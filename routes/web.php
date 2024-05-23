@@ -1,11 +1,11 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\ComaeTerController;
+
 use App\Http\Controllers\ComaeExCliController;
 use App\Http\Controllers\ComaeExRelParController;
 use App\Http\Controllers\ParentescosController;
-use App\Http\Controllers\MonitoriaExController;
+use App\Http\Controllers\ExMonitoriaController;
 
 Route::get('/', function () {
     return view('dashboardTemplate');
@@ -22,13 +22,13 @@ Route::middleware([
 });
 
 Route::get('/asociados/{id}/generarpdf', [ComaeExCliController::class, 'generarpdf'])->name('asociados.generarpdf');
-Route::get('/monitoria/generarpdf', [MonitoriaExController::class, 'generarpdf'])->name('monitoria.generarpdf');
+Route::get('/monitoria/generarpdf', [ExMonitoriaController::class, 'generarpdf'])->name('monitoria.generarpdf');
 
 Route::resource('asociados', ComaeExCliController::class)->middleware('auth');
 Route::resource('beneficiarios', ComaeExRelParController::class);
-Route::resource('monitoria', MonitoriaExController::class);
+Route::resource('monitoria', ExMonitoriaController::class);
 
 Route::get('/parentescosall', [ParentescosController::class, 'index'])->name('parentescosall');
-Route::get('/exportar-datos', [MonitoriaExController::class, 'exportData']);
-Route::get('/mes/{mes}', [MonitoriaExController::class, 'ConsultaMes']);
+Route::get('/exportar-datos', [ExMonitoriaController::class, 'exportData']);
+Route::get('/mes/{mes}', [ExMonitoriaController::class, 'ConsultaMes']);
 

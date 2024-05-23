@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('coMaeCli', function (Blueprint $table) {
+        Schema::create('coMae_ExCli', function (Blueprint $table) {
             $table->bigInteger('cedula')->primary();
             $table->string('apellido');
             $table->string('nombre');

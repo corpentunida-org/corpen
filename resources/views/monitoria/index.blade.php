@@ -83,7 +83,8 @@
                                     </form>
                                 </div>
                                 <div class="col-md-2">
-                                    <a href="/exportar-datos" class="btn btn-secondary">Exportar Datos</a>
+                                    <!-- <a href="/exportar-datos" class="btn btn-secondary">Exportar Datos</a> -->
+                                    <a href="#" class="btn btn-secondary">Exportar Datos</a>
                                 </div>
                                 <div class="col-md-2">
                                     <a href="{{ route('monitoria.generarpdf') }}" target="_blank" class="btn btn-primary">Generar PDF</a>                                    
