@@ -11,9 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('comae_ex_rel_pars', function (Blueprint $table) {
-            $table->id();
+        Schema::create('coMaeExRelPar', function (Blueprint $table) {
+            $table->bigInteger('cedula');
+            $table->string('nombre');
+            $table->string('parentesco');
+            $table->bigInteger('cedulaAsociado');
+            $table->date('fechaNacimiento');
+            $table->date('fechaIngreso');
+            $table->boolean('estado')->default(true);
             $table->timestamps();
+            $table->foreign('cedulaAsociado')->references('cedula')->on('coMaeCli');
+            $table->foreign('parentesco')->references('codPar')->on('parentescos');
         });
     }
 
@@ -22,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('comae_ex_rel_pars');
+        Schema::dropIfExists('comaeExRelPar');
     }
 };

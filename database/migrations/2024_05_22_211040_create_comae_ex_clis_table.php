@@ -11,8 +11,20 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('comae_ex_clis', function (Blueprint $table) {
-            $table->id();
+        Schema::create('coMaeCli', function (Blueprint $table) {
+            $table->bigInteger('cedula')->primary();
+            $table->string('apellido');
+            $table->string('nombre');
+            $table->integer('distrito_id');
+            $table->string('direccion')->nullable();
+            $table->integer('ciudad_id')->nullable();
+            $table->boolean('estado')->default(true);
+            $table->string('celular')->nullable();
+            $table->string('email')->nullable();
+            $table->date('fechaNacimiento');
+            $table->text('observacion_familia')->nullable();
+            $table->text('observacion')->nullable();
+            $table->softDeletes();
             $table->timestamps();
         });
     }
@@ -22,6 +34,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('comae_ex_clis');
+        Schema::dropIfExists('coMaeCli');
     }
 };

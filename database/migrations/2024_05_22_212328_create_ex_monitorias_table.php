@@ -11,8 +11,22 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('ex_monitorias', function (Blueprint $table) {
+        Schema::create('exMonitorias', function (Blueprint $table) {
             $table->id();
+            $table->date('fechaRegistro');
+            $table->time('horaFallecimiento');
+            $table->bigInteger('cedulaTitular');
+            $table->bigInteger('cedulaFallecido');
+            $table->date('fechaFallecimiento');
+            $table->string('lugarFallecimiento');
+            $table->string('parentesco');
+            $table->boolean('traslado')->default(true);
+            $table->string('contacto');
+            $table->string('telefonoContacto');
+            $table->string('Contacto2')->nullable();
+            $table->string('telefonoContacto2')->nullable();
+            $table->string('factura');
+            $table->string('valor');
             $table->timestamps();
         });
     }
