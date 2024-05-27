@@ -1,9 +1,9 @@
 <div class="sidebar" data-color="blue">
     <div class="logo">
-        <a href="" class="simple-text logo-mini">
+        <a href="/" class="simple-text logo-mini">
             BD
         </a>
-        <a href="" class="simple-text logo-normal">
+        <a href="/" class="simple-text logo-normal">
             EXEQUIALES
         </a>
     </div>
@@ -21,11 +21,13 @@
                     <p>Servicios</p>
                 </a>
             </li>
+            <li class="active-pro">                
+                <x-authentication-card-logo />                
+            </li>
         </ul>
     </div>
 </div>
 
-<!-- 
-    menu active
-    <li class="{{ Request::is('pagina1') ? 'active' : '' }}"><a href="{{ route('pagina1') }}">Página 1</a></li>
- -->
+
+    {{-- menu active --}}
+    {{-- <li class="{{ Request::is('pagina1') ? 'active' : '' }}"><a href="{{ route('pagina1') }}">Página 1</a></li> --}}

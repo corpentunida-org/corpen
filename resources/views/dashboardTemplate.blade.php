@@ -4,13 +4,8 @@
 <head>
   <meta charset="utf-8" />  
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
-  <title>{{env('APP_NAME')}}</title>
-    <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, shrink-to-fit=no' name='viewport' />
-
-    <link rel="icon" type="image/png" href="{{ asset('assets/img/cropped-logoAppCircular-32x32.png') }}">
-    <link href="{{ asset('assets/css/bootstrap.min.css') }}" rel="stylesheet">
-    <link href="{{ asset('assets/css/now-ui-dashboard.css?v=1.5.0') }}" rel="stylesheet">
-    <link href="{{ asset('assets/demo/demo.css') }}" rel="stylesheet">
+  <meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, shrink-to-fit=no' name='viewport' />
+  <x-component-header />
 </head> 
 
 <body class="">
@@ -28,7 +23,7 @@
                 <span class="navbar-toggler-bar bar3"></span>
               </button>
             </div>
-            
+
             <a class="navbar-brand" href="#pablo">Hola, {{ Auth::user()->name }}</a>            
             @yield('content')
 
