@@ -25,7 +25,7 @@
 
 <body>
     <div class="wrapper ">
-        @include('navbar')
+        @include('layouts.navbar')
         <div class="main-panel" id="main-panel">
             <!-- Navbar -->
             <nav class="navbar navbar-expand-lg navbar-transparent  bg-primary  navbar-absolute">
@@ -269,7 +269,7 @@
                 </div>
             </div>
         </div>
-        @include('footer')
+        @include('layouts.footer')
 </body>
 
 </html>
