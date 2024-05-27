@@ -26,7 +26,6 @@
 <body>
     <div class="wrapper ">
         @include('navbar')
-
         <div class="main-panel" id="main-panel">
             <!-- Navbar -->
             <nav class="navbar navbar-expand-lg navbar-transparent  bg-primary  navbar-absolute">
@@ -188,7 +187,7 @@
                                 <div class="col-md-4 pr-1">
                                     <div class="form-group">
                                         <label>Cedula</label>
-                                        <input type="text" class="form-control">
+                                        <input type="number" class="form-control">
                                     </div>
                                 </div>
                                 <div class="col-md-4 px-1">
@@ -205,53 +204,62 @@
                                 </div>
                             </div>
                             <div class="row">
-                                <div class="col-md-3 pr-1">
-                                    <div class="form-group">
-                                        <label>Distrito</label>
-                                        <select class="form-control" name="parentesco" aria-label="Default select example" id="selectDistrito"></select>
-                                    </div>
-                                </div>
-                                <div class="col-md-3 px-1">
+                                <div class="col-md-4 pr-1">
                                     <div class="form-group">
                                         <label>Parentesco</label>
                                         <select class="form-control" name="parentesco" aria-label="Default select example" id="selectParentesco"></select>
                                     </div>
                                 </div>
-                                <div class="col-md-6 pl-1">
+                                <div class="col-md-4 px-1">
+                                    <div class="form-group">
+                                        <label>Distrito</label>
+                                        <select class="form-control" name="parentesco" aria-label="Default select example" id="selectDistrito"></select>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 pl-1">
+                                    <div class="form-group">
+                                        <label>Cuidad</label>
+                                        <select class="form-control" name="parentesco" aria-label="Default select example" id="selectDistrito"></select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-7 pr-1">
                                     <div class="form-group">
                                         <label>Dirección</label>
                                         <input type="text" class="form-control">
                                     </div>
                                 </div>
+                                <div class="col-md-5 pl-1">
+                                    <div class="form-group">
+                                        <label>Fecha Nacimiento</label>
+                                        <input type="date" class="form-control">
+                                    </div>
+                                </div>
+                                                            
                             </div>
-                            <div class="row">
-                                <div class="col-md-3 pr-1">
+                            <div class="row">                                
+                                <div class="col-md-5 pr-1">
                                     <div class="form-group">
                                         <label>Celular</label>
                                         <input type="text" class="form-control">
                                     </div>
                                 </div>
-                                <div class="col-md-3 px-1">
+                                <div class="col-md-7 pl-1">
                                     <div class="form-group">
                                         <label>Email</label>
-                                        <input type="text" class="form-control">
-                                    </div>
-                                </div>
-                                <div class="col-md-6 pl-1">
-                                    <div class="form-group">
-                                        <label>Dirección</label>
-                                        <input type="text" class="form-control">
+                                        <input type="email" class="form-control">
                                     </div>
                                 </div>
                             </div>
                             <div class="row">
                                 <div class="col-md-12">
                                     <div class="form-group">
-                                        <label>Observacion</label>
-                                        <input type="text" class="form-control" placeholder="Home Address" value="Bld Mihail Kogalniceanu, nr. 8 Bl 1, Sc 1, Ap 09">
+                                        <label>Observación</label>
+                                        <input type="text" class="form-control">
                                     </div>
                                 </div>
-                            </div>                            
+                            </div>
                         </form>
                     </div>
                     <div class="modal-footer">
@@ -261,8 +269,6 @@
                 </div>
             </div>
         </div>
-
-
         @include('footer')
 </body>
 

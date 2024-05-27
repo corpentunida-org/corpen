@@ -32,6 +32,13 @@ class ComaeExCliController extends Controller
         return view('asociados.show', compact('asociado', 'beneficiarios'));
     }
 
+
+
+    public function store(Request $request)
+    {
+         
+    }
+
     public function update(Request $request, $cedula)
     {
         ComaeExCli::where('cedula', $cedula)

@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class ExMonitoria extends Model
 {
     use HasFactory;
-    protected $table = 'exmonitorias';
+    protected $table = 'exMonitorias';
     protected $fillable = [
         'fechaRegistro',
         'horaFallecimiento',
@@ -25,7 +25,7 @@ class ExMonitoria extends Model
         'factura',
         'valor',
     ];
-    public function asociado() 
+    public function asociado()
     {
         return $this->belongsTo(ComaeExCli::class, 'cedulaTitular', 'cedula');
     }

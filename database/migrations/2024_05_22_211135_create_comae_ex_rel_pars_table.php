@@ -20,7 +20,7 @@ return new class extends Migration
             $table->date('fechaIngreso');
             $table->boolean('estado')->default(true);
             $table->timestamps();
-            $table->foreign('cedulaAsociado')->references('cedula')->on('coMaeCli');
+            $table->foreign('cedulaAsociado')->references('cedula')->on('coMae_ExCli');
             $table->foreign('parentesco')->references('codPar')->on('parentescos');
         });
     }
