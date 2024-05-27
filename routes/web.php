@@ -7,9 +7,13 @@ use App\Http\Controllers\ComaeExRelParController;
 use App\Http\Controllers\ParentescosController;
 use App\Http\Controllers\ExMonitoriaController;
 
-Route::get('/', function () {
-    return view('dashboardTemplate');
+
+Route::middleware(['auth'])->group(function () {
+    Route::get('/', function () {
+        return view('dashboardTemplate');
+    })->name('dashboard');
 });
+
 
 Route::middleware([
     'auth:sanctum',
@@ -21,6 +25,7 @@ Route::middleware([
     })->name('dashboard');
 });
 
+
 Route::get('/asociados/{id}/generarpdf', [ComaeExCliController::class, 'generarpdf'])->name('asociados.generarpdf');
 Route::get('/monitoria/generarpdf', [ExMonitoriaController::class, 'generarpdf'])->name('monitoria.generarpdf');
 
@@ -30,5 +35,5 @@ Route::resource('monitoria', ExMonitoriaController::class);
 
 Route::get('/parentescosall', [ParentescosController::class, 'index'])->name('parentescosall');
 Route::get('/exportar-datos', [ExMonitoriaController::class, 'exportData']);
-Route::get('/mes/{mes}', [ExMonitoriaController::class, 'ConsultaMes']);
+Route::get('/mes/{mes}', [ExMonitoriaController::class, 'ConsultaMes']);  
 
