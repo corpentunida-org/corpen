@@ -25,7 +25,7 @@ Route::middleware([
     })->name('dashboard');
 });
 
-
+Route::get('/prueba', [ParentescosController::class, 'index']);
 Route::get('/asociados/{id}/generarpdf', [ComaeExCliController::class, 'generarpdf'])->name('asociados.generarpdf');
 Route::get('/monitoria/generarpdf', [ExMonitoriaController::class, 'generarpdf'])->name('monitoria.generarpdf');
 

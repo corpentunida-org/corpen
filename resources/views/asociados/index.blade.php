@@ -158,7 +158,8 @@
                 </div>
             </div>
         </div>
-
+        @include('layouts.footer')
+        
         <div class="modal fade" id="ModalInsert" tabindex="-1" aria-labelledby="ModalInsertLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -254,7 +255,6 @@
                 </div>
             </div>
         </div>
-        @include('layouts.footer')
 </body>
 
 </html>
