@@ -10,7 +10,7 @@
 </head>
 
 <body>
-    @include('navbar')
+    @include('layouts.navbar')
 
     <div class="main-panel" id="main-panel">
         <!-- Navbar -->

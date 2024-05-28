@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\ComaeExRelPar;
 use App\Models\ComaeExCli;
+use App\Models\ComaeTer;
 use Dompdf\Dompdf;
 use Illuminate\Support\Facades\View;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -32,11 +33,21 @@ class ComaeExCliController extends Controller
         return view('asociados.show', compact('asociado', 'beneficiarios'));
     }
 
+    public function validarRegistro(Request $request){
+        $id = $request->input('id');
+        $asociado = ComaeExCli::where('cedula', $id)->first();
+        if($asociado) return "1";        
+        else{
+            $tercero = ComaeTer::where('cod-ter', $id)->first();
+            if ($tercero) return '2';
+            else return '0';
+        }
+    }
 
 
     public function store(Request $request)
     {
-         
+        
     }
 
     public function update(Request $request, $cedula)

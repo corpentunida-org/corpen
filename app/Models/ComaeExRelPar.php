@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class ComaeExRelPar extends Model
 {
     use HasFactory;
-    protected $table = 'comaeexrelpar';
+    protected $table = 'coMaeExRelPar';
     protected $primaryKey = 'cedula'; 
     public $timestamps = false;
     protected $fillable = [
