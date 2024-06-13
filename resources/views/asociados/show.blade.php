@@ -10,6 +10,9 @@
 </head>
 
 <body>
+
+    
+
     @include('layouts.navbar')
 
     <div class="main-panel" id="main-panel">
@@ -339,17 +342,22 @@
                 </div>
             </div>
             <script>
-                $(document).ready(function() {
+                $(document).ready(function() {                    
                     $.ajax({
                         url: "{{ route('parentescosall') }}",
                         type: 'GET',
                         dataType: 'json',
-                        success: function(response) {
+                        success: function(response) {                            
                             var select = $('#selectParentesco');
                             response.forEach(function(data) {
                                 select.append($('<option>', {
-                                    value: data.codPar,
-                                    text: data.nomPar
+                                    //BD LOCAL
+                                    // value: data.codPar,
+                                    // text: data.nomPar
+
+                                    //consumo api
+                                    value: data.code,
+                                    text: data.name
                                 }));
                             });
                         },
@@ -363,7 +371,6 @@
 
                         var formData = $(this).serialize();
                         var csrfToken = $('meta[name="csrf-token"]').attr('content');
-
                         $.ajax({
                             url: "{{ route('beneficiarios.store') }}",
                             type: 'POST',
@@ -372,7 +379,7 @@
                                 'X-CSRF-TOKEN': csrfToken
                             },
                             success: function(response) {
-                                console.log(response);                                                               
+                                console.log(response);                                                              
                                 location.reload();
                             },
                             error: function(xhr) {
