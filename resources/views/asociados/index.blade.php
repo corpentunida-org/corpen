@@ -199,7 +199,7 @@
                                 <div class="col-md-4 px-1">
                                     <div class="form-group">
                                         <label>Distrito</label>
-                                        <select class="form-control" name="parentesco" aria-label="Default select example" id="selectDistrito"></select>
+                                        <input type="number" max="99" class="form-control">
                                     </div>
                                 </div>
                                 <div class="col-md-4 pl-1">

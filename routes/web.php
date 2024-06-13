@@ -14,6 +14,9 @@ Route::middleware(['auth'])->group(function () {
     })->name('dashboard');
 });
 
+Route::get('/offline', function () {
+    return view('vendor.laravelpwa.offline');
+});
 
 Route::middleware([
     'auth:sanctum',
