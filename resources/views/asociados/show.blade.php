@@ -379,7 +379,8 @@
                                 'X-CSRF-TOKEN': csrfToken
                             },
                             success: function(response) {
-                                console.log(response);                                                              
+                                console.log(response);
+                                alert("se añadio el beneficiario")                                                            
                                 location.reload();
                             },
                             error: function(xhr) {

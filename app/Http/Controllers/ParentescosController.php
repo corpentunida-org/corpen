@@ -12,7 +12,6 @@ class ParentescosController extends Controller
     {
         // $parentescos = Parentescos::all();
         // return response()->json($parentescos);
-
         $response = Http::get('https://www.siasoftapp.com:7011/api/Exequiales/Relationship');
         $posts = $response->json();
         return response()->json($posts);

@@ -32,7 +32,7 @@ class ComaeExRelParController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'cedula' => ['required', 'min:3', 'unique:comaeexrelpar,cedulaAsociado'],
+            'cedula' => ['required', 'min:3'],
             'fechaNacimiento' => ['required'],
             'apellidos' => ['required'],
             'nombres' => ['required'],
@@ -48,7 +48,7 @@ class ComaeExRelParController extends Controller
         // ]);
         //return "se añadio el registro"; //Interno Controlador
 
-        $token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6ImFkbWluQGdtYWlsLmNvbSIsImp0aSI6ImZmZGRjYWNhLTlmZTItNDdkZi04NGMyLTNhODhmNjExNzE3NyIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJBZG1pbiIsIlVzZXJJZCI6IjEiLCJtYWlsIjoiYWRtaW5AZ21haWwuY29tIiwiVXNlcnJvbGUiOiJBZG1pbiIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6IkFkbWluIiwiZXhwIjoxNzIwODk3ODk1LCJpc3MiOiJteWFwcCIsImF1ZCI6Im15YXBwIn0.JqmbabE0ysqvyIsbHlBItze6f3p12nVLc3f-RlbCeaQ'; 
+        $token = env('TOKEN_SIASOFT');
 
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
