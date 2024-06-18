@@ -52,7 +52,7 @@ class ComaeExRelParController extends Controller
 
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
-            'Accept' => 'application/json', // Ajusta esto según el tipo de datos que esperas recibir
+            'Accept' => 'application/json',
         ])->post('https://www.siasoftapp.com:7011/api/Exequiales/Beneficiary', [
             'documentBeneficiaryId' => $request->cedula,
             'codePastor' => $request->cedulaAsociado,
@@ -63,13 +63,10 @@ class ComaeExRelParController extends Controller
             'type' => "A"
         ]);
     
-        // Manejo de la respuesta de la API
         if ($response->successful()) {
-            // Éxito
-            return $response->json(); // O devuelve la vista que corresponda
+            return $response->json();
         } else {
-            // Manejo de errores
-            return $response->json(); // O devuelve la vista que corresponda con el mensaje de error
+            return $response->json();
         }
     }
 }
