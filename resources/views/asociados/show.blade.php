@@ -67,7 +67,7 @@
                 <div class="col-md-11 ml-auto mr-auto">
                     <div class="card">
                         <div class="card-header">
-                            <h5 class="title">Información del Asociado</h5>
+                            <h5 class="title">Información del Titular</h5>
                         </div>
                         <div class="card-body">
                             <div class="row">
