@@ -12,7 +12,7 @@
             <li class="active ">
                 <a href="/asociados">
                     <i class="now-ui-icons business_badge"></i>
-                    <p>Asociados</p>
+                    <p>Titular</p>
                 </a>
             </li>
             <li class="active ">

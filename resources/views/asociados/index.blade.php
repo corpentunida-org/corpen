@@ -23,7 +23,7 @@
                                 <span class="navbar-toggler-bar bar3"></span>
                             </button>
                         </div>
-                        <a class="navbar-brand" href="#">Asociados</a>
+                        <a class="navbar-brand" href="#">Titular Cliente</a>
                     </div>
                     <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navigation" aria-controls="navigation-index" aria-expanded="false" aria-label="Toggle navigation">
                         <span class="navbar-toggler-bar navbar-kebab"></span>
@@ -151,7 +151,7 @@
                         </div>
                     </div>
                     <div class="col-md-12">
-                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#ModalInsert">
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#ModalVerCedula">
                             Agregar Cliente
                         </button>
                     </div>
@@ -159,7 +159,44 @@
             </div>
         </div>
         @include('layouts.footer')
-        
+
+        {{-- Modal Filtro Cedula --}}
+        <div class="modal fade" id="ModalVerCedula" tabindex="-1" aria-labelledby="ModalVerCedula" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#ModalInsert">Next</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Modal No se añade Titular --}}
+        <div class="modal fade" id="ModalVerCedula" tabindex="-1" aria-labelledby="ModalVerCedula" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        No se añadio el titular
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#ModalInsert">Next</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Modal agregar Titular --}}
         <div class="modal fade" id="ModalInsert" tabindex="-1" aria-labelledby="ModalInsertLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">

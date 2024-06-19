@@ -23,7 +23,6 @@ class ComaeExRelParController extends Controller
                 $beneficiario->save();
             }
         }
-
         $asociado = ComaeExCli::where('cedula', $cedula)->firstOrFail();
         $beneficiarios = ComaeExRelPar::where('cedulaAsociado', $cedula)->get();
         return view('asociados.show', compact('asociado', 'beneficiarios'))->with('success', 'Datos actualizados');
