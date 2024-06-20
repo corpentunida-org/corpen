@@ -5,8 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <x-component-header />
-
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 </head>
 
 <body>
@@ -27,7 +27,7 @@
                             <span class="navbar-toggler-bar bar3"></span>
                         </button>
                     </div>
-                    <a class="navbar-brand" href="#pablo">ASOCIADO - BENEFICIARIOS</a>
+                    <a class="navbar-brand" href="#pablo">TITULAR - BENEFICIARIOS</a>
                 </div>
                 <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navigation" aria-controls="navigation-index" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-bar navbar-kebab"></span>
@@ -65,23 +65,21 @@
         <div class="content">
             <div class="row">
                 <div class="col-md-11 ml-auto mr-auto">
-                    <div class="card">
-                        <div class="card-header">
-                            <h5 class="title">Información del Titular</h5>
+                    <div class="card">                        
+                        <div class="card-header">                            
+                                <h5 class="card-category">Información del Titular</h5>
+                                <div class="d-flex flex-row align-items-center">                                    
+                                    <h5 class="title mb-0">{{ $asociado->apellido . ' ' . $asociado->nombre }}</h5>
+                                    <button class="btn btn-success ml-4 py-2"><i class="bi bi-pencil-square"></i></button>
+                                    <button class="btn btn-danger mx-2 py-2"><i class="bi bi-x-square"></i></button>                
+                                </div>                     
                         </div>
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-md-2 pr-1">
                                     <div class="form-group">
-                                        <label for="cedula">Cedula</label>
+                                        <label for="cedula">Cédula</label>
                                         <div class="form-control">{{ $asociado->cedula }}</div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4 px-1">
-                                    <div class="form-group">
-                                        <label>Nombre</label>
-                                        <div class="form-control">{{ $asociado->apellido . ' ' . $asociado->nombre }}
-                                        </div>
                                     </div>
                                 </div>
 
@@ -101,9 +99,9 @@
                                             </script>
                                         </div>
                                     </form>
-                                </div>
+                                </div>                               
 
-                                <div class="col-md-2 pl-1">
+                                <div class="col-md-1 pl-1">
                                     <div class="form-group">
                                         @php
                                         $fecNac = new DateTime($asociado->fechaNacimiento);
@@ -112,7 +110,31 @@
                                         $edad = $diferencia->y;
                                         @endphp
                                         <label>Edad</label>
-                                        <div class="form-control">{{ $edad }}</div>
+                                        <div class="form-control">
+                                            @if($edad == 2024) 0
+                                            @else {{ $edad }}
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-3 pl-1">
+                                    <div class="form-group">
+                                        <label>Dirección</label>
+                                        <div class="form-control">
+                                            @if ($asociado->direccion == null) <div class="p-2"></div>
+                                            @endif {{ $asociado->direccion }}
+                                        </div>                                    
+                                    </div>
+                                </div>
+
+                                <div class="col-md-3 pl-1">
+                                    <div class="form-group">
+                                        <label>Teléfono</label>                                        
+                                        <div class="form-control">
+                                            @if ($asociado->celular == null) <div class="p-2"></div>
+                                            @endif {{ $asociado->celular }}
+                                        </div>
                                     </div>
                                 </div>
 
@@ -125,13 +147,7 @@
                                             <div class="form-control">{{ $asociado->distrito->id }}</div>
                                             @else
                                             <div class="form-control">{{ $asociado->distrito }}</div>
-                                            @endif
-
-                                            <label>Dirección</label>
-                                            <div class="form-control">{{ $asociado->direccion }}</div>
-
-                                            <label>Teléfono</label>
-                                            <div class="form-control">{{ $asociado->celular }}</div>
+                                            @endif                                            
 
                                             <label>Ciudad</label>
                                             @if ($asociado->ciudad_id !== null && $asociado->ciudad_id !== 0)
@@ -154,6 +170,7 @@
                                         <div class="card">
                                             <div class="card-header">
                                                 <h5 class="card-category">Beneficiarios</h5>
+                                            </div>
                                                 <div class="card-body">
                                                     <form method="POST" id="fechasBeneficiarios">
                                                         @csrf
@@ -166,7 +183,7 @@
                                                                     <th>Parentesco</th>
                                                                     <th>Fecha Nacimiento</th>
                                                                     <th>Edad</th>
-                                                                    <th> </th>
+                                                                    <th> </th>                                                   
                                                                 </tr>
 
                                                                 @foreach ($beneficiarios as $beneficiario)
@@ -195,11 +212,14 @@
                                                                     @endphp
 
                                                                     <td>{{ $edad }}</td>
-                                                                    <td>
-                                                                        <a class="btn btn-success p-2 botonPrestarServicio" data-bs-toggle="modal" data-bs-target="#exampleModalServicio">
+                                                                    <td class="d-flex flex-row align-items-center">
+                                                                        <a class="btn btn-success py-2 px-1 botonPrestarServicio m-0" data-bs-toggle="modal" data-bs-target="#exampleModalServicio">
                                                                             Prestar Servicio
                                                                         </a>
                                                                     </td>
+                                                                    {{-- <td>
+                                                                        <a class="btn btn-danger py-3 px-1"><i class="bi bi-x-square"></i></a>
+                                                                    </td> --}}
                                                                 </tr>
                                                                 @endif
                                                                 @endforeach
@@ -219,7 +239,6 @@
                                                     {{ session('PrestarServicio') }}
                                                 </div>
                                                 @endif
-                                            </div>
                                         </div>
 
                                         <div class="card" id="cardServiciosPrestados">
