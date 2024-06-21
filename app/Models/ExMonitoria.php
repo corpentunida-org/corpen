@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class ExMonitoria extends Model
 {
     use HasFactory;
-    protected $table = 'exMonitorias';
+    protected $table = 'MAEC_EXSER';
     protected $fillable = [
         'fechaRegistro',
         'horaFallecimiento',

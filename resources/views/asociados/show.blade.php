@@ -216,6 +216,7 @@
                                                                         <a class="btn btn-success py-2 px-1 botonPrestarServicio m-0" data-bs-toggle="modal" data-bs-target="#exampleModalServicio">
                                                                             Prestar Servicio
                                                                         </a>
+                                                                        <a class="btn btn-danger py-3 px-1 ml-1"><i class="bi bi-x-square"></i></a>
                                                                     </td>
                                                                     {{-- <td>
                                                                         <a class="btn btn-danger py-3 px-1"><i class="bi bi-x-square"></i></a>
@@ -239,6 +240,7 @@
                                                     {{ session('PrestarServicio') }}
                                                 </div>
                                                 @endif
+                                                <div id="SuccessAddBeneficiario"></div>
                                         </div>
 
                                         <div class="card" id="cardServiciosPrestados">
@@ -361,15 +363,16 @@
                 </div>
             </div>
             <script>
-                $(document).ready(function() {                    
+                $(document).ready(function() {                   
                     $.ajax({
                         url: "{{ route('parentescosall') }}",
                         type: 'GET',
                         dataType: 'json',
-                        success: function(response) {                            
+                        success: function(response) {        
+                            //console.log(response);                    
                             var select = $('#selectParentesco');
                             response.forEach(function(data) {
-                                select.append($('<option>', {
+                                select.append($('<option>', {                                    
                                     //BD LOCAL
                                     // value: data.codPar,
                                     // text: data.nomPar
@@ -385,6 +388,11 @@
                             console.error('Error:', error);
                         }
                     });
+                    var message = localStorage.getItem('successMessage');
+                    if (message) {
+                        $("#SuccessAddBeneficiario").html('<div class="alert alert-success p-1">' + message + '</div>');
+                        localStorage.removeItem('successMessage');
+                    }
                     $('#FormularioAñadirBeneficiario').submit(function(event) {
                         event.preventDefault();
 
@@ -399,7 +407,7 @@
                             },
                             success: function(response) {
                                 console.log(response);
-                                alert("se añadio el beneficiario")                                                            
+                                localStorage.setItem('successMessage', "Registro Añadido Exitosamente");                                                    
                                 location.reload();
                             },
                             error: function(xhr) {
@@ -628,5 +636,4 @@
                 });
             </script>
 </body>
-
 </html>
