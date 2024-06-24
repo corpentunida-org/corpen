@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\ComaeExRelPar;
 use App\Models\ComaeExCli;
 use App\Models\ComaeTer;
+use Illuminate\Support\Facades\Http;
 use Dompdf\Dompdf;
 use Illuminate\Support\Facades\View;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -25,30 +26,13 @@ class ComaeExCliController extends Controller
     }
 
     public function show(Request $request, $id)
-    {
-        //API
-        $token = env('TOKEN_ADMIN');
-        $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $token,
-        ])->get('https://www.siasoftapp.com:7011/api/Exequiales', [
-            'documentId' => $id,
-        ]);
-    
-        if ($response->successful()) { $data = $response->json();
-            // return view('asociados.show', [
-            //     'data' => $data,
-            // ]);
-        } else {
-            return "Error al obtener datos de la API";
-        }
-        
-
+    {      
         //cedula por url asociados/ID?id=
         //A la BD
-        // $id = $request->input('id');
-        // $asociado = ComaeExCli::where('cedula', $id)->firstOrFail();
-        // $beneficiarios = ComaeExRelPar::where('cedulaAsociado', $id)->with('parentescoo')->get();
-        // return view('asociados.show', compact('asociado', 'beneficiarios'));
+        $id = $request->input('id');
+        $asociado = ComaeExCli::where('cedula', $id)->firstOrFail();
+        $beneficiarios = ComaeExRelPar::where('cedulaAsociado', $id)->with('parentescoo')->get();
+        return view('asociados.show', compact('asociado', 'beneficiarios'));
     }
 
     public function validarRegistro(Request $request){
