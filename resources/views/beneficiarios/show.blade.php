@@ -1,3 +1,13 @@
+{{-- <h1>Asociado</h1>
+        <p>Nombre: {{ $asociado['name'] }}</p>
+<p>observation: {{ $asociado['observation'] }}</p>
+
+<h2>Beneficiarios</h2>
+@foreach($beneficiarios as $beneficiario)
+<p>Nombre: {{ $beneficiario['names'] }}</p>
+<p>Parentesco: {{ $beneficiario['relationship'] }}</p>
+<!-- Agrega más campos según sea necesario -->
+@endforeach --}}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -10,7 +20,6 @@
 </head>
 
 <body>
-
     @include('layouts.navbar')
 
     <div class="main-panel" id="main-panel">
@@ -33,7 +42,9 @@
                     <span class="navbar-toggler-bar navbar-kebab"></span>
                 </button>
                 <div class="collapse navbar-collapse justify-content-end" id="navigation">
+                    
                     <x-input-search></x-input-search>
+
                     <ul class="navbar-nav">
                         <li class="nav-item">
                             <a class="nav-link" href="/user/profile">
@@ -57,7 +68,7 @@
                         <div class="card-header">
                             <h5 class="card-category">Información del Titular</h5>
                             <div class="d-flex flex-row align-items-center">
-                                <h5 class="title mb-0">{{ $asociado->apellido . ' ' . $asociado->nombre }}</h5>
+                                <h5 class="title mb-0">{{ $asociado['name'] }}</h5>
                                 <button class="btn btn-success ml-4 py-2"><i class="bi bi-pencil-square"></i></button>
                                 <button class="btn btn-danger mx-2 py-2"><i class="bi bi-x-square"></i></button>
                             </div>
@@ -67,7 +78,7 @@
                                 <div class="col-md-2 pr-1">
                                     <div class="form-group">
                                         <label for="cedula">Cédula</label>
-                                        <div class="form-control">{{ $asociado->cedula }}</div>
+                                        <div class="form-control">{{ $asociado['documentId'] }}</div>
                                     </div>
                                 </div>
 
@@ -78,21 +89,15 @@
                                             <div class="input-group">
                                                 <input class="form-control" id="fechaInput" type="date" name="fechaNacimiento">
                                                 <button class="btn form-control m-0 p-0" data-bs-toggle="modal" data-bs-target="#exampleModal" type="submit">Actualizar</button>
-                                            </div>
-                                            <script>
-                                                document.addEventListener('DOMContentLoaded', function() {
-                                                    var fechaDesdeBD = "{{ $asociado->fechaNacimiento }}";
-                                                    document.getElementById('fechaInput').value = fechaDesdeBD;
-                                                });
-                                            </script>
+                                            </div>                                            
                                         </div>
                                     </form>
                                 </div>
 
                                 <div class="col-md-1 pl-1">
-                                    <div class="form-group">
+                                    <!-- <div class="form-group">
                                         @php
-                                        $fecNac = new DateTime($asociado->fechaNacimiento);
+                                        $fecNac = new DateTime();
                                         $fechaActual = new DateTime();
                                         $diferencia = $fecNac->diff($fechaActual);
                                         $edad = $diferencia->y;
@@ -103,15 +108,14 @@
                                             @else {{ $edad }}
                                             @endif
                                         </div>
-                                    </div>
+                                    </div> -->
                                 </div>
 
                                 <div class="col-md-3 pl-1">
                                     <div class="form-group">
                                         <label>Dirección</label>
                                         <div class="form-control">
-                                            @if ($asociado->direccion == null) <div class="p-2"></div>
-                                            @endif {{ $asociado->direccion }}
+                                            <div class="p-2"></div>                                            
                                         </div>
                                     </div>
                                 </div>
@@ -120,8 +124,7 @@
                                     <div class="form-group">
                                         <label>Teléfono</label>
                                         <div class="form-control">
-                                            @if ($asociado->celular == null) <div class="p-2"></div>
-                                            @endif {{ $asociado->celular }}
+                                            <div class="p-2"></div>                                            
                                         </div>
                                     </div>
                                 </div>
@@ -129,30 +132,27 @@
                                 <div class="row">
                                     <div class="col-md-2 pr-1">
                                         <div class="form-group">
-                                            <label>Distrito</label>
+                                        <label>Plan</label>                                            
+                                        <div class="form-control">
+                                        {{ $asociado['codePlan'] }}
+                                        </div>
 
-                                            @if ($asociado->distrito !== null && $asociado->distrito !== 0)
-                                            <div class="form-control">{{ $asociado->distrito->id }}</div>
-                                            @else
-                                            <div class="form-control">{{ $asociado->distrito }}</div>
-                                            @endif
+                                            <label>Distrito</label>                                            
+                                            <div class="form-control"></div>
+                                            
 
-                                            <label>Ciudad</label>
-                                            @if ($asociado->ciudad_id !== null && $asociado->ciudad_id !== 0)
-                                            <div class="form-control">{{ $asociado->ciudade->nombre }}</div>
-                                            @else
-                                            <div class="form-control">{{ $asociado->ciudade }}</div>
-                                            @endif
+                                            <label>Ciudad</label>                                            
+                                            <div class="form-control"></div>
+                                            
                                             <label>Email</label>
                                             <div class="form-control">
-                                                {{ $asociado->email }}
                                             </div>
                                         </div>
                                     </div>
                                     <div class="col-md-10">
                                         <label>Observaciones</label>
                                         <p class="border border-secondary-subtle p-3 rounded">
-                                            {{ $asociado->observacion_familia }}
+                                        {{ $asociado['observation'] }}
                                         </p>
 
                                         <div class="card">
@@ -175,25 +175,18 @@
                                                             </tr>
 
                                                             @foreach ($beneficiarios as $beneficiario)
-                                                            @if($beneficiario->estado)
+                                                            @if($beneficiario["type"] == "A")
                                                             <tr>
-                                                                <td>{{ $beneficiario->cedula }}</td>
-                                                                <td>{{ $beneficiario->apellido . $beneficiario->nombre }}
-                                                                </td>
+                                                                <td>{{ $beneficiario["cedulaBeneficiario"] }}</td>
+                                                                <td>{{ $beneficiario["names"] }}</td>
+                                                                
+                                                                <td>{{ $beneficiario["relationship"] }}</td>                                                               
 
-                                                                @if ($beneficiario->parentescoo !== null)
-                                                                <td>{{ $beneficiario->parentescoo->nomPar }}
-                                                                </td>
-                                                                @else
-                                                                <td>{{ $beneficiario->parentesco }}</td>
-                                                                @endif
-
-
-                                                                <input type="hidden" name="ids[]" value="{{ $beneficiario->cedula }}">
-                                                                <td><input type="date" name="fechas[]" class="form-control" value="{{ $beneficiario->fechaNacimiento }}">
+                                                                <input type="hidden" name="ids[]" value="{{ $beneficiario["cedulaBeneficiario"] }}">
+                                                                <td><input type="date" name="fechas[]" class="form-control" value="{{ $beneficiario["dateBirthday"] }}">
                                                                 </td>
                                                                 @php
-                                                                $fecNac = new DateTime($beneficiario->fechaNacimiento);
+                                                                $fecNac = new DateTime($beneficiario["dateBirthday"]);
                                                                 $fechaActual = new DateTime();
                                                                 $diferencia = $fecNac->diff($fechaActual);
                                                                 $edad = $diferencia->y;
@@ -207,8 +200,8 @@
                                                                     <a class="btn btn-danger py-3 px-1 ml-1"><i class="bi bi-x-square"></i></a>
                                                                 </td>
                                                                 {{-- <td>
-                                                                        <a class="btn btn-danger py-3 px-1"><i class="bi bi-x-square"></i></a>
-                                                                    </td> --}}
+                                                                                <a class="btn btn-danger py-3 px-1"><i class="bi bi-x-square"></i></a>
+                                                                            </td> --}}
                                                             </tr>
                                                             @endif
                                                             @endforeach
@@ -246,18 +239,12 @@
                                                             $totalRegistros = 0;
                                                             @endphp
                                                             @foreach ($beneficiarios as $beneficiario)
-                                                            @if($beneficiario->estado != '1')
+                                                            @if($beneficiario["type"] != "A")
                                                             <tr>
-                                                                <td>{{ $beneficiario->cedula }}</td>
-                                                                <td>{{ $beneficiario->apellido . $beneficiario->nombre }}
-                                                                </td>
-
-                                                                @if ($beneficiario->parentescoo !== null)
-                                                                <td>{{ $beneficiario->parentescoo->nomPar }}
-                                                                </td>
-                                                                @else
-                                                                <td>{{ $beneficiario->parentesco }}</td>
-                                                                @endif
+                                                                <td>{{ $beneficiario["cedulaBeneficiario"] }}</td>
+                                                                <td>{{ $beneficiario["names"] }}</td>
+                                                                <td>{{ $beneficiario["relationship"] }}</td>
+                                                                
                                                             </tr>
                                                             @php
                                                             $totalRegistros++;
@@ -280,7 +267,7 @@
                                     <div class="row">
                                         <div class="col-md-auto">
                                             <div class="form-group">
-                                                <a href="{{ route('asociados.generarpdf', ['id' => $asociado->cedula]) }}" target="_blank" class="btn btn-primary">Generar PDF</a>
+                                                <a href="{{ route('asociados.generarpdf', ['id' => $beneficiario["cedulaBeneficiario"]]) }}" target="_blank" class="btn btn-primary">Generar PDF</a>
                                             </div>
                                         </div>
                                     </div>
@@ -307,7 +294,7 @@
                                     <div class="col-md-4 pr-1">
                                         <div class="form-group">
                                             <label>Cedula</label>
-                                            <input type="hidden" value='{{ $asociado->cedula }}' name="cedulaAsociado">
+                                            <!-- <input type="hidden" value='{{ $asociado['documentId'] }}' name="cedulaAsociado"> -->
                                             <input type="text" class="form-control" placeholder="Cedula" id="cedula" name="cedula">
                                         </div>
                                     </div>
@@ -419,7 +406,7 @@
                         <form method="POST" action="{{ route('monitoria.store') }}" id="FormularioPrestarServicio">
                             @csrf
                             <div class="modal-body">
-                                <input type="hidden" id="cedulaTitular" name="cedulaTitular" value="{{ $asociado->cedula }}">
+                                <!-- <input type="hidden" id="cedulaTitular" name="cedulaTitular" value="{{ $asociado['documentId'] }}"> -->
                                 <input type="hidden" id="cedulaFallecido" name="cedulaFallecido">
                                 <input type="hidden" id="parentesco" name="parentesco">
                                 <div class="row">
@@ -521,7 +508,7 @@
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
-                            ¿Estás seguro de que deseas actualizar la fecha
+                            ¿Estás seguro de que deseas actualizar la fecha?
                         </div>
                         <div class="modal-footer">
                             <button type="button" id="confirmarEnvio" class="btn btn-primary">Si</button>
@@ -565,14 +552,14 @@
 
                     botonConfirmar.addEventListener('click', function() {
                         $('#exampleModal').modal('hide');
-                        var cedula = "{{ $asociado->cedula }}";
+                        var cedula = "{{ $asociado['documentId'] }}";
                         var fechaNacimiento = $('#fechaNacimiento').val();
 
                         const nuevaFecha = fechaInput.value;
                         //const url = `/asociados/${cedula}`;
 
                         $.ajax({
-                            url: "{{ route('asociados.update', ['asociado' => $asociado->cedula]) }}",
+                            url: "{{ route('asociados.update', ['asociado' => $asociado['documentId']]) }}",
                             method: 'PUT',
                             data: {
                                 fechaNacimiento: nuevaFecha,
@@ -609,7 +596,7 @@
                         var formData = $(formularioBene).serialize();
                         $.ajax({
                             type: 'PUT',
-                            url: "{{ route('beneficiarios.update', ['beneficiario' => $asociado->cedula]) }}",
+                            url: "{{ route('beneficiarios.update', ['beneficiario' => $asociado['documentId']]) }}",
                             data: formData,
                             _token: '{{ csrf_token() }}',
                             success: function(response) {

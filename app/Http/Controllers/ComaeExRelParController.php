@@ -11,6 +11,34 @@ use Illuminate\Support\Facades\Log;
 
 class ComaeExRelParController extends Controller
 {
+    public function show(Request $request, $id){
+        //API
+        $token = env('TOKEN_ADMIN');
+        $id = $request->input('id');
+        $titular = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $token,
+        ])->get('https://www.siasoftapp.com:7011/api/Exequiales/Tercero', [
+            'documentId' => $id,
+        ]);
+        
+        $beneficiarios = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $token,
+        ])->get('https://www.siasoftapp.com:7011/api/Exequiales', [
+            'documentId' => $id,
+        ]);
+    
+        if ($titular->successful() && $beneficiarios->successful()) {
+            $jsonTit = $titular->json();
+            $jsonBene = $beneficiarios->json();
+            return view('beneficiarios.show', [
+                'asociado' => $jsonTit, 
+                'beneficiarios' => $jsonBene,                 
+            ]);
+        } else {
+            return "No se pudo obtener datos de la API externa";
+        }
+    }
+
     public function update(Request $request, $cedula)
     {
         $ids = $request->input('ids');
