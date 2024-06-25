@@ -46,7 +46,6 @@
                   </a>
               </li>
           </ul>
-        
           </div>
         </div>
       </nav>
@@ -54,6 +53,7 @@
       
       <div class="panel-header panel-header-lg vh-100">
         <!-- <canvas id="bigDashboardChart"></canvas> -->
+         
       </div>
       
       

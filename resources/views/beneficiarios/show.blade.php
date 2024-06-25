@@ -1,13 +1,3 @@
-{{-- <h1>Asociado</h1>
-        <p>Nombre: {{ $asociado['name'] }}</p>
-<p>observation: {{ $asociado['observation'] }}</p>
-
-<h2>Beneficiarios</h2>
-@foreach($beneficiarios as $beneficiario)
-<p>Nombre: {{ $beneficiario['names'] }}</p>
-<p>Parentesco: {{ $beneficiario['relationship'] }}</p>
-<!-- Agrega más campos según sea necesario -->
-@endforeach --}}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -42,7 +32,7 @@
                     <span class="navbar-toggler-bar navbar-kebab"></span>
                 </button>
                 <div class="collapse navbar-collapse justify-content-end" id="navigation">
-                    
+
                     <x-input-search></x-input-search>
 
                     <ul class="navbar-nav">
@@ -89,7 +79,7 @@
                                             <div class="input-group">
                                                 <input class="form-control" id="fechaInput" type="date" name="fechaNacimiento">
                                                 <button class="btn form-control m-0 p-0" data-bs-toggle="modal" data-bs-target="#exampleModal" type="submit">Actualizar</button>
-                                            </div>                                            
+                                            </div>
                                         </div>
                                     </form>
                                 </div>
@@ -115,7 +105,7 @@
                                     <div class="form-group">
                                         <label>Dirección</label>
                                         <div class="form-control">
-                                            <div class="p-2"></div>                                            
+                                            <div class="p-2"></div>
                                         </div>
                                     </div>
                                 </div>
@@ -124,7 +114,7 @@
                                     <div class="form-group">
                                         <label>Teléfono</label>
                                         <div class="form-control">
-                                            <div class="p-2"></div>                                            
+                                            <div class="p-2"></div>
                                         </div>
                                     </div>
                                 </div>
@@ -132,18 +122,17 @@
                                 <div class="row">
                                     <div class="col-md-2 pr-1">
                                         <div class="form-group">
-                                        <label>Plan</label>                                            
-                                        <div class="form-control">
-                                        {{ $asociado['codePlan'] }}
-                                        </div>
+                                            <label>Plan</label>
+                                            <div class="form-control">
 
-                                            <label>Distrito</label>                                            
+                                            </div>
+                                            <label>Distrito</label>
                                             <div class="form-control"></div>
-                                            
 
-                                            <label>Ciudad</label>                                            
+
+                                            <label>Ciudad</label>
                                             <div class="form-control"></div>
-                                            
+
                                             <label>Email</label>
                                             <div class="form-control">
                                             </div>
@@ -152,17 +141,15 @@
                                     <div class="col-md-10">
                                         <label>Observaciones</label>
                                         <p class="border border-secondary-subtle p-3 rounded">
-                                        {{ $asociado['observation'] }}
+
                                         </p>
 
                                         <div class="card">
                                             <div class="card-header">
                                                 <h5 class="card-category">Beneficiarios</h5>
                                             </div>
-                                            <div class="card-body">
-                                                <form method="POST" id="fechasBeneficiarios">
-                                                    @csrf
-                                                    @method('PUT')
+                                            <div class="card-body">                                               
+                                                    
                                                     <div class="table-responsive">
                                                         <table class="table">
                                                             <tr>
@@ -173,35 +160,32 @@
                                                                 <th>Edad</th>
                                                                 <th> </th>
                                                             </tr>
-
                                                             @foreach ($beneficiarios as $beneficiario)
                                                             @if($beneficiario["type"] == "A")
                                                             <tr>
-                                                                <td>{{ $beneficiario["cedulaBeneficiario"] }}</td>
+                                                                <form method="POST" class="formDeleteBene">
+                                                                    @csrf
+                                                                    @method('DELETE')
+                                                                    <input type="hidden" name="documentId" value="{{ $beneficiario["documentId"] }}">                                                            
+                                                                    <td>{{ $beneficiario["documentId"] }}</td>
+                                                                </form>
                                                                 <td>{{ $beneficiario["names"] }}</td>
-                                                                
-                                                                <td>{{ $beneficiario["relationship"] }}</td>                                                               
-
-                                                                <input type="hidden" name="ids[]" value="{{ $beneficiario["cedulaBeneficiario"] }}">
-                                                                <td><input type="date" name="fechas[]" class="form-control" value="{{ $beneficiario["dateBirthday"] }}">
-                                                                </td>
+                                                                <td>{{ $beneficiario["relationship"] }}</td>
+                                                                <td>{{ $beneficiario["dateBirthday"] }}</td>
                                                                 @php
                                                                 $fecNac = new DateTime($beneficiario["dateBirthday"]);
                                                                 $fechaActual = new DateTime();
                                                                 $diferencia = $fecNac->diff($fechaActual);
                                                                 $edad = $diferencia->y;
                                                                 @endphp
-
                                                                 <td>{{ $edad }}</td>
                                                                 <td class="d-flex flex-row align-items-center">
-                                                                    <a class="btn btn-success py-2 px-1 botonPrestarServicio m-0" data-bs-toggle="modal" data-bs-target="#exampleModalServicio">
+                                                                    <a class="btn btn-info py-2 px-1 botonEliminarBene m-0" data-bs-toggle="modal" data-bs-target="#exampleModalServicio">
                                                                         Prestar Servicio
                                                                     </a>
-                                                                    <a class="btn btn-danger py-3 px-1 ml-1"><i class="bi bi-x-square"></i></a>
+                                                                    <a class="btn btn-danger py-2 px-1 ml-1 botonEliminarBene"><i class="bi bi-x-square"></i></a>
                                                                 </td>
-                                                                {{-- <td>
-                                                                                <a class="btn btn-danger py-3 px-1"><i class="bi bi-x-square"></i></a>
-                                                                            </td> --}}
+                                                                <!-- {{-- <td><a class="btn btn-danger py-3 px-1"><i class="bi bi-x-square"></i></a></td> --}} -->
                                                             </tr>
                                                             @endif
                                                             @endforeach
@@ -210,11 +194,11 @@
 
                                                     <div class="d-flex">
                                                         <button class="btn btn-secondary m-3 p-2" type="submit">Actualizar fechas</button>
-                                                        <button type="button" class="btn btn-primary m-3 p-2" data-bs-toggle="modal" data-bs-target="#staticBackdrop">
+                                                        <button type="button" class="btn btn-primary m-3 p-2" data-bs-toggle="modal" data-bs-target="#addBeneficiario">
                                                             Agregar Beneficiario
                                                         </button>
                                                     </div>
-                                                </form>
+                                                
                                             </div>
                                             @if(session('PrestarServicio'))
                                             <div class="alert alert-success p-1">
@@ -223,7 +207,7 @@
                                             @endif
                                             <div id="SuccessAddBeneficiario"></div>
                                         </div>
-
+                                        <!-- tabla registros SERVICIO PRESTADO -->    
                                         <div class="card" id="cardServiciosPrestados">
                                             <div class="card-header">
                                                 <h5 class="card-category">Servicios Prestados</h5>
@@ -244,7 +228,7 @@
                                                                 <td>{{ $beneficiario["cedulaBeneficiario"] }}</td>
                                                                 <td>{{ $beneficiario["names"] }}</td>
                                                                 <td>{{ $beneficiario["relationship"] }}</td>
-                                                                
+
                                                             </tr>
                                                             @php
                                                             $totalRegistros++;
@@ -263,11 +247,11 @@
                                         @endif
                                     </div>
 
-
+                                    {{-- GENERAR PDF --}}
                                     <div class="row">
                                         <div class="col-md-auto">
                                             <div class="form-group">
-                                                <a href="{{ route('asociados.generarpdf', ['id' => $beneficiario["cedulaBeneficiario"]]) }}" target="_blank" class="btn btn-primary">Generar PDF</a>
+                                                <a href="{{ route('asociados.generarpdf', ['id' => $beneficiario['cedulaBeneficiario']]) }}" target="_blank" class="btn btn-primary">Generar PDF</a>
                                             </div>
                                         </div>
                                     </div>
@@ -279,12 +263,12 @@
             </div>
 
 
-            <!-- Agregar Beneficiario -->
-            <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+            <!-- MODAL -->
+            <!-- ADD Beneficiario -->
+            <div class="modal fade" id="addBeneficiario" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="addBeneficiario" aria-hidden="true">
                 <div class="modal-dialog">
                     <div class="modal-content">
-                        <form action="{{ route('beneficiarios.store') }}" id="FormularioAñadirBeneficiario" method="post">
-                            @csrf
+                        <form action="" id="FormularioAddBeneficiario" method="post">
                             <div class="modal-header">
                                 <h1 class="modal-title fs-5" id="staticBackdropLabel">Agregar Beneficiario</h1>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -294,7 +278,7 @@
                                     <div class="col-md-4 pr-1">
                                         <div class="form-group">
                                             <label>Cedula</label>
-                                            <!-- <input type="hidden" value='{{ $asociado['documentId'] }}' name="cedulaAsociado"> -->
+                                            <input type="hidden" value="{{ $asociado["documentId"] }}" name="cedulaAsociado">
                                             <input type="text" class="form-control" placeholder="Cedula" id="cedula" name="cedula">
                                         </div>
                                     </div>
@@ -337,38 +321,32 @@
                     </div>
                 </div>
             </div>
+            <!-- Eliminar Beneficiario -->
+            <div class="modal fade" id="eliminarBeneficiario" tabindex="-1" aria-labelledby="elimiarBeneficiario" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            ¿Estás seguro de que desea eliminar el registro?
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" id="confirmarElimacionBene" class="btn btn-primary">Si</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" aria-label="Close">No</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <script>
                 $(document).ready(function() {
-                    $.ajax({
-                        url: "{{ route('parentescosall') }}",
-                        type: 'GET',
-                        dataType: 'json',
-                        success: function(response) {
-                            //console.log(response);                    
-                            var select = $('#selectParentesco');
-                            response.forEach(function(data) {
-                                select.append($('<option>', {
-                                    //BD LOCAL
-                                    // value: data.codPar,
-                                    // text: data.nomPar
-
-                                    //consumo api
-                                    value: data.code,
-                                    text: data.name
-                                }));
-                            });
-                        },
-                        error: function(xhr, status, error) {
-                            // Manejar errores aquí
-                            console.error('Error:', error);
-                        }
-                    });
+                    /* Añadir Beneficiario */
                     var message = localStorage.getItem('successMessage');
                     if (message) {
                         $("#SuccessAddBeneficiario").html('<div class="alert alert-success p-1">' + message + '</div>');
                         localStorage.removeItem('successMessage');
                     }
-                    $('#FormularioAñadirBeneficiario').submit(function(event) {
+                    $('#FormularioAddBeneficiario').submit(function(event) {
                         event.preventDefault();
 
                         var formData = $(this).serialize();
@@ -392,224 +370,53 @@
                             }
                         });
                     });
-                });
-            </script>
 
-            <!-- Modal Prestar servicio -->
-            <div class="modal fade" id="exampleModalServicio" tabindex="-1" aria-labelledby="exampleModalServicioLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="DatosPrestarServicio">holi?</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <form method="POST" action="{{ route('monitoria.store') }}" id="FormularioPrestarServicio">
-                            @csrf
-                            <div class="modal-body">
-                                <!-- <input type="hidden" id="cedulaTitular" name="cedulaTitular" value="{{ $asociado['documentId'] }}"> -->
-                                <input type="hidden" id="cedulaFallecido" name="cedulaFallecido">
-                                <input type="hidden" id="parentesco" name="parentesco">
-                                <div class="row">
-                                    <div class="col-md-5 pr-1">
-                                        <div class="form-group">
-                                            <label>Lugar Fallecimiento</label>
-                                            <input type="text" class="form-control" name="lugarFallecimiento">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4 px-1">
-                                        <div class="form-group">
-                                            <label>Fecha Fallecimiento</label>
-                                            <input type="date" class="form-control" name="fechaFallecimiento">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3 pl-1">
-                                        <div class="form-group">
-                                            <label for="exampleInputEmail1">Hora</label>
-                                            <input type="time" class="form-control" name="horaFallecimiento">
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-6 pr-1">
-                                        <div class="form-group">
-                                            <label>Contacto 1</label>
-                                            <input type="text" class="form-control" name="contacto">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6 pl-1">
-                                        <div class="form-group">
-                                            <label>Telefono de Contacto</label>
-                                            <input type="text" class="form-control" name="telefonoContacto">
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-6 pr-1">
-                                        <div class="form-group">
-                                            <label>Contacto 2</label>
-                                            <input type="text" class="form-control" name="contacto2">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6 pl-1">
-                                        <div class="form-group">
-                                            <label>Telefono de Contacto</label>
-                                            <input type="text" class="form-control" name="telefonoContacto2">
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-md-3 pr-1">
-                                        <div class="form-group">
-                                            <label>Traslado</label>
-                                            <select class="form-control" name="traslado">
-                                                <option value="1">Sí</option>
-                                                <option value="0">No</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4 pl-1">
-                                        <div class="form-group">
-                                            <label>Factura </label>
-                                            <input type="text" class="form-control" name="factura">
-                                        </div>
-                                    </div>
-                                    <div class="col-md-5 pl-1">
-                                        <div class="form-group">
-                                            <label>Valor </label>
-                                            <input type="number" class="form-control" name="valor">
-                                        </div>
-                                    </div>
-                                </div>
-
-                            </div>
-                            <div class="modal-footer">
-                                <button type="submit" class="btn btn-primary">Servicio Prestado</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-            <script>
-                $('.botonPrestarServicio').on('click', function() {
-                    var fila = $(this).closest('tr');
-                    var cedula = fila.find('td:eq(0)').text();
-                    var nombre = fila.find('td:eq(1)').text();
-                    var parentesco = fila.find('td:eq(2)').text();
-                    $('#cedulaFallecido').val(cedula);
-                    $('#parentesco').val(parentesco);
-                    $('#DatosPrestarServicio').text(nombre);
-                });
-            </script>
-            <!-- Modal -->
-            <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            ¿Estás seguro de que deseas actualizar la fecha?
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" id="confirmarEnvio" class="btn btn-primary">Si</button>
-                            <button type="button" class="btn btn-secondary" id="botonNo">No</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal fade" id="ModalBeneficiarios" tabindex="-1" aria-labelledby="ModalBeneficiariosLabel" aria-hidden="true">
-                <div class="modal-dialog">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body">
-                            ¿Estás seguro de que deseas actualizar la fecha?
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" id="confirmarEnvioBene" class="btn btn-primary">Si</button>
-                            <button type="button" class="btn btn-secondary" id="botonNoBene">No</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <script>
-                document.addEventListener('DOMContentLoaded', function() {
-                    //asociado
-                    const formulario = document.getElementById('FormFechaUpdate');
-                    const botonConfirmar = document.getElementById('confirmarEnvio');
-
-                    formulario.addEventListener('submit', function(event) {
-                        event.preventDefault();
-                        $('#exampleModal').modal('show');
+                    /* Parentescos Formulario addBeneficiario */
+                    $.ajax({
+                        url: "{{ route('parentescosall') }}",
+                        type: 'GET',
+                        dataType: 'json',
+                        success: function(response) {                 
+                            var select = $('#selectParentesco');
+                            response.forEach(function(data) {                                
+                                select.append($('<option>', {
+                                    value: data.code,
+                                    text: data.name
+                                }));
+                            });
+                        },
+                        error: function(xhr, status, error) {
+                            console.error('Error:', error);
+                        }
                     });
 
-                    const botonCerrarModal = document.getElementById('botonNo')
-                    botonCerrarModal.addEventListener('click', function() {
-                        $('#exampleModal').modal('hide');
-                        location.reload();
-                    })
+                    /* Eliminar Beneficiario */
+                    $('.botonEliminarBene').on('click', function() {
+                        var button = $(this);
+                        $('#eliminarBeneficiario').modal('show');
+                        $('#confirmarElimacionBene').on('click', function() {
+                            var fila = button.closest('tr');
+                            var documentId = fila.find('input[name="documentId"]').val();
+                            console.log('Valor de documentId:', documentId);
 
-                    botonConfirmar.addEventListener('click', function() {
-                        $('#exampleModal').modal('hide');
-                        var cedula = "{{ $asociado['documentId'] }}";
-                        var fechaNacimiento = $('#fechaNacimiento').val();
-
-                        const nuevaFecha = fechaInput.value;
-                        //const url = `/asociados/${cedula}`;
-
-                        $.ajax({
-                            url: "{{ route('asociados.update', ['asociado' => $asociado['documentId']]) }}",
-                            method: 'PUT',
-                            data: {
-                                fechaNacimiento: nuevaFecha,
-                                _token: '{{ csrf_token() }}'
-                            },
-                            success: function(response) {
-                                console.log('Datos actualizados correctamente');
-                                location.reload();
-                            },
-                            error: function(xhr, status, error) {
-                                console.error('Error al enviar los datos al servidor:', error);
-                            }
+                            var csrfToken = $('meta[name="csrf-token"]').attr('content');
+                            $.ajax({
+                                url: "{{ route('beneficiarios.destroy', ['beneficiario' => ':id']) }}".replace(':id', documentId),
+                                type: 'DELETE',
+                                headers: {
+                                    'X-CSRF-TOKEN': csrfToken
+                                },
+                                success: function(response) {
+                                    console.log("eliminado")
+                                },
+                                error: function(xhr, status, error) {
+                                    console.error('Error al eliminar beneficiario:', error);
+                                    // Manejar el error según sea necesario
+                                }
+                            });
                         });
                     });
-
-                    //beneficiarios
-                    const formularioBene = document.getElementById('fechasBeneficiarios');
-                    const confirmarEnvioBene = document.getElementById('confirmarEnvioBene');
-
-                    formularioBene.addEventListener('submit', function(event) {
-                        event.preventDefault();
-                        $('#ModalBeneficiarios').modal('show');
-                    });
-
-                    const botonCerrarBene = document.getElementById('botonNoBene')
-                    botonCerrarBene.addEventListener('click', function() {
-                        $('#ModalBeneficiarios').modal('hide');
-                        location.reload();
-                    })
-
-                    confirmarEnvioBene.addEventListener('click', function() {
-                        $('#ModalBeneficiarios').modal('hide');
-
-                        var formData = $(formularioBene).serialize();
-                        $.ajax({
-                            type: 'PUT',
-                            url: "{{ route('beneficiarios.update', ['beneficiario' => $asociado['documentId']]) }}",
-                            data: formData,
-                            _token: '{{ csrf_token() }}',
-                            success: function(response) {
-                                console.log("Datos actualizados");
-                                location.reload();
-                            },
-                            error: function(xhr, status, error) {
-                                console.error(error);
-                            }
-                        });
-                    });
-                });
+                });                
             </script>
 </body>
-
 </html>
