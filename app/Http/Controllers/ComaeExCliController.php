@@ -7,6 +7,7 @@ use App\Models\ComaeExRelPar;
 use App\Models\ComaeExCli;
 use App\Models\ComaeTer;
 use Illuminate\Support\Facades\Http;
+use Carbon\Carbon;
 use Dompdf\Dompdf;
 use Illuminate\Support\Facades\View;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -49,7 +50,33 @@ class ComaeExCliController extends Controller
 
     public function store(Request $request)
     {
-        
+        $token = env('TOKEN_ADMIN');
+        $fechaActual = Carbon::now();
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $token,
+            'Accept' => 'application/json',
+        ])->post('https://www.siasoftapp.com:7011/api/Exequiales/Tercero', [
+            'documentId' => $request->documentId,
+            'name' => $request->name,
+            'agreement' => 0,
+            'dateEntry' => $fechaActual,
+            'stade' => true,
+            'obsevations' => $request->observaciones,
+            'dateStart' => $fechaActual,
+            'dateEnd' => $fechaActual,
+            'descuento' => 0,
+            'valuePlan' => 0,
+            'codePlan' => $request->plan,
+            'codeCenterCost' => "C1010"
+        ]);
+    
+        if ($response->successful()) {
+            // Procesar la respuesta exitosa
+            return response()->json(['message' => 'Recurso añadido correctamente', 'data' => $response->json()], $response->status());
+        } else {
+            // Manejar errores si la solicitud no fue exitosa
+            return response()->json(['error' => $response->json()], $response->status());
+        }
     }
 
     public function update(Request $request, $cedula)
