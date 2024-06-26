@@ -15,16 +15,16 @@ class ComaeExRelParController extends Controller
         //API
         $token = env('TOKEN_ADMIN');
         $id = $request->input('id');
-        // $titular = Http::withHeaders([
-        //     'Authorization' => 'Bearer ' . $token,
-        // ])->get('https://www.siasoftapp.com:7011/api/Exequiales/Tercero', [
-        //     'documentId' => $id,
-        // ]);
         $titular = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
-        ])->get('https://www.siasoftapp.com:7011/api/Pastors', [
+        ])->get('https://www.siasoftapp.com:7011/api/Exequiales/Tercero', [
             'documentId' => $id,
         ]);
+        // $titular = Http::withHeaders([
+        //     'Authorization' => 'Bearer ' . $token,
+        // ])->get('https://www.siasoftapp.com:7011/api/Pastors', [
+        //     'documentId' => $id,
+        // ]);
         $beneficiarios = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
         ])->get('https://www.siasoftapp.com:7011/api/Exequiales', [
@@ -68,6 +68,7 @@ class ComaeExRelParController extends Controller
             'apellidos' => ['required'],
             'nombres' => ['required'],
         ]);
+
         $fechaActual = Carbon::now();
         // ComaeExRelPar::create([
         //     'cedula' => $request->cedula,
@@ -104,14 +105,13 @@ class ComaeExRelParController extends Controller
     public function destroy($id)
     {
         $token = env('TOKEN_ADMIN');
+        $url = 'https://www.siasoftapp.com:7011/api/Exequiales/Beneficiary?documentId=' . $id;
         $response = Http::withHeaders([
+            'Accept' => '*/*',
             'Authorization' => 'Bearer ' . $token,
-        ])->delete('https://www.siasoftapp.com:7011/api/Exequiales',[
-            'documentId' => $id
-        ]);
-    
-        if ($response->successful()) return "shi";
-        else return "ño";
+        ])->delete($url);
+
+        return $response->status();
     }
 
 }

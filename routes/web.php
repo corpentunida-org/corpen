@@ -6,7 +6,7 @@ use App\Http\Controllers\ComaeExCliController;
 use App\Http\Controllers\ComaeExRelParController;
 use App\Http\Controllers\ParentescosController;
 use App\Http\Controllers\ExMonitoriaController;
-
+use App\Http\Controllers\PlanController;
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/', function () {
@@ -37,6 +37,7 @@ Route::resource('beneficiarios', ComaeExRelParController::class);
 Route::resource('monitoria', ExMonitoriaController::class);
 
 Route::get('/parentescosall', [ParentescosController::class, 'index'])->name('parentescosall');
+Route::get('/plansall', [PlanController::class, 'index'])->name('plansall');
 Route::get('/exportar-datos', [ExMonitoriaController::class, 'exportData']);
 Route::get('/mes/{mes}', [ExMonitoriaController::class, 'ConsultaMes']);  
 
