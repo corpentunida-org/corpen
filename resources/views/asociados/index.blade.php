@@ -130,7 +130,7 @@
 
                                     @for ($i = $start; $i <= $end; $i++)
                                         <li class="page-item {{ $asociados->currentPage() == $i ? 'active' : '' }}">
-                                            <a class="page-link"
+                                            <a class="page-link btn-primary"
                                                 href="{{ $asociados->url($i) }}">{{ $i }}</a>
                                         </li>
                                     @endfor
@@ -146,8 +146,8 @@
                     </div>
                     <div class="col-md-12">
                         {{-- <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#ModalVerCedula"> --}}
-                        <button type="button" class="btn btn-primary" data-bs-toggle="modal"
-                            data-bs-target="#addTitular">
+                        <button type="button" class="btn btn-success" data-bs-toggle="modal"
+                            data-bs-target="#addTitular" style="color: black">
                             Agregar Titular
                         </button>
                     </div>
@@ -378,7 +378,7 @@
                     type: 'GET',
                     dataType: 'json',
                     success: function(response) {
-                        //console.log(response);                  
+                        console.log(response);                  
                         var select = $('#selectPlanes');
                         response.forEach(function(data) {
                             select.append($('<option>', {

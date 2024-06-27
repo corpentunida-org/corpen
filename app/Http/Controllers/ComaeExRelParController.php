@@ -8,9 +8,12 @@ use App\Models\ComaeExCli;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\PlanController;
 
 class ComaeExRelParController extends Controller
 {
+    
+
     public function show(Request $request, $id){
         //API
         $token = env('TOKEN_ADMIN');
@@ -32,8 +35,13 @@ class ComaeExRelParController extends Controller
         ]);
     
         if ($titular->successful() && $beneficiarios->successful()) {
-            $jsonTit = $titular->json();
+            $jsonTit = $titular->json();            
             $jsonBene = $beneficiarios->json();
+            if (isset($jsonTit['codePlan'])) {
+                $controllerplanes = app()->make(PlanController::class);
+                $nomPlan = $controllerplanes->nomCodPlan($jsonTit['codePlan']);
+                $jsonTit['codePlan'] = $nomPlan;
+            }
             return view('beneficiarios.show', [
                 'asociado' => $jsonTit, 
                 'beneficiarios' => $jsonBene,                 
@@ -113,5 +121,7 @@ class ComaeExRelParController extends Controller
 
         return $response->status();
     }
+
+    
 
 }
