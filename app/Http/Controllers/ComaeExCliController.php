@@ -79,14 +79,31 @@ class ComaeExCliController extends Controller
         }
     }
 
-    public function update(Request $request, $cedula)
-    {
-        ComaeExCli::where('cedula', $cedula)
-            ->update(['fechaNacimiento' => $request->input('fechaNacimiento')]);
+    //actualizar fechas
+    // public function update(Request $request, $cedula)
+    // {
+    //     ComaeExCli::where('cedula', $cedula)
+    //         ->update(['fechaNacimiento' => $request->input('fechaNacimiento')]);
 
-        $asociado = ComaeExCli::where('cedula', $cedula)->firstOrFail();
-        $beneficiarios = ComaeExRelPar::where('cedulaAsociado', $cedula)->get();
-        return view('asociados.show', compact('asociado', 'beneficiarios'))->with('success', 'Datos actualizados');
+    //     $asociado = ComaeExCli::where('cedula', $cedula)->firstOrFail();
+    //     $beneficiarios = ComaeExRelPar::where('cedulaAsociado', $cedula)->get();
+    //     return view('asociados.show', compact('asociado', 'beneficiarios'))->with('success', 'Datos actualizados');
+    // }
+    public function update(Request $request){
+        $data = $request->json()->all();
+        $token = env('TOKEN_ADMIN');
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $token,
+            'Accept' => 'application/json',
+        ])->patch('https://www.siasoftapp.com:7011/api/Exequiales/Tercero', [
+            'documentId' => $data['documentid'],
+            'dateInit' => $data['dateInit'],
+            'codePlan'=> $data['codePlan'],
+            'discount'=> $data['discount'],
+            'observation'=> $data['observation']
+        ]);
+    
+        return $data;
     }
 
     public function generarpdf($id)
