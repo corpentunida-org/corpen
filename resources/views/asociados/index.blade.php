@@ -39,9 +39,7 @@
                             <li class="nav-item">
                                 <a class="nav-link" href="/user/profile">
                                     <i class="now-ui-icons users_single-02"></i>
-                                    <p>
-                                        <span class="d-lg-none d-md-block">Account</span>
-                                    </p>
+                                    <p><span class="d-lg-none d-md-block">Account</span></p>
                                 </a>
                             </li>
                         </ul>
@@ -52,29 +50,27 @@
             <div class="panel-header panel-header-sm">
             </div>
 
-
             {{-- Tabla --}}
             <div class="content">
                 <div class="row">
                     <div class="col-md-12">
                         <div class="card">
                             <div class="card-body">
-                                <div class="table-responsive">
+                                @if(session('messageTit'))
+                                    <div class="alert alert-danger p-1 pl-3">
+                                        {{ session('messageTit') }}
+                                    </div>
+                                @endif
+                                {{-- Table all Titulares --}}
+                                {{-- <div class="table-responsive">
                                     <table class="table table-striped h-100">
                                         <thead class=" text-primary">
                                             <th>Cédula</th>
                                             <th>Nombre</th>
                                             <th>Distrito</th>
                                             <th>Ciudad</th>
-                                            {{-- <th>Dirección</th> --}}
                                             <th>Estado</th>
                                             <th>Celular</th>
-                                            {{-- <th>Email</th>
-                                            <th>Observación Familia</th>
-                                            <th>Observación</th>
-                                            <th class="text-right">
-                                                Salary
-                                            </th> --}}
                                         </thead>
                                         <tbody>
                                             @foreach ($asociados as $asociado)
@@ -95,7 +91,6 @@
                                                         <td></td>
                                                     @endif
 
-                                                    {{-- <td>{{ $asociado->direccion }}</td> --}}
 
                                                     @if ($asociado->estado)
                                                         <td><button type="button"
@@ -105,16 +100,21 @@
                                                     @endif
 
                                                     <td>{{ $asociado->celular }}</td>
-                                                    {{-- <td>{{ $asociado->email }}</td>
-                                                <td>{{ $asociado->observacion }}</td>
-                                                <td>{{ $asociado->observacion_familia }}</td> --}}
                                                 </tr>
                                             @endforeach
                                         </tbody>
                                     </table>
+                                </div> --}}
+                                <div class="col-md-12">
+                                    {{-- <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#ModalVerCedula"> --}}
+                                    <button type="button" class="btn btn-success" data-bs-toggle="modal"
+                                        data-bs-target="#addTitular" style="color: black">
+                                        Agregar Titular
+                                    </button>
                                 </div>
                             </div>
-                            <nav aria-label="Page navigation example">
+                            {{-- Paginacion Tabla --}}
+                            {{-- <nav aria-label="Page navigation example">
                                 <ul class="pagination justify-content-center">
 
                                     <li class="page-item {{ $asociados->previousPageUrl() ? '' : 'disabled' }}">
@@ -141,16 +141,9 @@
                                         </a>
                                     </li>
                                 </ul>
-                            </nav>
+                            </nav> --}}
                         </div>
-                    </div>
-                    <div class="col-md-12">
-                        {{-- <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#ModalVerCedula"> --}}
-                        <button type="button" class="btn btn-success" data-bs-toggle="modal"
-                            data-bs-target="#addTitular" style="color: black">
-                            Agregar Titular
-                        </button>
-                    </div>
+                    </div>                    
                 </div>
             </div>
         </div>
@@ -289,7 +282,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                        <button type="button" class="btn btn-primary">Guardar</button>
+                        <button type="button" class="btn btn-success">Guardar</button>
                     </div>
                 </div>
             </div>
@@ -363,7 +356,7 @@
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                            <button type="submit" id="botonAddTitular" class="btn btn-primary">Enviar</button>
+                            <button type="submit" id="botonAddTitular" class="btn btn-success" style=color:black;>Enviar</button>
                         </div>
                     </form>
                 </div>
@@ -377,8 +370,7 @@
                     url: "{{ route('plansall') }}",
                     type: 'GET',
                     dataType: 'json',
-                    success: function(response) {
-                        console.log(response);                  
+                    success: function(response) {             
                         var select = $('#selectPlanes');
                         response.forEach(function(data) {
                             select.append($('<option>', {
@@ -429,7 +421,6 @@
                         event.stopPropagation();
                     }
                 });
-
             });
         </script>
 </body>

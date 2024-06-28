@@ -11,9 +11,7 @@ use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\PlanController;
 
 class ComaeExRelParController extends Controller
-{
-    
-
+{   
     public function show(Request $request, $id){
         //API
         $token = env('TOKEN_ADMIN');
@@ -44,14 +42,15 @@ class ComaeExRelParController extends Controller
             }
             return view('beneficiarios.show', [
                 'asociado' => $jsonTit, 
-                'beneficiarios' => $jsonBene,                 
+                'beneficiarios' => $jsonBene,
             ]);
         } else {
-            return "No se pudo obtener datos de la API externa";
+            return redirect()->route('asociados.index')->with('messageTit', 'No se encontró la cédula como titular de exequiales');
         }
     }
 
-    public function update(Request $request, $cedula)
+    //update BD fechas de nacimiento
+    /* public function update(Request $request, $cedula)
     {
         $ids = $request->input('ids');
         $fechas = $request->input('fechas');
@@ -66,6 +65,29 @@ class ComaeExRelParController extends Controller
         $asociado = ComaeExCli::where('cedula', $cedula)->firstOrFail();
         $beneficiarios = ComaeExRelPar::where('cedulaAsociado', $cedula)->get();
         return view('asociados.show', compact('asociado', 'beneficiarios'))->with('success', 'Datos actualizados');
+    } */
+    public function update(Request $request)
+    {
+        $token = env('TOKEN_ADMIN');
+        $fechaActual = Carbon::now();
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $token,
+            'Accept' => 'application/json',
+        ])->put('https://www.siasoftapp.com:7011/api/Exequiales/Beneficiary', [
+            'name' => $request->names,
+            'codeParentesco' => $request->parentesco,
+            'type' => "A",
+            'dateEntry' => $fechaActual,
+            'documentBeneficiaryId' => $request->cedula,
+            'dateBirthDate' => $request->fechaNacimiento,
+        ]);
+        if ($response->successful()) {
+            // Procesar la respuesta exitosa
+            return response()->json(['message' => 'Se actualizó correctamente', 'data' => $response->json()], $response->status());
+        } else {
+            // Manejar errores si la solicitud no fue exitosa
+            return response()->json(['error' => $response->json()], $response->status());
+        }
     }
 
     public function store(Request $request)
@@ -101,13 +123,8 @@ class ComaeExRelParController extends Controller
             'dateEntry' => $fechaActual,
             'codeParentesco' => $request->parentesco,
             'type' => "A"
-        ]);
-    
-        if ($response->successful()) {
-            return $response->json();
-        } else {
-            return $response->json();
-        }
+        ]);    
+        return $response->json();
     }
 
     public function destroy($id)

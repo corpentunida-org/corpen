@@ -17,7 +17,7 @@ class ComaeExCliController extends Controller
     /* public function __construct()
     {
         $this->middleware(['auth']);
-    } */ 
+    } */
 
     public function index()
     {
@@ -71,8 +71,8 @@ class ComaeExCliController extends Controller
         ]);
     
         if ($response->successful()) {
-            // Procesar la respuesta exitosa
-            return response()->json(['message' => 'Recurso añadido correctamente', 'data' => $response->json()], $response->status());
+            return redirect()->route('beneficiarios.show', ['beneficiario' => $documentId])
+            ->with('messageTit', 'Titular añadido exitosamente.');
         } else {
             // Manejar errores si la solicitud no fue exitosa
             return response()->json(['error' => $response->json()], $response->status());
