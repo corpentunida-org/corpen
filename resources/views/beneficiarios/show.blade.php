@@ -60,13 +60,19 @@
                             <div class="d-flex flex-row align-items-center">
                                 <h5 class="title mb-0">{{ $asociado['name'] }}</h5>
                                 <button class="btn btn-warning ml-4 py-2" id="btnActualizarTitular"><i class="bi bi-pencil-square"></i></button>
-                                <button class="btn btn-danger mx-2 py-2"><i class="bi bi-x-square"></i></button>
+                                {{-- <button class="btn btn-danger mx-2 py-2"><i class="bi bi-x-square"></i></button> --}}
                             </div>
                         </div>
                         <div class="card-body">
+                            @if(session('messageTit'))
+                                <div class="alert alert-success p-1 pl-3" style=color:black;>
+                                    {{ session('messageTit') }}
+                                </div>
+                            @endif
                             <div class="row px-3">
                                 <div class="col-md-2 pr-1">
                                     <div class="form-group">
+                                        {{-- Form / data del Titular --}} 
                                         <form id="formUpdateTitular">
                                             <label>Cédula</label>
                                             <div class="form-control">{{ $asociado['documentId'] }}</div>
@@ -140,7 +146,7 @@
                                                                         data-bs-target="#ModalFormServicio" style="color: black">
                                                                         Prestar Servicio
                                                                     </a>
-                                                                    <a class="btn btn-warning ml-1 py-2" style="color: white" data-bs-toggle="modal"
+                                                                    <a class="btn btn-warning ml-1 py-2 btn-open-modal-updateBene" data-index={{ $loop->index }} style="color: white" data-bs-toggle="modal"
                                                                     data-bs-target="#modalUpdateBeneficiario"><i
                                                                             class="bi bi-pencil-square"></i></a>
                                                                     <a style="color: white"
@@ -253,7 +259,7 @@
                                     <div class="col-md-4 pr-1">
                                         <div class="form-group">
                                             <label>Parentesco</label>
-                                            <select class="form-control" name="parentesco"
+                                            <select class="form-control selectParentesco" name="parentesco"
                                                 aria-label="Default select example" id="selectParentesco"
                                                 required></select>
                                         </div>
@@ -289,7 +295,7 @@
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary"
                                     data-bs-dismiss="modal">Close</button>
-                                <button type="submit" id="botonEnviar" class="btn btn-primary">Enviar</button>
+                                <button type="submit" id="botonEnviar" class="btn btn-success" style="color: black">Enviar</button>
                             </div>
                         </form>
                     </div>
@@ -298,10 +304,10 @@
 
             {{-- Actualizar Beneficiario --}}
             <div class="modal fade" id="modalUpdateBeneficiario" data-bs-backdrop="static" data-bs-keyboard="false"
-                tabindex="-1" aria-labelledby="modalUpdateBeneficiario" aria-hidden="true">
+                tabindex="-1" aria-labelledby="modalUpdateBeneficiario" aria-hidden="true" >
                 <div class="modal-dialog">
                     <div class="modal-content">
-                        <form class="needs-validation" id="FormUpdateBeneficiario" method="post" novalidate>
+                        <form id="FormUpdateBeneficiario" method="post">
                             <div class="modal-header">
                                 <h1 class="modal-title fs-5" id="staticBackdropLabel">Actualizar Beneficiario</h1>
                                 <button type="button" class="btn-close" data-bs-dismiss="modal"
@@ -311,53 +317,40 @@
                                 <div class="row">
                                     <div class="col-md-4 pr-1">
                                         <div class="form-group">
-                                            <label>Cedula</label>
-                                            <input type="hidden" value="{{ $asociado['documentId'] }}"
-                                                name="cedulaAsociado">
-                                            <input type="text" class="form-control" placeholder="Cedula"
-                                                id="cedula" name="cedula" required>
+                                            <label>Cédula</label>
+                                            <input type="text" class="form-control" id="updateCedBenficiario" name="cedula">
                                         </div>
                                     </div>
                                     <div class="col-md-4 pr-1">
                                         <div class="form-group">
                                             <label>Parentesco</label>
-                                            <select class="form-control" name="parentesco"
-                                                aria-label="Default select example" id="selectParentesco"
-                                                required></select>
+                                            <select class="form-control selectParentesco" name="parentesco"
+                                                aria-label="Default select example" id="UpdateSelectParentesco"></select>
                                         </div>
                                     </div>
                                     <div class="col-md-4 pl-1">
                                         <div class="form-group">
                                             <label>Fecha de Nacimiento</label>
-                                            <input type="date" class="form-control" id="fechaNacimiento"
-                                                name="fechaNacimiento" required>
+                                            <input type="date" class="form-control" id="UpdatefechaNacimiento" name="fechaNacimiento">
                                         </div>
                                     </div>
                                 </div>
                                 <div class="row">
-                                    <div class="col-md-6 pr-1">
+                                    <div class="col-md-12 pr-1">
                                         <div class="form-group">
-                                            <label>Apellidos</label>
-                                            <input type="text" class="form-control" placeholder="Apellidos"
-                                                id="apellidos" name="apellidos" required>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6 pl-1">
-                                        <div class="form-group">
-                                            <label>Nombres</label>
-                                            <input type="text" class="form-control" placeholder="Nombres"
-                                                id="nombres" name="nombres" required>
+                                            <label>Apellidos y Nombres</label>
+                                            <input type="text" class="form-control" id="UpdateApellidosyNombres" name="names">
                                         </div>
                                     </div>
                                 </div>
                                 <div class="row">
-                                    <p class="text-danger col-md-12" id="msjAjax"></p>
+                                    <p class="text-danger col-md-12" id="msjAjaxUpdateBene"></p>
                                 </div>
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary"
                                     data-bs-dismiss="modal">Close</button>
-                                <button type="submit" id="botonEnviar" class="btn btn-primary">Enviar</button>
+                                <button type="submit" id="btnUpdateBene" class="btn btn-warning">Actualizar</button>
                             </div>
                         </form>
                     </div>
@@ -377,7 +370,7 @@
                             ¿Estás seguro de que desea eliminar el registro?
                         </div>
                         <div class="modal-footer">
-                            <button type="button" id="confirmarElimacionBene" class="btn btn-primary">Si</button>
+                            <button type="button" id="confirmarElimacionBene" class="btn btn-danger">Si</button>
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
                                 aria-label="Close">No</button>
                         </div>
@@ -385,7 +378,7 @@
                 </div>
             </div>
 
-            {{-- Modal Confirmacion Update Titular --}}
+            {{-- Modal Confirmacion Update Titular - Beneficiario --}}
             <div class="modal fade" id="ConfirmarEnvioUpdate" tabindex="-1" aria-labelledby="ConfirmarEnvioUpdate" aria-hidden="true">
                 <div class="modal-dialog">
                     <div class="modal-content">
@@ -515,11 +508,10 @@
                         $(this).html(formattedDate);
                     });
                     
-
                     /* Añadir Beneficiario */
                     var message = localStorage.getItem('successMessage');
                     if (message) {
-                        $("#SuccessAddBeneficiario").html('<div class="alert alert-success p-1">' + message + '</div>');
+                        $("#SuccessAddBeneficiario").html('<div class="alert alert-success p-1 pl-3" style=color:black;>' + message + '</div>');
                         localStorage.removeItem('successMessage');
                     }
                     $('#FormularioAddBeneficiario').submit(function(event) {
@@ -554,18 +546,21 @@
                         }
                     });
 
-                    /* Parentescos Formulario addBeneficiario */
+                    /* Parentescos Formulario addBeneficiario - updateBenficiario */
                     $.ajax({
                         url: "{{ route('parentescosall') }}",
                         type: 'GET',
                         dataType: 'json',
                         success: function(response) {
-                            var select = $('#selectParentesco');
-                            response.forEach(function(data) {
-                                select.append($('<option>', {
-                                    value: data.code,
-                                    text: data.name
-                                }));
+                            //console.log(response);
+                            $('.selectParentesco').each(function() {
+                                var select = $(this);
+                                response.forEach(function(data) {
+                                    select.append($('<option>', {
+                                        value: data.code,
+                                        text: data.name
+                                    }));
+                                });
                             });
                         },
                         error: function(xhr, status, error) {
@@ -632,6 +627,47 @@
                                 },
                                 success: function(response) {
                                     console.log(response);
+                                    localStorage.setItem('successMessage',
+                                        "Se Actualizó Titular Correctamente");
+                                    location.reload();
+                                },
+                                error: function(e) {
+                                    console.log(e)
+                                }
+                            });
+                        });
+                    });
+
+                    /* MODAL Actualizar Beneficiario */                    
+                    document.querySelectorAll('.btn-open-modal-updateBene').forEach(click => {
+                        click.addEventListener('click', function () {
+                            var beneficiariosjson = @json($beneficiarios);
+                            const i = this.getAttribute('data-index');
+                            $('#updateCedBenficiario').val(beneficiariosjson[i].documentId);
+                            $('#UpdateSelectParentesco').val(beneficiariosjson[i].codeRelationship);                            
+                            $('#UpdatefechaNacimiento').val(beneficiariosjson[i].dateBirthday.split('T')[0]);
+                            $('#UpdateApellidosyNombres').val(beneficiariosjson[i].names);
+                        })
+                    });
+                    /* Actualizar Beneficiario */                    
+                    $('#FormUpdateBeneficiario').submit(function(event) {                        
+                        event.preventDefault();
+                        $('#ConfirmarEnvioUpdate').modal('show');
+                        $('#btnConfirmarEnvio').on('click', function() {                            
+                            var csrfToken = $('meta[name="csrf-token"]').attr('content');
+                            data = $('#FormUpdateBeneficiario').serialize();
+                            $.ajax({
+                                url: "{{ route('beneficiarios.update', ['beneficiario' => ':id']) }}"
+                                        .replace(':id', $('updateCedBenficiario').val()),
+                                type: 'PUT',
+                                data: data,
+                                headers: {
+                                    'X-CSRF-TOKEN': csrfToken
+                                },
+                                success: function(response) {
+                                    console.log(response);
+                                    localStorage.setItem('successMessage',
+                                        "Se Actualizó Beneficiario Exitosamente");
                                     location.reload();
                                 },
                                 error: function(e) {
@@ -679,7 +715,6 @@
                                 });
                         });
                     });
-
                 });
             </script>
 </body>
