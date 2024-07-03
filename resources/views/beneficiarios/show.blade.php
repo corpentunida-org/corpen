@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -144,7 +143,7 @@
                                                                 <td>{{ $edad }}</td>
                                                                 <td>
                                                                     @can('prestarServicio', App\Models\User::class)
-                                                                    <a class="btn btn-success py-2 m-0 px-2 botonPrestarServicio" data-bs-toggle="modal" data-bs-target="#ModalFormServicio" style="color: black">Prestar Servicio</a>
+                                                                    <a class="btn btn-success py-2 ml-1 px-2 botonPrestarServicio" data-bs-toggle="modal" data-bs-target="#ModalFormServicio" style="color: black">Prestar Servicio</a>
                                                                     @endcan
                                                                     @can('update', App\Models\User::class)
                                                                     <a class="btn btn-warning ml-1 py-2 btn-open-modal-updateBene" data-index={{ $loop->index }} style="color: white" data-bs-toggle="modal" data-bs-target="#modalUpdateBeneficiario"><i class="bi bi-pencil-square"></i></a>
@@ -718,6 +717,6 @@
                     });
                 });
             </script>
+            <x-footer-jslinks></x-footer-jslinks>
 </body>
-
 </html>

@@ -11,7 +11,7 @@
 <body>
     <div class="wrapper ">
         @include('layouts.navbar')
-        <div class="main-panel" id="main-panel">
+        <div class="main-panel ps ps--active-y" id="main-panel">
             <!-- Navbar -->
             <nav class="navbar navbar-expand-lg navbar-transparent  bg-primary  navbar-absolute">
                 <div class="container-fluid">
@@ -152,11 +152,8 @@
                     </div>                    
                 </div>
             </div>
-        </div>
-        @include('layouts.footer')
-
-        {{-- Modal Filtro Cedula --}}
-        <div class="modal fade" id="ModalVerCedula" tabindex="-1" aria-labelledby="ModalVerCedula" aria-hidden="true">
+            {{-- Modal Filtro Cedula --}}
+            <div class="modal fade" id="ModalVerCedula" tabindex="-1" aria-labelledby="ModalVerCedula" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -172,10 +169,10 @@
                     </div>
                 </div>
             </div>
-        </div>
+            </div>
 
-        {{-- Modal No se añade Titular --}}
-        <div class="modal fade" id="ModalNoAñadido" tabindex="-1" aria-labelledby="ModalNoAñadido" aria-hidden="true">
+            {{-- Modal No se añade Titular --}}
+            <div class="modal fade" id="ModalNoAñadido" tabindex="-1" aria-labelledby="ModalNoAñadido" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -191,10 +188,10 @@
                     </div>
                 </div>
             </div>
-        </div>
+            </div>
 
-        {{-- Modal agregar Titular --}}
-        <div class="modal fade" id="ModalInsert" tabindex="-1" aria-labelledby="ModalInsertLabel"
+            {{-- Modal agregar Titular --}}
+            <div class="modal fade" id="ModalInsert" tabindex="-1" aria-labelledby="ModalInsertLabel"
             aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -292,10 +289,10 @@
                     </div>
                 </div>
             </div>
-        </div>
+            </div>
 
-        {{-- Agregar Datos del titular API --}}
-        <div class="modal fade" id="addTitular" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+            {{-- Agregar Datos del titular API --}}
+            <div class="modal fade" id="addTitular" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
             aria-labelledby="addTitular" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
@@ -367,68 +364,74 @@
                     </form>
                 </div>
             </div>
+        
+            </div>
+
+            @include('layouts.footer')
         </div>
+    </div>
 
-        <script>
-            $(document).ready(function() {
-                /* Get Planes */
-                $.ajax({
-                    url: "{{ route('plansall') }}",
-                    type: 'GET',
-                    dataType: 'json',
-                    success: function(response) {             
-                        var select = $('#selectPlanes');
-                        response.forEach(function(data) {
-                            select.append($('<option>', {
-                                value: data.code,
-                                text: data.name,
-                                'data-value': data.value
-                            }));
-                        });
-                        $('#valorPlan').html(response[0].value);
-                        $('#selectPlanes').change(function() {
-                            var valorSeleccionado = $(this).find(':selected').data('value');;
-                            $('#valorPlan').html(valorSeleccionado);
-                        });
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('Error:', error);
-                    }
-                });
-
-                /* Añadir Titular */
-                $('#FormularioAddTitular').submit(function(event) {
-                    event.preventDefault();
-                    var form = document.getElementById('FormularioAddTitular');
-                    if (form.checkValidity()) {
-                        var formData = $(this).serialize();
-                        var csrfToken = $('meta[name="csrf-token"]').attr('content');
-                        $.ajax({
-                            url: "{{ route('asociados.store') }}",
-                            type: 'POST',
-                            data: formData,
-                            headers: {
-                                'X-CSRF-TOKEN': csrfToken
-                            },
-                            success: function(response) {
-                                console.log(response);
-                                // localStorage.setItem('successMessage', "Registro Añadido Exitosamente");
-                                // location.reload();
-                            },
-                            error: function(xhr, status, error) {
-                                console.log(xhr.responseText)
-                                var response = JSON.parse(xhr.responseText);
-                                $('#msjAjax').text(response.error.message);
-                            }
-                        });                        
-                    }else{
-                        $("#FormularioAddTitular").addClass('was-validated');
-                        event.preventDefault();
-                        event.stopPropagation();
-                    }
-                });
+    <script>
+        $(document).ready(function() {
+            /* Get Planes */
+            $.ajax({
+                url: "{{ route('plansall') }}",
+                type: 'GET',
+                dataType: 'json',
+                success: function(response) {
+                    var select = $('#selectPlanes');
+                    response.forEach(function(data) {
+                        select.append($('<option>', {
+                            value: data.code,
+                            text: data.name,
+                            'data-value': data.value
+                        }));
+                    });
+                    $('#valorPlan').html(response[0].value);
+                    $('#selectPlanes').change(function() {
+                        var valorSeleccionado = $(this).find(':selected').data('value');;
+                        $('#valorPlan').html(valorSeleccionado);
+                    });
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error:', error);
+                }
             });
-        </script>
-</body>
 
+            /* Añadir Titular */
+            $('#FormularioAddTitular').submit(function(event) {
+                event.preventDefault();
+                var form = document.getElementById('FormularioAddTitular');
+                if (form.checkValidity()) {
+                    var formData = $(this).serialize();
+                    var csrfToken = $('meta[name="csrf-token"]').attr('content');
+                    $.ajax({
+                        url: "{{ route('asociados.store') }}",
+                        type: 'POST',
+                        data: formData,
+                        headers: {
+                            'X-CSRF-TOKEN': csrfToken
+                        },
+                        success: function(response) {
+                            console.log(response);
+                            // localStorage.setItem('successMessage', "Registro Añadido Exitosamente");
+                            // location.reload();
+                        },
+                        error: function(xhr, status, error) {
+                            console.log(xhr.responseText)
+                            var response = JSON.parse(xhr.responseText);
+                            $('#msjAjax').text(response.error.message);
+                        }
+                    });
+                } else {
+                    $("#FormularioAddTitular").addClass('was-validated');
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+            });
+        });
+    </script>
+
+    <x-footer-jslinks></x-footer-jslinks>
+</body>
 </html>
