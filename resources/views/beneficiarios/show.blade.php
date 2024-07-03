@@ -59,7 +59,9 @@
                             <h5 class="card-category">Información del Titular</h5>
                             <div class="d-flex flex-row align-items-center">
                                 <h5 class="title mb-0">{{ $asociado['name'] }}</h5>
+                                @can('update', App\Models\User::class)
                                 <button class="btn btn-warning ml-4 py-2" id="btnActualizarTitular"><i class="bi bi-pencil-square"></i></button>
+                                @endcan
                                 {{-- <button class="btn btn-danger mx-2 py-2"><i class="bi bi-x-square"></i></button> --}}
                             </div>
                         </div>
@@ -140,18 +142,16 @@
                                                                     $edad = $diferencia->y;
                                                                 @endphp
                                                                 <td>{{ $edad }}</td>
-                                                                <td class="d-flex flex-row align-items-center">
-                                                                    <a class="btn btn-success py-2 m-0 px-2 botonPrestarServicio"
-                                                                        data-bs-toggle="modal"
-                                                                        data-bs-target="#ModalFormServicio" style="color: black">
-                                                                        Prestar Servicio
-                                                                    </a>
-                                                                    <a class="btn btn-warning ml-1 py-2 btn-open-modal-updateBene" data-index={{ $loop->index }} style="color: white" data-bs-toggle="modal"
-                                                                    data-bs-target="#modalUpdateBeneficiario"><i
-                                                                            class="bi bi-pencil-square"></i></a>
-                                                                    <a style="color: white"
-                                                                        class="btn btn-danger py-2 ml-1 botonEliminarBene"><i
-                                                                            class="bi bi-x-square"></i></a>
+                                                                <td>
+                                                                    @can('prestarServicio', App\Models\User::class)
+                                                                    <a class="btn btn-success py-2 m-0 px-2 botonPrestarServicio" data-bs-toggle="modal" data-bs-target="#ModalFormServicio" style="color: black">Prestar Servicio</a>
+                                                                    @endcan
+                                                                    @can('update', App\Models\User::class)
+                                                                    <a class="btn btn-warning ml-1 py-2 btn-open-modal-updateBene" data-index={{ $loop->index }} style="color: white" data-bs-toggle="modal" data-bs-target="#modalUpdateBeneficiario"><i class="bi bi-pencil-square"></i></a>
+                                                                    @endcan
+                                                                    @can('delete', App\Models\User::class)
+                                                                    <a style="color: white" class="btn btn-danger py-2 ml-1 botonEliminarBene"><i class="bi bi-x-square"></i></a>
+                                                                    @endcan
                                                                 </td>
                                                             </tr>
                                                         @endif
@@ -160,13 +160,14 @@
                                             </div>
 
                                             {{-- Boton Add Beneficiario --}}
+                                            @can('create', App\Models\User::class)
                                             <div class="d-flex">
                                                 <button type="button" class="btn btn-success m-3"
                                                     data-bs-toggle="modal" data-bs-target="#addBeneficiario" style="color: black">
                                                     Agregar Beneficiario
                                                 </button>
                                             </div>
-
+                                            @endcan
                                         </div>
                                         @if (session('PrestarServicio'))
                                             <div class="alert alert-success p-1">

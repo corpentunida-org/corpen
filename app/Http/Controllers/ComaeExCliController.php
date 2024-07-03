@@ -50,6 +50,8 @@ class ComaeExCliController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorize('create', auth()->user());
+
         $token = env('TOKEN_ADMIN');
         $fechaActual = Carbon::now();
         $response = Http::withHeaders([
@@ -90,6 +92,8 @@ class ComaeExCliController extends Controller
     //     return view('asociados.show', compact('asociado', 'beneficiarios'))->with('success', 'Datos actualizados');
     // }
     public function update(Request $request){
+        $this->authorize('update', auth()->user());
+
         $data = $request->json()->all();
         $token = env('TOKEN_ADMIN');
         $response = Http::withHeaders([
