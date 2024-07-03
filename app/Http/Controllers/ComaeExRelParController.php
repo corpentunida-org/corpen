@@ -12,6 +12,7 @@ use App\Http\Controllers\PlanController;
 
 class ComaeExRelParController extends Controller
 {   
+
     public function show(Request $request, $id){
         //API
         $token = env('TOKEN_ADMIN');
@@ -68,6 +69,8 @@ class ComaeExRelParController extends Controller
     } */
     public function update(Request $request)
     {
+        $this->authorize('update', auth()->user());
+
         $token = env('TOKEN_ADMIN');
         $fechaActual = Carbon::now();
         $response = Http::withHeaders([
@@ -92,6 +95,8 @@ class ComaeExRelParController extends Controller
 
     public function store(Request $request)
     {
+        $this->authorize('create', auth()->user());
+
         $request->validate([
             'cedula' => ['required', 'min:3'],
             'fechaNacimiento' => ['required'],
@@ -129,6 +134,8 @@ class ComaeExRelParController extends Controller
 
     public function destroy($id)
     {
+        $this->authorize('delete', auth()->user());
+
         $token = env('TOKEN_ADMIN');
         $url = 'https://www.siasoftapp.com:7011/api/Exequiales/Beneficiary?documentId=' . $id;
         $response = Http::withHeaders([

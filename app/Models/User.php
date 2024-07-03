@@ -9,6 +9,7 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Jetstream\HasProfilePhoto;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Support\Facades\DB;
 
 class User extends Authenticatable
 {
@@ -63,4 +64,14 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function hasRole($role)
+    {
+        return DB::table('permisos')
+            ->join('rol', 'permisos.rol_id', '=', 'rol.id')
+            ->where('permisos.user_id', $this->id)
+            ->where('rol.rol', $role)
+            ->exists();
+    }
+
 }

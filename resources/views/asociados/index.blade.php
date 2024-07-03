@@ -105,6 +105,11 @@
                                         </tbody>
                                     </table>
                                 </div> --}}
+                                <div class="col-md-3">
+                                    <x-input-search></x-input-search>
+                                </div>
+
+                                @can('create', App\Models\User::class)
                                 <div class="col-md-12">
                                     {{-- <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#ModalVerCedula"> --}}
                                     <button type="button" class="btn btn-success" data-bs-toggle="modal"
@@ -112,6 +117,7 @@
                                         Agregar Titular
                                     </button>
                                 </div>
+                                @endcan
                             </div>
                             {{-- Paginacion Tabla --}}
                             {{-- <nav aria-label="Page navigation example">
