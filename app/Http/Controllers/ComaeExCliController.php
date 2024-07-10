@@ -8,9 +8,8 @@ use App\Models\ComaeExCli;
 use App\Models\ComaeTer;
 use Illuminate\Support\Facades\Http;
 use Carbon\Carbon;
-use Dompdf\Dompdf;
-use Illuminate\Support\Facades\View;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Mpdf\Mpdf;
 
 class ComaeExCliController extends Controller
 {
@@ -50,7 +49,7 @@ class ComaeExCliController extends Controller
 
     public function store(Request $request)
     {
-        $this->authorize('create', auth()->user());
+        //$this->authorize('create', auth()->user());
 
         $token = env('TOKEN_ADMIN');
         $fechaActual = Carbon::now();
@@ -73,11 +72,17 @@ class ComaeExCliController extends Controller
         ]);
     
         if ($response->successful()) {
-            return redirect()->route('beneficiarios.show', ['beneficiario' => $documentId])
+            return redirect()->route('beneficiarios.show', ['beneficiario' => $request->documentId])
             ->with('messageTit', 'Titular añadido exitosamente.');
         } else {
-            // Manejar errores si la solicitud no fue exitosa
-            return response()->json(['error' => $response->json()], $response->status());
+            $jsonResponse = $response->json();
+            $message = $jsonResponse['message'];
+            if ($message === "El pastor no se encuentra registrado, debe registrarlo para tener acceso al servicio de exequiales") {
+                $code = 1;
+            } elseif ($message === "Ya se encuetra registrado como titular de exequiales con esa cedula") {
+                $code = 2;
+            }
+            return response()->json(['message' => $message, 'code' => $code], 200);
         }
     }
 
@@ -92,8 +97,7 @@ class ComaeExCliController extends Controller
     //     return view('asociados.show', compact('asociado', 'beneficiarios'))->with('success', 'Datos actualizados');
     // }
     public function update(Request $request){
-        $this->authorize('update', auth()->user());
-
+        //$this->authorize('update', auth()->user());
         $data = $request->json()->all();
         $token = env('TOKEN_ADMIN');
         $response = Http::withHeaders([
@@ -112,11 +116,44 @@ class ComaeExCliController extends Controller
 
     public function generarpdf($id)
     {
-        $asociado = ComaeExCli::where('cedula', $id)->with(['ciudade', 'distrito'])->firstOrFail();
-        $beneficiarios = ComaeExRelPar::where('cedulaAsociado', $id)->with('parentescoo')->get();     
-        $data = ['asociado'=> $asociado, 'beneficiarios' => $beneficiarios];
+        $token = env('TOKEN_ADMIN');
+
+        $titular = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $token,
+        ])->get('https://www.siasoftapp.com:7011/api/Exequiales/Tercero', [
+            'documentId' => $id,
+        ]);
+        $beneficiarios = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $token,
+        ])->get('https://www.siasoftapp.com:7011/api/Exequiales', [
+            'documentId' => $id,
+        ]);
+    
+        if ($titular->successful() && $beneficiarios->successful()) {
+            $jsonTit = $titular->json();            
+            $jsonBene = $beneficiarios->json();
+            if (isset($jsonTit['codePlan'])) {
+                $controllerplanes = app()->make(PlanController::class);
+                $nomPlan = $controllerplanes->nomCodPlan($jsonTit['codePlan']);
+                $jsonTit['codePlan'] = $nomPlan;
+            }
+            
+            $data = [
+                'asociado' => $jsonTit, 
+                'beneficiarios' => $jsonBene,
+            ];
+            
+            return view('asociados.showpdf', [
+                'asociado' => $jsonTit, 
+                'beneficiarios' => $jsonBene,
+            ]);
+            
+        }
+        //$asociado = ComaeExCli::where('cedula', $id)->with(['ciudade', 'distrito'])->firstOrFail();
+        //$beneficiarios = ComaeExRelPar::where('cedulaAsociado', $id)->with('parentescoo')->get();     
+        //$data = ['asociado'=> $asociado, 'beneficiarios' => $beneficiarios];
         //$pdf = PDF::loadView('asociados.showpdf', $data)->setPaper('legal', 'landscape');
         //return $pdf->download(date('Y-m-d') .  $asociado->nombre . '.pdf');
-        return view('asociados.showpdf', $data);
+        //return view('asociados.showpdf', $data);
     }
 }

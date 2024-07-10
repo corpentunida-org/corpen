@@ -17,7 +17,7 @@ class ExMonitoriaController extends Controller
     }
     public function store(Request $request)
     {
-        $this->authorize('create', auth()->user());
+        //$this->authorize('create', auth()->user());
         $fechaActual = Carbon::now();
 
         ExMonitoria::create([

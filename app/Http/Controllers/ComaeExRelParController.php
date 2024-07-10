@@ -69,7 +69,7 @@ class ComaeExRelParController extends Controller
     } */
     public function update(Request $request)
     {
-        $this->authorize('update', auth()->user());
+        //$this->authorize('update', auth()->user());
 
         $token = env('TOKEN_ADMIN');
         $fechaActual = Carbon::now();
@@ -95,7 +95,7 @@ class ComaeExRelParController extends Controller
 
     public function store(Request $request)
     {
-        $this->authorize('create', auth()->user());
+        //$this->authorize('create', auth()->user());
 
         $request->validate([
             'cedula' => ['required', 'min:3'],
@@ -134,7 +134,7 @@ class ComaeExRelParController extends Controller
 
     public function destroy($id)
     {
-        $this->authorize('delete', auth()->user());
+        //$this->authorize('delete', auth()->user());
 
         $token = env('TOKEN_ADMIN');
         $url = 'https://www.siasoftapp.com:7011/api/Exequiales/Beneficiary?documentId=' . $id;
