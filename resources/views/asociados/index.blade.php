@@ -105,9 +105,11 @@
                                         </tbody>
                                     </table>
                                 </div> --}}
-                                <div class="col-md-3">
+                                <div class="d-flex justify-content-start align-items-center">
                                     <x-input-search></x-input-search>
+                                    <button class="btn btn-primary">Buscar</button>
                                 </div>
+                                
 
                                 @can('create', App\Models\User::class)
                                 <div class="col-md-12">
@@ -300,8 +302,7 @@
                         novalidate>
                         <div class="modal-header">
                             <h1 class="modal-title fs-5" id="staticBackdropLabel">Agregar Titular</h1>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"
-                                aria-label="Close"></button>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
                             <div class="row">
@@ -404,6 +405,7 @@
                 var form = document.getElementById('FormularioAddTitular');
                 if (form.checkValidity()) {
                     var formData = $(this).serialize();
+                    console.log(formData)
                     var csrfToken = $('meta[name="csrf-token"]').attr('content');
                     $.ajax({
                         url: "{{ route('asociados.store') }}",
@@ -414,13 +416,18 @@
                         },
                         success: function(response) {
                             console.log(response);
+                            if(response.code==2){
+                                $('#msjAjax').html('<p>'+response.message+'</p><p><a href="/beneficiarios/ID?id='+$('input[name="documentId"]').val()+'">VER TITULAR...</a></p>')
+                            }
+                            else{
+                                $('#msjAjax').html('<p>'+response.message+'</p>')
+                            }
                             // localStorage.setItem('successMessage', "Registro Añadido Exitosamente");
                             // location.reload();
                         },
                         error: function(xhr, status, error) {
-                            console.log(xhr.responseText)
+                            console.log(xhr.responseText);
                             var response = JSON.parse(xhr.responseText);
-                            $('#msjAjax').text(response.error.message);
                         }
                     });
                 } else {

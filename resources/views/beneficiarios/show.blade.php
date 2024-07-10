@@ -6,6 +6,7 @@
     <x-component-header />
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
 </head>
 <body>
     @include('layouts.navbar')
@@ -220,8 +221,9 @@
                                 <div class="row">
                                     <div class="col-md-auto">
                                         <div class="form-group">
-                                            <a href=""
-                                                target="_blank" class="btn btn-primary">Generar PDF</a>
+                                            <!-- <a href=""
+                                                target="_blank" class="btn btn-primary">Generar PDF</a> -->
+                                                <a href="{{ route('asociados.generarpdf', ['id' => $asociado['documentId'] ]) }}">Generar PDF</a>
                                         </div>
                                     </div>
                                 </div>
@@ -718,5 +720,5 @@
                 });
             </script>
             <x-footer-jslinks></x-footer-jslinks>
-</body>
+        </body>
 </html>
