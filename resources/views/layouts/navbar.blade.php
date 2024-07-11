@@ -1,14 +1,16 @@
 <div class="sidebar" data-color="blue">
     <div class="logo">
         <a href="/" class="simple-text logo-mini">
-            BD
+            APP
         </a>
         <a href="/" class="simple-text logo-normal">
-            EXEQUIALES
+            en desarrollo
         </a>
     </div>
+    
     <div class="sidebar-wrapper" id="sidebar-wrapper">
         <ul class="nav">
+        @can('exequial', App\Models\User::class)
             <li class="active ">
                 <a href="/asociados">
                     <i class="now-ui-icons business_badge"></i>
@@ -21,11 +23,14 @@
                     <p>Servicios</p>
                 </a>
             </li>
+        @endcan
             <li class="active-pro">                
                 <x-authentication-card-logo />                
             </li>
         </ul>
+
     </div>
+    
 </div>
 
 

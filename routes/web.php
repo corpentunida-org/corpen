@@ -10,7 +10,14 @@ use App\Http\Controllers\PlanController;
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/', function () {
-        return view('dashboardTemplate');
+        $user = Auth::user();
+        if ($user->hasRole('admin')) {
+            return view('dashboardTemplate');
+        } elseif ($user->hasRole('exequial')) {
+            return view('exequial.asociados.index');
+        } else {
+            return view('welcome');
+        }
     })->name('dashboard');
 });
 
