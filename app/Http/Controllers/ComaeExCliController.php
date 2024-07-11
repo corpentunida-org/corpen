@@ -22,7 +22,7 @@ class ComaeExCliController extends Controller
     {
         //$asociados = ComaeExCli::all();
         $asociados = ComaeExCli::with(['ciudade', 'distrito'])->paginate(10);
-        return view('asociados.index', ['asociados' => $asociados]);
+        return view('exequial.asociados.index', ['asociados' => $asociados]);
     }
 
     public function show(Request $request, $id)
@@ -32,7 +32,7 @@ class ComaeExCliController extends Controller
         $id = $request->input('id');
         $asociado = ComaeExCli::where('cedula', $id)->firstOrFail();
         $beneficiarios = ComaeExRelPar::where('cedulaAsociado', $id)->with('parentescoo')->get();
-        return view('asociados.show', compact('asociado', 'beneficiarios'));
+        return view('exequial.asociados.show', compact('asociado', 'beneficiarios'));
     }
 
     public function validarRegistro(Request $request){
@@ -70,10 +70,12 @@ class ComaeExCliController extends Controller
             'codePlan' => $request->plan,
             'codeCenterCost' => "C1010"
         ]);
-    
+        //dd($request->documentId);
         if ($response->successful()) {
-            return redirect()->route('beneficiarios.show', ['beneficiario' => $request->documentId])
-            ->with('messageTit', 'Titular añadido exitosamente.');
+            return response()->json([
+                'redirect' => route('beneficiarios.show', ['beneficiario' => $request->documentId]),
+                'message' => 'Titular añadido exitosamente.'
+            ]);
         } else {
             $jsonResponse = $response->json();
             $message = $jsonResponse['message'];
@@ -82,10 +84,10 @@ class ComaeExCliController extends Controller
             } elseif ($message === "Ya se encuetra registrado como titular de exequiales con esa cedula") {
                 $code = 2;
             }
-            return response()->json(['message' => $message, 'code' => $code], 200);
+            else $code = 3;
+            return response()->json(['error' => $message, 'code' => $code], $response->status());
         }
     }
-
     //actualizar fechas
     // public function update(Request $request, $cedula)
     // {
@@ -96,6 +98,7 @@ class ComaeExCliController extends Controller
     //     $beneficiarios = ComaeExRelPar::where('cedulaAsociado', $cedula)->get();
     //     return view('asociados.show', compact('asociado', 'beneficiarios'))->with('success', 'Datos actualizados');
     // }
+
     public function update(Request $request){
         //$this->authorize('update', auth()->user());
         $data = $request->json()->all();
@@ -109,8 +112,7 @@ class ComaeExCliController extends Controller
             'codePlan'=> $data['codePlan'],
             'discount'=> $data['discount'],
             'observation'=> $data['observation']
-        ]);
-    
+        ]);    
         return $data;
     }
 
@@ -143,7 +145,7 @@ class ComaeExCliController extends Controller
                 'beneficiarios' => $jsonBene,
             ];
             
-            return view('asociados.showpdf', [
+            return view('exequial.asociados.showpdf', [
                 'asociado' => $jsonTit, 
                 'beneficiarios' => $jsonBene,
             ]);

@@ -55,12 +55,7 @@
                 <div class="row">
                     <div class="col-md-12">
                         <div class="card">
-                            <div class="card-body">
-                                @if(session('messageTit'))
-                                    <div class="alert alert-danger p-1 pl-3">
-                                        {{ session('messageTit') }}
-                                    </div>
-                                @endif
+                            <div class="card-body">                                
                                 {{-- Table all Titulares --}}
                                 {{-- <div class="table-responsive">
                                     <table class="table table-striped h-100">
@@ -105,21 +100,37 @@
                                         </tbody>
                                     </table>
                                 </div> --}}
-                                <div class="d-flex justify-content-start align-items-center">
-                                    <x-input-search></x-input-search>
-                                    <button class="btn btn-primary">Buscar</button>
-                                </div>
-                                
+                                @if(session('messageTit'))
+                                    <div class="alert alert-danger p-2" role="alert">
+                                        {{ session('messageTit') }}. 
+                                        <a data-bs-toggle="modal" data-bs-target="#addTitular" class="alert-link" style="text-decoration: underline;">¿Desea agregar?... Clik aqui </a>
+                                    </div>
+                                @endif
 
-                                @can('create', App\Models\User::class)
-                                <div class="col-md-12">
-                                    {{-- <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#ModalVerCedula"> --}}
-                                    <button type="button" class="btn btn-success" data-bs-toggle="modal"
-                                        data-bs-target="#addTitular" style="color: black">
-                                        Agregar Titular
-                                    </button>
+                                <div class="container mt-3 w-50">
+                                    <div class="row mb-3">
+                                        <div class="col-12">
+                                            <label>Buscar titular por numero de cedula</label>
+                                            <input type="text" value="" placeholder="Cédula" class="form-control p-3" id="valueCedula" required>
+                                            <div class="invalid-feedback">Ingrese un dato</div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-md-6 d-flex justify-content-center align-items-center">
+                                            <button type="button" class="btn btn-primary w-100" id="btn-buscador">Buscar</button>
+                                        </div>
+                                        <div class="col-md-6 d-flex justify-content-center align-items-center">
+                                        @can('create', App\Models\User::class)
+                                        {{-- <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#ModalVerCedula"> --}}
+                                        <button type="button" class="btn btn-success w-100" data-bs-toggle="modal"
+                                            data-bs-target="#addTitular" style="color: black">
+                                            Agregar Titular
+                                        </button>
+                                        @endcan
+                                        </div>
+                                    </div> 
                                 </div>
-                                @endcan
+                                                               
                             </div>
                             {{-- Paginacion Tabla --}}
                             {{-- <nav aria-label="Page navigation example">
@@ -381,14 +392,15 @@
                 dataType: 'json',
                 success: function(response) {
                     var select = $('#selectPlanes');
-                    response.forEach(function(data) {
+                    for (var i = response.length - 1; i >= 0; i--) {
+                        var data = response[i];
                         select.append($('<option>', {
                             value: data.code,
                             text: data.name,
                             'data-value': data.value
                         }));
-                    });
-                    $('#valorPlan').html(response[0].value);
+                    }
+                    $('#valorPlan').html(response[3].value);
                     $('#selectPlanes').change(function() {
                         var valorSeleccionado = $(this).find(':selected').data('value');;
                         $('#valorPlan').html(valorSeleccionado);
@@ -398,6 +410,22 @@
                     console.error('Error:', error);
                 }
             });
+            
+            $('#valueCedula').on('change', function() {
+                var newValue = $(this).val();
+                $('#cedula').val(newValue);
+            });
+            
+
+            $('#btn-buscador').click(function() {      
+                var inputField = $('#valueCedula');          
+                if (inputField.val()) {
+                    inputField.addClass('was-validated').removeClass('is-invalid');                    
+                    window.location.href = "/beneficiarios/ID?id=" + inputField.val();
+                } else {
+                    inputField.removeClass('was-validated').addClass('is-invalid');                    
+                }
+            });
 
             /* Añadir Titular */
             $('#FormularioAddTitular').submit(function(event) {
@@ -405,8 +433,9 @@
                 var form = document.getElementById('FormularioAddTitular');
                 if (form.checkValidity()) {
                     var formData = $(this).serialize();
-                    console.log(formData)
+                    //console.log(formData)
                     var csrfToken = $('meta[name="csrf-token"]').attr('content');
+                    docid = $('input[name="documentId"]').val()
                     $.ajax({
                         url: "{{ route('asociados.store') }}",
                         type: 'POST',
@@ -415,19 +444,24 @@
                             'X-CSRF-TOKEN': csrfToken
                         },
                         success: function(response) {
-                            console.log(response);
-                            if(response.code==2){
-                                $('#msjAjax').html('<p>'+response.message+'</p><p><a href="/beneficiarios/ID?id='+$('input[name="documentId"]').val()+'">VER TITULAR...</a></p>')
-                            }
-                            else{
-                                $('#msjAjax').html('<p>'+response.message+'</p>')
-                            }
-                            // localStorage.setItem('successMessage', "Registro Añadido Exitosamente");
+                            localStorage.setItem('successMessageTit', "Registro Añadido Exitosamente");
+                            //console.log(response);
+                            window.location.href = "/beneficiarios/ID?id=" + docid;
                             // location.reload();
                         },
                         error: function(xhr, status, error) {
                             console.log(xhr.responseText);
+                            $('#FormularioAddTitular')[0].reset();
+                            $('#valorPlan').text("0")
                             var response = JSON.parse(xhr.responseText);
+                            $('#msjAjax').html('<p> </p>')
+                            if(response.code==2){
+                                $('#msjAjax').html('<p>'+response.error+'</p><p><a href="/beneficiarios/ID?id='+docid+'">VER TITULAR...'+docid+'</a></p>')
+                            }
+                            else{
+                                $('#msjAjax').html('<p>'+response.error+'</p>')                                
+                            }
+                            
                         }
                     });
                 } else {
@@ -438,7 +472,6 @@
             });
         });
     </script>
-
     <x-footer-jslinks></x-footer-jslinks>
 </body>
 </html>

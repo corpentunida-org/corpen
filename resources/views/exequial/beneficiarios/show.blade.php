@@ -71,6 +71,8 @@
                                     {{ session('messageTit') }}
                                 </div>
                             @endif
+                            <div id="messageTit"></div>
+
                             <div class="row px-3">
                                 <div class="col-md-2 pr-1">
                                     <div class="form-group">
@@ -498,6 +500,13 @@
 
             <script>
                 $(document).ready(function() {
+                    /* Mensaje de Add Titular */
+                    if (localStorage.getItem('successMessageTit')) {
+                        var successMessage = localStorage.getItem('successMessageTit');
+                        $('#messageTit').html('<div class="alert alert-success p-1 pl-3" style="color:black;">' + successMessage + '</div>');
+                        localStorage.removeItem('successMessageTit');
+                    }
+
                     /* Optimizar fechas */      
                     const formatDate = dateString => {
                         const [year, month, day] = dateString.split('T')[0].split('-');

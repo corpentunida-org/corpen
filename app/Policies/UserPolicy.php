@@ -67,4 +67,14 @@ class UserPolicy
     {
         return $user->hasRole("create");
     }
+
+    public function admin(User $user)
+    {
+        return $user->hasRole('admin');
+    }
+
+    public function exequial(User $user)
+    {
+        return $user->hasRole('exequial');
+    }
 }

@@ -41,7 +41,7 @@ class ComaeExRelParController extends Controller
                 $nomPlan = $controllerplanes->nomCodPlan($jsonTit['codePlan']);
                 $jsonTit['codePlan'] = $nomPlan;
             }
-            return view('beneficiarios.show', [
+            return view('exequial.beneficiarios.show', [
                 'asociado' => $jsonTit, 
                 'beneficiarios' => $jsonBene,
             ]);
