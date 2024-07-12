@@ -58,15 +58,9 @@ class ComaeExCliController extends Controller
             'Accept' => 'application/json',
         ])->post('https://www.siasoftapp.com:7011/api/Exequiales/Tercero', [
             'documentId' => $request->documentId,
-            'name' => $request->name,
-            'agreement' => 0,
-            'dateEntry' => $fechaActual,
-            'stade' => true,
             'obsevations' => $request->observaciones,
             'dateStart' => $fechaActual,
-            'dateEnd' => $fechaActual,
             'descuento' => 0,
-            'valuePlan' => 0,
             'codePlan' => $request->plan,
             'codeCenterCost' => "C1010"
         ]);
