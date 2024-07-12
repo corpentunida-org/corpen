@@ -326,7 +326,7 @@
                                 <div class="col-md-8">
                                     <div class="form-group">
                                         <label>Nombres</label>
-                                        <input type="text" class="form-control" placeholder="Nombres y Apellidos" name="name" required>
+                                        <input type="text" class="form-control" placeholder="Nombres y Apellidos" id="name" required>
                                     </div>
                                 </div>
                             </div>
@@ -405,6 +405,18 @@
                         var valorSeleccionado = $(this).find(':selected').data('value');;
                         $('#valorPlan').html(valorSeleccionado);
                     });
+                },
+                error: function(xhr, status, error) {
+                    console.error('Error:', error);
+                }
+            });
+
+            $.ajax({
+                url: "",
+                type: 'GET',
+                dataType: 'json',
+                success: function(response) {
+                    var campoNombre = $('#name');                    
                 },
                 error: function(xhr, status, error) {
                     console.error('Error:', error);

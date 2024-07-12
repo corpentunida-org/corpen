@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ComaeTerController;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\ComaeExCliController;
@@ -41,6 +42,7 @@ Route::get('/monitoria/generarpdf', [ExMonitoriaController::class, 'generarpdf']
 
 Route::resource('asociados', ComaeExCliController::class)->middleware('auth');
 Route::resource('beneficiarios', ComaeExRelParController::class);
+Route::resource('terceros', ComaeTerController::class);
 Route::resource('monitoria', ExMonitoriaController::class);
 
 Route::get('/parentescosall', [ParentescosController::class, 'index'])->name('parentescosall');
