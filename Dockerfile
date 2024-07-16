@@ -5,6 +5,8 @@ ENV COMPOSER_ALLOW_SUPERUSER=1
 RUN apt-get update -y && apt-get install -y \
   git \
   zip unzip \
+  zlib1g-dev \
+  libpng-dev \
   curl \
   openssl 
 
