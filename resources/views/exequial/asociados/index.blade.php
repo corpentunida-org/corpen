@@ -411,23 +411,29 @@
                 }
             });
 
-            $.ajax({
-                url: "",
-                type: 'GET',
-                dataType: 'json',
-                success: function(response) {
-                    var campoNombre = $('#name');                    
-                },
-                error: function(xhr, status, error) {
-                    console.error('Error:', error);
-                }
-            });
+            
             
             $('#valueCedula').on('change', function() {
                 var newValue = $(this).val();
                 $('#cedula').val(newValue);
             });
-            
+
+            $('#cedula').on('change', function() {
+                var newValue = $(this).val();
+                $('#cedula').val(newValue);
+                $.ajax({
+                    url: "{{ route('terceros.show', ['tercero' => ':id']) }}".replace(':id', newValue),
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function(response) {
+                        console.log(response)
+                        $('#name').val(response.name);
+                    },
+                    error: function(xhr, status, error) {
+                        $('#name').val("");
+                    }
+                });
+            });
 
             $('#btn-buscador').click(function() {      
                 var inputField = $('#valueCedula');          

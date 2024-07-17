@@ -115,7 +115,7 @@ class ComaeExRelParController extends Controller
         // ]);
         //return "se añadio el registro"; //Interno Controlador
 
-        $token = env('TOKEN_SIASOFT');
+        $token = env('TOKEN_ADMIN');
 
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
@@ -129,7 +129,12 @@ class ComaeExRelParController extends Controller
             'codeParentesco' => $request->parentesco,
             'type' => "A"
         ]);    
-        return $response->json();
+        if ($response->successful()) {
+            return response()->json(['message' => 'Se agrego beneficiario correctamente', 'data' => $response->json()], $response->status());
+        } else {
+            // Manejar errores si la solicitud no fue exitosa
+            return response()->json(['error' => $response->json()], $response->status());
+        }
     }
 
     public function destroy($id)

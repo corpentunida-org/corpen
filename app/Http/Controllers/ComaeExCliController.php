@@ -50,7 +50,6 @@ class ComaeExCliController extends Controller
     public function store(Request $request)
     {
         //$this->authorize('create', auth()->user());
-
         $token = env('TOKEN_ADMIN');
         $fechaActual = Carbon::now();
         $response = Http::withHeaders([

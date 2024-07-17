@@ -239,8 +239,7 @@
 
             <!-- MODAL -->
             <!-- ADD Beneficiario -->
-            <div class="modal fade" id="addBeneficiario" data-bs-backdrop="static" data-bs-keyboard="false"
-                tabindex="-1" aria-labelledby="addBeneficiario" aria-hidden="true">
+            <div class="modal fade" id="addBeneficiario" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="addBeneficiario" aria-hidden="true">
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <form class="needs-validation" id="FormularioAddBeneficiario" method="post" novalidate>
@@ -512,7 +511,10 @@
                         const [year, month, day] = dateString.split('T')[0].split('-');
                         return `${year}-${month}-${day}`;
                     };
-                    $('#fechaInicioTitular').html(formatDate('{{ $asociado['dateInit'] }}'))
+                    if ('{{ $asociado['dateInit'] }}' != '') {
+                        console.log("si hay fechaaaaaaaaaa")
+                        $('#fechaInicioTitular').html(formatDate('{{ $asociado['dateInit'] }}'))
+                    }
                     $('.dateBeneficiarios').each(function() {
                         const originalDate = $(this).text();
                         const formattedDate = formatDate(originalDate);
@@ -540,14 +542,12 @@
                                 },
                                 success: function(response) {
                                     console.log(response);
-                                    localStorage.setItem('successMessage',
-                                        "Registro Añadido Exitosamente");
+                                    localStorage.setItem('successMessage', "Registro Añadido Exitosamente");
                                     location.reload();
                                 },
                                 error: function(xhr) {
-                                    var errorMessage = JSON.parse(xhr.responseText).message;
-                                    $('#msjAjax').text(errorMessage);
-                                    console.error(xhr.responseText);
+                                    var errorMessage = JSON.parse(xhr.responseText);
+                                    $('#msjAjax').text(errorMessage.error.message);
                                 }
                             });
                         } else {
