@@ -5,6 +5,8 @@ ENV COMPOSER_ALLOW_SUPERUSER=1
 RUN apt-get update -y && apt-get install -y \
   git \
   zip unzip \
+  zlib1g-dev \
+  libpng-dev \
   curl \
   openssl 
 
@@ -21,6 +23,7 @@ RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | b
 
 RUN docker-php-ext-install pdo
 RUN docker-php-ext-install pdo_mysql
+RUN docker-php-ext-install gd
 
 #upload
 RUN echo "file_uploads = On\n" \

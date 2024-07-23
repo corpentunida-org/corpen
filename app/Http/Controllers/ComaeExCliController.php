@@ -9,7 +9,6 @@ use App\Models\ComaeTer;
 use Illuminate\Support\Facades\Http;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Mpdf\Mpdf;
 
 class ComaeExCliController extends Controller
 {
@@ -123,7 +122,12 @@ class ComaeExCliController extends Controller
         ])->get('https://www.siasoftapp.com:7011/api/Exequiales', [
             'documentId' => $id,
         ]);
-    
+        $personalTitular = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $token,
+        ])->get('https://www.siasoftapp.com:7011/api/Pastors', [
+            'documentId' => $id,
+        ]);
+
         if ($titular->successful() && $beneficiarios->successful()) {
             $jsonTit = $titular->json();            
             $jsonBene = $beneficiarios->json();
@@ -136,12 +140,16 @@ class ComaeExCliController extends Controller
             $data = [
                 'asociado' => $jsonTit, 
                 'beneficiarios' => $jsonBene,
+                'pastor' => $personalTitular,
             ];
             
-            return view('exequial.asociados.showpdf', [
-                'asociado' => $jsonTit, 
-                'beneficiarios' => $jsonBene,
-            ]);
+            // return view('exequial.asociados.showpdf', [
+            //     'asociado' => $jsonTit, 
+            //     'beneficiarios' => $jsonBene,
+            //     'pastor' => $personalTitular,
+            // ]);
+            $pdf = Pdf::loadView('exequial.asociados.showpdf', $data)->setPaper('letter', 'landscape');
+            return $pdf->download(date('Y-m-d') .  isset($jsonTit['documentId']) . '.pdf');
             
         }
         //$asociado = ComaeExCli::where('cedula', $id)->with(['ciudade', 'distrito'])->firstOrFail();

@@ -6,7 +6,24 @@
     <x-component-header />
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    
+    <style>
+        .uppercase-input {
+            text-transform: uppercase;
+        }
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.7); /* Semi-transparent background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999; /* Make sure it's on top of other content */
+            visibility: hidden;
+        }
+    </style>
 </head>
 <body>
     @include('layouts.navbar')
@@ -55,6 +72,11 @@
             <div class="row">
                 <div class="col-md-11 ml-auto mr-auto">
                     <div class="card">
+                    <div id="overlay">
+                                    <div class="spinner-border" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
                         <div class="card-header">
                             <h5 class="card-category">Información del Titular</h5>
                             <div class="d-flex flex-row align-items-center">
@@ -98,6 +120,9 @@
 
                                             <label class="mt-3">Fecha de Inicio</label>
                                             <div class="form-control" id="fechaInicioTitular"></div>
+
+                                            <label class="mt-3">Contrato</label>
+                                            <div class="form-control">{{ $asociado['agreement'] }}</div>
 
                                             <button type="submit" class="btn btn-warning mt-2" id="btnUpdateTitular">
                                                 <i class="bi bi-pencil-square"></i> Actualizar</button>
@@ -225,7 +250,7 @@
                                         <div class="form-group">
                                             <!-- <a href=""
                                                 target="_blank" class="btn btn-primary">Generar PDF</a> -->
-                                                <a href="{{ route('asociados.generarpdf', ['id' => $asociado['documentId'] ]) }}">Generar PDF</a>
+                                                <a href="{{ route('asociados.generarpdf', ['id' => $asociado['documentId'] ]) }}" id="btnpdf">Generar PDF</a>
                                         </div>
                                     </div>
                                 </div>
@@ -279,14 +304,14 @@
                                     <div class="col-md-6 pr-1">
                                         <div class="form-group">
                                             <label>Apellidos</label>
-                                            <input type="text" class="form-control" placeholder="Apellidos"
+                                            <input type="text" class="form-control uppercase-input" placeholder="Apellidos"
                                                 id="apellidos" name="apellidos" required>
                                         </div>
                                     </div>
                                     <div class="col-md-6 pl-1">
                                         <div class="form-group">
                                             <label>Nombres</label>
-                                            <input type="text" class="form-control" placeholder="Nombres"
+                                            <input type="text" class="form-control uppercase-input" placeholder="Nombres"
                                                 id="nombres" name="nombres" required>
                                         </div>
                                     </div>
@@ -342,7 +367,7 @@
                                     <div class="col-md-12 pr-1">
                                         <div class="form-group">
                                             <label>Apellidos y Nombres</label>
-                                            <input type="text" class="form-control" id="UpdateApellidosyNombres" name="names">
+                                            <input type="text" class="form-control uppercase-input" id="UpdateApellidosyNombres" name="names">
                                         </div>
                                     </div>
                                 </div>
@@ -499,6 +524,9 @@
 
             <script>
                 $(document).ready(function() {
+                    $('#btnpdf').on('click', function(){
+                        $('#overlay').css('visibility', 'visible');   
+                    });
                     /* Mensaje de Add Titular */
                     if (localStorage.getItem('successMessageTit')) {
                         var successMessage = localStorage.getItem('successMessageTit');
@@ -547,7 +575,7 @@
                                 },
                                 error: function(xhr) {
                                     var errorMessage = JSON.parse(xhr.responseText);
-                                    $('#msjAjax').text(errorMessage.error.message);
+                                    $('#msjAjax').text(errorMessage.error.message + " con otro titular");
                                 }
                             });
                         } else {

@@ -6,13 +6,12 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
-        "dompdf/dompdf": "^3.0",
+        "barryvdh/laravel-dompdf": "^2.2",
         "laravel/framework": "^11.0",
         "laravel/jetstream": "^5.1",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.9",
         "livewire/livewire": "^3.0",
-        "mpdf/mpdf": "^8.2",
         "silviolleite/laravelpwa": "^2.0"
     },
     "require-dev": {
@@ -65,6 +64,9 @@
         "allow-plugins": {
             "pestphp/pest-plugin": true,
             "php-http/discovery": true
+        },
+        "platform": {
+            "php": "8.2"
         }
     },
     "minimum-stability": "stable",
