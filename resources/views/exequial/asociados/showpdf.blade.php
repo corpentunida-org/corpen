@@ -21,10 +21,16 @@
         }
 
         .header h2 {
-            width: 50%;
+            width: 60%;
+            text-align: center;
+            font-size: 30px;
+        }
+        .header div{
+            text-align: right;
+            font-size: 10px;
         }
 
-        table {
+        .table {
             border-collapse: collapse;
             width: 100%;
         }
@@ -43,44 +49,87 @@
         .separador {
             height: 20px;
         }
-    </style>
+        #noborder{
+            border: 0px #f2f2f2 solid;
+        }
 
+        .centerText{
+            font-size: 10px;
+            text-align: center;
+        }
+    </style>
 
     <div class="header">
         <img src="{{ asset('assets/img/corpentunida-logo-azul-oscuro-2021x300.png') }}" alt="logo">
-        <h2>Solicitud de afiliación a prevención exequial</h2>
+        
+                        <h2>Solicitud de afiliación a prevención exequial</h2>
+                    <!-- <table class="table">
+                        <tr>
+                            <td>FECHA:</td>
+                            <td>{{ date('Y-m-d') }}</td>
+                        </tr>
+                        <tr>
+                            <td>HORA:</td>
+                            <td>{{ date('H:i:s') }}</td>
+                        </tr>
+                        <tr>
+                            <td>USUARIO:</td>
+                            <td>{{ Auth::user()->name }}</td>
+                        </tr>
+                    </table> -->
+                    <div>
+                    <p><strong>FECHA: </strong>{{ date('Y-m-d') }}</p>
+                        <p><strong>HORA: </strong>{{ date('H:i:s') }}</p>
+                        <p><strong>USUARIO: </strong>{{ Auth::user()->name }}</p>
+                    </div>
+                </tr>
+            </table>
+        </div>
     </div>
     <div class="separador"></div>
-    <table>
+    <table class="table">
         <thead>
             <tr>
-                <th colspan="5" style="text-align: center; background-color: rgba(0, 128, 0, 0.5);">INFORMACION DEL
-                    CONTRATANTE</th>
+                <th colspan="5" style="text-align: center; background-color: rgba(0, 128, 0, 0.5);">INFORMACION DEL CONTRATANTE</th>
             </tr>
         </thead>
         <tbody>
             <tr>
-                <th colspan="3">APELLIDOS Y NOMBRES</th>
+                <th colspan="2">APELLIDOS Y NOMBRES</th>
                 <th>DOCUMENTO DE IDENTIDAD</th>
                 <th>FECHA DE INICIO</th>
+                <th>CONTRATO</th>
             </tr>
             <tr>
-                <td colspan="3">{{ $asociado['name'] }}</td>
+                <td colspan="2">{{ $asociado['name'] }}</td>
                 <td>{{ $asociado['documentId'] }}</td>
                 <td>{{ $asociado['dateInit'] }}</td>
+                <td>{{ $asociado['agreement'] }}</td>
             </tr>
             <tr>
                 <th>PLAN</th>
-                <th>OBSERVACIONES</th>
+                <th colspan="4">OBSERVACIONES</th>
             </tr>
             <tr>
                 <td>{{ $asociado['codePlan'] }}</td>
                 <td colspan="4">{{ $asociado['observation'] }}</td>
             </tr>
+            <tr>
+                <th>DISTRITO</th>
+                <th colspan="2">CONGREGACIÓN</th>
+                <th>FECHA DE NACIMIENTO</th>
+                <th>CORREO</th>
+            </tr>
+            <tr>
+                <td>{{ $pastor['district'] }}</td>
+                <td colspan="2">{{ $pastor['congregation'] }}</td>
+                <td>{{ $pastor['birthdate'] }}</td>
+                <td>{{ $pastor['email'] }}</td>
+            </tr>
         </tbody>
     </table>
     <div class="separador"></div>
-    <table>
+    <table class="table">
         <thead>
             <tr>
                 <th colspan="5" style="text-align: center; background-color: rgba(0, 128, 0, 0.5);">INFORMACIÓN
@@ -114,7 +163,7 @@
             @endforeach
         </tbody>
     </table>
-    
+    <p class="centerText">app.corpentunida.org.co</p>
 </body>
 
 </html>

@@ -6,6 +6,21 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
     <x-component-header />
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.7); /* Semi-transparent background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999; /* Make sure it's on top of other content */
+            visibility: hidden;
+        }
+    </style>
 </head>
 
 <body>
@@ -108,10 +123,17 @@
                                 @endif
 
                                 <div class="container mt-3 w-50">
+                                <div id="overlay">
+                                    <div class="spinner-border" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                </div>
                                     <div class="row mb-3">
                                         <div class="col-12">
-                                            <label>Buscar titular por numero de cedula</label>
-                                            <input type="text" value="" placeholder="Cédula" class="form-control p-3" id="valueCedula" required>
+                                            <form action="{{ route('beneficiarios.show', ['beneficiario' => 'ID']) }}" method="GET">                                                
+                                                <label>Buscar titular por número de cédula</label>
+                                                <input type="text" value="" placeholder="Cédula" class="form-control p-3" id="valueCedula" required>
+                                            </form>
                                             <div class="invalid-feedback">Ingrese un dato</div>
                                         </div>
                                     </div>
@@ -378,7 +400,6 @@
             </div>
         
             </div>
-
             @include('layouts.footer')
         </div>
     </div>
@@ -410,8 +431,6 @@
                     console.error('Error:', error);
                 }
             });
-
-            
             
             $('#valueCedula').on('change', function() {
                 var newValue = $(this).val();
@@ -438,18 +457,19 @@
             $('#btn-buscador').click(function() {      
                 var inputField = $('#valueCedula');          
                 if (inputField.val()) {
-                    inputField.addClass('was-validated').removeClass('is-invalid');                    
+                    inputField.addClass('was-validated').removeClass('is-invalid');
+                    $('#overlay').css('visibility', 'visible');    
                     window.location.href = "/beneficiarios/ID?id=" + inputField.val();
                 } else {
                     inputField.removeClass('was-validated').addClass('is-invalid');                    
                 }
-            });
-
+            });  
             /* Añadir Titular */
             $('#FormularioAddTitular').submit(function(event) {
                 event.preventDefault();
                 var form = document.getElementById('FormularioAddTitular');
                 if (form.checkValidity()) {
+                    $('#overlay').css('visibility', 'visible');
                     var formData = $(this).serialize();
                     //console.log(formData)
                     var csrfToken = $('meta[name="csrf-token"]').attr('content');
@@ -463,6 +483,7 @@
                         },
                         success: function(response) {
                             localStorage.setItem('successMessageTit', "Registro Añadido Exitosamente");
+                            $('#overlay').css('visibility', 'hidden');
                             //console.log(response);
                             window.location.href = "/beneficiarios/ID?id=" + docid;
                             // location.reload();
