@@ -20,19 +20,14 @@ class PlanController extends Controller
         switch ($cod) {
             case '01':
                 return 'Plan Basico';
-                break;
             case '02':
                 return 'Plan Ejecutivo';
-                break;
             case '03':
                 return 'Plan Unipersonal';
-                break;
             case '04':
                 return 'Plan Exento Pago';
-                break;
             default:
                 return ' ';
-                break;
         }
     }
 }

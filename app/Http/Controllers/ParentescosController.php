@@ -17,4 +17,26 @@ class ParentescosController extends Controller
         $posts = $response->json();
         return response()->json($posts);
     }
+
+    public function show($nomParentesco){
+        $response = Http::get('https://www.siasoftapp.com:7011/api/Exequiales/Relationship');
+        $parentescos = $response->json();
+        foreach ($parentescos as $parentesco) {
+            if ($parentesco['name'] === $nomParentesco) {
+                $codParentesco = $parentesco['code'];
+                return $codParentesco;
+            }
+        }
+    }
+
+    public function showName($codParentesco){
+        $response = Http::get('https://www.siasoftapp.com:7011/api/Exequiales/Relationship');
+        $parentescos = $response->json();
+        foreach ($parentescos as $parentesco) {
+            if ($parentesco['code'] === $codParentesco) {
+                $nomParentesco = $parentesco['name'];
+                return $nomParentesco;
+            }
+        }
+    }
 }

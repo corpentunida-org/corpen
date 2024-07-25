@@ -53,7 +53,7 @@
     <table>
         <thead>
             <tr>
-                <th colspan="14" style="text-align: center; background-color: rgba(0, 128, 0, 0.5);">INFORME FALLECIDOS</th>
+                <th colspan="15" style="text-align: center; background-color: rgba(0, 128, 0, 0.5);">INFORME FALLECIDOS</th>
             </tr>
         </thead>
         <tbody>
@@ -64,6 +64,7 @@
                 <th>Hora</th>
                 <th>Cedula Titular</th>
                 <th>Nombre Titular</th>
+                <th>Cedula Fallecido</th>
                 <th>Nombre Fallecido</th>
                 <th>Lugar Fallecimiento</th>
                 <th>Parentesco</th>
@@ -86,10 +87,11 @@
                 </td>
                 <td>{{ $reg->horaFallecimiento }}</td>
                 <td>{{ $reg->cedulaTitular }}</td>
-                <td>{{ $reg->asociado->apellido . " " . $reg->asociado->nombre}}</td>
-                <td>{{ $reg->beneficiario->nombre }}</td>
+                <td>{{ $reg->nombreTitular }}</td>
+                <td>{{ $reg->cedulaFallecido }}</td>
+                <td>{{ $reg->nombreFallecido }}</td>
                 <td>{{ $reg->lugarFallecimiento }}</td>
-                <td>{{ $reg->parentescoo->nomPar}}</td>
+                <td>{{ $reg->parentesco }}</td>
                 @if( $reg->traslado)
                 <td>SI</td>
                 @else

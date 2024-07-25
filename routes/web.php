@@ -12,8 +12,8 @@ use App\Http\Controllers\PlanController;
 Route::middleware(['auth'])->group(function () {
     Route::get('/', function () {
         $user = Auth::user();
-        if ($user->hasRole('admin')) {
-            return view('dashboardTemplate');
+        if ($user->hasRole('creditos')) {
+            return view('creditos.index');
         } elseif ($user->hasRole('exequial')) {
             return view('exequial.asociados.index');
         } else {
@@ -38,12 +38,12 @@ Route::middleware([
 
 Route::get('/prueba', [ParentescosController::class, 'index']);
 Route::get('/asociados/{id}/generarpdf', [ComaeExCliController::class, 'generarpdf'])->name('asociados.generarpdf');
-Route::get('/monitoria/generarpdf', [ExMonitoriaController::class, 'generarpdf'])->name('monitoria.generarpdf');
+Route::get('/prestarServicio/generarpdf', [ExMonitoriaController::class, 'generarpdf'])->name('prestarServicio.generarpdf');
 
 Route::resource('asociados', ComaeExCliController::class)->middleware('auth');
 Route::resource('beneficiarios', ComaeExRelParController::class);
 Route::resource('terceros', ComaeTerController::class);
-Route::resource('monitoria', ExMonitoriaController::class);
+Route::resource('prestarServicio', ExMonitoriaController::class);
 
 Route::get('/parentescosall', [ParentescosController::class, 'index'])->name('parentescosall');
 Route::get('/plansall', [PlanController::class, 'index'])->name('plansall');

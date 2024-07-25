@@ -16,7 +16,9 @@ return new class extends Migration
             $table->date('fechaRegistro');
             $table->time('horaFallecimiento');
             $table->bigInteger('cedulaTitular');
+            $table->string("nombreTitular");
             $table->bigInteger('cedulaFallecido');
+            $table->string("nombreFallecido");
             $table->date('fechaFallecimiento');
             $table->string('lugarFallecimiento');
             $table->string('parentesco');
@@ -25,18 +27,18 @@ return new class extends Migration
             $table->string('telefonoContacto');
             $table->string('Contacto2')->nullable();
             $table->string('telefonoContacto2')->nullable();
-            $table->string('factura');
-            $table->string('valor');
+            $table->string('factura')->nullable();
+            $table->string('valor')->nullable();
             $table->boolean('estado')->default(false);
             $table->timestamps();
         });
     }
-    
+
     /**
      * Reverse the migrations.
      */
     public function down(): void
     {
-        Schema::dropIfExists('MAEC_EXSER');
+        //
     }
 };
