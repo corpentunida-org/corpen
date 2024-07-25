@@ -72,11 +72,11 @@
             <div class="row">
                 <div class="col-md-11 ml-auto mr-auto">
                     <div class="card">
-                    <div id="overlay">
-                                    <div class="spinner-border" role="status">
-                                        <span class="visually-hidden">Loading...</span>
-                                    </div>
-                                </div>
+                        <div id="overlay">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
                         <div class="card-header">
                             <h5 class="card-category">Información del Titular</h5>
                             <div class="d-flex flex-row align-items-center">
@@ -248,9 +248,8 @@
                                 <div class="row">
                                     <div class="col-md-auto">
                                         <div class="form-group">
-                                            <!-- <a href=""
-                                                target="_blank" class="btn btn-primary">Generar PDF</a> -->
-                                                <a href="{{ route('asociados.generarpdf', ['id' => $asociado['documentId'] ]) }}" id="btnpdf">Generar PDF</a>
+                                            <!-- <a href="" id="btnpdf">Generar PDF</a> -->
+                                            <a href="{{ route('asociados.generarpdf', ['id' => $asociado['documentId'] ]) }}" id="btnpdf">Generar PDF</a>
                                         </div>
                                     </div>
                                 </div>
@@ -430,34 +429,35 @@
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title" id="DatosPrestarServicio">Prestar Servicio</h5>
+                            <h5 class="modal-title">Prestar Servicio</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"
                                 aria-label="Close"></button>
                         </div>
-                        <form method="POST" action="{{ route('monitoria.store') }}" id="FormularioPrestarServicio">
-                            @csrf
+                        <!-- <form method="POST" action="{{ route('monitoria.store') }}" id="FormularioPrestarServicio" novalidate> -->
+                        <form id="FormularioPrestarServicio" novalidate>
+                            <!-- @csrf -->
                             <div class="modal-body">
                                 <input type="hidden" id="cedulaTitular" name="cedulaTitular"
                                     value="{{ $asociado['documentId'] }}">
                                 <input type="hidden" id="cedulaFallecido" name="cedulaFallecido">
-                                <input type="hidden" id="parentesco" name="parentesco">
+                                <input type="hidden" id="parentescoServicio" name="parentesco">
                                 <div class="row">
                                     <div class="col-md-5 pr-1">
                                         <div class="form-group">
                                             <label>Lugar Fallecimiento</label>
-                                            <input type="text" class="form-control" name="lugarFallecimiento">
+                                            <input type="text" class="form-control uppercase-input" name="lugarFallecimiento" required>
                                         </div>
                                     </div>
                                     <div class="col-md-4 px-1">
                                         <div class="form-group">
                                             <label>Fecha Fallecimiento</label>
-                                            <input type="date" class="form-control" name="fechaFallecimiento">
+                                            <input type="date" class="form-control" name="fechaFallecimiento" required>
                                         </div>
                                     </div>
                                     <div class="col-md-3 pl-1">
                                         <div class="form-group">
                                             <label for="exampleInputEmail1">Hora</label>
-                                            <input type="time" class="form-control" name="horaFallecimiento">
+                                            <input type="time" class="form-control" name="horaFallecimiento" required>
                                         </div>
                                     </div>
                                 </div>
@@ -465,13 +465,13 @@
                                     <div class="col-md-6 pr-1">
                                         <div class="form-group">
                                             <label>Contacto 1</label>
-                                            <input type="text" class="form-control" name="contacto">
+                                            <input type="text" class="form-control uppercase-input" name="contacto" required>
                                         </div>
                                     </div>
                                     <div class="col-md-6 pl-1">
                                         <div class="form-group">
                                             <label>Telefono de Contacto</label>
-                                            <input type="text" class="form-control" name="telefonoContacto">
+                                            <input type="text" class="form-control" name="telefonoContacto" required>
                                         </div>
                                     </div>
                                 </div>
@@ -479,7 +479,7 @@
                                     <div class="col-md-6 pr-1">
                                         <div class="form-group">
                                             <label>Contacto 2</label>
-                                            <input type="text" class="form-control" name="contacto2">
+                                            <input type="text" class="form-control uppercase-input" name="contacto2">
                                         </div>
                                     </div>
                                     <div class="col-md-6 pl-1">
@@ -502,7 +502,7 @@
                                     <div class="col-md-4 pl-1">
                                         <div class="form-group">
                                             <label>Factura </label>
-                                            <input type="text" class="form-control" name="factura">
+                                            <input type="text" class="form-control uppercase-input" name="factura">
                                         </div>
                                     </div>
                                     <div class="col-md-5 pl-1">
@@ -525,7 +525,10 @@
             <script>
                 $(document).ready(function() {
                     $('#btnpdf').on('click', function(){
-                        $('#overlay').css('visibility', 'visible');   
+                        $('#overlay').css('visibility', 'visible');
+                        setTimeout(function() {
+                            $('#overlay').css('visibility', 'hidden');
+                        }, 7000);
                     });
                     /* Mensaje de Add Titular */
                     if (localStorage.getItem('successMessageTit')) {
@@ -540,7 +543,6 @@
                         return `${year}-${month}-${day}`;
                     };
                     if ('{{ $asociado['dateInit'] }}' != '') {
-                        console.log("si hay fechaaaaaaaaaa")
                         $('#fechaInicioTitular').html(formatDate('{{ $asociado['dateInit'] }}'))
                     }
                     $('.dateBeneficiarios').each(function() {
@@ -559,6 +561,7 @@
                         event.preventDefault();
                         var form = document.getElementById('FormularioAddBeneficiario');
                         if (form.checkValidity()) {
+                            $('#overlay').css('visibility', 'visible');
                             var formData = $(this).serialize();
                             var csrfToken = $('meta[name="csrf-token"]').attr('content');
                             $.ajax({
@@ -569,13 +572,17 @@
                                     'X-CSRF-TOKEN': csrfToken
                                 },
                                 success: function(response) {
-                                    console.log(response);
+                                    //console.log(response);
+                                    setTimeout(function() {
+                                        $('#overlay').css('visibility', 'hidden');
+                                    }, 5000);
                                     localStorage.setItem('successMessage', "Registro Añadido Exitosamente");
                                     location.reload();
                                 },
                                 error: function(xhr) {
                                     var errorMessage = JSON.parse(xhr.responseText);
-                                    $('#msjAjax').text(errorMessage.error.message + " con otro titular");
+                                    $('#msjAjax').text(errorMessage.error.message);
+                                    $('#overlay').css('visibility', 'hidden');
                                 }
                             });
                         } else {
@@ -645,7 +652,8 @@
                     $('#formUpdateTitular').submit(function(event) {                        
                         event.preventDefault();
                         $('#ConfirmarEnvioUpdate').modal('show');
-                        $('#btnConfirmarEnvio').on('click', function() {                            
+                        $('#btnConfirmarEnvio').on('click', function() {   
+                            $('#overlay').css('visibility', 'visible');                         
                             var csrfToken = $('meta[name="csrf-token"]').attr('content');
                             var data = {
                                 documentid: '{{ $asociado['documentId'] }}',
@@ -668,6 +676,9 @@
                                     console.log(response);
                                     localStorage.setItem('successMessage',
                                         "Se Actualizó Titular Correctamente");
+                                        setTimeout(function() {
+                                        $('#overlay').css('visibility', 'hidden');
+                                    }, 5000);
                                     location.reload();
                                 },
                                 error: function(e) {
@@ -692,7 +703,8 @@
                     $('#FormUpdateBeneficiario').submit(function(event) {                        
                         event.preventDefault();
                         $('#ConfirmarEnvioUpdate').modal('show');
-                        $('#btnConfirmarEnvio').on('click', function() {                            
+                        $('#btnConfirmarEnvio').on('click', function() { 
+                            $('#overlay').css('visibility', 'visible');                           
                             var csrfToken = $('meta[name="csrf-token"]').attr('content');
                             data = $('#FormUpdateBeneficiario').serialize();
                             $.ajax({
@@ -707,6 +719,9 @@
                                     console.log(response);
                                     localStorage.setItem('successMessage',
                                         "Se Actualizó Beneficiario Exitosamente");
+                                        setTimeout(function() {
+                                            $('#overlay').css('visibility', 'hidden');
+                                        }, 7000);
                                     location.reload();
                                 },
                                 error: function(e) {
@@ -718,7 +733,7 @@
 
 
                     /* Eliminar Titular */
-
+                    //cambiar el estado a false, pero ¿?
 
                     /* Eliminar Beneficiario */
                     $('.botonEliminarBene').on('click', function() {
@@ -753,6 +768,24 @@
                                     }
                                 });
                         });
+                    });
+                
+                    /* Prestar Servicio Form */
+                    $('.botonPrestarServicio').on('click', function() {
+                        var fila = $(this).closest('tr');
+                        var cedula = fila.find('td:eq(0)').text();
+                        var parentesco = fila.find('td:eq(2)').text();
+                        $('#cedulaFallecido').val(cedula);
+                        $('#parentescoServicio').val(parentesco);
+                    });
+                    $('#FormularioPrestarServicio').submit(function(event) { 
+                        console.log($(this).serialize())
+                        var form = this;
+                        if (!form.checkValidity()) {
+                            $("#FormularioPrestarServicio").addClass('was-validated');
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
                     });
                 });
             </script>
