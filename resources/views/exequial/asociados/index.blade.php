@@ -449,17 +449,20 @@
                         $('#name').val(response.name);
                     },
                     error: function(xhr, status, error) {
-                        $('#name').val("");
+                        $('#name').val(" ");
                     }
                 });
             });
 
-            $('#btn-buscador').click(function() {      
+            $('#btn-buscador').click(function() {                      
                 var inputField = $('#valueCedula');          
                 if (inputField.val()) {
                     inputField.addClass('was-validated').removeClass('is-invalid');
                     $('#overlay').css('visibility', 'visible');    
                     window.location.href = "/beneficiarios/ID?id=" + inputField.val();
+                    setTimeout(function() {
+                        $('#overlay').css('visibility', 'hidden');
+                    }, 10000);
                 } else {
                     inputField.removeClass('was-validated').addClass('is-invalid');                    
                 }
@@ -483,8 +486,9 @@
                         },
                         success: function(response) {
                             localStorage.setItem('successMessageTit', "Registro Añadido Exitosamente");
-                            $('#overlay').css('visibility', 'hidden');
-                            //console.log(response);
+                            setTimeout(function() {
+                                $('#overlay').css('visibility', 'hidden');
+                            }, 7000);
                             window.location.href = "/beneficiarios/ID?id=" + docid;
                             // location.reload();
                         },

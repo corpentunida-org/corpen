@@ -27,6 +27,7 @@ return new class extends Migration
             $table->string('telefonoContacto2')->nullable();
             $table->string('factura');
             $table->string('valor');
+            $table->boolean('estado')->default(false);
             $table->timestamps();
         });
     }

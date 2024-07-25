@@ -14,17 +14,17 @@
             font-family: Arial, Helvetica, sans-serif;
         }
 
-        .header {
+        /* .header {
             display: flex;
             align-items: center;
             justify-content: space-around;
-        }
+        } */
 
-        .header h2 {
+        /* .header h2 {
             width: 60%;
             text-align: center;
             font-size: 30px;
-        }
+        } */
         .header div{
             text-align: right;
             font-size: 10px;
@@ -40,6 +40,7 @@
             border: 1px solid black;
             padding: 8px;
             text-align: left;
+            font-size: 12px;
         }
 
         th {
@@ -49,9 +50,6 @@
         .separador {
             height: 20px;
         }
-        #noborder{
-            border: 0px #f2f2f2 solid;
-        }
 
         .centerText{
             font-size: 10px;
@@ -60,37 +58,25 @@
     </style>
 
     <div class="header">
-        <img src="{{ asset('assets/img/corpentunida-logo-azul-oscuro-2021x300.png') }}" alt="logo">
-        
-                        <h2>Solicitud de afiliación a prevención exequial</h2>
-                    <!-- <table class="table">
-                        <tr>
-                            <td>FECHA:</td>
-                            <td>{{ date('Y-m-d') }}</td>
-                        </tr>
-                        <tr>
-                            <td>HORA:</td>
-                            <td>{{ date('H:i:s') }}</td>
-                        </tr>
-                        <tr>
-                            <td>USUARIO:</td>
-                            <td>{{ Auth::user()->name }}</td>
-                        </tr>
-                    </table> -->
+        <!-- <img src="{{ asset('assets/img/corpentunida-logo-azul-oscuro-2021x300.png') }}" alt="logo"> -->
+        <table style="border: none; width: 100%;" >
+            <tr style="border: none">
+                <td style="border: none; width:50px;"><img src="{{ $image_path }}" alt="logoCorpen" style="80%"></td>
+                <td style="border: none"><h2 style="text-align: left;">CERTIFICADO DE AFILIACIÓN A PREVENCIÓN EXEQUIAL</h2></td>
+                <td style="border: none">
                     <div>
-                    <p><strong>FECHA: </strong>{{ date('Y-m-d') }}</p>
+                        <p><strong>FECHA: </strong>{{ date('Y-m-d') }}</p>
                         <p><strong>HORA: </strong>{{ date('H:i:s') }}</p>
                         <p><strong>USUARIO: </strong>{{ Auth::user()->name }}</p>
                     </div>
-                </tr>
-            </table>
-        </div>
+                </td>
+            </tr>
+        </table>
     </div>
-    <div class="separador"></div>
     <table class="table">
         <thead>
             <tr>
-                <th colspan="5" style="text-align: center; background-color: rgba(0, 128, 0, 0.5);">INFORMACION DEL CONTRATANTE</th>
+                <th colspan="5" style="text-align: center; background-color: rgba(0, 128, 0, 0.5);">INFORMACIÓN DEL CONTRATANTE</th>
             </tr>
         </thead>
         <tbody>
@@ -104,27 +90,25 @@
                 <td colspan="2">{{ $asociado['name'] }}</td>
                 <td>{{ $asociado['documentId'] }}</td>
                 <td>{{ $asociado['dateInit'] }}</td>
-                <td>{{ $asociado['agreement'] }}</td>
+                <th>{{ $asociado['agreement'] }}</th>
             </tr>
             <tr>
-                <th>PLAN</th>
-                <th colspan="4">OBSERVACIONES</th>
+                <th colspan="2">PLAN</th>
+                <th colspan="3">OBSERVACIONES</th>
             </tr>
             <tr>
-                <td>{{ $asociado['codePlan'] }}</td>
-                <td colspan="4">{{ $asociado['observation'] }}</td>
+                <td colspan="2">{{ $asociado['codePlan'] }}</td>
+                <td colspan="3">{{ $asociado['observation'] }}</td>
             </tr>
             <tr>
                 <th>DISTRITO</th>
-                <th colspan="2">CONGREGACIÓN</th>
                 <th>FECHA DE NACIMIENTO</th>
-                <th>CORREO</th>
+                <th colspan="3">CORREO</th>
             </tr>
             <tr>
                 <td>{{ $pastor['district'] }}</td>
-                <td colspan="2">{{ $pastor['congregation'] }}</td>
                 <td>{{ $pastor['birthdate'] }}</td>
-                <td>{{ $pastor['email'] }}</td>
+                <td colspan="3">{{ $pastor['email'] }}</td>
             </tr>
         </tbody>
     </table>
@@ -163,7 +147,7 @@
             @endforeach
         </tbody>
     </table>
-    <p class="centerText">app.corpentunida.org.co</p>
+    <p class="centerText"><strong>app.corpentunida.org.co</strong> todos los derechos reservados.</p>
 </body>
 
 </html>

@@ -141,15 +141,17 @@ class ComaeExCliController extends Controller
                 'asociado' => $jsonTit, 
                 'beneficiarios' => $jsonBene,
                 'pastor' => $personalTitular,
+                'image_path' => public_path('assets/img/corpentunida-logo-azul-oscuro-2021x300.png'),
             ];
             
             // return view('exequial.asociados.showpdf', [
             //     'asociado' => $jsonTit, 
             //     'beneficiarios' => $jsonBene,
             //     'pastor' => $personalTitular,
+            //     'image_path' => public_path('assets/img/corpentunida-logo-azul-oscuro-2021x300.png'),
             // ]);
             $pdf = Pdf::loadView('exequial.asociados.showpdf', $data)->setPaper('letter', 'landscape');
-            return $pdf->download(date('Y-m-d') .  isset($jsonTit['documentId']) . '.pdf');
+            return $pdf->download(date('Y-m-d') . " Reporte " .  $jsonTit['documentId'] . '.pdf');
             
         }
         //$asociado = ComaeExCli::where('cedula', $id)->with(['ciudade', 'distrito'])->firstOrFail();

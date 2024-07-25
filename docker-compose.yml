@@ -7,3 +7,4 @@ services:
             - 0.0.0.0:81:80
         volumes:
             - ".:/var/www/html"
+            - ./public/assets/img:/var/www/html/public/assets/img
