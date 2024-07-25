@@ -433,14 +433,16 @@
                             <button type="button" class="btn-close" data-bs-dismiss="modal"
                                 aria-label="Close"></button>
                         </div>
-                        <!-- <form method="POST" action="{{ route('monitoria.store') }}" id="FormularioPrestarServicio" novalidate> -->
-                        <form id="FormularioPrestarServicio" novalidate>
-                            <!-- @csrf -->
+                        <form method="POST" action="{{ route('prestarServicio.store') }}" id="FormularioPrestarServicio" novalidate>
+                        <!-- <form id="FormularioPrestarServicio" novalidate> -->
+                            @csrf
                             <div class="modal-body">
                                 <input type="hidden" id="cedulaTitular" name="cedulaTitular"
                                     value="{{ $asociado['documentId'] }}">
                                 <input type="hidden" id="cedulaFallecido" name="cedulaFallecido">
                                 <input type="hidden" id="parentescoServicio" name="parentesco">
+                                <input type="hidden" id="nameFallecido" name="nameBeneficiary">
+                                <input type="hidden" value="{{ $asociado['name'] }}" name="nameTitular">
                                 <div class="row">
                                     <div class="col-md-5 pr-1">
                                         <div class="form-group">
@@ -524,6 +526,12 @@
 
             <script>
                 $(document).ready(function() {
+                    document.querySelectorAll('.uppercase-input').forEach(input => {
+                        input.addEventListener('input', function() {
+                            this.value = this.value.toUpperCase();
+                        });
+                    });
+
                     $('#btnpdf').on('click', function(){
                         $('#overlay').css('visibility', 'visible');
                         setTimeout(function() {
@@ -774,14 +782,17 @@
                     $('.botonPrestarServicio').on('click', function() {
                         var fila = $(this).closest('tr');
                         var cedula = fila.find('td:eq(0)').text();
+                        var name = fila.find('td:eq(1)').text();
                         var parentesco = fila.find('td:eq(2)').text();
                         $('#cedulaFallecido').val(cedula);
                         $('#parentescoServicio').val(parentesco);
+                        $("#nameFallecido").val(name);
                     });
                     $('#FormularioPrestarServicio').submit(function(event) { 
                         console.log($(this).serialize())
                         var form = this;
                         if (!form.checkValidity()) {
+
                             $("#FormularioPrestarServicio").addClass('was-validated');
                             event.preventDefault();
                             event.stopPropagation();

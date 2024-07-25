@@ -29,7 +29,7 @@
                             <span class="navbar-toggler-bar bar3"></span>
                         </button>
                     </div>
-                    <a class="navbar-brand" href="#">MONITORIA</a>
+                    <a class="navbar-brand" href="#">Servicios Prestados</a>
                 </div>
                 <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navigation" aria-controls="navigation-index" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-bar navbar-kebab"></span>
@@ -78,7 +78,7 @@
                                     <a href="#" class="btn btn-secondary">Exportar Datos</a>
                                 </div>
                                 <div class="col-md-2">
-                                    <a href="{{ route('monitoria.generarpdf') }}" target="_blank" class="btn btn-primary">Generar PDF</a>                                    
+                                    <a href="{{ route('prestarServicio.generarpdf') }}" target="_blank" class="btn btn-primary">Generar PDF</a>                                    
                                 </div>
                             </div>
                         </div>
@@ -105,8 +105,6 @@
                                     </tbody>
                                 </table>
                                 <table id="Tabla" class="table">
-
-
                                     <tr>
                                         <th class="text-primary" style="width: 100px;">Fecha</th>
                                         <th class="text-primary">Cedula Titular</th>
@@ -136,10 +134,10 @@
                                             <p>{{ $dia }}</p>
                                         </td>
                                         <td>{{ $reg->cedulaTitular }}</td>
-                                        <td>{{ $reg->asociado->apellido . " " . $reg->asociado->nombre}}</td>
-                                        <td>{{ $reg->beneficiario->nombre }}</td>
+                                        <td>{{ $reg->nombreTitular }}</td>
+                                        <td>{{ $reg->nombreFallecido }}</td>
                                         <td>{{ $reg->lugarFallecimiento }}</td>
-                                        <td>{{ $reg->parentescoo->nomPar}}</td>
+                                        <td>{{ $reg->parentesco}}</td>
                                         @if( $reg->traslado)
                                         <td>SI</td>
                                         @else
