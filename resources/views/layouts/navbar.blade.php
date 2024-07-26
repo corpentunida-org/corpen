@@ -24,6 +24,14 @@
                 </a>
             </li>
         @endcan
+        @can('creditos', App\Models\User::class)
+            <li class="active ">
+                <a href="/">
+                    <i class="now-ui-icons business_badge"></i>
+                    <p>Liquidación</p>
+                </a>
+            </li>            
+        @endcan
             <li class="active-pro">                
                 <x-authentication-card-logo />                
             </li>

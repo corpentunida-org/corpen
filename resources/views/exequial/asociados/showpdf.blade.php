@@ -61,7 +61,9 @@
         <!-- <img src="{{ asset('assets/img/corpentunida-logo-azul-oscuro-2021x300.png') }}" alt="logo"> -->
         <table style="border: none; width: 100%;" >
             <tr style="border: none">
-                <td style="border: none; width:50px;"><img src="{{ $image_path }}" alt="logoCorpen" style="80%"></td>
+                <td style="border: none; width:50px;">
+                    <img src="{{ $image_path }}" alt="logoCorpen" style="80%">
+                </td>
                 <td style="border: none"><h2 style="text-align: left;">CERTIFICADO DE AFILIACIÓN A PREVENCIÓN EXEQUIAL</h2></td>
                 <td style="border: none">
                     <div>

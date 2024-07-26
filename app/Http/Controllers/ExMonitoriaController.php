@@ -7,6 +7,7 @@ use App\Models\ComaeExRelPar;
 use Illuminate\Support\Facades\Http;
 use App\Models\ExMonitoria;
 use App\Models\Parentescos;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 
 class ExMonitoriaController extends Controller
@@ -57,10 +58,12 @@ class ExMonitoriaController extends Controller
             'Authorization' => 'Bearer ' . $token,
             'Accept' => '*/*',
         ])->put('https://www.siasoftapp.com:7011/api/Exequiales/Beneficiary', [
-            'type' => "I",
             "name" => $request->nameBeneficiary,
             "codeParentesco" => $codPar,
-            'documentBeneficiaryId' => $request->cedulaFallecido,
+            "type" => "I",
+            "dateEntry"=>$fechaActual,
+            "documentBeneficiaryId" => $request->cedulaFallecido,
+            "dateBirthDate"=>$request->fecNacFallecido,
         ]);
         if ($response->successful()) {
             return $this->index();
@@ -85,6 +88,11 @@ class ExMonitoriaController extends Controller
             $nomPar = $controllerparentesco->showName($registro->parentesco);
             $registro->parentesco = $nomPar;
         }
-        return view('exequial.prestarServicio.indexpdf', ['registros' => $registros]);
+        $pdf = Pdf::loadView('exequial.prestarServicio.indexpdf', 
+            ['registros' => $registros,
+            'image_path' => public_path('assets/img/corpentunida-logo-azul-oscuro-2021x300.png'),
+            ])->setPaper('letter', 'landscape');
+        return $pdf->download(date('Y-m-d') . " Reporte.pdf");
+        //return view('exequial.prestarServicio.indexpdf', ['registros' => $registros]);
     }
 }
