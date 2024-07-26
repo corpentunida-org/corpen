@@ -78,7 +78,7 @@
                                     <a href="#" class="btn btn-secondary">Exportar Datos</a>
                                 </div>
                                 <div class="col-md-2">
-                                    <a href="{{ route('prestarServicio.generarpdf') }}" target="_blank" class="btn btn-primary">Generar PDF</a>                                    
+                                    <a href="{{ route('prestarServicio.generarpdf') }}" target="_blank">Generar PDF</a>                                    
                                 </div>
                             </div>
                         </div>

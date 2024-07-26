@@ -443,6 +443,7 @@
                                 <input type="hidden" id="parentescoServicio" name="parentesco">
                                 <input type="hidden" id="nameFallecido" name="nameBeneficiary">
                                 <input type="hidden" value="{{ $asociado['name'] }}" name="nameTitular">
+                                <input type="hidden" name="fecNacFallecido" id="fecNacFallecido">
                                 <div class="row">
                                     <div class="col-md-5 pr-1">
                                         <div class="form-group">
@@ -784,9 +785,11 @@
                         var cedula = fila.find('td:eq(0)').text();
                         var name = fila.find('td:eq(1)').text();
                         var parentesco = fila.find('td:eq(2)').text();
+                        var fecNacimiento = fila.find('td:eq(3)').text();
                         $('#cedulaFallecido').val(cedula);
                         $('#parentescoServicio').val(parentesco);
                         $("#nameFallecido").val(name);
+                        $("#fecNacFallecido").val(fecNacimiento);
                     });
                     $('#FormularioPrestarServicio').submit(function(event) { 
                         console.log($(this).serialize())

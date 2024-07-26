@@ -33,6 +33,7 @@
             border: 1px solid black;
             padding: 8px;
             text-align: left;
+            font-size: 11px;
         }
 
         th {
@@ -42,14 +43,32 @@
         .separador {
             height: 20px;
         }
+        .centerText{
+            font-size: 10px;
+            text-align: center;
+        }
     </style>
 
 
-    <div class="header">
+    <!-- <div class="header">
         <img src="{{ asset('assets/img/corpentunida-logo-azul-oscuro-2021x300.png') }}" alt="logo">
         <h2> </h2>
-    </div>
-    <div class="separador"></div>
+    </div> -->
+    <table style="border: none; width: 100%;" >
+        <tr style="border: none">
+            <td style="border: none; width:50px;">
+                <img src="{{ $image_path }}" alt="logoCorpen" style="80%">
+                <!-- <img src="{{ asset('assets/img/corpentunida-logo-azul-oscuro-2021x300.png') }}" alt="logo"> -->
+            </td>
+            <td style="border: none">
+                <div style="text-align: right; font-size: 10px;">
+                    <p><strong>FECHA: </strong>{{ date('Y-m-d') }}</p>
+                    <p><strong>HORA: </strong>{{ date('H:i:s') }}</p>
+                    <p><strong>USUARIO: </strong>{{ Auth::user()->name }}</p>
+                </div>
+            </td>
+        </tr>
+    </table>
     <table>
         <thead>
             <tr>
@@ -105,6 +124,7 @@
             @endforeach
         </tbody>
     </table>
+    <p class="centerText"><strong>app.corpentunida.org.co</strong> todos los derechos reservados.</p>
     <div class="separador"></div>
 
 </body>
