@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Exequial;
 
-use Illuminate\Http\Request;
-use App\Models\Parentescos;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Http\Request;
 
 class ParentescosController extends Controller
 {

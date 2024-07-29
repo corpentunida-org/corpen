@@ -1,18 +1,14 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Exequial;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\ComaeExRelPar;
-use App\Models\ComaeExCli;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Log;
-use App\Http\Controllers\PlanController;
 
 class ComaeExRelParController extends Controller
-{   
-
+{
     public function show(Request $request, $id){
         //API
         $token = env('TOKEN_ADMIN');
@@ -49,6 +45,7 @@ class ComaeExRelParController extends Controller
             return redirect()->route('asociados.index')->with('messageTit', 'No se encontró la cédula como titular de exequiales');
         }
     }
+
 
     //update BD fechas de nacimiento
     /* public function update(Request $request, $cedula)
@@ -147,10 +144,12 @@ class ComaeExRelParController extends Controller
             'Accept' => '*/*',
             'Authorization' => 'Bearer ' . $token,
         ])->delete($url);
-
-        return $response->status();
+        if ($response->successful()) {
+            return $response->status();
+        } else {
+            return response()->json(['error' => $response->json()], $response->status());
+        }
     }
 
     
-
 }

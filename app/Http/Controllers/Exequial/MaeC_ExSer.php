@@ -1,16 +1,16 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Exequial;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\ComaeExRelPar;
-use Illuminate\Support\Facades\Http;
 use App\Models\ExMonitoria;
 use App\Models\Parentescos;
+use Illuminate\Support\Facades\Http;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 
-class ExMonitoriaController extends Controller
+class MaeC_ExSer extends Controller
 {
     public function index()
     {

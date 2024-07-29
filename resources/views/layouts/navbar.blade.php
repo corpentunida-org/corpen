@@ -3,9 +3,16 @@
         <a href="/" class="simple-text logo-mini">
             APP
         </a>
-        <a href="/" class="simple-text logo-normal">
-            en desarrollo
-        </a>
+        @can('exequial', App\Models\User::class)
+            <a href="/" class="simple-text logo-normal">
+                EXEQUIAL
+            </a>
+        @endcan
+        @can('creditos', App\Models\User::class)
+            <a href="/" class="simple-text logo-normal">
+                CREDITOS
+            </a>
+        @endcan
     </div>
     
     <div class="sidebar-wrapper" id="sidebar-wrapper">

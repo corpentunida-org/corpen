@@ -145,7 +145,7 @@
                                         @can('create', App\Models\User::class)
                                         {{-- <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#ModalVerCedula"> --}}
                                         <button type="button" class="btn btn-success w-100" data-bs-toggle="modal"
-                                            data-bs-target="#addTitular" style="color: black">
+                                            data-bs-target="#addTitular" style="color: black" id="btn-add-titular">
                                             Agregar Titular
                                         </button>
                                         @endcan
@@ -319,7 +319,7 @@
                         </form>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                         <button type="button" class="btn btn-success">Guardar</button>
                     </div>
                 </div>
@@ -392,7 +392,7 @@
                             </div>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                             <button type="submit" id="botonAddTitular" class="btn btn-success" style=color:black;>Enviar</button>
                         </div>
                     </form>
@@ -467,6 +467,9 @@
                     inputField.removeClass('was-validated').addClass('is-invalid');                    
                 }
             });  
+            $('#btn-add-titular').click(function() {     
+                $('#msjAjax').html('<p> </p>')
+            });
             /* Añadir Titular */
             $('#FormularioAddTitular').submit(function(event) {
                 event.preventDefault();
@@ -494,6 +497,7 @@
                         },
                         error: function(xhr, status, error) {
                             console.log(xhr.responseText);
+                            $('#overlay').css('visibility', 'hidden');
                             $('#FormularioAddTitular')[0].reset();
                             $('#valorPlan').text("0")
                             var response = JSON.parse(xhr.responseText);

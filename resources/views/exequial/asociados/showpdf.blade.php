@@ -131,6 +131,7 @@
         </thead>
         <tbody>
             @foreach ($beneficiarios as $beneficiario)
+            @if ($beneficiario['type'] == 'A')
                         <tr>
                             <td>{{ $beneficiario['documentId'] }}</td>
                             <td>{{ $beneficiario['names'] }}</td>
@@ -146,6 +147,7 @@
                             @endphp
                             <td>{{ $edad }}</td>
                         </tr>
+            @endif
             @endforeach
         </tbody>
     </table>
