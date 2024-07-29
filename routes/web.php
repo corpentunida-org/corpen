@@ -1,13 +1,17 @@
 <?php
 
-use App\Http\Controllers\ComaeTerController;
+
 use Illuminate\Support\Facades\Route;
 
-use App\Http\Controllers\ComaeExCliController;
-use App\Http\Controllers\ComaeExRelParController;
-use App\Http\Controllers\ParentescosController;
-use App\Http\Controllers\ExMonitoriaController;
-use App\Http\Controllers\PlanController;
+use App\Http\Controllers\Exequial\ComaeTerController;
+use App\Http\Controllers\Exequial\ComaeExCliController;
+use App\Http\Controllers\Exequial\ComaeExRelParController;
+use App\Http\Controllers\Exequial\ParentescosController;
+use App\Http\Controllers\Exequial\MaeC_ExSer;
+use App\Http\Controllers\Exequial\PlanController;
+
+
+use App\Http\Controllers\Prueba\PruebaController;
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/', function () {
@@ -36,17 +40,22 @@ Route::middleware([
     })->name('dashboard');
 });
 
-Route::get('/prueba', [ParentescosController::class, 'index']);
+//RUTAS DE EXEQUIALES
 Route::get('/asociados/{id}/generarpdf', [ComaeExCliController::class, 'generarpdf'])->name('asociados.generarpdf');
-Route::get('/prestarServicio/generarpdf', [ExMonitoriaController::class, 'generarpdf'])->name('prestarServicio.generarpdf');
-
 Route::resource('asociados', ComaeExCliController::class)->middleware('auth');
+
+Route::get('/prestarServicio/generarpdf', [MaeC_ExSer::class, 'generarpdf'])->name('prestarServicio.generarpdf');
+Route::get('/exportar-datos', [MaeC_ExSer::class, 'exportData']);
+Route::get('/mes/{mes}', [MaeC_ExSer::class, 'ConsultaMes']);  
+Route::resource('prestarServicio', MaeC_ExSer::class);
+
 Route::resource('beneficiarios', ComaeExRelParController::class);
+
 Route::resource('terceros', ComaeTerController::class);
-Route::resource('prestarServicio', ExMonitoriaController::class);
 
 Route::get('/parentescosall', [ParentescosController::class, 'index'])->name('parentescosall');
+
 Route::get('/plansall', [PlanController::class, 'index'])->name('plansall');
-Route::get('/exportar-datos', [ExMonitoriaController::class, 'exportData']);
-Route::get('/mes/{mes}', [ExMonitoriaController::class, 'ConsultaMes']);  
+
+//RUTAS
 

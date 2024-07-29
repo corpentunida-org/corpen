@@ -1,8 +1,10 @@
 <?php
 
-namespace App\Http\Controllers;
-use Illuminate\Support\Facades\Http;
+namespace App\Http\Controllers\Exequial;
+
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 
 class ComaeTerController extends Controller
 {
@@ -21,5 +23,4 @@ class ComaeTerController extends Controller
             return response()->json(['error' => 'Name not found'], 404);
         }
     }
-    
 }

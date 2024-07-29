@@ -279,7 +279,7 @@
                                             <label>Cedula</label>
                                             <input type="hidden" value="{{ $asociado['documentId'] }}"
                                                 name="cedulaAsociado">
-                                            <input type="text" class="form-control" placeholder="Cedula"
+                                            <input type="number" class="form-control" placeholder="Cedula"
                                                 id="cedula" name="cedula" required>
                                         </div>
                                     </div>
@@ -321,7 +321,7 @@
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary"
-                                    data-bs-dismiss="modal">Close</button>
+                                    data-bs-dismiss="modal">Cancelar</button>
                                 <button type="submit" id="botonEnviar" class="btn btn-success" style="color: black">Enviar</button>
                             </div>
                         </form>
@@ -345,7 +345,7 @@
                                     <div class="col-md-4 pr-1">
                                         <div class="form-group">
                                             <label>Cédula</label>
-                                            <input type="text" class="form-control" id="updateCedBenficiario" name="cedula">
+                                            <input type="number" class="form-control" id="updateCedBenficiario" name="cedula">
                                         </div>
                                     </div>
                                     <div class="col-md-4 pr-1">
@@ -376,7 +376,7 @@
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-secondary"
-                                    data-bs-dismiss="modal">Close</button>
+                                    data-bs-dismiss="modal">Cancelar</button>
                                 <button type="submit" id="btnUpdateBene" class="btn btn-warning">Actualizar</button>
                             </div>
                         </form>
@@ -395,11 +395,14 @@
                         </div>
                         <div class="modal-body">
                             ¿Estás seguro de que desea eliminar el registro?
+                            <div class="row">
+                                <p class="text-danger col-md-12" id="msjApiEliminar"></p>
+                            </div>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" id="confirmarElimacionBene" class="btn btn-danger">Si</button>
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
-                                aria-label="Close">No</button>
+                                aria-label="Close">Cancelar</button>
+                            <button type="button" id="confirmarElimacionBene" class="btn btn-danger">Si</button>
                         </div>
                     </div>
                 </div>
@@ -518,7 +521,8 @@
 
                             </div>
                             <div class="modal-footer">
-                                <button type="submit" class="btn btn-primary">Servicio Prestado</button>
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" aria-label="Close">Cancelar</button>
+                                <button type="submit" class="btn btn-success" style="color: black;">Servicio Prestado</button>
                             </div>
                         </form>
                     </div>
@@ -582,10 +586,8 @@
                                 },
                                 success: function(response) {
                                     //console.log(response);
-                                    setTimeout(function() {
-                                        $('#overlay').css('visibility', 'hidden');
-                                    }, 5000);
                                     localStorage.setItem('successMessage', "Registro Añadido Exitosamente");
+                                    $('#overlay').css('visibility', 'hidden');
                                     location.reload();
                                 },
                                 error: function(xhr) {
@@ -748,14 +750,13 @@
                     $('.botonEliminarBene').on('click', function() {
                         var button = $(this);
                         $('#eliminarBeneficiario').modal('show');
+                        $('#msjApiEliminar').text(" ");
                         $('#confirmarElimacionBene').on('click', function() {
+                            $('#overlay').css('visibility', 'visible');
                             var fila = button.closest('tr');
                             var documentId = fila.find('input[name="documentId"]').val();
-                            console.log('Valor de documentId:', documentId);
-
                             var csrfToken = $('meta[name="csrf-token"]').attr('content');
-                            urlconsole = "{{ route('beneficiarios.destroy', ['beneficiario' => ':id']) }}"
-                                .replace(':id', documentId),
+                            urlconsole = "{{ route('beneficiarios.destroy', ['beneficiario' => ':id']) }}".replace(':id', documentId),
                                 $.ajax({
                                     url: "{{ route('beneficiarios.destroy', ['beneficiario' => ':id']) }}"
                                         .replace(':id', documentId),
@@ -763,17 +764,18 @@
                                     headers: {
                                         'X-CSRF-TOKEN': csrfToken
                                     },
-                                    success: function(response) {
+                                    success: function(response) {                                        
                                         if (response == 200) {
                                             localStorage.setItem('successMessage',
                                                 "Registro Eliminado Exitosamente");
+                                                $('#overlay').css('visibility', 'hidden');
                                             location.reload();
                                         }
                                     },
                                     error: function(xhr, status, error) {
-                                        console.error('Error al eliminar:', error);
-                                        console.error('Detalles:', xhr.responseText);
-                                        $('#responseMessage').text('Error al eliminar: ' + error);
+                                        var errorMessage = JSON.parse(xhr.responseText);
+                                        $('#msjApiEliminar').text(errorMessage.error.message);
+                                        $('#overlay').css('visibility', 'hidden');
                                     }
                                 });
                         });
