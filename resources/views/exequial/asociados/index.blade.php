@@ -20,6 +20,9 @@
             z-index: 9999; /* Make sure it's on top of other content */
             visibility: hidden;
         }
+        .required-asterisk{
+            color: red;
+        }
     </style>
 </head>
 
@@ -341,14 +344,14 @@
                             <div class="row">
                                 <div class="col-md-4 pr-1">
                                     <div class="form-group">
-                                        <label>Cedula</label>
+                                        <label for="cedula">Cédula <span class="required-asterisk">*</span></label>
                                         <input type="text" class="form-control" placeholder="Cedula" id="cedula" name="documentId" required>
                                     </div>
                                 </div>
                                 <div class="col-md-8">
                                     <div class="form-group">
                                         <label>Nombres</label>
-                                        <input type="text" class="form-control" placeholder="Nombres y Apellidos" id="name" required>
+                                        <input type="text" class="form-control" placeholder="Nombres y Apellidos" id="name">
                                     </div>
                                 </div>
                             </div>
@@ -379,7 +382,7 @@
                             <div class="row">
                                 <div class="col-md-12">
                                     <div class="form-group">
-                                        <label>Obsvervaciones</label>
+                                        <label>Obsvervaciones <span class="required-asterisk">*</span></label>
                                         <input class="form-control" type="text" name="observaciones" required>
                                         <div class="invalid-feedback">
                                             Digite una observación.
