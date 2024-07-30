@@ -23,6 +23,9 @@
             z-index: 9999; /* Make sure it's on top of other content */
             visibility: hidden;
         }
+        .required-asterisk{
+            color: red;
+        }
     </style>
 </head>
 <body>
@@ -276,7 +279,7 @@
                                 <div class="row">
                                     <div class="col-md-4 pr-1">
                                         <div class="form-group">
-                                            <label>Cedula</label>
+                                            <label>Cédula <span class="required-asterisk">*</span></label>
                                             <input type="hidden" value="{{ $asociado['documentId'] }}"
                                                 name="cedulaAsociado">
                                             <input type="number" class="form-control" placeholder="Cedula"
@@ -293,7 +296,7 @@
                                     </div>
                                     <div class="col-md-4 pl-1">
                                         <div class="form-group">
-                                            <label>Fecha de Nacimiento</label>
+                                            <label>Fecha de Nacimiento <span class="required-asterisk">*</span></label>
                                             <input type="date" class="form-control" id="fechaNacimiento"
                                                 name="fechaNacimiento" required>
                                         </div>
@@ -302,14 +305,14 @@
                                 <div class="row">
                                     <div class="col-md-6 pr-1">
                                         <div class="form-group">
-                                            <label>Apellidos</label>
+                                            <label>Apellidos <span class="required-asterisk">*</span></label>
                                             <input type="text" class="form-control uppercase-input" placeholder="Apellidos"
                                                 id="apellidos" name="apellidos" required>
                                         </div>
                                     </div>
                                     <div class="col-md-6 pl-1">
                                         <div class="form-group">
-                                            <label>Nombres</label>
+                                            <label>Nombres <span class="required-asterisk">*</span></label>
                                             <input type="text" class="form-control uppercase-input" placeholder="Nombres"
                                                 id="nombres" name="nombres" required>
                                         </div>
@@ -450,19 +453,19 @@
                                 <div class="row">
                                     <div class="col-md-5 pr-1">
                                         <div class="form-group">
-                                            <label>Lugar Fallecimiento</label>
+                                            <label>Lugar Fallecimiento <span class="required-asterisk">*</span></label>
                                             <input type="text" class="form-control uppercase-input" name="lugarFallecimiento" required>
                                         </div>
                                     </div>
                                     <div class="col-md-4 px-1">
                                         <div class="form-group">
-                                            <label>Fecha Fallecimiento</label>
+                                            <label>Fecha Fallecimiento <span class="required-asterisk">*</span></label>
                                             <input type="date" class="form-control" name="fechaFallecimiento" required>
                                         </div>
                                     </div>
                                     <div class="col-md-3 pl-1">
                                         <div class="form-group">
-                                            <label for="exampleInputEmail1">Hora</label>
+                                            <label>Hora <span class="required-asterisk">*</span></label>
                                             <input type="time" class="form-control" name="horaFallecimiento" required>
                                         </div>
                                     </div>
@@ -470,13 +473,13 @@
                                 <div class="row">
                                     <div class="col-md-6 pr-1">
                                         <div class="form-group">
-                                            <label>Contacto 1</label>
+                                            <label>Contacto 1 <span class="required-asterisk">*</span></label>
                                             <input type="text" class="form-control uppercase-input" name="contacto" required>
                                         </div>
                                     </div>
                                     <div class="col-md-6 pl-1">
                                         <div class="form-group">
-                                            <label>Telefono de Contacto</label>
+                                            <label>Teléfono de Contacto <span class="required-asterisk">*</span></label>
                                             <input type="text" class="form-control" name="telefonoContacto" required>
                                         </div>
                                     </div>
@@ -490,7 +493,7 @@
                                     </div>
                                     <div class="col-md-6 pl-1">
                                         <div class="form-group">
-                                            <label>Telefono de Contacto</label>
+                                            <label>Teléfono de Contacto</label>
                                             <input type="text" class="form-control" name="telefonoContacto2">
                                         </div>
                                     </div>
