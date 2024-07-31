@@ -43,7 +43,7 @@
                             <span class="navbar-toggler-bar bar3"></span>
                         </button>
                     </div>
-                    <a class="navbar-brand" href="#pablo">TITULAR - BENEFICIARIOS</a>
+                    <a class="navbar-brand" href="/">TITULAR - BENEFICIARIOS</a>
                 </div>
                 <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navigation"
                     aria-controls="navigation-index" aria-expanded="false" aria-label="Toggle navigation">
@@ -73,7 +73,7 @@
 
         <div class="content">
             <div class="row">
-                <div class="col-md-11 ml-auto mr-auto">
+                <div class="col-md-12 ml-auto mr-auto">
                     <div class="card">
                         <div id="overlay">
                             <div class="spinner-border" role="status">
@@ -224,7 +224,7 @@
                                                         @foreach ($beneficiarios as $beneficiario)
                                                             @if ($beneficiario['type'] != 'A')
                                                                 <tr>
-                                                                    <td>{{ $beneficiario['cedulaBeneficiario'] }}
+                                                                    <td>{{ $beneficiario['documentId'] }}
                                                                     </td>
                                                                     <td>{{ $beneficiario['names'] }}</td>
                                                                     <td>{{ $beneficiario['relationship'] }}</td>
@@ -280,10 +280,8 @@
                                     <div class="col-md-4 pr-1">
                                         <div class="form-group">
                                             <label>Cédula <span class="required-asterisk">*</span></label>
-                                            <input type="hidden" value="{{ $asociado['documentId'] }}"
-                                                name="cedulaAsociado">
-                                            <input type="number" class="form-control" placeholder="Cedula"
-                                                id="cedula" name="cedula" required>
+                                            <input type="hidden" value="{{ $asociado['documentId'] }}" name="cedulaAsociado">
+                                            <input type="number" class="form-control" placeholder="Cedula" id="cedula" name="cedula" required>
                                         </div>
                                     </div>
                                     <div class="col-md-4 pr-1">
