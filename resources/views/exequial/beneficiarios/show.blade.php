@@ -530,8 +530,10 @@
                 </div>
             </div>
 
+            <!-- <script src="{{ asset('assets/js/beneficiaryjs.js') }}"></script> -->
             <script>
                 $(document).ready(function() {
+                    var beneficiariosjson = @json($beneficiarios);
                     document.querySelectorAll('.uppercase-input').forEach(input => {
                         input.addEventListener('input', function() {
                             this.value = this.value.toUpperCase();
@@ -703,7 +705,6 @@
                     /* MODAL Actualizar Beneficiario */                    
                     document.querySelectorAll('.btn-open-modal-updateBene').forEach(click => {
                         click.addEventListener('click', function () {
-                            var beneficiariosjson = @json($beneficiarios);
                             const i = this.getAttribute('data-index');
                             $('#updateCedBenficiario').val(beneficiariosjson[i].documentId);
                             $('#UpdateSelectParentesco').val(beneficiariosjson[i].codeRelationship);                            
@@ -752,12 +753,13 @@
                         var button = $(this);
                         $('#eliminarBeneficiario').modal('show');
                         $('#msjApiEliminar').text(" ");
-                        $('#confirmarElimacionBene').on('click', function() {
-                            $('#overlay').css('visibility', 'visible');
+                        $('#confirmarElimacionBene').on('click', function() {                            
                             var fila = button.closest('tr');
-                            var documentId = fila.find('input[name="documentId"]').val();
+                            //var documentId = fila.find('input[name="documentId"]').val();
+                            rowIndex = fila.index();                            
+                            documentId = beneficiariosjson[rowIndex-1].id;
+                            $('#overlay').css('visibility', 'visible');
                             var csrfToken = $('meta[name="csrf-token"]').attr('content');
-                            urlconsole = "{{ route('beneficiarios.destroy', ['beneficiario' => ':id']) }}".replace(':id', documentId),
                                 $.ajax({
                                     url: "{{ route('beneficiarios.destroy', ['beneficiario' => ':id']) }}"
                                         .replace(':id', documentId),
@@ -769,7 +771,7 @@
                                         if (response == 200) {
                                             localStorage.setItem('successMessage',
                                                 "Registro Eliminado Exitosamente");
-                                                $('#overlay').css('visibility', 'hidden');
+                                            $('#overlay').css('visibility', 'hidden');
                                             location.reload();
                                         }
                                     },
@@ -778,7 +780,7 @@
                                         $('#msjApiEliminar').text(errorMessage.error.message);
                                         $('#overlay').css('visibility', 'hidden');
                                     }
-                                });
+                            });
                         });
                     });
                 

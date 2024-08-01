@@ -137,9 +137,8 @@ class ComaeExRelParController extends Controller
     public function destroy($id)
     {
         //$this->authorize('delete', auth()->user());
-
         $token = env('TOKEN_ADMIN');
-        $url = 'https://www.siasoftapp.com:7011/api/Exequiales/Beneficiary?documentId=' . $id;
+        $url = 'https://www.siasoftapp.com:7011/api/Exequiales/Beneficiary?idUser=' . $id;
         $response = Http::withHeaders([
             'Accept' => '*/*',
             'Authorization' => 'Bearer ' . $token,
@@ -150,6 +149,4 @@ class ComaeExRelParController extends Controller
             return response()->json(['error' => $response->json()], $response->status());
         }
     }
-
-    
 }

@@ -133,9 +133,9 @@
                                 </div>
                                     <div class="row mb-3">
                                         <div class="col-12">
-                                            <form action="{{ route('beneficiarios.show', ['beneficiario' => 'ID']) }}" method="GET">                                                
+                                            <form action="{{ route('beneficiarios.show', ['beneficiario' => 'ID']) }}" method="GET">                                             
                                                 <label>Buscar titular por número de cédula</label>
-                                                <input type="text" value="" placeholder="Cédula" class="form-control p-3" id="valueCedula" required>
+                                                <input type="text" name="id" placeholder="Cédula" class="form-control p-3" id="valueCedula" required>
                                             </form>
                                             <div class="invalid-feedback">Ingrese un dato</div>
                                         </div>
