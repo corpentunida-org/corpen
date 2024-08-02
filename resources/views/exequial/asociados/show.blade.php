@@ -295,7 +295,7 @@
             <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
                 <div class="modal-dialog">
                     <div class="modal-content">
-                        <form action="{{ route('beneficiarios.store') }}" id="FormularioAñadirBeneficiario" method="post">
+                        <form action="{{ route('exequial.beneficiarios.store') }}" id="FormularioAñadirBeneficiario" method="post">
                             @csrf
                             <div class="modal-header">
                                 <h1 class="modal-title fs-5" id="staticBackdropLabel">Agregar Beneficiario</h1>
@@ -352,7 +352,7 @@
             <script>
                 $(document).ready(function() {
                     $.ajax({
-                        url: "{{ route('parentescosall') }}",
+                        url: "{{ route('exequial.parentescosall') }}",
                         type: 'GET',
                         dataType: 'json',
                         success: function(response) {
@@ -386,7 +386,7 @@
                         var formData = $(this).serialize();
                         var csrfToken = $('meta[name="csrf-token"]').attr('content');
                         $.ajax({
-                            url: "{{ route('beneficiarios.store') }}",
+                            url: "{{ route('exequial.beneficiarios.store') }}",
                             type: 'POST',
                             data: formData,
                             headers: {
@@ -571,7 +571,7 @@
                         //const url = `/asociados/${cedula}`;
 
                         $.ajax({
-                            url: "{{ route('asociados.update', ['asociado' => $asociado->cedula]) }}",
+                            url: "{{ route('exequial.asociados.update', ['asociado' => $asociado->cedula]) }}",
                             method: 'PUT',
                             data: {
                                 fechaNacimiento: nuevaFecha,
@@ -608,7 +608,7 @@
                         var formData = $(formularioBene).serialize();
                         $.ajax({
                             type: 'PUT',
-                            url: "{{ route('beneficiarios.update', ['beneficiario' => $asociado->cedula]) }}",
+                            url: "{{ route('exequial.beneficiarios.update', ['beneficiario' => $asociado->cedula]) }}",
                             data: formData,
                             _token: '{{ csrf_token() }}',
                             success: function(response) {

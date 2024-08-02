@@ -84,9 +84,9 @@
                             <h5 class="card-category">Información del Titular</h5>
                             <div class="d-flex flex-row align-items-center">
                                 <h5 class="title mb-0">{{ $asociado['name'] }}</h5>
-                                @can('update', App\Models\User::class)
+                                
                                 <button class="btn btn-warning ml-4 py-2" id="btnActualizarTitular"><i class="bi bi-pencil-square"></i></button>
-                                @endcan
+                               
                                 {{-- <button class="btn btn-danger mx-2 py-2"><i class="bi bi-x-square"></i></button> --}}
                             </div>
                         </div>
@@ -173,15 +173,14 @@
                                                                 @endphp
                                                                 <td>{{ $edad }}</td>
                                                                 <td>
-                                                                    @can('prestarServicio', App\Models\User::class)
+                                                                    
                                                                     <a class="btn btn-success py-2 ml-1 px-2 botonPrestarServicio" data-bs-toggle="modal" data-bs-target="#ModalFormServicio" style="color: black">Prestar Servicio</a>
-                                                                    @endcan
-                                                                    @can('update', App\Models\User::class)
+                                                                    
                                                                     <a class="btn btn-warning ml-1 py-2 btn-open-modal-updateBene" data-index={{ $loop->index }} style="color: white" data-bs-toggle="modal" data-bs-target="#modalUpdateBeneficiario"><i class="bi bi-pencil-square"></i></a>
-                                                                    @endcan
-                                                                    @can('delete', App\Models\User::class)
+                                                                    
+                                                                    
                                                                     <a style="color: white" class="btn btn-danger py-2 ml-1 botonEliminarBene"><i class="bi bi-x-square"></i></a>
-                                                                    @endcan
+                                                                    
                                                                 </td>
                                                             </tr>
                                                         @endif
@@ -190,14 +189,14 @@
                                             </div>
 
                                             {{-- Boton Add Beneficiario --}}
-                                            @can('create', App\Models\User::class)
+                                            
                                             <div class="d-flex">
                                                 <button type="button" class="btn btn-success m-3"
                                                     data-bs-toggle="modal" data-bs-target="#addBeneficiario" style="color: black">
                                                     Agregar Beneficiario
                                                 </button>
                                             </div>
-                                            @endcan
+                                            
                                         </div>
                                         @if (session('PrestarServicio'))
                                             <div class="alert alert-success p-1">
@@ -540,6 +539,8 @@
                         });
                     });
 
+                    var csrfToken = $('meta[name="csrf-token"]').attr('content');
+
                     $('#btnpdf').on('click', function(){
                         $('#overlay').css('visibility', 'visible');
                         setTimeout(function() {
@@ -577,11 +578,10 @@
                         event.preventDefault();
                         var form = document.getElementById('FormularioAddBeneficiario');
                         if (form.checkValidity()) {
+                            var formData = $(this).serialize();                            
                             $('#overlay').css('visibility', 'visible');
-                            var formData = $(this).serialize();
-                            var csrfToken = $('meta[name="csrf-token"]').attr('content');
                             $.ajax({
-                                url: "{{ route('beneficiarios.store') }}",
+                                url: "{{ route('exequial.beneficiarios.store') }}",
                                 type: 'POST',
                                 data: formData,
                                 headers: {
@@ -608,7 +608,7 @@
 
                     /* Parentescos Formulario addBeneficiario - updateBenficiario */
                     $.ajax({
-                        url: "{{ route('parentescosall') }}",
+                        url: "{{ route('exequial.parentescosall') }}",
                         type: 'GET',
                         dataType: 'json',
                         success: function(response) {
@@ -667,8 +667,6 @@
                         event.preventDefault();
                         $('#ConfirmarEnvioUpdate').modal('show');
                         $('#btnConfirmarEnvio').on('click', function() {   
-                            $('#overlay').css('visibility', 'visible');                         
-                            var csrfToken = $('meta[name="csrf-token"]').attr('content');
                             var data = {
                                 documentid: '{{ $asociado['documentId'] }}',
                                 dateInit: $('#inputFechaInicioTitular').val(),
@@ -676,10 +674,11 @@
                                 discount: $('#inputTitularAct1').val(),
                                 observation: $('#inputTitularAct0').val(),
                             };
-                            console.log("fecha de ini "+$('#inputFechaInicioTitular').val())
-                            console.log("descuasto "+$('#inputTitularAct1').val())
+                            // console.log("fecha de ini "+$('#inputFechaInicioTitular').val())
+                            // console.log("descuento "+$('#inputTitularAct1').val())
+                            $('#overlay').css('visibility', 'visible');
                             $.ajax({
-                                url: "{{ route('asociados.update', ['asociado' => ':id']) }}"
+                                url: "{{ route('exequial.asociados.update', ['asociado' => ':id']) }}"
                                         .replace(':id', {{ $asociado['documentId'] }}),
                                 type: 'PATCH',
                                 data: JSON.stringify(data),
@@ -688,12 +687,9 @@
                                 },
                                 success: function(response) {
                                     console.log(response);
-                                    localStorage.setItem('successMessage',
-                                        "Se Actualizó Titular Correctamente");
-                                        setTimeout(function() {
-                                        $('#overlay').css('visibility', 'hidden');
-                                    }, 5000);
+                                    localStorage.setItem('successMessage',"Se Actualizó Titular Correctamente");
                                     location.reload();
+                                    $('#overlay').css('visibility', 'hidden');
                                 },
                                 error: function(e) {
                                     console.log(e)
@@ -717,11 +713,10 @@
                         event.preventDefault();
                         $('#ConfirmarEnvioUpdate').modal('show');
                         $('#btnConfirmarEnvio').on('click', function() { 
-                            $('#overlay').css('visibility', 'visible');                           
-                            var csrfToken = $('meta[name="csrf-token"]').attr('content');
+                            $('#overlay').css('visibility', 'visible');
                             data = $('#FormUpdateBeneficiario').serialize();
                             $.ajax({
-                                url: "{{ route('beneficiarios.update', ['beneficiario' => ':id']) }}"
+                                url: "{{ route('exequial.beneficiarios.update', ['beneficiario' => ':id']) }}"
                                         .replace(':id', $('updateCedBenficiario').val()),
                                 type: 'PUT',
                                 data: data,
@@ -756,23 +751,20 @@
                         $('#confirmarElimacionBene').on('click', function() {                            
                             var fila = button.closest('tr');
                             //var documentId = fila.find('input[name="documentId"]').val();
-                            rowIndex = fila.index();                            
+                            rowIndex = fila.index();
                             documentId = beneficiariosjson[rowIndex-1].id;
                             $('#overlay').css('visibility', 'visible');
-                            var csrfToken = $('meta[name="csrf-token"]').attr('content');
                                 $.ajax({
-                                    url: "{{ route('beneficiarios.destroy', ['beneficiario' => ':id']) }}"
-                                        .replace(':id', documentId),
+                                    url: "{{ route('exequial.beneficiarios.destroy', ['beneficiario' => ':id']) }}".replace(':id', documentId),
                                     method: 'DELETE',
                                     headers: {
                                         'X-CSRF-TOKEN': csrfToken
                                     },
                                     success: function(response) {                                        
                                         if (response == 200) {
-                                            localStorage.setItem('successMessage',
-                                                "Registro Eliminado Exitosamente");
+                                            localStorage.setItem('successMessage',"Registro Eliminado Exitosamente");
+                                                location.reload();
                                             $('#overlay').css('visibility', 'hidden');
-                                            location.reload();
                                         }
                                     },
                                     error: function(xhr, status, error) {

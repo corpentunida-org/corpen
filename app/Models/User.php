@@ -9,7 +9,8 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Jetstream\HasProfilePhoto;
 use Laravel\Sanctum\HasApiTokens;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\DB; 
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
@@ -18,6 +19,7 @@ class User extends Authenticatable
     use HasProfilePhoto;
     use Notifiable;
     use TwoFactorAuthenticatable;
+    use HasRoles; //incluyendo todas las relaciones en las tablas entre rol permisos y usuarios
 
     /**
      * The attributes that are mass assignable.
@@ -65,13 +67,13 @@ class User extends Authenticatable
         ];
     }
 
-    public function hasRole($role)
-    {
-        return DB::table('permisos')
-            ->join('rol', 'permisos.rol_id', '=', 'rol.id')
-            ->where('permisos.user_id', $this->id)
-            ->where('rol.rol', $role)
-            ->exists();
-    }
+    // public function hasRole($role)
+    // {
+    //     return DB::table('permisos')
+    //         ->join('rol', 'permisos.rol_id', '=', 'rol.id')
+    //         ->where('permisos.user_id', $this->id)
+    //         ->where('rol.rol', $role)
+    //         ->exists();
+    // }
 
 }
