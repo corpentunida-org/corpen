@@ -66,7 +66,7 @@ class ComaeExCliController extends Controller
         //dd($request->documentId);
         if ($response->successful()) {
             return response()->json([
-                'redirect' => route('beneficiarios.show', ['beneficiario' => $request->documentId]),
+                'redirect' => route('exequial.beneficiarios.show', ['beneficiario' => $request->documentId]),
                 'message' => 'Titular añadido exitosamente.'
             ]);
         } else {
@@ -89,7 +89,7 @@ class ComaeExCliController extends Controller
 
     //     $asociado = ComaeExCli::where('cedula', $cedula)->firstOrFail();
     //     $beneficiarios = ComaeExRelPar::where('cedulaAsociado', $cedula)->get();
-    //     return view('asociados.show', compact('asociado', 'beneficiarios'))->with('success', 'Datos actualizados');
+    //     return view('exequial.asociados.show', compact('asociado', 'beneficiarios'))->with('success', 'Datos actualizados');
     // }
 
     public function update(Request $request){

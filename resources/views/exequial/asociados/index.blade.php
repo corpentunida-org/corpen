@@ -133,7 +133,7 @@
                                 </div>
                                     <div class="row mb-3">
                                         <div class="col-12">
-                                            <form action="{{ route('beneficiarios.show', ['beneficiario' => 'ID']) }}" method="GET">                                             
+                                            <form action="{{ route('exequial.beneficiarios.show', ['beneficiario' => 'ID']) }}" method="GET">                                             
                                                 <label>Buscar titular por número de cédula</label>
                                                 <input type="text" name="id" placeholder="Cédula" class="form-control p-3" id="valueCedula" required>
                                             </form>
@@ -145,13 +145,13 @@
                                             <button type="button" class="btn btn-primary w-100" id="btn-buscador">Buscar</button>
                                         </div>
                                         <div class="col-md-6 d-flex justify-content-center align-items-center">
-                                        @can('create', App\Models\User::class)
+                                        
                                         {{-- <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#ModalVerCedula"> --}}
                                         <button type="button" class="btn btn-success w-100" data-bs-toggle="modal"
                                             data-bs-target="#addTitular" style="color: black" id="btn-add-titular">
                                             Agregar Titular
                                         </button>
-                                        @endcan
+                                        
                                         </div>
                                     </div> 
                                 </div>
@@ -411,7 +411,7 @@
         $(document).ready(function() {
             /* Get Planes */
             $.ajax({
-                url: "{{ route('plansall') }}",
+                url: "{{ route('exequial.plansall') }}",
                 type: 'GET',
                 dataType: 'json',
                 success: function(response) {
@@ -444,7 +444,7 @@
                 var newValue = $(this).val();
                 $('#cedula').val(newValue);
                 $.ajax({
-                    url: "{{ route('terceros.show', ['tercero' => ':id']) }}".replace(':id', newValue),
+                    url: "{{ route('exequial.terceros.show', ['tercero' => ':id']) }}".replace(':id', newValue),
                     type: 'GET',
                     dataType: 'json',
                     success: function(response) {
@@ -484,7 +484,7 @@
                     var csrfToken = $('meta[name="csrf-token"]').attr('content');
                     docid = $('input[name="documentId"]').val()
                     $.ajax({
-                        url: "{{ route('asociados.store') }}",
+                        url: "{{ route('exequial.asociados.store') }}",
                         type: 'POST',
                         data: formData,
                         headers: {
