@@ -280,7 +280,7 @@
                                         <div class="form-group">
                                             <label>Cédula <span class="required-asterisk">*</span></label>
                                             <input type="hidden" value="{{ $asociado['documentId'] }}" name="cedulaAsociado">
-                                            <input type="number" class="form-control" placeholder="Cedula" id="cedula" name="cedula" required>
+                                            <input type="number" class="form-control" placeholder="Cedula" id="cedula" name="cedula" required min="1" step="1">
                                         </div>
                                     </div>
                                     <div class="col-md-4 pr-1">
@@ -345,7 +345,7 @@
                                     <div class="col-md-4 pr-1">
                                         <div class="form-group">
                                             <label>Cédula</label>
-                                            <input type="number" class="form-control" id="updateCedBenficiario" name="cedula">
+                                            <input type="number" class="form-control" id="updateCedBenficiario" name="cedula" min="1" step="1">
                                         </div>
                                     </div>
                                     <div class="col-md-4 pr-1">
