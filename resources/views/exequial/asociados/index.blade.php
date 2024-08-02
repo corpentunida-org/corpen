@@ -23,6 +23,9 @@
         .required-asterisk{
             color: red;
         }
+        .uppercase-input {
+            text-transform: uppercase;
+        }
     </style>
 </head>
 
@@ -328,7 +331,6 @@
                 </div>
             </div>
             </div>
-
             {{-- Agregar Datos del titular API --}}
             <div class="modal fade" id="addTitular" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
             aria-labelledby="addTitular" aria-hidden="true">
@@ -345,13 +347,14 @@
                                 <div class="col-md-4 pr-1">
                                     <div class="form-group">
                                         <label for="cedula">Cédula <span class="required-asterisk">*</span></label>
-                                        <input type="text" class="form-control" placeholder="Cedula" id="cedula" name="documentId" required>
+                                        <input type="number" class="form-control" placeholder="Cedula" id="cedula" name="documentId" required min="1" step="1">
+                                        <div class="invalid-feedback">Ingrese una cédula válida.</div>
                                     </div>
                                 </div>
                                 <div class="col-md-8">
                                     <div class="form-group">
                                         <label>Nombres</label>
-                                        <input type="text" class="form-control" placeholder="Nombres y Apellidos" id="name">
+                                        <input type="text" class="form-control uppercase-input" placeholder="Nombres y Apellidos" id="name">
                                     </div>
                                 </div>
                             </div>
@@ -383,7 +386,7 @@
                                 <div class="col-md-12">
                                     <div class="form-group">
                                         <label>Obsvervaciones <span class="required-asterisk">*</span></label>
-                                        <input class="form-control" type="text" name="observaciones" required>
+                                        <input class="form-control uppercase-input" type="text" name="observaciones" required>
                                         <div class="invalid-feedback">
                                             Digite una observación.
                                         </div>
@@ -510,8 +513,7 @@
                             }
                             else{
                                 $('#msjAjax').html('<p>'+response.error+'</p>')                                
-                            }
-                            
+                            }                            
                         }
                     });
                 } else {
