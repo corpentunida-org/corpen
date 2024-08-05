@@ -84,9 +84,9 @@
                             <h5 class="card-category">Información del Titular</h5>
                             <div class="d-flex flex-row align-items-center">
                                 <h5 class="title mb-0">{{ $asociado['name'] }}</h5>
-                                
+                                @can('exequial.asociados.update')
                                 <button class="btn btn-warning ml-4 py-2" id="btnActualizarTitular"><i class="bi bi-pencil-square"></i></button>
-                               
+                                @endcan
                                 {{-- <button class="btn btn-danger mx-2 py-2"><i class="bi bi-x-square"></i></button> --}}
                             </div>
                         </div>
@@ -173,14 +173,15 @@
                                                                 @endphp
                                                                 <td>{{ $edad }}</td>
                                                                 <td>
-                                                                    
+                                                                    @can('exequial.beneficiarios.store')
                                                                     <a class="btn btn-success py-2 ml-1 px-2 botonPrestarServicio" data-bs-toggle="modal" data-bs-target="#ModalFormServicio" style="color: black">Prestar Servicio</a>
-                                                                    
+                                                                    @endcan
+                                                                    @can('exequial.beneficiarios.update')
                                                                     <a class="btn btn-warning ml-1 py-2 btn-open-modal-updateBene" data-index={{ $loop->index }} style="color: white" data-bs-toggle="modal" data-bs-target="#modalUpdateBeneficiario"><i class="bi bi-pencil-square"></i></a>
-                                                                    
-                                                                    
+                                                                    @endcan
+                                                                    @can('exequial.beneficiarios.destroy')
                                                                     <a style="color: white" class="btn btn-danger py-2 ml-1 botonEliminarBene"><i class="bi bi-x-square"></i></a>
-                                                                    
+                                                                    @endcan
                                                                 </td>
                                                             </tr>
                                                         @endif
@@ -189,14 +190,14 @@
                                             </div>
 
                                             {{-- Boton Add Beneficiario --}}
-                                            
+                                            @can('exequial.beneficiarios.store')
                                             <div class="d-flex">
                                                 <button type="button" class="btn btn-success m-3"
                                                     data-bs-toggle="modal" data-bs-target="#addBeneficiario" style="color: black">
                                                     Agregar Beneficiario
                                                 </button>
                                             </div>
-                                            
+                                            @endcan
                                         </div>
                                         @if (session('PrestarServicio'))
                                             <div class="alert alert-success p-1">

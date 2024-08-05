@@ -150,11 +150,14 @@
                                         <div class="col-md-6 d-flex justify-content-center align-items-center">
                                         
                                         {{-- <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#ModalVerCedula"> --}}
+                                        
+                                        @can('exequial.asociados.store')
                                         <button type="button" class="btn btn-success w-100" data-bs-toggle="modal"
                                             data-bs-target="#addTitular" style="color: black" id="btn-add-titular">
                                             Agregar Titular
                                         </button>
-                                        
+                                        @endcan
+
                                         </div>
                                     </div> 
                                 </div>
