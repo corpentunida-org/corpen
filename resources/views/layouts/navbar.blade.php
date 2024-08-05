@@ -6,11 +6,6 @@
             <a href="/" class="simple-text logo-normal">
                 EXEQUIAL
             </a>
-        <!-- @can('creditos', App\Models\User::class)
-            <a href="/" class="simple-text logo-normal">
-                CREDITOS
-            </a>
-        @endcan -->
     </div>
     
     <div class="sidebar-wrapper" id="sidebar-wrapper">
@@ -28,19 +23,6 @@
                     <p>Servicios</p>
                 </a>
             </li>
-        <!-- @can('creditos', App\Models\User::class)
-            <li class="active ">
-                <a href="/">
-                    <i class="now-ui-icons business_badge"></i>
-                    <p>Liquidación</p>
-                </a>
-            </li>            
-        @endcan
-            <li class="active-pro">                
-                <x-authentication-card-logo />                
-            </li>
-        </ul> -->
-
     </div>
     
 </div>
