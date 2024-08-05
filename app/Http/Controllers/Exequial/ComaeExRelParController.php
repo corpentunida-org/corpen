@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Exequial;
 
+use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -9,6 +10,8 @@ use Illuminate\Support\Facades\Http;
 
 class ComaeExRelParController extends Controller
 {
+    //$auditoria = app()->make(AuditoriaController::class);
+
     public function show(Request $request, $id){
         //API
         $token = env('TOKEN_ADMIN');
