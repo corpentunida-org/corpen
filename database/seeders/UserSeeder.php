@@ -30,7 +30,6 @@ class UserSeeder extends Seeder
             'email' => 'administracion@corpentunida.org.co',
             'password' => bcrypt('Cc123456')
         ])->assignRole('read');
-
         //User::factory(5)->create();
     }
 }

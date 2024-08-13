@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <x-component-header />
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
         .uppercase-input {
             text-transform: uppercase;
@@ -97,7 +96,6 @@
                                 </div>
                             @endif
                             <div id="messageTit"></div>
-
                             <div class="row px-3">
                                 <div class="col-md-2 pr-1">
                                     <div class="form-group">
@@ -138,7 +136,6 @@
                                             <h5 class="card-category">Beneficiarios</h5>
                                         </div>
                                         <div class="card-body">
-
                                             <div class="table-responsive">
                                                 <table class="table">
                                                     <tr>
@@ -172,10 +169,9 @@
                                                                     $edad = $diferencia->y;
                                                                 @endphp
                                                                 <td>{{ $edad }}</td>
-                                                                <td>
-                                                                    @can('exequial.beneficiarios.store')
+                                                                <td>                                                                    
                                                                     <a class="btn btn-success py-2 ml-1 px-2 botonPrestarServicio" data-bs-toggle="modal" data-bs-target="#ModalFormServicio" style="color: black">Prestar Servicio</a>
-                                                                    @endcan
+                                                                    
                                                                     @can('exequial.beneficiarios.update')
                                                                     <a class="btn btn-warning ml-1 py-2 btn-open-modal-updateBene" data-index={{ $loop->index }} style="color: white" data-bs-toggle="modal" data-bs-target="#modalUpdateBeneficiario"><i class="bi bi-pencil-square"></i></a>
                                                                     @endcan
@@ -331,8 +327,7 @@
             </div>
 
             {{-- Actualizar Beneficiario --}}
-            <div class="modal fade" id="modalUpdateBeneficiario" data-bs-backdrop="static" data-bs-keyboard="false"
-                tabindex="-1" aria-labelledby="modalUpdateBeneficiario" aria-hidden="true" >
+            <div class="modal fade" id="modalUpdateBeneficiario" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="modalUpdateBeneficiario" aria-hidden="true" >
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <form id="FormUpdateBeneficiario" method="post">
@@ -428,8 +423,7 @@
             </div>
 
             {{-- Prestar Servicio --}}
-            <div class="modal fade" id="ModalFormServicio" tabindex="-1" aria-labelledby="ModalFormServicio"
-                aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+            <div class="modal fade" id="ModalFormServicio" tabindex="-1" aria-labelledby="ModalFormServicio" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
                 <div class="modal-dialog">
                     <div class="modal-content">
                         <div class="modal-header">
@@ -437,7 +431,7 @@
                             <button type="button" class="btn-close" data-bs-dismiss="modal"
                                 aria-label="Close"></button>
                         </div>
-                        <form method="POST" action="{{ route('prestarServicio.store') }}" id="FormularioPrestarServicio" novalidate>
+                        <form method="POST" action="{{ route('exequial.prestarServicio.store') }}" id="FormularioPrestarServicio" novalidate>
                         <!-- <form id="FormularioPrestarServicio" novalidate> -->
                             @csrf
                             <div class="modal-body">
@@ -539,9 +533,7 @@
                             this.value = this.value.toUpperCase();
                         });
                     });
-
                     var csrfToken = $('meta[name="csrf-token"]').attr('content');
-
                     $('#btnpdf').on('click', function(){
                         $('#overlay').css('visibility', 'visible');
                         setTimeout(function() {
@@ -579,7 +571,7 @@
                         event.preventDefault();
                         var form = document.getElementById('FormularioAddBeneficiario');
                         if (form.checkValidity()) {
-                            var formData = $(this).serialize();                            
+                            var formData = $(this).serialize();
                             $('#overlay').css('visibility', 'visible');
                             $.ajax({
                                 url: "{{ route('exequial.beneficiarios.store') }}",
@@ -701,6 +693,7 @@
 
                     /* MODAL Actualizar Beneficiario */                    
                     document.querySelectorAll('.btn-open-modal-updateBene').forEach(click => {
+                        $("#SuccessAddBeneficiario").html('<div></div>');
                         click.addEventListener('click', function () {
                             const i = this.getAttribute('data-index');
                             $('#updateCedBenficiario').val(beneficiariosjson[i].documentId);
@@ -709,7 +702,8 @@
                             $('#UpdateApellidosyNombres').val(beneficiariosjson[i].names);
                         })
                     });
-                    /* Actualizar Beneficiario */                    
+                    
+                    /* Actualizar Beneficiario */
                     $('#FormUpdateBeneficiario').submit(function(event) {                        
                         event.preventDefault();
                         $('#ConfirmarEnvioUpdate').modal('show');
@@ -746,10 +740,11 @@
 
                     /* Eliminar Beneficiario */
                     $('.botonEliminarBene').on('click', function() {
+                        $("#SuccessAddBeneficiario").html('<div></div>');
                         var button = $(this);
                         $('#eliminarBeneficiario').modal('show');
                         $('#msjApiEliminar').text(" ");
-                        $('#confirmarElimacionBene').on('click', function() {                            
+                        $('#confirmarElimacionBene').on('click', function() {
                             var fila = button.closest('tr');
                             //var documentId = fila.find('input[name="documentId"]').val();
                             rowIndex = fila.index();
@@ -779,6 +774,7 @@
                 
                     /* Prestar Servicio Form */
                     $('.botonPrestarServicio').on('click', function() {
+                        $("#SuccessAddBeneficiario").html('<div></div>');
                         var fila = $(this).closest('tr');
                         var cedula = fila.find('td:eq(0)').text();
                         var name = fila.find('td:eq(1)').text();

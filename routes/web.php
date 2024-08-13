@@ -8,7 +8,7 @@ use App\Http\Controllers\Exequial\ComaeTerController;
 use App\Http\Controllers\Exequial\ComaeExCliController;
 use App\Http\Controllers\Exequial\ComaeExRelParController;
 use App\Http\Controllers\Exequial\ParentescosController;
-use App\Http\Controllers\Exequial\MaeC_ExSer;
+use App\Http\Controllers\Exequial\MaeC_ExSerController;
 use App\Http\Controllers\Exequial\PlanController;
 
 
@@ -48,10 +48,11 @@ Route::resource('users', UserController::class)->names('admin.users');
 Route::get('/asociados/{id}/generarpdf', [ComaeExCliController::class, 'generarpdf'])->name('asociados.generarpdf');
 Route::resource('asociados', ComaeExCliController::class)->middleware('auth')->names('exequial.asociados');
 
-Route::get('/prestarServicio/generarpdf', [MaeC_ExSer::class, 'generarpdf'])->name('prestarServicio.generarpdf');
-Route::get('/exportar-datos', [MaeC_ExSer::class, 'exportData']);
-Route::get('/mes/{mes}', [MaeC_ExSer::class, 'ConsultaMes']);
-Route::resource('prestarServicio', MaeC_ExSer::class);
+Route::get('/prestarServicio/generarpdf', [MaeC_ExSerController::class, 'generarpdf'])->name('prestarServicio.generarpdf');
+Route::resource('prestarServicio', MaeC_ExSerController::class)->names('exequial.prestarServicio');
+Route::get('/prestarServicio/{id}/generarpdf', [MaeC_ExSerController::class, 'reporteIndividual'])->name('prestarServicio.repIndividual');
+Route::get('/exportar-datos', [MaeC_ExSerController::class, 'exportData']);
+Route::get('/prestarServicio/mes/{mes}', [MaeC_ExSerController::class, 'consultaMes'])->name('prestarServicio.consultaMes');
 
 Route::resource('beneficiarios', ComaeExRelParController::class)->names('exequial.beneficiarios');
 

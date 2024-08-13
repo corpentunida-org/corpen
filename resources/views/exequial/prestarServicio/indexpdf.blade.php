@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reporte Monitoria</title>
+    <title>Reporte Prestar Servicio</title>
 </head>
 
 <body>
@@ -93,9 +93,12 @@
                 <th>Factura</th>
                 <th>Valor</th>
             </tr>
+            @php
+                $i = 1;
+            @endphp
             @foreach ($registros as $reg)
             <tr>
-                <td>{{$reg->id}}</td>
+                <td>{{$i}}</td>
                 <td>{{ $reg->fechaFallecimiento }}</td>
                 <td>
                     @php
@@ -121,12 +124,20 @@
                 <td>{{ $reg->factura }}</td>
                 <td>{{ $reg->valor }}</td>
             </tr>
+            @php
+                $i++;
+            @endphp
             @endforeach
         </tbody>
     </table>
     <p class="centerText"><strong>app.corpentunida.org.co</strong> todos los derechos reservados.</p>
     <div class="separador"></div>
-
+        <script>
+            var serviciosjson = @json($registros);
+            console.log("hola?")
+            console.log(serviciosjson);
+        
+        </script>
 </body>
 
 </html>
