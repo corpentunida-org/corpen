@@ -17,7 +17,7 @@ return new class extends Migration
             $table->time('horaFallecimiento');
             $table->bigInteger('cedulaTitular');
             $table->string("nombreTitular");
-            $table->bigInteger('cedulaFallecido');
+            $table->bigInteger('cedulaFallecido')->unique();
             $table->string("nombreFallecido");
             $table->date('fechaFallecimiento');
             $table->string('lugarFallecimiento');

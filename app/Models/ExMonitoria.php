@@ -9,6 +9,7 @@ class ExMonitoria extends Model
 {
     use HasFactory;
     protected $table = 'MAEC_EXSER';
+    //protected $table = 'pruebaServicios';
     protected $fillable = [
         'fechaRegistro',
         'horaFallecimiento',

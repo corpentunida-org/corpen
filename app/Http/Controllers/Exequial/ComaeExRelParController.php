@@ -10,12 +10,16 @@ use Illuminate\Support\Facades\Http;
 
 class ComaeExRelParController extends Controller
 {
-    //$auditoria = app()->make(AuditoriaController::class);
+    private function auditoria($accion){
+        $auditoriaController = app(AuditoriaController::class);
+        $auditoriaController->create($accion);
+    }
 
     public function show(Request $request, $id){
         //API
         $token = env('TOKEN_ADMIN');
         $id = $request->input('id');
+        //->get(env('CONEXION_API') . '/api/Exequiales/Tercero'
         $titular = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
         ])->get('https://www.siasoftapp.com:7011/api/Exequiales/Tercero', [
@@ -81,76 +85,78 @@ class ComaeExRelParController extends Controller
         
         $fechaActual = Carbon::now();
         // ComaeExRelPar::create([
-            //     'cedula' => $request->cedula,
-            //     'cedulaAsociado' => $request->cedulaAsociado,
-            //     'nombre' => $request->apellidos . ' ' . $request->nombres,
-            //     'fechaNacimiento' => $request->fechaNacimiento,
-            //     'fechaIngreso' => $fechaActual,
-            //     'parentesco' => $request->parentesco
-            // ]);
-            //return "se añadio el registro"; //Interno Controlador
+        //         'cedula' => $request->cedula,
+        //         'cedulaAsociado' => $request->cedulaAsociado,
+        //         'nombre' => $request->apellidos . ' ' . $request->nombres,
+        //         'fechaNacimiento' => $request->fechaNacimiento,
+        //         'fechaIngreso' => $fechaActual,
+        //         'parentesco' => $request->parentesco
+        //     ]);
+        //     return "se añadio el registro"; //Interno Controlador
             
-            $token = env('TOKEN_ADMIN');
-            
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $token,
-                'Accept' => 'application/json',
-                ])->post('https://www.siasoftapp.com:7011/api/Exequiales/Beneficiary', [
-                    'documentBeneficiaryId' => $request->cedula,
-                    'codePastor' => $request->cedulaAsociado,
-                    'name' => $request->apellidos . ' ' . $request->nombres,
-                    'dateBirthDate' => $request->fechaNacimiento,
-                    'dateEntry' => $fechaActual,
-                    'codeParentesco' => $request->parentesco,
-                    'type' => "A"
-                ]);    
-                if ($response->successful()) {
-                    return response()->json(['message' => 'Se agrego beneficiario correctamente', 'data' => $response->json()], $response->status());
-                } else {
-                    // Manejar errores si la solicitud no fue exitosa
-                    return response()->json(['error' => $response->json()], $response->status());
-                }
-            }
+        $token = env('TOKEN_ADMIN');
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $token,
+            'Accept' => 'application/json',
+            ])->post('https://www.siasoftapp.com:7011/api/Exequiales/Beneficiary', [
+                'documentBeneficiaryId' => $request->cedula,
+                'codePastor' => $request->cedulaAsociado,
+                'name' => $request->apellidos . ' ' . $request->nombres,
+                'dateBirthDate' => $request->fechaNacimiento,
+                'dateEntry' => $fechaActual,
+                'codeParentesco' => $request->parentesco,
+                'type' => "A"
+            ]);
+        if ($response->successful()) {
+            $accion = "add beneficiario " . $request->cedula;
+            $this->auditoria($accion);
+            return response()->json(['message' => 'Se agrego beneficiario correctamente', 'data' => $response->json()], $response->status());
+        } else {
+            return response()->json(['error' => $response->json()], $response->status());
+        }
+    }
+        
+    public function update(Request $request)
+    {
+        //$this->authorize('update', auth()->user());
+        $token = env('TOKEN_ADMIN');
+        $fechaActual = Carbon::now();
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $token,
+            'Accept' => 'application/json',
+        ])->put('https://www.siasoftapp.com:7011/api/Exequiales/Beneficiary', [
+            'name' => $request->names,
+            'codeParentesco' => $request->parentesco,
+            'type' => "A",
+            'dateEntry' => $fechaActual,
+            'documentBeneficiaryId' => $request->cedula,
+            'dateBirthDate' => $request->fechaNacimiento,
+        ]);
+        if ($response->successful()) {
+            $accion = "update beneficiario " . $request->cedula;
+            $this->auditoria($accion);
+            return response()->json(['message' => 'Se actualizó correctamente', 'data' => $response->json()], $response->status());
+        } else {
+            return response()->json(['error' => $response->json()], $response->status());
+        }        
+    }
+    
+    public function destroy($id)
+    {
+        //$this->authorize('delete', auth()->user());
+        $token = env('TOKEN_ADMIN');
+        $url = 'https://www.siasoftapp.com:7011/api/Exequiales/Beneficiary?idUser=' . $id;
+        $response = Http::withHeaders([
+            'Accept' => '*/*',
+            'Authorization' => 'Bearer ' . $token,
+        ])->delete($url);
+        if ($response->successful()) {
+            $accion = "delete beneficiario " . $id;
+            $this->auditoria($accion);
+            return $response->status();
+        } else {
+            return response()->json(['error' => $response->json()], $response->status());
+        }
+    }
 
-            public function update(Request $request)
-            {
-                //$this->authorize('update', auth()->user());
-         
-                $token = env('TOKEN_ADMIN');
-                $fechaActual = Carbon::now();
-                $response = Http::withHeaders([
-                    'Authorization' => 'Bearer ' . $token,
-                    'Accept' => 'application/json',
-                ])->put('https://www.siasoftapp.com:7011/api/Exequiales/Beneficiary', [
-                    'name' => $request->names,
-                    'codeParentesco' => $request->parentesco,
-                    'type' => "A",
-                    'dateEntry' => $fechaActual,
-                    'documentBeneficiaryId' => $request->cedula,
-                    'dateBirthDate' => $request->fechaNacimiento,
-                ]);
-                if ($response->successful()) {
-                    // Procesar la respuesta exitosa
-                    return response()->json(['message' => 'Se actualizó correctamente', 'data' => $response->json()], $response->status());
-                } else {
-                    // Manejar errores si la solicitud no fue exitosa
-                    return response()->json(['error' => $response->json()], $response->status());
-                }
-            }
-            
-            public function destroy($id)
-            {
-                //$this->authorize('delete', auth()->user());
-                $token = env('TOKEN_ADMIN');
-                $url = 'https://www.siasoftapp.com:7011/api/Exequiales/Beneficiary?idUser=' . $id;
-                $response = Http::withHeaders([
-                    'Accept' => '*/*',
-                    'Authorization' => 'Bearer ' . $token,
-                ])->delete($url);
-                if ($response->successful()) {
-                    return $response->status();
-                } else {
-                    return response()->json(['error' => $response->json()], $response->status());
-                }
-            }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Exequial;
 
+use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\ComaeExRelPar;
@@ -17,6 +18,11 @@ class ComaeExCliController extends Controller
     {
         $this->middleware(['auth']);
     } */
+
+    private function auditoria($accion){
+        $auditoriaController = app(AuditoriaController::class);
+        $auditoriaController->create($accion);
+    }
 
     public function index()
     {
@@ -65,6 +71,8 @@ class ComaeExCliController extends Controller
         ]);
         //dd($request->documentId);
         if ($response->successful()) {
+            $accion = "add titular " . $request->documentId;
+            $this->auditoria($accion);
             return response()->json([
                 'redirect' => route('exequial.beneficiarios.show', ['beneficiario' => $request->documentId]),
                 'message' => 'Titular añadido exitosamente.'
@@ -106,6 +114,8 @@ class ComaeExCliController extends Controller
             'discount'=> $data['discount'],
             'observation'=> $data['observation']
         ]);    
+        $accion = "update titular " . $data['documentid'];
+        $this->auditoria($accion);
         return $data;
     }
 
