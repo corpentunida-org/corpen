@@ -22,7 +22,7 @@ class RoleSeeder extends Seeder
         $viewer = Role::create(['name'=>'read']);
 
         //crear Permisos
-        Permission::create(['name'=>'exequial.asociados.index'])->syncRoles([$admin, $exequial, $viewer]); //Asignando el permiso al rol Admin y Exequial
+        Permission::create(['name'=>'exequial.asociados.index'])->syncRoles([$admin, $exequial, $viewer]); //Asignando el permiso al rol Admin, Exequial, Viewer
         Permission::create(['name'=>'exequial.asociados.show'])->syncRoles([$admin, $exequial, $viewer]);
         Permission::create(['name'=>'exequial.asociados.store'])->syncRoles([$admin, $exequial]);
         Permission::create(['name'=>'exequial.asociados.update'])->syncRoles([$admin, $exequial]);

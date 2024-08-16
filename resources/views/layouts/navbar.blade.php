@@ -10,7 +10,6 @@
     
     <div class="sidebar-wrapper" id="sidebar-wrapper">
         <ul class="nav">
-        
             <li class="active ">
                 <a href="/asociados">
                     <i class="now-ui-icons business_badge"></i>
@@ -23,8 +22,8 @@
                     <p>Servicios</p>
                 </a>
             </li>
+        </ul>
     </div>
-    
 </div>
 
 

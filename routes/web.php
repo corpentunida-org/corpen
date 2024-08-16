@@ -12,7 +12,6 @@ use App\Http\Controllers\Exequial\MaeC_ExSerController;
 use App\Http\Controllers\Exequial\PlanController;
 
 
-use App\Http\Controllers\Prueba\PruebaController;
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/', function () {
@@ -25,6 +24,7 @@ Route::middleware(['auth'])->group(function () {
         //     return view('welcome');
         // }
         return view('exequial.asociados.index');
+        //return view('layouts.mainview');
     })->name('dashboard');
 });
 
