@@ -54,7 +54,7 @@
         function abrirWhatsApp(boton) {
             var fila = $(boton).closest('tr');
             var nombre = fila.find('td:eq(2)').text();
-            var telefono = fila.find('td:eq(4)').text();
+            var telefono = fila.find('td:eq(19)').text();
             
          
             var mensaje = encodeURIComponent(`hola ${nombre}, prueba del reporte`);
