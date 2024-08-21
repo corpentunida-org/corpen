@@ -19,20 +19,19 @@ class ComaeExRelParController extends Controller
         //API
         $token = env('TOKEN_ADMIN');
         $id = $request->input('id');
-        //->get(env('CONEXION_API') . '/api/Exequiales/Tercero'
         $titular = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
-        ])->get('https://www.siasoftapp.com:7011/api/Exequiales/Tercero', [
+        ])->get(env('API_PRODUCCION') . '/api/Exequiales/Tercero', [
             'documentId' => $id,
         ]);
         // $titular = Http::withHeaders([
         //     'Authorization' => 'Bearer ' . $token,
-        // ])->get('https://www.siasoftapp.com:7011/api/Pastors', [
+        // ])->get(env('API_PRODUCCION') . '/api/Pastors', [
         //     'documentId' => $id,
         // ]);
         $beneficiarios = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
-        ])->get('https://www.siasoftapp.com:7011/api/Exequiales', [
+        ])->get(env('API_PRODUCCION') . '/api/Exequiales', [
             'documentId' => $id,
         ]);
     
@@ -98,7 +97,7 @@ class ComaeExRelParController extends Controller
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
             'Accept' => 'application/json',
-            ])->post('https://www.siasoftapp.com:7011/api/Exequiales/Beneficiary', [
+            ])->post(env('API_PRODUCCION') . '/api/Exequiales/Beneficiary', [
                 'documentBeneficiaryId' => $request->cedula,
                 'codePastor' => $request->cedulaAsociado,
                 'name' => $request->apellidos . ' ' . $request->nombres,
@@ -124,7 +123,7 @@ class ComaeExRelParController extends Controller
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
             'Accept' => 'application/json',
-        ])->put('https://www.siasoftapp.com:7011/api/Exequiales/Beneficiary', [
+        ])->put(env('API_PRODUCCION') . '/api/Exequiales/Beneficiary', [
             'name' => $request->names,
             'codeParentesco' => $request->parentesco,
             'type' => "A",
@@ -145,7 +144,7 @@ class ComaeExRelParController extends Controller
     {
         //$this->authorize('delete', auth()->user());
         $token = env('TOKEN_ADMIN');
-        $url = 'https://www.siasoftapp.com:7011/api/Exequiales/Beneficiary?idUser=' . $id;
+        $url = env('API_PRODUCCION') . '/api/Exequiales/Beneficiary?idUser=' . $id;
         $response = Http::withHeaders([
             'Accept' => '*/*',
             'Authorization' => 'Bearer ' . $token,
