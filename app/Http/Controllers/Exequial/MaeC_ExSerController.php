@@ -55,7 +55,7 @@ class MaeC_ExSerController extends Controller
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
             'Accept' => '*/*',
-        ])->put('https://www.siasoftapp.com:7011/api/Exequiales/Beneficiary', [
+        ])->put(env('API_PRODUCCION') . '/api/Exequiales/Beneficiary', [
             "name" => $request->nameBeneficiary,
             "codeParentesco" => $codPar,
             "type" => "I",
@@ -155,7 +155,7 @@ class MaeC_ExSerController extends Controller
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
             'Accept' => 'application/json',
-        ])->put('https://www.siasoftapp.com:7011/api/Exequiales/Beneficiary', [
+        ])->put(env('API_PRODUCCION') . '/api/Exequiales/Beneficiary', [
             'name' => $nombreFallecido,
             'codeParentesco' => $parentesco,
             'type' => "A",
