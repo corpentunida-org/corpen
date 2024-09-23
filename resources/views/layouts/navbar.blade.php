@@ -4,7 +4,7 @@
             APP
         </a>
             <a href="/" class="simple-text logo-normal">
-                EXEQUIAL
+                @yield('titlenav', "{{env('APP_NAME')}}")
             </a>
     </div>
     
@@ -29,3 +29,4 @@
 
     {{-- menu active --}}
     {{-- <li class="{{ Request::is('pagina1') ? 'active' : '' }}"><a href="{{ route('pagina1') }}">Página 1</a></li> --}}
+    <!-- :active="request()->routeIs('dashboard)" --> 
