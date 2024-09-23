@@ -9,9 +9,14 @@ use App\Models\Parentescos;
 use Illuminate\Support\Facades\Http;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use App\Http\Controllers\AuditoriaController;
 
 class MaeC_ExSerController extends Controller
 {
+    private function auditoria($accion){
+        $auditoriaController = app(AuditoriaController::class);
+        $auditoriaController->create($accion);
+    }
     public function index()
     {
         $registros = ExMonitoria::orderBy('id', 'desc')->get();
@@ -25,46 +30,66 @@ class MaeC_ExSerController extends Controller
     public function store(Request $request)
     {
         //$this->authorize('create', auth()->user());
-        $controllerparentesco = app()->make(ParentescosController::class);
-        $codPar = $controllerparentesco->show($request->parentesco);
-        $fechaActual = Carbon::now();
-        ExMonitoria::create([
-            'fechaRegistro' => $fechaActual,
-            'horaFallecimiento' => $request->horaFallecimiento,
-            'cedulaTitular'  => $request->cedulaTitular,
-            'nombreTitular' => $request->nameTitular,
-            'nombreFallecido' => $request->nameBeneficiary,
-            'cedulaFallecido'  => $request->cedulaFallecido,
-            'fechaFallecimiento' => $request->fechaFallecimiento,
-            'lugarFallecimiento' => $request->lugarFallecimiento,
-            'parentesco'=> $codPar,
-            'traslado'=> $request->traslado,
-            'contacto'=> $request->contacto,
-            'telefonoContacto'=> $request->telefonoContacto,
-            'Contacto2'=> $request->contacto2,
-            'telefonoContacto2'=> $request->telefonoContacto2,
-            'factura'=> $request->factura,
-            'valor'=> $request->valor,
-        ]);
-
-        //Cambio en beneficiarios de estado a false
-        // $modelo = ComaeExRelPar::where('cedula', $request->cedulaFallecido)->first()->refresh();
-        // $modelo->estado = '0';
-        // $modelo->save();
         $token = env('TOKEN_ADMIN');
-        $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $token,
-            'Accept' => '*/*',
-        ])->put(env('API_PRODUCCION') . '/api/Exequiales/Beneficiary', [
-            "name" => $request->nameBeneficiary,
-            "codeParentesco" => $codPar,
-            "type" => "I",
-            "dateEntry"=>$fechaActual,
-            "documentBeneficiaryId" => $request->cedulaFallecido,
-            "dateBirthDate"=>$request->fecNacFallecido,
-        ]);
+        $fechaActual = Carbon::now();
+        if($request->pastor){
+            $codPar = null;
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $token,
+                'Accept' => '*/*',
+            ])->patch(env('API_PRODUCCION') . '/api/Exequiales/Tercero', [
+                "documentId"=> $request->cedulaTitular,
+                "dateInit"=> $request->dateInit ? $request->dateInit : ' ',
+                "codePlan"=> $request->codePlan,
+                "discount"=> $request->discount,
+                "observation"=> $request->observation,
+                "stade"=> false 
+            ]);
+        }else{
+            $controllerparentesco = app()->make(ParentescosController::class);
+            $codPar = $controllerparentesco->show($request->parentesco);
+            //Cambio en beneficiarios de estado a false
+            // $modelo = ComaeExRelPar::where('cedula', $request->cedulaFallecido)->first()->refresh();
+            // $modelo->estado = '0';
+            // $modelo->save();
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $token,
+                'Accept' => '*/*',
+            ])->put(env('API_PRODUCCION') . '/api/Exequiales/Beneficiary', [
+                "name" => $request->nameBeneficiary,
+                "codeParentesco" => $codPar,
+                "type" => "I",
+                "dateEntry"=>$request->dateInit ? $request->dateInit : ' ',
+                "documentBeneficiaryId" => $request->cedulaFallecido,
+                "dateBirthDate"=>$request->fecNacFallecido,
+            ]);
+        }
         if ($response->successful()) {
+            ExMonitoria::create([
+                'fechaRegistro' => $fechaActual,
+                'horaFallecimiento' => $request->horaFallecimiento,
+                'cedulaTitular'  => $request->cedulaTitular,
+                'nombreTitular' => $request->nameTitular,
+                'nombreFallecido' => $request->nameBeneficiary,
+                'cedulaFallecido'  => $request->cedulaFallecido,
+                'fechaFallecimiento' => $request->fechaFallecimiento,
+                'lugarFallecimiento' => $request->lugarFallecimiento,
+                'parentesco'=> $codPar,
+                'traslado'=> $request->traslado,
+                'contacto'=> $request->contacto,
+                'telefonoContacto'=> $request->telefonoContacto,
+                'Contacto2'=> $request->contacto2,
+                'telefonoContacto2'=> $request->telefonoContacto2,
+                'factura'=> $request->factura,
+                'valor'=> $request->valor,
+            ]);
+            $accion = "prestar servicio a " . $request->cedulaFallecido;
+            $this->auditoria($accion);
             return $this->index();
+        }
+        else{            
+            return redirect()->back()
+                             ->with('error', 'Mensaje: ' . $response->body() . 'Estado: ' . $response->status());            
         }
     }
 

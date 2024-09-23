@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string("nombreFallecido");
             $table->date('fechaFallecimiento');
             $table->string('lugarFallecimiento');
-            $table->string('parentesco');
+            $table->string('parentesco')->nullable();
             $table->boolean('traslado')->default(true);
             $table->string('contacto');
             $table->string('telefonoContacto');

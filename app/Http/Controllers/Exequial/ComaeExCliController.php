@@ -114,9 +114,15 @@ class ComaeExCliController extends Controller
             'discount'=> $data['discount'],
             'observation'=> $data['observation']
         ]);    
-        $accion = "update titular " . $data['documentid'];
-        $this->auditoria($accion);
-        return $data;
+        
+        if ($response->successful()) {
+            $accion = "update titular " . $data['documentid'];
+            $this->auditoria($accion);
+            return $data;
+        } else {
+            return response()->json(['error' => $response->json()], $response->status());
+        }
+        
     }
 
     public function generarpdf($id)
