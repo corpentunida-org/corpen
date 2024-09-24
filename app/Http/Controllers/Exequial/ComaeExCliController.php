@@ -112,8 +112,9 @@ class ComaeExCliController extends Controller
             'dateInit' => $data['dateInit'],
             'codePlan'=> $data['codePlan'],
             'discount'=> $data['discount'],
-            'observation'=> $data['observation']
-        ]);    
+            'observation'=> $data['observation'],
+            'stade'=> true 
+        ]);
         
         if ($response->successful()) {
             $accion = "update titular " . $data['documentid'];
