@@ -20,7 +20,7 @@ class UserController extends Controller
     }
 
     public function update(Request $request, User $user){
-        $user->roles()->sync($request->roles);
+        $user->roles()->sync($request->roles); //sync añadir nuevos registros a la tabla intermedia
         return redirect()->route('admin.users.edit', $user)->with('info', 'Se asignó el rol correctamente');
     }
 

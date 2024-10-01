@@ -1,6 +1,7 @@
 <?php
-use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Admin\UserController;
+use Illuminate\Support\Facades\Route;
 
-Route::resource('/admin', UserController::class)->names('admin');
+/* Route::resource('users', UserController::class)->names('admin.users'); */
+ 
