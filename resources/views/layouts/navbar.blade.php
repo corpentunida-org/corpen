@@ -4,13 +4,12 @@
             APP
         </a>
             <a href="/" class="simple-text logo-normal">
-                EXEQUIAL
+                @yield('titlenav', "{{env('APP_NAME')}}")
             </a>
     </div>
     
     <div class="sidebar-wrapper" id="sidebar-wrapper">
         <ul class="nav">
-        
             <li class="active ">
                 <a href="/asociados">
                     <i class="now-ui-icons business_badge"></i>
@@ -23,10 +22,11 @@
                     <p>Servicios</p>
                 </a>
             </li>
+        </ul>
     </div>
-    
 </div>
 
 
     {{-- menu active --}}
     {{-- <li class="{{ Request::is('pagina1') ? 'active' : '' }}"><a href="{{ route('pagina1') }}">Página 1</a></li> --}}
+    <!-- :active="request()->routeIs('dashboard)" --> 

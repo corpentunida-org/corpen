@@ -61,7 +61,7 @@ class ComaeExCliController extends Controller
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
             'Accept' => 'application/json',
-        ])->post('https://www.siasoftapp.com:7011/api/Exequiales/Tercero', [
+        ])->post(env('API_PRODUCCION') . '/api/Exequiales/Tercero', [
             'documentId' => $request->documentId,
             'obsevations' => $request->observaciones,
             'dateStart' => $fechaActual,
@@ -107,16 +107,23 @@ class ComaeExCliController extends Controller
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
             'Accept' => 'application/json',
-        ])->patch('https://www.siasoftapp.com:7011/api/Exequiales/Tercero', [
+        ])->patch(env('API_PRODUCCION') . '/api/Exequiales/Tercero', [
             'documentId' => $data['documentid'],
             'dateInit' => $data['dateInit'],
             'codePlan'=> $data['codePlan'],
             'discount'=> $data['discount'],
-            'observation'=> $data['observation']
-        ]);    
-        $accion = "update titular " . $data['documentid'];
-        $this->auditoria($accion);
-        return $data;
+            'observation'=> $data['observation'],
+            'stade'=> true 
+        ]);
+        
+        if ($response->successful()) {
+            $accion = "update titular " . $data['documentid'];
+            $this->auditoria($accion);
+            return $data;
+        } else {
+            return response()->json(['error' => $response->json()], $response->status());
+        }
+        
     }
 
     public function generarpdf($id)
@@ -125,17 +132,17 @@ class ComaeExCliController extends Controller
 
         $titular = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
-        ])->get('https://www.siasoftapp.com:7011/api/Exequiales/Tercero', [
+        ])->get(env('API_PRODUCCION') . '/api/Exequiales/Tercero', [
             'documentId' => $id,
         ]);
         $beneficiarios = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
-        ])->get('https://www.siasoftapp.com:7011/api/Exequiales', [
+        ])->get(env('API_PRODUCCION') . '/api/Exequiales', [
             'documentId' => $id,
         ]);
         $personalTitular = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
-        ])->get('https://www.siasoftapp.com:7011/api/Pastors', [
+        ])->get(env('API_PRODUCCION') . '/api/Pastors', [
             'documentId' => $id,
         ]);
 

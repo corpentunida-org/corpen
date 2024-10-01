@@ -13,13 +13,13 @@ class ParentescosController extends Controller
         // $parentescos = Parentescos::all();
         // return response()->json($parentescos);
 
-        $response = Http::get('https://www.siasoftapp.com:7011/api/Exequiales/Relationship');
+        $response = Http::get(env('API_PRODUCCION') . '/api/Exequiales/Relationship');
         $posts = $response->json();
         return response()->json($posts);
     }
 
     public function show($nomParentesco){
-        $response = Http::get('https://www.siasoftapp.com:7011/api/Exequiales/Relationship');
+        $response = Http::get(env('API_PRODUCCION') . '/api/Exequiales/Relationship');
         $parentescos = $response->json();
         foreach ($parentescos as $parentesco) {
             if ($parentesco['name'] === $nomParentesco) {
@@ -30,7 +30,7 @@ class ParentescosController extends Controller
     }
 
     public function showName($codParentesco){
-        $response = Http::get('https://www.siasoftapp.com:7011/api/Exequiales/Relationship');
+        $response = Http::get(env('API_PRODUCCION') . '/api/Exequiales/Relationship');
         $parentescos = $response->json();
         foreach ($parentescos as $parentesco) {
             if ($parentesco['code'] === $codParentesco) {

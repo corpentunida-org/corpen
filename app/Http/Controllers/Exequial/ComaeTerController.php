@@ -13,7 +13,7 @@ class ComaeTerController extends Controller
         $token = env('TOKEN_ADMIN');
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
-        ])->get('https://www.siasoftapp.com:7011/api/Pastors', [
+        ])->get(env('API_PRODUCCION') . '/api/Pastors', [
              'documentId' => $id,
         ]);
         $titular = $response->json();

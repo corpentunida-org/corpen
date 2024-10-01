@@ -13,7 +13,7 @@ class PlanController extends Controller
         $token = env('TOKEN_ADMIN');
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
-        ])->get('https://www.siasoftapp.com:7011/api/Plan');
+        ])->get(env('API_PRODUCCION') . '/api/Plan');
         $plans = $response->json();
         return response()->json($plans);
     }
