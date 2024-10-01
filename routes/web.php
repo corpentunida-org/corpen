@@ -13,7 +13,6 @@ use App\Http\Controllers\Exequial\MaeC_ExSerController;
 use App\Http\Controllers\Exequial\PlanController;
 
 
-use App\Http\Controllers\Prueba\PruebaController;
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/', function () {
@@ -26,6 +25,7 @@ Route::middleware(['auth'])->group(function () {
         //     return view('welcome');
         // }
         return view('exequial.asociados.index');
+        //return view('layouts.mainview');
     })->name('dashboard');
 });
 
@@ -43,21 +43,22 @@ Route::middleware([
     })->name('dashboard');
 });
 
-Route::resource('users', UserController::class)->names('admin.users');
+//ADMIN
+Route::resource('users', UserController::class)->middleware('can:admin')->names('admin.users');
 
 //RUTAS DE EXEQUIALES
-Route::get('/asociados/{id}/generarpdf', [ComaeExCliController::class, 'generarpdf'])->name('asociados.generarpdf');
+Route::get('/asociados/{id}/generarpdf', [ComaeExCliController::class, 'generarpdf'])->middleware('auth')->name('asociados.generarpdf');
 Route::resource('asociados', ComaeExCliController::class)->middleware('auth')->names('exequial.asociados');
 
-Route::get('/prestarServicio/generarpdf', [MaeC_ExSerController::class, 'generarpdf'])->name('prestarServicio.generarpdf');
-Route::resource('prestarServicio', MaeC_ExSerController::class)->names('exequial.prestarServicio');
+Route::get('/prestarServicio/generarpdf', [MaeC_ExSerController::class, 'generarpdf'])->middleware('auth')->name('prestarServicio.generarpdf');
+Route::resource('prestarServicio', MaeC_ExSerController::class)->middleware('auth')->names('exequial.prestarServicio');
 Route::get('/prestarServicio/{id}/generarpdf', [MaeC_ExSerController::class, 'reporteIndividual'])->name('prestarServicio.repIndividual');
 Route::get('/exportar-datos', [MaeC_ExSerController::class, 'exportData']);
 Route::get('/prestarServicio/mes/{mes}', [MaeC_ExSerController::class, 'consultaMes'])->name('prestarServicio.consultaMes');
 
-Route::resource('beneficiarios', ComaeExRelParController::class)->names('exequial.beneficiarios');
+Route::resource('beneficiarios', ComaeExRelParController::class)->middleware('auth')->names('exequial.beneficiarios');
 
-Route::resource('terceros', ComaeTerController::class)->names('exequial.terceros');
+Route::resource('terceros', ComaeTerController::class)->middleware('auth')->names('exequial.terceros');
 
 Route::get('/parentescosall', [ParentescosController::class, 'index'])->name('exequial.parentescosall');
 
