@@ -21,13 +21,11 @@
     </table>
 </body>
 </html> -->
-
 @extends('layouts.appTemplate')
 @section('titlepage', 'index user')
 @section('titleView', 'Administracion Usuarios')
 @section('titlenav', 'ADMINISTRACION')
 @section('contentpage')
-
     <div class="card-header">
         <h5 class="card-category">Lista de usuarios</h5>
     </div>
@@ -40,7 +38,7 @@
                     <td>{{$user->name}}</td>
                     <td>{{$user->email}}</td>
                     <td>
-                        <a href="{{route('admin.users.edit', $user)}}">Editar</a>
+                        <a href="{{route('admin.users.edit', $user)}}" class="btn btn-warning p-2">Editar</a>
                     </td>
                 </tr>
                 @endforeach

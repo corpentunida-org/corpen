@@ -42,7 +42,8 @@ Route::middleware([
     })->name('dashboard');
 });
 
-Route::resource('users', UserController::class)->names('admin.users');
+//ADMIN
+Route::resource('users', UserController::class)->middleware('can:admin')->names('admin.users');
 
 //RUTAS DE EXEQUIALES
 Route::get('/asociados/{id}/generarpdf', [ComaeExCliController::class, 'generarpdf'])->middleware('auth')->name('asociados.generarpdf');
