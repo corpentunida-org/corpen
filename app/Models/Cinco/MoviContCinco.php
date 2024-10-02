@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Models\Exequiales;
+namespace App\Models\Cinco;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Ciudades extends Model
+class MoviContCinco extends Model
 {
     use HasFactory;
 }
