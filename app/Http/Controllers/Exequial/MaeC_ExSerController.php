@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Exequial;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\ExMonitoria;
-use App\Models\Parentescos;
+use App\Models\Exequiales\ExMonitoria;
+use App\Models\Exequiales\Parentescos;
 use Illuminate\Support\Facades\Http;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
