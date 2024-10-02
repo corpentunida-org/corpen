@@ -14,6 +14,7 @@ class auditoria extends Model
         'fechaRegistro',
         'horaRegistro',
         'usuario',
+        
         'accion',
     ];
 }
