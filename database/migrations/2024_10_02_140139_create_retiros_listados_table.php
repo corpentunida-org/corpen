@@ -11,8 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('retiros_listados', function (Blueprint $table) {
+        Schema::create('retirosListados', function (Blueprint $table) {
             $table->id();
+            $table->string('Cod_Ter');
+            $table->date('fechaIngresoMinisterio')->nullable();
+            $table->date('fechaRespaldo')->nullable();
+            $table->boolean('Verificacion')->default(false);
+            $table->date('VerificadoFecha')->nullable();
+            $table->string('VerificadoUsuario')->nullable();
+            $table->date('fechaPrimerAporte')->nullable();
+            $table->string('ObservacionActualizacion')->nullable();
             $table->timestamps();
         });
     }
@@ -22,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('retiros_listados');
+        Schema::dropIfExists('retirosListados');
     }
 };
