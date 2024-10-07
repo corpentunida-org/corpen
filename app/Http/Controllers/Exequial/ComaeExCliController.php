@@ -44,14 +44,13 @@ class ComaeExCliController extends Controller
     public function validarRegistro(Request $request){
         $id = $request->input('id');
         $asociado = ComaeExCli::where('cedula', $id)->first();
-        if($asociado) return "1";        
+        if($asociado) return "1";
         else{
             $tercero = ComaeTer::where('cod-ter', $id)->first();
             if ($tercero) return '2';
             else return '0';
         }
     }
-
 
     public function store(Request $request)
     {

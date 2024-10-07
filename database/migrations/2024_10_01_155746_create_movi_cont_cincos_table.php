@@ -11,8 +11,26 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('movi_cont_cincos', function (Blueprint $table) {
+        Schema::create('MoviCont', function (Blueprint $table) {
             $table->id();
+            $table->string('CodComprob')->nullable();
+            $table->string('NumComprob')->nullable();
+            $table->string('ItemComprob')->nullable();
+            $table->date('Fecha')->nullable();
+            $table->string('Cuenta')->nullable();
+            $table->string('DocRef')->nullable();            
+            $table->string('Base')->nullable();
+            $table->string('Cedula')->nullable();
+            $table->string('CentroCosto')->nullable();
+            $table->string('VrDebitos')->nullable();
+            $table->string('VrCreditos')->nullable();
+            $table->string('UsuariosAdd')->nullable();
+            $table->string('DocSoporte')->nullable();
+            $table->string('Observacion')->nullable();
+            $table->string('AñoIncio')->nullable();
+            $table->string('MesIncio')->nullable();
+            $table->string('AñoFin')->nullable();
+            $table->string('MesFin')->nullable();
             $table->timestamps();
         });
     }
@@ -22,6 +40,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('movi_cont_cincos');
+        Schema::dropIfExists('MoviCont');
     }
 };
