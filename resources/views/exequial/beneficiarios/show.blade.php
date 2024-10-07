@@ -753,7 +753,6 @@
             $("#SuccessAddBeneficiario").html('<div></div>');
             i = $('.botonPrestarServicio').index($(this));
             if (i===0) {
-                console.log("el del pastor pa")
                 $('#cedulaFallecido').val(asociadojson.documentId);
                 $('#nameFallecido').val(asociadojson.name);
                 $('#dateInit').val(asociadojson.dateInit);
@@ -774,17 +773,21 @@
                 $("#nameFallecido").val(name);
                 $("#fecNacFallecido").val(fecNacimiento);
                 $('#dateInit').val(beneficiariosjson[fila.index()-1].dateEntry);
-                $('#ispastor').val('false');
+                $('#ispastor').val('false');                
             }
         });
         $('#FormularioPrestarServicio').submit(function (event) {
             console.log($(this).serialize())
+            console.log("is pastorrrr? "+$('#ispastor').val())
             var form = this;
             if (!form.checkValidity()) {
                 $("#FormularioPrestarServicio").addClass('was-validated');
                 event.preventDefault();
                 event.stopPropagation();
             }
+            setTimeout(function () {
+                            $('#overlay').css('visibility', 'hidden');
+                        }, 7000);
         });
     });
 </script>

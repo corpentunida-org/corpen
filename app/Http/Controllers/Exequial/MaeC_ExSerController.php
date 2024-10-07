@@ -32,7 +32,7 @@ class MaeC_ExSerController extends Controller
         //$this->authorize('create', auth()->user());
         $token = env('TOKEN_ADMIN');
         $fechaActual = Carbon::now();
-        if($request->pastor){
+        if($request->pastor === true){
             $codPar = null;
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $token,
@@ -87,9 +87,9 @@ class MaeC_ExSerController extends Controller
             $this->auditoria($accion);
             return $this->index();
         }
-        else{            
+        else{
             return redirect()->back()
-                             ->with('error', 'Mensaje: ' . $response->body() . 'Estado: ' . $response->status());            
+                             ->with('error', 'Mensaje: ' . $response->body() . 'Estado: ' . $response->status() . 'Modelo: **' . $request);            
         }
     }
 
