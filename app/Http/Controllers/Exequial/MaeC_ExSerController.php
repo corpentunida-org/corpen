@@ -32,7 +32,7 @@ class MaeC_ExSerController extends Controller
         //$this->authorize('create', auth()->user());
         $token = env('TOKEN_ADMIN');
         $fechaActual = Carbon::now();
-        if($request->pastor === true){
+        if($request->pastor === 'true'){
             $codPar = null;
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $token,
@@ -40,11 +40,13 @@ class MaeC_ExSerController extends Controller
             ])->patch(env('API_PRODUCCION') . '/api/Exequiales/Tercero', [
                 "documentId"=> $request->cedulaTitular,
                 "dateInit"=> $request->dateInit ? $request->dateInit : ' ',
-                "codePlan"=> $request->codePlan,
+                "codePlan" => $request->codePlan ? $request->codePlan : '01',
                 "discount"=> $request->discount,
                 "observation"=> $request->observation,
                 "stade"=> false 
             ]);
+            // return redirect()->back()
+            //                  ->with('error', 'EN EL IF del titular');
         }else{
             $controllerparentesco = app()->make(ParentescosController::class);
             $codPar = $controllerparentesco->show($request->parentesco);
