@@ -30,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('CoMae_ExCli');
+        Schema::dropIfExists('EXE_CoMae_ExCli');
     }
 };
