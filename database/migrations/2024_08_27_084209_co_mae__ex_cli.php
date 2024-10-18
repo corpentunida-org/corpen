@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('CoMae_ExCli', function (Blueprint $table) {
+        Schema::create('EXE_CoMae_ExCli', function (Blueprint $table) {
             $table->integer('idrow');
             $table->bigInteger('cod_cli')->unique()->primary();
             $table->text('benef')->nullable();

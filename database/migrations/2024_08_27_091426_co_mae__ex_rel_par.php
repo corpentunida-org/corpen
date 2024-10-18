@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('CoMae_ExRelPar', function (Blueprint $table) {
+        Schema::create('EXE_CoMae_ExRelPar', function (Blueprint $table) {
             $table->integer('idrow');
             $table->bigInteger('cedula')->unique()->primary();
             $table->string('nombre');
