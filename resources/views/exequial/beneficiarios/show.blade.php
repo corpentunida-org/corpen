@@ -672,6 +672,7 @@
             // $("#SuccessAddBeneficiario").html('<div></div>');
             click.addEventListener('click', function () {
                 const i = this.getAttribute('data-index');
+                console.log("dame el numero porfa "+i)
                 $('#updateCedBenficiario').val(beneficiariosjson[i].documentId);
                 $('#UpdateSelectParentesco').val(beneficiariosjson[i].codeRelationship);
                 $('#UpdatefechaNacimiento').val(beneficiariosjson[i].dateBirthday.split('T')[0]);
@@ -684,6 +685,7 @@
             event.preventDefault();
             $('#ConfirmarEnvioUpdate').modal('show');
             $('#btnConfirmarEnvio').on('click', function () {
+                console.log("cedula beneficiario "+$('#updateCedBenficiario').val());
                 $('#overlay').css('visibility', 'visible');
                 data = $('#FormUpdateBeneficiario').serialize();
                 $.ajax({
@@ -704,6 +706,7 @@
                         location.reload();
                     },
                     error: function (e) {
+                        console.log("en el error")
                         console.log(e)
                     }
                 });
