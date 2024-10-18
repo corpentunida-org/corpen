@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class ComaeExCli extends Model
 {
     use HasFactory;
-    protected $table = 'MAEC_EXSER'; // Nombre de la tabla en la base de datos
+    protected $table = 'EXE_CoMae_ExCli'; // Nombre de la tabla en la base de datos
     protected $primaryKey = 'cedula'; // Nombre de la clave primaria en la tabla
     public $incrementing = false; // Indica si la clave primaria es autoincrementable o no
 
