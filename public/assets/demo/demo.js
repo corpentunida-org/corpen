@@ -80,28 +80,7 @@ demo = {
     gradientFill.addColorStop(0, "rgba(128, 182, 244, 0)");
     gradientFill.addColorStop(1, "rgba(249, 99, 59, 0.40)");
 
-    myChart = new Chart(ctx, {
-      type: 'line',
-      responsive: true,
-      data: {
-        labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
-        datasets: [{
-          label: "Active Users",
-          borderColor: "#f96332",
-          pointBorderColor: "#FFF",
-          pointBackgroundColor: "#f96332",
-          pointBorderWidth: 2,
-          pointHoverRadius: 4,
-          pointHoverBorderWidth: 1,
-          pointRadius: 4,
-          fill: true,
-          backgroundColor: gradientFill,
-          borderWidth: 2,
-          data: [542, 480, 430, 550, 530, 453, 380, 434, 568, 610, 700, 630]
-        }]
-      },
-      options: gradientChartOptionsConfiguration
-    });
+
   },
 
   initDashboardPageCharts: function() {
@@ -222,7 +201,7 @@ demo = {
     var myChart = new Chart(ctx, {
       type: 'line',
       data: {
-        labels: ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"],
+        labels: ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT"],
         datasets: [{
           label: "Data",
           borderColor: chartColor,
@@ -237,7 +216,7 @@ demo = {
           fill: true,
           backgroundColor: gradientFill,
           borderWidth: 2,
-          data: [50, 150, 100, 190, 130, 90, 150, 160, 120, 140, 190, 95]
+          data: [5, 15, 10, 19, 13, 9, 15, 30, 12, 5]
         }]
       },
       options: {
@@ -270,8 +249,9 @@ demo = {
             ticks: {
               fontColor: "rgba(255,255,255,0.4)",
               fontStyle: "bold",
-              beginAtZero: true,
-              maxTicksLimit: 5,
+              beginAtZero: true, //empieza en 0
+              max: 30,               // Valor máximo
+              stepSize: 10,           // Incrementos 10
               padding: 10
             },
             gridLines: {
@@ -298,11 +278,10 @@ demo = {
         }
       }
     });
-
     var cardStatsMiniLineColor = "#fff",
       cardStatsMiniDotColor = "#fff";
 
-    ctx = document.getElementById('lineChartExample').getContext("2d");
+    /* ctx = document.getElementById('lineChartExample').getContext("2d");
 
     gradientStroke = ctx.createLinearGradient(500, 0, 100, 0);
     gradientStroke.addColorStop(0, '#80b6f4');
@@ -333,10 +312,10 @@ demo = {
         }]
       },
       options: gradientChartOptionsConfiguration
-    });
+    }); */
 
 
-    ctx = document.getElementById('lineChartExampleWithNumbersAndGrid').getContext("2d");
+    /* ctx = document.getElementById('lineChartExampleWithNumbersAndGrid').getContext("2d");
 
     gradientStroke = ctx.createLinearGradient(500, 0, 100, 0);
     gradientStroke.addColorStop(0, '#18ce0f');
@@ -367,7 +346,7 @@ demo = {
         }]
       },
       options: gradientChartOptionsConfigurationWithNumbersAndGrid
-    });
+    }); */
 
     var e = document.getElementById("barChartSimpleGradientsNumbers").getContext("2d");
 
@@ -378,9 +357,9 @@ demo = {
     var a = {
       type: "bar",
       data: {
-        labels: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+        labels: ["Mujeres", "Hombres"],
         datasets: [{
-          label: "Active Countries",
+          label: "Servicios prestados",
           backgroundColor: gradientFill,
           borderColor: "#2CA8FF",
           pointBorderColor: "#FFF",
@@ -391,7 +370,7 @@ demo = {
           pointRadius: 4,
           fill: true,
           borderWidth: 1,
-          data: [80, 99, 86, 96, 123, 85, 100, 75, 88, 90, 123, 155]
+          data: [16, 18]  // Datos del gráfico
         }]
       },
       options: {
@@ -411,23 +390,30 @@ demo = {
         responsive: 1,
         scales: {
           yAxes: [{
-            gridLines: 0,
+            ticks: {
+              beginAtZero: true,  // Inicia el eje Y en 0
+              stepSize: 10,       // Intervalos de 10 en 10
+              max: 20,            // Máximo valor en el eje Y
+              callback: function(value) {
+                return value;  // Mostrar valores como están
+              }
+            },
             gridLines: {
               zeroLineColor: "transparent",
               drawBorder: false
             }
           }],
           xAxes: [{
-            display: 0,
-            gridLines: 0,
-            ticks: {
-              display: false
-            },
+            display: 0,  // Mostrar el eje X
             gridLines: {
               zeroLineColor: "transparent",
               drawTicks: false,
               display: false,
               drawBorder: false
+            },
+            ticks: {
+              fontColor: "#888",  // Color de las etiquetas del eje X
+              fontSize: 14
             }
           }]
         },
@@ -441,6 +427,9 @@ demo = {
         }
       }
     };
+    
+    var viewsChart = new Chart(e, a);
+    
 
     var viewsChart = new Chart(e, a);
   },
@@ -578,5 +567,6 @@ demo = {
 
     // To add the marker to the map, call setMap();
     marker.setMap(map);
-  }
+    
+  } 
 };
