@@ -27,9 +27,11 @@ class ComaeExCliController extends Controller
     public function index()
     {
         //$asociados = ComaeExCli::all();
-        $asociados = ComaeExCli::with(['ciudade', 'distrito'])->paginate(10);
-        return view('exequial.asociados.index', ['asociados' => $asociados]);
+        //$asociados = ComaeExCli::with(['ciudade', 'distrito'])->paginate(10);
+        //return view('exequial.asociados.index', ['asociados' => $asociados]);
+        return view('exequial.asociados.index');
     }
+
 
     public function show(Request $request, $id)
     {      

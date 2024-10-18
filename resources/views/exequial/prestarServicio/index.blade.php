@@ -39,6 +39,7 @@
 </head>
 
 <body>
+    @section('titlenav', 'EXEQUIALES')
     @include('layouts.navbar')
     <div class="main-panel" id="main-panel">
         <!-- Navbar -->
