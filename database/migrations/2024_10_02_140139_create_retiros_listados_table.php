@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('retirosListados', function (Blueprint $table) {
+        Schema::create('CIN_RetirosListados', function (Blueprint $table) {
             $table->id();
             $table->string('Cod_Ter');
             $table->date('fechaIngresoMinisterio')->nullable();

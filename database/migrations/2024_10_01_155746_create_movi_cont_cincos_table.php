@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('MoviCont', function (Blueprint $table) {
+        Schema::create('CIN_MoviCont', function (Blueprint $table) {
             $table->id();
             $table->string('CodComprob')->nullable();
             $table->string('NumComprob')->nullable();

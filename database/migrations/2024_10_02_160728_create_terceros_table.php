@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('Terceros', function (Blueprint $table) {
+        Schema::create('CIN_Terceros', function (Blueprint $table) {
             $table->id();
             $table->string('Cod_Ter')->nullable();
             $table->string('Nom_Ter')->nullable();

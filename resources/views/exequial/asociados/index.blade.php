@@ -232,8 +232,7 @@
                         <div class="col-md-5">
                             <div class="form-group">
                                 <label>Plan</label>
-                                <select class="form-control" name="plan" id="selectPlanes" required>
-                                </select>
+                                <select class="form-control" name="plan" id="selectPlanes" required></select>
                             </div>
                         </div>
                         <div class="col-md-4">
