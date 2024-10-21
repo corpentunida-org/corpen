@@ -32,6 +32,11 @@ Route::get('/offline', function () {
     return view('vendor.laravelpwa.offline');
 });
 
+Route::get('/base', function () {
+    return view('layouts.base');
+});
+
+
 Route::middleware([
     'auth:sanctum',
     config('jetstream.auth_session'),
