@@ -111,7 +111,7 @@
                 </div>
 
                 <div class="col-lg-4 col-md-6">
-                    <div class="card">
+                    <div class="card" style="height: 295px;">
                         <div class="card-header">
                             <h5 class="card-category">2024 Octubre</h5>
                             <h4 class="card-title">Servicios prestados</h4>
