@@ -49,6 +49,7 @@
                             <img src="{{asset('assets/images/logo-abbr.png')}}" alt="" class="img-fluid">
                         </div>
                         <div class="creative-card-body card-body p-sm-5">
+                            
                             {{ $slot }}
                         </div>
                     </div>

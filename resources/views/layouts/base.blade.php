@@ -6,10 +6,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'Laravel') }}</title>
+    <title>{{ config('app.name', 'Corpentunida') }}</title>
     <!--! END:  Apps Title-->
     <!--! BEGIN: Favicon-->
-    <link rel="shortcut icon" type="image/x-icon" href="{{asset('assets/images/favicon.ico')}}" />
+    <link rel="shortcut icon" type="image/x-icon" href="{{asset('assets/images/logo/corpenfavicon.png')}}" />
     <!--! END: Favicon-->
     <!--! BEGIN: Bootstrap CSS-->
     <link rel="stylesheet" type="text/css" href="{{asset('assets/css/bootstrap.min.css')}}" />
@@ -27,6 +27,8 @@
     <script src="https:oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
     <script src="https:oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
     <![endif]-->
+    <!-- ICONOS BOOTSTRAP -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 </head>
 
 <body>
@@ -151,7 +153,7 @@
         <!-- [ Main Content ] start -->
         <div class="main-content">
             <div class="row">
-
+                @yield('contentpage')
             </div>
         </div>
         <!-- [ Main Content ] end -->
