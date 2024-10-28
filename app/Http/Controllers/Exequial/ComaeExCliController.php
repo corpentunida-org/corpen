@@ -26,10 +26,38 @@ class ComaeExCliController extends Controller
 
     public function index()
     {
-        //$asociados = ComaeExCli::all();
-        //$asociados = ComaeExCli::with(['ciudade', 'distrito'])->paginate(10);
-        //return view('exequial.asociados.index', ['asociados' => $asociados]);
         return view('exequial.asociados.index');
+    }
+
+    //Datos solo del titular
+    public function titularShow($id){
+        //API
+        $token = env('TOKEN_ADMIN');
+        $titular = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $token,
+        ])->get(env('API_PRODUCCION') . '/api/Exequiales/Tercero', [
+            'documentId' => $id,
+        ]);
+        if ($titular->successful()) {
+            $jsonTit = $titular->json();            
+            if (isset($jsonTit['codePlan'])) {
+                $controllerplanes = app()->make(PlanController::class);
+                $nomPlan = $controllerplanes->nomCodPlan($jsonTit['codePlan']);
+                $jsonTit['codePlan'] = $nomPlan;
+            }
+            return $jsonTit;
+        } else {
+            return redirect()->route('exequial.asociados.index')->with('messageTit', 'No se encontró la cédula como titular de exequiales');
+        }
+    }
+
+    public function edit($id) {
+        $jsonTit = $this->titularShow($id);
+        $controllerplanes = app()->make(PlanController::class);
+        return view('exequial.asociados.edit', [
+            'asociado' => $jsonTit, 
+            'plans' => $controllerplanes->index(),
+        ]);
     }
 
 
@@ -40,7 +68,7 @@ class ComaeExCliController extends Controller
         $id = $request->input('id');
         $asociado = ComaeExCli::where('cedula', $id)->firstOrFail();
         $beneficiarios = ComaeExRelPar::where('cedulaAsociado', $id)->with('parentescoo')->get();
-        return view('exequial.asociados.show', compact('asociado', 'beneficiarios'));
+        return view('exequial.beneficiarios.show', compact('asociado', 'beneficiarios'));
     }
 
     public function validarRegistro(Request $request){
@@ -124,8 +152,8 @@ class ComaeExCliController extends Controller
         } else {
             return response()->json(['error' => $response->json()], $response->status());
         }
-        
     }
+    
 
     public function generarpdf($id)
     {

@@ -52,7 +52,7 @@
         <div class="navbar-content">
             <ul class="nxl-navbar">
                 <li class="nxl-item nxl-caption">
-                    <label>Navigation</label>
+                    <label>Menu</label>
                 </li>
                 @foreach(auth()->user()->actions as $action)
                     @include('layouts.actions.' . $action->role->name)

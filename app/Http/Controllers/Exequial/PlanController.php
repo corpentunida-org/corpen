@@ -15,7 +15,7 @@ class PlanController extends Controller
             'Authorization' => 'Bearer ' . $token,
         ])->get(env('API_PRODUCCION') . '/api/Plan');
         $plans = $response->json();
-        return response()->json($plans);
+        return $plans;
     }
 
     public function nomCodPlan($cod){        
