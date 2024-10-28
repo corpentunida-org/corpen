@@ -50,31 +50,15 @@ class ComaeExRelParController extends Controller
         } else {
             return redirect()->route('exequial.asociados.index')->with('messageTit', 'No se encontró la cédula como titular de exequiales');
         }
+       
     }
 
+    
 
-    //update BD fechas de nacimiento
-    /* public function update(Request $request, $cedula)
-    {
-        $ids = $request->input('ids');
-        $fechas = $request->input('fechas');
-
-        foreach ($ids as $key => $id) {
-            $beneficiario = ComaeExRelPar::find($id);
-            if ($beneficiario) {
-                $beneficiario->fechaNacimiento = $fechas[$key];
-                $beneficiario->save();
-            }
-        }
-        $asociado = ComaeExCli::where('cedula', $cedula)->firstOrFail();
-        $beneficiarios = ComaeExRelPar::where('cedulaAsociado', $cedula)->get();
-        return view('exequial.asociados.show', compact('asociado', 'beneficiarios'))->with('success', 'Datos actualizados');
-    } */
-   
+    
    public function store(Request $request)
    {
-       //$this->authorize('create', auth()->user());
-       
+       //$this->authorize('create', auth()->user());       
        $request->validate([
            'cedula' => ['required', 'min:3'],
            'fechaNacimiento' => ['required'],
@@ -82,17 +66,7 @@ class ComaeExRelParController extends Controller
            'nombres' => ['required'],
         ]);
         
-        $fechaActual = Carbon::now();
-        // ComaeExRelPar::create([
-        //         'cedula' => $request->cedula,
-        //         'cedulaAsociado' => $request->cedulaAsociado,
-        //         'nombre' => $request->apellidos . ' ' . $request->nombres,
-        //         'fechaNacimiento' => $request->fechaNacimiento,
-        //         'fechaIngreso' => $fechaActual,
-        //         'parentesco' => $request->parentesco
-        //     ]);
-        //     return "se añadio el registro"; //Interno Controlador
-            
+        $fechaActual = Carbon::now();            
         $token = env('TOKEN_ADMIN');
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
