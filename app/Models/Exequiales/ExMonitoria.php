@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class ExMonitoria extends Model
 {
     use HasFactory;
-    protected $table = 'MAEC_EXSER';
+    protected $table = 'EXE_MAEC_EXSER';
     //protected $table = 'pruebaServicios';
     protected $fillable = [
         'fechaRegistro',
