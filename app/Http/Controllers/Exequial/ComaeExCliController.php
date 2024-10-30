@@ -39,12 +39,7 @@ class ComaeExCliController extends Controller
             'documentId' => $id,
         ]);
         if ($titular->successful()) {
-            $jsonTit = $titular->json();            
-            if (isset($jsonTit['codePlan'])) {
-                $controllerplanes = app()->make(PlanController::class);
-                $nomPlan = $controllerplanes->nomCodPlan($jsonTit['codePlan']);
-                $jsonTit['codePlan'] = $nomPlan;
-            }
+            $jsonTit = $titular->json();
             return $jsonTit;
         } else {
             return redirect()->route('exequial.asociados.index')->with('messageTit', 'No se encontró la cédula como titular de exequiales');
@@ -130,28 +125,30 @@ class ComaeExCliController extends Controller
     // }
 
     public function update(Request $request){
-        //$this->authorize('update', auth()->user());
-        $data = $request->json()->all();
+        //$this->authorize('update', auth()->user());        
         $token = env('TOKEN_ADMIN');
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
             'Accept' => 'application/json',
         ])->patch(env('API_PRODUCCION') . '/api/Exequiales/Tercero', [
-            'documentId' => $data['documentid'],
-            'dateInit' => $data['dateInit'],
-            'codePlan'=> $data['codePlan'],
-            'discount'=> $data['discount'],
-            'observation'=> $data['observation'],
+            'documentId' => $request->documentid,
+            'dateInit' => $request->dateInit,
+            'codePlan'=> $request->codePlan,
+            'discount'=> $request->discount,
+            'observation'=> $request->observation,
             'stade'=> true 
-        ]);
-        
+        ]);        
         if ($response->successful()) {
-            $accion = "update titular " . $data['documentid'];
+            $accion = "update titular " . $request->documentid;
             $this->auditoria($accion);
-            return $data;
+            //return $data; //antigua vista
+            //plantilla            
+            $url = route('exequial.beneficiarios.show', ['beneficiario' => 'ID']) . '?id=' . $request->documentid;
+            return redirect()->to($url)->with('success', 'Titular actualizado exitosamente');
         } else {
             return response()->json(['error' => $response->json()], $response->status());
         }
+      
     }
     
 
