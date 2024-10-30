@@ -51,9 +51,7 @@ class ComaeExRelParController extends Controller
             return redirect()->route('exequial.asociados.index')->with('messageTit', 'No se encontró la cédula como titular de exequiales');
         }
        
-    }
-
-    
+    }   
 
     
    public function store(Request $request)

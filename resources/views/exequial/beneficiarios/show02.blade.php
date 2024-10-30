@@ -58,7 +58,7 @@
 </div>
 <div class="card-body">
     @if(session('messageTit'))
-        <div class="alert alert-success p-1 pl-3" style=color:black;>
+        <div class="alert alert-success p-1 pl-3" style="color:black;">
             {{ session('messageTit') }}
         </div>
     @endif
@@ -778,7 +778,6 @@
         });
         $('#FormularioPrestarServicio').submit(function (event) {
             console.log($(this).serialize())
-            console.log("is pastorrrr? "+$('#ispastor').val())
             var form = this;
             if (!form.checkValidity()) {
                 $("#FormularioPrestarServicio").addClass('was-validated');

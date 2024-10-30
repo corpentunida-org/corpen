@@ -29,6 +29,8 @@
     <![endif]-->
     <!-- ICONOS BOOTSTRAP -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Jquery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 
 <body>
@@ -179,6 +181,7 @@
 
 <!--! Footer Script !-->
 <!--! ================================================================ !-->
+
 <!--! BEGIN: Vendors JS !-->
 <script src="{{asset('assets/vendors/js/vendors.min.js')}}"></script>
 <!-- vendors.min.js {always must need to be top} -->
@@ -196,5 +199,4 @@
     @endif
 @endauth
 </body>
-
 </html>
