@@ -9,7 +9,7 @@ class ComaeExRelPar extends Model
 {
     use HasFactory;
     //protected $table = 'coMaeExRelPar';
-    protected $table = 'coMaeExRelPar';
+    protected $table = 'EXE_CoMae_ExRelPar';
     protected $primaryKey = 'cedula'; 
     public $timestamps = false;
     protected $fillable = [
