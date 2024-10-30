@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class auditoria extends Model
 {
+    protected $table = 'Auditoria';
     use HasFactory;
     public $timestamps = false;
 

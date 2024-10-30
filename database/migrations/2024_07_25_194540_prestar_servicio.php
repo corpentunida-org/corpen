@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('MAEC_EXSER', function (Blueprint $table) {
+        Schema::create('EXE_MAEC_EXSER', function (Blueprint $table) {
             $table->id();
             $table->date('fechaRegistro');
             $table->time('horaFallecimiento');
@@ -39,6 +39,6 @@ return new class extends Migration
     */
     public function down(): void
     {
-        Schema::dropIfExists('MAEC_EXSER');
+        Schema::dropIfExists('EXE_MAEC_EXSER');
     }
 };

@@ -23,6 +23,5 @@ class UserController extends Controller
         $user->roles()->sync($request->roles); //sync añadir nuevos registros a la tabla intermedia
         return redirect()->route('admin.users.edit', $user)->with('info', 'Se asignó el rol correctamente');
     }
-
-
+    
 }

@@ -5,9 +5,9 @@ namespace App\Http\Controllers\Exequial;
 use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\ComaeExRelPar;
-use App\Models\ComaeExCli;
-use App\Models\ComaeTer;
+use App\Models\Exequiales\ComaeExRelPar;
+use App\Models\Exequiales\ComaeExCli;
+use App\Models\Exequiales\ComaeTer;
 use Illuminate\Support\Facades\Http;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -26,10 +26,35 @@ class ComaeExCliController extends Controller
 
     public function index()
     {
-        //$asociados = ComaeExCli::all();
-        $asociados = ComaeExCli::with(['ciudade', 'distrito'])->paginate(10);
-        return view('exequial.asociados.index', ['asociados' => $asociados]);
+        return view('exequial.asociados.index');
     }
+
+    //Datos solo del titular
+    public function titularShow($id){
+        //API
+        $token = env('TOKEN_ADMIN');
+        $titular = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $token,
+        ])->get(env('API_PRODUCCION') . '/api/Exequiales/Tercero', [
+            'documentId' => $id,
+        ]);
+        if ($titular->successful()) {
+            $jsonTit = $titular->json();
+            return $jsonTit;
+        } else {
+            return redirect()->route('exequial.asociados.index')->with('messageTit', 'No se encontró la cédula como titular de exequiales');
+        }
+    }
+
+    public function edit($id) {
+        $jsonTit = $this->titularShow($id);
+        $controllerplanes = app()->make(PlanController::class);
+        return view('exequial.asociados.edit', [
+            'asociado' => $jsonTit, 
+            'plans' => $controllerplanes->index(),
+        ]);
+    }
+
 
     public function show(Request $request, $id)
     {      
@@ -38,20 +63,19 @@ class ComaeExCliController extends Controller
         $id = $request->input('id');
         $asociado = ComaeExCli::where('cedula', $id)->firstOrFail();
         $beneficiarios = ComaeExRelPar::where('cedulaAsociado', $id)->with('parentescoo')->get();
-        return view('exequial.asociados.show', compact('asociado', 'beneficiarios'));
+        return view('exequial.beneficiarios.show', compact('asociado', 'beneficiarios'));
     }
 
     public function validarRegistro(Request $request){
         $id = $request->input('id');
         $asociado = ComaeExCli::where('cedula', $id)->first();
-        if($asociado) return "1";        
+        if($asociado) return "1";
         else{
             $tercero = ComaeTer::where('cod-ter', $id)->first();
             if ($tercero) return '2';
             else return '0';
         }
     }
-
 
     public function store(Request $request)
     {
@@ -101,30 +125,32 @@ class ComaeExCliController extends Controller
     // }
 
     public function update(Request $request){
-        //$this->authorize('update', auth()->user());
-        $data = $request->json()->all();
+        //$this->authorize('update', auth()->user());        
         $token = env('TOKEN_ADMIN');
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
             'Accept' => 'application/json',
         ])->patch(env('API_PRODUCCION') . '/api/Exequiales/Tercero', [
-            'documentId' => $data['documentid'],
-            'dateInit' => $data['dateInit'],
-            'codePlan'=> $data['codePlan'],
-            'discount'=> $data['discount'],
-            'observation'=> $data['observation'],
+            'documentId' => $request->documentid,
+            'dateInit' => $request->dateInit,
+            'codePlan'=> $request->codePlan,
+            'discount'=> $request->discount,
+            'observation'=> $request->observation,
             'stade'=> true 
-        ]);
-        
+        ]);        
         if ($response->successful()) {
-            $accion = "update titular " . $data['documentid'];
+            $accion = "update titular " . $request->documentid;
             $this->auditoria($accion);
-            return $data;
+            //return $data; //antigua vista
+            //plantilla            
+            $url = route('exequial.beneficiarios.show', ['beneficiario' => 'ID']) . '?id=' . $request->documentid;
+            return redirect()->to($url)->with('success', 'Titular actualizado exitosamente');
         } else {
             return response()->json(['error' => $response->json()], $response->status());
         }
-        
+      
     }
+    
 
     public function generarpdf($id)
     {
