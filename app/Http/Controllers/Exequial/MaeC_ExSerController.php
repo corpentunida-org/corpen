@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Exequial;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\ExMonitoria;
-use App\Models\Parentescos;
+use App\Models\Exequiales\ExMonitoria;
+use App\Models\Exequiales\Parentescos;
 use Illuminate\Support\Facades\Http;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -25,14 +25,16 @@ class MaeC_ExSerController extends Controller
             $nomPar = $controllerparentesco->showName($registro->parentesco);
             $registro->parentesco = $nomPar;
         }
-        return view('exequial.prestarServicio.index', ['registros' => $registros]);
+        $tReg = ExMonitoria::count();
+        $mReg = ExMonitoria::whereMonth('fechaFallecimiento', Carbon::now()->month)->count();
+        return view('exequial.prestarServicio.index', ['registros' => $registros, 'totalRegistros'=>$tReg, 'mesRegistros'=>$mReg]);
     }
     public function store(Request $request)
     {
         //$this->authorize('create', auth()->user());
         $token = env('TOKEN_ADMIN');
         $fechaActual = Carbon::now();
-        if($request->pastor){
+        if($request->pastor === 'true'){
             $codPar = null;
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $token,
@@ -40,11 +42,13 @@ class MaeC_ExSerController extends Controller
             ])->patch(env('API_PRODUCCION') . '/api/Exequiales/Tercero', [
                 "documentId"=> $request->cedulaTitular,
                 "dateInit"=> $request->dateInit ? $request->dateInit : ' ',
-                "codePlan"=> $request->codePlan,
+                "codePlan" => $request->codePlan ? $request->codePlan : '01',
                 "discount"=> $request->discount,
                 "observation"=> $request->observation,
                 "stade"=> false 
             ]);
+            // return redirect()->back()
+            //                  ->with('error', 'EN EL IF del titular');
         }else{
             $controllerparentesco = app()->make(ParentescosController::class);
             $codPar = $controllerparentesco->show($request->parentesco);
@@ -87,9 +91,9 @@ class MaeC_ExSerController extends Controller
             $this->auditoria($accion);
             return $this->index();
         }
-        else{            
+        else{
             return redirect()->back()
-                             ->with('error', 'Mensaje: ' . $response->body() . 'Estado: ' . $response->status());            
+                             ->with('error', 'Mensaje: ' . $response->body() . 'Estado: ' . $response->status() . 'Modelo: **' . $request);            
         }
     }
 

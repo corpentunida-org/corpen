@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('CoMae_ExRelPar', function (Blueprint $table) {
+        Schema::create('EXE_CoMae_ExRelPar', function (Blueprint $table) {
             $table->integer('idrow');
             $table->bigInteger('cedula')->unique()->primary();
             $table->string('nombre');
@@ -21,7 +21,7 @@ return new class extends Migration
             $table->date('fec_nac');
             $table->boolean('estado');
             $table->bigInteger('cod_cli');
-            $table->foreign('cod_cli')->references('cod_cli')->on('CoMae_ExCli');
+            //$table->foreign('cod_cli')->references('cod_cli')->on('CoMae_ExCli');
         });
     }
 
@@ -30,6 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('CoMae_ExRelPar');
+        Schema::dropIfExists('EXE_CoMae_ExRelPar');
     }
 };
