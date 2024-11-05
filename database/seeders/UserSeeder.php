@@ -13,6 +13,18 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
+        /*if (!User::where('email', 'superadmin@corpentunida.org.co')->exists()) {
+
+        }
+        if (!User::where('email', 'exequiales@corpentunida.org.co')->exists()) {
+
+        }
+        if (!User::where('email', 'administracion@corpentunida.org.co')->exists()) {
+
+        }
+        if (!User::where('email', 'superadmin@corpentunida.org.co')->exists()) {
+            
+        } */
         User::create([
             'name' => 'admin',
             'email' => 'superadmin@corpentunida.org.co',
@@ -30,6 +42,12 @@ class UserSeeder extends Seeder
             'email' => 'administracion@corpentunida.org.co',
             'password' => bcrypt('Cc123456')
         ])->assignRole('read');
+
+        User::create([
+            'name' => 'Johanna Rivera',
+            'email' => 'seguros@corpentunida.org.co',
+            'password' => bcrypt('Jj123456')
+        ])->assignRole('seguros');
         //User::factory(5)->create();
     }
 }
