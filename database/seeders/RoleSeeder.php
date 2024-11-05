@@ -19,6 +19,7 @@ class RoleSeeder extends Seeder
         $admin = Role::create(['name'=>'admin']);
         $exequial = Role::create(['name'=>'exequial']);
         $creditos = Role::create(['name'=>'creditos']);
+        $seguros = Role::create(['name'=>'seguros']);
         $viewer = Role::create(['name'=>'read']);
 
         //crear Permisos 
@@ -32,7 +33,12 @@ class RoleSeeder extends Seeder
         Permission::create(['name'=>'exequial.beneficiarios.store'])->syncRoles([$admin, $exequial]);
         Permission::create(['name'=>'exequial.beneficiarios.update'])->syncRoles([$admin, $exequial]);
         Permission::create(['name'=>'exequial.beneficiarios.destroy'])->syncRoles([$admin, $exequial]);
-        
+
+        //Permisos de Seguros 
+        Permission::create(['name'=>'exequial.polizas.show'])->syncRoles([$admin, $seguros, $viewer]);
+        Permission::create(['name'=>'exequial.polizas.store'])->syncRoles([$admin, $seguros]);
+        Permission::create(['name'=>'exequial.polizas.update'])->syncRoles([$admin, $seguros]);
+        Permission::create(['name'=>'exequial.polizas.destroy'])->syncRoles([$admin, $seguros]);
         
         Permission::create(['name'=>'admin'])->syncRoles($admin);
 

@@ -58,12 +58,35 @@ class ComaeExCliController extends Controller
 
     public function show(Request $request, $id)
     {      
-        //cedula por url asociados/ID?id=
-        //A la BD
+        //API
+        $token = env('TOKEN_ADMIN');
         $id = $request->input('id');
-        $asociado = ComaeExCli::where('cedula', $id)->firstOrFail();
-        $beneficiarios = ComaeExRelPar::where('cedulaAsociado', $id)->with('parentescoo')->get();
-        return view('exequial.beneficiarios.show', compact('asociado', 'beneficiarios'));
+        $titular = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $token,
+        ])->get(env('API_PRODUCCION') . '/api/Exequiales/Tercero', [
+            'documentId' => $id,
+        ]);
+        $beneficiarios = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $token,
+        ])->get(env('API_PRODUCCION') . '/api/Exequiales', [
+            'documentId' => $id,
+        ]);
+    
+        if ($titular->successful() && $beneficiarios->successful()) {
+            $jsonTit = $titular->json();            
+            $jsonBene = $beneficiarios->json();
+            if (isset($jsonTit['codePlan'])) {
+                $controllerplanes = app()->make(PlanController::class);
+                $nomPlan = $controllerplanes->nomCodPlan($jsonTit['codePlan']);
+                $jsonTit['codePlan'] = $nomPlan;
+            }
+            return view('exequial.asociados.show', [
+                'asociado' => $jsonTit, 
+                'beneficiarios' => $jsonBene,
+            ]);
+        } else {
+            return redirect()->route('exequial.asociados.index')->with('messageTit', 'No se encontró la cédula como titular de exequiales');
+        }
     }
 
     public function validarRegistro(Request $request){
@@ -148,10 +171,8 @@ class ComaeExCliController extends Controller
         } else {
             return response()->json(['error' => $response->json()], $response->status());
         }
-      
     }
     
-
     public function generarpdf($id)
     {
         $token = env('TOKEN_ADMIN');

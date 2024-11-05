@@ -67,8 +67,10 @@ class User extends Authenticatable
         ];
     }
 
+    
+
     public function actions()
-    {
-        return $this->hasMany(Action::class);
-    }
+{
+    return $this->hasMany(Action::class, 'user_email', 'email');
+}
 }

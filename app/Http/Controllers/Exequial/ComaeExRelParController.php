@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Exequial;
 
 use App\Http\Controllers\AuditoriaController;
+use App\Http\Controllers\Exequial\ComaeExCliController;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
@@ -15,43 +16,22 @@ class ComaeExRelParController extends Controller
         $auditoriaController->create($accion);
     }
 
-    public function show(Request $request, $id){
-        //API
-        $token = env('TOKEN_ADMIN');
-        $id = $request->input('id');
-        $titular = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $token,
-        ])->get(env('API_PRODUCCION') . '/api/Exequiales/Tercero', [
-            'documentId' => $id,
+
+    public function edit($id,  Request $request){
+        $idTit = $request->query('asociadoid');
+        $controllerTit = app()->make(ComaeExCliController::class);
+        return view('exequial.beneficiarios.edit', [
+            'id' => $id,
+            'asociado' => $controllerTit->titularShow($idTit),
         ]);
-        // $titular = Http::withHeaders([
-        //     'Authorization' => 'Bearer ' . $token,
-        // ])->get(env('API_PRODUCCION') . '/api/Pastors', [
-        //     'documentId' => $id,
-        // ]);
-        $beneficiarios = Http::withHeaders([
-            'Authorization' => 'Bearer ' . $token,
-        ])->get(env('API_PRODUCCION') . '/api/Exequiales', [
-            'documentId' => $id,
+    }
+    /* public function edit($idBene) {
+        $controllerTit = app()->make(ComaeExCliController::class);
+        return view('exequial.asociados.edit', [
+            'asociado' => $controllerTit->titularShow(),
+            'beneficiario' => ,
         ]);
-    
-        if ($titular->successful() && $beneficiarios->successful()) {
-            $jsonTit = $titular->json();            
-            $jsonBene = $beneficiarios->json();
-            if (isset($jsonTit['codePlan'])) {
-                $controllerplanes = app()->make(PlanController::class);
-                $nomPlan = $controllerplanes->nomCodPlan($jsonTit['codePlan']);
-                $jsonTit['codePlan'] = $nomPlan;
-            }
-            return view('exequial.beneficiarios.show', [
-                'asociado' => $jsonTit, 
-                'beneficiarios' => $jsonBene,
-            ]);
-        } else {
-            return redirect()->route('exequial.asociados.index')->with('messageTit', 'No se encontró la cédula como titular de exequiales');
-        }
-       
-    }   
+    } */
 
     
    public function store(Request $request)

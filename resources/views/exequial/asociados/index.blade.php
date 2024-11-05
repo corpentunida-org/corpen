@@ -40,7 +40,7 @@
                     </div>
                 </div>
                 <div class="col-sm-12 col-md-6 d-flex justify-content-end align-items-center">
-                    <form action="{{ route('exequial.beneficiarios.show', ['beneficiario' => 'ID']) }}" method="GET"
+                    <form action="{{ route('exequial.asociados.show', ['asociado' => 'ID']) }}" method="GET"
                         class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
                         <label for="search-input" class="mb-0 me-2">Buscar:</label>
                         <input type="text" name="id" class="form-control form-control-sm" id="valueCedula"
