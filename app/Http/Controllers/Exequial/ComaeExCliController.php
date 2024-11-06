@@ -55,7 +55,6 @@ class ComaeExCliController extends Controller
         ]);
     }
 
-
     public function show(Request $request, $id)
     {      
         //API
@@ -160,16 +159,17 @@ class ComaeExCliController extends Controller
             'discount'=> $request->discount,
             'observation'=> $request->observation,
             'stade'=> true 
-        ]);        
+        ]);  
+        $url = route('exequial.asociados.show', ['asociado' => 'ID']) . '?id=' . $request->documentid;      
         if ($response->successful()) {
             $accion = "update titular " . $request->documentid;
             $this->auditoria($accion);
             //return $data; //antigua vista
             //plantilla            
-            $url = route('exequial.beneficiarios.show', ['beneficiario' => 'ID']) . '?id=' . $request->documentid;
             return redirect()->to($url)->with('success', 'Titular actualizado exitosamente');
         } else {
-            return response()->json(['error' => $response->json()], $response->status());
+            //return response()->json(['error' => $response->json()], $response->status());
+            return redirect()->to($url)->with('msjerror', 'No se pudo actualizar el titular ' . $response->json());
         }
     }
     

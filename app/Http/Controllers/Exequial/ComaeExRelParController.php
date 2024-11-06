@@ -17,22 +17,22 @@ class ComaeExRelParController extends Controller
     }
 
 
-    public function edit($id,  Request $request){
-        $idTit = $request->query('asociadoid');
+    public function edit($id,Request $request){
+        $idTit = $request->input('asociadoid');       
+        $beneficiario = [
+            'name' => $request->input('name'),
+            'relationship' => $request->input('relationship'),
+            'dateBirthday' => substr($request->input('dateBirthday'), 0, 10)
+        ];
         $controllerTit = app()->make(ComaeExCliController::class);
-        return view('exequial.beneficiarios.edit', [
+        $controllerparen = app()->make(ParentescosController::class);
+        return view('exequial.beneficiarios.edit', [      
             'id' => $id,
             'asociado' => $controllerTit->titularShow($idTit),
+            'parentescos' => $controllerparen->index(),
+            'beneficiario' => $beneficiario
         ]);
     }
-    /* public function edit($idBene) {
-        $controllerTit = app()->make(ComaeExCliController::class);
-        return view('exequial.asociados.edit', [
-            'asociado' => $controllerTit->titularShow(),
-            'beneficiario' => ,
-        ]);
-    } */
-
     
    public function store(Request $request)
    {
@@ -83,13 +83,16 @@ class ComaeExRelParController extends Controller
             'documentBeneficiaryId' => $request->cedula,
             'dateBirthDate' => $request->fechaNacimiento,
         ]);
+        $url = route('exequial.asociados.show', ['asociado' => 'ID']) . '?id=' . $request->documentid;      
         if ($response->successful()) {
             $accion = "update beneficiario " . $request->cedula;
             $this->auditoria($accion);
-            return response()->json(['message' => 'Se actualizó correctamente', 'data' => $response->json()], $response->status());
+            //return response()->json(['message' => 'Se actualizó correctamente', 'data' => $response->json()], $response->status());
+            $url = route('exequial.asociados.show', ['asociado' => 'ID']) . '?id=' . $request->documentid;
+            return redirect()->to($url)->with('success', 'Beneficiario actualizado exitosamente');
         } else {
-            return response()->json(['error' => $response->json()], $response->status());
-        }        
+            return redirect()->to($url)->with('msjerror', 'No se pudo actualizar el titular ' . $response->json());
+        }
     }
     
     public function destroy($id)

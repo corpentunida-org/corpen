@@ -16,14 +16,14 @@
                 </div>
             </div>
             <div class="col-sm-12 col-md-6 d-flex justify-content-end align-items-center">
-                <form action="{{ route('exequial.beneficiarios.show', ['beneficiario' => 'ID']) }}" method="GET"
+                <form action="{{ route('exequial.asociados.show', ['asociado' => 'ID']) }}" method="GET"
                     class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
                     <label for="search-input" class="mb-0 me-2">Buscar:</label>
                     <input type="text" name="id" class="form-control form-control-sm" id="valueCedula"
                         placeholder="cédula titular" aria-controls="customerList">
                     <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i></button>
                 </form>
-            </div>          
+            </div>
         </div>
     </div>
 </div>
@@ -70,8 +70,7 @@
                                                     <a href="javascript:void(0);">Cédula</a>
                                                 </td>
                                                 <td>
-                                                    <!-- <a href="javascript:void(0);">{{ $asociado['documentId'] }} <span
-                                                            class="fs-12 fw-normal text-muted">{{ $asociado['name'] }}</span></a> -->
+                                                    <!-- <a href="javascript:void(0);">{{ $asociado['documentId'] }} <span class="fs-12 fw-normal text-muted">{{ $asociado['name'] }}</span></a> -->
                                                     <input class="fs-12 fw-normal text-muted border border-0 p-1" value="{{ $asociado['documentId'] }}" name="documentid" readonly>                                    
                                                 </td>
                                             </tr>
@@ -128,8 +127,7 @@
                                             </tr>
                                         </tbody>
                                     </table>
-                                </div>
-                            
+                                </div>                            
                             <div class="d-flex flex-row-reverse gap-2 mt-2">
                                 <button class="btn btn-warning" data-bs-toggle="tooltip" title="Timesheets" type="submit">
                                     <i class="feather-clock me-2"></i>
