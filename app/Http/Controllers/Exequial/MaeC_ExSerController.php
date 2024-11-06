@@ -19,7 +19,7 @@ class MaeC_ExSerController extends Controller
     }
     public function index()
     {
-        $registros = ExMonitoria::orderBy('id', 'desc')->get();
+        /* $registros = ExMonitoria::orderBy('id', 'desc')->get();
         $controllerparentesco = app()->make(ParentescosController::class);        
         foreach ($registros as $registro) {
             $nomPar = $controllerparentesco->showName($registro->parentesco);
@@ -27,7 +27,8 @@ class MaeC_ExSerController extends Controller
         }
         $tReg = ExMonitoria::count();
         $mReg = ExMonitoria::whereMonth('fechaFallecimiento', Carbon::now()->month)->count();
-        return view('exequial.prestarServicio.index', ['registros' => $registros, 'totalRegistros'=>$tReg, 'mesRegistros'=>$mReg]);
+        return view('exequial.prestarServicio.index', ['registros' => $registros, 'totalRegistros'=>$tReg, 'mesRegistros'=>$mReg]); */
+        return view('exequial.prestarServicio.index');
     }
     public function store(Request $request)
     {

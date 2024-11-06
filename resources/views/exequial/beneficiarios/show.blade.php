@@ -23,7 +23,6 @@
         </thead>
         <tbody>
             @foreach ($beneficiarios as $beneficiario)
-
                     @if ($beneficiario['type'] == 'A')
                             <tr class="single-item odd">
                                 <td>{{ $beneficiario['documentId'] }}</td>
@@ -53,10 +52,16 @@
                                             </a>
                                             <ul class="dropdown-menu">
                                                 <li>
-                                                <a href="{{ route('exequial.beneficiarios.edit', ['beneficiario' => $beneficiario['documentId']]) }}?asociadoid={{ $asociado['documentId'] }}">Editar</a>
+                                                <form action="{{ route('exequial.beneficiarios.edit', ['beneficiario' => $beneficiario['documentId']]) }}" method="GET">
+                                                    <input type="hidden" name="asociadoid" value="{{ $asociado['documentId'] }}">                                                    
+                                                    <input type="hidden" name="name" value="{{ $beneficiario['names'] }}">
+                                                    <input type="hidden" name="relationship" value="{{ $beneficiario['relationship'] }}">
+                                                    <input type="hidden" name="dateBirthday" value="{{ $beneficiario['dateBirthday'] }}">
+                                                    <button type="submit" class="dropdown-item">
                                                         <i class="feather feather-edit-3 me-3"></i>
                                                         <span>Editar</span>
-                                                    </a>
+                                                    </button>
+                                                </form>                                                    
                                                 </li>
                                                 <li>
                                                     <a class="dropdown-item printBTN" href="javascript:void(0)">

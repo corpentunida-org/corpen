@@ -12,11 +12,11 @@ class ParentescosController extends Controller
     {
         // $parentescos = Parentescos::all();
         // return response()->json($parentescos);
-
         $response = Http::get(env('API_PRODUCCION') . '/api/Exequiales/Relationship');
-        $posts = $response->json();
-        return response()->json($posts);
+        $data = $response->json();
+        return $data;
     }
+
 
     public function show($nomParentesco){
         $response = Http::get(env('API_PRODUCCION') . '/api/Exequiales/Relationship');

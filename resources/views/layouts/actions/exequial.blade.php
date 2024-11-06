@@ -5,6 +5,6 @@
     </a>
     <ul class="nxl-submenu">
         <li class="nxl-item"><a class="nxl-link" href="">Beneficiarios</a></li>
-        <li class="nxl-item"><a class="nxl-link" href="">Prestar Servicio</a></li>
+        <li class="nxl-item"><a class="nxl-link" href="{{ route('exequial.prestarServicio.index')}}" >Prestar Servicio</a></li>
     </ul>
 </li>
