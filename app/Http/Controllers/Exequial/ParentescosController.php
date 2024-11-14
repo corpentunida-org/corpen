@@ -30,7 +30,10 @@ class ParentescosController extends Controller
     }
 
     public function showName($codParentesco){
-        $response = Http::get(env('API_PRODUCCION') . '/api/Exequiales/Relationship');
+        $token = env('TOKEN_ADMIN');
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $token,
+        ])->get(env('API_PRODUCCION') . '/api/Exequiales/Relationship');
         $parentescos = $response->json();
         foreach ($parentescos as $parentesco) {
             if ($parentesco['code'] === $codParentesco) {

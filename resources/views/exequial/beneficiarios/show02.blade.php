@@ -416,8 +416,7 @@
                         <div class="col-md-5 pr-1">
                             <div class="form-group">
                                 <label>Lugar Fallecimiento <span class="required-asterisk">*</span></label>
-                                <input type="text" class="form-control uppercase-input" name="lugarFallecimiento"
-                                    required>
+                                <input type="text" class="form-control uppercase-input" name="lugarFallecimiento" required>
                             </div>
                         </div>
                         <div class="col-md-4 px-1">
@@ -484,7 +483,6 @@
                             </div>
                         </div>
                     </div>
-
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"

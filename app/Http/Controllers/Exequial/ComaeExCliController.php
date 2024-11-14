@@ -27,6 +27,9 @@ class ComaeExCliController extends Controller
     public function index()
     {
         return view('exequial.asociados.index');
+        /* $apiUrl = env('API_PRODUCCION');
+        dd($apiUrl);
+        return $apiUrl; */
     }
 
     //Datos solo del titular
@@ -35,7 +38,7 @@ class ComaeExCliController extends Controller
         $token = env('TOKEN_ADMIN');
         $titular = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
-        ])->get(env('API_PRODUCCION') . '/api/Exequiales/Tercero', [
+        ])->get(env('API_DESARROLLO') . '/api/Exequiales/Tercero', [
             'documentId' => $id,
         ]);
         if ($titular->successful()) {
@@ -59,15 +62,17 @@ class ComaeExCliController extends Controller
     {      
         //API
         $token = env('TOKEN_ADMIN');
+        //$token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6ImFkbWluQGdtYWlsLmNvbSIsImp0aSI6ImFiZThhYWU5LTRhZDctNGIyOS1iZDQxLWVhYjBiZDFkOWU3ZiIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJBZG1pbiIsIlVzZXJJZCI6IjEiLCJtYWlsIjoiYWRtaW5AZ21haWwuY29tIiwiVXNlcnJvbGUiOiJBZG1pbiIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6IkFkbWluIiwiZXhwIjoxNzMyNzI2ODkyLCJpc3MiOiJteWFwcCIsImF1ZCI6Im15YXBwIn0.xORK90WXu1wPocxAx1PkX7lWUH3lR78twXCeqib7Nxs';
         $id = $request->input('id');
+        
         $titular = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
-        ])->get(env('API_PRODUCCION') . '/api/Exequiales/Tercero', [
+        ])->get(env('API_PRODUCCION') .'/api/Exequiales/Tercero', [
             'documentId' => $id,
         ]);
         $beneficiarios = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
-        ])->get(env('API_PRODUCCION') . '/api/Exequiales', [
+        ])->get(env('API_PRODUCCION') .'/api/Exequiales', [
             'documentId' => $id,
         ]);
     
@@ -80,12 +85,20 @@ class ComaeExCliController extends Controller
                 $jsonTit['codePlan'] = $nomPlan;
             }
             return view('exequial.asociados.show', [
-                'asociado' => $jsonTit, 
+                'asociado' => $jsonTit,
                 'beneficiarios' => $jsonBene,
             ]);
         } else {
-            return redirect()->route('exequial.asociados.index')->with('messageTit', 'No se encontró la cédula como titular de exequiales');
+            return response()->json([
+                'error' => 'Something went wrong',
+                'titular_status' => $titular->status(),
+                'titular_response' => $titular->json(),
+                'beneficiarios_status' => $beneficiarios->status(),
+                'beneficiarios_response' => $beneficiarios->json(),
+            ], 500);
+            //return redirect()->route('exequial.asociados.index')->with('messageTit', 'No se encontró la cédula como titular de exequiales');
         }
+       
     }
 
     public function validarRegistro(Request $request){

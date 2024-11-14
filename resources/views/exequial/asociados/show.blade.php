@@ -52,21 +52,16 @@
                         <h5 class="fw-bold mb-0">
                             <span class="d-block mb-2">Información:</span>
                         </h5>
-                        <div class="d-flex gap-2">
-                            <a href="javascript:void(0);" class="btn btn-icon" data-bs-toggle="tooltip"
-                                title="Make as Complete">
-                                <i class="feather-check-circle"></i>
-                            </a>
-                            <a href="javascript:void(0);" class="btn btn-icon" data-bs-toggle="tooltip"
-                                title="Timesheets">
-                                <i class="feather-calendar"></i>
+                        <div class="d-flex gap-2">                            
+                            <a class="btn btn-icon" data-bs-toggle="offcanvas" data-bs-target="#proposalSent" title="Prestar Servicio">
+                                <i class="fa-regular fa-bell"></i>
                             </a>
                             <a href="javascript:void(0);" class="btn btn-icon" data-bs-toggle="tooltip"
                                 title="Statistics">
                                 <i class="feather-bar-chart-2"></i>
                             </a>
                             <a href="{{route('exequial.asociados.edit', $asociado['documentId'])}}"
-                                class="btn btn-warning" data-bs-toggle="tooltip" title="Timesheets">
+                                class="btn btn-warning" data-bs-toggle="tooltip">
                                 <i class="feather-clock me-2"></i>
                                 <span>Actualizar Titular</span>
                             </a>
@@ -124,18 +119,12 @@
 
             <div class="tab-pane fade p-4" id="securityTab" role="tabpanel">
                 <div class="col-lg-12">
-                    <div class="card stretch stretch-full">
-                        <div class="table-responsive">
-                            <div id="proposalList_wrapper" class="dataTables_wrapper dt-bootstrap5 no-footer">
-                                <div class="row">
-                                    @include('exequial.beneficiarios.show')
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    @include('exequial.beneficiarios.show')                   
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+
 @endsection
