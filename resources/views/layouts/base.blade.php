@@ -19,6 +19,10 @@
     <link rel="stylesheet" type="text/css" href="{{asset('assets/vendors/css/daterangepicker.min.css')}}" />
     <!--! END: Vendors CSS-->
     <!--! BEGIN: Custom CSS-->
+    
+    <link rel="stylesheet" type="text/css" href="{{ asset('assets/vendors/css/dataTables.bs5.min.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ asset('assets/vendors/css/select2.min.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ asset('assets/vendors/css/select2-theme.min.css') }}">
     <link rel="stylesheet" type="text/css" href="{{asset('assets/css/theme.min.css')}}" />
     <!--! END: Custom CSS-->
     <!--! HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries !-->
@@ -182,6 +186,10 @@
 <!--! Footer Script !-->
 <!--! ================================================================ !-->
 
+
+
+<script src="{{ asset('assets/js/customers-init.min.js') }}"></script>
+<script src="{{ asset('assets/js/theme-customizer-init.min.js') }}"></script>
 <!--! BEGIN: Vendors JS !-->
 <script src="{{asset('assets/vendors/js/vendors.min.js')}}"></script>
 <!-- vendors.min.js {always must need to be top} -->
@@ -192,6 +200,11 @@
 <!--! BEGIN: Apps Init  !-->
 <script src="{{asset('assets/js/common-init.min.js')}}"></script>
 <script src="{{asset('assets/js/dashboard-init.min.js')}}"></script>
+
+<script src="{{ asset('assets/vendors/js/dataTables.min.js') }}"></script>
+<script src="{{ asset('assets/vendors/js/dataTables.bs5.min.js') }}"></script>
+<script src="{{ asset('assets/vendors/js/select2.min.js') }}"></script>
+<script src="{{ asset('assets/vendors/js/select2-active.min.js') }}"></script>
 <!--! END: Apps Init !-->
 <!--! BEGIN: Theme Customizer  !-->
 <script src="{{asset('assets/js/theme-customizer-init.min.js')}}"></script>

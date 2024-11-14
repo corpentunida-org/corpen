@@ -19,17 +19,18 @@ class MaeC_ExSerController extends Controller
     }
     public function index()
     {
-        /* $registros = ExMonitoria::orderBy('id', 'desc')->get();
+        $registros = ExMonitoria::orderBy('id', 'desc')->get();
         $controllerparentesco = app()->make(ParentescosController::class);        
         foreach ($registros as $registro) {
             $nomPar = $controllerparentesco->showName($registro->parentesco);
             $registro->parentesco = $nomPar;
         }
-        $tReg = ExMonitoria::count();
-        $mReg = ExMonitoria::whereMonth('fechaFallecimiento', Carbon::now()->month)->count();
-        return view('exequial.prestarServicio.index', ['registros' => $registros, 'totalRegistros'=>$tReg, 'mesRegistros'=>$mReg]); */
-        return view('exequial.prestarServicio.index');
+        /* $tReg = ExMonitoria::count();
+        $mReg = ExMonitoria::whereMonth('fechaFallecimiento', Carbon::now()->month)->count(); */
+        //return view('exequial.prestarServicio.index', ['registros' => $registros, 'totalRegistros'=>$tReg, 'mesRegistros'=>$mReg]);
+        return view('exequial.prestarServicio.index', ['registros' => $registros]);
     }
+    
     public function store(Request $request)
     {
         //$this->authorize('create', auth()->user());
@@ -46,23 +47,17 @@ class MaeC_ExSerController extends Controller
                 "codePlan" => $request->codePlan ? $request->codePlan : '01',
                 "discount"=> $request->discount,
                 "observation"=> $request->observation,
-                "stade"=> false 
+                "stade"=> false
             ]);
             // return redirect()->back()
             //                  ->with('error', 'EN EL IF del titular');
         }else{
-            $controllerparentesco = app()->make(ParentescosController::class);
-            $codPar = $controllerparentesco->show($request->parentesco);
-            //Cambio en beneficiarios de estado a false
-            // $modelo = ComaeExRelPar::where('cedula', $request->cedulaFallecido)->first()->refresh();
-            // $modelo->estado = '0';
-            // $modelo->save();
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $token,
                 'Accept' => '*/*',
             ])->put(env('API_PRODUCCION') . '/api/Exequiales/Beneficiary', [
                 "name" => $request->nameBeneficiary,
-                "codeParentesco" => $codPar,
+                "codeParentesco" => $request->parentesco,
                 "type" => "I",
                 "dateEntry"=>$request->dateInit ? $request->dateInit : ' ',
                 "documentBeneficiaryId" => $request->cedulaFallecido,
@@ -79,7 +74,7 @@ class MaeC_ExSerController extends Controller
                 'cedulaFallecido'  => $request->cedulaFallecido,
                 'fechaFallecimiento' => $request->fechaFallecimiento,
                 'lugarFallecimiento' => $request->lugarFallecimiento,
-                'parentesco'=> $codPar,
+                'parentesco'=> $request->parentesco,
                 'traslado'=> $request->traslado,
                 'contacto'=> $request->contacto,
                 'telefonoContacto'=> $request->telefonoContacto,
@@ -93,10 +88,9 @@ class MaeC_ExSerController extends Controller
             return $this->index();
         }
         else{
-            return redirect()->back()
-                             ->with('error', 'Mensaje: ' . $response->body() . 'Estado: ' . $response->status() . 'Modelo: **' . $request);            
+            return "error " . response()->json(['error' => $response->json()], $response->status());;
         }
-    }
+    } 
 
     public function consultaMes($mes)
     {
