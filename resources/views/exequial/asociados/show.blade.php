@@ -1,4 +1,5 @@
 @extends('layouts.base')
+@section('titlepage', 'Asociado')
 @section('contentpage')
 <div class="col-lg-12">
     <div class="card stretch stretch-full">
@@ -52,14 +53,14 @@
                         <h5 class="fw-bold mb-0">
                             <span class="d-block mb-2">Información:</span>
                         </h5>
-                        <div class="d-flex gap-2">                            
-                            <a class="btn btn-icon" data-bs-toggle="offcanvas" data-bs-target="#proposalSent" title="Prestar Servicio">
+                        <div class="d-flex gap-2">
+                            <!-- <a href="javascript:void(0);" class="btn btn-icon" data-bs-toggle="tooltip" title="Prestar Servicio" data-bs-target="#proposalSent">
+                                <i class="fa-regular fa-bell"></i>
+                            </a> -->
+                            <a href="javascript:void(0);" class="btn btn-icon" data-bs-toggle="offcanvas" data-bs-target="#proposalSent2">
                                 <i class="fa-regular fa-bell"></i>
                             </a>
-                            <a href="javascript:void(0);" class="btn btn-icon" data-bs-toggle="tooltip"
-                                title="Statistics">
-                                <i class="feather-bar-chart-2"></i>
-                            </a>
+                            
                             <a href="{{route('exequial.asociados.edit', $asociado['documentId'])}}"
                                 class="btn btn-warning" data-bs-toggle="tooltip">
                                 <i class="feather-clock me-2"></i>
@@ -119,12 +120,114 @@
 
             <div class="tab-pane fade p-4" id="securityTab" role="tabpanel">
                 <div class="col-lg-12">
-                    @include('exequial.beneficiarios.show')                   
+                    @include('exequial.beneficiarios.show')
                 </div>
             </div>
         </div>
     </div>
 </div>
 
+<div class="offcanvas offcanvas-end" tabindex="-1" id="proposalSent2">
+    <div class="offcanvas-header ht-80 px-4 border-bottom border-gray-5">
+        <div>
+            <h2 class="fs-16 fw-bold text-truncate-1-line">PRESTAR SERVICIO</h2>
+            <small class="fs-12 text-muted fechahoy">25 MAY, 2023</small>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <form method="POST" action="{{ route('exequial.prestarServicio.store') }}" id="FormularioPrestarServicio"
+        novalidate>
+        @csrf
+        <div
+            class="py-3 px-4 d-flex justify-content-between align-items-center border-bottom border-bottom-dashed border-gray-5 bg-gray-100">
+            <div>
+                <input class="fw-bold text-dark p-0 m-0 border border-0 bg-gray-100" id="nameBeneficiario"
+                    style="width: 100%;" name="nameBeneficiary" readonly>
+                <input class="fs-12 fw-medium text-muted p-0 m-0 border border-0 bg-gray-100" id="idBeneficiario"
+                    name="cedulaFallecido" readonly>
+            </div>
+        </div>
+        <input type="hidden" name="pastor" id="ispastor" value="false">
+        <input type="hidden" id="cedulaTitular" name="cedulaTitular" value="{{ $asociado['documentId'] }}">
+        <input type="hidden" value="{{ $asociado['name'] }}" name="nameTitular">
+        <input type="hidden" id="parentescoServicio" name="parentesco">
+        <input type="hidden" name="fecNacFallecido" id="fecNacFallecido">
+        <input type="hidden" name="dateInit" id="dateInit">
 
+        <div class="offcanvas-body">
+            <div class="form-group mb-4">
+                <label class="form-label">Lugar Fallecimiento<span class="text-danger">*</span></label>
+                <input type="text" class="form-control uppercase-input" name="lugarFallecimiento" required>
+            </div>
+            <div class="row">
+                <!-- <div class="form-group mb-4">
+                    <label class="form-label">To: <span class="text-danger">*</span></label>
+                    <input class="form-control" name="tomailcontent" value="wrapcode.info@gmail.com" placeholder="To..."
+                        required>
+                </div> -->
+                <div class="form-group col-lg-6 mb-4">
+                    <label class="form-label">Fecha<span class="text-danger">*</span></label>
+                    <input type="date" class="form-control datepicker-input" name="fechaFallecimiento" required>
+                </div>
+                <div class="form-group col-lg-6 mb-4">
+                    <label class="form-label">Hora<span class="text-danger">*</span></label>
+                    <input type="time" class="form-control" name="horaFallecimiento" required>
+                </div>
+            </div>
+            <div class="form-group mb-4">
+                <label class="form-label">Contacto 1<span class="text-danger">*</span></label>
+                <input type="text" class="form-control uppercase-input" name="contacto">
+            </div>
+            <div class="form-group mb-4">
+                <label class="form-label">Contacto 2</label>
+                <input type="text" class="form-control uppercase-input" name="contacto2">
+            </div>
+            <div class="row">
+                <div class="form-group col-lg-6 mb-4">
+                    <label class="form-label">Telefono 1<span class="text-danger">*</span></label>
+                    <input type="number" class="form-control" name="telefonoContacto">
+                </div>
+                <div class="form-group col-lg-6 mb-4">
+                    <label class="form-label">Telefono 2</label>
+                    <input type="number" class="form-control" name="telefonoContacto2">
+                </div>
+            </div>
+            <div class="row">
+                <div class="form-group col-lg-4 mb-4">
+                    <label class="form-label">Factura<span class="text-danger">*</span></label>
+                    <input type="text" class="form-control uppercase-input" name="factura">
+                </div>
+                <div class="form-group col-lg-4 mb-4">
+                    <label class="form-label">Valor<span class="text-danger">*</span></label>
+                    <input type="text" class="form-control" name="valor">
+                </div>
+                <div class="form-group col-lg-4 mb-4">
+                    <label class="form-label">Traslado<span class="text-danger">*</span></label>
+                    <select class="form-control" name="traslado">
+                        <option value="1">Sí</option>
+                        <option value="0">No</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="px-4 gap-2 d-flex align-items-center ht-80 border border-end-0 border-gray-2">
+            <a href="javascript:void(0);" class="btn btn-danger w-50" data-bs-dismiss="offcanvas">Cancel</a>
+            <button type="submit" class="btn btn-success w-50">Prestar Servicio</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    const today = new Date();
+    
+    const day = today.getDate();
+    const month = today.toLocaleString('en-US', { month: 'short' }).toUpperCase(); // Nombre del mes en MAY
+    const year = today.getFullYear();
+    
+    // Formatear la fecha
+    const formattedDate = `${day} ${month}, ${year}`;
+    
+    // Mostrar la fecha en el elemento con id 'currentDate'
+    document.getElementsByClassName('fechahoy').textContent = formattedDate;
+</script>
 @endsection
