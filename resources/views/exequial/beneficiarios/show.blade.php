@@ -55,7 +55,7 @@
                                                                                 <td>{{ $edad }}</td>
                                                                                 <td>
                                                                                     <div class="hstack gap-2 justify-content-end">
-                                                                                        <a href="proposal-view.html" class="avatar-text avatar-md">
+                                                                                        <a href="#" class="avatar-text avatar-md">
                                                                                             <i class="feather feather-eye"></i>
                                                                                         </a>
                                                                                         <div class="dropdown">

@@ -99,12 +99,12 @@
                 </div>
                 <div class="dropdown nxl-h-item">
                     <a href="javascript:void(0);" data-bs-toggle="dropdown" role="button" data-bs-auto-close="outside">
-                        <img src="assets/images/avatar/1.png" alt="user-image" class="img-fluid user-avtar me-0" />
+                        <!-- <img src="" alt="user-image" class="img-fluid user-avtar me-0" /> -->
                     </a>
                     <div class="dropdown-menu dropdown-menu-end nxl-h-dropdown nxl-user-dropdown">
                         <div class="dropdown-header">
                             <div class="d-flex align-items-center">
-                                <img src="assets/images/avatar/1.png" alt="user-image" class="img-fluid user-avtar" />
+                                <!-- <img src="" alt="user-image" class="img-fluid user-avtar" /> -->
                                 <div>
                                     <h6 class="text-dark mb-0">{{ auth()->user()->name }}</h6>
                                     <span class="fs-12 fw-medium text-muted">{{ auth()->user()->email }}</span>
@@ -147,11 +147,11 @@
             <div class="page-header-left d-flex align-items-center">
                 @stack('header')
                 <div class="page-header-title">
-                    <h5 class="m-b-10">Dashboard</h5>
+                    <h5 class="m-b-10">APP Corpentunida</h5>
                 </div>
                 <ul class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="index.html">Home</a></li>
-                    <li class="breadcrumb-item">Dashboard</li>
+                    <li class="breadcrumb-item"><a href="{{ url('/') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item">@yield('titlepage', 'Inicio')</li>
                 </ul>
             </div>
         </div>
