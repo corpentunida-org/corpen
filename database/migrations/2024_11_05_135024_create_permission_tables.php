@@ -9,7 +9,7 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
+    /* public function up(): void
     {
         $teams = config('permission.teams');
         $tableNames = config('permission.table_names');
@@ -118,7 +118,7 @@ return new class extends Migration
         app('cache')
             ->store(config('permission.cache.store') != 'default' ? config('permission.cache.store') : null)
             ->forget(config('permission.cache.key'));
-    }
+    } */
 
     /**
      * Reverse the migrations.
