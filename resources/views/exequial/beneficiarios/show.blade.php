@@ -8,7 +8,19 @@
         {{ session('error') }}
     </div>
 @endif
-<div class="card stretch stretch-full">
+<div class="mb-4 d-flex align-items-center justify-content-between">
+    <h5 class="fw-bold mb-0">
+        <span class="d-block mb-2">Información:</span>
+    </h5>
+    <div class="d-flex gap-2">
+
+    <a href="{{route('exequial.beneficiarios.create')}}" class="btn btn-success">
+                                <i class="feather-plus me-2"></i>
+                                <span>Agregar Beneficiario</span>
+                            </a>
+    </div>
+</div>
+
     <div class="table-responsive">
         <div id="proposalList_wrapper" class="dataTables_wrapper dt-bootstrap5 no-footer">
             <div class="row">
@@ -117,7 +129,7 @@
             </div>
         </div>
     </div>
-</div>
+
 
 <div class="card stretch stretch-full" id="cardServiciosPrestados">
     <div class="card-header">

@@ -34,6 +34,11 @@ class ComaeExRelParController extends Controller
         ]);
     }
     
+    public function create(){
+        //cedula nombre de titular
+        //lista de parentescos
+        return view('exequial.beneficiarios.create');
+    }
    public function store(Request $request)
    {
        //$this->authorize('create', auth()->user());       
