@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('valorPlan');
 
             $table->unsignedBigInteger('idTipoPoliza');
-            $table->foreign('idTipoPoliza')->references('id')->on('SEG_tipoPolizas');
+            $table->foreign('idTipoPoliza')->references('idPoliza')->on('SEG_tipoPolizas');
             $table->timestamps();
         });
     }

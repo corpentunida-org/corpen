@@ -3,6 +3,7 @@
 
 use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuditoriaController;
 
 use App\Http\Controllers\Exequial\ComaeTerController;
 use App\Http\Controllers\Exequial\ComaeExCliController;
@@ -11,21 +12,16 @@ use App\Http\Controllers\Exequial\ParentescosController;
 use App\Http\Controllers\Exequial\MaeC_ExSerController;
 use App\Http\Controllers\Exequial\PlanController;
 
+use App\Http\Controllers\Seguros\SegPolizaController;
 
 
-Route::middleware(['auth'])->group(function () {
+/* Route::middleware(['auth'])->group(function () {
     Route::get('/', function () {
-        $user = Auth::user();
-        // if ($user->hasRole('creditos')) {
-        //     return view('creditos.index');
-        // } elseif ($user->hasRole('exequial')) {
-        //     return view('exequial.asociados.index');
-        // } else {
-        //     return view('welcome');
-        // }
-        return view('exequial.asociados.index');
-        //return view('layouts.mainview');
+        //return view('exequial.asociados.index');
     })->name('dashboard');
+}); */
+Route::middleware(['auth'])->group(function () {
+    Route::get('/', [AuditoriaController::class, 'index'])->name('dashboard');
 });
 
 Route::get('/offline', function () {
@@ -68,5 +64,6 @@ Route::get('/parentescosall', [ParentescosController::class, 'index'])->name('ex
 
 Route::get('/plansall', [PlanController::class, 'index'])->name('exequial.plansall');
 
-//RUTAS
+//RUTAS SEGUROS
+Route::resource('poliza', SegPolizaController::class)->middleware('auth')->names('seguros.poliza');
 

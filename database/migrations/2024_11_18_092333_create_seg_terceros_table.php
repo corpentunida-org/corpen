@@ -15,9 +15,8 @@ return new class extends Migration
             /* $table->id(); */
             $table->bigInteger('cedula')->unique()->primary();
             $table->string('nombre');
-            $table->string('fechaNacimiento');
-            $table->string('telefono');
-            $table->string('parentesco');
+            $table->string('fechaNacimiento')->nullable();
+            $table->string('telefono')->nullable();
             $table->string('genero');
             $table->timestamps();
         });

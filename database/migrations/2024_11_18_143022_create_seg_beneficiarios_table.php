@@ -18,8 +18,8 @@ return new class extends Migration
             $table->bigInteger('cedula');
             $table->foreign('cedula')->references('cedula')->on('SEG_terceros')->onDelete('cascade');
 
-            $table->bigInteger('idPoliza');
-            $table->foreign('idPoliza')->references('idPoliza')->on('SEG_polizas')->onDelete('cascade');
+            $table->unsignedBigInteger('idPoliza');
+            $table->foreign('idPoliza')->references('id')->on('SEG_polizas')->onDelete('cascade');
 
             $table->timestamps();
         });

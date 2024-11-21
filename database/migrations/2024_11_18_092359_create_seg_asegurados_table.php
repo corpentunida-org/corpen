@@ -14,7 +14,10 @@ return new class extends Migration
         Schema::create('SEG_asegurados', function (Blueprint $table) {
             $table->bigInteger('cedula');
             $table->foreign('cedula')->references('cedula')->on('SEG_terceros')->onDelete('cascade');
-            $table->string('tipo');
+            $table->string('parentesco');
+            $table->string('prima')->nullable();
+            $table->string('descuento');
+            $table->bigInteger('titular');
             $table->timestamps();
         });
     }

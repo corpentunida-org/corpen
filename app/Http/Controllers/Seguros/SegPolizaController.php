@@ -13,7 +13,7 @@ class SegPolizaController extends Controller
      */
     public function index()
     {
-        //
+        return view('seguros.polizas.index');
     }
 
     /**
