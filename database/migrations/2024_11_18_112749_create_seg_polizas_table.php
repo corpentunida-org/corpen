@@ -12,9 +12,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('SEG_polizas', function (Blueprint $table) {
-            $table->bigInteger('idPoliza')->unique()->primary();
-            $table->date('fechaInicio');
-            $table->date('fechaFin');
+            $table->id();
+            $table->date('fechaInicio')->nullable();
+            $table->date('fechaFin')->nullable();
             $table->date('fechaNovedad');
             $table->string('estado');
             $table->string('descripcion');
@@ -23,7 +23,7 @@ return new class extends Migration
             $table->foreign('idAsegurado')->references('cedula')->on('SEG_terceros');
 
             $table->unsignedBigInteger('idTipoPoliza');
-            $table->foreign('idTipoPoliza')->references('id')->on('SEG_tipoPolizas');
+            $table->foreign('idTipoPoliza')->references('idPoliza')->on('SEG_tipoPolizas');
 
             $table->unsignedBigInteger('idPlan');
             $table->foreign('idPlan')->references('id')->on('SEG_plans');

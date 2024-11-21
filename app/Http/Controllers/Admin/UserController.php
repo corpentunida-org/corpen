@@ -10,8 +10,9 @@ use Spatie\Permission\Models\Role;
 class UserController extends Controller
 {
     public function index() {
-        $users = User::all();
-        return view('admin.users.index', compact('users'));
+        /* $users = User::all();
+        return view('admin.users.index', compact('users')); */
+        return "en el index";
     }
 
     public function edit(User $user) {

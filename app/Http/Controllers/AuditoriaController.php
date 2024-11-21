@@ -18,4 +18,20 @@ class AuditoriaController extends Controller
             'accion'=> $action,
         ]);
     }
+    public function index()
+    {
+        $user = Auth::user();
+        if ($user->hasRole('admin')) {
+            return view('admin.users.index');
+        } elseif ($user->hasRole('exequial')) {
+            return view('exequial.asociados.index');
+        } elseif ($user->hasRole('creditos')) {
+            return view('exequial.asociados.index');
+        } elseif ($user->hasRole('seguros')) {
+            return view('seguros.polizas.index');
+        } else {
+            return redirect('exequial.prestarServicio.index');
+        }
+    }
+
 }
