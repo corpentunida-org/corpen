@@ -16,7 +16,6 @@ class ComaeExRelParController extends Controller
         $auditoriaController->create($accion);
     }
 
-
     public function edit($id,Request $request){
         $idTit = $request->input('asociadoid');       
         $beneficiario = [
@@ -26,7 +25,7 @@ class ComaeExRelParController extends Controller
         ];
         $controllerTit = app()->make(ComaeExCliController::class);
         $controllerparen = app()->make(ParentescosController::class);
-        return view('exequial.beneficiarios.edit', [      
+        return view('exequial.beneficiarios.edit', [
             'id' => $id,
             'asociado' => $controllerTit->titularShow($idTit),
             'parentescos' => $controllerparen->index(),
