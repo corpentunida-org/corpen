@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Seguros\SegPoliza;
 use Illuminate\Http\Request;
 
+use App\Models\Seguros\SegAsegurado;
+
 class SegPolizaController extends Controller
 {
     /**
@@ -35,9 +37,11 @@ class SegPolizaController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(SegPoliza $segPoliza)
+    public function show(Request $request)
     {
-        //
+        $id = $request->input('id');
+        $titular = SegAsegurado::where('cedula', $id)->where('parentesco', 'AF')->firstOrFail(); 
+        return view('seguros.polizas.show', compact('titular'));
     }
 
     /**

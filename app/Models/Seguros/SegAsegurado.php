@@ -8,4 +8,10 @@ use Illuminate\Database\Eloquent\Model;
 class SegAsegurado extends Model
 {
     use HasFactory;
+    protected $table = 'SEG_asegurados';
+
+    public function tercero()
+    {
+        return $this->belongsTo(SegTercero::class, 'cedula', 'cedula');
+    }
 }
