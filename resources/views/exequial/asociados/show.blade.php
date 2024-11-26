@@ -1,6 +1,11 @@
 @extends('layouts.base')
 @section('titlepage', 'Asociado')
 @section('contentpage')
+<style>
+    .uppercase-input {
+        text-transform: uppercase;
+    }
+</style>
 <div class="col-lg-12">
     <div class="card stretch stretch-full">
         <div class="card-body task-header d-lg-flex align-items-center justify-content-between">
