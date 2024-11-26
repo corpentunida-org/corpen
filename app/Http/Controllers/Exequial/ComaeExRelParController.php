@@ -33,41 +33,41 @@ class ComaeExRelParController extends Controller
         ]);
     }
     
-    public function create(){
+    public function create(Request $request){
         //cedula nombre de titular
-        //lista de parentescos
-        return view('exequial.beneficiarios.create');
-    }
-   public function store(Request $request)
-   {
-       //$this->authorize('create', auth()->user());       
-       $request->validate([
-           'cedula' => ['required', 'min:3'],
-           'fechaNacimiento' => ['required'],
-           'apellidos' => ['required'],
-           'nombres' => ['required'],
+        $asociado = $request->input('asociado');
+        $controllerTit = app()->make(ComaeExCliController::class);
+        $controllerparen = app()->make(ParentescosController::class);
+        return view('exequial.beneficiarios.create',[
+            'parentescos' => $controllerparen->index(),
+            'asociado' => $controllerTit->titularShow($asociado),
         ]);
-        
+    }
+    
+   public function store(Request $request)
+   {        
         $fechaActual = Carbon::now();            
         $token = env('TOKEN_ADMIN');
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
             'Accept' => 'application/json',
             ])->post(env('API_PRODUCCION') . '/api/Exequiales/Beneficiary', [
-                'documentBeneficiaryId' => $request->cedula,
+                'documentBeneficiaryId' => $request->documentid,
                 'codePastor' => $request->cedulaAsociado,
                 'name' => $request->apellidos . ' ' . $request->nombres,
                 'dateBirthDate' => $request->fechaNacimiento,
                 'dateEntry' => $fechaActual,
-                'codeParentesco' => $request->parentesco,
+                'codeParentesco' => $request->codePar,
                 'type' => "A"
             ]);
         if ($response->successful()) {
-            $accion = "add beneficiario " . $request->cedula;
+            $accion = "add beneficiario " . $request->documentid;
             $this->auditoria($accion);
-            return response()->json(['message' => 'Se agrego beneficiario correctamente', 'data' => $response->json()], $response->status());
+            //return response()->json(['message' => 'Se agrego beneficiario correctamente', 'data' => $response->json()], $response->status());
+            $url = route('exequial.asociados.show', ['asociado' => 'ID']) . '?id=' . $request->cedulaAsociado;
+            return redirect()->to($url)->with('success', 'Beneficiario agregado exitosamente');
         } else {
-            return response()->json(['error' => $response->json()], $response->status());
+            return redirect()->back()->with('error', "aaaaa " . $response->json() . $response->status());
         }
     }
         

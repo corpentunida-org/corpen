@@ -112,6 +112,13 @@ class ComaeExCliController extends Controller
         }
     }
 
+    public function create(Request $request){
+        $controllerplan = app()->make(PlanController::class);
+        return view('exequial.asociados.create',[
+            'plans' => $controllerplan->index(),
+        ]);
+    }
+
     public function store(Request $request)
     {
         //$this->authorize('create', auth()->user());
@@ -124,40 +131,33 @@ class ComaeExCliController extends Controller
             'documentId' => $request->documentId,
             'obsevations' => $request->observaciones,
             'dateStart' => $fechaActual,
-            'descuento' => 0,
+            'descuento' => $request->discount,
             'codePlan' => $request->plan,
             'codeCenterCost' => "C1010"
-        ]);
-        //dd($request->documentId);
+        ]);        
         if ($response->successful()) {
             $accion = "add titular " . $request->documentId;
             $this->auditoria($accion);
-            return response()->json([
+            /* return response()->json([
                 'redirect' => route('exequial.beneficiarios.show', ['beneficiario' => $request->documentId]),
                 'message' => 'Titular añadido exitosamente.'
-            ]);
+            ]); */
+            $url = route('exequial.asociados.show', ['asociado' => 'ID']) . '?id=' . $request->cedulaAsociado;
+            return redirect()->to($url)->with('success', 'Titular agregado exitosamente');
         } else {
             $jsonResponse = $response->json();
             $message = $jsonResponse['message'];
-            if ($message === "El pastor no se encuentra registrado, debe registrarlo para tener acceso al servicio de exequiales") {
+            /*if ($message === "El pastor no se encuentra registrado, debe registrarlo para tener acceso al servicio de exequiales") {
                 $code = 1;
             } elseif ($message === "Ya se encuetra registrado como titular de exequiales con esa cedula") {
                 $code = 2;
             }
             else $code = 3;
-            return response()->json(['error' => $message, 'code' => $code], $response->status());
+            return response()->json(['error' => $message, 'code' => $code], $response->status()); */
+            return redirect()->back()->with('error', $message);
         }
     }
-    //actualizar fechas
-    // public function update(Request $request, $cedula)
-    // {
-    //     ComaeExCli::where('cedula', $cedula)
-    //         ->update(['fechaNacimiento' => $request->input('fechaNacimiento')]);
-
-    //     $asociado = ComaeExCli::where('cedula', $cedula)->firstOrFail();
-    //     $beneficiarios = ComaeExRelPar::where('cedulaAsociado', $cedula)->get();
-    //     return view('exequial.asociados.show', compact('asociado', 'beneficiarios'))->with('success', 'Datos actualizados');
-    // }
+    
 
     public function update(Request $request){
         //$this->authorize('update', auth()->user());        
