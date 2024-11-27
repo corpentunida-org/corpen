@@ -1,14 +1,10 @@
-@extends('layouts.base')
-@section('contentpage')
-
-
-
+<x-base-layout>
 <div class="col-lg-12">
     <div class="card stretch stretch-full">
         <div class="card-body p-0">
             <div class="table-responsive">
                 <div id="customerList_wrapper" class="dataTables_wrapper dt-bootstrap5 no-footer">
-                    
+
                     <div class="col-sm-12">
                         <table class="table table-hover" id="customerList">
                             <thead>
@@ -125,13 +121,11 @@
                                 @endforeach
                             </tbody>
                         </table>
-                    </div>                    
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-
-
-@endsection
+</x-base-layout>

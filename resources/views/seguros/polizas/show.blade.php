@@ -1,5 +1,4 @@
-@extends('layouts.base')
-@section('contentpage')
+<x-base-layout>
 @section('titlepage', 'Polizas')
 
 <div class="col-lg-12">
@@ -18,7 +17,7 @@
                 </div>
             </div>
             <div class="col-sm-12 col-md-6 d-flex justify-content-end align-items-center">
-                <form action="{{ route('seguros.poliza.show', ['poliza' => 'ID']) }}" method="GET"
+                <form action="{{ route('poliza.show', ['poliza' => 'ID']) }}" method="GET"
                     class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
                     <label for="search-input" class="mb-0 me-2">Buscar:</label>
                     <input type="text" name="id" class="form-control form-control-sm" id="valueCedula"
@@ -31,8 +30,6 @@
 </div>
 
 <div class="col-xxl-12 col-xl-12">
-    
+
 </div>
-
-
-@endsection
+</x-base-layout>>
