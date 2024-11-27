@@ -1,5 +1,4 @@
-@extends('layouts.base')
-@section('contentpage')
+<x-base-layout>
 
 <div class="col-lg-12">
     <div class="card stretch stretch-full">
@@ -47,7 +46,7 @@
   "dateBirthDate": "2024-11-21T17:18:28.874Z" -->
         <div class="tab-content">
             <div class="tab-pane fade active show" id="connectionTab" role="tabpanel">
-                <div class="col-lg-12">                    
+                <div class="col-lg-12">
                         <div class="card-body lead-info">
                             <div class="mb-4 d-flex align-items-center justify-content-between">
                                 <h5 class="fw-bold mb-0">
@@ -63,7 +62,7 @@
                                     <a href="javascript:void(0);" class="btn btn-icon" data-bs-toggle="tooltip" title="Statistics">
                                         <i class="feather-bar-chart-2"></i>
                                     </a>
-                                    
+
                                 </div>
                             </div>
                             <form method="POST" id="formUpdateTitular" novalidate>
@@ -76,8 +75,8 @@
                                                 <td style="width: 50px;">
                                                     <a href="javascript:void(0);">Cédula</a>
                                                 </td>
-                                                <td>                                                    
-                                                    <input class="form-control fs-12 fw-normal text-muted p-2" name="documentid">                                    
+                                                <td>
+                                                    <input class="form-control fs-12 fw-normal text-muted p-2" name="documentid">
                                                 </td>
                                             </tr>
                                             <tr>
@@ -93,26 +92,26 @@
                                                 <td>
                                                     <a href="javascript:void(0);">Parentesco</a>
                                                 </td>
-                                                
+
                                             </tr>
                                             <tr>
                                                 <td>
-                                                    <a href="javascript:void(0);">Fecha de nacimiento</a>                                                    
+                                                    <a href="javascript:void(0);">Fecha de nacimiento</a>
                                                 </td>
-                                                <td>                                                
+                                                <td>
                                                 <input type="date" class="form-control fs-12 fw-normal text-muted p-2" name="discount" required>
-                                            </tr> 
-                                            <tr></tr>                                           
-                                            
+                                            </tr>
+                                            <tr></tr>
+
                                         </tbody>
                                     </table>
-                                </div>                            
+                                </div>
                             <div class="d-flex flex-row-reverse gap-2 mt-2">
                                 <button class="btn btn-success" data-bs-toggle="tooltip" title="Beneficiario" type="submit">
-                                
+
                                 <i class="feather-plus me-2"></i>
                                 <span>Agregar</span>
-                            
+
                                 </button>
                             </div>
                             </form>
@@ -135,4 +134,4 @@
     </div>
 </div>
 
-@endsection
+</x-base-layout>

@@ -1,5 +1,4 @@
-@extends('layouts.base')
-@section('contentpage')
+<x-base-layout>
 <div class="col-lg-12">
     <div class="card stretch stretch-full">
         <div class="card-body task-header d-lg-flex align-items-center justify-content-between">
@@ -99,4 +98,4 @@
     </div>
 </div>
 </div>
-@endsection
+</x-base-layout>

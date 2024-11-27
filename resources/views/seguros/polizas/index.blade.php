@@ -1,20 +1,7 @@
-@extends('layouts.base')
-@section('contentpage')
-@if (session('messageTit'))
+<x-base-layout>
+
 <div class="col-12">
-    <div class="p-4 bg-soft-warning rounded-3 m-2">
-        <p class="fs-12 text-dark text-truncate-2-line">No se encontró el titular
-        <a href="javascript:void(0);" class="fs-10 text-uppercase text-danger d-flex align-items-center">
-            <span
-                class="wd-10 ht-10 d-flex align-items-center justify-content-center bg-danger text-white me-2 rounded-circle">
-                <i class="feather feather-x fs-8"></i>
-            </span>
-            <span>Cerrar</span>
-        </a>
-    </div>
-</div>
-@endif
-<div class="col-12">
+    <x-warning />
     <div class="card stretch stretch-full">
         <div class="card-body">
             <div class="row">
@@ -40,7 +27,7 @@
                     </div>
                 </div>
                 <div class="col-sm-12 col-md-6 d-flex justify-content-end align-items-center">
-                    <form action="{{ route('seguros.poliza.show', ['poliza' => 'ID']) }}" method="GET" class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
+                    <form action="{{ route('poliza.show', ['poliza' => 'ID']) }}" method="GET" class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
                         <label for="search-input" class="mb-0 me-2">Buscar:</label>
                         <input type="text" name="id" class="form-control form-control-sm" id="valueCedula"
                             placeholder="cédula titular" aria-controls="customerList">
@@ -111,10 +98,10 @@
                         </div>
                         <div class="badge bg-gray-200 text-dark project-mini-card-badge">Updates</div>
                     </div>
-                </div>                
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-@endsection
+</x-base-layout>

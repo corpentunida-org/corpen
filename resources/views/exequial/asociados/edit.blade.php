@@ -1,6 +1,4 @@
-@extends('layouts.base')
-@section('contentpage')
-
+<x-base-layout>
 <div class="col-lg-12">
     <div class="card stretch stretch-full">
         <div class="card-body task-header d-lg-flex align-items-center justify-content-between">
@@ -40,7 +38,7 @@
         </div>
         <div class="tab-content">
             <div class="tab-pane fade active show" id="connectionTab" role="tabpanel">
-                <div class="col-lg-12">                    
+                <div class="col-lg-12">
                         <div class="card-body lead-info">
                             <div class="mb-4 d-flex align-items-center justify-content-between">
                                 <h5 class="fw-bold mb-0">
@@ -56,7 +54,7 @@
                                     <a href="javascript:void(0);" class="btn btn-icon" data-bs-toggle="tooltip" title="Statistics">
                                         <i class="feather-bar-chart-2"></i>
                                     </a>
-                                    
+
                                 </div>
                             </div>
                             <form action="{{ route('exequial.asociados.update', $asociado['documentId'] )}}" method="POST" id="formUpdateTitular" novalidate>
@@ -71,7 +69,7 @@
                                                 </td>
                                                 <td>
                                                     <!-- <a href="javascript:void(0);">{{ $asociado['documentId'] }} <span class="fs-12 fw-normal text-muted">{{ $asociado['name'] }}</span></a> -->
-                                                    <input class="fs-12 fw-normal text-muted border border-0 p-1" value="{{ $asociado['documentId'] }}" name="documentid" readonly>                                    
+                                                    <input class="fs-12 fw-normal text-muted border border-0 p-1" value="{{ $asociado['documentId'] }}" name="documentid" readonly>
                                                 </td>
                                             </tr>
                                             <tr>
@@ -97,12 +95,12 @@
                                                         {{ $plan['name'] }}
                                                     </option>
                                                     @endforeach
-                                                </select>                      
+                                                </select>
                                                 </td>
                                             </tr>
                                             <tr>
                                                 <td>
-                                                    <a href="javascript:void(0);">Descuento</a>                                                    
+                                                    <a href="javascript:void(0);">Descuento</a>
                                                 </td>
                                                 <td>
                                                 <!-- <input type="text" class="form-control fs-12 fw-normal text-muted"
@@ -114,20 +112,20 @@
                                                     <a href="javascript:void(0);">Fecha de Inicio</a>
                                                 </td>
                                                 <td>
-                                                    <input class="fs-12 fw-normal text-muted border border-0 p-1" value="{{ $asociado['dateInit'] }}" name="dateInit" readonly>                                    
+                                                    <input class="fs-12 fw-normal text-muted border border-0 p-1" value="{{ $asociado['dateInit'] }}" name="dateInit" readonly>
                                                 </td>
                                             </tr>
                                             <tr class="mb-1">
                                                 <td>
                                                     <a href="javascript:void(0);">Contrato</a>
                                                 </td>
-                                                <td>                                                    
+                                                <td>
                                                     <input class="fs-12 fw-normal text-muted border border-0 p-1" value="{{ $asociado['agreement'] }}" readonly>
                                                 </td>
                                             </tr>
                                         </tbody>
                                     </table>
-                                </div>                            
+                                </div>
                             <div class="d-flex flex-row-reverse gap-2 mt-2">
                                 <button class="btn btn-warning" data-bs-toggle="tooltip" title="Timesheets" type="submit">
                                     <i class="feather-clock me-2"></i>
@@ -154,4 +152,4 @@
     </div>
 </div>
 
-@endsection
+</x-base-layout>

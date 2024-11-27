@@ -1,5 +1,4 @@
-@extends('layouts.base')
-@section('contentpage')
+<x-base-layout>
 @section('titlepage', 'Administrador')
 
 <div class="col-xxl-4 col-lg-6">
@@ -569,4 +568,4 @@
         <a href="javascript:void(0);" class="card-footer fs-11 fw-bold text-uppercase text-center">Update 30 Min Ago</a>
     </div>
 </div>
-@endsection
+</x-base-layout>

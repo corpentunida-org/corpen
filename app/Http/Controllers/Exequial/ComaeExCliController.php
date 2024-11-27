@@ -53,18 +53,18 @@ class ComaeExCliController extends Controller
         $jsonTit = $this->titularShow($id);
         $controllerplanes = app()->make(PlanController::class);
         return view('exequial.asociados.edit', [
-            'asociado' => $jsonTit, 
+            'asociado' => $jsonTit,
             'plans' => $controllerplanes->index(),
         ]);
     }
 
     public function show(Request $request, $id)
-    {      
+    {
         //API
         $token = env('TOKEN_ADMIN');
         //$token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6ImFkbWluQGdtYWlsLmNvbSIsImp0aSI6ImFiZThhYWU5LTRhZDctNGIyOS1iZDQxLWVhYjBiZDFkOWU3ZiIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJBZG1pbiIsIlVzZXJJZCI6IjEiLCJtYWlsIjoiYWRtaW5AZ21haWwuY29tIiwiVXNlcnJvbGUiOiJBZG1pbiIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6IkFkbWluIiwiZXhwIjoxNzMyNzI2ODkyLCJpc3MiOiJteWFwcCIsImF1ZCI6Im15YXBwIn0.xORK90WXu1wPocxAx1PkX7lWUH3lR78twXCeqib7Nxs';
         $id = $request->input('id');
-        
+
         $titular = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
         ])->get(env('API_PRODUCCION') .'/api/Exequiales/Tercero', [
@@ -75,9 +75,9 @@ class ComaeExCliController extends Controller
         ])->get(env('API_PRODUCCION') .'/api/Exequiales', [
             'documentId' => $id,
         ]);
-    
+
         if ($titular->successful() && $beneficiarios->successful()) {
-            $jsonTit = $titular->json();            
+            $jsonTit = $titular->json();
             $jsonBene = $beneficiarios->json();
             if (isset($jsonTit['codePlan'])) {
                 $controllerplanes = app()->make(PlanController::class);
@@ -98,7 +98,7 @@ class ComaeExCliController extends Controller
             ], 500);
             //return redirect()->route('exequial.asociados.index')->with('messageTit', 'No se encontró la cédula como titular de exequiales');
         }
-       
+
     }
 
     public function validarRegistro(Request $request){
@@ -160,7 +160,7 @@ class ComaeExCliController extends Controller
     // }
 
     public function update(Request $request){
-        //$this->authorize('update', auth()->user());        
+        //$this->authorize('update', auth()->user());
         $token = env('TOKEN_ADMIN');
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
@@ -171,21 +171,21 @@ class ComaeExCliController extends Controller
             'codePlan'=> $request->codePlan,
             'discount'=> $request->discount,
             'observation'=> $request->observation,
-            'stade'=> true 
-        ]);  
-        $url = route('exequial.asociados.show', ['asociado' => 'ID']) . '?id=' . $request->documentid;      
+            'stade'=> true
+        ]);
+        $url = route('exequial.asociados.show', ['asociado' => 'ID']) . '?id=' . $request->documentid;
         if ($response->successful()) {
             $accion = "update titular " . $request->documentid;
             $this->auditoria($accion);
             //return $data; //antigua vista
-            //plantilla            
+            //plantilla
             return redirect()->to($url)->with('success', 'Titular actualizado exitosamente');
         } else {
             //return response()->json(['error' => $response->json()], $response->status());
             return redirect()->to($url)->with('msjerror', 'No se pudo actualizar el titular ' . $response->json());
         }
     }
-    
+
     public function generarpdf($id)
     {
         $token = env('TOKEN_ADMIN');
@@ -207,33 +207,33 @@ class ComaeExCliController extends Controller
         ]);
 
         if ($titular->successful() && $beneficiarios->successful()) {
-            $jsonTit = $titular->json();            
+            $jsonTit = $titular->json();
             $jsonBene = $beneficiarios->json();
             if (isset($jsonTit['codePlan'])) {
                 $controllerplanes = app()->make(PlanController::class);
                 $nomPlan = $controllerplanes->nomCodPlan($jsonTit['codePlan']);
                 $jsonTit['codePlan'] = $nomPlan;
             }
-            
+
             $data = [
-                'asociado' => $jsonTit, 
+                'asociado' => $jsonTit,
                 'beneficiarios' => $jsonBene,
                 'pastor' => $personalTitular,
                 'image_path' => public_path('assets/img/corpentunida-logo-azul-oscuro-2021x300.png'),
             ];
-            
+
             // return view('exequial.asociados.showpdf', [
-            //     'asociado' => $jsonTit, 
+            //     'asociado' => $jsonTit,
             //     'beneficiarios' => $jsonBene,
             //     'pastor' => $personalTitular,
             //     'image_path' => public_path('assets/img/corpentunida-logo-azul-oscuro-2021x300.png'),
             // ]);
             $pdf = Pdf::loadView('exequial.asociados.showpdf', $data)->setPaper('letter', 'landscape');
             return $pdf->download(date('Y-m-d') . " Reporte " .  $jsonTit['documentId'] . '.pdf');
-            
+
         }
         //$asociado = ComaeExCli::where('cedula', $id)->with(['ciudade', 'distrito'])->firstOrFail();
-        //$beneficiarios = ComaeExRelPar::where('cedulaAsociado', $id)->with('parentescoo')->get();     
+        //$beneficiarios = ComaeExRelPar::where('cedulaAsociado', $id)->with('parentescoo')->get();
         //$data = ['asociado'=> $asociado, 'beneficiarios' => $beneficiarios];
         //$pdf = PDF::loadView('asociados.showpdf', $data)->setPaper('legal', 'landscape');
         //return $pdf->download(date('Y-m-d') .  $asociado->nombre . '.pdf');

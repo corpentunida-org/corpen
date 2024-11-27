@@ -1,6 +1,5 @@
-@extends('layouts.base')
+<x-base-layout>
 @section('titlepage', 'Asociado')
-@section('contentpage')
 <div class="col-lg-12">
     <div class="card stretch stretch-full">
         <div class="card-body task-header d-lg-flex align-items-center justify-content-between">
@@ -60,7 +59,7 @@
                             <a href="javascript:void(0);" class="btn btn-icon" data-bs-toggle="offcanvas" data-bs-target="#proposalSent2">
                                 <i class="fa-regular fa-bell"></i>
                             </a>
-                            
+
                             <a href="{{route('exequial.asociados.edit', $asociado['documentId'])}}"
                                 class="btn btn-warning" data-bs-toggle="tooltip">
                                 <i class="feather-clock me-2"></i>
@@ -219,15 +218,15 @@
 
 <script>
     const today = new Date();
-    
+
     const day = today.getDate();
     const month = today.toLocaleString('en-US', { month: 'short' }).toUpperCase(); // Nombre del mes en MAY
     const year = today.getFullYear();
-    
+
     // Formatear la fecha
     const formattedDate = `${day} ${month}, ${year}`;
-    
+
     // Mostrar la fecha en el elemento con id 'currentDate'
     document.getElementsByClassName('fechahoy').textContent = formattedDate;
 </script>
-@endsection
+</x-base-layout>

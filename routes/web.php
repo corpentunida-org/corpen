@@ -65,5 +65,5 @@ Route::get('/parentescosall', [ParentescosController::class, 'index'])->name('ex
 Route::get('/plansall', [PlanController::class, 'index'])->name('exequial.plansall');
 
 //RUTAS SEGUROS
-Route::resource('poliza', SegPolizaController::class)->middleware('auth')->names('seguros.poliza');
+Route::resource('poliza', SegPolizaController::class)->middleware('auth');
 
