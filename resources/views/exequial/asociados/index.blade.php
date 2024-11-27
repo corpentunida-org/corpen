@@ -13,7 +13,7 @@
                                     data-bs-toggle="collapse" data-bs-target="#collapseOne">
                                     <i class="feather-bar-chart"></i>
                                 </a>
-                                <a href="" class="btn btn-primary">
+                                <a href="{{route('exequial.asociados.create')}}" class="btn btn-primary">
                                     <i class="feather-plus me-2"></i>
                                     <span>Crear Titular</span>
                                 </a>

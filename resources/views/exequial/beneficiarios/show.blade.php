@@ -14,7 +14,7 @@
     </h5>
     <div class="d-flex gap-2">
 
-    <a href="{{route('exequial.beneficiarios.create')}}" class="btn btn-success">
+    <a href="{{route('exequial.beneficiarios.create', ['asociado' =>  $asociado['documentId'] ])}}" class="btn btn-success">
                                 <i class="feather-plus me-2"></i>
                                 <span>Agregar Beneficiario</span>
                             </a>

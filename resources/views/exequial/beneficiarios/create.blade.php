@@ -1,5 +1,4 @@
 <x-base-layout>
-
 <div class="col-lg-12">
     <div class="card stretch stretch-full">
         <div class="card-body task-header d-lg-flex align-items-center justify-content-between">
@@ -9,8 +8,8 @@
                         <i class="bi bi-person-fill"></i>
                     </div>
                     <div>
-                        <div class="fs-4 fw-bold text-dark"><span class="counter"></span></div>
-                        <h3 class="fs-13 fw-semibold text-truncate-1-line"></h3>
+                        <div class="fs-4 fw-bold text-dark"><span class="counter">{{ $asociado['name'] }}</span></div>
+                        <h3 class="fs-13 fw-semibold text-truncate-1-line">{{ $asociado['documentId'] }}</h3>
                     </div>
                 </div>
             </div>
@@ -37,13 +36,6 @@
                 </li>
             </ul>
         </div>
-        <!-- "codePastor": "string",
-  "name": "string",
-  "codeParentesco": "string",
-  "type": "string",
-  "dateEntry": "2024-11-21T17:18:28.874Z",
-  "documentBeneficiaryId": "string",
-  "dateBirthDate": "2024-11-21T17:18:28.874Z" -->
         <div class="tab-content">
             <div class="tab-pane fade active show" id="connectionTab" role="tabpanel">
                 <div class="col-lg-12">
@@ -111,23 +103,22 @@
 
                                 <i class="feather-plus me-2"></i>
                                 <span>Agregar</span>
-
                                 </button>
                             </div>
-                            </form>
-                            <script>
-                                $('#formUpdateTitular').submit(function (event) {
-                                    var form = this;
-                                    if (!form.checkValidity()) {
-                                        $(form).addClass('was-validated'); // Aplicar la clase al formulario que estás enviando
-                                        event.preventDefault();
-                                        event.stopPropagation();
-                                    } else {
-                                        console.log($(this).serialize()); // Serializa y muestra los datos solo si la validación pasa
-                                    }
-                                });
-                            </script>
-                        </div>
+                        </form>
+                        <script>
+                            $('#formAddBeneficiario').submit(function (event) {
+                                var form = this;
+                                if (!form.checkValidity()) {
+                                    $(form).addClass('was-validated'); // Aplicar la clase al formulario que estás enviando
+                                    event.preventDefault();
+                                    event.stopPropagation();
+                                } else {
+                                    console.log($(this).serialize()); // Serializa y muestra los datos solo si la validación pasa
+                                }
+                            });
+                        </script>
+                    </div>
                 </div>
             </div>
         </div>
