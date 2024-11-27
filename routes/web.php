@@ -2,6 +2,7 @@
 
 
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Cartera\ReadExelController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuditoriaController;
 
@@ -67,3 +68,8 @@ Route::get('/plansall', [PlanController::class, 'index'])->name('exequial.plansa
 //RUTAS SEGUROS
 Route::resource('poliza', SegPolizaController::class)->middleware('auth');
 
+
+//RUTA CARTERA MOROSOS
+Route::resource('cartera', ReadExelController::class)->only(['index', 'store'])->middleware('auth')
+    ->names('cartera.morosos');
+Route::post('/cartera/pdfMora', [ReadExelController::class, 'pdfMora'])->middleware('auth')->name('cartera.morosos.pdfMora');
