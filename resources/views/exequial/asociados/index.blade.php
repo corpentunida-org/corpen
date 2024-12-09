@@ -57,7 +57,7 @@
                         <div class="hstack justify-content-between gap-4">
                             <div>
                                 <h6 class="fs-14 text-truncate-1-line">Beneficiarios Agregados</h6>
-                                <div class="fs-12 text-muted"><span class="text-dark fw-medium">Mes:</span>
+                                <div class="fs-12 text-muted"><span class="text-dark fw-medium">Mes 2024:</span>
                                     <script>
                                         const meses = [
                                             "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
