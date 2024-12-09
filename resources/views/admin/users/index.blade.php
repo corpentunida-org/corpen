@@ -4,7 +4,7 @@
 <div class="col-xxl-4 col-lg-6">
     <div class="card stretch stretch-full">
         <div class="card-header">
-            <h5 class="card-title">Project</h5>
+            <h5 class="card-title">Proyectos</h5>
             <div class="card-header-action">
                 <div class="card-header-btn">
                     <div data-bs-toggle="tooltip" title="" data-bs-original-title="Delete">
@@ -46,7 +46,7 @@
                     <div class="d-flex w-50 align-items-center me-3">
                         <img src="assets/images/brand/app-store.png" alt="laravel-logo" class="me-3" width="35">
                         <div>
-                            <a href="javascript:void(0);" class="text-truncate-1-line">Apps Developemtn</a>
+                            <a href="javascript:void(0);" class="text-truncate-1-line">Apps Desarrollo</a>
                             <div class="fs-11 text-muted">Applications</div>
                         </div>
                     </div>
@@ -63,7 +63,7 @@
                     <div class="d-flex w-50 align-items-center me-3">
                         <img src="assets/images/brand/figma.png" alt="figma-logo" class="me-3" width="35">
                         <div>
-                            <a href="javascript:void(0);" class="text-truncate-1-line">Dashboard Design</a>
+                            <a href="javascript:void(0);" class="text-truncate-1-line">Exequiales</a>
                             <div class="fs-11 text-muted">App UI Kit</div>
                         </div>
                     </div>

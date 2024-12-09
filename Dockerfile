@@ -25,7 +25,7 @@ RUN docker-php-ext-install pdo
 RUN docker-php-ext-install pdo_mysql
 RUN docker-php-ext-install gd
 
-#upload
+
 RUN echo "file_uploads = On\n" \
   "memory_limit = 500M\n" \
   "upload_max_filesize = 500M\n" \
@@ -35,6 +35,11 @@ RUN echo "file_uploads = On\n" \
 
 WORKDIR /var/www/html
 COPY . /var/www/html/
+
+RUN git config --global --add safe.directory /var/www/html
+
+RUN apt-get update && apt-get install -y zlib1g-dev libzip-dev
+RUN docker-php-ext-install zip
 
 RUN composer install --optimize-autoloader --no-dev
 RUN . ~/.nvm/nvm.sh && npm install
