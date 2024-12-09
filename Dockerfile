@@ -8,7 +8,9 @@ RUN apt-get update -y && apt-get install -y \
   zlib1g-dev \
   libpng-dev \
   curl \
-  openssl 
+  openssl \
+  libzip-dev \
+  zlib1g-dev 
 
 RUN a2enmod rewrite
 
@@ -24,6 +26,7 @@ RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | b
 RUN docker-php-ext-install pdo
 RUN docker-php-ext-install pdo_mysql
 RUN docker-php-ext-install gd
+RUN docker-php-ext-install zip
 
 
 RUN echo "file_uploads = On\n" \
@@ -37,9 +40,6 @@ WORKDIR /var/www/html
 COPY . /var/www/html/
 
 RUN git config --global --add safe.directory /var/www/html
-
-RUN apt-get update && apt-get install -y zlib1g-dev libzip-dev
-RUN docker-php-ext-install zip
 
 RUN composer install --optimize-autoloader --no-dev
 RUN . ~/.nvm/nvm.sh && npm install
