@@ -80,7 +80,7 @@
                     <div class="d-flex w-50 align-items-center me-3">
                         <img src="assets/images/brand/facebook.png" alt="vue-logo" class="me-3" width="35">
                         <div>
-                            <a href="javascript:void(0);" class="text-truncate-1-line">Facebook Marketing</a>
+                            <a href="javascript:void(0);" class="text-truncate-1-line">CINCO</a>
                             <div class="fs-11 text-muted">Marketing</div>
                         </div>
                     </div>
@@ -97,7 +97,7 @@
                     <div class="d-flex w-50 align-items-center me-3">
                         <img src="assets/images/brand/github.png" alt="react-logo" class="me-3" width="35">
                         <div>
-                            <a href="javascript:void(0);" class="text-truncate-1-line">React Dashboard Github</a>
+                            <a href="javascript:void(0);" class="text-truncate-1-line">CINCO</a>
                             <div class="fs-11 text-muted">Dashboard</div>
                         </div>
                     </div>
@@ -114,7 +114,7 @@
                     <div class="d-flex w-50 align-items-center me-3">
                         <img src="assets/images/brand/paypal.png" alt="sketch-logo" class="me-3" width="35">
                         <div>
-                            <a href="javascript:void(0);" class="text-truncate-1-line">Paypal Payment Gateway</a>
+                            <a href="javascript:void(0);" class="text-truncate-1-line">CINCO</a>
                             <div class="fs-11 text-muted">Payment</div>
                         </div>
                     </div>
