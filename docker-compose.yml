@@ -4,7 +4,7 @@ services:
             context: .
             dockerfile: Dockerfile
         ports:
-            - 82:80
+            - 83:80
         volumes:
             - ".:/var/www/html"
             - ./public/assets/img:/var/www/html/public/assets/img
