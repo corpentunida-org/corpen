@@ -40,14 +40,13 @@ class SegPolizaController extends Controller
     public function show(Request $request)
     {
         $id = $request->input('id');
-        $titular = SegAsegurado::where('cedula', $id)
-            ->where('parentesco', 'AF')
-            ->first();
-        if($titular) {
-            return view('seguros.polizas.show', compact('titular'));
-        }
-        $titular = null;
-        return redirect()->route('poliza.index')->with('warning', 'No se encontró el titular de la póliza');
+        $poliza = SegPoliza::where('seg_asegurado_id', $id)
+            ->with(['tercero', 'asegurado', 'asegurado.terceroAF', 'plan.condicion', 'plan.coberturas'])->first();
+        
+        $titularCedula = $poliza->asegurado->titular;
+        $grupoFamiliar = SegAsegurado::where('Titular', $titularCedula)->with('tercero','polizas.plan.coberturas')->get();
+        //dd($grupoFamiliar);
+        return view('seguros.polizas.show', compact('poliza','grupoFamiliar'));
     }
 
     /**

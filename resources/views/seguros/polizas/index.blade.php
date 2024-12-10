@@ -1,5 +1,5 @@
-@extends('layouts.base')
-@section('contentpage')
+<x-base-layout>
+
 @if (session('messageTit'))
 <div class="col-12">
     <div class="p-4 bg-soft-warning rounded-3 m-2">
@@ -117,4 +117,4 @@
     </div>
 </div>
 
-@endsection
+</x-base-layout>

@@ -14,4 +14,8 @@ class SegTercero extends Model
     {
         return $this->hasMany(SegAsegurado::class, 'cedula', 'cedula');
     }
+    public function polizas()
+    {
+        return $this->hasMany(SegPoliza::class, 'seg_asegurado_id');
+    }
 }

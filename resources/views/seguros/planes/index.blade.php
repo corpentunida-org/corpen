@@ -1,6 +1,5 @@
-@extends('layouts.base')
+<x-base-layout>
 @section('titlepage', 'Planes')
-@section('contentpage')
 
 @foreach ($planes as $condicionId => $planesGrupo)
     <div class="mb-4 w-100">
@@ -19,7 +18,7 @@
                 @else                    
                     <div class="card flex-fill bg-soft-100">
                 @endif
-                <div class="card flex-fill">
+                <div class="card">
                     <div class="card-header d-flex align-items-center justify-content-between">
                         <div class="d-flex gap-3 align-items-center">
                             <div class="avatar-text">
@@ -48,19 +47,21 @@
                                     <i class="feather-chevron-down fs-12 ms-1"></i>
                                 </div> -->
                             </div>
-                            <div class="progress ht-5 my-2">
-                                
+                            <div class="progress ht-5 my-2">                                
                                 <div class="progress-bar bg-primary" role="progressbar" aria-valuenow="78" aria-valuemin="0"
                                     aria-valuemax="100" style="width: 78%"></div>
                             </div>
                             <div class="fs-12 text-muted">Valor de prima: <span
-                                    class="fw-bold text-dark">${{ $plan->prima }}</span></div>
+                                    class="fw-bold text-dark">${{ $plan->prima }}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
+                
                 @php
                     $tarjeta++; 
                 @endphp
+                </div>
             @endforeach
         </div>
 
@@ -69,4 +70,4 @@
 @endforeach
 
 
-@endsection
+</x-base-layout>

@@ -14,6 +14,7 @@ use App\Http\Controllers\Exequial\MaeC_ExSerController;
 use App\Http\Controllers\Exequial\PlanController;
 
 use App\Http\Controllers\Seguros\SegPolizaController;
+use App\Http\Controllers\Seguros\SegPlanController;
 
 
 /* Route::middleware(['auth'])->group(function () {
@@ -66,7 +67,8 @@ Route::get('/parentescosall', [ParentescosController::class, 'index'])->name('ex
 Route::get('/plansall', [PlanController::class, 'index'])->name('exequial.plansall');
 
 //RUTAS SEGUROS
-Route::resource('poliza', SegPolizaController::class)->middleware('auth');
+Route::resource('poliza', SegPolizaController::class)->middleware('auth')->names('seguros.poliza');
+Route::resource('plan', SegPlanController::class)->middleware('auth')->names('seguros.planes');
 
 
 //RUTA CARTERA MOROSOS
