@@ -10,9 +10,9 @@ use Spatie\Permission\Models\Role;
 class UserController extends Controller
 {
     public function index() {
-        /* $users = User::all();
-        return view('admin.users.index', compact('users')); */
-        return "en el index";
+        $users = User::all();
+        return view('admin.users.index', compact('users'));
+        //return "en el index";
     }
 
     public function edit(User $user) {
@@ -24,5 +24,4 @@ class UserController extends Controller
         $user->roles()->sync($request->roles); //sync añadir nuevos registros a la tabla intermedia
         return redirect()->route('admin.users.edit', $user)->with('info', 'Se asignó el rol correctamente');
     }
-    
 }

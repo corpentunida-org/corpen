@@ -1,5 +1,4 @@
-@extends('layouts.base')
-@section('contentpage')
+<x-base-layout>
 <div class="col-12">
     <div class="card stretch stretch-full">
         <div class="card-body">
@@ -11,11 +10,7 @@
                                 <a href="javascript:void(0);" class="btn btn-icon btn-light-brand"
                                     data-bs-toggle="collapse" data-bs-target="#collapseOne">
                                     <i class="feather-bar-chart"></i>
-                                </a>
-                                <a href="" class="btn btn-primary">
-                                    <i class="feather-plus me-2"></i>
-                                    <span>Crear Titular</span>
-                                </a>
+                                </a>                                
                             </div>
                         </div>
                         <div class="d-md-none d-flex align-items-center">
@@ -119,4 +114,4 @@
         </div>
     </div>
 </div>
-@endsection
+</x-base-layout>
