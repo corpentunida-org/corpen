@@ -1,4 +1,24 @@
 <x-base-layout>
+    @section('titlepage', 'Beneficiarios')
+<style>
+    .uppercase-input {
+        text-transform: uppercase;
+    }
+</style>
+@if (session('error'))
+<div class="col-12">
+    <div class="p-4 bg-soft-warning rounded-3 m-2">
+        <p class="fs-12 text-dark text-truncate-2-line">No se agrego el beneficiario {{ session('error') }}
+        <a href="javascript:void(0);" class="fs-10 text-uppercase text-danger d-flex align-items-center">
+            <span
+                class="wd-10 ht-10 d-flex align-items-center justify-content-center bg-danger text-white me-2 rounded-circle">
+                <i class="feather feather-x fs-8"></i>
+            </span>
+            <span>Cerrar</span>
+        </a>
+    </div>
+</div>
+@endif
 <div class="col-lg-12">
     <div class="card stretch stretch-full">
         <div class="card-body task-header d-lg-flex align-items-center justify-content-between">
@@ -39,70 +59,97 @@
         <div class="tab-content">
             <div class="tab-pane fade active show" id="connectionTab" role="tabpanel">
                 <div class="col-lg-12">
-                        <div class="card-body lead-info">
-                            <div class="mb-4 d-flex align-items-center justify-content-between">
-                                <h5 class="fw-bold mb-0">
-                                    <span class="d-block mb-2">Información:</span>
-                                </h5>
-                                <div class="d-flex gap-2">
-                                    <a href="javascript:void(0);" class="btn btn-icon" data-bs-toggle="tooltip" title="Make as Complete">
-                                        <i class="feather-check-circle"></i>
-                                    </a>
-                                    <a href="javascript:void(0);" class="btn btn-icon" data-bs-toggle="tooltip" title="Timesheets">
-                                        <i class="feather-calendar"></i>
-                                    </a>
-                                    <a href="javascript:void(0);" class="btn btn-icon" data-bs-toggle="tooltip" title="Statistics">
-                                        <i class="feather-bar-chart-2"></i>
-                                    </a>
+                    <div class="card-body lead-info">
+                        <div class="mb-4 d-flex align-items-center justify-content-between">
+                            <h5 class="fw-bold mb-0">
+                                <span class="d-block mb-2">Información:</span>
+                            </h5>
+                            <div class="d-flex gap-2">
+                                <a href="javascript:void(0);" class="btn btn-icon" data-bs-toggle="tooltip"
+                                    title="Make as Complete">
+                                    <i class="feather-check-circle"></i>
+                                </a>
+                                <a href="javascript:void(0);" class="btn btn-icon" data-bs-toggle="tooltip"
+                                    title="Timesheets">
+                                    <i class="feather-calendar"></i>
+                                </a>
+                                <a href="javascript:void(0);" class="btn btn-icon" data-bs-toggle="tooltip"
+                                    title="Statistics">
+                                    <i class="feather-bar-chart-2"></i>
+                                </a>
 
-                                </div>
                             </div>
-                            <form method="POST" id="formUpdateTitular" novalidate>
-                                @csrf
-                                @method('PUT')
-                                <div class="table-responsive tickets-items-wrapper">
-                                    <table class="table table-hover mb-0">
-                                        <tbody>
-                                            <tr>
-                                                <td style="width: 50px;">
-                                                    <a href="javascript:void(0);">Cédula</a>
-                                                </td>
-                                                <td>
-                                                    <input class="form-control fs-12 fw-normal text-muted p-2" name="documentid">
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td>
-                                                    <a href="javascript:void(0);">Nombre</a>
-                                                </td>
-                                                <td>
-                                                    <input type="text" class="form-control fs-12 fw-normal text-muted p-2"
-                                                        name="observation" required>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td>
-                                                    <a href="javascript:void(0);">Parentesco</a>
-                                                </td>
+                        </div>
+                        <form method="POST" action="{{route('exequial.beneficiarios.store')}}"  id="formAddBeneficiario" novalidate>
+                            @csrf                            
+                            <input type="hidden" name="cedulaAsociado" value="{{ $asociado['documentId'] }}">
+                            <div class="table-responsive tickets-items-wrapper">
+                                <table class="table table-hover mb-0">
+                                    <tbody>
+                                        <tr>
+                                            <td style="width: 50px;">
+                                                <a href="javascript:void(0);">Cédula</a>
+                                            </td>
+                                            <td>
+                                                <input class="form-control fs-12 fw-normal text-muted p-2"
+                                                    name="documentid" required>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <a href="javascript:void(0);">Nombres</a>
+                                            </td>
+                                            <td>
+                                                <input type="text" class="form-control fs-12 fw-normal text-muted p-2 uppercase-input"
+                                                    name="nombres" required>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <a href="javascript:void(0);">Apellidos</a>
+                                            </td>
+                                            <td>
+                                                <input type="text" class="form-control fs-12 fw-normal text-muted p-2 uppercase-input"
+                                                    name="apellidos" required>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <a href="javascript:void(0);">Parentesco</a>
+                                            </td>
+                                            <td>                                                
+                                                <select class="form-select select2-hidden-accessible p-0"
+                                                        data-select2-selector="icon"
+                                                        tabindex="-1" aria-hidden="true" name="codePar">
+                                                    @foreach($parentescos as $p)
+                                                    <option value="{{ $p['code'] }}">
+                                                        {{ $p['name'] }}
+                                                    </option>
+                                                    @endforeach
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <a href="javascript:void(0);">Fecha de nacimiento</a>
+                                            </td>
+                                            <td>
+                                                <input type="date" class="form-control fs-12 fw-normal text-muted p-2"
+                                                    name="fechaNacimiento" required>
+                                            </td>
+                                        </tr>
+                                        <tr></tr>
 
-                                            </tr>
-                                            <tr>
-                                                <td>
-                                                    <a href="javascript:void(0);">Fecha de nacimiento</a>
-                                                </td>
-                                                <td>
-                                                <input type="date" class="form-control fs-12 fw-normal text-muted p-2" name="discount" required>
-                                            </tr>
-                                            <tr></tr>
-
-                                        </tbody>
-                                    </table>
-                                </div>
+                                    </tbody>
+                                </table>
+                            </div>
                             <div class="d-flex flex-row-reverse gap-2 mt-2">
-                                <button class="btn btn-success" data-bs-toggle="tooltip" title="Beneficiario" type="submit">
+                                <button class="btn btn-success" data-bs-toggle="tooltip" title="Beneficiario"
+                                    type="submit">
 
-                                <i class="feather-plus me-2"></i>
-                                <span>Agregar</span>
+                                    <i class="feather-plus me-2"></i>
+                                    <span>Agregar</span>
+
                                 </button>
                             </div>
                         </form>
@@ -110,11 +157,11 @@
                             $('#formAddBeneficiario').submit(function (event) {
                                 var form = this;
                                 if (!form.checkValidity()) {
-                                    $(form).addClass('was-validated'); // Aplicar la clase al formulario que estás enviando
+                                    $(form).addClass('was-validated'); 
                                     event.preventDefault();
                                     event.stopPropagation();
                                 } else {
-                                    console.log($(this).serialize()); // Serializa y muestra los datos solo si la validación pasa
+                                    console.log($(this).serialize()); 
                                 }
                             });
                         </script>

@@ -56,8 +56,7 @@
                             </div>
                         </div>
                     </div>
-                </div>
-                
+                </div>                
                 @php
                     $tarjeta++; 
                 @endphp
