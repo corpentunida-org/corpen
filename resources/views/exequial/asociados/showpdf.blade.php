@@ -58,7 +58,7 @@
     </style>
 
     <div class="header">
-        <!-- <img src="{{ asset('assets/img/corpentunida-logo-azul-oscuro-2021x300.png') }}" alt="logo"> -->
+        <img src="{{ asset('assets/img/corpentunida-logo-azul-oscuro-2021x300.png') }}" alt="logo">
         <table style="border: none; width: 100%;" >
             <tr style="border: none">
                 <td style="border: none; width:50px;">
