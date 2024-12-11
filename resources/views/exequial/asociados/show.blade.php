@@ -121,8 +121,13 @@
                 <div class="col-lg-12">
                     @include('exequial.beneficiarios.show')
                 </div>
-            </div>
+            </div>           
         </div>
+
+         <a href={{ route('asociados.generarpdf', ['id' => $asociado['documentId']])}} class="btn btn-primary mt-3">
+                <i class="feather-plus me-2"></i>
+                <span>Descargar PDF</span>
+        </a>
     </div>
 </div>
 
