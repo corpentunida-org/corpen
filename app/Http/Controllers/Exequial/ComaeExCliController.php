@@ -35,12 +35,12 @@ class ComaeExCliController extends Controller
         $token = env('TOKEN_ADMIN');
         $titular = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
-        ])->get(env('API_DESARROLLO') . '/api/Exequiales/Tercero', [
+        ])->get(env('API_PRODUCCION') . '/api/Exequiales/Tercero', [
             'documentId' => $id,
         ]);
         if ($titular->successful()) {
-            $jsonTit = $titular->json();
-            return $jsonTit;
+            
+            return $titular->json();
         } else {
             return redirect()->route('exequial.asociados.index')->with('messageTit', 'No se encontró la cédula como titular de exequiales');
         }

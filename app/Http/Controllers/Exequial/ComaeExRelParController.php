@@ -38,9 +38,12 @@ class ComaeExRelParController extends Controller
         $asociado = $request->input('asociado');
         $controllerTit = app()->make(ComaeExCliController::class);
         $controllerparen = app()->make(ParentescosController::class);
+        //datos del titular
+        $jsonTitular = $controllerTit->titularShow($asociado);
+        //dd($asociado);
         return view('exequial.beneficiarios.create',[
             'parentescos' => $controllerparen->index(),
-            'asociado' => $controllerTit->titularShow($asociado),
+            'asociado' => $jsonTitular,
         ]);
     }
     
