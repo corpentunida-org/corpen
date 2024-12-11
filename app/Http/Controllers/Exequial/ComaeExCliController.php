@@ -85,14 +85,14 @@ class ComaeExCliController extends Controller
                 'beneficiarios' => $jsonBene,
             ]);
         } else {
-            return response()->json([
+            /* return response()->json([
                 'error' => 'Something went wrong',
                 'titular_status' => $titular->status(),
                 'titular_response' => $titular->json(),
                 'beneficiarios_status' => $beneficiarios->status(),
                 'beneficiarios_response' => $beneficiarios->json(),
-            ], 500);
-            //return redirect()->route('exequial.asociados.index')->with('messageTit', 'No se encontró la cédula como titular de exequiales');
+            ], 500); */
+            return redirect()->route('exequial.asociados.index')->with('error', 'No se encontró la cédula como titular de exequiales');
         }
 
     }
@@ -143,13 +143,6 @@ class ComaeExCliController extends Controller
         } else {
             $jsonResponse = $response->json();
             $message = $jsonResponse['message'];
-            /*if ($message === "El pastor no se encuentra registrado, debe registrarlo para tener acceso al servicio de exequiales") {
-                $code = 1;
-            } elseif ($message === "Ya se encuetra registrado como titular de exequiales con esa cedula") {
-                $code = 2;
-            }
-            else $code = 3;
-            return response()->json(['error' => $message, 'code' => $code], $response->status()); */
             return redirect()->back()->with('error', $message);
         }
     }
@@ -217,22 +210,9 @@ class ComaeExCliController extends Controller
                 'pastor' => $personalTitular,
                 'image_path' => public_path('assets/images/CORPENTUNIDA_LOGO PRINCIPAL  (2).png'),
             ];
-
-            // return view('exequial.asociados.showpdf', [
-            //     'asociado' => $jsonTit,
-            //     'beneficiarios' => $jsonBene,
-            //     'pastor' => $personalTitular,
-            //     'image_path' => public_path('assets/img/corpentunida-logo-azul-oscuro-2021x300.png'),
-            // ]);
             $pdf = Pdf::loadView('exequial.asociados.showpdf', $data)->setPaper('letter', 'landscape');
             return $pdf->download(date('Y-m-d') . " Reporte " .  $jsonTit['documentId'] . '.pdf');
 
         }
-        //$asociado = ComaeExCli::where('cedula', $id)->with(['ciudade', 'distrito'])->firstOrFail();
-        //$beneficiarios = ComaeExRelPar::where('cedulaAsociado', $id)->with('parentescoo')->get();
-        //$data = ['asociado'=> $asociado, 'beneficiarios' => $beneficiarios];
-        //$pdf = PDF::loadView('asociados.showpdf', $data)->setPaper('legal', 'landscape');
-        //return $pdf->download(date('Y-m-d') .  $asociado->nombre . '.pdf');
-        //return view('exequial.asociados.showpdf', $data);
     }
 }
