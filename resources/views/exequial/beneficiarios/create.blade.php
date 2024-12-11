@@ -97,20 +97,20 @@
                                         </tr>
                                         <tr>
                                             <td>
-                                                <a href="javascript:void(0);">Nombres</a>
-                                            </td>
-                                            <td>
-                                                <input type="text" class="form-control fs-12 fw-normal text-muted p-2 uppercase-input"
-                                                    name="nombres" required>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td>
                                                 <a href="javascript:void(0);">Apellidos</a>
                                             </td>
                                             <td>
                                                 <input type="text" class="form-control fs-12 fw-normal text-muted p-2 uppercase-input"
                                                     name="apellidos" required>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>
+                                                <a href="javascript:void(0);">Nombres</a>
+                                            </td>
+                                            <td>
+                                                <input type="text" class="form-control fs-12 fw-normal text-muted p-2 uppercase-input"
+                                                    name="nombres" required>
                                             </td>
                                         </tr>
                                         <tr>

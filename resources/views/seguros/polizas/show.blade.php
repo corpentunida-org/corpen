@@ -77,13 +77,13 @@
                             @foreach($grupoFamiliar as $familiar)
                             @if($familiar->cedula!=$poliza->seg_asegurado_id)
                                 <tr>
-                                    <td><a href="javascript:void(0);">{{ $familiar->cedula }}</a></td>
+                                    <td><a href="">{{ $familiar->cedula }}</a></td>
                                     <td>{{$familiar->tercero->nombre}}</td>
                                     <td>{{$familiar->parentesco}}</td>
                                     
                                     <td class="hstack justify-content-end gap-4 text-end">
-                                        <a href="javascript:void(0);" data-bs-toggle="tooltip" data-bs-trigger="hover"
-                                            title="" data-bs-original-title="Sent Mail">
+                                        <a href="{{}}" data-bs-toggle="tooltip" data-bs-trigger="hover"
+                                            title="" data-bs-original-title="Ver Poliza">
                                             <i class="feather feather-send fs-12"></i>
                                         </a>                                    
                                     </td>
