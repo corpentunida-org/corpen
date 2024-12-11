@@ -105,6 +105,14 @@
                                 </tr>
                                 <tr class="mb-1">
                                     <td>
+                                        <a href="javascript:void(0);">Fecha de Inicio</a>
+                                    </td>
+                                    <td>
+                                        <span class="fs-12 fw-normal text-muted">{{ $asociado['dateInit'] }}</span>
+                                    </td>
+                                </tr>
+                                <tr class="mb-1">
+                                    <td>
                                         <a href="javascript:void(0);">Contrato</a>
                                     </td>
                                     <td>
@@ -131,44 +139,39 @@
     </div>
 </div>
 
+
 <div class="offcanvas offcanvas-end" tabindex="-1" id="proposalSent2">
     <div class="offcanvas-header ht-80 px-4 border-bottom border-gray-5">
         <div>
             <h2 class="fs-16 fw-bold text-truncate-1-line">PRESTAR SERVICIO</h2>
-            <small class="fs-12 text-muted fechahoy">25 MAY, 2023</small>
+            <small class="fs-12 text-muted">25 MAY, 2023</small>
         </div>
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
-    <form method="POST" action="{{ route('exequial.prestarServicio.store') }}" id="FormularioPrestarServicio"
-        novalidate>
+    <form method="POST" action="{{ route('exequial.prestarServicio.store') }}" id="FormularioPrestarServicioTitular"novalidate>
         @csrf
         <div
             class="py-3 px-4 d-flex justify-content-between align-items-center border-bottom border-bottom-dashed border-gray-5 bg-gray-100">
             <div>
-                <input class="fw-bold text-dark p-0 m-0 border border-0 bg-gray-100" id="nameBeneficiario"
-                    style="width: 100%;" name="nameBeneficiary" readonly>
-                <input class="fs-12 fw-medium text-muted p-0 m-0 border border-0 bg-gray-100" id="idBeneficiario"
-                    name="cedulaFallecido" readonly>
+                <input class="fw-bold text-dark p-0 m-0 border border-0 bg-gray-100" id="nameTitular"
+                    style="width: 100%;" name="nameBeneficiary" value="{{ $asociado['name'] }}" readonly>
+                <input class="fs-12 fw-medium text-muted p-0 m-0 border border-0 bg-gray-100" id="idTitular"
+                    name="cedulaFallecido" value="{{ $asociado['documentId'] }}" readonly>
             </div>
         </div>
-        <input type="hidden" name="pastor" id="ispastor" value="false">
+        <input type="hidden" name="pastor" id="ispastor" value="true">
         <input type="hidden" id="cedulaTitular" name="cedulaTitular" value="{{ $asociado['documentId'] }}">
         <input type="hidden" value="{{ $asociado['name'] }}" name="nameTitular">
         <input type="hidden" id="parentescoServicio" name="parentesco">
         <input type="hidden" name="fecNacFallecido" id="fecNacFallecido">
-        <input type="hidden" name="dateInit" id="dateInit">
+        <input type="hidden" name="dateInit" id="dateInit" value="{{ $asociado['dateInit'] }}">
 
         <div class="offcanvas-body">
             <div class="form-group mb-4">
                 <label class="form-label">Lugar Fallecimiento<span class="text-danger">*</span></label>
                 <input type="text" class="form-control uppercase-input" name="lugarFallecimiento" required>
             </div>
-            <div class="row">
-                <!-- <div class="form-group mb-4">
-                    <label class="form-label">To: <span class="text-danger">*</span></label>
-                    <input class="form-control" name="tomailcontent" value="wrapcode.info@gmail.com" placeholder="To..."
-                        required>
-                </div> -->
+            <div class="row">               
                 <div class="form-group col-lg-6 mb-4">
                     <label class="form-label">Fecha<span class="text-danger">*</span></label>
                     <input type="date" class="form-control datepicker-input" name="fechaFallecimiento" required>
@@ -233,5 +236,20 @@
 
     // Mostrar la fecha en el elemento con id 'currentDate'
     document.getElementsByClassName('fechahoy').textContent = formattedDate;
+
+    $(document).ready(function () {
+        $('#FormularioPrestarServicioTitular').submit(function (event) {
+        
+        var form = this;
+        if (!form.checkValidity()) {
+            $(form).addClass('was-validated');
+            event.preventDefault();
+            event.stopPropagation();
+        } else {
+            console.log($(this).serialize());
+        }
+    });
+    });
+    
 </script>
 </x-base-layout>

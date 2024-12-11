@@ -92,7 +92,7 @@ class ComaeExCliController extends Controller
                 'beneficiarios_status' => $beneficiarios->status(),
                 'beneficiarios_response' => $beneficiarios->json(),
             ], 500); */
-            return redirect()->route('exequial.asociados.index')->with('error', 'No se encontró la cédula como titular de exequiales');
+            return redirect()->route('exequial.asociados.index')->with('warning', 'No se encontró la cédula como titular de exequiales');
         }
 
     }

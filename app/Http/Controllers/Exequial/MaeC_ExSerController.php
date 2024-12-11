@@ -33,6 +33,7 @@ class MaeC_ExSerController extends Controller
     
     public function store(Request $request)
     {
+        dd($request);
         //$this->authorize('create', auth()->user());
         $token = env('TOKEN_ADMIN');
         $fechaActual = Carbon::now();
@@ -64,6 +65,7 @@ class MaeC_ExSerController extends Controller
                 "dateBirthDate"=>$request->fecNacFallecido,
             ]);
         }
+        
         if ($response->successful()) {
             ExMonitoria::create([
                 'fechaRegistro' => $fechaActual,
