@@ -82,7 +82,7 @@
                                     <td>{{$familiar->parentesco}}</td>
                                     
                                     <td class="hstack justify-content-end gap-4 text-end">
-                                        <a href="{{}}" data-bs-toggle="tooltip" data-bs-trigger="hover"
+                                        <a data-bs-toggle="tooltip" data-bs-trigger="hover"
                                             title="" data-bs-original-title="Ver Poliza">
                                             <i class="feather feather-send fs-12"></i>
                                         </a>                                    
