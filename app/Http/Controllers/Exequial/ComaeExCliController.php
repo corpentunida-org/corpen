@@ -215,7 +215,7 @@ class ComaeExCliController extends Controller
                 'asociado' => $jsonTit,
                 'beneficiarios' => $jsonBene,
                 'pastor' => $personalTitular,
-                'image_path' => public_path('assets/img/corpentunida-logo-azul-oscuro-2021x300.png'),
+                'image_path' => public_path('assets/images/CORPENTUNIDA_LOGO PRINCIPAL  (2).png'),
             ];
 
             // return view('exequial.asociados.showpdf', [
@@ -233,6 +233,6 @@ class ComaeExCliController extends Controller
         //$data = ['asociado'=> $asociado, 'beneficiarios' => $beneficiarios];
         //$pdf = PDF::loadView('asociados.showpdf', $data)->setPaper('legal', 'landscape');
         //return $pdf->download(date('Y-m-d') .  $asociado->nombre . '.pdf');
-        //return view('asociados.showpdf', $data);
+        //return view('exequial.asociados.showpdf', $data);
     }
 }
