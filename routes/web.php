@@ -49,7 +49,7 @@ Route::get('/base', function () {
 Route::resource('users', UserController::class)->middleware('can:admin')->names('admin.users');
 
 //RUTAS DE EXEQUIALES
-Route::get('/asociados/{id}/generarpdf', [ComaeExCliController::class, 'generarpdf'])->middleware('auth')->name('asociados.generarpdf');
+Route::get('asociados/{id}/generarpdf/{active}', [ComaeExCliController::class, 'generarpdf'])->name('asociados.generarpdf');
 Route::resource('asociados', ComaeExCliController::class)->middleware('auth')->names('exequial.asociados');
 
 Route::get('/prestarServicio/generarpdf', [MaeC_ExSerController::class, 'generarpdf'])->middleware('auth')->name('prestarServicio.generarpdf');

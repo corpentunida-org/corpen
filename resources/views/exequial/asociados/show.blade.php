@@ -132,10 +132,10 @@
             </div>           
         </div>
 
-         <a href={{ route('asociados.generarpdf', ['id' => $asociado['documentId']])}} class="btn btn-primary mt-3">
-                <i class="feather-plus me-2"></i>
-                <span>Descargar PDF</span>
-        </a>
+        <div class="d-flex justify-content-end gap-2 m-3 ">
+            <a href={{ route('asociados.generarpdf', ['id' => $asociado['documentId'], 'active' => 'false'])}} class="btn btn-md bg-soft-teal text-teal border-soft-teal">Descargar PDF</a>
+            <a href={{ route('asociados.generarpdf', ['id' => $asociado['documentId'], 'active' => 'true'])}} class="btn btn-md btn-primary">Descargar certificado</a>
+        </div>
     </div>
 </div>
 

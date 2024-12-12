@@ -79,40 +79,39 @@
     <table class="table">
         <thead>
             <tr>
-                <th colspan="5" style="text-align: center; background-color: rgba(0, 128, 0, 0.5);">INFORMACIÓN DEL CONTRATANTE</th>
+                <th colspan="4" style="text-align: center; background-color: rgba(0, 128, 0, 0.5);">INFORMACIÓN DEL CONTRATANTE</th>
             </tr>
         </thead>
         <tbody>
             <tr>
                 <th colspan="2">APELLIDOS Y NOMBRES</th>
                 <th>DOCUMENTO DE IDENTIDAD</th>
-                <th>FECHA DE INICIO</th>
                 <th>CONTRATO</th>
             </tr>
             <tr>
                 <td colspan="2">{{ $asociado['name'] }}</td>
                 <td>{{ $asociado['documentId'] }}</td>
-                <td>{{ $asociado['dateInit'] }}</td>
                 <th>{{ $asociado['agreement'] }}</th>
+            </tr>    
+            <tr>
+                <th>FECHA DE INICIO</th>
+                <th colspan="2">FECHA DE NACIMIENTO</th>
+                <th>EDAD</th>                
             </tr>
             <tr>
-                <th colspan="2">PLAN</th>
-                <th colspan="3">OBSERVACIONES</th>
-            </tr>
-            <tr>
-                <td colspan="2">{{ $asociado['codePlan'] }}</td>
-                <td colspan="3">{{ $asociado['observation'] }}</td>
-            </tr>
-            <tr>
-                <th>DISTRITO</th>
-                <th>FECHA DE NACIMIENTO</th>
-                <th colspan="3">CORREO</th>
-            </tr>
-            <tr>
-                <td>{{ $pastor['district'] }}</td>
-                <td>{{ $pastor['birthdate'] }}</td>
-                <td colspan="3">{{ $pastor['email'] }}</td>
-            </tr>
+                <td>{{ $asociado['dateInit'] }}</td>
+                <td colspan="2">{{ $pastor['birthdate'] }}</td>
+                @php
+                    $fecNac = new DateTime(
+                        $pastor['birthdate'],
+                    );
+                    $fechaActual = new DateTime();
+                    $diferencia = $fecNac->diff($fechaActual);
+                    $edad = $diferencia->y;
+                @endphp
+                    <td>{{ $edad }}</td>
+            </tr>        
+            
         </tbody>
     </table>
     <div class="separador"></div>

@@ -175,7 +175,7 @@ class ComaeExCliController extends Controller
         }
     }
 
-    public function generarpdf($id)
+    public function generarpdf($id, $active)
     {
         $token = env('TOKEN_ADMIN');
 
@@ -210,9 +210,15 @@ class ComaeExCliController extends Controller
                 'pastor' => $personalTitular,
                 'image_path' => public_path('assets/images/CORPENTUNIDA_LOGO PRINCIPAL  (2).png'),
             ];
-            $pdf = Pdf::loadView('exequial.asociados.showpdf', $data)->setPaper('letter', 'landscape');
-            return $pdf->download(date('Y-m-d') . " Reporte " .  $jsonTit['documentId'] . '.pdf');
-
+            $isActive = filter_var($active, FILTER_VALIDATE_BOOLEAN);
+            if ($isActive) {
+                $pdf = Pdf::loadView('exequial.asociados.showpdf', $data)->setPaper('letter', 'landscape');
+                return $pdf->download(date('Y-m-d') . " Reporte " .  $jsonTit['documentId'] . '.pdf');
+            } else {
+                $pdf = Pdf::loadView('exequial.asociados.showpdf2', $data)->setPaper('letter', 'landscape');
+                return $pdf->download(date('Y-m-d') . " Reporte " .  $jsonTit['documentId'] . '.pdf');
+            }
         }
     }
+    
 }
