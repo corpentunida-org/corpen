@@ -30,10 +30,22 @@ class MaeC_ExSerController extends Controller
         //return view('exequial.prestarServicio.index', ['registros' => $registros, 'totalRegistros'=>$tReg, 'mesRegistros'=>$mReg]);
         return view('exequial.prestarServicio.index', ['registros' => $registros]);
     }
-    
+
+    public function edit($id)
+    {
+        $registro = ExMonitoria::findOrFail($id);
+        $controllerparentesco = app()->make(ParentescosController::class);   
+        
+        $nomPar = $controllerparentesco->showName($registro->parentesco);
+        $registro->parentesco = $nomPar;
+        
+        return view('exequial.prestarServicio.edit', [
+            'registro' => $registro
+        ]);
+    }
+
     public function store(Request $request)
     {
-        dd($request);
         //$this->authorize('create', auth()->user());
         $token = env('TOKEN_ADMIN');
         $fechaActual = Carbon::now();
@@ -50,6 +62,7 @@ class MaeC_ExSerController extends Controller
                 "observation"=> $request->observation,
                 "stade"=> false
             ]);
+            $request->parentesco = "TITULAR";
             // return redirect()->back()
             //                  ->with('error', 'EN EL IF del titular');
         }else{
@@ -152,24 +165,13 @@ class MaeC_ExSerController extends Controller
             'valor' =>$request->valor
         ]);
         if($updated > 0){
-            return response()->json(['message' => 'Actualización exitosa']);
+            $accion = "actualizar prestar servicio a " . $request->cedulaFallecido;
+            $this->auditoria($accion);
+            return redirect()->route('exequial.prestarServicio.index')->with('success', 'Registro actualizado exitosamente');
         }else{
-            return response()->json(['error' => 'Error al actualizar el registro'], 500);
+            return redirect()->route('exequial.prestarServicio.index')->with('error', 'Error al actualizar el registro');
+            //return response()->json(['error' => 'Error al actualizar el registro'], 500);
         }
-
-        // $reg = ExMonitoria::find($id);
-        // $reg->horaFallecimiento = $request->horaFallecimiento;
-        // $reg->fechaFallecimiento = $request->fechaFallecimiento;
-        // $reg->lugarFallecimiento = $request->lugarFallecimiento;
-        // $reg->traslado = $request->traslado;
-        // $reg->contacto = $request->contacto;
-        // $reg->telefonoContacto = $request->telefonoContacto;
-        // $reg->Contacto2 = $request->Contacto2;
-        // $reg->telefonoContacto2 = $request->telefonoContacto2;
-        // $reg->factura = $request->factura;
-        // $reg->valor = $request->valor;
-        // $reg->save();
-        // return response()->json(['message' => 'Actualización exitosa']);
     }
 
     public function destroy($id){
