@@ -171,7 +171,7 @@
                 <label class="form-label">Lugar Fallecimiento<span class="text-danger">*</span></label>
                 <input type="text" class="form-control uppercase-input" name="lugarFallecimiento" required>
             </div>
-            <div class="row">               
+            <div class="row">
                 <div class="form-group col-lg-6 mb-4">
                     <label class="form-label">Fecha<span class="text-danger">*</span></label>
                     <input type="date" class="form-control datepicker-input" name="fechaFallecimiento" required>

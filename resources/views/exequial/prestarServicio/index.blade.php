@@ -1,4 +1,6 @@
 <x-base-layout>
+@section('titlepage', 'Prestar Servicio')
+    <x-success />
 <div class="col-lg-12">
     <div class="card stretch stretch-full">
         <div class="card-body p-0">
@@ -88,10 +90,10 @@
                                                     </a>
                                                     <ul class="dropdown-menu">
                                                         <li>
-                                                            <button type="submit" class="dropdown-item">
+                                                            <a href="{{route('exequial.prestarServicio.edit', $r->id)}}" class="dropdown-item">
                                                                 <i class="feather feather-edit-3 me-3"></i>
                                                                 <span>Editar</span>
-                                                            </button>
+                                                            </a>
                                                         </li>
                                                         <li>
                                                             <a class="dropdown-item printBTN" href="javascript:void(0)">

@@ -24,6 +24,16 @@
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/vendors/css/select2.min.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/vendors/css/select2-theme.min.css') }}">
     <link rel="stylesheet" type="text/css" href="{{asset('assets/css/theme.min.css')}}" />
+
+
+ 
+    <link rel="stylesheet" type="text/css" href="{{ asset('assets/vendors/css/tagify.min.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ asset('assets/vendors/css/tagify-data.min.css') }}">
+    <link rel="stylesheet" type="text/css" href="{{ asset('assets/vendors/css/quill.min.css') }}">
+
+    <link rel="stylesheet" type="text/css" href="{{ asset('assets/vendors/css/datepicker.min.css') }}">
+    
+
     <!--! END: Custom CSS-->
     <!--! HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries !-->
     <!--! WARNING: Respond.js doesn"t work if you view the page via file: !-->
@@ -207,10 +217,22 @@
 <script src="{{ asset('assets/vendors/js/select2.min.js') }}"></script>
 <script src="{{ asset('assets/vendors/js/select2-active.min.js') }}"></script>
 <!--! END: Apps Init !-->
-<!--! BEGIN: Theme Customizer  !-->
-<script src="{{asset('assets/js/theme-customizer-init.min.js')}}"></script>
-<!--! END: Theme Customizer !-->
-    @endif
+
+
+    <!-- vendors.min.js {always must need to be top} -->
+    <script src="{{ asset('assets/vendors/js/tagify.min.js') }}"></script>
+    <script src="{{ asset('assets/vendors/js/tagify-data.min.js') }}"></script>
+    <script src="{{ asset('assets/vendors/js/quill.min.js') }}"></script>
+    <script src="{{ asset('assets/vendors/js/datepicker.min.js') }}"></script>
+
+    <script src="assets/js/proposal-create-init.min.js"></script>
+    <!--! END: Apps Init !-->
+    <!--! BEGIN: Theme Customizer  !-->
+
+    <!--! BEGIN: Theme Customizer  !-->
+        <script src="{{asset('assets/js/theme-customizer-init.min.js')}}"></script>
+    <!--! END: Theme Customizer !-->
+@endif
 @endauth
 </body>
 </html>
