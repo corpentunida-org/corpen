@@ -3,6 +3,7 @@
 
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Cartera\ReadExelController;
+use App\Http\Controllers\IndexController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuditoriaController;
 
@@ -23,7 +24,7 @@ use App\Http\Controllers\Seguros\SegPlanController;
     })->name('dashboard');
 }); */
 Route::middleware(['auth'])->group(function () {
-    Route::get('/', [AuditoriaController::class, 'index'])->name('dashboard');
+    Route::get('/', [IndexController::class, 'index'])->name('dashboard');
 });
 
 Route::get('/offline', function () {
@@ -45,8 +46,11 @@ Route::get('/base', function () {
 //     })->name('dashboard');
 // });
 
+
 //ADMIN
 Route::resource('users', UserController::class)->middleware('can:admin')->names('admin.users');
+Route::resource('admin', AuditoriaController::class)->middleware('auth')->names('admin.auditoria');
+
 
 //RUTAS DE EXEQUIALES
 Route::get('asociados/{id}/generarpdf/{active}', [ComaeExCliController::class, 'generarpdf'])->name('asociados.generarpdf');

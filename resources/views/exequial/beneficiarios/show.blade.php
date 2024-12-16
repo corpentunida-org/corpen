@@ -1,8 +1,4 @@
-<style>
-    .uppercase-input {
-        text-transform: uppercase;
-    }
-</style>
+
 @if(session('error'))
     <div class="alert alert-danger">
         {{ session('error') }}
@@ -13,11 +9,12 @@
         <span class="d-block mb-2">Información:</span>
     </h5>
     <div class="d-flex gap-2">
-
+    @if ($asociado['stade'])  
     <a href="{{route('exequial.beneficiarios.create', ['asociado' =>  $asociado['documentId'] ])}}" class="btn btn-success">
                                 <i class="feather-plus me-2"></i>
                                 <span>Agregar Beneficiario</span>
                             </a>
+    @endif
     </div>
 </div>
 
@@ -64,7 +61,7 @@
                                                                                     $diferencia = $fecNac->diff($fechaActual);
                                                                                     $edad = $diferencia->y;
                                                                                 @endphp
-                                                                                <td>{{ $edad }}</td>
+                                                                                <td>{{ $edad }}</td>                                                                                
                                                                                 <td>
                                                                                     <div class="hstack gap-2 justify-content-end">
                                                                                         <a href="#" class="avatar-text avatar-md">
@@ -75,6 +72,7 @@
                                                                                                 data-bs-toggle="dropdown" data-bs-offset="0,21">
                                                                                                 <i class="feather feather-more-horizontal"></i>
                                                                                             </a>
+                                                                                            @if ($asociado['stade'])  
                                                                                             <ul class="dropdown-menu">
                                                                                                 <li>
                                                                                                     <form
@@ -117,6 +115,7 @@
                                                                                                     </a>
                                                                                                 </li>
                                                                                             </ul>
+                                                                                            @endif
                                                                                         </div>
                                                                                     </div>
                                                                                 </td>

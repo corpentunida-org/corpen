@@ -5,6 +5,6 @@
     </a>
     <ul class="nxl-submenu">
        {{--  <li class="nxl-item"><a class="nxl-link" href="{{ view('admin.users.index')}}">Usuarios</a></li>    --}}     
-        <li class="nxl-item"><a class="nxl-link">Usuarios</a></li>        
+        <li class="nxl-item"><a href="{{route('admin.auditoria.index')}}" class="nxl-link">Usuarios</a></li>
     </ul>
 </li>
