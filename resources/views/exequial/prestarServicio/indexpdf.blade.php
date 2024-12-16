@@ -33,7 +33,7 @@
             border: 1px solid black;
             padding: 8px;
             text-align: left;
-            font-size: 11px;
+            font-size: 8px;
         }
 
         th {
@@ -44,21 +44,17 @@
             height: 20px;
         }
         .centerText{
-            font-size: 10px;
+            font-size: 7px;
             text-align: center;
         }
     </style>
 
 
-    <!-- <div class="header">
-        <img src="{{ asset('assets/img/corpentunida-logo-azul-oscuro-2021x300.png') }}" alt="logo">
-        <h2> </h2>
-    </div> -->
     <table style="border: none; width: 100%;" >
         <tr style="border: none">
             <td style="border: none; width:50px;">
-                <img src="{{ $image_path }}" alt="logoCorpen" style="80%">
-                <!-- <img src="{{ asset('assets/img/corpentunida-logo-azul-oscuro-2021x300.png') }}" alt="logo"> -->
+                <img src="{{ $image_path }}" alt="logoCorpen" style="width: 300px;">
+                {{-- <img src="{{ asset('assets/img/corpentunida-logo-azul-oscuro-2021x300.png') }}" alt="logo"> --}}
             </td>
             <td style="border: none">
                 <div style="text-align: right; font-size: 10px;">
@@ -132,12 +128,5 @@
     </table>
     <p class="centerText"><strong>app.corpentunida.org.co</strong> todos los derechos reservados.</p>
     <div class="separador"></div>
-        <script>
-            var serviciosjson = @json($registros);
-            console.log("hola?")
-            console.log(serviciosjson);
-        
-        </script>
 </body>
-
 </html>

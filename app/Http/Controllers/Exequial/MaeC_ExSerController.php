@@ -119,18 +119,17 @@ class MaeC_ExSerController extends Controller
     } */
 
     public function generarpdf(){
-        $registros = ExMonitoria::all();
+        $registros = ExMonitoria::orderBy('id', 'desc')->get();
         $controllerparentesco = app()->make(ParentescosController::class);        
         foreach ($registros as $registro) {
             $nomPar = $controllerparentesco->showName($registro->parentesco);
             $registro->parentesco = $nomPar;
         }
         $pdf = Pdf::loadView('exequial.prestarServicio.indexpdf', 
-            ['registros' => $registros,'image_path' => public_path('assets/img/corpentunida-logo-azul-oscuro-2021x300.png'),])
+            ['registros' => $registros,'image_path' => public_path('assets/images/CORPENTUNIDA_LOGO PRINCIPAL  (2).png'),])
                 ->setPaper('letter', 'landscape');
         return $pdf->download(date('Y-m-d') . " Reporte.pdf");
-        //return view('exequial.prestarServicio.indexpdf', ['registros' => $registros]);
-
+        //return view('exequial.prestarServicio.indexpdf', ['registros' => $registros, 'image_path' => public_path('assets/images/CORPENTUNIDA_LOGO PRINCIPAL  (2).png')]);
     }
 
     public function reporteIndividual($id){
