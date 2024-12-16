@@ -19,21 +19,9 @@ class AuditoriaController extends Controller
         ]);
     }
     
-    public function index()
-    {
-        $user = Auth::user();
-        if ($user->hasRole('admin')) {
-            return view('admin.users.index');
-            //return redirect()->route('admin.users.index');
-        } elseif ($user->hasRole('exequial')) {
-            return view('exequial.asociados.index');
-        } elseif ($user->hasRole('creditos')) {
-            return view('exequial.asociados.index');
-        } elseif ($user->hasRole('seguros')) {
-            return view('seguros.polizas.index');
-        } else {
-            return redirect('exequial.prestarServicio.index');
-        }
-    }
 
+    public function index(){
+        $registros = auditoria::all();
+        return view('admin.users.usuarios', ['registros' => $registros]);
+    }
 }

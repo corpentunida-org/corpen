@@ -1,5 +1,10 @@
 <x-base-layout>
 @section('titlepage', 'Asociado')
+<style>
+    .uppercase-input {
+        text-transform: uppercase;
+    }
+</style>
 <div class="col-lg-12">
     <div class="card stretch stretch-full">
         <div class="card-body task-header d-lg-flex align-items-center justify-content-between">
@@ -56,15 +61,25 @@
                             <!-- <a href="javascript:void(0);" class="btn btn-icon" data-bs-toggle="tooltip" title="Prestar Servicio" data-bs-target="#proposalSent">
                                 <i class="fa-regular fa-bell"></i>
                             </a> -->
-                            <a href="javascript:void(0);" class="btn btn-icon" data-bs-toggle="offcanvas" data-bs-target="#proposalSent2">
-                                <i class="fa-regular fa-bell"></i>
+                            
+                            @if ($asociado['stade'])                                
+                            <a href="javascript:void(0);" class="border" data-bs-toggle="offcanvas" data-bs-target="#proposalSent2">
+                                <div class="wd-60 d-flex align-items-center justify-content-center" data-bs-toggle="tooltip" data-bs-trigger="hover" title="" style="height: 59px" data-bs-original-title="Prestar Servicio" aria-label="Prestar Servicio">
+                                    <i class="fa-regular fa-bell"></i>
+                                </div>
                             </a>
-
                             <a href="{{route('exequial.asociados.edit', $asociado['documentId'])}}"
                                 class="btn btn-warning" data-bs-toggle="tooltip">
                                 <i class="feather-clock me-2"></i>
                                 <span>Actualizar Titular</span>
                             </a>
+                            @else
+                                <a
+                                class="btn btn-danger" data-bs-toggle="tooltip">
+                                <span>Titular Inactivo</span>
+                                </a>                            
+                            @endif
+                            
                         </div>
                     </div>
                     <div class="table-responsive tickets-items-wrapper">
@@ -144,7 +159,7 @@
     <div class="offcanvas-header ht-80 px-4 border-bottom border-gray-5">
         <div>
             <h2 class="fs-16 fw-bold text-truncate-1-line">PRESTAR SERVICIO</h2>
-            <small class="fs-12 text-muted">25 MAY, 2023</small>
+            <small class="fs-12 text-muted">25 MAY, 2024</small>
         </div>
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
@@ -162,6 +177,7 @@
         <input type="hidden" name="pastor" id="ispastor" value="true">
         <input type="hidden" id="cedulaTitular" name="cedulaTitular" value="{{ $asociado['documentId'] }}">
         <input type="hidden" value="{{ $asociado['name'] }}" name="nameTitular">
+        <input type="hidden" value="{{ $asociado['discount'] }}" name="discount">
         <input type="hidden" id="parentescoServicio" name="parentesco">
         <input type="hidden" name="fecNacFallecido" id="fecNacFallecido">
         <input type="hidden" name="dateInit" id="dateInit" value="{{ $asociado['dateInit'] }}">

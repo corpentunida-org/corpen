@@ -19,7 +19,7 @@ class MaeC_ExSerController extends Controller
     }
     public function index()
     {
-        $registros = ExMonitoria::orderBy('fechaRegistro', 'desc')->get();
+        $registros = ExMonitoria::orderBy('id', 'desc')->get();
         $controllerparentesco = app()->make(ParentescosController::class);        
         foreach ($registros as $registro) {
             $nomPar = $controllerparentesco->showName($registro->parentesco);
@@ -59,7 +59,7 @@ class MaeC_ExSerController extends Controller
                 "dateInit"=> $request->dateInit ? $request->dateInit : ' ',
                 "codePlan" => $request->codePlan ? $request->codePlan : '01',
                 "discount"=> $request->discount,
-                "observation"=> $request->observation,
+                "observation"=> "PASTOR FALLECIDO" . $request->observation,
                 "stade"=> false
             ]);
             $request->parentesco = "TITULAR";
