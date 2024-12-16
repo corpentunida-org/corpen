@@ -26,7 +26,11 @@
                                                 <select class="form-control" data-select2-selector="tag" tabindex="-1">
                                                     <option value="primary" data-bg="bg-primary">{{ $r->fechaRegistro }}
                                                     </option>
-                                                    <option value="primary" data-bg="bg-primary">Martes</option>
+                                                    @php
+                                                        $fecha = \Carbon\Carbon::parse($r->fechaRegistro)->format('d/m/Y');
+                                                        $diaSemana = \Carbon\Carbon::createFromFormat('d/m/Y', $fecha)->locale('es')->isoFormat('dddd');
+                                                    @endphp
+                                                    <option value="primary" data-bg="bg-primary">{{ ucfirst($diaSemana) }}</option>
                                                     <option value="primary" data-bg="bg-primary">
                                                         {{ $r->horaFallecimiento }}
                                                     </option>
