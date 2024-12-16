@@ -159,7 +159,7 @@
     <div class="offcanvas-header ht-80 px-4 border-bottom border-gray-5">
         <div>
             <h2 class="fs-16 fw-bold text-truncate-1-line">PRESTAR SERVICIO</h2>
-            <small class="fs-12 text-muted">25 MAY, 2024</small>
+            <small class="fs-12 text-muted">@php date('Y-m-d') @endphp</small>
         </div>
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>

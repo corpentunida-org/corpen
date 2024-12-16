@@ -35,6 +35,9 @@ class ParentescosController extends Controller
             'Authorization' => 'Bearer ' . $token,
         ])->get(env('API_PRODUCCION') . '/api/Exequiales/Relationship');
         $parentescos = $response->json();
+        if($codParentesco=='TITULAR'){
+            return $codParentesco;
+        }
         foreach ($parentescos as $parentesco) {
             if ($parentesco['code'] === $codParentesco) {
                 $nomParentesco = $parentesco['name'];
