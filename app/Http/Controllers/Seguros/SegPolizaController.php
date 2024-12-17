@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Seguros;
 use App\Http\Controllers\Controller;
 use App\Models\Seguros\SegPoliza;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 use App\Models\Seguros\SegAsegurado;
 
@@ -45,8 +46,12 @@ class SegPolizaController extends Controller
         
         $titularCedula = $poliza->asegurado->titular;
         $grupoFamiliar = SegAsegurado::where('Titular', $titularCedula)->with('tercero','polizas.plan.coberturas')->get();
-        //dd($grupoFamiliar);
-        return view('seguros.polizas.show', compact('poliza','grupoFamiliar'));
+        
+        $totalPrima = DB::table('SEG_polizas')
+        ->whereIn('seg_asegurado_id', $grupoFamiliar->pluck('cedula')) // IDs del grupo familiar
+        ->sum('valor_prima');
+
+        return view('seguros.polizas.show', compact('poliza','grupoFamiliar', 'totalPrima'));
     }
 
     /**
