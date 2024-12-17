@@ -9,7 +9,7 @@
                             <table class="table table-hover" id="customerList">
                                 <thead>
                                     <tr>
-                                        <th>Registro</th>
+                                        <th>Servicio</th>
                                         <th>Titular</th>
                                         <th>Fallecido</th>
                                         <th>Parentesco</th>
@@ -24,10 +24,10 @@
                                         <tr class="single-item">
                                             <td>
                                                 <select class="form-control" data-select2-selector="tag" tabindex="-1">
-                                                    <option value="primary" data-bg="bg-primary">{{ $r->fechaRegistro }}
+                                                    <option value="primary" data-bg="bg-primary">{{ $r->fechaFallecimiento }}
                                                     </option>
                                                     @php
-                                                        $fecha = \Carbon\Carbon::parse($r->fechaRegistro)->format('d/m/Y');
+                                                        $fecha = \Carbon\Carbon::parse($r->fechaFallecimiento)->format('d/m/Y');
                                                         $diaSemana = \Carbon\Carbon::createFromFormat('d/m/Y', $fecha)->locale('es')->isoFormat('dddd');
                                                     @endphp
                                                     <option value="primary" data-bg="bg-primary">{{ ucfirst($diaSemana) }}</option>
@@ -47,7 +47,7 @@
                                             <td>
                                                 <select class="form-control" data-select2-selector="status">
                                                     <option value="primary" data-bg="bg-primary">
-                                                        {{ $r->cedulaFallecido }}
+                                                        <p>{{ $r->cedulaFallecido }}</p>
                                                     </option>
                                                     <option value="primary" data-bg="bg-primary">
                                                         {{ $r->nombreFallecido }}

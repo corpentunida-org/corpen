@@ -8,6 +8,7 @@
                 <div class="card-body">
                     <div class="mb-4">
                         <h5 class="fw-bold">PRESTAR SERVICIO:</h5>
+                        <div class="fs-12 text-muted">{{ $registro->fechaRegistro }}</div>
                     </div>
                     <div class="mb-4">
                         <label class="form-label">Fallecido</label>
@@ -23,12 +24,12 @@
                     </div>
                     <div class="row">
                         <div class="col-lg-6 mb-4">
-                            <label class="form-label">Fecha <span class="text-danger">*</span></label>
+                            <label class="form-label">Fecha Fallecimiento<span class="text-danger">*</span></label>
                             <input type="date" class="form-control datepicker-input" name="fechaFallecimiento" value="{{ $registro->fechaFallecimiento }}"
                                 required>
                         </div>
                         <div class="col-lg-6 mb-4">
-                            <label class="form-label">Hora <span class="text-danger">*</span></label>
+                            <label class="form-label">Hora Fallecimiento<span class="text-danger">*</span></label>
                             <input type="time" class="form-control datepicker-input" name="horaFallecimiento" value="{{ $registro->horaFallecimiento }}"
                                 required>
                         </div>
