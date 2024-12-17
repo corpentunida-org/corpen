@@ -290,7 +290,7 @@
             <div class="p-4 mb-4 d-xxl-flex d-xl-block d-md-flex align-items-center justify-content-end gap-4">                
                 <div class="hstack gap-3">
                     <a href="javascript:void(0);" class="text-bold">Valor total</a>
-                    <a href="javascript:void(0);" class="btn btn-light-brand bg-soft-primary">{{ number_format($totalPrima)}}</a>
+                    <a href="javascript:void(0);" class="btn btn-light-brand bg-soft-primary">$ {{ number_format($totalPrima)}}</a>
                 </div>
             </div>
         </div>
