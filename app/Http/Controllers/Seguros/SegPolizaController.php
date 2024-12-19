@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Seguros;
 
 use App\Http\Controllers\Controller;
 use App\Models\Seguros\SegPoliza;
+use App\Models\Seguros\SegBeneficiario;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -43,15 +44,19 @@ class SegPolizaController extends Controller
         $id = $request->input('id');
         $poliza = SegPoliza::where('seg_asegurado_id', $id)
             ->with(['tercero', 'asegurado', 'asegurado.terceroAF', 'plan.condicion', 'plan.coberturas'])->first();
-        
+        if (!$poliza){
+            return redirect()->route('seguros.poliza.index')->with('warning', 'No se encontró la cédula como asegurado de una poliza');
+        }
         $titularCedula = $poliza->asegurado->titular;
         $grupoFamiliar = SegAsegurado::where('Titular', $titularCedula)->with('tercero','polizas.plan.coberturas')->get();
         
         $totalPrima = DB::table('SEG_polizas')
-        ->whereIn('seg_asegurado_id', $grupoFamiliar->pluck('cedula')) // IDs del grupo familiar
-        ->sum('valor_prima');
+            ->whereIn('seg_asegurado_id', $grupoFamiliar->pluck('cedula'))
+            ->sum('valor_prima');
 
-        return view('seguros.polizas.show', compact('poliza','grupoFamiliar', 'totalPrima'));
+        $beneficiarios = SegBeneficiario::where('id_asegurado', $id)->get();
+
+        return view('seguros.polizas.show', compact('poliza','grupoFamiliar', 'totalPrima', 'beneficiarios'));
     }
 
     /**
