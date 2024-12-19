@@ -42,7 +42,7 @@ class ComaeExCliController extends Controller
             
             return $titular->json();
         } else {
-            return redirect()->route('exequial.asociados.index')->with('messageTit', 'No se encontró la cédula como titular de exequiales');
+            return redirect()->route('exequial.asociados.index')->with('warning', 'No se encontró la cédula como titular de exequiales');
         }
     }
 

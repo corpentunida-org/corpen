@@ -31,11 +31,7 @@
         </div>
     </div>
 </div>
-@if(session('success'))
-    <div class="alert alert-success">
-        {{ session('success') }}
-    </div>
-@endif
+<x-success />
 <div class="col-xxl-12 col-xl-12">
     <div class="card border-top-0">
         <div class="card-header p-0">
