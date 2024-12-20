@@ -129,5 +129,4 @@
             </div>
         </div>
     </div>
-    </div>
 </x-base-layout>

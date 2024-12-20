@@ -1,5 +1,5 @@
 <x-base-layout>
-@section('titlepage', 'Asociado')
+@section('titlepage', 'Actualizar Beneficiario')
 <style>
     .uppercase-input {
         text-transform: uppercase;

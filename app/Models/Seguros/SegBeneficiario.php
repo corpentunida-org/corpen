@@ -10,6 +10,8 @@ class SegBeneficiario extends Model
     use HasFactory;
     protected $table = 'SEG_beneficiarios';
     protected $fillable = [
+        'tipo_documento_id',
+        'cedula',
         'nombre', 
         'parentesco', 
         'porcentaje', 
@@ -18,6 +20,7 @@ class SegBeneficiario extends Model
         'telefono', 
         'correo', 
         'id_asegurado', 
+        'id_poliza', 
     ];
     
     public function poliza()
