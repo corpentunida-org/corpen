@@ -11,9 +11,9 @@ use Illuminate\Support\Facades\Http;
 
 class ComaeExRelParController extends Controller
 {
-    private function auditoria($accion){
+    private function auditoria($accion,$area){
         $auditoriaController = app(AuditoriaController::class);
-        $auditoriaController->create($accion);
+        $auditoriaController->create($accion,$area);
     }
 
     public function edit($id,Request $request){
@@ -65,7 +65,7 @@ class ComaeExRelParController extends Controller
             ]);
         if ($response->successful()) {
             $accion = "add beneficiario " . $request->documentid;
-            $this->auditoria($accion);
+            $this->auditoria($accion, "EXEQUIALES");
             //return response()->json(['message' => 'Se agrego beneficiario correctamente', 'data' => $response->json()], $response->status());
             $url = route('exequial.asociados.show', ['asociado' => 'ID']) . '?id=' . $request->cedulaAsociado;
             return redirect()->to($url)->with('success', 'Beneficiario agregado exitosamente');
@@ -93,7 +93,7 @@ class ComaeExRelParController extends Controller
         $url = route('exequial.asociados.show', ['asociado' => 'ID']) . '?id=' . $request->documentid;      
         if ($response->successful()) {
             $accion = "update beneficiario " . $request->cedula;
-            $this->auditoria($accion);
+            $this->auditoria($accion, "EXEQUIALES");
             //return response()->json(['message' => 'Se actualizó correctamente', 'data' => $response->json()], $response->status());
             $url = route('exequial.asociados.show', ['asociado' => 'ID']) . '?id=' . $request->documentid;
             return redirect()->to($url)->with('success', 'Beneficiario actualizado exitosamente');
@@ -113,7 +113,7 @@ class ComaeExRelParController extends Controller
         ])->delete($url);
         if ($response->successful()) {
             $accion = "delete beneficiario " . $id;
-            $this->auditoria($accion);
+            $this->auditoria($accion, "EXEQUIALES");
             return $response->status();
         } else {
             return response()->json(['error' => $response->json()], $response->status());

@@ -19,9 +19,9 @@ class ComaeExCliController extends Controller
         $this->middleware(['auth']);
     } */
 
-    private function auditoria($accion){
+    private function auditoria($accion,$area){
         $auditoriaController = app(AuditoriaController::class);
-        $auditoriaController->create($accion);
+        $auditoriaController->create($accion,$area);
     }
 
     public function index()
@@ -133,7 +133,7 @@ class ComaeExCliController extends Controller
         ]);        
         if ($response->successful()) {
             $accion = "add titular " . $request->documentId;
-            $this->auditoria($accion);
+            $this->auditoria($accion, "EXEQUIALES");
             /* return response()->json([
                 'redirect' => route('exequial.beneficiarios.show', ['beneficiario' => $request->documentId]),
                 'message' => 'Titular añadido exitosamente.'
@@ -165,7 +165,7 @@ class ComaeExCliController extends Controller
         $url = route('exequial.asociados.show', ['asociado' => 'ID']) . '?id=' . $request->documentid;
         if ($response->successful()) {
             $accion = "update titular " . $request->documentid;
-            $this->auditoria($accion);
+            $this->auditoria($accion, "EXEQUIALES");
             //return $data; //antigua vista
             //plantilla
             return redirect()->to($url)->with('success', 'Titular actualizado exitosamente');

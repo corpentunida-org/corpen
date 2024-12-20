@@ -99,7 +99,7 @@ class MaeC_ExSerController extends Controller
                 'valor'=> $request->valor,
             ]);
             $accion = "prestar servicio a " . $request->cedulaFallecido;
-            $this->auditoria($accion);
+            $this->auditoria($accion, "EXEQUIALES");
             return $this->index();
         }
         else{
@@ -165,7 +165,7 @@ class MaeC_ExSerController extends Controller
         ]);
         if($updated > 0){
             $accion = "actualizar prestar servicio a " . $request->cedulaFallecido;
-            $this->auditoria($accion);
+            $this->auditoria($accion, "EXEQUIALES");
             return redirect()->route('exequial.prestarServicio.index')->with('success', 'Registro actualizado exitosamente');
         }else{
             return redirect()->route('exequial.prestarServicio.index')->with('error', 'Error al actualizar el registro');
