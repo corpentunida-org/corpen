@@ -31,15 +31,15 @@ class ComaeExCliController extends Controller
 
     //Datos solo del titular
     public function titularShow($id){
-        //API
+        //API        
         $token = env('TOKEN_ADMIN');
         $titular = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
         ])->get(env('API_PRODUCCION') . '/api/Exequiales/Tercero', [
             'documentId' => $id,
         ]);
+        
         if ($titular->successful()) {
-            
             return $titular->json();
         } else {
             return redirect()->route('exequial.asociados.index')->with('warning', 'No se encontró la cédula como titular de exequiales');
@@ -60,20 +60,22 @@ class ComaeExCliController extends Controller
         //API
         $token = env('TOKEN_ADMIN');
         $id = $request->input('id');
-
+        
         $titular = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
         ])->get(env('API_PRODUCCION') .'/api/Exequiales/Tercero', [
             'documentId' => $id,
         ]);
+        
         $beneficiarios = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
         ])->get(env('API_PRODUCCION') .'/api/Exequiales', [
             'documentId' => $id,
         ]);
-
+        
         if ($titular->successful() && $beneficiarios->successful()) {
             $jsonTit = $titular->json();
+            dd($jsonTit);
             $jsonBene = $beneficiarios->json();
             if (isset($jsonTit['codePlan'])) {
                 $controllerplanes = app()->make(PlanController::class);

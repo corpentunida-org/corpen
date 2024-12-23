@@ -76,7 +76,7 @@
             </div>
 
         </div>
-        @if ($grupoFamiliar->count() > 1)
+        @if ($grupoFamiliar->count() >= 1)
             <div class="payment-history">
                 <div class="mb-4 px-4 d-flex align-items-center justify-content-between">
                     <h5 class="fw-bold mb-0">Grupo Familiar:</h5>
@@ -90,13 +90,13 @@
                                 <th>Parentesco</th>
                                 <th>Plan</th>
                                 <th>Valor Asegurado</th>
+                                <th>Prima</th>
                                 <th class="text-end">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
 
-                            @foreach ($grupoFamiliar as $familiar)
-                                @if ($familiar->cedula != $poliza->seg_asegurado_id)
+                            @foreach ($grupoFamiliar as $familiar)                                
                                     <tr>
                                         <td><a href="javascript:void(0);">{{ $familiar->cedula }}</a></td>
                                         <td>{{ $familiar->tercero->nombre }}</td>
@@ -105,6 +105,7 @@
                                                 class="badge bg-soft-warning text-warning">{{ $familiar->polizas->first()->plan->name }}</span>
                                         </td>
                                         <td>$ {{ number_format($familiar->polizas->first()->plan->valor, 2) }}</td>
+                                        <td>$ {{$familiar->polizas->valor_prima}}</td>
                                         <td class="hstack justify-content-end gap-4 text-end">
                                             {{-- <a data-bs-toggle="tooltip" data-bs-trigger="hover"
                                                 data-bs-original-title="Ver Poliza"
@@ -125,14 +126,24 @@
                                             </form>
                                         </td>
                                     </tr>
-                                @endif
+                                
                             @endforeach
                         </tbody>
                     </table>
                 </div>
                 <div class="p-4 mb-4 d-xxl-flex d-xl-block d-md-flex align-items-center justify-content-end gap-4">
                     <div class="hstack gap-3">
-                        <a href="javascript:void(0);" class="text-bold">Valor total</a>
+                        <a href="javascript:void(0);" class="text-bold">Valor Titular</a>
+                        <a href="javascript:void(0);" class="btn bg-soft-primary" style="font-size:20px;">$
+                            45987</a>
+                    </div>
+                    <div class="hstack gap-3">
+                        <a href="javascript:void(0);" class="text-bold">Subsidio</a>
+                        <a href="javascript:void(0);" class="btn bg-soft-primary" style="font-size:20px;">$
+                            89087</a>
+                    </div>
+                    <div class="hstack gap-3">
+                        <a href="javascript:void(0);" class="text-bold">Valor Aseguradora</a>
                         <a href="javascript:void(0);" class="btn bg-soft-primary" style="font-size:20px;">$
                             {{ number_format($totalPrima) }}</a>
                     </div>
