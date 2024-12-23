@@ -49,7 +49,7 @@ class SegPolizaController extends Controller
         }
         $titularCedula = $poliza->asegurado->titular;
         $grupoFamiliar = SegAsegurado::where('Titular', $titularCedula)->with('tercero','polizas.plan.coberturas')->get();
-        
+        //dd($grupoFamiliar);
         $totalPrima = DB::table('SEG_polizas')
             ->whereIn('seg_asegurado_id', $grupoFamiliar->pluck('cedula'))
             ->sum('valor_prima');
