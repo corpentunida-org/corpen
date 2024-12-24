@@ -104,8 +104,8 @@
                                         <td><span
                                                 class="badge bg-soft-warning text-warning">{{ $familiar->polizas->first()->plan->name }}</span>
                                         </td>
-                                        <td>$ {{ number_format($familiar->polizas->first()->plan->valor, 2) }}</td>
-                                        <td>$ {{$familiar->polizas->valor_prima}}</td>
+                                        <td>$ {{ number_format($familiar->valorAsegurado) }}</td>
+                                        <td>$ {{ number_format($familiar->valorprima) }}</td>
                                         <td class="hstack justify-content-end gap-4 text-end">
                                             {{-- <a data-bs-toggle="tooltip" data-bs-trigger="hover"
                                                 data-bs-original-title="Ver Poliza"
@@ -134,13 +134,18 @@
                 <div class="p-4 mb-4 d-xxl-flex d-xl-block d-md-flex align-items-center justify-content-end gap-4">
                     <div class="hstack gap-3">
                         <a href="javascript:void(0);" class="text-bold">Valor Titular</a>
-                        <a href="javascript:void(0);" class="btn bg-soft-primary" style="font-size:20px;">$
-                            45987</a>
+                        <a href="javascript:void(0);" class="btn bg-soft-info" style="font-size:20px;">$
+                            {{number_format($poliza->asegurado->valorpAseguradora)}}</a>
                     </div>
                     <div class="hstack gap-3">
                         <a href="javascript:void(0);" class="text-bold">Subsidio</a>
-                        <a href="javascript:void(0);" class="btn bg-soft-primary" style="font-size:20px;">$
-                            89087</a>
+                        <a href="javascript:void(0);" class="btn bg-soft-warning" style="font-size:20px;">$
+                        @if (!$poliza->asegurado->valorpAseguradora)
+                             0
+                        @else
+                            @php $subsicio = $totalPrima - $poliza->asegurado->valorpAseguradora @endphp {{number_format($subsicio)}}
+                        @endif
+                            </a>
                     </div>
                     <div class="hstack gap-3">
                         <a href="javascript:void(0);" class="text-bold">Valor Aseguradora</a>
