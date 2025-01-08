@@ -13,7 +13,7 @@ class SegPlanController extends Controller
      */
     public function index()
     {
-        $planes = SegPlan::with(['condicion'])
+        $planes = SegPlan::with(['condicion','convenio'])
             ->get()
             ->groupBy('condicion');
         return view('seguros.planes.index', compact('planes'));
@@ -24,7 +24,7 @@ class SegPlanController extends Controller
      */
     public function create()
     {
-        //
+        return view('seguros.planes.create');
     }
 
     /**
