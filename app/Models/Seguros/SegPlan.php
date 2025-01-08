@@ -27,5 +27,9 @@ class SegPlan extends Model
         return $this->hasOne(SegPlan::class, 'seg_asegurado_id');
     }
 
+    public function convenio()
+    {
+        return $this->belongsTo(SegConvenio::class, 'seg_convenio_id', 'id');
+    }
     
 }

@@ -75,7 +75,7 @@ class ComaeExCliController extends Controller
         
         if ($titular->successful() && $beneficiarios->successful()) {
             $jsonTit = $titular->json();
-            dd($jsonTit);
+            
             $jsonBene = $beneficiarios->json();
             if (isset($jsonTit['codePlan'])) {
                 $controllerplanes = app()->make(PlanController::class);
