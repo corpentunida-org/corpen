@@ -4,16 +4,26 @@ namespace App\Http\Controllers\Seguros;
 
 use App\Http\Controllers\Controller;
 use App\Models\Seguros\SegPlan;
+use App\Models\Seguros\SegCobertura;
+use App\Models\Seguros\SegConvenio;
+use App\Models\Seguros\SegCondicion;
 use Illuminate\Http\Request;
+use App\Http\Controllers\AuditoriaController;
 
 class SegPlanController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
+
+    private function auditoria($accion){
+        $auditoriaController = app(AuditoriaController::class);
+        $auditoriaController->create($accion, "SEGUROS");
+    }
+
     public function index()
     {
-        $planes = SegPlan::with(['condicion','convenio'])
+        $planes = SegPlan::with(['condicion', 'convenio'])
             ->get()
             ->groupBy('condicion');
         return view('seguros.planes.index', compact('planes'));
@@ -24,7 +34,10 @@ class SegPlanController extends Controller
      */
     public function create()
     {
-        return view('seguros.planes.create');
+        $coberturas = SegCobertura::all();
+        $convenios = SegConvenio::all();
+        $condiciones = SegCondicion::all();
+        return view('seguros.planes.create', compact('coberturas', 'convenios', 'condiciones'));
     }
 
     /**
@@ -32,7 +45,30 @@ class SegPlanController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $plan = SegPlan::create([
+            'name' => strtoupper($request->input('name')),
+            'valor' => $request->input('valorPlanAsegurado'),
+            'prima' => $request->input('prima'),
+            'seg_convenio_id' => $request->input('convenio'),
+            'condicion_id' => $request->input('condicion_id'),
+        ]);
+        if (!$plan->exists) {
+            return redirect()->back()->with('error', 'No se pudo procesar el plan.');
+        }
+        $coberturaIds = $request->input('cobertura_id'); 
+        $valoresAse = $request->input('valorAsegurado');
+        $valoresCob = $request->input('valorPrima');
+
+        for ($i = 0; $i < count($coberturaIds); $i++) {
+            $plan->coberturas()->attach(
+                $coberturaIds[$i], [
+                    'valorAsegurado' => $valoresAse[$i],
+                    'valorCobertura' => $valoresCob[$i],
+                ]
+            );
+        }
+        $this->auditoria("PLAN CREADO ID" . $plan->id);
+        return redirect()->route('seguros.planes.index')->with('success', 'El plan fue creado exitosamente.');      
     }
 
     /**

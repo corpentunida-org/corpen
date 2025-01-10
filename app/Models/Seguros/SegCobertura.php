@@ -9,6 +9,12 @@ class SegCobertura extends Model
 {
     use HasFactory;
     protected $table = 'seg_coberturas';
+    protected $fillable = [
+        'id',
+        'nombre',
+        'prima', 
+        'convenio_id', 
+    ];
 
     public function planes()
     {
@@ -17,6 +23,6 @@ class SegCobertura extends Model
             'seg_plan_cobertura',
             'cobertura_id',
             'plan_id'
-        )->withPivot('valorAsegurado', 'Prima');
+        )->withPivot('valorAsegurado', 'valorCobertura');
     }
 }
