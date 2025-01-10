@@ -1,4 +1,3 @@
-
 <div class="payment-history">
     <div class="mb-4 px-4 d-flex align-items-center justify-content-between">
         <h5 class="fw-bold mb-0">Beneficiarios:</h5>

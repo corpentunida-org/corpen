@@ -9,6 +9,12 @@ class SegPlan_cobertura extends Model
 {
     use HasFactory;
     protected $table = 'seg_plan_cobertura';
+    protected $fillable = [
+        'plan_id',
+        'cobertura_id',
+        'valorAsegurado',
+        'valorCobertura',
+    ];
 
     public function cobertura()
     {

@@ -9,6 +9,13 @@ class SegPlan extends Model
 {
     use HasFactory;
     protected $table = 'SEG_plans';
+    protected $fillable = [
+        'name',
+        'valor',
+        'prima', 
+        'seg_convenio_id', 
+        'condicion_id', 
+    ];
 
     public function condicion()
     {
@@ -19,7 +26,7 @@ class SegPlan extends Model
     {
         return $this->belongsToMany(
         SegCobertura::class,'seg_plan_cobertura','plan_id','cobertura_id')
-                ->withPivot('valorAsegurado', 'Prima');
+                ->withPivot('valorAsegurado', 'valorCobertura');
     }
 
     public function poliza()

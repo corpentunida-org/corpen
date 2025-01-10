@@ -1,5 +1,6 @@
 <x-base-layout>
     @section('titlepage', 'Planes')
+    <x-success />
     <div class="col-lg-12">
         <div class="card stretch stretch-full">
             <div class="card-body task-header d-lg-flex align-items-center justify-content-between">
@@ -38,11 +39,15 @@
             <div class="card stretch stretch-full">
                 <div class="card-body">
                     <div class="hstack justify-content-between flex-wrap flex-md-nowrap mb-4">
+                    @if ($planesGrupo->pluck('condicion_id')->contains(0))
+                        @continue 
+                    @endif
                         <div>
                             <h5 class="mb-1">{{ $planesGrupo->first()->condicion->descripcion }}</h5>
                             <span class="fs-12 text-muted">Fecha: {{ $planesGrupo->first()->convenio->fecha_inicio }} /
                                 {{ $planesGrupo->first()->convenio->fecha_fin }}</span>
                         </div>
+                                          
                         <div class="hstack gap-3 btn-light-brand py-2 px-4">
                             <h6 class="fs-12 fw-bolder mb-0">{{ $planesGrupo->first()->convenio->nombre }}</h6>
                             <p class="fs-12 text-muted mb-0">{{ $planesGrupo->first()->convenio->id }}</p>

@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Cartera\ReadExelController;
 use App\Http\Controllers\IndexController;
 use App\Http\Controllers\Seguros\SegBeneficiarioController;
+use App\Http\Controllers\Seguros\SegCoberturaController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuditoriaController;
 
@@ -74,6 +75,7 @@ Route::get('/plansall', [PlanController::class, 'index'])->name('exequial.plansa
 //RUTAS SEGUROS
 Route::resource('poliza', SegPolizaController::class)->middleware('auth')->names('seguros.poliza');
 Route::resource('plan', SegPlanController::class)->middleware('auth')->names('seguros.planes');
+Route::resource('cobertura', SegCoberturaController::class)->middleware('auth')->names('seguros.cobertura');
 Route::resource('beneficiario', SegBeneficiarioController::class)->middleware('auth')->names('seguros.beneficiario');
 
 

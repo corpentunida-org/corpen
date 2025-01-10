@@ -13,9 +13,9 @@ use App\Http\Controllers\AuditoriaController;
 
 class MaeC_ExSerController extends Controller
 {
-    private function auditoria($accion){
+    private function auditoria($accion,$area){
         $auditoriaController = app(AuditoriaController::class);
-        $auditoriaController->create($accion);
+        $auditoriaController->create($accion, $area);
     }
     public function index()
     {
