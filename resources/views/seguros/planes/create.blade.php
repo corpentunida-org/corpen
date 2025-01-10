@@ -30,12 +30,9 @@
                                 <div class="row">
                                     <div class="col-lg-3">
                                         <label class="form-label">Convenio<span class="text-danger">*</span></label>
-                                        <select class="form-control" name="convenio" onchange="this.form.submit()">
+                                        <select class="form-control" name="convenio" id="convenio_id" required>
                                             @foreach ($convenios as $convenio)
-                                                <option value="{{ $convenio->id }}"
-                                                    {{ old('convenio_id') == $convenio->id ? 'selected' : '' }}>
-                                                    {{ $convenio->id }} - {{ $convenio->nombre }}
-                                                </option>
+                                                <option value="{{ $convenio->id }}">{{ $convenio->nombre }}</option>
                                             @endforeach
                                         </select>
                                     </div>
@@ -80,16 +77,7 @@
                                         <div class="col-lg-6">
                                             <label class="form-label">Cobertura <span
                                                     class="text-danger">*</span></label>
-                                            <select class="form-control" name="cobertura_id[]">
-                                                @foreach ($coberturas as $cobertura)
-                                                    @if (old('convenio_id') && $cobertura->convenio_id == old('convenio_id'))
-                                                        <option value="{{ $cobertura->id }}"
-                                                            {{ old('cobertura_id') == $cobertura->id ? 'selected' : '' }}>
-                                                            {{ $cobertura->nombre }}
-                                                        </option>
-                                                    @endif
-                                                @endforeach
-                                            </select>
+                                            <select class="form-control" name="cobertura_id[]" id="cobertura_id" required></select>
                                         </div>
                                         <div class="col-lg-3">
                                             <label class="form-label">Valor Asegurado<span
@@ -120,42 +108,68 @@
                             </div>
                         </form>
                         <script>
-                            $('#formAddPlan').submit(function(event) {
-                                var form = this;
+                            $(document).ready(function() {
+                                $('#convenio_id').on('change', function() {
+                                    var convenioId = $(this).val();
 
-                                if (!form.checkValidity()) {
-                                    $(form).addClass('was-validated');
-                                    event.preventDefault();
-                                    event.stopPropagation();
-                                } else {
-                                    var totalValorPrima = 0;
-                                    $('input[name="valorPrima[]"]').each(function() {
-                                        var valor = parseFloat($(this).val()) || 0;
-                                        totalValorPrima += valor;
-                                    });
+                                    $('#cobertura_id').empty();                                    
 
-                                    var totalPrima = parseFloat($('input[name="prima"]').val());
-
-                                    if (isNaN(totalPrima) || totalPrima <= 0) {
-                                        $('#prima').addClass('is-invalid');
-                                        event.preventDefault();
-                                        return;
-                                    } else {
-                                        $('#prima').removeClass('is-invalid');
-                                        $('#primaError').text('');
+                                    if (convenioId) {
+                                        var url = '{{ route("seguros.cobertura.show", ":cobertura") }}';
+            
+                                        $.ajax({
+                                            url: url.replace(':cobertura', convenioId),                                            
+                                            method: 'GET',
+                                            success: function(data) {
+                                                console.log(data);
+                                                data.forEach(function(cobertura) {
+                                                    $('#cobertura_id').append('<option value="' + cobertura
+                                                        .id + '">' + cobertura.nombre + '</option>');
+                                                });
+                                            },
+                                            error: function() {
+                                                alert('Hubo un error al cargar las coberturas.');
+                                            }
+                                        });
                                     }
-                                }
-                            });
-                            $('#add-cobertura').click(function() {
-                                const container = document.getElementById('coberturas-container');
-                                const coberturaRow = document.querySelector('.cobertura-row');
+                                });
 
-                                const clonedRow = coberturaRow.cloneNode(true);
+                                $('#formAddPlan').submit(function(event) {
+                                    var form = this;
+                                    if (!form.checkValidity()) {
+                                        $(form).addClass('was-validated');
+                                        event.preventDefault();
+                                        event.stopPropagation();
+                                    } else {
+                                        var totalValorPrima = 0;
+                                        $('input[name="valorPrima[]"]').each(function() {
+                                            var valor = parseFloat($(this).val()) || 0;
+                                            totalValorPrima += valor;
+                                        });
 
-                                const inputs = clonedRow.querySelectorAll('input');
-                                inputs.forEach(input => input.value = '');
+                                        var totalPrima = parseFloat($('input[name="prima"]').val());
 
-                                container.appendChild(clonedRow);
+                                        if (isNaN(totalPrima) || totalPrima <= 0) {
+                                            $('#prima').addClass('is-invalid');
+                                            event.preventDefault();
+                                            return;
+                                        } else {
+                                            $('#prima').removeClass('is-invalid');
+                                            $('#primaError').text('');
+                                        }
+                                    }
+                                });
+                                $('#add-cobertura').click(function() {
+                                    const container = document.getElementById('coberturas-container');
+                                    const coberturaRow = document.querySelector('.cobertura-row');
+
+                                    const clonedRow = coberturaRow.cloneNode(true);
+
+                                    const inputs = clonedRow.querySelectorAll('input');
+                                    inputs.forEach(input => input.value = '');
+
+                                    container.appendChild(clonedRow);
+                                });
                             });
                         </script>
                     </div>
