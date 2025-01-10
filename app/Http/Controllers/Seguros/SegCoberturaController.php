@@ -52,10 +52,12 @@ class SegCoberturaController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(SegCobertura $segCobertura)
+    public function show($convenio_id)
     {
-        //
+        $coberturas = SegCobertura::where('convenio_id', $convenio_id)->get();
+        return response()->json($coberturas);
     }
+    
 
     /**
      * Show the form for editing the specified resource.
