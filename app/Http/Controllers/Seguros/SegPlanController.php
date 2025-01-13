@@ -82,9 +82,13 @@ class SegPlanController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(SegPlan $segPlan)
+    public function edit($id)
     {
-        //
+        $segPlan = SegPlan::with('coberturas')->findOrFail($id);
+        $coberturas = SegCobertura::all();
+        $convenios = SegConvenio::all();
+        $condiciones = SegCondicion::all();
+        return view('seguros.planes.edit', compact('segPlan', 'coberturas', 'convenios', 'condiciones'));
     }
 
     /**

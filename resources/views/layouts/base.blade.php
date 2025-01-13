@@ -13,6 +13,7 @@
     <!--! END: Favicon-->
     <!--! BEGIN: Bootstrap CSS-->
     <link rel="stylesheet" type="text/css" href="{{asset('assets/css/bootstrap.min.css')}}" />
+    
     <!--! END: Bootstrap CSS-->
     <!--! BEGIN: Vendors CSS-->
     <link rel="stylesheet" type="text/css" href="{{asset('assets/vendors/css/vendors.min.css')}}" />
@@ -24,7 +25,6 @@
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/vendors/css/select2.min.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/vendors/css/select2-theme.min.css') }}">
     <link rel="stylesheet" type="text/css" href="{{asset('assets/css/theme.min.css')}}" />
-
 
  
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/vendors/css/tagify.min.css') }}">
@@ -74,7 +74,6 @@
                     @include('layouts.actions.' . $action->role->name)
                 @endforeach
             </ul>
-
         </div>
     </div>
 </nav>
@@ -1618,6 +1617,8 @@
     </footer>
     <!-- [ Footer ] end -->
 </main>
+
+<x-modal></x-modal>
 <!--! ================================================================ !-->
 <!--! [End] Main Content !-->
 <!--! ================================================================ !-->
@@ -1626,13 +1627,20 @@
 <!--! Footer Script !-->
 <!--! ================================================================ !-->
 
-
+{{-- Bootstrap CDN --}}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 
 <script src="{{ asset('assets/js/customers-init.min.js') }}"></script>
 <script src="{{ asset('assets/js/theme-customizer-init.min.js') }}"></script>
 <!--! BEGIN: Vendors JS !-->
 <script src="{{asset('assets/vendors/js/vendors.min.js')}}"></script>
 <!-- vendors.min.js {always must need to be top} -->
+<script src="{{ asset('assets/vendors/js/dataTables.min.js') }}"></script>
+<script src="{{ asset('assets/vendors/js/dataTables.bs5.min.js') }}"></script>
+<script src="{{ asset('assets/vendors/js/select2.min.js') }}"></script>
+<script src="{{ asset('assets/vendors/js/select2-active.min.js') }}"></script>
+
+
 <script src="{{asset('assets/vendors/js/daterangepicker.min.js')}}"></script>
 <script src="{{asset('assets/vendors/js/apexcharts.min.js')}}"></script>
 <script src="{{asset('assets/vendors/js/circle-progress.min.js')}}"></script>
@@ -1641,14 +1649,9 @@
 <script src="{{asset('assets/js/common-init.min.js')}}"></script>
 <script src="{{asset('assets/js/dashboard-init.min.js')}}"></script>
 
-<script src="{{ asset('assets/vendors/js/dataTables.min.js') }}"></script>
-<script src="{{ asset('assets/vendors/js/dataTables.bs5.min.js') }}"></script>
-<script src="{{ asset('assets/vendors/js/select2.min.js') }}"></script>
-<script src="{{ asset('assets/vendors/js/select2-active.min.js') }}"></script>
+<script src="{{ asset('assets/js/projects-init.min.js')}}"></script>
 <!--! END: Apps Init !-->
 
-
-    <!-- vendors.min.js {always must need to be top} -->
     <script src="{{ asset('assets/vendors/js/tagify.min.js') }}"></script>
     <script src="{{ asset('assets/vendors/js/tagify-data.min.js') }}"></script>
     <script src="{{ asset('assets/vendors/js/quill.min.js') }}"></script>
@@ -1656,11 +1659,7 @@
 
     <script src="assets/js/proposal-create-init.min.js"></script>
     <!--! END: Apps Init !-->
-    <!--! BEGIN: Theme Customizer  !-->
 
-    <!--! BEGIN: Theme Customizer  !-->
-        <script src="{{asset('assets/js/theme-customizer-init.min.js')}}"></script>
-    <!--! END: Theme Customizer !-->
 @endif
 @endauth
 </body>
