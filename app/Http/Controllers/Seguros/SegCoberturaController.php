@@ -13,7 +13,7 @@ class SegCoberturaController extends Controller
      * Display a listing of the resource.
      */
 
-     private function auditoria($accion){
+    private function auditoria($accion){
         $auditoriaController = app(AuditoriaController::class);
         $auditoriaController->create($accion, "SEGUROS");
     }
