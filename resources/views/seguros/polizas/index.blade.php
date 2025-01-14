@@ -27,31 +27,70 @@
                     </div>
                     <div class="col-sm-12 col-md-6 d-flex justify-content-end align-items-center">
                         <x-input-search-seguros></x-input-search-seguros>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="content-area ps ps--active-y">
+        <div class="content-area-header bg-white sticky-top">
+            <div class="page-header-right ms-auto">
+                <div class="hstack gap-2">
                     <div class="hstack">
                         <a href="javascript:void(0)" class="search-form-open-toggle">
                             <div class="avatar-text avatar-md" data-bs-toggle="tooltip" data-bs-trigger="hover"
                                 title="" data-bs-original-title="Search">
-                                <i class="feather feather-search"></i>
+                                <i class="feather-search"></i>
                             </div>
                         </a>
-                        <form class="search-form" style="display: none;">
+                        <form class="search-form" style="display: none">
                             <div class="search-form-inner">
                                 <a href="javascript:void(0)" class="search-form-close-toggle">
                                     <div class="avatar-text avatar-md" data-bs-toggle="tooltip" data-bs-trigger="hover"
-                                        title="" data-bs-original-title="Search Close">
-                                        <i class="feather feather-arrow-left"></i>
+                                        title="" data-bs-original-title="Back">
+                                        <i class="feather-arrow-left"></i>
                                     </div>
                                 </a>
-                                <input type="search" class="py-3 px-0 border-0 w-100" id="notesSearch"
-                                    placeholder="Search...">
+                                <input type="search" class="py-3 px-0 border-0 w-100" id="emailSearch"
+                                    placeholder="Search..." autocomplete="off">
                             </div>
                         </form>
                     </div>
+                    <div class="dropdown d-none d-sm-flex">
+                        <a href="javascript:void(0)" class="btn btn-light-brand btn-sm rounded-pill dropdown-toggle"
+                            data-bs-toggle="dropdown" data-bs-offset="0,23" aria-expanded="false">1-15 of 762
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="javascript:void(0)">Oldest</a></li>
+                            <li><a class="dropdown-item" href="javascript:void(0)">Newest</a></li>
+                            <li><a class="dropdown-item" href="javascript:void(0)">Replied</a></li>
+                            <li class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="javascript:void(0)">Ascending</a></li>
+                            <li><a class="dropdown-item" href="javascript:void(0)">Descending</a></li>
+                        </ul>
+                    </div>
+                    <div class="hstack d-none d-sm-flex">
+                        <a href="javascript:void(0)" class="d-flex me-1">
+                            <div class="avatar-text avatar-md" data-bs-toggle="tooltip" data-bs-trigger="hover"
+                                title="" data-bs-original-title="Previous">
+                                <i class="feather-chevron-left"></i>
+                            </div>
+                        </a>
+                        <a href="javascript:void(0)" class="d-flex me-1">
+                            <div class="avatar-text avatar-md" data-bs-toggle="tooltip" data-bs-trigger="hover"
+                                title="" data-bs-original-title="Next">
+                                <i class="feather-chevron-right"></i>
+                            </div>
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
+
     </div>
+
 
 
     <div class="col-12">
@@ -92,7 +131,8 @@
                             <div class="hstack justify-content-between gap-4">
                                 <div>
                                     <h6 class="fs-14 text-truncate-1-line">Total Beneficiarios</h6>
-                                    <div class="fs-12 text-muted"><span class="text-dark fw-medium">Deadiline:</span> 20
+                                    <div class="fs-12 text-muted"><span class="text-dark fw-medium">Deadiline:</span>
+                                        20
                                         days left</div>
                                 </div>
                                 <div class="project-progress-3"></div>
@@ -105,7 +145,8 @@
                             <div class="hstack justify-content-between gap-4">
                                 <div>
                                     <h6 class="fs-14 text-truncate-1-line">Cuenta de cobro</h6>
-                                    <div class="fs-12 text-muted"><span class="text-dark fw-medium">Deadiline:</span> 20
+                                    <div class="fs-12 text-muted"><span class="text-dark fw-medium">Deadiline:</span>
+                                        20
                                         days left</div>
                                 </div>
                                 <div class="project-progress-1"></div>
