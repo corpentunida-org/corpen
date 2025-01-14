@@ -1618,7 +1618,7 @@
     <!-- [ Footer ] end -->
 </main>
 
-<x-modal></x-modal>
+{{-- <x-modal></x-modal> --}}
 <!--! ================================================================ !-->
 <!--! [End] Main Content !-->
 <!--! ================================================================ !-->
@@ -1628,13 +1628,14 @@
 <!--! ================================================================ !-->
 
 {{-- Bootstrap CDN --}}
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+{{-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script> --}}
+
+<script src="{{asset('assets/vendors/js/vendors.min.js')}}"></script>
+<!-- vendors.min.js {always must need to be top} -->
 
 <script src="{{ asset('assets/js/customers-init.min.js') }}"></script>
 <script src="{{ asset('assets/js/theme-customizer-init.min.js') }}"></script>
 <!--! BEGIN: Vendors JS !-->
-<script src="{{asset('assets/vendors/js/vendors.min.js')}}"></script>
-<!-- vendors.min.js {always must need to be top} -->
 <script src="{{ asset('assets/vendors/js/dataTables.min.js') }}"></script>
 <script src="{{ asset('assets/vendors/js/dataTables.bs5.min.js') }}"></script>
 <script src="{{ asset('assets/vendors/js/select2.min.js') }}"></script>
@@ -1652,12 +1653,12 @@
 <script src="{{ asset('assets/js/projects-init.min.js')}}"></script>
 <!--! END: Apps Init !-->
 
-    <script src="{{ asset('assets/vendors/js/tagify.min.js') }}"></script>
-    <script src="{{ asset('assets/vendors/js/tagify-data.min.js') }}"></script>
-    <script src="{{ asset('assets/vendors/js/quill.min.js') }}"></script>
-    <script src="{{ asset('assets/vendors/js/datepicker.min.js') }}"></script>
+<script src="{{ asset('assets/vendors/js/tagify.min.js') }}"></script>
+<script src="{{ asset('assets/vendors/js/tagify-data.min.js') }}"></script>
+<script src="{{ asset('assets/vendors/js/quill.min.js') }}"></script>
+<script src="{{ asset('assets/vendors/js/datepicker.min.js') }}"></script>
 
-    <script src="assets/js/proposal-create-init.min.js"></script>
+<script src="{{ asset('assets/js/proposal-create-init.min.js') }}"></script>
     <!--! END: Apps Init !-->
 
 @endif
