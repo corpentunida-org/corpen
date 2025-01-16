@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Cinco;
 
+use App\Http\Controllers\Controller;
 use App\Models\Cinco\Terceros;
 use Illuminate\Http\Request;
 
@@ -12,7 +13,8 @@ class TercerosController extends Controller
      */
     public function index()
     {
-        //
+        $terceros = Terceros::paginate(6);
+        return view('cinco.terceros.index', compact('terceros'));
     }
 
     /**
@@ -34,9 +36,14 @@ class TercerosController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Terceros $terceros)
+    public function show($id)
     {
-        //
+        $tercero = Terceros::where('Cod_Ter', $id)->first();
+        dd($tercero);
+        if (!$tercero) {
+            return redirect()->route('cinco.tercero.index')->with('warning', 'No existe esa cédula en la lista de terceros cinco');
+        }
+        return view('cinco.terceros.show', compact('tercero'));
     }
 
     /**
