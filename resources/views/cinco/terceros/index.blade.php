@@ -13,7 +13,7 @@
                         </form>
                     </div>
                     <div class="col-sm-12 col-md-6 d-flex justify-content-end align-items-center">
-                        <form action="{{ route('cinco.tercero.show', ['tercero' => 'id']) }}" method="GET" class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
+                        <form action="{{ route('cinco.tercero.show', ['tercero' => 'ID']) }}" method="GET" class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
                             <label for="search-input" class="mb-0 me-2">Buscar:</label>
                             <input type="text" name="id" class="form-control form-control-sm" placeholder="cédula titular" aria-controls="customerList">
                             <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i></button>
@@ -96,7 +96,7 @@
                                 <td>{{$tercero->Fec_Aport}}</td>
                                 <td>{{$tercero->Fec_Minis}}</td>                                
                                 <td>
-                                    <a href="{{ route('cinco.tercero.show', ['tercero' => $tercero->Cod_Ter]) }}" class="avatar-text avatar-md ms-auto"><i
+                                    <a href="{{ route('cinco.tercero.show', ['tercero' => $tercero->Cod_Ter, 'id' => $tercero->Cod_Ter]) }}" class="avatar-text avatar-md ms-auto"><i
                                             class="feather-arrow-right"></i></a>
                                 </td>
                             </tr>
