@@ -44,11 +44,11 @@ class SegPolizaController extends Controller
         $id = $request->input('id');
         $poliza = SegPoliza::where('seg_asegurado_id', $id)
             ->with(['tercero', 'asegurado', 'asegurado.terceroAF', 'plan.condicion', 'plan.coberturas'])->first();
-        if (!$poliza){
+        if (!$poliza) {
             return redirect()->route('seguros.poliza.index')->with('warning', 'No se encontró la cédula como asegurado de una poliza');
         }
         $titularCedula = $poliza->asegurado->titular;
-        $grupoFamiliar = SegAsegurado::where('Titular', $titularCedula)->with('tercero','polizas.plan.coberturas')->get();
+        $grupoFamiliar = SegAsegurado::where('Titular', $titularCedula)->with('tercero', 'polizas.plan.coberturas')->get();
         //dd($grupoFamiliar);
         $totalPrima = DB::table('SEG_polizas')
             ->whereIn('seg_asegurado_id', $grupoFamiliar->pluck('cedula'))
@@ -56,7 +56,7 @@ class SegPolizaController extends Controller
 
         $beneficiarios = SegBeneficiario::where('id_asegurado', $id)->get();
 
-        return view('seguros.polizas.show', compact('poliza','grupoFamiliar', 'totalPrima', 'beneficiarios'));
+        return view('seguros.polizas.show', compact('poliza', 'grupoFamiliar', 'totalPrima', 'beneficiarios'));
     }
 
     /**
@@ -64,7 +64,7 @@ class SegPolizaController extends Controller
      */
     public function edit(SegPoliza $segPoliza)
     {
-        //
+
     }
 
     /**
@@ -72,7 +72,7 @@ class SegPolizaController extends Controller
      */
     public function update(Request $request, SegPoliza $segPoliza)
     {
-        //
+
     }
 
     /**
@@ -82,4 +82,14 @@ class SegPolizaController extends Controller
     {
         //
     }
+
+    public function namesearch(Request $request)
+    {
+        $name = str_replace(' ', '%', $request->input('id'));
+        $asegurados = SegAsegurado::with('tercero') // Cargar la relación 'tercero'
+            ->whereHas('tercero', function ($query) use ($name) {
+                $query->where('nombre', 'like', '%' . $name . '%');})->get();
+        return view('seguros.polizas.search', compact('asegurados'));
+    }
+
 }
