@@ -9,8 +9,14 @@ class SegConvenio extends Model
 {
     use HasFactory;
     protected $table = 'seg_convenios';
+    protected $fillable = [
+        'id',
+        'idConvenio',
+        'nombre',
+        'idAseguradora',
+    ];
     public function plan()
     {
-        return $this->hasMany(SegPlan::class, 'seg_convenio_id', 'id');
+        return $this->hasMany(SegPlan::class, 'seg_convenio_id', 'idConvenio');
     }
 }

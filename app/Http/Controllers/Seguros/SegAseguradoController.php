@@ -37,7 +37,7 @@ class SegAseguradoController extends Controller
      */
     public function show(SegAsegurado $segAsegurado)
     {
-        //
+        
     }
 
     /**

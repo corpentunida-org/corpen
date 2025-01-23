@@ -36,7 +36,9 @@ class SegPlan extends Model
 
     public function convenio()
     {
-        return $this->belongsTo(SegConvenio::class, 'seg_convenio_id', 'id');
+        return $this->belongsTo(SegConvenio::class, 'seg_convenio_id', 'idConvenio');
     }
     
 }
+
+
