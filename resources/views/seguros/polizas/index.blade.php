@@ -46,7 +46,7 @@
                                 <i class="feather-search"></i>
                             </div>
                         </a>
-                        <form class="search-form" style="display: none">
+                        <form action="{{ route('poliza.search',['name' => 'ID']) }}" method="GET" class="search-form" style="display: none">
                             <div class="search-form-inner">
                                 <a href="javascript:void(0)" class="search-form-close-toggle">
                                     <div class="avatar-text avatar-md" data-bs-toggle="tooltip" data-bs-trigger="hover"
@@ -54,7 +54,7 @@
                                         <i class="feather-arrow-left"></i>
                                     </div>
                                 </a>
-                                <input type="search" class="py-3 px-0 border-0 w-100"
+                                <input type="search" name="id" class="py-3 px-0 border-0 w-100"
                                     placeholder="Buscar por nombre..." autocomplete="off">
                                 <button type="submit" class="btn btn-primary">Buscar</button>
                             </div>

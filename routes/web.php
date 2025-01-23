@@ -80,6 +80,7 @@ Route::get('/plansall', [PlanController::class, 'index'])->name('exequial.plansa
 
 //RUTAS SEGUROS
 Route::resource('poliza', SegPolizaController::class)->middleware('auth')->names('seguros.poliza');
+Route::get('/polizaname/{name}', [SegPolizaController::class, 'namesearch'])->name('poliza.search');
 Route::resource('plan', SegPlanController::class)->middleware('auth')->names('seguros.planes');
 Route::resource('cobertura', SegCoberturaController::class)->middleware('auth')->names('seguros.cobertura');
 Route::resource('beneficiario', SegBeneficiarioController::class)->middleware('auth')->names('seguros.beneficiario');

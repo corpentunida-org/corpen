@@ -1,6 +1,7 @@
 <x-base-layout>
     <x-warning />
     <x-success />
+    @section('titlepage', 'Fechas Tercero')
     <div class="col-12">
         <div class="card stretch stretch-full">
             <div class="card-body">
