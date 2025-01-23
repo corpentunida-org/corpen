@@ -45,11 +45,11 @@ class SegBeneficiarioController extends Controller
         $beneficiario = SegBeneficiario::create([
             'tipo_documento_id' => $request->tipoDocumento,
             'cedula' => $request->cedula,
-            'nombre' => $request->names,
+            'nombre' => strtoupper($request->names),
             'parentesco' => $request->parentesco,
             'porcentaje' => $request->porcentaje,
             'cedula_contingente' => $request->cedulaContingente,
-            'nombre_contingente' => $request->nombreContingente,
+            'nombre_contingente' => strtoupper($request->nombreContingente),
             'id_poliza' => $request->poliza,
             'id_asegurado' => $request->asegurado,
             'telefono' => $request->telefono,

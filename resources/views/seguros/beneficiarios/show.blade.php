@@ -2,7 +2,7 @@
     <div class="mb-4 px-4 d-flex align-items-center justify-content-between">
         <h5 class="fw-bold mb-0">Beneficiarios:</h5>
     </div>
-    <div class="table-responsive">
+    <div class="table">
         <table class="table mb-0">
             <thead>
                 <tr class="border-top">
@@ -23,7 +23,7 @@
                         <td>{{ $b->parentescos->name }}</td>
                         <td><span class="badge bg-soft-warning text-warning">{{ $b->porcentaje }}%</span></td>
                         <td class="hstack justify-content-end gap-4 text-end">
-                            <div class="dropdown">
+                            <div class="dropdown open">
                                 <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown"
                                     data-bs-offset="0,21">
                                     <i class="feather feather-more-horizontal"></i>

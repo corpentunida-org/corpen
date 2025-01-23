@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\IndexController;
 
+
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuditoriaController;
 
@@ -19,6 +20,7 @@ use App\Http\Controllers\Seguros\SegPolizaController;
 use App\Http\Controllers\Seguros\SegPlanController;
 use App\Http\Controllers\Seguros\SegBeneficiarioController;
 use App\Http\Controllers\Seguros\SegCoberturaController;
+use App\Http\Controllers\Seguros\SegConvenioController;
 
 use App\Http\Controllers\Cinco\TercerosController;
 
@@ -81,11 +83,12 @@ Route::resource('poliza', SegPolizaController::class)->middleware('auth')->names
 Route::resource('plan', SegPlanController::class)->middleware('auth')->names('seguros.planes');
 Route::resource('cobertura', SegCoberturaController::class)->middleware('auth')->names('seguros.cobertura');
 Route::resource('beneficiario', SegBeneficiarioController::class)->middleware('auth')->names('seguros.beneficiario');
+Route::resource('convenio', SegConvenioController::class)->middleware('auth')->names('seguros.convenio');
 
 //RUTAS CINCO
 Route::resource('terceros', TercerosController::class)->middleware('auth')->names('cinco.tercero');
 
 //RUTA CARTERA MOROSOS
 Route::resource('cartera', ReadExelController::class)->only(['index', 'store'])->middleware('auth')
-    ->names('cartera.morosos');
+    ->names('cartera.morosos');                      
 Route::post('/cartera/pdfMora', [ReadExelController::class, 'pdfMora'])->middleware('auth')->name('cartera.morosos.pdfMora');

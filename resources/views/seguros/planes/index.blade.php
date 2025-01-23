@@ -49,7 +49,7 @@
                          </div>
                          <div class="hstack gap-3 btn-light-brand py-2 px-4">
                              <h6 class="fs-12 fw-bolder mb-0">{{ $planesGrupo->first()->convenio->nombre }}</h6>
-                             <p class="fs-12 text-muted mb-0">{{ $planesGrupo->first()->convenio->id }}</p>
+                             {{-- <p class="fs-12 text-muted mb-0">{{ $planesGrupo->first()->convenio->id }}</p> --}}
                          </div>
                      </div>
                      <div class="row justify-content-center">
@@ -59,17 +59,28 @@
                          @foreach ($planesGrupo as $plan)
                              <div class="col-xxl-2 col-lg-4 col-md-6">
                                  <div class="card stretch stretch-full border border-dashed border-gray-5">
-                                    <div class="card-body rounded-3">
-                                        <div class="text-center">
-                                            <h6 class="mt-2 {{ $colors[$plan->id % count($colors)] }}">
-                                                {{ $plan->name }}
-                                            </h6>
-                                            <div class=" fw-bolder text-dark mt-3 mb-1" style="font-size:15px;">
-                                                ${{ number_format($plan->valor) }}</div>
-                                            <p class="fs-12 fw-medium text-muted text-spacing-1 mb-0 text-truncate-1-line">
-                                                Prima: ${{ number_format($plan->prima) }}</p>
-                                        </div>
-                                    </div>
+                                     <div class="card-body rounded-3">
+                                         <div class="dropdown open text-end">
+                                             <a href="javascript:void(0);" data-bs-toggle="dropdown"
+                                                 aria-expanded="false" class="">
+                                                 <i class="feather-more-vertical"></i>
+                                             </a>
+                                             <div class="dropdown-menu dropdown-menu-end" style="">
+                                                 <a class="dropdown-item" href="{{ route('seguros.planes.edit', ['plan' => $plan->id])}}">Editar</a>
+                                                 <a class="dropdown-item" href="javascript:void(0);">Copiar Plan</a>
+                                             </div>
+                                         </div>
+                                         <div class="text-center">
+                                             <h6 class="mt-2 {{ $colors[$plan->id % count($colors)] }}">
+                                                 {{ $plan->name }}
+                                             </h6>
+                                             <div class=" fw-bolder text-dark mt-3 mb-1" style="font-size:15px;">
+                                                 ${{ number_format($plan->valor) }}</div>
+                                             <p
+                                                 class="fs-12 fw-medium text-muted text-spacing-1 mb-0 text-truncate-1-line">
+                                                 Prima: ${{ number_format($plan->prima) }}</p>
+                                         </div>
+                                     </div>
                                  </div>
                              </div>
                          @endforeach
@@ -78,11 +89,9 @@
              </div>
          </div>
      @endforeach
-
      <script>
          /*$(document).ready(function() {
-                       $('#ModalConfirmacionEliminar').modal('show');
-                   });*/
+                            $('#ModalConfirmacionEliminar').modal('show');
+                        });*/
      </script>
-
  </x-base-layout>

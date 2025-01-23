@@ -127,6 +127,7 @@
                     </table>
                 </div>
                 <div class="p-4 mb-4 d-xxl-flex d-xl-block d-md-flex align-items-center justify-content-end gap-4">
+                @if ($poliza->asegurado->parentesco == "AF")
                     <div class="d-flex gap-4 align-items-center justify-content-sm-end justify-content-between">
                         <a href="javascript:void(0);" class="text-bold">Valor Titular</a>
                         <a href="javascript:void(0);" class="btn bg-soft-info" style="font-size:20px;">$
@@ -142,6 +143,7 @@
                         @endif
                             </a>
                     </div>
+                @endif
                     <div class="d-flex gap-4 align-items-center justify-content-sm-end justify-content-between">
                         <a href="javascript:void(0);" class="text-bold">Valor Aseguradora</a>
                         <a href="javascript:void(0);" class="btn bg-soft-primary" style="font-size:20px;">$
