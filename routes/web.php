@@ -23,6 +23,7 @@ use App\Http\Controllers\Seguros\SegCoberturaController;
 use App\Http\Controllers\Seguros\SegConvenioController;
 
 use App\Http\Controllers\Cinco\TercerosController;
+use App\Http\Controllers\Cinco\MoviContCincoController;
 
 
 
@@ -88,6 +89,7 @@ Route::resource('convenio', SegConvenioController::class)->middleware('auth')->n
 
 //RUTAS CINCO
 Route::resource('terceros', TercerosController::class)->middleware('auth')->names('cinco.tercero');
+Route::resource('cinco', MoviContCincoController::class)->middleware('auth')->names('cinco.movcontables');
 
 //RUTA CARTERA MOROSOS
 Route::resource('cartera', ReadExelController::class)->only(['index', 'store'])->middleware('auth')

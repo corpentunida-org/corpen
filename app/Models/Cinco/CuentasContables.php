@@ -5,8 +5,8 @@ namespace App\Models\Cinco;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class MoviContCinco extends Model
+class CuentasContables extends Model
 {
     use HasFactory;
-    protected $table = 'CIN_MoviCont';
+    protected $table = 'CIN_Cuentas';
 }

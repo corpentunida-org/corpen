@@ -1,6 +1,6 @@
 <x-base-layout>
     @section('titlepage', 'Filtro por nombre')
-<div class="col-12">
+    <div class="col-12">
         <div class="card stretch stretch-full">
             <div class="card-body">
                 <div class="row">
@@ -46,7 +46,8 @@
                                 <i class="feather-search"></i>
                             </div>
                         </a>
-                        <form action="{{ route('poliza.search',['name' => 'ID']) }}" method="GET" class="search-form" style="display: none">
+                        <form action="{{ route('poliza.search', ['name' => 'ID']) }}" method="GET" class="search-form"
+                            style="display: none">
                             <div class="search-form-inner">
                                 <a href="javascript:void(0)" class="search-form-close-toggle">
                                     <div class="avatar-text avatar-md" data-bs-toggle="tooltip" data-bs-trigger="hover"
@@ -64,7 +65,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-xxl-12">
         <div class="card stratch">
             <div class="card-header">
@@ -101,7 +102,8 @@
                             <div class="dropdown-divider"></div>
                             <a href="javascript:void(0);" class="dropdown-item"><i
                                     class="feather-settings"></i>Settings</a>
-                            <a href="javascript:void(0);" class="dropdown-item"><i class="feather-life-buoy"></i>Tips &
+                            <a href="javascript:void(0);" class="dropdown-item"><i class="feather-life-buoy"></i>Tips
+                                &
                                 Tricks</a>
                         </div>
                     </div>
@@ -120,35 +122,37 @@
                             </tr>
                         </thead>
                         <tbody>
-                        @foreach($asegurados as $a)
-                            <tr>
-                                <td>
-                                    <div class="hstack gap-4">
-                                        
-                                                <i class="bi bi-person-circle"></i>
-                                        
-                                        <div>
-                                            <div class="fw-bold text-dark">{{$a->tercero->nombre}}</div>
-                                            <div class="fs-12 text-muted">Cedula: 
-                                            <a class="badge bg-soft-primary text-primary">{{$a->cedula}}</a></div>
+                            @foreach ($asegurados as $a)
+                                <tr>
+                                    <td>
+                                        <div class="hstack gap-4">
+                                            <i class="bi bi-person-circle"></i>
+                                            <div>
+                                                <div class="fw-bold text-dark">{{ $a->tercero->nombre }}</div>
+                                                <div class="fs-12 text-muted">Cedula:
+                                                    <a
+                                                        class="badge bg-soft-primary text-primary">{{ $a->cedula }}</a>
+                                                </div>
+                                            </div>
                                         </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="badge bg-gray-200 text-dark">{{$a->parentesco}}</span>
-                                </td>
-                                <td>${{$a->valorAsegurado}}</td>
-                                <td>${{$a->valorprima}}</td>                                
-                                <td>
-                                    <a href="" class="avatar-text avatar-md ms-auto"><i
-                                            class="feather-arrow-right"></i></a>
-                                </td>
-                            </tr>
-                        @endforeach
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-gray-200 text-dark">{{ $a->parentesco }}</span>
+                                    </td>
+                                    <td>$ {{ $a->valorAsegurado }}</td>
+                                    <td>$ {{ $a->valorprima }}</td>
+                                    <td>
+                                        <form action="{{ route('seguros.poliza.show',['poliza' => 'ID']) }}" class="avatar-text avatar-md ms-auto" method="GET">
+                                            <input type="hidden" name="id" value="{{ $a->cedula }}">
+                                            <button type="submit" class="avatar-text avatar-md ms-auto"><i class="feather-arrow-right"></i></button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            @endforeach
                         </tbody>
                     </table>
                 </div>
-            </div>            
+            </div>
         </div>
     </div>
 </x-base-layout>

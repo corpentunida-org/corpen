@@ -1,32 +1,13 @@
 <x-base-layout>
-    <div class="col-12">
-        <x-warning />
-        <div class="card stretch stretch-full">
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-sm-12 col-md-6">                    
-                        <form method="GET" class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
-                            <label for="search-input" class="mb-0 me-2">Buscar:</label>
-                            <input type="text" name="id" class="form-control form-control-sm"
-                                placeholder="nombre titular" aria-controls="customerList">
-                            <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i></button>
-                        </form>
-                    </div>
-                    <div class="col-sm-12 col-md-6 d-flex justify-content-end align-items-center">
-                        <form action="{{ route('cinco.tercero.show', ['tercero' => 'ID']) }}" method="GET" class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
-                            <label for="search-input" class="mb-0 me-2">Buscar:</label>
-                            <input type="text" name="id" class="form-control form-control-sm" placeholder="cédula titular" aria-controls="customerList">
-                            <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i></button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <x-warning />
+    
     <div class="col-xxl-12">
         <div class="card stratch">
             <div class="card-header">
+            <div>
                 <h5 class="card-title">Listado Terceros</h5>
+                <div class="fs-12 text-muted">Buscar por cédula o nombre</div>
+            </div>
                 <div class="card-header-action">
                     <div class="card-header-btn">
                         <div data-bs-toggle="tooltip" title="Delete">
@@ -67,7 +48,7 @@
             </div>
             <div class="card-body custom-card-action p-0">
                 <div class="table-responsive project-report-table">
-                    <table class="table table-hover">
+                    <table class="table table-hover" id="customerList">
                         <thead>
                             <tr>
                                 <th scope="col">Tercero</th>
@@ -82,9 +63,7 @@
                             <tr>
                                 <td>
                                     <div class="hstack gap-4">
-                                        
                                                 <i class="bi bi-person-circle"></i>
-                                        
                                         <div>
                                             <div class="fw-bold text-dark">{{$tercero->Nom_Ter}}</div>
                                             <div class="fs-12 text-muted">Cedula: 
@@ -104,24 +83,7 @@
                         </tbody>
                     </table>
                 </div>
-            </div>
-            <div class="card-footer">
-                <ul class="list-unstyled d-flex align-items-center gap-2 mb-0 pagination-common-style">
-                    <li>
-                        <a href="javascript:void(0);"><i class="bi bi-arrow-left"></i></a>
-                    </li>
-                    <li><a href="javascript:void(0);" class="active">1</a></li>
-                    <li><a href="javascript:void(0);">2</a></li>
-                    <li>
-                        <a href="javascript:void(0);"><i class="bi bi-dot"></i></a>
-                    </li>
-                    <li><a href="javascript:void(0);">8</a></li>
-                    <li><a href="javascript:void(0);">9</a></li>
-                    <li>
-                        <a href="javascript:void(0);"><i class="bi bi-arrow-right"></i></a>
-                    </li>
-                </ul>
-            </div>
+            </div>            
         </div>
     </div>
 </x-base-layout>

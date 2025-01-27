@@ -5,7 +5,7 @@
     </a>
     <ul class="nxl-submenu">
         <li class="nxl-item"><a class="nxl-link" href="{{ route('seguros.poliza.index')}}">Polizas</a></li>
-        <li class="nxl-item"><a class="nxl-link" href="{{ route('seguros.planes.index')}}">Planes</a></li>
+        {{-- <li class="nxl-item"><a class="nxl-link" href="{{ route('seguros.planes.index')}}">Planes</a></li> --}}
         <li class="nxl-item"><a class="nxl-link" href="{{ route('seguros.convenio.index')}}">Convenio</a></li>
         <li class="nxl-item"><a class="nxl-link" href="">Reclamaciones</a></li>
     </ul>

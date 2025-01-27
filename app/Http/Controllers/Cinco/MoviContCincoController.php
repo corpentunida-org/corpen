@@ -1,9 +1,10 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Cinco;
 
 use App\Models\Cinco\MoviContCinco;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 
 class MoviContCincoController extends Controller
 {
@@ -12,7 +13,7 @@ class MoviContCincoController extends Controller
      */
     public function index()
     {
-        //
+        return view('cinco.movcontables.index');
     }
 
     /**
@@ -34,9 +35,10 @@ class MoviContCincoController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(MoviContCinco $moviContCinco)
+    public function show(Request $request)
     {
-        //
+        $id = $request->input('id');
+        return view('cinco.movcontables.show');        
     }
 
     /**

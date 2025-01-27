@@ -20,7 +20,7 @@ class TercerosController extends Controller
 
     public function index()
     {
-        $terceros = Terceros::paginate(6);
+        $terceros = Terceros::all();
         return view('cinco.terceros.index', compact('terceros'));
     }
 
