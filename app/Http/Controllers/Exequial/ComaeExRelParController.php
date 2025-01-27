@@ -95,28 +95,30 @@ class ComaeExRelParController extends Controller
             $accion = "update beneficiario " . $request->cedula;
             $this->auditoria($accion, "EXEQUIALES");
             //return response()->json(['message' => 'Se actualizó correctamente', 'data' => $response->json()], $response->status());
-            $url = route('exequial.asociados.show', ['asociado' => 'ID']) . '?id=' . $request->documentid;
             return redirect()->to($url)->with('success', 'Beneficiario actualizado exitosamente');
         } else {
             return redirect()->to($url)->with('msjerror', 'No se pudo actualizar el titular ' . $response->json());
         }
     }
     
-    public function destroy($id)
+    public function destroy(Request $request)
     {
         //$this->authorize('delete', auth()->user());
+        $id = $request->id;
         $token = env('TOKEN_ADMIN');
-        $url = env('API_PRODUCCION') . '/api/Exequiales/Beneficiary?idUser=' . $id;
         $response = Http::withHeaders([
             'Accept' => '*/*',
             'Authorization' => 'Bearer ' . $token,
-        ])->delete($url);
+        ])->delete(env('API_PRODUCCION') . '/api/Exequiales/Beneficiary?idUser=' . $id);
+        $url = route('exequial.asociados.show', ['asociado' => 'ID']) . '?id=' . $request->documentid;
         if ($response->successful()) {
-            $accion = "delete beneficiario " . $id;
+            $accion = "delete beneficiario " . $request->beneid;
             $this->auditoria($accion, "EXEQUIALES");
-            return $response->status();
+            //return $response->status();
+            return redirect()->to($url)->with('success', 'Beneficiario eliminado exitosamente');
         } else {
-            return response()->json(['error' => $response->json()], $response->status());
+            //return response()->json(['error' => $response->json()], $response->status());
+            return redirect()->to($url)->with('msjerror', 'No se pudo eliminar el titular ' . $response->json());
         }
     }
 

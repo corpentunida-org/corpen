@@ -5,6 +5,6 @@
     </a>
     <ul class="nxl-submenu">
         <li class="nxl-item"><a class="nxl-link" href="{{ route('cinco.tercero.index')}}">Fecha Aporte - Ministerio</a></li>
-        <li class="nxl-item"><a class="nxl-link" href="">CINCO</a></li>
+        <li class="nxl-item"><a class="nxl-link" href="{{ route('cinco.movcontables.index')}}">CINCO</a></li>
     </ul>
 </li>

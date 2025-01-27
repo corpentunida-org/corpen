@@ -89,9 +89,4 @@
              </div>
          </div>
      @endforeach
-     <script>
-         /*$(document).ready(function() {
-                            $('#ModalConfirmacionEliminar').modal('show');
-                        });*/
-     </script>
  </x-base-layout>
