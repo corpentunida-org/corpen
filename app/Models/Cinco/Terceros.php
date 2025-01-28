@@ -18,4 +18,9 @@ class Terceros extends Model
         'verificadousuario'
     ];
 
+    public function movContable()
+    {
+        return $this->hasMany(MoviContCinco::class, 'Cedula', 'Cod_Ter');
+    }
+
 }

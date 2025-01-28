@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Cinco;
 use App\Models\Cinco\MoviContCinco;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class MoviContCincoController extends Controller
 {
@@ -38,7 +39,21 @@ class MoviContCincoController extends Controller
     public function show(Request $request)
     {
         $id = $request->input('id');
-        return view('cinco.movcontables.show');        
+        $movimientos = MoviContCinco::where('Cedula', $id)
+            ->with(['tercero', 'cuentaContable'])
+            ->orderBy('Cuenta', 'asc')
+            ->orderBy('Fecha', 'asc')
+            ->get();
+
+        $cuentasAgrupadas = MoviContCinco::select('cuenta')
+            ->with('cuentaContable')
+            ->where('Cedula', $id)
+            ->groupBy('cuenta')
+            ->orderBy('cuenta')
+            ->get();
+        //dd($cuentasAgrupadas);  
+
+        return view('cinco.movcontables.show', compact('movimientos', 'cuentasAgrupadas'));
     }
 
     /**
@@ -46,7 +61,7 @@ class MoviContCincoController extends Controller
      */
     public function edit(MoviContCinco $moviContCinco)
     {
-        //
+
     }
 
     /**
@@ -63,5 +78,23 @@ class MoviContCincoController extends Controller
     public function destroy(MoviContCinco $moviContCinco)
     {
         //
+    }
+
+    public function generarpdf($id)
+    {
+        $movimientos = MoviContCinco::where('Cedula', $id)
+            ->with(['tercero', 'cuentaContable'])
+            ->orderBy('Cuenta', 'asc')->orderBy('Fecha', 'asc')->get();
+
+        $cuentasAgrupadas = MoviContCinco::select('cuenta')
+            ->with('cuentaContable')->where('Cedula', $id)
+            ->groupBy('cuenta')->orderBy('cuenta')->get();
+
+        $image_path = public_path('assets/images/CORPENTUNIDA_LOGO PRINCIPAL  (2).png');
+        
+        //return view('cinco.movcontables.reportepdf', compact('movimientos', 'cuentasAgrupadas', 'image_path'));
+        $pdf = Pdf::loadView('cinco.movcontables.reportepdf', compact('movimientos', 'cuentasAgrupadas', 'image_path'))
+        ->setPaper('letter', 'landscape');
+                return $pdf->download(date('Y-m-d') . " Reporte " . $id . '.pdf');
     }
 }

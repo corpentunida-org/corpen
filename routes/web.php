@@ -90,6 +90,7 @@ Route::resource('convenio', SegConvenioController::class)->middleware('auth')->n
 //RUTAS CINCO
 Route::resource('terceros', TercerosController::class)->middleware('auth')->names('cinco.tercero');
 Route::resource('cinco', MoviContCincoController::class)->middleware('auth')->names('cinco.movcontables');
+Route::get('movcontables/{id}/reportepdf/', [MoviContCincoController::class, 'generarpdf'])->name('cinco.reportepdf');
 
 //RUTA CARTERA MOROSOS
 Route::resource('cartera', ReadExelController::class)->only(['index', 'store'])->middleware('auth')

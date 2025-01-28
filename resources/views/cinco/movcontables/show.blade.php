@@ -9,8 +9,10 @@
                             <i class="bi bi-person-fill"></i>
                         </div>
                         <div>
-                            <div class="fs-4 fw-bold text-dark"><span class="counter">ASOCIADO NAME SSEFC</span></div>
-                            <h3 class="fs-13 fw-semibold text-truncate-1-line">23401841</h3>
+                            <div class="fs-4 fw-bold text-dark"><span
+                                    class="counter">{{ $movimientos->first()->tercero->Nom_Ter }}</span></div>
+                            <h3 class="fs-13 fw-semibold text-truncate-1-line">
+                                {{ $movimientos->first()->tercero->Cod_Ter }}</h3>
                         </div>
                     </div>
                 </div>
@@ -30,42 +32,72 @@
     <div class="col-lg-12">
         <div class="card stretch stretch-full">
             <div class="card-header">
-                <h5 class="card-title">FAQ's</h5>
-                <a href="javascript:void(0);" class="btn btn-md btn-light-brand">
+                <h5 class="card-title">Movimientos contables</h5>
+                <a href="{{ route('cinco.reportepdf', ['id' =>  $movimientos->first()->tercero->Cod_Ter ]) }}" class="btn btn-md bg-soft-teal text-teal border-soft-teal">
                     <i class="feather-plus me-2"></i>
-                    <span>Add New FAQ</span>
+                    <span>Imprimir Reporte</span>
                 </a>
             </div>
             <div class="card-body">
                 <div class="accordion proposal-faq-accordion" id="accordionFaqGroup">
-                    <div class="accordion-item">
-                        <h2 class="accordion-header" >
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                                data-bs-target="#flush-collapseOne" aria-expanded="false"
-                                aria-controls="flush-collapseOne">01. Can I change my package?</button>
-                        </h2>
-                        <div id="flush-collapseOne" class="accordion-collapse collapse"
-                            aria-labelledby="flush-headingOne" data-bs-parent="#accordionFaqGroup" style="">
-                            <div class="accordion-body">Yes! Youc can change your package at any time. Upgrades will
-                                apply immediately to all your live and drafted events, so you can take advantage of
-                                professional product capabolities.</div>
+                    @foreach ($cuentasAgrupadas as $i => $c)
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#flush-collapse{{ $i }}" aria-expanded="false"
+                                    aria-controls="flush-collapse{{ $i }}">{{$c->cuenta }}  <span class="fw-normal text-muted"> _ {{$c->cuentaContable->Descripcion}}</span></button>
+                            </h2>
+                            <div id="flush-collapse{{ $i }}" class="accordion-collapse collapse"
+                                aria-labelledby="flush-heading{{ $i }}" data-bs-parent="#accordionFaqGroup"
+                                style="">
+                                <div class="accordion-body">
+                                    <table class="table table-responsive table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Comprobante</th>
+                                                <th>Número</th>
+                                                <th>Fecha</th>
+                                                <th>Observacion</th>
+                                                <th>Debitos</th>                                                
+                                                <th>Creditos</th>                                                
+                                            </tr>
+                                        </thead>
+                                        <tbody>                                            
+                                            @php
+                                                $contadorcreditos = 0;
+                                                $contadordebitos = 0;
+                                            @endphp
+                                            
+                                            @foreach ($movimientos as $mov)
+                                            @if ($mov->Cuenta == $c->cuenta)
+                                                <tr>
+                                                    <td>{{ $mov->CodComprob }}</td>
+                                                    <td>{{ $mov->NumComprob }}</td>
+                                                    <td>{{ $mov->Fecha }}</td>
+                                                    <td>{{ $mov->Observacion }}</td>
+                                                    <td>{{ number_format($mov->VrDebitos) }}</td>
+                                                    <td>{{ number_format($mov->VrCreditos) }}</td>
+                                                </tr> 
+                                                @php
+                                                    $contadorcreditos += $mov->VrCreditos;
+                                                    $contadordebitos += $mov->VrDebitos;
+                                                @endphp                                           
+                                            @endif                                                
+                                            @endforeach
+                                            <tr>
+                                                <td></td>
+                                                <td></td>
+                                                <td></td>
+                                                <td></td>
+                                                <td><span class=fw-bold>Débitos: </span>$ {{ number_format($contadordebitos) }}</td>
+                                                <td><span class=fw-bold>Créditos: </span>$ {{ number_format($contadorcreditos)}}</td>
+                                            <tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    
-                    <div class="accordion-item">
-                        <h2 class="accordion-header" >
-                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-                                data-bs-target="#flush-collapseTwo" aria-expanded="false"
-                                aria-controls="flush-collapseTwo">01. Can I change my package?</button>
-                        </h2>
-                        <div id="flush-collapseTwo" class="accordion-collapse collapse"
-                            aria-labelledby="flush-collapseTwo" data-bs-parent="#accordionFaqGroup" style="">
-                            <div class="accordion-body">Yes! Youc can change your package at any time. Upgrades will
-                                apply immediately to all your live and drafted events, so you can take advantage of
-                                professional product capabolities.</div>
-                        </div>
-                    </div>
-                    
+                    @endforeach
                 </div>
             </div>
         </div>

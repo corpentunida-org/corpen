@@ -9,4 +9,15 @@ class MoviContCinco extends Model
 {
     use HasFactory;
     protected $table = 'CIN_MoviCont';
+
+    public function cuentaContable()
+    {
+        return $this->belongsTo(CuentasContables::class, 'cuenta', 'id');
+    }
+
+    public function tercero()
+    {
+        return $this->belongsTo(Terceros::class, 'Cedula', 'Cod_Ter');
+    }
+
 }
