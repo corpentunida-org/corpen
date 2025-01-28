@@ -9,4 +9,11 @@ class CuentasContables extends Model
 {
     use HasFactory;
     protected $table = 'CIN_Cuentas';
+    protected $primaryKey = 'id';
+
+    public function movContable()
+    {
+        return $this->hasMany(MoviContCinco::class, 'Cuenta','id');
+    }
+
 }
