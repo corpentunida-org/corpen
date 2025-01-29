@@ -41,24 +41,7 @@
             </div>
         </div>
         <div class="card-body custom-card-action">
-            <div class="mb-3">
-                <div class="mb-4 pb-1 d-flex">
-                    <div class="d-flex w-50 align-items-center me-3">
-                        <img src="assets/images/brand/app-store.png" alt="laravel-logo" class="me-3" width="35">
-                        <div>
-                            <a href="javascript:void(0);" class="text-truncate-1-line">Apps Desarrollo</a>
-                            <div class="fs-11 text-muted">Applications</div>
-                        </div>
-                    </div>
-                    <div class="d-flex flex-grow-1 align-items-center">
-                        <div class="progress w-100 me-3 ht-5">
-                            <div class="progress-bar bg-danger" role="progressbar" style="width: 54%" aria-valuenow="54"
-                                aria-valuemin="0" aria-valuemax="100"></div>
-                        </div>
-                        <span class="text-muted">54%</span>
-                    </div>
-                </div>
-                <hr class="border-dashed my-3">
+            <div class="mb-3">                
                 <div class="mb-4 pb-1 d-flex">
                     <div class="d-flex w-50 align-items-center me-3">
                         <img src="assets/images/brand/figma.png" alt="figma-logo" class="me-3" width="35">
@@ -86,10 +69,10 @@
                     </div>
                     <div class="d-flex flex-grow-1 align-items-center">
                         <div class="progress w-100 me-3 ht-5">
-                            <div class="progress-bar bg-success" role="progressbar" style="width: 90%"
-                                aria-valuenow="90" aria-valuemin="0" aria-valuemax="100"></div>
+                            <div class="progress-bar bg-success" role="progressbar" style="width: 18%"
+                                aria-valuenow="18" aria-valuemin="0" aria-valuemax="100"></div>
                         </div>
-                        <span class="text-muted">90%</span>
+                        <span class="text-muted">18%</span>
                     </div>
                 </div>
                 <hr class="border-dashed my-3">
@@ -103,10 +86,10 @@
                     </div>
                     <div class="d-flex flex-grow-1 align-items-center">
                         <div class="progress w-100 me-3 ht-5">
-                            <div class="progress-bar bg-info" role="progressbar" style="width: 37%" aria-valuenow="37"
+                            <div class="progress-bar bg-info" role="progressbar" style="width: 90%" aria-valuenow="90"
                                 aria-valuemin="0" aria-valuemax="100"></div>
                         </div>
-                        <span class="text-muted">37%</span>
+                        <span class="text-muted">90%</span>
                     </div>
                 </div>
                 <hr class="border-dashed my-3">
@@ -126,17 +109,33 @@
                         <span class="text-muted">29%</span>
                     </div>
                 </div>
+                <hr class="border-dashed my-3">
+                <div class="d-flex">
+                    <div class="d-flex w-50 align-items-center me-3">
+                        <img src="assets/images/brand/paypal.png" alt="sketch-logo" class="me-3" width="35">
+                        <div>
+                            <a href="javascript:void(0);" class="text-truncate-1-line">Seguros</a>
+                            <div class="fs-11 text-muted">Payment</div>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-grow-1 align-items-center">
+                        <div class="progress w-100 me-3 ht-5">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: 76%"
+                                aria-valuenow="76" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <span class="text-muted">76%</span>
+                    </div>
+                </div>
             </div>
         </div>
-        <a href="javascript:void(0);" class="card-footer fs-11 fw-bold text-uppercase text-center">Upcomming
-            Projects</a>
+        <a href="javascript:void(0);" class="card-footer fs-11 fw-bold text-uppercase text-center">Upcomming Projects</a>
     </div>
 </div>
 
 <div class="col-xxl-4 col-lg-6">
     <div class="card stretch stretch-full">
         <div class="card-header">
-            <h5 class="card-title">Users</h5>
+            <h5 class="card-title">Usuarios</h5>
             <div class="card-header-action">
                 <div class="card-header-btn">
                     <div data-bs-toggle="tooltip" title="" data-bs-original-title="Delete">
@@ -173,14 +172,15 @@
             </div>
         </div>
         <div class="card-body custom-card-action">
+        @foreach ( $users as $user )            
             <div class="w-100 d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center">
                     <div class="avatar-image me-3">
                         <img src="../assets/images/avatar/3.png" class="rounded-circle img-fluid" alt="image">
                     </div>
                     <div>
-                        <a href="javascript:void(0)" class="d-flex align-items-center mb-1">Marianne Audrey</a>
-                        <div class="fs-12 fw-normal text-muted">marianne.audrey@yahoo.com</div>
+                        <a href="javascript:void(0)" class="d-flex align-items-center mb-1">{{$user->name}}</a>
+                        <div class="fs-12 fw-normal text-muted">{{$user->email}}</div>
                     </div>
                 </div>
                 <div class="dropdown hstack text-end justify-content-end">
@@ -218,227 +218,9 @@
                 </div>
             </div>
             <hr class="border-dashed my-3">
-            <div class="w-100 d-flex align-items-center justify-content-between">
-                <div class="d-flex align-items-center">
-                    <div class="avatar-image me-3">
-                        <img src="../assets/images/avatar/1.png" class="rounded-circle img-fluid" alt="image">
-                    </div>
-                    <div>
-                        <a href="javascript:void(0)" class="d-flex align-items-center mb-1">Alexandra Della</a>
-                        <div class="fs-12 fw-normal text-muted">alex.della@yahoo.com</div>
-                    </div>
-                </div>
-                <div class="dropdown hstack text-end justify-content-end">
-                    <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown">
-                        <i class="feather feather-more-vertical"></i>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li>
-                            <a href="javascript:void(0)" class="dropdown-item">
-                                <i class="feather feather-eye me-3"></i>
-                                <span>Open</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="javascript:void(0)" class="dropdown-item">
-                                <i class="feather feather-share-2 me-3"></i>
-                                <span>Share</span>
-                            </a>
-                        </li>
-                        <li class="dropdown-divider"></li>
-                        <li>
-                            <a href="javascript:void(0)" class="dropdown-item">
-                                <i class="feather feather-scissors me-3"></i>
-                                <span>Backup</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="javascript:void(0)" class="dropdown-item">
-                                <i class="feather feather-x me-3"></i>
-                                <span>Delete</span>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-            <hr class="border-dashed my-3">
-            <div class="w-100 d-flex align-items-center justify-content-between">
-                <div class="d-flex align-items-center">
-                    <div class="me-3">
-                        <div class="bg-primary text-white avatar-text">T</div>
-                    </div>
-                    <div>
-                        <a href="javascript:void(0)" class="d-flex align-items-center mb-1">Timothy Boyd</a>
-                        <div class="fs-12 fw-normal text-muted">timothy.boyd@gmail.com</div>
-                    </div>
-                </div>
-                <div class="dropdown hstack text-end justify-content-end">
-                    <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown">
-                        <i class="feather feather-more-vertical"></i>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li>
-                            <a href="javascript:void(0)" class="dropdown-item">
-                                <i class="feather feather-eye me-3"></i>
-                                <span>Open</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="javascript:void(0)" class="dropdown-item">
-                                <i class="feather feather-share-2 me-3"></i>
-                                <span>Share</span>
-                            </a>
-                        </li>
-                        <li class="dropdown-divider"></li>
-                        <li>
-                            <a href="javascript:void(0)" class="dropdown-item">
-                                <i class="feather feather-scissors me-3"></i>
-                                <span>Backup</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="javascript:void(0)" class="dropdown-item">
-                                <i class="feather feather-x me-3"></i>
-                                <span>Delete</span>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-            <hr class="border-dashed my-3">
-            <div class="w-100 d-flex align-items-center justify-content-between">
-                <div class="d-flex align-items-center">
-                    <div class="avatar-image me-3">
-                        <img src="../assets/images/avatar/4.png" class="rounded-circle img-fluid" alt="image">
-                    </div>
-                    <div>
-                        <a href="javascript:void(0)" class="d-flex align-items-center mb-1">Holland Scott</a>
-                        <div class="fs-12 fw-normal text-muted">holland.scott@hotmail.com</div>
-                    </div>
-                </div>
-                <div class="dropdown hstack text-end justify-content-end">
-                    <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown">
-                        <i class="feather feather-more-vertical"></i>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li>
-                            <a href="javascript:void(0)" class="dropdown-item">
-                                <i class="feather feather-eye me-3"></i>
-                                <span>Open</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="javascript:void(0)" class="dropdown-item">
-                                <i class="feather feather-share-2 me-3"></i>
-                                <span>Share</span>
-                            </a>
-                        </li>
-                        <li class="dropdown-divider"></li>
-                        <li>
-                            <a href="javascript:void(0)" class="dropdown-item">
-                                <i class="feather feather-scissors me-3"></i>
-                                <span>Backup</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="javascript:void(0)" class="dropdown-item">
-                                <i class="feather feather-x me-3"></i>
-                                <span>Delete</span>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-            <hr class="border-dashed my-3">
-            <div class="w-100 d-flex align-items-center justify-content-between">
-                <div class="d-flex align-items-center">
-                    <div class="me-3">
-                        <div class="bg-warning text-white avatar-text">N</div>
-                    </div>
-                    <div>
-                        <a href="javascript:void(0)" class="d-flex align-items-center mb-1">Nancy Elliot</a>
-                        <div class="fs-12 fw-normal text-muted">nancy.elliot@gmail.com</div>
-                    </div>
-                </div>
-                <div class="dropdown hstack text-end justify-content-end">
-                    <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown">
-                        <i class="feather feather-more-vertical"></i>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li>
-                            <a href="javascript:void(0)" class="dropdown-item">
-                                <i class="feather feather-eye me-3"></i>
-                                <span>Open</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="javascript:void(0)" class="dropdown-item">
-                                <i class="feather feather-share-2 me-3"></i>
-                                <span>Share</span>
-                            </a>
-                        </li>
-                        <li class="dropdown-divider"></li>
-                        <li>
-                            <a href="javascript:void(0)" class="dropdown-item">
-                                <i class="feather feather-scissors me-3"></i>
-                                <span>Backup</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="javascript:void(0)" class="dropdown-item">
-                                <i class="feather feather-x me-3"></i>
-                                <span>Delete</span>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-            <hr class="border-dashed my-3">
-            <div class="w-100 d-flex align-items-center justify-content-between mb-2">
-                <div class="d-flex align-items-center">
-                    <div class="avatar-image me-3">
-                        <img src="../assets/images/avatar/5.png" class="rounded-circle img-fluid" alt="image">
-                    </div>
-                    <div>
-                        <a href="javascript:void(0)" class="d-flex align-items-center mb-1">Olive Delarosa</a>
-                        <div class="fs-12 fw-normal text-muted">olive.delarosa@gmail.com</div>
-                    </div>
-                </div>
-                <div class="dropdown hstack text-end justify-content-end">
-                    <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown">
-                        <i class="feather feather-more-vertical"></i>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end">
-                        <li>
-                            <a href="javascript:void(0)" class="dropdown-item">
-                                <i class="feather feather-eye me-3"></i>
-                                <span>Open</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="javascript:void(0)" class="dropdown-item">
-                                <i class="feather feather-share-2 me-3"></i>
-                                <span>Share</span>
-                            </a>
-                        </li>
-                        <li class="dropdown-divider"></li>
-                        <li>
-                            <a href="javascript:void(0)" class="dropdown-item">
-                                <i class="feather feather-scissors me-3"></i>
-                                <span>Backup</span>
-                            </a>
-                        </li>
-                        <li>
-                            <a href="javascript:void(0)" class="dropdown-item">
-                                <i class="feather feather-x me-3"></i>
-                                <span>Delete</span>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
+            @endforeach
         </div>
-        <a href="javascript:void(0);" class="card-footer fs-11 fw-bold text-uppercase text-center">Refresh</a>
+        <a href="{{route('admin.users.create')}}" class="card-footer fs-11 fw-bold text-uppercase text-center">Añadir Usuario</a>
     </div>
 </div>
 

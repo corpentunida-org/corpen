@@ -22,7 +22,7 @@ class AuditoriaController extends Controller
     
 
     public function index(){
-        $registros = auditoria::all();
-        return view('admin.users.usuarios', ['registros' => $registros]);
+        $registros = auditoria::orderBy('id', 'desc')->get();
+        return view('admin.users.usuarios', compact('registros'));
     }
 }
