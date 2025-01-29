@@ -98,6 +98,7 @@ class MaeC_ExSerController extends Controller
                 'telefonoContacto2'=> $request->telefonoContacto2,
                 'factura'=> $request->factura,
                 'valor'=> $request->valor,
+                'genero'=>$request->genero,
             ]);
             $accion = "prestar servicio a " . $request->cedulaFallecido;
             $this->auditoria($accion, "EXEQUIALES");

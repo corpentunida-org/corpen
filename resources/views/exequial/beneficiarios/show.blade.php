@@ -114,7 +114,9 @@
                                                         </li>
                                                         <li class="dropdown-divider"></li>
                                                         <li>
-                                                            <form action="{{ route('exequial.beneficiarios.destroy', ['beneficiario' => $beneficiario['id']]) }}" method="POST">
+                                                            <form
+                                                                action="{{ route('exequial.beneficiarios.destroy', ['beneficiario' => $beneficiario['id']]) }}"
+                                                                method="POST">
                                                                 @csrf
                                                                 @method('DELETE')
                                                                 <input type="hidden" name="documentid"
@@ -202,12 +204,10 @@
     </script>
 @endif
 
-<div class="offcanvas offcanvas-end" tabindex="-1" id="proposalSent">
-    <div class="offcanvas-header ht-80 px-4 border-bottom border-gray-5">
-        <div>
-            <h2 class="fs-16 fw-bold text-truncate-1-line">PRESTAR SERVICIO</h2>
-            <small class="fs-12 text-muted">25 MAY, 2023</small>
-        </div>
+<div class="offcanvas offcanvas-end modal-dialog-scrollable" tabindex="-1" id="proposalSent">
+    {{-- <div class="offcanvas-header ht-80 px-4 border-bottom border-gray-5"> --}}
+    <div class="offcanvas-header d-flex justify-content-between border-bottom border-gray-5">
+        <h2 class="fs-16 fw-bold pt-2">PRESTAR SERVICIO</h2>
         <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
     </div>
     <form method="POST" action="{{ route('exequial.prestarServicio.store') }}" id="FormularioPrestarServicio"
@@ -268,15 +268,24 @@
                 </div>
             </div>
             <div class="row">
-                <div class="form-group col-lg-4 mb-4">
+                <div class="form-group col-lg-6 mb-6">
                     <label class="form-label">Factura<span class="text-danger">*</span></label>
                     <input type="text" class="form-control uppercase-input" name="factura">
                 </div>
-                <div class="form-group col-lg-4 mb-4">
+                <div class="form-group col-lg-6 mb-6">
                     <label class="form-label">Valor<span class="text-danger">*</span></label>
                     <input type="text" class="form-control" name="valor">
                 </div>
-                <div class="form-group col-lg-4 mb-4">
+            </div>
+            <div class="row">
+                <div class="form-group col-lg-6 mb-6">
+                    <label class="form-label">Género<span class="text-danger">*</span></label>
+                    <select class="form-control" name="genero">
+                        <option value="F">Femenino</option>
+                        <option value="M">Masculino</option>
+                    </select>
+                </div>
+                <div class="form-group col-lg-6 mb-6">
                     <label class="form-label">Traslado<span class="text-danger">*</span></label>
                     <select class="form-control" name="traslado">
                         <option value="1">Sí</option>
