@@ -12,12 +12,16 @@ class UserController extends Controller
     public function index() {
         $users = User::all();
         return view('admin.users.index', compact('users'));
-        //return "en el index";
     }
 
     public function edit(User $user) {
         $roles = Role::all();
         return view('admin.users.edit', compact('user', 'roles'));;
+    }
+
+    public function create() {
+        $roles = Role::all();
+        return view('admin.users.create', compact('roles'));
     }
 
     public function update(Request $request, User $user){

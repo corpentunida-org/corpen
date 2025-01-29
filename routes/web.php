@@ -58,7 +58,7 @@ Route::get('/base', function () {
 
 
 //ADMIN
-Route::resource('users', UserController::class)->middleware('can:admin')->names('admin.users');
+Route::resource('users', UserController::class)->middleware('auth')->names('admin.users');
 Route::resource('admin', AuditoriaController::class)->middleware('auth')->names('admin.auditoria');
 
 
