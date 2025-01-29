@@ -1,11 +1,85 @@
+@php
+    use Carbon\Carbon;
+    $meses = [
+        1 => 'ENERO',
+        2 => 'Febrero',
+        3 => 'Marzo',
+        4 => 'Abril',
+        5 => 'Mayo',
+        6 => 'Junio',
+        7 => 'Julio',
+        8 => 'Agosto',
+        9 => 'Septiembre',
+        10 => 'Octubre',
+        11 => 'Noviembre',
+        12 => 'Diciembre',
+    ];
+    $mesActual = $meses[Carbon::now()->month];
+@endphp
 <x-base-layout>
     @section('titlepage', 'Prestar Servicio')
     <x-success />
+
+    <div class="row">
+        <div class="col-xxl-3 col-md-6">
+            <div class="card card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="me-3">
+                        <h5 class="fs-4">{{ $registros->count() }}</h5>
+                        <span class="text-muted">TOTAL SERVICIOS PRESTADOS</span>
+                    </div>
+                    <div class="avatar-text avatar-lg bg-success text-white rounded">
+                        <i class="feather-pie-chart"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xxl-3 col-md-6">
+            <div class="card card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="me-3">
+                        <h5 class="fs-4">{{ $mReg }}</h5>
+                        <span class="text-muted">ÚLTIMO MES</span>
+                        <span class="fs-11 text-dark badge bg-gray-100">{{ $mesActual }}</span>
+                    </div>
+                    <div class="avatar-text avatar-lg bg-primary text-white rounded">
+                        <i class="feather-activity"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xxl-3 col-md-6">
+            <div class="card card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="me-3">
+                        <h5 class="fs-4">{{ $nmen }}</h5>
+                        <span class="text-muted">HOMBRES</span>
+                    </div>
+                    <div class="avatar-text avatar-lg bg-info text-white rounded">
+                        <i class="bi bi-person-standing"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xxl-3 col-md-6">
+            <div class="card card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="me-3">
+                        <h5 class="fs-4">{{ $nwomen }} </h5>
+                        <span class="text-muted">MUJERES</span>
+                    </div>
+                    <div class="avatar-text avatar-lg bg-warning text-white rounded">
+                        <i class="feather-bi bi-person-standing-dress"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="col-lg-12">
         <div class="card stretch stretch-full">
             <div class="card-body p-0">
                 <div class="table-responsive">
-
                     <table class="table table-hover" id="customerList">
                         <thead>
                             <tr>
@@ -19,7 +93,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach ($registros as $r)
+                            @foreach ($registros->sortByDesc('id') as $r)
                                 <tr>
                                     <td>
                                         <div class="fw-semibold mb-1">{{ $r->fechaFallecimiento }}</div>
@@ -74,10 +148,11 @@
                                         </select>
                                     </td> --}}
                                     <td>
-                                    <div>
-                                        <a href="javascript:void(0);" class="fs-12 fw-normal text-muted d-block">{{ $r->factura }}</a>
-                                        <a href="javascript:void(0);" class="d-block">$ {{ $r->valor }}</a>
-                                    </div>
+                                        <div>
+                                            <a href="javascript:void(0);"
+                                                class="fs-12 fw-normal text-muted d-block">{{ $r->factura }}</a>
+                                            <a href="javascript:void(0);" class="d-block">$ {{ $r->valor }}</a>
+                                        </div>
                                     </td>
                                     <td>
                                         @if ($r->traslado)
@@ -88,11 +163,13 @@
                                     </td>
                                     <td>
                                         <div class="hstack gap-2 justify-content-end">
-                                            
-                                            <a href="{{ route('exequial.prestarServicio.edit', $r->id) }}" class="avatar-text avatar-md" data-bs-toggle="tooltip" title="EDITAR" data-bs-original-title="EDITAR">
+
+                                            <a href="{{ route('exequial.prestarServicio.edit', $r->id) }}"
+                                                class="avatar-text avatar-md" data-bs-toggle="tooltip" title="EDITAR"
+                                                data-bs-original-title="EDITAR">
                                                 <i class="feather feather-eye"></i>
                                             </a>
-                                            
+
                                         </div>
                                     </td>
                                 </tr>
