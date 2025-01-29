@@ -25,10 +25,11 @@ class MaeC_ExSerController extends Controller
             $nomPar = $controllerparentesco->showName($registro->parentesco);
             $registro->parentesco = $nomPar;
         }
-        /* $tReg = ExMonitoria::count();
-        $mReg = ExMonitoria::whereMonth('fechaFallecimiento', Carbon::now()->month)->count(); */
-        //return view('exequial.prestarServicio.index', ['registros' => $registros, 'totalRegistros'=>$tReg, 'mesRegistros'=>$mReg]);
-        return view('exequial.prestarServicio.index', ['registros' => $registros]);
+        $mReg = ExMonitoria::whereMonth('fechaFallecimiento', Carbon::now()->month)->count();
+        $nmen = ExMonitoria::where('genero', 'M')->count();
+        $nwomen = ExMonitoria::where('genero', 'F')->count();
+        
+        return view('exequial.prestarServicio.index', compact('registros','mReg', 'nmen', 'nwomen'));
     }
 
     public function edit($id)
