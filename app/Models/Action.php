@@ -9,7 +9,11 @@ use Spatie\Permission\Models\Role;
 class Action extends Model
 {
     use HasFactory;
-
+    protected $table = 'actions';
+    protected $fillable = [
+        'user_email',
+        'role_id',
+    ];
     public function role()
     {
         return $this->belongsTo(Role::class);
