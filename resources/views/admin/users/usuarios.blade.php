@@ -9,7 +9,7 @@
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <div class="col-sm-12">
-                        <table class="table table-hover" id="customerList">
+                        <table class="table table-hover">
                             <thead>
                                 <tr>
                                     <th>Fecha</th>

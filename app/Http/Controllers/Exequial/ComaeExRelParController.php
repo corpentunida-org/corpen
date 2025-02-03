@@ -70,7 +70,7 @@ class ComaeExRelParController extends Controller
             $url = route('exequial.asociados.show', ['asociado' => 'ID']) . '?id=' . $request->cedulaAsociado;
             return redirect()->to($url)->with('success', 'Beneficiario agregado exitosamente');
         } else {
-            return redirect()->back()->with('error', "aaaaa " . $response->json() . $response->status());
+            return redirect()->back()->with('error', $response->json() . $response->status());
         }
     }
         
