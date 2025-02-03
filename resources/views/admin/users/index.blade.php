@@ -1,6 +1,6 @@
 <x-base-layout>
     @section('titlepage', 'Administrador')
-
+    <x-success />
     <div class="col-xxl-4 col-lg-6">
         <div class="card stretch stretch-full">
             <div class="card-header">
@@ -51,7 +51,9 @@
                 <div class="mb-3">
                     <div class="mb-4 pb-1 d-flex">
                         <div class="d-flex w-50 align-items-center me-3">
-                            <img src="assets/images/brand/figma.png" alt="figma-logo" class="me-3" width="35">
+                            <div class="wd-40 ht-40 bg-soft-primary text-primary lh-1 d-flex align-items-center justify-content-center flex-column rounded-2 schedule-date me-3">
+                                <span class="fs-18 fw-bold mb-1 d-block">1</span>
+                            </div>
                             <div>
                                 <a href="javascript:void(0);" class="text-truncate-1-line">Exequiales</a>
                                 <div class="fs-11 text-muted">App UI Kit</div>
@@ -68,7 +70,9 @@
                     <hr class="border-dashed my-3">
                     <div class="mb-4 pb-1 d-flex">
                         <div class="d-flex w-50 align-items-center me-3">
-                            <img src="assets/images/brand/facebook.png" alt="vue-logo" class="me-3" width="35">
+                            <div class="wd-40 ht-40 bg-soft-primary text-primary lh-1 d-flex align-items-center justify-content-center flex-column rounded-2 schedule-date me-3">
+                                <span class="fs-18 fw-bold mb-1 d-block">2</span>
+                            </div>
                             <div>
                                 <a href="javascript:void(0);" class="text-truncate-1-line">Creditos</a>
                                 <div class="fs-11 text-muted">Marketing</div>
@@ -85,7 +89,9 @@
                     <hr class="border-dashed my-3">
                     <div class="mb-4 pb-1 d-flex">
                         <div class="d-flex w-50 align-items-center me-3">
-                            <img src="assets/images/brand/github.png" alt="react-logo" class="me-3" width="35">
+                            <div class="wd-40 ht-40 bg-soft-primary text-primary lh-1 d-flex align-items-center justify-content-center flex-column rounded-2 schedule-date me-3">
+                                <span class="fs-18 fw-bold mb-1 d-block">3</span>
+                            </div>
                             <div>
                                 <a href="javascript:void(0);" class="text-truncate-1-line">CINCO</a>
                                 <div class="fs-11 text-muted">Dashboard</div>
@@ -102,8 +108,9 @@
                     <hr class="border-dashed my-3">
                     <div class="d-flex">
                         <div class="d-flex w-50 align-items-center me-3">
-                            <img src="assets/images/brand/paypal.png" alt="sketch-logo" class="me-3"
-                                width="35">
+                            <div class="wd-40 ht-40 bg-soft-primary text-primary lh-1 d-flex align-items-center justify-content-center flex-column rounded-2 schedule-date me-3">
+                                <span class="fs-18 fw-bold mb-1 d-block">4</span>
+                            </div>
                             <div>
                                 <a href="javascript:void(0);" class="text-truncate-1-line">Cartera</a>
                                 <div class="fs-11 text-muted">Payment</div>
@@ -120,10 +127,8 @@
                     <hr class="border-dashed my-3">
                     <div class="d-flex">
                         <div class="d-flex w-50 align-items-center me-3">
-                            <div
-                                class="wd-50 ht-50 bg-soft-primary text-primary lh-1 d-flex align-items-center justify-content-center flex-column rounded-2 schedule-date">
-                                <span class="fs-18 fw-bold mb-1 d-block">20</span>
-                                <span class="fs-10 fw-semibold text-uppercase d-block">Dec</span>
+                            <div class="wd-40 ht-40 bg-soft-primary text-primary lh-1 d-flex align-items-center justify-content-center flex-column rounded-2 schedule-date me-3">
+                                <span class="fs-18 fw-bold mb-1 d-block">5</span>
                             </div>
                             <div>
                                 <a href="javascript:void(0);" class="text-truncate-1-line">Seguros</a>
@@ -197,8 +202,7 @@
                     <div class="w-100 d-flex align-items-center justify-content-between">
                         <div class="d-flex align-items-center">
                             <div class="avatar-image me-3">
-                                <img src="../assets/images/avatar/3.png" class="rounded-circle img-fluid"
-                                    alt="image">
+                                <i class="bi bi-person-circle"></i>
                             </div>
                             <div>
                                 <a href="javascript:void(0)"
@@ -297,27 +301,7 @@
                 </div>
             </div>
             <div class="card-body custom-card-action">
-                <div class="hstack justify-content-between border border-dashed rounded-3 p-3 mb-3">
-                    <div class="hstack gap-3">
-                        <div class="avatar-image">
-                            <img src="assets/images/avatar/1.png" alt="" class="img-fluid">
-                        </div>
-                        <div>
-                            <a href="javascript:void(0);"></a>
-                            <div class="fs-11 text-muted"></div>
-                        </div>
-                    </div>
-                    <div class="team-progress-1" role="progressbar" aria-valuemin="0" aria-valuemax="100"
-                        aria-valuenow="40"><svg version="1.1" width="100" height="100" viewBox="0 0 100 100"
-                            class="circle-progress">
-                            <circle class="circle-progress-circle" cx="50" cy="50" r="47"
-                                fill="none" stroke="#ddd" stroke-width="8"></circle>
-                            <path d="M 50 3 A 47 47 0 0 1 77.62590685774623 88.02379873562253"
-                                class="circle-progress-value" fill="none" stroke="#00E699" stroke-width="8">
-                            </path><text class="circle-progress-text" x="50" y="50" font="16px Arial, sans-serif"
-                                text-anchor="middle" fill="#999" dy="0.4em">50%</text>
-                        </svg></div>
-                </div>
+                
 
             </div>
             <a href="javascript:void(0);" class="card-footer fs-11 fw-bold text-uppercase text-center"></a>

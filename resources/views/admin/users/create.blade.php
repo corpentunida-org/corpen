@@ -1,6 +1,10 @@
+<style>
+        .uppercase-input {
+            text-transform: uppercase;
+        }
+    </style>
 <x-base-layout>
     @section('titlepage', 'Administrador')
-
     <div class="col-xxl-12 col-xl-12">
         <div class="card border-top-0">
             <div class="card-header p-0">
@@ -18,7 +22,7 @@
             <div class="tab-content">
                 <div class="tab-pane fade p-4 active show" id="securityTab" role="tabpanel">
                     <div class="col-lg-12 p-4">
-                        <form method="POST" action="{{ route('seguros.planes.store') }}" id="formAddPlan" novalidate>
+                        <form method="POST" action="{{ route('admin.users.store') }}" id="formAddPlan" novalidate>
                             @csrf
                             @method('POST')
                             <div class="mb-4">
@@ -27,29 +31,29 @@
                             </div>
                             <div class="mb-4">
                                 <label class="form-label">Correo corporativo<span class="text-danger">*</span></label>
-                                <input type="email" class="form-control uppercase-input" name="email" required>
+                                <input type="email" class="form-control" name="email" required>
                             </div>
                             <div class="row">
                                 <div class="col-lg-6">
                                     <div class="mb-4">
                                         <label class="form-label">Asignar Rol<span class="text-danger">*</span></label>
-                                        <select class="form-control" name="cobconvenio">
+                                        <select class="form-control" name="rol">
                                             @foreach ($roles as $rol)
-                                                <option value="">
+                                                <option value="{{ $rol->id }}">
                                                     {{ strtoupper($rol->name) }}
                                                 </option>
                                             @endforeach
-                                        </select>                                        
+                                        </select>
                                     </div>
                                 </div>
                                 <div class="col-lg-6">
                                     <div class="mb-4">
                                         <label class="form-label">Contraseña<span class="text-danger">*</span></label>
-                                        <input type="password" class="form-control uppercase-input" name="pass"required>
+                                        <input type="password" class="form-control"
+                                            name="pass"required>
                                     </div>
                                 </div>
                             </div>
-
 
                             <div class="d-flex flex-row-reverse gap-2 mt-2">
                                 <button class="btn btn-success mt-4" data-bs-toggle="tooltip" title="Timesheets"
@@ -69,14 +73,12 @@
                             @csrf
                             @method('POST')
                             <div class="mb-4">
-                                
-                                        <label class="form-label">Nombre del Rol<span
-                                                class="text-danger">*</span></label>
-                                        <input type="text" class="form-control uppercase-input" name="cobname"
-                                            required>
-                                    
+
+                                <label class="form-label">Nombre del Rol<span class="text-danger">*</span></label>
+                                <input type="text" class="form-control uppercase-input" name="cobname" required>
+
                             </div>
-                            
+
 
 
                             <div class="d-flex flex-row-reverse gap-2 mt-2">
