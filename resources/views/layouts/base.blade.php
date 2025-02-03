@@ -61,8 +61,9 @@
         <div class="m-header">
             <a href="{{route('dashboard')}}" class="b-brand">
                 <!-- ========   change your logo hear   ============ -->
-                <img src="{{asset('assets/images/logo/CORPENTUNIDA_LOGO_PRINCIPAL.png')}}" alt="" class="logo logo-lg" />
-                <img src="{{asset('assets/images/logo/CORPENTUNIDA_LOGO_PRINCIPAL.png')}}" alt="" class="logo logo-sm" />
+                
+                <img src="{{asset('assets/images/CORPENTUNIDA_LOGO_PRINCIPAL   (2).png')}}" alt="logo" class="logo logo-lg" />
+                <img src="{{asset('assets/images/CORPENTUNIDA_LOGO_PRINCIPAL   (2).png')}}" alt="" class="logo logo-sm" />
             </a>
         </div>
         <div class="navbar-content">

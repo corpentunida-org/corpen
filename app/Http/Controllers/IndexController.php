@@ -21,10 +21,11 @@ class IndexController extends Controller
             return view('exequial.asociados.index');
         } elseif ($user->hasRole('seguros')) {
             return view('seguros.polizas.index');
+        } elseif ($user->hasRole('cinco')) {
+            return redirect()->route('cinco.tercero.index');
         } else {
-            return redirect('exequial.prestarServicio.index');
+            return view('welcome');
         }
-    
     }
 
     /**
