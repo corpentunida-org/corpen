@@ -12,16 +12,22 @@ class IndexController extends Controller
      */
     public function index()
     {
-        $user = Auth::user();
-        if ($user->hasRole('admin')) {
+        $userEmail = Auth::user()->email;
+        $roles = \DB::table('roles')
+                ->join('actions', 'roles.id', '=', 'actions.role_id')
+                ->where('actions.user_email', '=', $userEmail)
+                ->select('roles.*')
+                ->get();
+
+        if ($roles->first()->name===('admin')) {
             return redirect()->route('admin.users.index');
-        } elseif ($user->hasRole('exequial')) {
+        } elseif ($roles->first()->name===('exequial')) {
             return view('exequial.asociados.index');
-        } elseif ($user->hasRole('creditos')) {
+        } elseif ($roles->first()->name===('creditos')) {
             return view('exequial.asociados.index');
-        } elseif ($user->hasRole('seguros')) {
+        } elseif ($roles->first()->name===('seguros')) {
             return view('seguros.polizas.index');
-        } elseif ($user->hasRole('cinco')) {
+        } elseif ($roles->first()->name===('cinco')) {
             return redirect()->route('cinco.tercero.index');
         } else {
             return view('welcome');
