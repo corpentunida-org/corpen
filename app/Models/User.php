@@ -10,6 +10,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 use Laravel\Jetstream\HasProfilePhoto;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\Model;
 //use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
@@ -35,6 +36,8 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Role::class, 'actions', 'user_email', 'role_id');
     }
+
+
     public function actions()
     {
         return $this->hasMany(Action::class, 'user_email', 'email');

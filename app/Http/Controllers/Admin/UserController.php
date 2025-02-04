@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Action;
+use App\Models\auditoria;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
 
@@ -17,7 +18,12 @@ class UserController extends Controller
 
     public function edit(User $user) {
         $roles = Role::all();
-        return view('admin.users.edit', compact('user', 'roles'));;
+        $user->load('actions.role');
+        $acciones = $count = auditoria::where('usuario', $user->name)->count();
+        $fecha = auditoria::where('usuario', $user->name)
+        ->orderBy('fechaRegistro', 'desc') 
+        ->first();
+        return view('admin.users.edit', compact('user', 'roles', 'acciones', 'fecha'));;
     }
 
     public function create() {
