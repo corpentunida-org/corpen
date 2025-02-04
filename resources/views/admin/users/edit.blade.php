@@ -1,42 +1,95 @@
-
-<!-- Laravel colective -->
-{{-- {!! Form::model($user,['route'=> ['admin.users.update',$user], 'method' => 'put']) !!}
-    <div>
-        <label>
-            {!! Form::checkbox('roles[]', $role->id, null)!!}
-            {{$role->name}}
-        </label>
-    </div>
-{!! Form::close()!!} --}}
-
-
-@extends('layouts.appTemplate')
-@section('titlepage', 'asignar rol')
-@section('titleView', 'Administracion Usuarios')
-@section('titlenav', 'ADMINISTRACION')
-@section('contentpage')
-    <div class="card-header">
-        <h5 class="card-category">Asignar rol</h5>
-    </div>
-    <div class="card-body">
-    @if (session('info')){
-        <div><strong>{{session('info')}}</strong></div>
-    }
-    @endif
-    <h5>Usuario: {{$user->name}}</h5>
-    <form action="{{ route('admin.users.update', $user) }}" method="POST">
-        @csrf
-        @method('PUT')
-        @foreach($roles as $role)
-            <div>
-                <label>
-                    <input type="checkbox" name="roles[]" value="{{ $role->id }}" {{ in_array($role->id, $user->roles->pluck('id')->toArray()) ? 'checked' : '' }}>
-                    {{ $role->name }}
-                </label>
+<x-base-layout>
+    @section('titlepage', 'Perfil Usuario')
+    <div class="col-12">
+        <div class="card stretch stretch-full">
+            <div class="card-body">
+                <div class="mb-4 text-center">
+                    <div class="wd-150 ht-150 mx-auto mb-3 position-relative">
+                        <div class="avatar-image wd-150 ht-150 border border-5 border-gray-3">
+                            <img src="assets/images/avatar/1.png" alt="" class="img-fluid">
+                        </div>
+                        <div class="wd-10 ht-10 text-success rounded-circle position-absolute translate-middle"
+                            style="top: 76%; right: 10px">
+                            <i class="bi bi-patch-check-fill"></i>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <a href="javascript:void(0);" class="fs-14 fw-bold d-block"> {{ $user->name }}</a>
+                        <a href="javascript:void(0);" class="fs-12 fw-normal text-muted d-block">{{ $user->email }}</a>
+                    </div>
+                    <div class="fs-12 fw-normal text-muted text-center d-flex flex-wrap gap-3 mb-4">
+                        <div class="flex-fill py-3 px-4 rounded-1 d-none d-sm-block border border-dashed border-gray-5">
+                            <h6 class="fs-15 fw-bolder">{{ $acciones }}</h6>
+                            <p class="fs-12 text-muted mb-0">Actividades en la app</p>
+                        </div>
+                        <div class="flex-fill py-3 px-4 rounded-1 d-none d-sm-block border border-dashed border-gray-5">
+                            <h6 class="fs-15 fw-bolder">{{ strtoupper($user->actions->first()->role->name) }}</h6>
+                            <p class="fs-12 text-muted mb-0">Rol asignado</p>
+                        </div>
+                        <div class="flex-fill py-3 px-4 rounded-1 d-none d-sm-block border border-dashed border-gray-5">
+                            <h6 class="fs-15 fw-bolder">{{$fecha->fechaRegistro}}</h6>
+                            <p class="fs-12 text-muted mb-0">Ultima actividad</p>
+                        </div>
+                    </div>
+                </div>
+                <ul class="list-unstyled mb-4">
+                    <div class="row mb-4 align-items-center">
+                        <div class="col-lg-2">
+                            <span class="text-muted fw-medium hstack gap-3 mr-3"><i
+                                class="feather-phone"></i>Telefono</span>
+                        </div>
+                        <div class="col-lg-10">
+                            <div class="input-group">                        
+                                <input class="form-control" value="+01 (375) 2589 645">                                
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mb-4 align-items-center">
+                        <div class="col-lg-2">
+                            <span class="text-muted fw-medium hstack gap-3 mr-3"><i
+                                class="feather-mail"></i>Email</span>
+                        </div>
+                        <div class="col-lg-10">
+                            <div class="input-group">                        
+                                <input class="form-control" value="{{$user->email}}">                                
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mb-4 align-items-center">
+                        <div class="col-lg-2">
+                            <span class="text-muted fw-medium hstack gap-3 mr-3"><i
+                                class="feather-user"></i>Name</span>
+                        </div>
+                        <div class="col-lg-10">
+                            <div class="input-group">                        
+                                <input class="form-control" value="{{$user->name}}">                                
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mb-4 align-items-center">
+                        <div class="col-lg-2">
+                            <span class="text-muted fw-medium hstack gap-3 mr-3"><i
+                                class="bi bi-lock-fill"></i>Contraseña</span>
+                        </div>
+                        <div class="col-lg-10">
+                            <div class="input-group">                        
+                                <input class="form-control" type="password" value="123456">                                
+                            </div>
+                        </div>
+                    </div>
+                    
+                </ul>
+                <div class="d-flex gap-2 text-center pt-4">
+                    <a href="javascript:void(0);" class="w-50 btn btn-light-brand">
+                        <i class="feather-trash-2 me-2"></i>
+                        <span>Delete</span>
+                    </a>
+                    <a href="javascript:void(0);" class="w-50 btn btn-primary">
+                        <i class="feather-edit me-2"></i>
+                        <span>Editar usuario</span>
+                    </a>
+                </div>
             </div>
-        @endforeach
-        <button type="submit" class="btn btn-warning">Asignar Rol</button>
-    </form>
+        </div>
     </div>
-    
-@endsection
+</x-base-layout>

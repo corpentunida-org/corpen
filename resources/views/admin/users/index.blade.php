@@ -217,18 +217,18 @@
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" style="">
                                 <li>
-                                    <a href="javascript:void(0)" class="dropdown-item">
+                                    <a href="{{route('admin.users.edit', $user->id)}}" class="dropdown-item">
                                         <i class="feather feather-eye me-3"></i>
-                                        <span>Open</span>
+                                        <span>Abrir</span>
                                     </a>
                                 </li>
                                 <li>
                                     <a href="javascript:void(0)" class="dropdown-item">
                                         <i class="feather feather-share-2 me-3"></i>
-                                        <span>Share</span>
+                                        <span>Compartir</span>
                                     </a>
                                 </li>
-                                <li class="dropdown-divider"></li>
+                                {{-- <li class="dropdown-divider"></li>
                                 <li>
                                     <a href="javascript:void(0)" class="dropdown-item">
                                         <i class="feather feather-scissors me-3"></i>
@@ -240,7 +240,7 @@
                                         <i class="feather feather-x me-3"></i>
                                         <span>Delete</span>
                                     </a>
-                                </li>
+                                </li> --}}
                             </ul>
                         </div>
                     </div>
