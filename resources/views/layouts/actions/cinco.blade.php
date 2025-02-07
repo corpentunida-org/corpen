@@ -5,6 +5,7 @@
     </a>
     <ul class="nxl-submenu">
         <li class="nxl-item"><a class="nxl-link" href="{{ route('cinco.tercero.index')}}">Fecha Aporte - Ministerio</a></li>
-        <li class="nxl-item"><a class="nxl-link" href="{{ route('cinco.movcontables.index')}}">CINCO</a></li>
+        <li class="nxl-item"><a class="nxl-link" href="{{ route('cinco.movcontables.index')}}">Movimientos Contables</a></li>
+        <li class="nxl-item"><a class="nxl-link" href="{{ route('cinco.retiros.index')}}">Calculo Retiros</a></li>
     </ul>
 </li>

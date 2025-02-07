@@ -24,6 +24,7 @@ use App\Http\Controllers\Seguros\SegConvenioController;
 
 use App\Http\Controllers\Cinco\TercerosController;
 use App\Http\Controllers\Cinco\MoviContCincoController;
+use App\Http\Controllers\Cinco\RetirosListadoController;
 
 
 
@@ -90,7 +91,9 @@ Route::resource('convenio', SegConvenioController::class)->middleware('auth')->n
 //RUTAS CINCO
 Route::resource('terceros', TercerosController::class)->middleware('auth')->names('cinco.tercero');
 Route::resource('cinco', MoviContCincoController::class)->middleware('auth')->names('cinco.movcontables');
+Route::resource('calculoretiros', RetirosListadoController::class)->middleware('auth')->names('cinco.retiros');
 Route::get('movcontables/{id}/reportepdf/', [MoviContCincoController::class, 'generarpdf'])->name('cinco.reportepdf');
+Route::get('/retirosname/{name}', [RetirosListadoController::class, 'namesearch'])->name('cinco.retiros.search');
 
 //RUTA CARTERA MOROSOS
 Route::resource('cartera', ReadExelController::class)->only(['index', 'store'])->middleware('auth')

@@ -1,9 +1,12 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Cinco;
 
 use App\Models\Cinco\RetirosListado;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use App\Models\Cinco\Terceros;
+use Carbon\Carbon;
 
 class RetirosListadoController extends Controller
 {
@@ -12,7 +15,15 @@ class RetirosListadoController extends Controller
      */
     public function index()
     {
-        //
+        return view('cinco.retiros.index');
+    }
+
+    public function namesearch(Request $request)
+    {
+        $name = str_replace(' ', '%', $request->input('id'));
+        $terceros = Terceros::whereHas('tercero', function ($query) use ($name) {
+                $query->where('Nom_Ter', 'like', '%' . $name . '%');})->get();
+        return view('seguros.polizas.search', compact('asegurados'));
     }
 
     /**
@@ -34,11 +45,25 @@ class RetirosListadoController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(RetirosListado $retirosListado)
+    public function show(Request $request)
     {
-        //
+        $id = $request->input('id');
+        $tercero = Terceros::where('Cod_Ter', $id)->first();
+        //dd($tercero->Fec_Minis);
+        //$arrayliquidacion = $this->liquidaciones($tercero->Fec_Minis);
+        return view('cinco.retiros.show', compact('tercero'));
     }
 
+    private function liquidaciones(string $fechaminis)
+    {
+        $arrayliquidacion = [];
+        $fecha = Carbon::parse($fechaminis);
+        $dia = $fecha->day;
+        $mes = $fecha->month;
+        $año = $fecha->year;
+        dd($dia, $mes, $año);
+        return $arrayliquidacion;
+    }
     /**
      * Show the form for editing the specified resource.
      */
