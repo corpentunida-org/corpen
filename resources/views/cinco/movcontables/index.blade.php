@@ -44,7 +44,7 @@
     <div class="col-lg-12">
         <div class="card stretch stretch-full">
             <div class="card-header">
-                <h5 class="card-title">Base de datos aplicativo antiguo 2007</h5>
+                <h5 class="card-title">Movimientos Contables del aplicacativo CINCO antes del año 2007</h5>
                 <a href="javascript:void(0);" class="btn btn-md btn-light-brand">
                     <i class="feather-plus me-2"></i>
                     <span>Services</span>
@@ -58,17 +58,13 @@
                                 <div class="avatar-text rounded-2 mb-4">
                                     <i class="feather-archive"></i>
                                 </div>
-                                <h6 class="fw-bold mb-3 text-truncate-1-line">Website design and development</h6>
-                                <p class="text-muted mb-4 text-truncate-3-line">Website design and development -
-                                    designing and building a website to meet specific requirements, such as the look and
-                                    feel, functionality, and content.</p>
+                                <h6 class="fw-bold mb-3 text-truncate-1-line">Buscar por número de cedula</h6>
+                                <p class="text-muted mb-4 text-truncate-3-line">Toda la información de cuentas contables de los pastores, viudas y musicos, antiguas al año 2007. En la parte inferior, se puede generar un informe PDF de todas las cuentas.</p>
                                 <a href="javascript:void(0);"
-                                    class="d-block fs-10 fw-bold text-dark text-uppercase text-spacing-1">Learn More
-                                    →</a>
+                                    class="d-block fs-10 fw-bold text-dark text-uppercase text-spacing-1">Buscar →</a>
                             </div>
                         </div>
                     </div>
-                    
                 </div>
             </div>
         </div>
