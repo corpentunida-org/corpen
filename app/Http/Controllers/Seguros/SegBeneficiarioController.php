@@ -12,9 +12,9 @@ use App\Http\Controllers\AuditoriaController;
 
 class SegBeneficiarioController extends Controller
 {
-    private function auditoria($accion,$area){
+    private function auditoria($accion){
         $auditoriaController = app(AuditoriaController::class);
-        $auditoriaController->create($accion,$area);
+        $auditoriaController->create($accion, "SEGUROS");
     }
     /**
      * Display a listing of the resource.
@@ -58,7 +58,7 @@ class SegBeneficiarioController extends Controller
         $url = route('seguros.poliza.show', ['poliza' => 'ID']) . '?id=' . $request->asegurado;
         if ($beneficiario) {
             $accion = "add beneficiario  " . $request->cedula;
-            $this->auditoria($accion, "SEGUROS");    
+            $this->auditoria($accion);    
             return redirect()->to($url)->with('success', 'Beneficiario agregado correctamente.');
         }else{
             return redirect()->to($url)->with('error', 'No se pudo agregar el beneficiario, intente mas tarde.');
@@ -100,7 +100,7 @@ class SegBeneficiarioController extends Controller
             'correo' => $request->input('correo'),
         ]);
         $accion = "actualizar a " . $request->cedulaFallecido;
-        $this->auditoria($accion, "SEGUROS");
+        $this->auditoria($accion);
         $url = route('seguros.poliza.show', ['poliza' => 'ID']) . '?id=' . $request->aseguradoId;
         return redirect()->to($url)->with('success', 'Beneficiario actualizado correctamente');
     }
@@ -108,8 +108,10 @@ class SegBeneficiarioController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(SegBeneficiario $segBeneficiario)
+    public function destroy(SegBeneficiario $beneficiario)
     {
-        //
+        SegBeneficiario::findOrFail($beneficiario->id)->delete();
+        $this->auditoria("BENEFICIARIO ELIMINADO CEDULA" . $beneficiario->cedula);
+        return redirect()->back()->with('success', 'Beneficiario eliminado correctamente.');
     }
 }

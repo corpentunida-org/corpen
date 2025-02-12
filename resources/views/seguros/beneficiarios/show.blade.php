@@ -30,16 +30,21 @@
                                 </a>
                                 <ul class="dropdown-menu">
                                     <li>
-                                        <a class="dropdown-item" href="{{ route('seguros.beneficiario.edit', ['beneficiario' => $b->id]) }}">
+                                        <a class="dropdown-item"
+                                            href="{{ route('seguros.beneficiario.edit', ['beneficiario' => $b->id]) }}">
                                             <i class="feather feather-edit-3 me-3"></i>
                                             <span>Editar</span>
                                         </a>
-                                    </li>                                   
-                                    <li>
-                                        <a class="dropdown-item" href="javascript:void(0)">
-                                            <i class="feather feather-trash-2 me-3"></i>
-                                            <span>Eliminar</span>
-                                        </a>
+                                    </li>
+                                    <li>                                        
+                                        <form action="{{ route('seguros.beneficiario.destroy', ['beneficiario' => $b->id]) }}"method="POST">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="dropdown-item btnEliminar">
+                                                <i class="feather feather-trash-2 me-3"></i>
+                                                <span>Eliminar</span>
+                                            </button>
+                                        </form>
                                     </li>
                                 </ul>
                             </div>
@@ -50,3 +55,18 @@
         </table>
     </div>
 </div>
+<script>
+    $(document).ready(function() {
+        $('.btnEliminar').click(function(event) {
+            event.preventDefault();
+            formToSubmit = $(this).closest('form');
+            $('#ModalConfirmacionEliminar').modal('show');
+            $('#botonSiModal').off('click').on('click', function() {
+                if (formToSubmit) {
+                    formToSubmit.off('submit');
+                    formToSubmit.submit();
+                }
+            });
+        });
+    });
+</script>
