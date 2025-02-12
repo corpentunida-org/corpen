@@ -7,6 +7,7 @@ use App\Models\Seguros\SegPlan;
 use App\Models\Seguros\SegCobertura;
 use App\Models\Seguros\SegConvenio;
 use App\Models\Seguros\SegCondicion;
+use App\Models\Seguros\SegPlan_cobertura;
 use Illuminate\Http\Request;
 use App\Http\Controllers\AuditoriaController;
 
@@ -67,8 +68,10 @@ class SegPlanController extends Controller
                 ]
             );
         }
+        $idConvenio = $request->input('idConveniobusqueda');
         $this->auditoria("PLAN CREADO ID" . $plan->id);
-        return redirect()->route('seguros.planes.index')->with('success', 'El plan fue creado exitosamente.');      
+        return redirect()->action([SegConvenioController::class, 'show'], ['convenio' => $idConvenio])
+            ->with('success', 'Plan creado correctamente.');
     }
 
     /**
@@ -102,8 +105,12 @@ class SegPlanController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(SegPlan $segPlan)
+    public function destroy(SegPlan $plan)
     {
-        //
+        SegPlan_cobertura::where('plan_id', $plan->id)->delete();
+        $plandelete = SegPlan::findOrFail($plan->id);
+        $plandelete->delete();
+        $this->auditoria("PLAN ELIMINADO ID" . $plan->id);
+        return redirect()->back()->with('success', 'Plan eliminado correctamente.');
     }
 }
