@@ -20,9 +20,13 @@ class SegConvenioController extends Controller
         $convenio = SegConvenio::with(['plan.condicion'])
             ->where('idConvenio', $idConvenio)
             ->first();
-
         $planes = $convenio->plan->groupBy('condicion');
-
+        /* dd($convenio); */
         return view('seguros.convenio.show', compact('convenio', 'planes'));
+    }
+
+    public function create()
+    {
+        return view('seguros.convenio.create');
     }
 }

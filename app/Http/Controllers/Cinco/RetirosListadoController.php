@@ -64,9 +64,26 @@ class RetirosListadoController extends Controller
         dd($dia, $mes, $año);
         return $arrayliquidacion;
     }
-    /**
-     * Show the form for editing the specified resource.
-     */
+    /* private double anio2007(int cod_ter)
+        {
+            double calculo = 0;
+            var r = retAnioMesDia(cod_ter);
+            int valorFijo = 576000;
+            if (r.Item1 < 2007)
+            {
+                calculo = valorFijo;
+                return calculo;
+            }
+            else if (r.Item1 == 2007)
+            {
+                int difMes = 12 - r.Item2;
+                int difDia = 31 - r.Item3;
+
+                calculo = ((difMes * valorFijo) / 12) + (((difDia * valorFijo) / 12) / 30);
+                return (int)Math.Ceiling(calculo);
+            }
+            else return calculo;
+        } */
     public function edit(RetirosListado $retirosListado)
     {
         //

@@ -32,7 +32,7 @@
                                         <label class="form-label">Convenio<span class="text-danger">*</span></label>
                                         <select class="form-control" name="convenio" id="convenio_id" required>
                                             @foreach ($convenios as $convenio)
-                                                <option value="{{ $convenio->id }}">{{ $convenio->nombre }}</option>
+                                                <option value="{{ $convenio->idConvenio }}" data-idaseguradora="{{ $convenio->idAseguradora }}" data-id="{{ $convenio->id }}">{{ $convenio->nombre }}</option>
                                             @endforeach
                                         </select>
                                     </div>
@@ -99,6 +99,7 @@
                                 </a>
                             </div>
                             {{-- hidden --}}
+                            <input type="hidden" name="idConveniobusqueda" id="idConveniobusqueda" value="">
                             <div class="d-flex flex-row-reverse gap-2 mt-2">
                                 <button class="btn btn-success mt-4" data-bs-toggle="tooltip" title="Timesheets"
                                     type="submit">
@@ -110,15 +111,15 @@
                         <script>
                             $(document).ready(function() {
                                 $('#convenio_id').on('change', function() {
-                                    var convenioId = $(this).val();
-
+                                    //var convenioId = $(this).val();
+                                    idAseguradora = $(this).find(':selected').data('idaseguradora');
+                                    idBusqueda = $(this).find(':selected').data('id');
+                                    $('#idConveniobusqueda').val(idBusqueda);
                                     $('#cobertura_id').empty();                                    
-
-                                    if (convenioId) {
                                         var url = '{{ route("seguros.cobertura.show", ":cobertura") }}';
-            
+                                        console.log(idAseguradora);
                                         $.ajax({
-                                            url: url.replace(':cobertura', convenioId),                                            
+                                            url: url.replace(':cobertura', idAseguradora),                                            
                                             method: 'GET',
                                             success: function(data) {
                                                 console.log(data);
@@ -131,7 +132,7 @@
                                                 alert('Hubo un error al cargar las coberturas.');
                                             }
                                         });
-                                    }
+                                    
                                 });
 
                                 $('#formAddPlan').submit(function(event) {
