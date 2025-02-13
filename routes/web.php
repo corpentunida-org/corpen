@@ -21,6 +21,7 @@ use App\Http\Controllers\Seguros\SegPlanController;
 use App\Http\Controllers\Seguros\SegBeneficiarioController;
 use App\Http\Controllers\Seguros\SegCoberturaController;
 use App\Http\Controllers\Seguros\SegConvenioController;
+use App\Http\Controllers\Seguros\SegReclamacionesController;
 
 use App\Http\Controllers\Cinco\TercerosController;
 use App\Http\Controllers\Cinco\MoviContCincoController;
@@ -87,6 +88,7 @@ Route::resource('plan', SegPlanController::class)->middleware('auth')->names('se
 Route::resource('cobertura', SegCoberturaController::class)->middleware('auth')->names('seguros.cobertura');
 Route::resource('beneficiario', SegBeneficiarioController::class)->middleware('auth')->names('seguros.beneficiario');
 Route::resource('convenio', SegConvenioController::class)->middleware('auth')->names('seguros.convenio');
+Route::resource('reclamacion', SegReclamacionesController::class)->middleware('auth')->names('seguros.reclamacion');
 
 //RUTAS CINCO
 Route::resource('terceros', TercerosController::class)->middleware('auth')->names('cinco.tercero');

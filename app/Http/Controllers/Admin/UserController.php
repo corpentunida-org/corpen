@@ -23,6 +23,7 @@ class UserController extends Controller
         $fecha = auditoria::where('usuario', $user->name)
         ->orderBy('fechaRegistro', 'desc') 
         ->first();
+        dd($fecha);
         return view('admin.users.edit', compact('user', 'roles', 'acciones', 'fecha'));;
     }
 
