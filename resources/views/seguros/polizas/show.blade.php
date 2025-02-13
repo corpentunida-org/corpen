@@ -50,8 +50,12 @@
                     <div class="fs-12 text-muted mt-1"><strong class="text-dark">EXTRA:
                         </strong>{{ $poliza->extra_prima }}%</div>
                 </div>
-                <div class="hstack gap-3">
-                    <a href="javascript:void(0);" class="text-danger">Cancel Plan</a>
+                <div class="hstack gap-3">   
+                    <a href="{{ route('seguros.reclamacion.create', ['asegurado' => $poliza->seg_asegurado_id ]) }}" class="text-danger">Generar Reclamación</a>                 
+                    {{-- <form action="{{ route('seguros.reclamacion.create') }}" method="GET">
+                        <input type="hidden" name="asegurado" value="{{$poliza->seg_asegurado_id}}">
+                        <button type="submit" class="btn btn-link text-danger">Generar Reclamación</button>
+                    </form> --}}
                 </div>
             </div>
 
@@ -96,54 +100,53 @@
                         </thead>
                         <tbody>
 
-                            @foreach ($grupoFamiliar as $familiar)                                
-                                    <tr>
-                                        <td><a href="javascript:void(0);">{{ $familiar->cedula }}</a></td>
-                                        <td>{{ $familiar->tercero->nombre }}</td>
-                                        <td>{{ $familiar->parentesco }}</td>
-                                        <td><span
-                                                class="badge bg-soft-warning text-warning">{{ $familiar->polizas->first()->plan->name }}</span>
-                                        </td>
-                                        <td>$ {{ number_format($familiar->valorAsegurado) }}</td>
-                                        <td>$ {{ number_format($familiar->valorprima) }}</td>
-                                        <td class="hstack justify-content-end gap-4 text-end">                                            
-                                            <form action="{{ route('seguros.poliza.show', ['poliza' => 'ID']) }}"
-                                                method="GET">
-                                                <div data-bs-toggle="tooltip" data-bs-trigger="hover"
-                                                    data-bs-original-title="Ver Poliza">
-                                                    <input type="hidden" name="id" id="valueCedula"
-                                                        value="{{ $familiar->cedula }}">
-                                                    <button class="w-50 btn">
-                                                        <i class="feather feather-send fs-12"></i>
-                                                        <span></span>
-                                                    </button>
-                                                </div>
-                                            </form>
-                                        </td>
-                                    </tr>
-                                
+                            @foreach ($grupoFamiliar as $familiar)
+                                <tr>
+                                    <td><a href="javascript:void(0);">{{ $familiar->cedula }}</a></td>
+                                    <td>{{ $familiar->tercero->nombre }}</td>
+                                    <td>{{ $familiar->parentesco }}</td>
+                                    <td><span
+                                            class="badge bg-soft-warning text-warning">{{ $familiar->polizas->first()->plan->name }}</span>
+                                    </td>
+                                    <td>$ {{ number_format($familiar->valorAsegurado) }}</td>
+                                    <td>$ {{ number_format($familiar->valorprima) }}</td>
+                                    <td class="hstack justify-content-end gap-4 text-end">
+                                        <form action="{{ route('seguros.poliza.show', ['poliza' => 'ID']) }}"
+                                            method="GET">
+                                            <div data-bs-toggle="tooltip" data-bs-trigger="hover"
+                                                data-bs-original-title="Ver Poliza">
+                                                <input type="hidden" name="id" id="valueCedula"
+                                                    value="{{ $familiar->cedula }}">
+                                                <button class="w-50 btn">
+                                                    <i class="feather feather-send fs-12"></i>
+                                                    <span></span>
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </td>
+                                </tr>
                             @endforeach
                         </tbody>
                     </table>
                 </div>
                 <div class="p-4 mb-4 d-xxl-flex d-xl-block d-md-flex align-items-center justify-content-end gap-4">
-                @if ($poliza->asegurado->parentesco == "AF")
-                    <div class="d-flex gap-4 align-items-center justify-content-sm-end justify-content-between">
-                        <a href="javascript:void(0);" class="text-bold">Valor Titular</a>
-                        <a href="javascript:void(0);" class="btn bg-soft-info" style="font-size:20px;">$
-                            {{number_format($poliza->asegurado->valorpAseguradora)}}</a>
-                    </div>
-                    <div class="d-flex gap-4 align-items-center justify-content-sm-end justify-content-between">
-                        <a href="javascript:void(0);" class="text-bold">Subsidio</a>
-                        <a href="javascript:void(0);" class="btn bg-soft-warning" style="font-size:20px;">$
-                        @if (!$poliza->asegurado->valorpAseguradora)
-                             0
-                        @else
-                            @php $subsicio = $totalPrima - $poliza->asegurado->valorpAseguradora @endphp {{number_format($subsicio)}}
-                        @endif
+                    @if ($poliza->asegurado->parentesco == 'AF')
+                        <div class="d-flex gap-4 align-items-center justify-content-sm-end justify-content-between">
+                            <a href="javascript:void(0);" class="text-bold">Valor Titular</a>
+                            <a href="javascript:void(0);" class="btn bg-soft-info" style="font-size:20px;">$
+                                {{ number_format($poliza->asegurado->valorpAseguradora) }}</a>
+                        </div>
+                        <div class="d-flex gap-4 align-items-center justify-content-sm-end justify-content-between">
+                            <a href="javascript:void(0);" class="text-bold">Subsidio</a>
+                            <a href="javascript:void(0);" class="btn bg-soft-warning" style="font-size:20px;">$
+                                @if (!$poliza->asegurado->valorpAseguradora)
+                                    0
+                                @else
+                                    @php $subsicio = $totalPrima - $poliza->asegurado->valorpAseguradora @endphp {{ number_format($subsicio) }}
+                                @endif
                             </a>
-                    </div>
-                @endif
+                        </div>
+                    @endif
                     <div class="d-flex gap-4 align-items-center justify-content-sm-end justify-content-between">
                         <a href="javascript:void(0);" class="text-bold">Valor Aseguradora</a>
                         <a href="javascript:void(0);" class="btn bg-soft-primary" style="font-size:20px;">$
@@ -158,7 +161,8 @@
         @endif
         <div class="my-4 d-flex align-items-center justify-content-start">
             <div class="d-flex gap-2">
-                <a href="{{route('seguros.beneficiario.create', ['a' => $poliza->seg_asegurado_id , 'p' => $poliza->id ])}}" class="btn btn-success">
+                <a href="{{ route('seguros.beneficiario.create', ['a' => $poliza->seg_asegurado_id, 'p' => $poliza->id]) }}"
+                    class="btn btn-success">
                     <i class="feather-plus me-2"></i>
                     <span>Agregar Beneficiario</span>
                 </a>

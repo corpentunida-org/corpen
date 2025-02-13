@@ -26,7 +26,17 @@ class ComaeExCliController extends Controller
 
     public function index()
     {
+        $token = env('TOKEN_ADMIN');
+        
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer '
+        ])->get(env('API_PRODUCCION') . '/api/District');
+        if ($response->status() == 401) {
+            //dd($response->status());
+            return view('exequial.asociados.index')->with('warning', 'Debe cambiar el token de la api para poder usar la aplicación.');
+        }
         return view('exequial.asociados.index');
+
     }
 
     //Datos solo del titular

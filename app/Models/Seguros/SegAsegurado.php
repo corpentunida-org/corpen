@@ -25,4 +25,9 @@ class SegAsegurado extends Model
     {
         return $this->hasMany(SegPoliza::class, 'seg_asegurado_id','cedula');
     }
+
+    public function reclamacion()
+    {
+        return $this->hasMany(SegReclamaciones::class, 'cedulaAsegurado','cedula');
+    }
 }
