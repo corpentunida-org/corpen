@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Seguros;
 
 use App\Http\Controllers\Controller;
+use App\Models\Seguros\SegPoliza;
 use Illuminate\Http\Request;
 use App\Models\Seguros\SegAsegurado;
 
@@ -21,8 +22,12 @@ class SegReclamacionesController extends Controller
      */
     public function create(Request $request)
     {
-        $id = $request->query('asegurado');
+        $id = $request->query('a');
+
         $asegurado = SegAsegurado::where('cedula',$id)->with(['tercero','terceroAF'])->first();
+        
+        $poliza = SegPoliza::where('seg_asegurado_id', $id)->with(['plan.coberturas'])->first();
+        dd($poliza);
         return view("seguros.reclamaciones.create", compact('asegurado'));
     }
 

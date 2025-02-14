@@ -82,7 +82,7 @@
 
 
     <div>
-        <p><strong>7514540 </strong> CAMACHO ISAZA ANGELMIRO</p>
+        <p>{{$id}}<strong>{{ $movimientos->first()->tercero->Nom_Ter ?? ' _ ' }} </strong></p>
     </div>
 
     @foreach ($cuentasAgrupadas as $c)
