@@ -39,19 +39,19 @@
                 <div class="row">
                     <div class="col-lg-4 mb-4">
                         <label class="form-label">Tipo de Afiliado<span class="text-danger">*</span></label>
-                        <input class="form-control datepicker-input" name="contacto" value="">
+                        <input class="form-control datepicker-input" name="contacto" value="{{$asegurado->parentesco}}" readonly>
                     </div>
                     <div class="col-lg-4 mb-4">
                         <label class="form-label">Genero <span class="text-danger">*</span></label>
-                        <input type="" class="form-control datepicker-input" value=""name="telefonoContacto">
+                        <input class="form-control datepicker-input" value="{{ $asegurado->tercero->genero == 'V' ? 'Masculino' : 'Femenino' }}" readonly>
                     </div>
                     <div class="col-lg-4 mb-4">
                         <label class="form-label">Distrito <span class="text-danger">*</span></label>
-                        <input type="" class="form-control datepicker-input" value=""name="telefonoContacto">
+                        <input class="form-control datepicker-input" value="" readonly>
                     </div>
                 </div>
                 <div class="mb-4">
-                    <label class="form-label">Parentesco</label>
+                    <label class="form-label">Cobertura</label>
                     <input type="text" class="form-control" value="">
                 </div>
                 <div class="row">

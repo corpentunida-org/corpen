@@ -9,10 +9,9 @@
                             <i class="bi bi-person-fill"></i>
                         </div>
                         <div>
-                            <div class="fs-4 fw-bold text-dark"><span
-                                    class="counter">{{ $movimientos->first()->tercero->Nom_Ter }}</span></div>
+                            <div class="fs-4 fw-bold text-dark"><span class="counter">{{ $movimientos->first()->tercero->Nom_Ter ?? 'Identificar Nombre' }}</span></div>
                             <h3 class="fs-13 fw-semibold text-truncate-1-line">
-                                {{ $movimientos->first()->tercero->Cod_Ter }}</h3>
+                                {{ $id }}</h3>
                         </div>
                     </div>
                 </div>
@@ -33,7 +32,7 @@
         <div class="card stretch stretch-full">
             <div class="card-header">
                 <h5 class="card-title">Movimientos contables</h5>
-                <a href="{{ route('cinco.reportepdf', ['id' =>  $movimientos->first()->tercero->Cod_Ter ]) }}" class="btn btn-md bg-soft-teal text-teal border-soft-teal">
+                <a href="{{ route('cinco.reportepdf', ['id' =>  $id ]) }}" class="btn btn-md bg-soft-teal text-teal border-soft-teal">
                     <i class="feather-plus me-2"></i>
                     <span>Imprimir Reporte</span>
                 </a>

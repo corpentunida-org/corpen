@@ -53,7 +53,7 @@ class MoviContCincoController extends Controller
             ->get();
         //dd($cuentasAgrupadas);  
 
-        return view('cinco.movcontables.show', compact('movimientos', 'cuentasAgrupadas'));
+        return view('cinco.movcontables.show', compact('movimientos', 'cuentasAgrupadas', 'id'));
     }
 
     /**
@@ -93,7 +93,7 @@ class MoviContCincoController extends Controller
         $image_path = public_path('assets/images/CORPENTUNIDA_LOGO PRINCIPAL  (2).png');
         
         //return view('cinco.movcontables.reportepdf', compact('movimientos', 'cuentasAgrupadas', 'image_path'));
-        $pdf = Pdf::loadView('cinco.movcontables.reportepdf', compact('movimientos', 'cuentasAgrupadas', 'image_path'))
+        $pdf = Pdf::loadView('cinco.movcontables.reportepdf', compact('movimientos', 'cuentasAgrupadas', 'id' ,'image_path'))
         ->setPaper('letter', 'landscape');
                 return $pdf->download(date('Y-m-d') . " Reporte " . $id . '.pdf');
     }
