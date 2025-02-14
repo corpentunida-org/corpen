@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Action;
 use App\Models\auditoria;
+use App\Models\Permisos;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
 
@@ -18,13 +19,28 @@ class UserController extends Controller
 
     public function edit(User $user) {
         $roles = Role::all();
-        $user->load('actions.role');
+        $user->load('actions.role', 'permissions');
         $acciones = $count = auditoria::where('usuario', $user->name)->count();
-        $fecha = auditoria::where('usuario', $user->name)
-        ->orderBy('fechaRegistro', 'desc') 
-        ->first();
-        dd($fecha);
-        return view('admin.users.edit', compact('user', 'roles', 'acciones', 'fecha'));;
+        $fecha = auditoria::where('usuario', $user->name)->orderBy('fechaRegistro', 'desc') ->first();
+        
+        $permisosUsuario = collect(); // Colección para almacenar los permisos del usuario
+
+        //dd($user->actions);
+        foreach ($user->actions as $action) {
+            $role = $action->role;
+            if ($role) {
+                $permisos = Permisos::where('role_id', $role->id)->get();
+                $permisosUsuario = $permisosUsuario->merge($permisos);
+            }
+        }
+        
+        $permisosAsignados = \DB::table('model_has_permissions')
+                            ->where('model_id', $user->id)
+                            ->pluck('permission_id')
+                            ->toArray();
+        
+         
+        return view('admin.users.edit', compact('user', 'roles', 'acciones', 'fecha', 'permisosUsuario', 'permisosAsignados'));
     }
 
     public function create() {
