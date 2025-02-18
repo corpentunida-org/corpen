@@ -48,7 +48,11 @@
 </head>
 
 <body>
-
+    <style>
+        .uppercase-input {
+            text-transform: uppercase;
+        }
+    </style>
     @auth()
         @if (Auth::user()->actions->count() == 0)
             @include('layouts.norole')
