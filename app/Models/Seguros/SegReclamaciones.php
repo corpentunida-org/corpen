@@ -9,6 +9,20 @@ class SegReclamaciones extends Model
 {
     use HasFactory;
     protected $table = 'SEG_reclamaciones';
+    protected $fillable = [
+        'cedulaAsegurado',
+        'idCobertura',
+        'idDiagnostico',
+        'otro',
+        'fechaSiniestro',
+        'fechaContacto',
+        'horaContacto',
+        'nombreContacto',
+        'parentescoContacto',
+        'estado',
+        'poliza_id',
+        'nombre_contingente',
+    ];
 
     public function asegurado()
     {
