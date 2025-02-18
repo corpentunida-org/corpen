@@ -22,7 +22,7 @@ class UserController extends Controller
         $user->load('actions.role', 'permissions');
         $acciones = $count = auditoria::where('usuario', $user->name)->count();
         $fecha = auditoria::where('usuario', $user->name)->orderBy('fechaRegistro', 'desc') ->first();
-        
+
         $permisosUsuario = collect(); // Colección para almacenar los permisos del usuario
 
         //dd($user->actions);
@@ -33,18 +33,18 @@ class UserController extends Controller
                 $permisosUsuario = $permisosUsuario->merge($permisos);
             }
         }
-        
+
         $permisosAsignados = \DB::table('model_has_permissions')
                             ->where('model_id', $user->id)
                             ->pluck('permission_id')
                             ->toArray();
-        
-         
+
+
         return view('admin.users.edit', compact('user', 'roles', 'acciones', 'fecha', 'permisosUsuario', 'permisosAsignados'));
     }
 
     public function create() {
-        $roles = Role::all();  
+        $roles = Role::all();
         return view('admin.users.create', compact('roles'));
     }
 
@@ -62,7 +62,7 @@ class UserController extends Controller
         $users = User::latest()->take(5)->get();
         if (!$user || !$rol ) {
            return redirect()->route('admin.users.index', compact('users'))->with('error', 'No se pudo crear el usuario');
-        }        
+        }
         return redirect()->route('admin.users.index', compact('users'))->with('success', 'Usuario creado con éxito');
     }
 
@@ -70,6 +70,11 @@ class UserController extends Controller
     public function update(Request $request, User $user){
         $user->roles()->sync($request->roles);
         //return redirect()->route('admin.users.edit', $user)->with('info', 'Se asignó el rol correctamente');
+    }
+
+    public function inventario()
+    {
+        return 'Inventario';
     }
 
 }

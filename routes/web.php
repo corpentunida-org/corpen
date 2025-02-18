@@ -99,5 +99,8 @@ Route::get('/retirosname/{name}', [RetirosListadoController::class, 'namesearch'
 
 //RUTA CARTERA MOROSOS
 Route::resource('cartera', ReadExelController::class)->only(['index', 'store'])->middleware('auth')
-    ->names('cartera.morosos');                      
+    ->names('cartera.morosos');
 Route::post('/cartera/pdfMora', [ReadExelController::class, 'pdfMora'])->middleware('auth')->name('cartera.morosos.pdfMora');
+
+//Módulo inventario
+Route::get('/inventario', [UserController::class, 'inventario'])->middleware('auth')->name('inventario');
