@@ -43,10 +43,11 @@ class SegPolizaController extends Controller
     {
         $id = $request->input('id');
         $poliza = SegPoliza::where('seg_asegurado_id', $id)
-            ->with(['tercero', 'asegurado', 'asegurado.terceroAF', 'plan.condicion', 'plan.coberturas', 'esreclamacion'])->first();
+            ->with(['tercero', 'asegurado', 'asegurado.terceroAF', 'plan.condicion', 'plan.coberturas', 'esreclamacion.estadoReclamacion'])->first();
         if (!$poliza) {
             return redirect()->route('seguros.poliza.index')->with('warning', 'No se encontró la cédula como asegurado de una poliza');
         }
+        
         $titularCedula = $poliza->asegurado->titular;
         $grupoFamiliar = SegAsegurado::where('Titular', $titularCedula)->with('tercero', 'polizas.plan.coberturas')->get();
         //dd($grupoFamiliar);
