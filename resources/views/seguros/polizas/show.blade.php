@@ -24,18 +24,22 @@
             </div>
         </div>
     </div>
-
     <div class="card">
         <div class="subscription-plan px-4 pt-4 mb-3">
-            <div class="mb-4 d-flex align-items-center justify-content-start gap-4">
-                <div class="btn btn-sm btn-light-brand p-3 bg-soft-primary">{{ $poliza->asegurado->parentesco }}</div>
-                <div>
-                    <h5 class="fw-bold mb-0">{{ $poliza->tercero->nombre }}:</h5>
-                    <div class="fs-12 text-muted">{{ $poliza->seg_asegurado_id }}</div>
+            <div class="mb-4 d-flex align-items-center justify-content-between gap-4">
+                <div class="mb-4 d-flex align-items-center justify-content-start gap-4">
+                    <div class="btn btn-sm btn-light-brand p-3 bg-soft-primary">{{ $poliza->asegurado->parentesco }}
+                    </div>
+                    <div>
+                        <h5 class="fw-bold mb-0">{{ $poliza->tercero->nombre }}:</h5>
+                        <div class="fs-12 text-muted">{{ $poliza->seg_asegurado_id }}</div>
+                    </div>
                 </div>
+                @if ($poliza->reclamacion != 0)
+                    <a href="javascript:void(0);" class="btn btn-sm bg-soft-danger text-danger">Activo en una reclamación</a>
+                @endif
             </div>
-            <div
-                class="p-4 mb-4 d-xxl-flex d-xl-block d-md-flex align-items-center justify-content-between gap-4 border border-dashed border-gray-5 rounded-1">
+            <div class="p-4 mb-4 d-xxl-flex d-xl-block d-md-flex align-items-center justify-content-between gap-4 border border-dashed border-gray-5 rounded-1">
                 <div>
                     <div class="fs-14 fw-bold text-dark mb-1">Seguro de vida
                         <a href="javascript:void(0);"class="badge bg-primary text-white ms-2">{{ $poliza->plan->name }}</a>
@@ -49,12 +53,12 @@
                     <div class="fs-12 text-muted mt-1"><strong class="text-dark">EXTRA:
                         </strong>{{ $poliza->extra_prima }}%</div>
                 </div>
-                <div class="hstack gap-3">   
-                    <a href="{{ route('seguros.reclamacion.create', ['a' => $poliza->seg_asegurado_id ]) }}" class="text-danger">Generar Reclamación</a>                 
-                    {{-- <form action="{{ route('seguros.reclamacion.create') }}" method="GET">
-                        <input type="hidden" name="asegurado" value="{{$poliza->seg_asegurado_id}}">
-                        <button type="submit" class="btn btn-link text-danger">Generar Reclamación</button>
-                    </form> --}}
+                <div class="hstack gap-3">
+                    @if ($poliza->reclamacion == 0)
+                    <a href="{{ route('seguros.reclamacion.create', ['a' => $poliza->seg_asegurado_id]) }}" class="text-danger">Generar Reclamación</a>
+                    @else
+                        <a class="text-danger">{{ $poliza->esreclamacion->nombre }}</a>
+                    @endif
                 </div>
             </div>
 

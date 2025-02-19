@@ -29,7 +29,6 @@
                         <x-input-search-seguros></x-input-search-seguros>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
@@ -55,8 +54,7 @@
                                         <i class="feather-arrow-left"></i>
                                     </div>
                                 </a>
-                                <input type="search" name="id" class="py-3 px-0 border-0 w-100"
-                                    placeholder="Buscar por nombre..." autocomplete="off">
+                                <input type="search" name="id" class="py-3 px-0 border-0 w-100"placeholder="Buscar por nombre..." autocomplete="off">
                                 <button type="submit" class="btn btn-primary">Buscar</button>
                             </div>
                         </form>
@@ -65,7 +63,6 @@
             </div>
         </div>
     </div>
-
     <div class="col-xxl-12">
         <div class="card stratch">
             <div class="card-header">
