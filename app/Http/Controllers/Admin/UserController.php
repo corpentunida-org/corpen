@@ -72,7 +72,7 @@ class UserController extends Controller
         //return redirect()->route('admin.users.edit', $user)->with('info', 'Se asignó el rol correctamente');
     }
 
-    public function inventario()
+    public function inventario( $id )
     {
         return 'Inventario';
     }
