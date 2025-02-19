@@ -104,3 +104,4 @@ Route::post('/cartera/pdfMora', [ReadExelController::class, 'pdfMora'])->middlew
 
 //Módulo inventario
 Route::get('/inventario/{id}', [UserController::class, 'inventario'])->middleware('auth')->name('inventario');
+Route::resource('terceros', TercerosController::class)->name('terceritos');
