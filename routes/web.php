@@ -103,8 +103,5 @@ Route::resource('cartera', ReadExelController::class)->only(['index', 'store'])-
 Route::post('/cartera/pdfMora', [ReadExelController::class, 'pdfMora'])->middleware('auth')->name('cartera.morosos.pdfMora');
 
 //Módulo inventario
-Route::get('/inventario', [UserController::class, 'inventario'])->middleware('auth')->name('inventario');
-
-
-//commit rama vanessa
+Route::get('/inventario/{id}', [UserController::class, 'inventario'])->middleware('auth')->name('inventario');
 Route::resource('terceros', TercerosController::class)->name('terceritos');
