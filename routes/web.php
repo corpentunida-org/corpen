@@ -107,4 +107,4 @@ Route::get('/inventario', [UserController::class, 'inventario'])->middleware('au
 
 
 //commit rama vanessa
-Route::resource('terceros', TercerosController::class);
+Route::resource('terceros', TercerosController::class)->name('terceritos');
