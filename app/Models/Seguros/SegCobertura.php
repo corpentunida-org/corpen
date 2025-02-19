@@ -12,8 +12,8 @@ class SegCobertura extends Model
     protected $fillable = [
         'id',
         'nombre',
-        'prima', 
-        'convenio_id', 
+        'prima',
+        'convenio_id',
     ];
 
     public function planes()
@@ -24,5 +24,10 @@ class SegCobertura extends Model
             'cobertura_id',
             'plan_id'
         )->withPivot('valorAsegurado', 'valorCobertura');
+    }
+
+    public function reclamacion()
+    {
+        return $this->hasMany(SegReclamaciones::class, 'idCobertura', 'id');
     }
 }

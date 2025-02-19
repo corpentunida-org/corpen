@@ -10,7 +10,6 @@ class SegAsegurado extends Model
     use HasFactory;
     protected $table = 'SEG_asegurados';
 
-    
     public function terceroAF()
     {
         return $this->belongsTo(SegTercero::class, 'titular', 'cedula');

@@ -22,7 +22,8 @@ class SegReclamacionesController extends Controller
     }
     public function index()
     {
-        return view("seguros.reclamaciones.index");
+        $reclamaciones = SegReclamaciones::with(['asegurado.terceroAF', 'asegurado.tercero', 'cobertura'])->get();
+        return view("seguros.reclamaciones.index", compact('reclamaciones'));
     }
 
     /**
@@ -40,6 +41,7 @@ class SegReclamacionesController extends Controller
     /**
      * Store a newly created resource in storage.
      */
+
     public function store(Request $request)
     {
         $reclamacion = SegReclamaciones::create([
@@ -55,6 +57,9 @@ class SegReclamacionesController extends Controller
             'estado' => $request->estado_id,
             'poliza_id' => $request->poliza_id,
         ]);
+
+        SegPoliza::where('id', $request->poliza_id)
+            ->update(['reclamacion' => $request->estado_id]);
         
         $cambioEstado = SegCambioEstadoReclamacion::create([
             'reclamacion_id' => $reclamacion->id,

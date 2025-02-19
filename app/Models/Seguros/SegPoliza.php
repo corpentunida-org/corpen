@@ -25,5 +25,7 @@ class SegPoliza extends Model
         return $this->belongsTo(SegTercero::class, 'seg_asegurado_id', 'cedula');
     }
 
-    
+    public function esreclamacion(){
+        return $this->belongsTo(SegEstadoReclamacion::class, 'reclamacion', 'id');
+    }   
 }
