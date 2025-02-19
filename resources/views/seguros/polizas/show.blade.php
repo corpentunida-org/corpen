@@ -36,7 +36,7 @@
                     </div>
                 </div>
                 @if ($poliza->reclamacion != 0)
-                    <a href="javascript:void(0);" class="btn btn-sm bg-soft-danger text-danger">Activo en una reclamación</a>
+                    <a href="{{ route('seguros.reclamacion.edit', ['reclamacion' => $poliza->esreclamacion->id]) }}" class="btn btn-sm bg-soft-danger text-danger">Activo en una reclamación</a>
                 @endif
             </div>
             <div class="p-4 mb-4 d-xxl-flex d-xl-block d-md-flex align-items-center justify-content-between gap-4 border border-dashed border-gray-5 rounded-1">
@@ -57,7 +57,7 @@
                     @if ($poliza->reclamacion == 0)
                     <a href="{{ route('seguros.reclamacion.create', ['a' => $poliza->seg_asegurado_id]) }}" class="text-danger">Generar Reclamación</a>
                     @else
-                        <a class="text-danger">{{ $poliza->esreclamacion->nombre }}</a>
+                        <a class="text-danger">{{ $poliza->esreclamacion->estadoReclamacion->nombre }}</a>
                     @endif
                 </div>
             </div>
