@@ -58,8 +58,7 @@ class User extends Authenticatable
 
     public function permissions()
     {
-        return $this->belongsToMany(Permisos::class, 'model_has_permissions', 'model_id', 'permission_id')
-                    ->where('model_type', User::class); // Si la columna `model_type` es relevante para el filtro.
+        return $this->belongsToMany(Permisos::class, 'model_has_permissions', 'model_id', 'permission_id'); 
     }
 
 /* 
