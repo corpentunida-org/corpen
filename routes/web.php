@@ -60,8 +60,9 @@ Route::get('/base', function () {
 
 
 //ADMIN
-Route::resource('users', UserController::class)->middleware('auth')->names('admin.users');
-Route::resource('admin', AuditoriaController::class)->middleware('auth')->names('admin.auditoria');
+
+Route::resource('users', UserController::class)->names('admin.users')->middleware(['auth', 'can:admin.users.index']);
+Route::resource('admin', AuditoriaController::class)->names('admin.auditoria')->middleware(['auth', 'can:admin.auditoria.index']);
 
 
 //RUTAS DE EXEQUIALES

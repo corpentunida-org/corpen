@@ -29,11 +29,11 @@ class ComaeExCliController extends Controller
         $token = env('TOKEN_ADMIN');
         
         $response = Http::withHeaders([
-            'Authorization' => 'Bearer '
+            'Authorization' => 'Bearer ' . $token,
         ])->get(env('API_PRODUCCION') . '/api/District');
-        if ($response->status() == 401) {
-            //dd($response->status());
-            return view('exequial.asociados.index')->with('warning', 'Debe cambiar el token de la api para poder usar la aplicación.');
+        if ($response->status() === 401) {
+            session()->flash('warning', 'Debe cambiar el token de la API para poder usar la aplicación.');
+            return view('exequial.asociados.index');
         }
         return view('exequial.asociados.index');
 
