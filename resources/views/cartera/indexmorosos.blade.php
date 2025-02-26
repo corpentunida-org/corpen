@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <!--! The above 6 meta tags *must* come first in the head; any other head content must come *after* these tags !-->
     <!--! BEGIN: Apps Title-->
-    <title>Duralux || Tags Settings</title>
+    <title>Reportes</title>
     <!--! END:  Apps Title-->
     <!--! BEGIN: Favicon-->
     <link rel="shortcut icon" type="image/x-icon" href="assets/images/favicon.ico">
@@ -73,7 +73,7 @@
                                 <td>{{ $cell }}</td>
                             @endforeach
                             @if ($rowIndex != 0)
-                                <td><button onclick="abrirWhatsApp(this)">Enviar Mensaje</button></td>
+                                <td><button {{-- onclick="abrirWhatsApp(this)" --}} class="badge text-bg-primary text-wrap border border-0">Enviar Mensaje</button></td>
                             @endif
                         </tr>
                     </form>
@@ -84,10 +84,9 @@
     <script>
         function abrirWhatsApp(boton) {
             var fila = $(boton).closest('tr');
-            var nombre = fila.find('td:eq(2)').text();
-            var cedula = fila.find('td:eq(3)').text();
-            var telefono = fila.find('td:eq(19)').text();
-
+            var cedula = fila.find('td:eq(0)').text();
+            var nombre = fila.find('td:eq(1)').text();
+            var telefono = fila.find('td:eq(2)').text();
 
             var mensaje = encodeURIComponent(`Dios lo bendiga Hermano ${nombre} CC ${cedula},\n 
             Adjunto encontrará el reporte de su estado de cuenta del crédito Rapicredito de Libre Inversión\nPor favor, verificar si tiene alguna novedad o inquietud frente a la información suministrada.\n
