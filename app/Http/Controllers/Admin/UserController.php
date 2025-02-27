@@ -74,7 +74,8 @@ class UserController extends Controller
         if (!$user || !$rol) {
             return redirect()->route('admin.users.index', compact('users'))->with('error', 'No se pudo crear el usuario');
         }
-        $accion = "add usuario app  " . $request->asegurado;
+        $emailuser = explode('@', $user->email);
+        $accion = "add usuario app  " . $emailuser[0];
         $this->auditoria($accion);
         return redirect()->route('admin.users.index', compact('users'))->with('success', 'Usuario creado con éxito');
     }
@@ -89,14 +90,14 @@ class UserController extends Controller
             $update['password'] = bcrypt($request->input('pass'));
         }
         $success = $user->update($update);
-        if($success){   
+        if($success){
             $currentPermissions = $user->permissions()->pluck('id')->toArray();
             $permissions = $request->input('permissions', []);
             $permissionsToAdd = array_diff($permissions, $currentPermissions);
             $permissionsToRemove = array_diff($currentPermissions, $permissions);
             if (!empty($permissionsToAdd)) {
                 $user->permissions()->attach($permissionsToAdd, [
-                    'model_type' => 'App\\Models\\User'
+                    'model_type' => 'App\Models\User'
                 ]);
             }
             if (!empty($permissionsToRemove)) {
