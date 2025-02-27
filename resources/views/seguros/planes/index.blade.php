@@ -1,6 +1,7 @@
  <x-base-layout>
      @section('titlepage', 'Planes')
      <x-success />
+     <x-error>
      <div class="col-lg-12">
          <div class="card stretch stretch-full">
              <div class="card-body task-header d-lg-flex align-items-center justify-content-between">

@@ -1,5 +1,7 @@
 <x-base-layout>
     @section('titlepage', 'Perfil Usuario')
+    <x-success />
+    <x-error />
     <div class="col-12">
         <div class="card stretch stretch-full">
             <div class="card-body">
@@ -32,91 +34,106 @@
                         </div>
                     </div>
                 </div>
-                <ul class="list-unstyled mb-4">
-                    <div class="row mb-4 align-items-center">
-                        <div class="col-lg-2">
-                            <span class="text-muted fw-medium hstack gap-3 mr-3"><i
-                                    class="feather-phone"></i>Telefono</span>
-                        </div>
-                        <div class="col-lg-10">
-                            <div class="input-group">
-                                <input class="form-control" value="+01 (375) 2589 645">
+                <form method="POST" action="{{ route('admin.users.update', $user) }}" id="formUpdateUser" novalidate>
+                    @csrf
+                    @method('PUT')
+                    <ul class="list-unstyled mb-4">
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-2">
+                                <span class="text-muted fw-medium hstack gap-3 mr-3"><i
+                                        class="feather-phone"></i>Telefono</span>
                             </div>
-                        </div>
-                    </div>
-                    <div class="row mb-4 align-items-center">
-                        <div class="col-lg-2">
-                            <span class="text-muted fw-medium hstack gap-3 mr-3"><i
-                                    class="feather-mail"></i>Email</span>
-                        </div>
-                        <div class="col-lg-10">
-                            <div class="input-group">
-                                <input class="form-control" value="{{ $user->email }}">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row mb-4 align-items-center">
-                        <div class="col-lg-2">
-                            <span class="text-muted fw-medium hstack gap-3 mr-3"><i class="feather-user"></i>Name</span>
-                        </div>
-                        <div class="col-lg-10">
-                            <div class="input-group">
-                                <input class="form-control" value="{{ $user->name }}">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row mb-4 align-items-center">
-                        <div class="col-lg-2">
-                            <span class="text-muted fw-medium hstack gap-3 mr-3"><i
-                                    class="bi bi-lock-fill"></i>Contraseña</span>
-                        </div>
-                        <div class="col-lg-10">
-                            <div class="input-group">
-                                <input class="form-control" type="password" value="123456">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row mb-4 align-items-center">
-                        <div class="col-lg-2">
-                            <span class="text-muted fw-medium hstack gap-3 mr-3"><i
-                                    class="bi bi-ui-checks-grid"></i>Permisos</span>
-                        </div>
-                        <div class="col-lg-10">
-                            <div class="row">
-                                @foreach ($permisosUsuario as $index => $permiso)
-                                    
-                                    @if ($index % 3 == 0 && $index > 0)
-                            </div>
-                            <div class="row">
-                                @endif
-
-                                <div class="col-lg-4">
-                                    <div class="form-check">
-                                        <input type="checkbox" name="permissions[]" value="{{ $permiso->id }}"
-                                            class="form-check-input ml-3" id="permission_{{ $permiso->id }}"
-                                            @if (in_array($permiso->id, $permisosAsignados)) checked @endif>
-                                        <label class="form-check-label" for="permission_{{ $permiso->id }}">
-                                            {{ $permiso->name }}
-                                        </label>
-                                    </div>
+                            <div class="col-lg-10">
+                                <div class="input-group">
+                                    <input class="form-control" value="+01 (375) 2589 645">
                                 </div>
-                                @endforeach
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-2">
+                                <span class="text-muted fw-medium hstack gap-3 mr-3"><i
+                                        class="feather-mail"></i>Email</span>
+                            </div>
+                            <div class="col-lg-10">
+                                <div class="input-group">
+                                    <input class="form-control" value="{{ $user->email }}" required>
+                                </div>
                             </div>
                         </div>
 
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-2">
+                                <span class="text-muted fw-medium hstack gap-3 mr-3"><i
+                                        class="feather-user"></i>Name</span>
+                            </div>
+                            <div class="col-lg-10">
+                                <div class="input-group">
+                                    <input class="form-control" value="{{ $user->name }}" name="name" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-2">
+                                <span class="text-muted fw-medium hstack gap-3 mr-3"><i
+                                        class="bi bi-lock-fill"></i>Contraseña</span>
+                            </div>
+                            <div class="col-lg-10">
+                                <div class="input-group">
+                                    <input class="form-control" type="password" name="pass">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mb-4 align-items-center">
+                            <div class="col-lg-2">
+                                <span class="text-muted fw-medium hstack gap-3 mr-3"><i
+                                        class="bi bi-ui-checks-grid"></i>Permisos</span>
+                            </div>
+                            <div class="col-lg-10">
+                                <div class="row">
+                                    @foreach ($permisosUsuario as $index => $permiso)
+                                        @if ($index % 3 == 0 && $index > 0)
+                                </div>
+                                <div class="row">
+                                    @endif
+                                    <div class="col-lg-4">
+                                        <div class="form-check">
+                                            <input type="checkbox" name="permissions[]" value="{{ $permiso->id }}"
+                                                class="form-check-input ml-3" id="permission_{{ $permiso->id }}"
+                                                @if (in_array($permiso->id, $permisosAsignados)) checked @endif>
+                                            <label class="form-check-label" for="permission_{{ $permiso->id }}">
+                                                {{ $permiso->name }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    </ul>
+                    <div class="d-flex gap-2 text-center pt-4">
+                        <a href="javascript:void(0);" class="w-50 btn btn-light-brand">
+                            <i class="feather-trash-2 me-2"></i>
+                            <span>Delete</span>
+                        </a>
+                        <button type="submit" class="w-50 btn btn-primary">
+                            <i class="feather-edit me-2"></i>
+                            <span>Guardar Cambios</span>
+                        </button>
                     </div>
-                </ul>
-                <div class="d-flex gap-2 text-center pt-4">
-                    <a href="javascript:void(0);" class="w-50 btn btn-light-brand">
-                        <i class="feather-trash-2 me-2"></i>
-                        <span>Delete</span>
-                    </a>
-                    <a href="javascript:void(0);" class="w-50 btn btn-primary">
-                        <i class="feather-edit me-2"></i>
-                        <span>Editar usuario</span>
-                    </a>
-                </div>
+                </form>
             </div>
         </div>
     </div>
+    <script>
+        $('#formUpdateUser').submit(function(event) {
+            var form = this;
+            if (!form.checkValidity()) {
+                $(form).addClass('was-validated');
+                event.preventDefault();
+                event.stopPropagation();
+            } else {
+                console.log($(this).serialize());
+            }
+        });
+    </script>
 </x-base-layout>

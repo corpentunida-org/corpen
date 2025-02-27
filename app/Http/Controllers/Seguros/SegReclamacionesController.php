@@ -52,6 +52,7 @@ class SegReclamacionesController extends Controller
             'fechaSiniestro' => $request->fechasiniestro,
             'fechaContacto' => $request->fechacontacto,
             'horaContacto' => $request->horacontacto,
+            'cedulaContacto'=>$request->cedulacontacto,
             'nombreContacto' => strtoupper($request->nombrecontacto),
             'parentescoContacto' => $request->parentesco_id,
             'estado' => $request->estado_id,
@@ -59,7 +60,7 @@ class SegReclamacionesController extends Controller
         ]);
 
         SegPoliza::where('id', $request->poliza_id)
-            ->update(['reclamacion' => $request->estado_id]);
+            ->update(['reclamacion' => $reclamacion->id]);
         
         $cambioEstado = SegCambioEstadoReclamacion::create([
             'reclamacion_id' => $reclamacion->id,
@@ -90,17 +91,45 @@ class SegReclamacionesController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(string $id)
-    {
-        //
+    public function edit(SegReclamaciones $reclamacion)
+    {        
+        $asegurado = SegAsegurado::where('cedula',$reclamacion->cedulaAsegurado)->with(['tercero','terceroAF'])->first();
+        $poliza = SegPoliza::where('seg_asegurado_id', $reclamacion->cedulaAsegurado)->with(['plan.coberturas'])->first();
+        $estados = SegEstadoReclamacion::all();
+        return view("seguros.reclamaciones.edit", compact('reclamacion','asegurado','poliza', 'estados'));
     }
-
+    
     /**
      * Update the specified resource in storage.
      */
     public function update(Request $request, string $id)
     {
-        //
+        //cambiar el estado de la reclamacion
+        $update = SegReclamaciones::where('id', $id)->update([
+            'estado' => $request->estado_id,
+        ]);
+
+        //crear registro cambio de estado de la reclamacion
+        $crear = SegCambioEstadoReclamacion::create([
+            'estado_id' => $request->estado_id,
+            'reclamacion_id'=>$id,
+            'observacion' => strtoupper($request->observacion),
+            'fecha_actualizacion' => now()->toDateString(),
+            'hora_actualizacion' => now()->toTimeString(),
+        ]);
+
+        /* //actualizar poliza
+        $poliza = SegPoliza::where('id', $request->poliza_id)->update([
+            'reclamacion' => $request->estado_id,
+        ]); */
+
+        if ($update && $crear) {
+            $accion = "update reclamacion id " . $id;
+            $this->auditoria($accion);    
+            return redirect()->route('seguros.reclamacion.index')->with('success', 'Reclamación actualizada exitosamente.');
+        }else{
+            return redirect()->route('seguros.reclamacion.index')->with('error', 'No se pudo actualizar la reclamación, intente mas tarde.');
+        }
     }
 
     /**

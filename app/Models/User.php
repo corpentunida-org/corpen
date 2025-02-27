@@ -11,7 +11,7 @@ use Laravel\Jetstream\HasProfilePhoto;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Model;
-//use Spatie\Permission\Traits\HasRoles;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
@@ -20,7 +20,7 @@ class User extends Authenticatable
     // HasProfilePhoto;
     use Notifiable;
     //use TwoFactorAuthenticatable;
-    //use HasRoles;
+    use HasRoles;
     
     /**
      * The attributes that are mass assignable.
@@ -58,8 +58,12 @@ class User extends Authenticatable
 
     public function permissions()
     {
-        return $this->belongsToMany(Permisos::class, 'model_has_permissions', 'model_id', 'permission_id')
-                    ->where('model_type', User::class); // Si la columna `model_type` es relevante para el filtro.
+        return $this->belongsToMany(Permisos::class, 'model_has_permissions', 'model_id', 'permission_id'); 
+    }
+
+    public function hasPermission($permiso)
+    {
+        return $this->permissions()->where('name', $permiso)->exists();
     }
 
 /* 

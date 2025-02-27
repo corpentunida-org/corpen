@@ -4,13 +4,19 @@ ENV COMPOSER_ALLOW_SUPERUSER=1
 
 RUN apt-get update -y && apt-get install -y \
   git \
-  zip unzip \
-  zlib1g-dev \
-  libpng-dev \
+  zip \
+  unzip \
   curl \
   openssl \
+  libjpeg-dev \
+  libpng-dev \
+  libfreetype6-dev \
   libzip-dev \
-  zlib1g-dev 
+  zlib1g-dev
+
+# Instalar extensiones de PHP
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
+  && docker-php-ext-install gd zip pdo pdo_mysql
 
 RUN a2enmod rewrite
 
