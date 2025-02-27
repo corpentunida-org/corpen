@@ -117,7 +117,7 @@
                         </a>
                         <button type="submit" class="w-50 btn btn-primary">
                             <i class="feather-edit me-2"></i>
-                            <span>Editar usuario</span>
+                            <span>Guardar Cambios</span>
                         </button>
                     </div>
                 </form>

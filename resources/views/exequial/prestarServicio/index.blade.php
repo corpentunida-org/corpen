@@ -26,7 +26,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div class="me-3">
                         <h5 class="fs-4">{{ $registros->count() }}</h5>
-                        <span class="text-muted">TOTAL SERVICIOS PRESTADOS</span>
+                        <span class="text-muted">TOTAL SERVICIOS</span>
                     </div>
                     <div class="avatar-text avatar-lg bg-success text-white rounded">
                         <i class="feather-pie-chart"></i>
