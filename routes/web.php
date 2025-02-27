@@ -60,16 +60,17 @@ Route::get('/base', function () {
 
 
 //ADMIN
-Route::resource('users', UserController::class)->middleware('auth')->names('admin.users');
-Route::resource('admin', AuditoriaController::class)->middleware('auth')->names('admin.auditoria');
+
+Route::resource('users', UserController::class)->names('admin.users')->middleware(['auth', 'can:admin.users.index']);
+Route::resource('admin', AuditoriaController::class)->names('admin.auditoria')->middleware(['auth', 'can:admin.auditoria.index']);
 
 
 //RUTAS DE EXEQUIALES
 Route::get('asociados/{id}/generarpdf/{active}', [ComaeExCliController::class, 'generarpdf'])->name('asociados.generarpdf');
-Route::resource('asociados', ComaeExCliController::class)->middleware('auth')->names('exequial.asociados');
+Route::resource('asociados', ComaeExCliController::class)->names('exequial.asociados')->middleware(['auth', 'can:exequial.asociados.index']);
 
 Route::get('/prestarServicio/generarpdf', [MaeC_ExSerController::class, 'generarpdf'])->middleware('auth')->name('prestarServicio.generarpdf');
-Route::resource('prestarServicio', MaeC_ExSerController::class)->middleware('auth')->names('exequial.prestarServicio');
+Route::resource('prestarServicio', MaeC_ExSerController::class)->names('exequial.prestarServicio')->middleware(['auth', 'can:exequial.prestarServicio.index']);
 Route::get('/prestarServicio/{id}/generarpdf', [MaeC_ExSerController::class, 'reporteIndividual'])->name('prestarServicio.repIndividual');
 Route::get('/exportar-datos', [MaeC_ExSerController::class, 'exportData']);
 Route::get('/prestarServicio/mes/{mes}', [MaeC_ExSerController::class, 'consultaMes'])->name('prestarServicio.consultaMes');
@@ -103,5 +104,7 @@ Route::resource('cartera', ReadExelController::class)->only(['index', 'store'])-
 Route::post('/cartera/pdfMora', [ReadExelController::class, 'pdfMora'])->middleware('auth')->name('cartera.morosos.pdfMora');
 
 //Módulo inventario
+
+Route::get('/inventario', [UserController::class, 'inventario'])->middleware('auth')->name('inventario');
 Route::get('/inventario/{id}', [UserController::class, 'inventario'])->middleware('auth')->name('inventario');
-Route::resource('terceros', TercerosController::class)->name('terceritos');
+

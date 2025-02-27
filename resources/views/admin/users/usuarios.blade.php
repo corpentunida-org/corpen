@@ -37,6 +37,8 @@
                                                 <span class="badge bg-soft-info text-info">
                                             @elseif ( $r->area == 'CREDITOS')
                                                 <span class="badge bg-soft-danger text-danger">
+                                            @else
+                                                <span class="badge bg-soft-danger text-warning">
                                             @endif
                                             {{ $r->area }} </span>
                                         </td>
