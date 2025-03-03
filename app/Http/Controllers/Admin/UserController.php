@@ -109,7 +109,7 @@ class UserController extends Controller
     }
 
 
-    public function inventario()
+    public function inventario( $id )
     {
         return 'Inventario';
     }
