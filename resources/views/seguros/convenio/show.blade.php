@@ -19,7 +19,7 @@
                         data-bs-original-title="Statistics">
                         <i class="feather-bar-chart-2"></i>
                     </a>
-                    <a href="{{ route('seguros.convenio.create') }}" class="btn btn-light-brand">Copiar Convenio</a>
+                    <a href="{{ route('seguros.convenio.create', ['id' => $convenio->id]) }}" class="btn btn-light-brand">Copiar Convenio</a>
                     <a href="{{ route('seguros.planes.create') }}" class="btn btn-success" data-bs-toggle="tooltip"
                         title="" data-bs-original-title="{{ $convenio->nombre }}">
                         <i class="feather-plus me-2"></i>

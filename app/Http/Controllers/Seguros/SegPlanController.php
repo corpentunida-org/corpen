@@ -69,7 +69,7 @@ class SegPlanController extends Controller
             );
         }
         $idConvenio = $request->input('idConveniobusqueda');
-        $this->auditoria("PLAN CREADO ID" . $plan->id);
+        $this->auditoria("PLAN CREADO ID " . $plan->id);
         return redirect()->action([SegConvenioController::class, 'show'], ['convenio' => $idConvenio])
             ->with('success', 'Plan creado correctamente.');
     }
