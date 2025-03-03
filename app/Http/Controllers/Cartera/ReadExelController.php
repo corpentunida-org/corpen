@@ -47,12 +47,10 @@ class ReadExelController extends Controller
         $pdf = Pdf::loadView('cartera.morosospdf', [
             'registro' => $request,
             'image_path' => public_path('assets/img/fondoPdf.png'),
-        ])
-        
-        ->setPaper('a4', 'portrait');
+        ])->setPaper('a4', 'portrait');
         
         return $pdf->download(date('Y-m-d') . " " . $request->CEDULA . " Reporte.pdf");
-        //return $pdf->download("Reporte.pdf");
         //return view('cartera.morosospdf', ['registro' => $request, 'image_path' => public_path('assets/img/fondoPdf.jpg')]);
+    
     }
 }
