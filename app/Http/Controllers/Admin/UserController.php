@@ -10,6 +10,8 @@ use App\Models\Permisos;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
 use App\Http\Controllers\AuditoriaController;
+use Illuminate\Support\Facades\DB;
+
 
 class UserController extends Controller
 {
@@ -69,13 +71,21 @@ class UserController extends Controller
             'name' => strtoupper($request['name']),
             'email' => $request['email'],
             'password' => bcrypt($request['pass']),
-        ]);        
+        ]); 
         $roles = $request->input('rol');
         foreach ($roles as $role) {
             Action::create([
                 'user_email' => $user->email,
                 'role_id' => $role,
             ]);
+            $permisos_rol = $this->permisos_rol($role);
+            foreach ($permisos_rol as $p) {
+                DB::table('model_has_permissions')->insert([
+                    'permission_id' => $p->permission_id,
+                    'model_type' => 'App\Models\User',
+                    'model_id' => $user->id,
+                ]);
+            }
         }        
         if (!$user) {
             return redirect()->route('admin.users.index', compact('users'))->with('error', 'No se pudo crear el usuario');
@@ -111,6 +121,12 @@ class UserController extends Controller
             return redirect()->route('admin.users.edit',$user->id)->with('success', 'Usuario actualizado correctamente.');
         }
         return redirect()->route('admin.users.edit',$user->id)->with('error', 'No se pudo actualizar el usuario. Intente mas tarde.');
+    }
+
+    private function permisos_rol($role){
+        //$permisos = Permisos::where('role_id', $role)->get();
+        $permisos = DB::table('role_has_permissions')->where('role_id', $role)->get();
+        return $permisos;
     }
 
 

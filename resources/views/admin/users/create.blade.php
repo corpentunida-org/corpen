@@ -22,7 +22,7 @@
             <div class="tab-content">
                 <div class="tab-pane fade p-4 active show" id="securityTab" role="tabpanel">
                     <div class="col-lg-12 p-4">
-                        <form method="POST" action="{{ route('admin.users.store') }}" id="formAddPlan" novalidate>
+                        <form method="POST" action="{{ route('admin.users.store') }}" id="formAddUser" novalidate>
                             @csrf
                             @method('POST')
                             <div class="mb-4">
@@ -120,6 +120,14 @@
                 inputs.forEach(input => input.value = '');
 
                 container.appendChild(clonedRow);
+            });
+            $('#formAddUser').submit(function(event) {
+                var form = this;
+                if (!form.checkValidity()) {
+                    $(form).addClass('was-validated');
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
             });
         });
     </script>
