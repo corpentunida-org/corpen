@@ -60,18 +60,24 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
+        $users = User::paginate(4);
+        $existingUser = User::where('email', $request['email'])->first();
+        if ($existingUser) {
+            return redirect()->route('admin.users.index', compact('users'))->with('error', 'El correo ' . $request['email'] .' ya está registrado');
+        }
         $user = User::create([
             'name' => strtoupper($request['name']),
             'email' => $request['email'],
             'password' => bcrypt($request['pass']),
-        ]);
-
-        $rol = Action::create([
-            'user_email' => $user->email,
-            'role_id' => $request['rol'],
-        ]);
-        $users = User::latest()->take(5)->get();
-        if (!$user || !$rol) {
+        ]);        
+        $roles = $request->input('rol');
+        foreach ($roles as $role) {
+            Action::create([
+                'user_email' => $user->email,
+                'role_id' => $role,
+            ]);
+        }        
+        if (!$user) {
             return redirect()->route('admin.users.index', compact('users'))->with('error', 'No se pudo crear el usuario');
         }
         $emailuser = explode('@', $user->email);
@@ -79,7 +85,6 @@ class UserController extends Controller
         $this->auditoria($accion);
         return redirect()->route('admin.users.index', compact('users'))->with('success', 'Usuario creado con éxito');
     }
-
 
     public function update(Request $request, User $user)
     {
