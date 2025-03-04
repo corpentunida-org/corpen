@@ -10,8 +10,7 @@
                         </div>
                         <div>
                             <div class="fs-4 fw-bold text-dark"><span class="counter">{{ $movimientos->first()->tercero->Nom_Ter ?? 'Identificar Nombre' }}</span></div>
-                            <h3 class="fs-13 fw-semibold text-truncate-1-line">
-                                {{ $id }}</h3>
+                            <h3 class="fs-13 fw-semibold text-truncate-1-line">{{ $id }}</h3>
                         </div>
                     </div>
                 </div>
