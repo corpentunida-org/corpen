@@ -40,10 +40,12 @@
                     <a href="{{ route('seguros.reclamacion.edit', ['reclamacion' => $poliza->esreclamacion->id]) }}"
                         class="btn btn-sm bg-soft-danger text-danger">Activo en una reclamación</a>
                 @else
+                    @can('seguros.poliza.update')
                     <a href="" class="btn btn-light-brand">
                         <i class="feather-check-circle me-2"></i>
                         <span>Generar Novedad</span>
                     </a>
+                    @endcan
                 @endif
             </div>
             <div
@@ -64,8 +66,10 @@
                 </div>
                 <div class="hstack gap-3">
                     @if ($poliza->reclamacion == 0)
+                        @can('seguros.reclamacion.store')
                         <a href="{{ route('seguros.reclamacion.create', ['a' => $poliza->seg_asegurado_id]) }}"
                             class="text-danger">Generar Reclamación</a>
+                        @endcan
                     @else
                         <a class="text-danger">{{ $poliza->esreclamacion->estadoReclamacion->nombre }}</a>
                     @endif

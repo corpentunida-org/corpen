@@ -92,12 +92,14 @@
                                             </a>
                                             <ul class="dropdown-menu" data-popper-placement="bottom-end"
                                                 style="position: absolute; inset: 0px auto auto 0px; margin: 0px; transform: translate3d(-195px, 51px, 0px);">
+                                                @can('seguros.reclamacion.update')
                                                 <li>                                                    
                                                     <a href="{{ route('seguros.reclamacion.edit', ['reclamacion' => $r->id]) }}" class="dropdown-item">
                                                         <i class="feather feather-edit-3 me-3"></i>
                                                         <span>Editar</span>
-                                                    </a>                                                
+                                                    </a>
                                                 </li>
+                                                @endcan
                                                 <li>
                                                     <a class="dropdown-item" href="">
                                                         <i class="feather feather-printer me-3"></i>
