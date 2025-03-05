@@ -20,6 +20,7 @@ class UserController extends Controller
         $auditoriaController = app(AuditoriaController::class);
         $auditoriaController->create($accion, "ADMINISTRACIÓN");
     }
+
     public function index()
     {
         //$users = User::latest()->take(5)->get();
@@ -65,13 +66,13 @@ class UserController extends Controller
         $users = User::paginate(4);
         $existingUser = User::where('email', $request['email'])->first();
         if ($existingUser) {
-            return redirect()->route('admin.users.index', compact('users'))->with('error', 'El correo ' . $request['email'] .' ya está registrado');
+            return redirect()->route('admin.users.index', compact('users'))->with('error', 'El correo ' . $request['email'] . ' ya está registrado');
         }
         $user = User::create([
             'name' => strtoupper($request['name']),
             'email' => $request['email'],
             'password' => bcrypt($request['pass']),
-        ]); 
+        ]);
         $roles = $request->input('rol');
         foreach ($roles as $role) {
             Action::create([
@@ -86,7 +87,7 @@ class UserController extends Controller
                     'model_id' => $user->id,
                 ]);
             }
-        }        
+        }
         if (!$user) {
             return redirect()->route('admin.users.index', compact('users'))->with('error', 'No se pudo crear el usuario');
         }
@@ -105,7 +106,7 @@ class UserController extends Controller
             $update['password'] = bcrypt($request->input('pass'));
         }
         $success = $user->update($update);
-        if($success){
+        if ($success) {
             $currentPermissions = $user->permissions()->pluck('id')->toArray();
             $permissions = $request->input('permissions', []);
             $permissionsToAdd = array_diff($permissions, $currentPermissions);
@@ -117,20 +118,69 @@ class UserController extends Controller
             }
             if (!empty($permissionsToRemove)) {
                 $user->permissions()->detach($permissionsToRemove);
-            }    
-            return redirect()->route('admin.users.edit',$user->id)->with('success', 'Usuario actualizado correctamente.');
+            }
+            return redirect()->route('admin.users.edit', $user->id)->with('success', 'Usuario actualizado correctamente.');
         }
-        return redirect()->route('admin.users.edit',$user->id)->with('error', 'No se pudo actualizar el usuario. Intente mas tarde.');
+        return redirect()->route('admin.users.edit', $user->id)->with('error', 'No se pudo actualizar el usuario. Intente mas tarde.');
     }
 
-    private function permisos_rol($role){
+    private function permisos_rol($role)
+    {
         //$permisos = Permisos::where('role_id', $role)->get();
         $permisos = DB::table('role_has_permissions')->where('role_id', $role)->get();
         return $permisos;
     }
 
+    public function storeRole(Request $request)
+    {
+        $role = Role::create([
+            'name' => strtoupper($request->input('namerole')),
+            'guard_name' => 'web'
+        ]);
+        if (!$role) {
+            return redirect()->back()->with('error', 'No se pudo crear el rol');
+        }
+        return redirect()->back()->with('success', 'Rol creado con éxito');
+    }
 
-    public function inventario( $id )
+    public function getPermissionsByRole(Request $request)
+    {
+        $permissions = Permisos::where('role_id', $request->role_id)->get(['id', 'name']);
+        $assignedPermissions = DB::table('role_has_permissions')
+            ->where('role_id', $request->role_id)
+            ->pluck('permission_id')->toArray();
+        return response()->json([
+            'permissions' => $permissions,
+            'assigned_permissions' => $assignedPermissions,
+        ]);
+    }
+    public function updatePermissionsRole(Request $request)
+    {
+        $role = Role::find($request->input('roleid'));
+        $currentPermissions = $role->permissions()->pluck('id')->toArray();
+        $permissions = $request->input('permissions', []);
+
+        // Permisos a agregar: aquellos que están en la solicitud pero no están en los permisos actuales
+        $permissionsToAdd = array_diff($permissions, $currentPermissions);
+
+        // Permisos a eliminar: aquellos que están en los permisos actuales pero no están en la solicitud
+        $permissionsToRemove = array_diff($currentPermissions, $permissions);
+
+        // Agregar los permisos nuevos
+        if (!empty($permissionsToAdd)) {
+            $role->permissions()->attach($permissionsToAdd);
+        }
+
+        // Eliminar los permisos que ya no están seleccionados
+        if (!empty($permissionsToRemove)) {
+            $role->permissions()->detach($permissionsToRemove);
+        }
+
+        // Redirigir con un mensaje de éxito
+        return redirect()->back()->with('success', 'Permisos actualizados al rol correctamente.');
+    }
+
+    public function inventario($id)
     {
         return 'Inventario';
     }
