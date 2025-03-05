@@ -63,7 +63,9 @@ Route::get('/base', function () {
 
 Route::resource('users', UserController::class)->names('admin.users')->middleware(['auth', 'can:admin.users.index']);
 Route::resource('admin', AuditoriaController::class)->names('admin.auditoria')->middleware(['auth', 'can:admin.auditoria.index']);
-
+Route::post('/role', [UserController::class, 'storeRole'])->name('admin.rol.store')->middleware(['auth']);
+Route::post('/role/permissions', [UserController::class, 'getPermissionsByRole'])->name('admin.permissions.show')->middleware(['auth']);
+Route::put('/role/permissions', [UserController::class, 'updatePermissionsRole'])->name('admin.permissions.update')->middleware(['auth']);
 
 //RUTAS DE EXEQUIALES
 Route::get('asociados/{id}/generarpdf/{active}', [ComaeExCliController::class, 'generarpdf'])->name('asociados.generarpdf');
