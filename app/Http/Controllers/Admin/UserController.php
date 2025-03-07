@@ -129,56 +129,7 @@ class UserController extends Controller
         //$permisos = Permisos::where('role_id', $role)->get();
         $permisos = DB::table('role_has_permissions')->where('role_id', $role)->get();
         return $permisos;
-    }
-
-    public function storeRole(Request $request)
-    {
-        $role = Role::create([
-            'name' => strtoupper($request->input('namerole')),
-            'guard_name' => 'web'
-        ]);
-        if (!$role) {
-            return redirect()->back()->with('error', 'No se pudo crear el rol');
-        }
-        return redirect()->back()->with('success', 'Rol creado con éxito');
-    }
-
-    public function getPermissionsByRole(Request $request)
-    {
-        $permissions = Permisos::where('role_id', $request->role_id)->get(['id', 'name']);
-        $assignedPermissions = DB::table('role_has_permissions')
-            ->where('role_id', $request->role_id)
-            ->pluck('permission_id')->toArray();
-        return response()->json([
-            'permissions' => $permissions,
-            'assigned_permissions' => $assignedPermissions,
-        ]);
-    }
-    public function updatePermissionsRole(Request $request)
-    {
-        $role = Role::find($request->input('roleid'));
-        $currentPermissions = $role->permissions()->pluck('id')->toArray();
-        $permissions = $request->input('permissions', []);
-
-        // Permisos a agregar: aquellos que están en la solicitud pero no están en los permisos actuales
-        $permissionsToAdd = array_diff($permissions, $currentPermissions);
-
-        // Permisos a eliminar: aquellos que están en los permisos actuales pero no están en la solicitud
-        $permissionsToRemove = array_diff($currentPermissions, $permissions);
-
-        // Agregar los permisos nuevos
-        if (!empty($permissionsToAdd)) {
-            $role->permissions()->attach($permissionsToAdd);
-        }
-
-        // Eliminar los permisos que ya no están seleccionados
-        if (!empty($permissionsToRemove)) {
-            $role->permissions()->detach($permissionsToRemove);
-        }
-
-        // Redirigir con un mensaje de éxito
-        return redirect()->back()->with('success', 'Permisos actualizados al rol correctamente.');
-    }
+    }    
 
     public function inventario($id)
     {

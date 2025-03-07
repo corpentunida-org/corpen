@@ -1,8 +1,8 @@
 <?php
 
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\IndexController;
-
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuditoriaController;
@@ -58,14 +58,10 @@ Route::get('/base', function () {
 //     })->name('dashboard');
 // });
 
-
 //ADMIN
-
 Route::resource('users', UserController::class)->names('admin.users')->middleware(['auth', 'can:admin.users.index']);
 Route::resource('admin', AuditoriaController::class)->names('admin.auditoria')->middleware(['auth', 'can:admin.auditoria.index']);
-Route::post('/role', [UserController::class, 'storeRole'])->name('admin.rol.store')->middleware(['auth']);
-Route::post('/role/permissions', [UserController::class, 'getPermissionsByRole'])->name('admin.permissions.show')->middleware(['auth']);
-Route::put('/role/permissions', [UserController::class, 'updatePermissionsRole'])->name('admin.permissions.update')->middleware(['auth']);
+Route::resource('roles', RoleController::class)->names('admin.roles')->middleware(['auth']);
 
 //RUTAS DE EXEQUIALES
 Route::get('asociados/{id}/generarpdf/{active}', [ComaeExCliController::class, 'generarpdf'])->name('asociados.generarpdf');
