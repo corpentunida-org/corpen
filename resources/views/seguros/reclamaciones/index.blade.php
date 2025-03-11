@@ -1,4 +1,6 @@
 <x-base-layout>
+    <x-success />
+    <x-error />
     <div class="col-xxl-12">
         <div class="card stratch">
             <div class="card-header">
@@ -79,27 +81,27 @@
                                     <td><span class="badge bg-gray-200 text-dark">{{ $r->asegurado->parentesco }}</span>
                                     </td>
                                     <td>{{ $r->cobertura->nombre }}</td>
-                                    <td></td>
-                                    <td><span
-                                            class="badge bg-soft-primary text-primary">{{ $r->estadoReclamacion->nombre }}</span>
+                                    <td>$ {{ number_format($r->asegurado->valorAsegurado)}} </td>
+                                    <td><span class="badge bg-soft-primary text-primary">{{ $r->estadoReclamacion->nombre }}</span>
                                     </td>
                                     <td>
                                         <div class="dropdown">
                                             <a href="javascript:void(0)" class="avatar-text avatar-md "
                                                 data-bs-toggle="dropdown" data-bs-offset="0,21">
-                                                <i class="feather feather-more-horizontal"></i>
+                                                <i class="feather feather-more-vertical"></i>
                                             </a>
                                             <ul class="dropdown-menu" data-popper-placement="bottom-end"
                                                 style="position: absolute; inset: 0px auto auto 0px; margin: 0px; transform: translate3d(-195px, 51px, 0px);">
+                                                @can('seguros.reclamacion.update')
                                                 <li>                                                    
-                                                        <button type="submit" class="dropdown-item">
-                                                            <i class="feather feather-edit-3 me-3"></i>
-                                                            <span>Editar</span>
-                                                        </button>
-                                                    
+                                                    <a href="{{ route('seguros.reclamacion.edit', ['reclamacion' => $r->id]) }}" class="dropdown-item">
+                                                        <i class="feather feather-edit-3 me-3"></i>
+                                                        <span>Editar</span>
+                                                    </a>
                                                 </li>
+                                                @endcan
                                                 <li>
-                                                    <a class="dropdown-item" href="javascript:void(0)">
+                                                    <a class="dropdown-item" href="">
                                                         <i class="feather feather-printer me-3"></i>
                                                         <span>Imprimir</span>
                                                     </a>

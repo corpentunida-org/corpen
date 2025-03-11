@@ -2,13 +2,14 @@
     $colors = ['success', 'info', 'secondary', 'warning', 'primary'];
 @endphp
 <x-base-layout>
+    <x-success />
     <div class="col-lg-12">
         <div class="card stretch stretch-full">
             <div class="card-body p-0">
                 <div class="recent-activity p-4 pb-0">
                     <div class="mb-4 pb-2 d-flex justify-content-between">
                         <h5 class="fw-bold">Convenios:</h5>
-                        <a href="javascript:void(0);" class="btn btn-sm btn-light-brand">View Alls</a>
+                        <a href="javascript:void(0);" class="btn btn-sm btn-light-brand">Listar Todos</a>
                     </div>
                     <ul class="list-unstyled activity-feed">
                         @foreach ($convenios as $i => $convenio)
@@ -25,11 +26,7 @@
                                 </div>
                                 <div class="ms-3 d-flex gap-2 align-items-center">                                
                                     <a href="{{route('seguros.convenio.show', ['convenio' => $convenio->id] )}}" class="avatar-text avatar-sm" data-bs-toggle="tooltip"
-                                        data-bs-trigger="hover" title="" data-bs-original-title="Copiar convenio"
-                                        aria-label="Copiar convenio"><i class="bi bi-clipboard"></i></a>
-                                    <a href="" class="avatar-text avatar-sm" data-bs-toggle="tooltip"
-                                        data-bs-trigger="hover" title="" data-bs-original-title="Ver Detalle"
-                                        aria-label="Ver Detalle"><i class="feather feather-eye fs-12"></i></a>
+                                        data-bs-trigger="hover" title="" data-bs-original-title="Ver Detalle"><i class="feather feather-eye fs-12"></i></a>
                                 </div>
                             </li>
                         @endforeach

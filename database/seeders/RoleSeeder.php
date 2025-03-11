@@ -21,31 +21,5 @@ class RoleSeeder extends Seeder
         $creditos = Role::create(['name'=>'creditos']);
         $seguros = Role::create(['name'=>'seguros']);
         $viewer = Role::create(['name'=>'read']);
-
-        //crear Permisos 
-        Permission::create(['name'=>'exequial.asociados.index'])->syncRoles([$admin, $exequial, $viewer]); //Asignando el permiso al rol Admin, Exequial, Viewer
-        Permission::create(['name'=>'exequial.asociados.show'])->syncRoles([$admin, $exequial, $viewer]);
-        Permission::create(['name'=>'exequial.asociados.store'])->syncRoles([$admin, $exequial]);
-        Permission::create(['name'=>'exequial.asociados.update'])->syncRoles([$admin, $exequial]);
-        Permission::create(['name'=>'exequial.asociados.destroy'])->syncRoles([$admin, $exequial]);
-
-        Permission::create(['name'=>'exequial.beneficiarios.show'])->syncRoles([$admin, $exequial, $viewer]);
-        Permission::create(['name'=>'exequial.beneficiarios.store'])->syncRoles([$admin, $exequial]);
-        Permission::create(['name'=>'exequial.beneficiarios.update'])->syncRoles([$admin, $exequial]);
-        Permission::create(['name'=>'exequial.beneficiarios.destroy'])->syncRoles([$admin, $exequial]);
-
-        //Permisos de Seguros 
-        Permission::create(['name'=>'exequial.polizas.show'])->syncRoles([$admin, $seguros, $viewer]);
-        Permission::create(['name'=>'exequial.polizas.store'])->syncRoles([$admin, $seguros]);
-        Permission::create(['name'=>'exequial.polizas.update'])->syncRoles([$admin, $seguros]);
-        Permission::create(['name'=>'exequial.polizas.destroy'])->syncRoles([$admin, $seguros]);
-        
-        Permission::create(['name'=>'admin'])->syncRoles($admin);
-
-
-
-
-
-
     }
 }

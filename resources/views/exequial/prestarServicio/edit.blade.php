@@ -92,12 +92,14 @@
                                 name="telefonoContacto2" value="{{$registro->telefonoContacto2}}">
                         </div>
                     </div>
+                    @can('exequial.prestarServicio.update')
                     <div class="d-flex justify-content-end gap-2 mt-3">
                         <button class="btn btn-warning" title="Prestar servicio" type="submit">
                             <i class="feather-plus me-2"></i>
                             <span>Actualizar datos</span>
                         </button>
                     </div>
+                    @endcan
                 </div>
             </div>
         </div>

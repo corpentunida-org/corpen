@@ -14,6 +14,9 @@ class SegConvenio extends Model
         'idConvenio',
         'nombre',
         'idAseguradora',
+        'seg_proveedor_id',
+        'fecha_inicio',
+        'fecha_fin',
     ];
     public function plan()
     {

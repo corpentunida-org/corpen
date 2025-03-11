@@ -18,6 +18,7 @@
                         </div>
                     </div>
                 </div>
+
                 <div class="col-sm-12 col-md-6 d-flex justify-content-end align-items-center">
                     <x-input-search-seguros></x-input-search-seguros>
                 </div>
@@ -26,8 +27,8 @@
     </div>
     <div class="card">
         <div class="subscription-plan px-4 pt-4 mb-3">
-            <div class="mb-4 d-flex align-items-center justify-content-between gap-4">
-                <div class="mb-4 d-flex align-items-center justify-content-start gap-4">
+            <div class="mb-4 d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center justify-content-start gap-4">
                     <div class="btn btn-sm btn-light-brand p-3 bg-soft-primary">{{ $poliza->asegurado->parentesco }}
                     </div>
                     <div>
@@ -36,13 +37,23 @@
                     </div>
                 </div>
                 @if ($poliza->reclamacion != 0)
-                    <a href="javascript:void(0);" class="btn btn-sm bg-soft-danger text-danger">Activo en una reclamación</a>
+                    <a href="{{ route('seguros.reclamacion.edit', ['reclamacion' => $poliza->esreclamacion->id]) }}"
+                        class="btn btn-sm bg-soft-danger text-danger">Activo en una reclamación</a>
+                @else
+                    @can('seguros.poliza.update')
+                    <a href="" class="btn btn-light-brand">
+                        <i class="feather-check-circle me-2"></i>
+                        <span>Generar Novedad</span>
+                    </a>
+                    @endcan
                 @endif
             </div>
-            <div class="p-4 mb-4 d-xxl-flex d-xl-block d-md-flex align-items-center justify-content-between gap-4 border border-dashed border-gray-5 rounded-1">
+            <div
+                class="p-4 mb-4 d-xxl-flex d-xl-block d-md-flex align-items-center justify-content-between gap-4 border border-dashed border-gray-5 rounded-1">
                 <div>
                     <div class="fs-14 fw-bold text-dark mb-1">Seguro de vida
-                        <a href="javascript:void(0);"class="badge bg-primary text-white ms-2">{{ $poliza->plan->name }}</a>
+                        <a
+                            href="javascript:void(0);"class="badge bg-primary text-white ms-2">{{ $poliza->plan->name }}</a>
                     </div>
                     <div class="fs-12 text-muted">{{ $poliza->plan->condicion->descripcion }}</div>
                 </div>
@@ -55,9 +66,12 @@
                 </div>
                 <div class="hstack gap-3">
                     @if ($poliza->reclamacion == 0)
-                    <a href="{{ route('seguros.reclamacion.create', ['a' => $poliza->seg_asegurado_id]) }}" class="text-danger">Generar Reclamación</a>
+                        @can('seguros.reclamacion.store')
+                        <a href="{{ route('seguros.reclamacion.create', ['a' => $poliza->seg_asegurado_id]) }}"
+                            class="text-danger">Generar Reclamación</a>
+                        @endcan
                     @else
-                        <a class="text-danger">{{ $poliza->esreclamacion->nombre }}</a>
+                        <a class="text-danger">{{ $poliza->esreclamacion->estadoReclamacion->nombre }}</a>
                     @endif
                 </div>
             </div>

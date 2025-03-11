@@ -5,7 +5,6 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-
     <title>{{ config('app.name', 'Corpentunida') }}</title>
     <!--! END:  Apps Title-->
     <!--! BEGIN: Favicon-->
@@ -13,7 +12,7 @@
     <!--! END: Favicon-->
     <!--! BEGIN: Bootstrap CSS-->
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/css/bootstrap.min.css') }}" />
-
+    {{-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous"> --}}
     <!--! END: Bootstrap CSS-->
     <!--! BEGIN: Vendors CSS-->
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/vendors/css/vendors.min.css') }}" />
@@ -77,7 +76,8 @@
                             <li class="nxl-item nxl-caption">
                                 <label>Menu</label>
                             </li>
-                            @foreach (auth()->user()->actions as $action)
+
+                            @foreach (auth()->user()->actions as $action)   
                                 @include('layouts.actions.' . $action->role->name)
                             @endforeach
                         </ul>

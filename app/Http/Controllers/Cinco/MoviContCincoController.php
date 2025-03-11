@@ -51,8 +51,10 @@ class MoviContCincoController extends Controller
             ->groupBy('cuenta')
             ->orderBy('cuenta')
             ->get();
-        //dd($cuentasAgrupadas);  
 
+        if ($movimientos->isEmpty()) {
+            return redirect()->back()->with('warning', 'No hay registros con esa cedula ingresada.');
+        }
         return view('cinco.movcontables.show', compact('movimientos', 'cuentasAgrupadas', 'id'));
     }
 

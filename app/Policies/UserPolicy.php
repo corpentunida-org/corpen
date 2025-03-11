@@ -15,6 +15,8 @@ class UserPolicy
         //
     }
 
+    
+
     /**
      * Determine whether the user can view the model.
      */
@@ -63,8 +65,5 @@ class UserPolicy
         //
     }
 
-    public function prestarServicio(User $user): bool
-    {
-        return $user->hasRole("create");
-    }
+
 }

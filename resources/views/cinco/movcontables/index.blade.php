@@ -27,10 +27,10 @@
                     </div>
                     <div class="col-sm-12 col-md-6 d-flex justify-content-end align-items-center">
                         <form action="{{ route('cinco.movcontables.show', ['cinco' => 'ID']) }}" method="GET"
-                            class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
+                            class="d-flex align-items-center gap-2 page-header-right-items-wrapper" validate>
                             <label class="mb-0 me-2">Buscar:</label>
                             <input type="text" name="id" class="form-control form-control-sm"
-                                placeholder="número de cédula" aria-controls="customerList">
+                                placeholder="número de cédula" aria-controls="customerList" required>
                             <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i></button>
                         </form>
                     </div>

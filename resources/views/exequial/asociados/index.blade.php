@@ -13,10 +13,12 @@
                                         data-bs-toggle="collapse" data-bs-target="#collapseOne">
                                         <i class="feather-bar-chart"></i>
                                     </a>
+                                    @can('exequial.asociados.store')
                                     <a href="{{ route('exequial.asociados.create') }}" class="btn btn-primary">
                                         <i class="feather-plus me-2"></i>
                                         <span>Crear Titular</span>
                                     </a>
+                                    @endcan
                                 </div>
                             </div>
                             <div class="d-md-none d-flex align-items-center">
