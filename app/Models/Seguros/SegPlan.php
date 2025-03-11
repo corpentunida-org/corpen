@@ -29,9 +29,9 @@ class SegPlan extends Model
                 ->withPivot('valorAsegurado', 'valorCobertura');
     }
 
-    public function poliza()
+    public function polizas()
     {
-        return $this->hasOne(SegPlan::class, 'seg_asegurado_id');
+        return $this->hasMany(SegPlan::class, 'seg_asegurado_id');
     }
 
     public function convenio()
