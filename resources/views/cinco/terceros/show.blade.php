@@ -44,10 +44,12 @@
                         </div>
                     </div>
                 </div>
+                @can('cinco.tercero.update')
                 <form action="{{ route('cinco.tercero.update', $tercero->Cod_Ter) }}" method="POST"
                     id="formEditfechasCinco" novalidate>
                     @csrf
                     @method('PUT')
+                @endcan
                     <div class="row mb-4 align-items-center">
                         <div class="col-lg-4">
                             <label class="fw-semibold">Fecha Ingreso Corpentunida: </label>
@@ -95,6 +97,7 @@
                             </div>
                         </div>
                     </div>
+                    @can('cinco.tercero.update')
                     <div class="d-flex flex-row-reverse gap-2 mt-2">
                         <button class="btn btn-warning mt-4" data-bs-toggle="tooltip" title="Timesheets"
                             type="submit">
@@ -102,6 +105,7 @@
                             <span>Editar Fechas</span>
                         </button>
                     </div>
+                    @endcan
                 </form>
             </div>
         </div>

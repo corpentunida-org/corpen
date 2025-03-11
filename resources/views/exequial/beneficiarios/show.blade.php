@@ -9,11 +9,13 @@
     </h5>
     <div class="d-flex gap-2">
         @if ($asociado['stade'])
+        @can('exequial.beneficiarios.create')
             <a href="{{ route('exequial.beneficiarios.create', ['asociado' => $asociado['documentId']]) }}"
                 class="btn btn-success">
                 <i class="feather-plus me-2"></i>
                 <span>Agregar Beneficiario</span>
             </a>
+        @endcan
         @endif
     </div>
 </div>
@@ -26,28 +28,17 @@
                     aria-describedby="proposalList_info">
                     <thead>
                         <tr>
-                            <th class="text-start sorting" tabindex="0" aria-controls="proposalList" rowspan="1"
-                                colspan="1" aria-label="Proposal: activate to sort column ascending"
-                                style="width: 67.9844px;">
+                            <th style="width: 67.9844px;">
                                 Cédula</th>
-                            <th class="sorting" tabindex="0" aria-controls="proposalList" rowspan="1"
-                                colspan="1" aria-label="Client: activate to sort column ascending"
-                                style="width: 247.75px;">
+                            <th style="width: 247.75px;">
                                 Nombre</th>
-                            <th class="sorting" tabindex="0" aria-controls="proposalList" rowspan="1"
-                                colspan="1" aria-label="Amount: activate to sort column ascending"
-                                style="width: 94.8281px;">
+                            <th style="width: 94.8281px;">
                                 Parentesco</th>
-                            <th class="sorting" tabindex="0" aria-controls="proposalList" rowspan="1"
-                                colspan="1" aria-label="Status: activate to sort column ascending"
-                                style="width: 50.7812px;">
+                            <th style="width: 50.7812px;">
                                 Fecha Nacimiento</th>
-                            <th class="sorting" tabindex="0" aria-controls="proposalList" rowspan="1"
-                                colspan="1" aria-label="Status: activate to sort column ascending"
-                                style="width: 50.7812px;">
+                            <th style="width: 50.7812px;">
                                 Edad</th>
-                            <th class="text-end sorting" tabindex="0" aria-controls="proposalList" rowspan="1"
-                                colspan="1" aria-label="Actions: activate to sort column ascending"
+                            <th colspan="1" aria-label="Actions: activate to sort column ascending"
                                 style="width: 127.484px;">Acciones</th>
                         </tr>
                     </thead>
@@ -68,9 +59,6 @@
                                     <td>{{ $edad }}</td>
                                     <td>
                                         <div class="hstack gap-2 justify-content-end">
-                                            <a href="#" class="avatar-text avatar-md">
-                                                <i class="feather feather-eye"></i>
-                                            </a>
                                             <div class="dropdown">
                                                 <a href="javascript:void(0)" class="avatar-text avatar-md"
                                                     data-bs-toggle="dropdown" data-bs-offset="0,21">
@@ -78,10 +66,9 @@
                                                 </a>
                                                 @if ($asociado['stade'])
                                                     <ul class="dropdown-menu">
+                                                    @can('exequial.beneficiarios.update')
                                                         <li>
-                                                            <form
-                                                                action="{{ route('exequial.beneficiarios.edit', ['beneficiario' => $beneficiario['documentId']]) }}"
-                                                                method="GET">
+                                                            <form action="{{ route('exequial.beneficiarios.edit', ['beneficiario' => $beneficiario['documentId']]) }}" method="GET">
                                                                 <input type="hidden" name="asociadoid"
                                                                     value="{{ $asociado['documentId'] }}">
                                                                 <input type="hidden" name="name"
@@ -96,12 +83,8 @@
                                                                 </button>
                                                             </form>
                                                         </li>
-                                                        <li>
-                                                            <a class="dropdown-item printBTN" href="javascript:void(0)">
-                                                                <i class="feather feather-printer me-3"></i>
-                                                                <span>Imprimir</span>
-                                                            </a>
-                                                        </li>
+                                                        @endcan                                                        
+                                                        @can('exequial.prestarServicio.store')
                                                         <li class="dropdown-divider"></li>
                                                         <li>
                                                             <a class="dropdown-item btn-prestarservicio"
@@ -112,6 +95,8 @@
                                                                 <span>Prestar Servicio</span>
                                                             </a>
                                                         </li>
+                                                        @endcan
+                                                        @can('exequial.beneficiarios.destroy')
                                                         <li class="dropdown-divider"></li>
                                                         <li>
                                                             <form
@@ -131,6 +116,7 @@
                                                                 </button>
                                                             </form>
                                                         </li>
+                                                        @endcan
                                                     </ul>
                                                 @endif
                                             </div>

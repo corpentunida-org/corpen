@@ -19,7 +19,6 @@ class AuditoriaController extends Controller
             'area'=> $area
         ]);
     }
-    
 
     public function index(){
         $registros = auditoria::orderBy('id', 'desc')->get();

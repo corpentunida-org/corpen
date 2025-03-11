@@ -26,6 +26,6 @@ class SegPoliza extends Model
     }
 
     public function esreclamacion(){
-        return $this->belongsTo(SegEstadoReclamacion::class, 'reclamacion', 'id');
+        return $this->belongsTo(SegReclamaciones::class, 'reclamacion', 'id');
     }   
 }

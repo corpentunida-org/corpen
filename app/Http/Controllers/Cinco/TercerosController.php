@@ -76,7 +76,7 @@ class TercerosController extends Controller
             'verificado'=> true,
             'verificadousuario'=> auth()->user()->name
         ]);
-        $accion = "Actualizar fechas terceros" . $id;
+        $accion = "Actualizar fechas terceros " . $id;
         $this->auditoria($accion);
         return redirect()->back()->with('success', 'Registro actualizado correctamente.');
     }
