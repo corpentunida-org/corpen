@@ -9,7 +9,7 @@
     </h5>
     <div class="d-flex gap-2">
         @if ($asociado['stade'])
-        @can('exequial.beneficiarios.create')
+        @can('exequial.beneficiarios.store')
             <a href="{{ route('exequial.beneficiarios.create', ['asociado' => $asociado['documentId']]) }}"
                 class="btn btn-success">
                 <i class="feather-plus me-2"></i>
