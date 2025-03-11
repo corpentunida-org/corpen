@@ -1,6 +1,7 @@
 <x-base-layout>
     @section('titlepage', 'Administrador')
     <x-success />
+    <x-error />
     <div class="col-xxl-4 col-lg-6">
         <div class="card stretch stretch-full">
             <div class="card-header">
@@ -51,7 +52,8 @@
                 <div class="mb-3">
                     <div class="mb-4 pb-1 d-flex">
                         <div class="d-flex w-50 align-items-center me-3">
-                            <div class="wd-40 ht-40 bg-soft-primary text-primary lh-1 d-flex align-items-center justify-content-center flex-column rounded-2 schedule-date me-3">
+                            <div
+                                class="wd-40 ht-40 bg-soft-primary text-primary lh-1 d-flex align-items-center justify-content-center flex-column rounded-2 schedule-date me-3">
                                 <span class="fs-18 fw-bold mb-1 d-block">1</span>
                             </div>
                             <div>
@@ -70,7 +72,8 @@
                     <hr class="border-dashed my-3">
                     <div class="mb-4 pb-1 d-flex">
                         <div class="d-flex w-50 align-items-center me-3">
-                            <div class="wd-40 ht-40 bg-soft-primary text-primary lh-1 d-flex align-items-center justify-content-center flex-column rounded-2 schedule-date me-3">
+                            <div
+                                class="wd-40 ht-40 bg-soft-primary text-primary lh-1 d-flex align-items-center justify-content-center flex-column rounded-2 schedule-date me-3">
                                 <span class="fs-18 fw-bold mb-1 d-block">2</span>
                             </div>
                             <div>
@@ -89,7 +92,8 @@
                     <hr class="border-dashed my-3">
                     <div class="mb-4 pb-1 d-flex">
                         <div class="d-flex w-50 align-items-center me-3">
-                            <div class="wd-40 ht-40 bg-soft-primary text-primary lh-1 d-flex align-items-center justify-content-center flex-column rounded-2 schedule-date me-3">
+                            <div
+                                class="wd-40 ht-40 bg-soft-primary text-primary lh-1 d-flex align-items-center justify-content-center flex-column rounded-2 schedule-date me-3">
                                 <span class="fs-18 fw-bold mb-1 d-block">3</span>
                             </div>
                             <div>
@@ -108,7 +112,8 @@
                     <hr class="border-dashed my-3">
                     <div class="d-flex">
                         <div class="d-flex w-50 align-items-center me-3">
-                            <div class="wd-40 ht-40 bg-soft-primary text-primary lh-1 d-flex align-items-center justify-content-center flex-column rounded-2 schedule-date me-3">
+                            <div
+                                class="wd-40 ht-40 bg-soft-primary text-primary lh-1 d-flex align-items-center justify-content-center flex-column rounded-2 schedule-date me-3">
                                 <span class="fs-18 fw-bold mb-1 d-block">4</span>
                             </div>
                             <div>
@@ -127,7 +132,8 @@
                     <hr class="border-dashed my-3">
                     <div class="d-flex">
                         <div class="d-flex w-50 align-items-center me-3">
-                            <div class="wd-40 ht-40 bg-soft-primary text-primary lh-1 d-flex align-items-center justify-content-center flex-column rounded-2 schedule-date me-3">
+                            <div
+                                class="wd-40 ht-40 bg-soft-primary text-primary lh-1 d-flex align-items-center justify-content-center flex-column rounded-2 schedule-date me-3">
                                 <span class="fs-18 fw-bold mb-1 d-block">5</span>
                             </div>
                             <div>
@@ -179,25 +185,13 @@
                             </div>
                         </a>
                         <div class="dropdown-menu dropdown-menu-end">
-                            <a href="javascript:void(0);" class="dropdown-item"><i
-                                    class="feather-at-sign"></i>New</a>
-                            <a href="javascript:void(0);" class="dropdown-item"><i
-                                    class="feather-calendar"></i>Event</a>
-                            <a href="javascript:void(0);" class="dropdown-item"><i
-                                    class="feather-bell"></i>Snoozed</a>
-                            <a href="javascript:void(0);" class="dropdown-item"><i
-                                    class="feather-trash-2"></i>Deleted</a>
-                            <div class="dropdown-divider"></div>
-                            <a href="javascript:void(0);" class="dropdown-item"><i
-                                    class="feather-settings"></i>Settings</a>
-                            <a href="javascript:void(0);" class="dropdown-item"><i class="feather-life-buoy"></i>Tips
-                                &amp;
-                                Tricks</a>
+                            <a href="{{ route('admin.users.create') }}" class="dropdown-item"><i
+                                class="feather-plus"></i>Crear Usuario</a>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="card-body custom-card-action">
+            <div class="card-body custom-card-action">                
                 @foreach ($users as $user)
                     <div class="w-100 d-flex align-items-center justify-content-between">
                         <div class="d-flex align-items-center">
@@ -217,9 +211,9 @@
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end" style="">
                                 <li>
-                                    <a href="{{route('admin.users.edit', $user->id)}}" class="dropdown-item">
+                                    <a href="{{ route('admin.users.edit', $user->id) }}" class="dropdown-item">
                                         <i class="feather feather-eye me-3"></i>
-                                        <span>Abrir</span>
+                                        <span>Ver detalle</span>
                                     </a>
                                 </li>
                                 <li>
@@ -246,9 +240,13 @@
                     </div>
                     <hr class="border-dashed my-3">
                 @endforeach
+                
             </div>
-            <a href="{{ route('admin.users.create') }}"
-                class="card-footer fs-11 fw-bold text-uppercase text-center">Añadir Usuario</a>
+            {{-- <a href="{{ route('admin.users.create') }}"
+                class="card-footer fs-11 fw-bold text-uppercase text-center">Añadir Usuario</a> --}}
+                <div class="card-footer d-flex justify-content-center">
+                    {{ $users->links() }}
+                </div>
         </div>
     </div>
 
@@ -301,7 +299,7 @@
                 </div>
             </div>
             <div class="card-body custom-card-action">
-                
+
 
             </div>
             <a href="javascript:void(0);" class="card-footer fs-11 fw-bold text-uppercase text-center"></a>
