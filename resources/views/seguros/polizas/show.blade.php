@@ -41,7 +41,7 @@
                         class="btn btn-sm bg-soft-danger text-danger">Activo en una reclamación</a>
                 @else
                     @can('seguros.poliza.update')
-                    <a href="" class="btn btn-light-brand">
+                    <a href="{{ route('seguros.novedades.create', ['a' => $poliza->seg_asegurado_id]) }}" class="btn btn-light-brand">
                         <i class="feather-check-circle me-2"></i>
                         <span>Generar Novedad</span>
                     </a>
