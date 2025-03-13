@@ -22,12 +22,11 @@ use App\Http\Controllers\Seguros\SegBeneficiarioController;
 use App\Http\Controllers\Seguros\SegCoberturaController;
 use App\Http\Controllers\Seguros\SegConvenioController;
 use App\Http\Controllers\Seguros\SegReclamacionesController;
+use App\Http\Controllers\Seguros\SegNovedadesController;
 
 use App\Http\Controllers\Cinco\TercerosController;
 use App\Http\Controllers\Cinco\MoviContCincoController;
 use App\Http\Controllers\Cinco\RetirosListadoController;
-
-
 
 /* Route::middleware(['auth'])->group(function () {
     Route::get('/', function () {
@@ -87,6 +86,7 @@ Route::resource('cobertura', SegCoberturaController::class)->names('seguros.cobe
 Route::resource('beneficiario', SegBeneficiarioController::class)->names('seguros.beneficiario')->middleware('auth');
 Route::resource('convenio', SegConvenioController::class)->names('seguros.convenio')->middleware(['auth', 'can:seguros.convenio.index']);
 Route::resource('reclamacion', SegReclamacionesController::class)->names('seguros.reclamacion')->middleware(['auth', 'can:seguros.reclamacion.index']);
+Route::resource('novedades', SegNovedadesController::class)->names('seguros.novedades')->middleware(['auth',]);
 
 //RUTAS CINCO
 Route::resource('terceros', TercerosController::class)->names('cinco.tercero')->middleware(['auth', 'can:cinco.tercero.index']);

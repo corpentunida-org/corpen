@@ -9,6 +9,24 @@ class SegPoliza extends Model
 {
     use HasFactory;
     protected $table = 'SEG_polizas';
+    protected $fillable = [
+        'seg_asegurado_id',
+        'seg_convenio_id',
+        'numero',
+        'active',
+        'fecha_inicio',
+        'fecha_fin',
+        'fecha_novedad',
+        'extra_prima',
+        'seg_plan_id',
+        'valor_prima',
+        'reclamacion',
+        'descuento',
+        'valor_asegurado',
+        'valorpagaraseguradora',
+        'created_at',
+        'updated_at',
+    ];
 
     public function asegurado()
     {

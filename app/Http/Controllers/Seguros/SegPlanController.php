@@ -113,4 +113,23 @@ class SegPlanController extends Controller
         $this->auditoria("PLAN ELIMINADO ID" . $plan->id);
         return redirect()->back()->with('success', 'Plan eliminado correctamente.');
     }
+
+    public function getCondicion($edad)
+    {
+        if ($edad >= 0 && $edad <= 17) {
+            return 1; // Asegurados desde 0 años hasta 17 años
+        } elseif ($edad >= 18 && $edad <= 65) {
+            return 2; // Asegurados desde 18 años hasta 65 años
+        } elseif ($edad >= 66 && $edad <= 70) {
+            return 3; // Asegurados desde 66 años hasta 70 años
+        } elseif ($edad >= 71 && $edad <= 80) {
+            return 4; // Asegurados desde 71 años hasta 80 años
+        } elseif ($edad >= 81 && $edad <= 89) {
+            return 5; // Asegurados desde 81 años hasta 89 años
+        } elseif ($edad >= 90) {
+            return 6; // Asegurados desde 90 años
+        } else {
+            return null;
+        }
+    }
 }
