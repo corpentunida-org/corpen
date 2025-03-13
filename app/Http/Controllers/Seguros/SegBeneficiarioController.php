@@ -90,7 +90,6 @@ class SegBeneficiarioController extends Controller
     public function update(Request $request, $id)
     {
         //dd($request->aseguradoId);
-
         $beneficiario = SegBeneficiario::findOrFail($id);
         $beneficiario->update([
             'nombre' => strtoupper($request->input('names')),

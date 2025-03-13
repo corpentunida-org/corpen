@@ -48,8 +48,7 @@
                     @endcan
                 @endif
             </div>
-            <div
-                class="p-4 mb-4 d-xxl-flex d-xl-block d-md-flex align-items-center justify-content-between gap-4 border border-dashed border-gray-5 rounded-1">
+            <div class="p-4 mb-4 d-xxl-flex d-xl-block d-md-flex align-items-center justify-content-between gap-4 border border-dashed border-gray-5 rounded-1">
                 <div>
                     <div class="fs-14 fw-bold text-dark mb-1">Seguro de vida
                         <a
@@ -125,8 +124,8 @@
                                     <td><span
                                             class="badge bg-soft-warning text-warning">{{ $familiar->polizas->first()->plan->name }}</span>
                                     </td>
-                                    <td>$ {{ number_format($familiar->valorAsegurado) }}</td>
-                                    <td>$ {{ number_format($familiar->valorprima) }}</td>
+                                    <td>$ {{ number_format($familiar->polizas->first()->valor_asegurado) }}</td>
+                                    <td>$ {{ number_format($familiar->polizas->first()->valor_prima) }}</td>
                                     <td class="hstack justify-content-end gap-4 text-end">
                                         <form action="{{ route('seguros.poliza.show', ['poliza' => 'ID']) }}"
                                             method="GET">

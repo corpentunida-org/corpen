@@ -24,7 +24,10 @@
                                             class="fw-bold text-{{ $colors[$i % count($colors)] }}">{{ substr($convenio->nombre, -4) }}</a>
                                     </span>
                                 </div>
-                                <div class="ms-3 d-flex gap-2 align-items-center">                                
+                                <div class="ms-3 d-flex gap-2 align-items-center">     
+                                    @if ($convenio->vigente)                                    
+                                        <a class="badge bg-soft-success text-success ms-1">Vigente</a>                           
+                                    @endif
                                     <a href="{{route('seguros.convenio.show', ['convenio' => $convenio->id] )}}" class="avatar-text avatar-sm" data-bs-toggle="tooltip"
                                         data-bs-trigger="hover" title="" data-bs-original-title="Ver Detalle"><i class="feather feather-eye fs-12"></i></a>
                                 </div>
