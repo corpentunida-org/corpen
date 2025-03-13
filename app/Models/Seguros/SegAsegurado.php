@@ -9,6 +9,9 @@ class SegAsegurado extends Model
 {
     use HasFactory;
     protected $table = 'SEG_asegurados';
+    protected $fillable = [
+        'valorpAseguradora'
+    ];
 
     public function terceroAF()
     {
@@ -28,5 +31,10 @@ class SegAsegurado extends Model
     public function reclamacion()
     {
         return $this->hasMany(SegReclamaciones::class, 'cedulaAsegurado','cedula');
+    }
+
+    public function novedades()
+    {
+        return $this->hasMany(SegNovedades::class, 'id_asegurado', 'cedula');
     }
 }

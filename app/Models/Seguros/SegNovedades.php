@@ -10,13 +10,21 @@ class SegNovedades extends Model
     use HasFactory;
     protected $table = 'Seg_novedadaes';
     protected $fillable = [
-        'id_asegurado',
-        'id_poliza',
-        'valorpAseguradora',
-        'planNuevo',
-        'valoraPlan',
-        'retiro',
-        'fechaNovedad',
-        'observaciones',
+        'id_asegurado', 'id_poliza', 'valorpAseguradora', 
+        'valorPrimaPlan', 'planNuevo', 'fechaNovedad', 'observaciones', 'valorAsegurado','created_at', 
+        'updated_at',
     ];
+
+    public function tercero()
+    {
+        return $this->belongsTo(SegTercero::class, 'id_asegurado', 'cedula');
+    }
+    public function asegurado()
+    {
+        return $this->belongsTo(SegAsegurado::class, 'id_asegurado', 'cedula');
+    }
+    public function plan()
+    {
+        return $this->belongsTo(SegPlan::class, 'planNuevo', 'id');
+    }
 }
