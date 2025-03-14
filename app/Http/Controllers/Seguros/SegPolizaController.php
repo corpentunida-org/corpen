@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Seguros;
 use App\Http\Controllers\Controller;
 use App\Models\Seguros\SegPoliza;
 use App\Models\Seguros\SegBeneficiario;
+use App\Models\Seguros\SegNovedades;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\AuditoriaController;
 
 use App\Models\Seguros\SegAsegurado;
 
@@ -15,6 +18,11 @@ class SegPolizaController extends Controller
     /**
      * Display a listing of the resource.
      */
+    private function auditoria($accion){
+        $auditoriaController = app(AuditoriaController::class);
+        $auditoriaController->create($accion, "SEGUROS");
+    }
+
     public function index()
     {
         return view('seguros.polizas.index');
@@ -79,9 +87,20 @@ class SegPolizaController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(SegPoliza $segPoliza)
+    public function destroy($poliza, Request $request)
     {
-        //
+        $now = Carbon::now();
+        SegNovedades::create([
+            'id_asegurado' => $request->input('aseguradoid'),
+            'id_poliza' => $poliza,
+            'fechaNovedad' => $now->toDateString(),
+            'retiro' => true,
+            'observaciones' => $request->input('observacionretiro'),
+        ]);
+        SegPoliza::where('id', $poliza)->update(['active' => false]);
+        $accion = "cancelar poliza id  " . $poliza;
+            $this->auditoria($accion); 
+        return redirect()->route('seguros.novedades.index')->with('success', 'Novedad registrada correctamente');
     }
 
     public function namesearch(Request $request)

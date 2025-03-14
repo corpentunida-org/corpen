@@ -10,9 +10,14 @@ use App\Models\Seguros\SegPlan;
 use App\Models\Seguros\SegPoliza;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use App\Http\Controllers\AuditoriaController;
 
 class SegNovedadesController extends Controller
 {
+    private function auditoria($accion){
+        $auditoriaController = app(AuditoriaController::class);
+        $auditoriaController->create($accion, "SEGUROS");
+    }
     public function index()
     {
         $update = SegAsegurado::where('parentesco', 'AF')
@@ -34,7 +39,7 @@ class SegNovedadesController extends Controller
             ->where('vigente', true)->with(['convenio'])->get();
 
         $condicion = SegCondicion::where('id', $idcondicion)->first(['descripcion']);
-
+        
         return view('seguros.novedades.create', compact('asegurado', 'planes', 'condicion'));
     }
 
@@ -68,6 +73,8 @@ class SegNovedadesController extends Controller
                 'valorAsegurado' => (int) str_replace(',', '', $request->valorAsegurado),
                 'observaciones' => $request->observaciones,
             ]);
+            $accion = "novedad en poliza  " . $request->id_poliza . " Asegurado " . $request->asegurado;
+            $this->auditoria($accion); 
             return redirect()->route('seguros.novedades.index')->with('success', 'Novedad registrada correctamente');
         }
         return redirect()->back()->with('error', 'No se pudo registrar la novedad.');
