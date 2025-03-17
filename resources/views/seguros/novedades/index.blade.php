@@ -56,14 +56,15 @@
                                     <td class="text-primary">{{ $reg->polizas->first()->plan->name }}</td>
                                     <td class="fw-bold text-dark">$
                                         {{ number_format($reg->polizas->first()->valor_asegurado) }}</td>
-                                    @if ($reg->valorpAseguradora == null)
-                                        <td>
+                                    <td>
+                                        @if ($reg->valorpAseguradora == null)
                                             <div class="badge bg-soft-warning text-warning">Valor a modificar</div>
-                                        </td>
-                                    @endif
+                                        @endif
+                                    </td>
                                     <td>
                                         <a href="{{ route('seguros.novedades.create', ['a' => $reg->cedula]) }}"
-                                            class="avatar-text avatar-md ms-auto"><i class="feather-arrow-right"></i></a>
+                                            class="avatar-text avatar-md ms-auto"><i
+                                                class="feather-arrow-right"></i></a>
                                     </td>
                                 </tr>
                             @endforeach
@@ -149,22 +150,30 @@
                                             </a>
                                         </div>
                                     </td>
-                                    <td>
-                                        <div class="d-flex align-items-center gap-3">
-                                            <a>
-                                                <span class="badge bg-soft-primary text-primary">{{$nov->plan->name}}</span>
-                                                <span
-                                                    class="fs-12 d-block fw-normal text-muted">$ {{ number_format($nov->plan->valor) }}</span>
-                                            </a>
-                                        </div>
-                                    </td>
-                                    <td class="text-dark fw-bold">$ {{number_format($nov->valorAsegurado)}}</td>
-                                    <td class="text-dark fw-bold">$ {{number_format($nov->valorpAseguradora)}}</td>
-                                    <td>
-                                        <a href="{{ route('seguros.novedades.create', ['a' => $nov->id_asegurado]) }}"
-                                            class="avatar-text avatar-md ms-auto"><i
-                                                class="feather-arrow-right"></i></a>
-                                    </td>
+                                    @if ($nov->retiro)
+                                        <td>
+                                            <span class="badge bg-soft-danger text-danger">Poliza Cancelada</span>
+                                        </td>
+                                    @else
+                                        <td class="text-dark fw-bold">$ {{ number_format($nov->valorAsegurado) }}</td>
+                                        <td class="text-dark fw-bold">$ {{ number_format($nov->valorpAseguradora) }}
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-3">
+                                                <a>
+                                                    <span
+                                                        class="badge bg-soft-primary text-primary">{{ $nov->plan->name }}</span>
+                                                    <span class="fs-12 d-block fw-normal text-muted">$
+                                                        {{ number_format($nov->plan->valor) }}</span>
+                                                </a>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <a href="{{ route('seguros.novedades.create', ['a' => $nov->id_asegurado]) }}"
+                                                class="avatar-text avatar-md ms-auto"><i
+                                                    class="feather-arrow-right"></i></a>
+                                        </td>
+                                    @endif
                                 </tr>
                             @endforeach
                         </tbody>
