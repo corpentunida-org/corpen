@@ -30,4 +30,6 @@ class SegCobertura extends Model
     {
         return $this->hasMany(SegReclamaciones::class, 'idCobertura', 'id');
     }
+
 }
+

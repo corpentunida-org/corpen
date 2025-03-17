@@ -75,7 +75,6 @@ Route::resource('beneficiarios', ComaeExRelParController::class)->middleware('au
 Route::resource('terceros', ComaeTerController::class)->middleware('auth')->names('exequial.terceros');
 
 Route::get('/parentescosall', [ParentescosController::class, 'index'])->name('exequial.parentescosall');
-
 Route::get('/plansall', [PlanController::class, 'index'])->name('exequial.plansall');
 
 //RUTAS SEGUROS
@@ -87,6 +86,7 @@ Route::resource('beneficiario', SegBeneficiarioController::class)->names('seguro
 Route::resource('convenio', SegConvenioController::class)->names('seguros.convenio')->middleware(['auth', 'can:seguros.convenio.index']);
 Route::resource('reclamacion', SegReclamacionesController::class)->names('seguros.reclamacion')->middleware(['auth', 'can:seguros.reclamacion.index']);
 Route::resource('novedades', SegNovedadesController::class)->names('seguros.novedades')->middleware(['auth',]);
+Route::post('/reclamacion/generarpdf', [SegReclamacionesController::class, 'generarpdf'])->middleware('auth')->name('seguros.reclamacion.generarpdf');
 
 //RUTAS CINCO
 Route::resource('terceros', TercerosController::class)->names('cinco.tercero')->middleware(['auth', 'can:cinco.tercero.index']);
