@@ -36,8 +36,8 @@
             <div class="tab-content">
                 <div class="tab-pane fade p-4 active show" id="securityTab" role="tabpanel">
                     <div class="col-lg-12 p-4">
-                        <form method="POST" action="{{ route('seguros.novedades.store') }}"
-                            id="formAddNovedad" novalidate>
+                        <form method="POST" action="{{ route('seguros.novedades.store') }}" id="formAddNovedad"
+                            novalidate>
                             @csrf
                             @method('POST')
                             <div class="row">
@@ -45,7 +45,7 @@
                                     <label class="form-label">Cédula Asegurado</label>
                                     <input type="text" class="form-control" name="asegurado"
                                         value="{{ $asegurado->cedula }}" readonly>
-                                        
+
                                 </div>
                                 <div class="col-lg-8 mb-4">
                                     <label class="form-label">Nombre Asegurado</label>
@@ -94,20 +94,24 @@
                                             <option value="{{ $plan->id }}"
                                                 {{ $asegurado->polizas->first()->plan->id == $plan->id ? 'selected' : '' }}>
                                                 {{ $plan->convenio->nombre }} - {{ $plan->name }} -
-                                                ${{ number_format($plan->valor) }} - ${{ number_format($plan->prima) }}
+                                                ${{ number_format($plan->valor) }} -
+                                                ${{ number_format($plan->prima) }}
                                             </option>
                                         @endforeach
                                     </select>
-                                    <span class="fs-12 fw-normal text-muted text-truncate-1-line pt-1">{{$condicion->descripcion}}</span>
+                                    <span
+                                        class="fs-12 fw-normal text-muted text-truncate-1-line pt-1">{{ $condicion->descripcion }}</span>
                                 </div>
                                 <div class="col-lg-3 mb-4">
                                     <label class="form-label">Porcentaje Descuento<span
                                             class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" name="descuento" value="{{ $asegurado->polizas->first()->descuento }}" required>
+                                    <input type="text" class="form-control" name="descuento"
+                                        value="{{ $asegurado->polizas->first()->descuento }}" required>
                                 </div>
                                 <div class="col-lg-3 mb-4">
                                     <label class="form-label">Extra Prima<span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" name="extra_prima" value="{{ $asegurado->polizas->first()->extra_prima }}" required>
+                                    <input type="text" class="form-control" name="extra_prima"
+                                        value="{{ $asegurado->polizas->first()->extra_prima }}" required>
                                 </div>
                             </div>
                             <div class="mb-4">
@@ -126,9 +130,41 @@
                         </form>
                     </div>
                 </div>
-                <div class="tab-pane fade p-4 active show" id="TaskTab" role="tabpanel">
+                <div class="tab-pane fade p-4" id="TaskTab" role="tabpanel">
                     <div class="col-lg-12 p-4">
-
+                        <form method="POST" action="{{ route('seguros.poliza.destroy', ['poliza' => $asegurado->polizas->first()->id]) }}">
+                            @csrf
+                            @method('DELETE')
+                            <div class="row">
+                                <div class="col-lg-4 mb-4">
+                                    <label class="form-label">Cédula Asegurado</label>
+                                    <input type="text" class="form-control" name="aseguradoid" value="{{ $asegurado->cedula }}" readonly>
+                                </div>
+                                <div class="col-lg-8 mb-4">
+                                    <label class="form-label">Nombre Asegurado</label>
+                                    <input type="text" class="form-control"
+                                        value="{{ $asegurado->tercero->nombre }}" disabled>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label">Plan </span></label>
+                                <input class="form-control" name="planid"
+                                    value="{{ $asegurado->polizas->first()->plan->convenio->nombre }} - {{ $asegurado->polizas->first()->plan->name }} - ${{ number_format($asegurado->polizas->first()->plan->valor) }} - ${{ number_format($asegurado->polizas->first()->plan->prima) }}"
+                                    disabled>
+                                <span
+                                    class="fs-12 fw-normal text-muted text-truncate-1-line pt-1">{{ $condicion->descripcion }}</span>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label">Observación<span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="observacionretiro" required>                                
+                            </div>
+                            <div class="d-flex flex-row-reverse gap-2 mt-2">
+                                <button class="btn btn-danger mt-4" data-bs-toggle="tooltip" title="Timesheets"
+                                    type="submit">
+                                    <span>Cancelar Poliza</span>
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>

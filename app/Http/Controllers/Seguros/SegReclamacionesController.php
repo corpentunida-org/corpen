@@ -5,11 +5,15 @@ namespace App\Http\Controllers\Seguros;
 use App\Http\Controllers\Controller;
 use App\Models\Seguros\SegPoliza;
 use App\Models\Seguros\SegReclamaciones;
-use Illuminate\Http\Request;
 use App\Models\Seguros\SegAsegurado;
+use App\Models\Seguros\SegCobertura;
 use App\Models\Seguros\SegEstadoReclamacion;
 use App\Models\Seguros\SegCambioEstadoReclamacion;
 use App\Http\Controllers\AuditoriaController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
+
 
 class SegReclamacionesController extends Controller
 {
@@ -23,7 +27,12 @@ class SegReclamacionesController extends Controller
     public function index()
     {
         $reclamaciones = SegReclamaciones::with(['asegurado.terceroAF', 'asegurado.tercero', 'cobertura'])->get();
-        return view("seguros.reclamaciones.index", compact('reclamaciones'));
+        $coberturas = SegCobertura::select('seg_coberturas.*', DB::raw('COUNT(SEG_reclamaciones.idCobertura) as reclamaciones_count'))
+            ->leftJoin('SEG_reclamaciones', 'seg_coberturas.id', '=', 'SEG_reclamaciones.idCobertura')
+            ->groupBy('seg_coberturas.id') // Asegúrate de agrupar por la columna que usas para la cobertura
+            ->orderByDesc('reclamaciones_count')
+            ->first();
+        return view("seguros.reclamaciones.index", compact('reclamaciones','coberturas'));
     }
 
     /**
@@ -138,5 +147,27 @@ class SegReclamacionesController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+
+    public function generarpdf(Request $request){
+        $valorSeleccionado = $request->input('pdfreclamacion');
+        if($valorSeleccionado=='todos'){
+            $registros = SegReclamaciones::with(['asegurado.terceroAF', 'asegurado.tercero', 'cobertura'])->get();
+        }
+        elseif($valorSeleccionado=='af'){
+            $registros = SegReclamaciones::whereHas('asegurado', function ($query) {
+                $query->where('parentesco', 'AF');
+            })->with(['asegurado.terceroAF', 'asegurado.tercero', 'cobertura'])->get();
+        }
+        elseif($valorSeleccionado=='co'){
+            $registros = SegReclamaciones::whereHas('asegurado.tercero', function ($query) {
+                $query->where('genero', 'H');  // Condición para la relación 'tercero'
+            })->with(['asegurado.terceroAF', 'asegurado.tercero', 'cobertura'])->get();
+        }       
+        $pdf = Pdf::loadView('seguros.reclamaciones.pdf', 
+            ['registros' => $registros,'image_path' => public_path('assets/images/CORPENTUNIDA_LOGO PRINCIPAL  (2).png'),])
+                ->setPaper('letter', 'landscape');
+        return $pdf->download(date('Y-m-d') . " Reporte.pdf");
+        //return view('seguros.reclamaciones.pdf', ['registros' => $registros, 'image_path' => public_path('assets/images/CORPENTUNIDA_LOGO PRINCIPAL  (2).png')]);
     }
 }
