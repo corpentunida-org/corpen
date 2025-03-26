@@ -8,13 +8,17 @@
                         <div class="page-header-right ms-auto">
                             <div class="page-header-right-items">
                                 <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
-                                    <a href="{{ route('seguros.poliza.edit', ['poliza' => 'excel']) }}" class="btn btn-light-brand">
+                                    <a href="{{ route('seguros.poliza.edit', ['poliza' => 'excel']) }}" class="btn bg-soft-warning text-warning">
                                         <i class="feather feather-edit-3 me-2"></i>
                                         <span>Actualizar Valor a Pagar</span>
                                     </a>                                    
                                     <a href="" class="btn btn-primary">
                                         <i class="feather-plus me-2"></i>
                                         <span>Crear Poliza</span>
+                                    </a>
+                                    <a href="{{ route('seguros.poliza.download') }}" class="btn btn-light-brand">
+                                        <i class="feather-folder-plus me-2"></i>
+                                        <span>Descargar CxC</span>
                                     </a>
                                 </div>
                             </div>
@@ -67,6 +71,5 @@
     </div>
 
     @include('seguros.novedades.index')
-
 
 </x-base-layout>
