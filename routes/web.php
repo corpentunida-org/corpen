@@ -88,6 +88,8 @@ Route::resource('reclamacion', SegReclamacionesController::class)->names('seguro
 Route::resource('novedades', SegNovedadesController::class)->names('seguros.novedades')->middleware(['auth',]);
 Route::post('/reclamacion/generarpdf', [SegReclamacionesController::class, 'generarpdf'])->middleware('auth')->name('seguros.reclamacion.generarpdf');
 Route::post('poliza/upload', [SegPolizaController::class, 'upload'])->name('seguros.poliza.upload');
+Route::get('/seguros/cxc', [SegPolizaController::class, 'exportcxc'])->name('seguros.poliza.download');
+
 
 //RUTAS CINCO
 Route::resource('terceros', TercerosController::class)->names('cinco.tercero')->middleware(['auth', 'can:cinco.tercero.index']);
@@ -104,5 +106,5 @@ Route::post('/cartera/pdfMora', [ReadExelController::class, 'pdfMora'])->middlew
 //Módulo inventario
 
 Route::get('/inventario', [UserController::class, 'inventario'])->middleware('auth')->name('inventario');
-Route::get('/inventario/{id}', [UserController::class, 'inventario'])->middleware('auth')->name('inventario');
+//Route::get('/inventario/{id}', [UserController::class, 'inventario'])->middleware('auth')->name('inventario');
 

@@ -12,7 +12,7 @@ use App\Http\Controllers\AuditoriaController;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\ExcelImport;
-use Validator;
+use App\Imports\ExcelExport; 
 
 use App\Models\Seguros\SegAsegurado;
 
@@ -147,6 +147,30 @@ class SegPolizaController extends Controller
             ->whereHas('tercero', function ($query) use ($name) {
                 $query->where('nombre', 'like', '%' . $name . '%');})->get();
         return view('seguros.polizas.search', compact('asegurados'));
+    }
+
+    public function exportcxc()
+    {
+        $datos = SegPoliza::where('active', true)->with(['tercero', 'asegurado'])->get();
+        $datosFormateados = $datos->map(function ($item) {
+            $fechaNacimiento = Carbon::parse($item->tercero?->fecha_nacimiento);
+            return [
+                'poliza' => $item->seg_convenio_id,
+                'id' => $item->id,
+                'nombre' => $item->tercero->nombre ?? ' ',
+                'num_doc' => $item->seg_asegurado_id,
+                'fecha_nac' => $fechaNacimiento,
+                'genero' => $item->tercero->genero ?? '',
+                'edad' => $fechaNacimiento->age ?? '0',
+                'doc_af' => $item->asegurado->titular ?? '',
+                'parentesco' => $item->asegurado->parentesco ?? ' ',
+                'fec_novedad' => $item->fecha_novedad,
+                'valor_asegurado' => $item->valor_asegurado, 
+                'extra_prima' => $item->extra_prima, 
+                'prima' => $item->valor_prima 
+            ];
+        });
+        return Excel::download(new ExcelExport($datosFormateados), 'DATOS SEGUROS VIDA.xlsx');
     }
 
 }
