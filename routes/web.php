@@ -87,6 +87,7 @@ Route::resource('convenio', SegConvenioController::class)->names('seguros.conven
 Route::resource('reclamacion', SegReclamacionesController::class)->names('seguros.reclamacion')->middleware(['auth', 'can:seguros.reclamacion.index']);
 Route::resource('novedades', SegNovedadesController::class)->names('seguros.novedades')->middleware(['auth',]);
 Route::post('/reclamacion/generarpdf', [SegReclamacionesController::class, 'generarpdf'])->middleware('auth')->name('seguros.reclamacion.generarpdf');
+Route::post('poliza/upload', [SegPolizaController::class, 'upload'])->name('seguros.poliza.upload');
 
 //RUTAS CINCO
 Route::resource('terceros', TercerosController::class)->names('cinco.tercero')->middleware(['auth', 'can:cinco.tercero.index']);

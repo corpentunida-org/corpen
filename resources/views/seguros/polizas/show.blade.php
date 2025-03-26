@@ -121,8 +121,7 @@
                                     <td><a href="javascript:void(0);">{{ $familiar->cedula }}</a></td>
                                     <td>{{ $familiar->tercero->nombre }}</td>
                                     <td>{{ $familiar->parentesco }}</td>
-                                    <td><span
-                                            class="badge bg-soft-warning text-warning">{{ $familiar->polizas->first()->plan->name }}</span>
+                                    <td><span class="badge bg-soft-warning text-warning">{{ $familiar->polizas->first()->plan->name }}</span>
                                     </td>
                                     <td>$ {{ number_format($familiar->polizas->first()->valor_asegurado) }}</td>
                                     <td>$ {{ number_format($familiar->polizas->first()->valor_prima) }}</td>
