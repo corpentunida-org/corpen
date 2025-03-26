@@ -10,9 +10,14 @@ class SegNovedades extends Model
     use HasFactory;
     protected $table = 'Seg_novedadaes';
     protected $fillable = [
-        'id_asegurado', 'id_poliza', 'valorpAseguradora', 
-        'valorPrimaPlan', 'planNuevo', 'fechaNovedad', 'observaciones', 'valorAsegurado','created_at', 
-        'updated_at',
+        'id_poliza',
+        'id_asegurado',
+        'retiro',
+        'plan',
+        'valorpAseguradora',
+        'valorAsegurado',
+        'fechaNovedad',
+        'observaciones',
     ];
 
     public function tercero()
