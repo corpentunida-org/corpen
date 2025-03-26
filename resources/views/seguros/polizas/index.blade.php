@@ -9,7 +9,7 @@
                             <div class="page-header-right-items">
                                 <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
                                     <a href="{{ route('seguros.poliza.edit', ['poliza' => 'excel']) }}" class="btn btn-light-brand">
-                                        <i class="feather feather-archive me-2"></i>
+                                        <i class="feather feather-edit-3 me-2"></i>
                                         <span>Actualizar Valor a Pagar</span>
                                     </a>                                    
                                     <a href="" class="btn btn-primary">

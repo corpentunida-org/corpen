@@ -26,7 +26,7 @@ class SegPlan extends Model
     {
         return $this->belongsToMany(
         SegCobertura::class,'seg_plan_cobertura','plan_id','cobertura_id')
-                ->withPivot('valorAsegurado', 'valorCobertura');
+                ->withPivot('valorAsegurado', 'valorCobertura','porcentaje');
     }
 
     public function polizas()
