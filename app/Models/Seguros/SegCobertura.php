@@ -23,7 +23,7 @@ class SegCobertura extends Model
             'seg_plan_cobertura',
             'cobertura_id',
             'plan_id'
-        )->withPivot('valorAsegurado', 'valorCobertura');
+        )->withPivot('valorAsegurado', 'valorCobertura', 'porcentaje');
     }
 
     public function reclamacion()

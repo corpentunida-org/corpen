@@ -83,9 +83,21 @@
                             <h6 class="fs-13 fw-bold">{{ $cobertura->nombre }}</h6>
                             <p class="fs-12 fw-normal text-muted">Seguros de vida</p>
                         </div>
+                        @if ($cobertura->id==1)                                
+                            @php $valoracalcular = $cobertura->pivot->valorAsegurado @endphp
+                        @endif
                         <div class="mt-4">
-                            <span class="fs-16 fw-bold text-dark">$
-                                {{ number_format($cobertura->pivot->valorAsegurado) }}</span>
+                            <span class="fs-16 fw-bold text-dark">                                
+                                $
+                                @if ($cobertura->pivot->valorAsegurado == 0 || $cobertura->pivot->valorAsegurado == null)
+                                    @php
+                                        $valorcalculado = $valoracalcular * ($cobertura->pivot->porcentaje / 100);
+                                    @endphp
+                                    {{ number_format($valorcalculado) }}
+                                @else                                    
+                                    {{ number_format($cobertura->pivot->valorAsegurado) }}
+                                @endif
+                                </span>
                             <p class="fs-12 fw-normal text-muted">Valor asegurado</p>
                         </div>
                         <div class="position-absolute top-0 start-50 translate-middle">
