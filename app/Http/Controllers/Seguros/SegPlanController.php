@@ -56,6 +56,7 @@ class SegPlanController extends Controller
         if (!$plan->exists) {
             return redirect()->back()->with('error', 'No se pudo procesar el plan.');
         }
+        
         $coberturaIds = $request->input('cobertura_id'); 
         $valoresAse = $request->input('valorAsegurado');
         $valoresCob = $request->input('valorPrima');

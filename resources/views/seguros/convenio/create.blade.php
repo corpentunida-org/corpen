@@ -6,10 +6,12 @@
             <div class="card-header p-0">
                 <ul class="nav nav-tabs flex-wrap w-100 text-center customers-nav-tabs" id="myTab" role="tablist">
                     <li class="nav-item flex-fill border-top" role="presentation">
-                        <a class="nav-link active" data-bs-toggle="tab" data-bs-target="#securityTab" aria-selected="true">Copiar Convenio</a>
+                        <a class="nav-link active" data-bs-toggle="tab" data-bs-target="#securityTab"
+                            aria-selected="true">Copiar Convenio</a>
                     </li>
                     <li class="nav-item flex-fill border-top" role="presentation">
-                        <a class="nav-link" data-bs-toggle="tab" data-bs-target="#taskTab" aria-selected="true">Crear Convenio</a>
+                        <a class="nav-link" data-bs-toggle="tab" data-bs-target="#taskTab" aria-selected="true">Crear
+                            Convenio</a>
                     </li>
                 </ul>
             </div>
@@ -29,13 +31,13 @@
                                     <div class="col-lg-6">
                                         <label class="form-label">Nombre Convenio<span
                                                 class="text-danger">*</span></label>
-                                        <input type="text" class="form-control uppercase-input"
-                                            name="nombre" required>
+                                        <input type="text" class="form-control uppercase-input" name="nombre"
+                                            required>
                                     </div>
                                     <div class="col-lg-2">
                                         <label class="form-label">Año<span class="text-danger">*</span></label>
-                                        <input type="number" class="form-control uppercase-input"
-                                            name="anio" required>
+                                        <input type="number" class="form-control uppercase-input" name="anio"
+                                            required>
                                     </div>
                                 </div>
                             </div>
@@ -63,25 +65,29 @@
                                             <div class="col-lg-2">
                                                 <label class="form-label">Nombre Plan<span
                                                         class="text-danger">*</span></label>
-                                                <input type="text" class="form-control" name="planes[{{ $plan->id }}][name]"
-                                                    value="{{ $plan->name }}" required>
+                                                <input type="text" class="form-control"
+                                                    name="planes[{{ $plan->id }}][name]" value="{{ $plan->name }}"
+                                                    required>
                                             </div>
                                             <div class="col-lg-3">
                                                 <label class="form-label">Valor Asegurado<span
                                                         class="text-danger">*</span></label>
-                                                <input type="number" class="form-control" name="planes[{{ $plan->id }}][vasegurado]"
+                                                <input type="number" class="form-control"
+                                                    name="planes[{{ $plan->id }}][vasegurado]"
                                                     value="{{ $plan->valor }}" required>
                                             </div>
                                             <div class="col-lg-3">
                                                 <label class="form-label">Valor Prima<span
                                                         class="text-danger">*</span></label>
-                                                <input type="number" class="form-control" name="planes[{{ $plan->id }}][vprima]"
+                                                <input type="number" class="form-control"
+                                                    name="planes[{{ $plan->id }}][vprima]"
                                                     value="{{ $plan->prima }}" required>
                                             </div>
                                             <div class="col-lg-4">
                                                 <label class="form-label">Condición<span
                                                         class="text-danger">*</span></label>
-                                                <select class="form-control" name="planes[{{ $plan->id }}][condicion]">
+                                                <select class="form-control"
+                                                    name="planes[{{ $plan->id }}][condicion]">
                                                     @foreach ($condiciones as $c)
                                                         <option value="{{ $c->id }}"
                                                             {{ $plan->condicion_id == $c->id ? 'selected' : '' }}>
@@ -95,7 +101,27 @@
                                     <hr class="my-3">
                                 </div>
                             @endforeach
-                            {{-- hidden --}}
+
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center gap-3 me-3">
+                                    <div class="custom-control custom-checkbox me-2">
+                                        <input type="checkbox" class="custom-control-input" id="customCheckTask10"
+                                            data-checked-action="task-action" name="CheckVigencia">
+                                        <label class="custom-control-label c-pointer" for="customCheckTask10"></label>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-3">
+                                        <a href="javascript:void(0);" class="single-task-list-link"
+                                            data-bs-toggle="offcanvas" data-bs-target="#tasksDetailsOffcanvas">
+                                            <div class="fs-13 fw-bold text-truncate-1-line">Configurar este convenio como
+                                                <span class="ms-2 badge bg-soft-success text-success"> Vigente</span>
+                                            </div>
+                                            <div class="fs-12 fw-normal text-muted text-truncate-1-line">Se actualizará
+                                                los valores de este nuevo convenio para todos los asegurados.</div>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="d-flex flex-row-reverse gap-2 mt-2">
                                 <button class="btn btn-success mt-4" data-bs-toggle="tooltip" title="Timesheets"
                                     type="submit">
@@ -159,8 +185,9 @@
                             <div class="pass-hint">
                                 <ul class="fs-12 ps-1 ms-2 text-muted">
                                     <li class="mb-1">El convenio se crea sin planes. </li>
-                                    <li class="mb-1">Debe crearlos manualmente, en la vista del convenio una vez creado. </li>
-                                    
+                                    <li class="mb-1">Debe crearlos manualmente, en la vista del convenio una vez
+                                        creado. </li>
+
                                 </ul>
                             </div>
                             <div class="d-flex flex-row-reverse gap-2 mt-2">
