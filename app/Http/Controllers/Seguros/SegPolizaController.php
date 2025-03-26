@@ -6,10 +6,13 @@ use App\Http\Controllers\Controller;
 use App\Models\Seguros\SegPoliza;
 use App\Models\Seguros\SegBeneficiario;
 use App\Models\Seguros\SegNovedades;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\AuditoriaController;
+use Carbon\Carbon;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\ExcelImport;
+use Validator;
 
 use App\Models\Seguros\SegAsegurado;
 
@@ -25,7 +28,11 @@ class SegPolizaController extends Controller
 
     public function index()
     {
-        return view('seguros.polizas.index');
+        $update = SegAsegurado::where('parentesco', 'AF')
+        ->whereHas('polizas', function($query) {$query->whereNull('valorpagaraseguradora')
+              ->orWhere('valorpagaraseguradora', ' ');})->get();
+              
+        return view('seguros.polizas.index', compact('update'));
     }
 
     /**
@@ -33,7 +40,7 @@ class SegPolizaController extends Controller
      */
     public function create()
     {
-        //
+        
     }
 
     /**
@@ -73,7 +80,37 @@ class SegPolizaController extends Controller
      */
     public function edit(SegPoliza $segPoliza)
     {
+        return view('seguros.polizas.edit');
+    }
+    public function upload(Request $request)
+    {        
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv',
+        ]);
 
+        $file = $request->file('file');
+        $import = new ExcelImport();
+        $rows = Excel::toArray(new ExcelImport(), $request->file('file'))[0];
+
+        $updatedCount = 0;
+        $failedRows = [];
+        
+        foreach ($rows as $index => $row) {
+            if ($index == 0) {
+                continue;
+            }         
+            $modeloData = SegPoliza::where('seg_asegurado_id', $row['cod_ter'])->first();
+            if ($modeloData) {
+                $modeloData->valorpagaraseguradora = $row['deb_mov'];
+                $modeloData->save();
+                $updatedCount++;
+            } else {
+                $failedRows[] = $row;
+            }
+        }
+        
+        $this->auditoria("actualizar valor a pagar polizas con carga");
+        return view('seguros.polizas.edit', compact('failedRows'))->with('success', 'Se actualizaron exitosamente ' . $updatedCount . ' registros');
     }
 
     /**

@@ -1,9 +1,4 @@
 <x-base-layout>
-    <style>
-        .uppercase-input {
-            text-transform: uppercase;
-        }
-    </style>
     @section('titlepage', 'Crear Plan')
     <x-error />
     <div class="col-xxl-12 col-xl-12">
@@ -78,7 +73,7 @@
                                         <div class="col-lg-6">
                                             <label class="form-label">Cobertura <span
                                                     class="text-danger">*</span></label>
-                                            <select class="form-control" name="cobertura_id[]" id="cobertura_id" required></select>
+                                            <select class="form-control" name="cobertura_id[]" id="cobertura_id"></select>
                                         </div>
                                         <div class="col-lg-3">
                                             <label class="form-label">Valor Asegurado<span
