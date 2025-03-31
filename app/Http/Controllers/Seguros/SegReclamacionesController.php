@@ -10,10 +10,13 @@ use App\Models\Seguros\SegCobertura;
 use App\Models\Seguros\SegEstadoReclamacion;
 use App\Models\Seguros\SegCambioEstadoReclamacion;
 use App\Http\Controllers\AuditoriaController;
+use App\Http\Controllers\Exequial\ParentescosController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
-
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\ExcelExport;
+use Carbon\Carbon;
 
 class SegReclamacionesController extends Controller
 {
@@ -44,7 +47,9 @@ class SegReclamacionesController extends Controller
         $asegurado = SegAsegurado::where('cedula',$id)->with(['tercero','terceroAF'])->first();
         $poliza = SegPoliza::where('seg_asegurado_id', $id)->with(['plan.coberturas'])->first();
         $estados = SegEstadoReclamacion::all();
-        return view("seguros.reclamaciones.create", compact('asegurado','poliza', 'estados'));
+        $parentescos = $controllerparen = app()->make(ParentescosController::class);
+        $parentescos = $parentescos->index();
+        return view("seguros.reclamaciones.create", compact('asegurado','poliza', 'estados', 'parentescos'));
     }
 
     /**
@@ -66,6 +71,7 @@ class SegReclamacionesController extends Controller
             'parentescoContacto' => $request->parentesco_id,
             'estado' => $request->estado_id,
             'poliza_id' => $request->poliza_id,
+            'valor_asegurado' => $request->valorAsegurado,
         ]);
 
         SegPoliza::where('id', $request->poliza_id)
@@ -113,6 +119,7 @@ class SegReclamacionesController extends Controller
      */
     public function update(Request $request, string $id)
     {
+        dd($request->all());
         //cambiar el estado de la reclamacion
         $update = SegReclamaciones::where('id', $id)->update([
             'estado' => $request->estado_id,
@@ -126,11 +133,6 @@ class SegReclamacionesController extends Controller
             'fecha_actualizacion' => now()->toDateString(),
             'hora_actualizacion' => now()->toTimeString(),
         ]);
-
-        /* //actualizar poliza
-        $poliza = SegPoliza::where('id', $request->poliza_id)->update([
-            'reclamacion' => $request->estado_id,
-        ]); */
 
         if ($update && $crear) {
             $accion = "update reclamacion id " . $id;
@@ -161,7 +163,7 @@ class SegReclamacionesController extends Controller
         }
         elseif($valorSeleccionado=='co'){
             $registros = SegReclamaciones::whereHas('asegurado.tercero', function ($query) {
-                $query->where('genero', 'H');  // Condición para la relación 'tercero'
+                $query->where('genero', 'H');
             })->with(['asegurado.terceroAF', 'asegurado.tercero', 'cobertura'])->get();
         }       
         $pdf = Pdf::loadView('seguros.reclamaciones.pdf', 
@@ -169,5 +171,31 @@ class SegReclamacionesController extends Controller
                 ->setPaper('letter', 'landscape');
         return $pdf->download(date('Y-m-d') . " Reporte.pdf");
         //return view('seguros.reclamaciones.pdf', ['registros' => $registros, 'image_path' => public_path('assets/images/CORPENTUNIDA_LOGO PRINCIPAL  (2).png')]);
+    }
+
+    public function exportexcel()
+    {
+        $datos = SegReclamaciones::with(['asegurado.terceroAF', 'asegurado.tercero', 'cobertura'])->get();
+        $headings = [
+            'N°', 'ASEGURADO CÉDULA', 'ASEGURADO', 'EDAD', 'TITULAR CEDULA', 'TITULAR', 'PARENTESCO', 'COBERTURA', 'VALOR ASEGURADO', 'DIAGNOSTICO', 'FECHA ACTUALIZACIÓN', 'ESTADO'
+        ];
+        $datosFormateados = $datos->map(function ($item, $index) {
+            $fechaNacimiento = Carbon::parse($item->tercero?->fecha_nacimiento);
+            return [
+                'N°' => $index + 1,
+                'ASEGURADO CÉDULA' => $item->cedulaAsegurado,
+                'ASEGURADO' => $item->asegurado->tercero->nombre,
+                'EDAD' => $fechaNacimiento,
+                'TITULAR CEDULA' => $item->asegurado->terceroAF->cedula,
+                'TITULAR' => $item->asegurado->terceroAF->nombre,
+                'PARENTESCO' => $item->asegurado->parentesco,
+                'COBERTURA' => $item->cobertura->nombre,
+                'VALOR ASEGURADO' => $item->valor_asegurado,
+                'DIAGNOSTICO' => $item->diagnostico->nombre ?? $item->otro,
+                'FECHA ACTUALIZACIÓN' => $item->updated_at,
+                'ESTADO' => $item->estadoReclamacion->nombre,
+            ];
+        });
+        return Excel::download(new ExcelExport($datosFormateados,$headings), date('Y-m-d') . " Reporte.xlsx");
     }
 }

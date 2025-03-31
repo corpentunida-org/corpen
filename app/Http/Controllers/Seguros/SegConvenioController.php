@@ -106,8 +106,8 @@ class SegConvenioController extends Controller
 
     private function updateVigencia($convenioid, $convenioanio){
         $polizas = SegPoliza::where('seg_convenio_id', $convenioid)
-            ->where('active', true)->get();
-        foreach ($polizas as $poliza) {     
+            ->where('active', true)->where('reclamacion', 0)->get();
+        foreach ($polizas as $poliza) {
             SegNovedades::create([
                 'id_asegurado' => $poliza->seg_asegurado_id,
                 'id_poliza' => $poliza->id,
