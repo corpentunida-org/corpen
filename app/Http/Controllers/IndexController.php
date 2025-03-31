@@ -26,7 +26,7 @@ class IndexController extends Controller
         } elseif ($roles->first()->name===('creditos')) {
             return view('exequial.asociados.index');
         } elseif ($roles->first()->name===('seguros')) {
-            return view('seguros.polizas.index');
+            return redirect()->route('seguros.poliza.index');
         } elseif ($roles->first()->name===('cinco')) {
             return redirect()->route('cinco.tercero.index');
         } else {

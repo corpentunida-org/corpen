@@ -87,6 +87,7 @@ Route::resource('convenio', SegConvenioController::class)->names('seguros.conven
 Route::resource('reclamacion', SegReclamacionesController::class)->names('seguros.reclamacion')->middleware(['auth', 'can:seguros.reclamacion.index']);
 Route::resource('novedades', SegNovedadesController::class)->names('seguros.novedades')->middleware(['auth',]);
 Route::post('/reclamacion/generarpdf', [SegReclamacionesController::class, 'generarpdf'])->middleware('auth')->name('seguros.reclamacion.generarpdf');
+Route::get('/reclamacion/informe/excel', [SegReclamacionesController::class, 'exportexcel'])->middleware('auth')->name('seguros.reclamacion.download');
 Route::post('poliza/upload', [SegPolizaController::class, 'upload'])->name('seguros.poliza.upload');
 Route::get('/seguros/cxc', [SegPolizaController::class, 'exportcxc'])->name('seguros.poliza.download');
 
