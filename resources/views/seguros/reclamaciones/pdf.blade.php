@@ -104,7 +104,7 @@
                     <td>{{ $r->asegurado->terceroAF->nombre }}</td>
                     <td>{{ $r->asegurado->parentesco }}</td>
                     <td>{{ $r->cobertura->nombre }}</td>
-                    <td>$ {{ number_format($r->asegurado->valorAsegurado) }} </td>
+                    <td>$ {{ number_format($r->valor_asegurado) }} </td>
                     <td>{{ $r->updated_at }}</td>
                     <td>{{ $r->estadoReclamacion->nombre }}</td>
                 </tr>

@@ -22,7 +22,8 @@
             </div>
         </div>
     </div>
-    <form action="{{ route('seguros.reclamacion.update', ['reclamacion' => $reclamacion->id]) }}" method="POST" id="formUpdateReclamacion" novalidate>
+    <form action="{{ route('seguros.reclamacion.update', ['reclamacion' => $reclamacion->id]) }}" method="POST"
+        id="formUpdateReclamacion" novalidate>
         @csrf
         @method('PUT')
         <div class="col-12">
@@ -31,7 +32,8 @@
                     <div class="row">
                         <div class="col-lg-4 mb-4">
                             <label class="form-label">Cédula Asegurado</label>
-                            <input type="text" class="form-control" name="asegurado" value="{{ $asegurado->cedula }}" readonly>
+                            <input type="text" class="form-control" name="asegurado" value="{{ $asegurado->cedula }}"
+                                readonly>
                         </div>
                         <div class="col-lg-8 mb-4">
                             <label class="form-label">Nombre Asegurado</label>
@@ -59,9 +61,8 @@
                         <label class="form-label">Cobertura<span class="text-danger">*</span></label>
                         <select name="cobertura_id" class="form-control">
                             @foreach ($poliza->plan->coberturas as $cobertura)
-                                <option value="{{ $cobertura->id }}" 
-                                @if ($cobertura->id == $reclamacion->idCobertura) selected @endif>
-                                {{ $cobertura->nombre }}</option>
+                                <option value="{{ $cobertura->id }}" @if ($cobertura->id == $reclamacion->idCobertura) selected @endif>
+                                    {{ $cobertura->nombre }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -75,27 +76,44 @@
                         </div>
                         <div class="col-lg-5 mb-4">
                             <label class="form-label">Otro</label>
-                            <input type="text" class="form-control" name="otrodiagnostico" value="{{ $reclamacion->otro }}">
+                            <input type="text" class="form-control" name="otrodiagnostico"
+                                value="{{ $reclamacion->otro }}">
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-lg-6 mb-4">
                             <label class="form-label">Fecha del siniestro <span class="text-danger">*</span></label>
-                            <input type="date" class="form-control" name="fechasiniestro" value="{{$reclamacion->fechaSiniestro}}" readonly>
+                            <input type="date" class="form-control" name="fechasiniestro"
+                                value="{{ $reclamacion->fechaSiniestro }}" readonly>
                         </div>
                         <div class="col-lg-6 mb-4">
                             <label class="form-label">Estado de la reclamación</label>
                             <select name="estado_id" class="form-control">
                                 @foreach ($estados as $e)
                                     <option value="{{ $e->id }}"
-                                    @if ($e->id == $reclamacion->estado) selected @endif>{{ $e->nombre }}</option>
+                                        @if ($e->id == $reclamacion->estado) selected @endif>{{ $e->nombre }}</option>
                                 @endforeach
                             </select>
                         </div>
                     </div>
+                    <div class="row">
+                        <div class="col-lg-9 mb-4">
+                            <label class="form-label">Beneficiario<span class="text-danger">*</span></label>
+                            <select name="beneficiario_id" class="form-control">
+                                <option value=""></option>
+                            </select>
+                        </div>
+                        <div class="col-lg-3 mb-4">
+                            <label class="form-label">Porcentaje en Reclamación</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control">
+                                <div class="input-group-text">%</div>
+                            </div>
+                        </div>
+                    </div>
                     <div class="col-lg-12 mb-4">
                         <label class="form-label">Observaciones</label>
-                        <input type="text" class="form-control uppercase-input" name="observacion" required>                        
+                        <input type="text" class="form-control uppercase-input" name="observacion" required>
                         <input type="text" value="{{ $poliza->id }}" name="poliza_id" hidden>
                     </div>
                     <div class="d-flex justify-content-end gap-2 mt-3">

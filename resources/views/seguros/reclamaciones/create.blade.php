@@ -22,7 +22,8 @@
             </div>
         </div>
     </div>
-    <form method="post" action="{{ route('seguros.reclamacion.store') }}" class="row" id="formAddReclamacion" novalidate>
+    <form method="post" action="{{ route('seguros.reclamacion.store') }}" class="row" id="formAddReclamacion"
+        novalidate>
         @csrf
         @method('POST')
         <div class="col-xl-6">
@@ -31,7 +32,8 @@
                     <div class="row">
                         <div class="col-lg-4 mb-4">
                             <label class="form-label">Cédula Asegurado</label>
-                            <input type="text" class="form-control" name="asegurado" value="{{ $asegurado->cedula }}" readonly>
+                            <input type="text" class="form-control" name="asegurado" value="{{ $asegurado->cedula }}"
+                                readonly>
                         </div>
                         <div class="col-lg-8 mb-4">
                             <label class="form-label">Nombre Asegurado</label>
@@ -55,13 +57,24 @@
                             <input class="form-control datepicker-input" value="" readonly>
                         </div>
                     </div>
-                    <div class="mb-4">
-                        <label class="form-label">Cobertura<span class="text-danger">*</span></label>
-                        <select name="cobertura_id" class="form-control">
-                            @foreach ($poliza->plan->coberturas as $cobertura)
-                                <option value="{{ $cobertura->id }}">{{ $cobertura->nombre }}</option>
-                            @endforeach
-                        </select>
+                    <div class="row">
+                        <div class="col-lg-7 mb-4">
+                            <label class="form-label">Cobertura<span class="text-danger">*</span></label>
+                            <select name="cobertura_id" class="form-control">
+                                @foreach ($poliza->plan->coberturas as $cobertura)
+                                    <option value="{{ $cobertura->id }}">{{ $cobertura->nombre }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-lg-5 mb-4">
+                            <label class="form-label">Valor Asegurado<span class="text-danger">*</span></label>
+                            <div class="input-group mb-3">
+                                <span class="input-group-text">$</span>
+                                <input type="text" class="form-control" name="valorAsegurado"
+                                    value="{{ $poliza->plan->valor }}">
+                            </div>
+
+                        </div>
                     </div>
                     <div class="row">
                         <div class="col-lg-7 mb-4">
@@ -103,15 +116,18 @@
                         </div>
                         <div class="col-lg-8 mb-4">
                             <label class="form-label">Nombre contacto</label>
-                            <input type="text" name="nombrecontacto" class="form-control uppercase-input" required>
+                            <input type="text" name="nombrecontacto" class="form-control uppercase-input"
+                                required>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-lg-7 mb-4">
                             <label class="form-label">Parentesco <span class="text-danger">*</span></label>
                             <select name="parentesco_id" class="form-control">
-                                <option value="1">opcion 1</option>
-                                <option value="2">opcion 2</option>
+                                <option value="TITULAR">TITULAR</option>
+                                @foreach ($parentescos as $p)
+                                    <option value="{{ $p['code'] }}">{{ $p['name'] }}</option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="col-lg-5 mb-4">
@@ -122,11 +138,12 @@
                     <div class="row">
                         <div class="col-lg-6 mb-4">
                             <label class="form-label">Hora de contacto<span class="text-danger">*</span></label>
-                            <input type="time" name="horacontacto" class="form-control" required>
+                            <input type="time" id="horaActual" name="horacontacto" class="form-control" required>
                         </div>
                         <div class="col-lg-6 mb-4">
                             <label class="form-label">Fecha de contacto<span class="text-danger">*</span></label>
-                            <input type="date" name="fechacontacto" class="form-control" required>
+                            <input type="date" id="fechaActual" name="fechacontacto" class="form-control"
+                                required>
                         </div>
                     </div>
                     <div class="col-lg-12 mb-4">
@@ -145,15 +162,23 @@
         </div>
     </form>
     <script>
-        $('#formAddReclamacion').submit(function(event) {
-            var form = this;
-            if (!form.checkValidity()) {
-                $(form).addClass('was-validated');
-                event.preventDefault();
-                event.stopPropagation();
-            } else {
-                console.log($(this).serialize());
-            }
+        $(document).ready(function() {
+            var fechaActual = new Date();
+            var fecha = fechaActual.toISOString().split('T')[0];
+            var hora = fechaActual.toTimeString().split(' ')[0].slice(0, 5);
+            $('#fechaActual').val(fecha);
+            $('#horaActual').val(hora);
+
+            $('#formAddReclamacion').submit(function(event) {
+                var form = this;
+                if (!form.checkValidity()) {
+                    $(form).addClass('was-validated');
+                    event.preventDefault();
+                    event.stopPropagation();
+                } else {
+                    console.log($(this).serialize());
+                }
+            });
         });
     </script>
 </x-base-layout>
