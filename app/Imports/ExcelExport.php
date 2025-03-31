@@ -7,16 +7,18 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 class ExcelExport implements FromCollection, WithHeadings
 {
     protected $data;
+    protected $headings;
 
-    public function __construct($data)
+    public function __construct($data, $headings = null)
     {
         $this->data = $data;
+        $this->headings = $headings ?: [
+            'ID',
+        ];
     }
     public function headings(): array
     {
-        return [
-            'POLIZA', 'ID', 'NOMBRE', 'NUM DOC', 'FECHA NAC', 'GENERO', 'EDAD', 'DOC AF','PARENTESCO', 'FEC NOVEDAD', 'VALOR ASEGURADO','EXTRA PRIMA', 'PRIMA'
-        ];
+        return $this->headings;
     }
 
     public function collection()

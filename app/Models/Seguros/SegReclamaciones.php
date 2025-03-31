@@ -22,6 +22,7 @@ class SegReclamaciones extends Model
         'estado',
         'poliza_id',
         'nombre_contingente',
+        'idBeneficiario'
     ];
 
     public function asegurado()

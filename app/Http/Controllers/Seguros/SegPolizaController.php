@@ -152,8 +152,11 @@ class SegPolizaController extends Controller
     public function exportcxc()
     {
         $datos = SegPoliza::where('active', true)->with(['tercero', 'asegurado'])->get();
+        $headings = [
+            'POLIZA', 'ID', 'NOMBRE', 'NUM DOC', 'FECHA NAC', 'GENERO', 'EDAD', 'DOC AF','PARENTESCO', 'FEC NOVEDAD', 'VALOR ASEGURADO','EXTRA PRIMA', 'PRIMA'
+        ];
         $datosFormateados = $datos->map(function ($item) {
-            $fechaNacimiento = Carbon::parse($item->tercero?->fecha_nacimiento);
+        $fechaNacimiento = Carbon::parse($item->tercero?->fecha_nacimiento);
             return [
                 'poliza' => $item->seg_convenio_id,
                 'id' => $item->id,
@@ -170,7 +173,6 @@ class SegPolizaController extends Controller
                 'prima' => $item->valor_prima 
             ];
         });
-        return Excel::download(new ExcelExport($datosFormateados), 'DATOS SEGUROS VIDA.xlsx');
+        return Excel::download(new ExcelExport($datosFormateados,$headings), 'DATOS SEGUROS VIDA.xlsx');
     }
-
 }

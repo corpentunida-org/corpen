@@ -1,7 +1,7 @@
 <x-base-layout>
     <x-success />
     <x-error />
-    <div class="col-lg-12" data-select2-id="select2-data-39-f2jf">
+    <div class="col-lg-12">
         <div class="card stretch stretch-full" data-select2-id="select2-data-38-lija">
             <div class="card-body lead-status">
                 <div class="mb-3 d-flex align-items-center justify-content-between">
@@ -11,7 +11,7 @@
                             Seleccione solo una de las siguiente opciones</span>
                     </h5>
                 </div>
-                <form class="row" method="post" action="{{route('seguros.reclamacion.generarpdf')}}">
+                <form class="row" method="post" action="{{ route('seguros.reclamacion.generarpdf') }}">
                     @csrf
                     <div class="col-xxl-3 col-md-6">
                         <div class="form-check">
@@ -26,16 +26,23 @@
                             <input class="form-check-input" type="radio" value="af" name="pdfreclamacion">
                         </div>
                     </div>
+
                     <div class="col-xxl-3 col-md-6">
                         <div class="form-check">
                             <label class="form-check-label" for="LRTdirection">Conyugues y Mujeres</label>
                             <input class="form-check-input" type="radio" value="co" name="pdfreclamacion">
                         </div>
                     </div>
-                
+
                     <div class="d-flex justify-content-end gap-2">
-                        <button type="submit" class="btn btn-md btn-primary">Descargar PDF</a>
+                        <button type="submit" class="btn btn-md btn-primary">Descargar PDF</button>
+                            <a href="{{ route('seguros.reclamacion.download') }}" class="btn btn-light-brand">
+                                <i class="feather-folder-plus me-2"></i>
+                                <span>Descargar Excel</span>
+                            </a>
                     </div>
+
+
                 </form>
             </div>
         </div>
@@ -123,7 +130,8 @@
                             </div>
                         </a>
                         <div class="dropdown-menu dropdown-menu-end">
-                            <a href="javascript:void(0);" class="dropdown-item"><i class="feather-at-sign"></i>New</a>
+                            <a href="javascript:void(0);" class="dropdown-item"><i
+                                    class="feather-at-sign"></i>New</a>
                             <a href="javascript:void(0);" class="dropdown-item"><i
                                     class="feather-calendar"></i>Event</a>
                             <a href="javascript:void(0);" class="dropdown-item"><i
@@ -169,7 +177,8 @@
                                         <div class="d-flex align-items-center gap-3">
                                             <a href="javascript:void(0);">
                                                 <span class="d-block">{{ $r->cedulaAsegurado }}</span>
-                                                <span class="fs-12 d-block fw-normal text-muted">{{ $r->asegurado->tercero->nombre }}</span>
+                                                <span
+                                                    class="fs-12 d-block fw-normal text-muted">{{ $r->asegurado->tercero->nombre }}</span>
                                             </a>
                                         </div>
                                     </td>
