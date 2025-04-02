@@ -22,4 +22,8 @@ class SegTercero extends Model
     {
         return $this->hasMany(SegNovedades::class, 'id_asegurado', 'cedula');
     }
+    public function reclamacion()
+    {
+        return $this->hasMany(SegReclamaciones::class, 'cedulaAsegurado','cedula');
+    }
 }

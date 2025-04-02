@@ -1,3 +1,6 @@
+@php
+    $colors = ['info', 'warning', 'danger', 'success', 'primary'];
+@endphp
 <x-base-layout>
     @section('titlepage', 'Editar Reclamación')
     <div class="col-lg-12">
@@ -22,13 +25,13 @@
             </div>
         </div>
     </div>
-    <form action="{{ route('seguros.reclamacion.update', ['reclamacion' => $reclamacion->id]) }}" method="POST"
-        id="formUpdateReclamacion" novalidate>
-        @csrf
-        @method('PUT')
-        <div class="col-12">
-            <div class="card stretch stretch-full">
-                <div class="card-body">
+    <div class="col-12">
+        <div class="card stretch stretch-full">
+            <div class="card-body">
+                <form action="{{ route('seguros.reclamacion.update', ['reclamacion' => $reclamacion->id]) }}"
+                    method="POST" id="formUpdateReclamacion" novalidate>
+                    @csrf
+                    @method('PUT')
                     <div class="row">
                         <div class="col-lg-4 mb-4">
                             <label class="form-label">Cédula Asegurado</label>
@@ -42,19 +45,24 @@
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-lg-4 mb-4">
+                        <div class="col-lg-3 mb-4">
                             <label class="form-label">Tipo de Afiliado<span class="text-danger">*</span></label>
                             <input class="form-control datepicker-input" name="contacto"
                                 value="{{ $asegurado->parentesco }}" readonly>
                         </div>
-                        <div class="col-lg-4 mb-4">
+                        <div class="col-lg-3 mb-4">
                             <label class="form-label">Genero <span class="text-danger">*</span></label>
                             <input class="form-control datepicker-input"
                                 value="{{ $asegurado->tercero->genero == 'V' ? 'Masculino' : 'Femenino' }}" readonly>
                         </div>
-                        <div class="col-lg-4 mb-4">
+                        <div class="col-lg-3 mb-4">
                             <label class="form-label">Distrito <span class="text-danger">*</span></label>
                             <input class="form-control datepicker-input" value="" readonly>
+                        </div>
+                        <div class="col-lg-3 mb-4">
+                            <label class="form-label">Fecha del siniestro <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" name="fechasiniestro"
+                                value="{{ $reclamacion->fechaSiniestro }}" readonly>
                         </div>
                     </div>
                     <div class="mb-4">
@@ -81,22 +89,6 @@
                         </div>
                     </div>
                     <div class="row">
-                        <div class="col-lg-6 mb-4">
-                            <label class="form-label">Fecha del siniestro <span class="text-danger">*</span></label>
-                            <input type="date" class="form-control" name="fechasiniestro"
-                                value="{{ $reclamacion->fechaSiniestro }}" readonly>
-                        </div>
-                        <div class="col-lg-6 mb-4">
-                            <label class="form-label">Estado de la reclamación</label>
-                            <select name="estado_id" class="form-control">
-                                @foreach ($estados as $e)
-                                    <option value="{{ $e->id }}"
-                                        @if ($e->id == $reclamacion->estado) selected @endif>{{ $e->nombre }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-                    <div class="row">
                         <div class="col-lg-9 mb-4">
                             <label class="form-label">Beneficiario<span class="text-danger">*</span></label>
                             <select name="beneficiario_id" class="form-control">
@@ -111,6 +103,47 @@
                             </div>
                         </div>
                     </div>
+                    <div class="accordion proposal-faq-accordion" id="accordionFaqGroup">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="flush-headingOne">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                                    data-bs-target="#flush-collapseOne" aria-expanded="false"
+                                    aria-controls="flush-collapseOne">Actividad Cambio de Reclamación</button>
+                            </h2>
+                            <div id="flush-collapseOne" class="accordion-collapse collapse"
+                                aria-labelledby="flush-headingOne" data-bs-parent="#accordionFaqGroup"
+                                style="">
+                                <div class="accordion-body">
+                                    <ul class="list-unstyled activity-feed">
+                                        @foreach ($hisreclamacion as $i => $hr)
+                                            <li
+                                                class="d-flex justify-content-between feed-item feed-item-{{ $colors[$i % count($colors)] }}">
+                                                <div>
+                                                    <span class="text">{{ $hr->fecha_actualizacion }} <a
+                                                            class="badge bg-soft-{{ $colors[$i % count($colors)] }} text-{{ $colors[$i % count($colors)] }} ms-1">{{ $hr->estado->nombre }}</a></span>
+                                                    <span class="text-truncate-1-line">
+                                                        {{ $hr->observacion }}
+                                                    </span>
+                                                </div>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Estado de la reclamación</label>
+                        <select name="estado_id" class="form-control">
+                            @foreach ($estados as $e)
+                                <option value="{{ $e->id }}" @if ($e->id == $reclamacion->estado) selected @endif>
+                                    {{ $e->nombre }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+
                     <div class="col-lg-12 mb-4">
                         <label class="form-label">Observaciones</label>
                         <input type="text" class="form-control uppercase-input" name="observacion" required>
@@ -122,10 +155,10 @@
                             <span>Actualiza Cambios</span>
                         </button>
                     </div>
-                </div>
+                </form>
             </div>
         </div>
-    </form>
+    </div>
     <script>
         $('#formUpdateReclamacion').submit(function(event) {
             var form = this;
@@ -138,4 +171,7 @@
             }
         });
     </script>
+
+
+
 </x-base-layout>
