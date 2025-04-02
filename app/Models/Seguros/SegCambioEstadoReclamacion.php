@@ -19,4 +19,9 @@ class SegCambioEstadoReclamacion extends Model
         'hora_actualizacion',
     ];
 
+    public function estado()
+    {
+        return $this->belongsTo(SegEstadoReclamacion::class, 'estado_id', 'id');
+    }
+
 }

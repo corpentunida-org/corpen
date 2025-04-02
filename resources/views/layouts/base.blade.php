@@ -77,7 +77,7 @@
                                 <label>Menu</label>
                             </li>
 
-                            @foreach (auth()->user()->actions as $action)   
+                            @foreach (auth()->user()->actions as $action)
                                 @include('layouts.actions.' . $action->role->name)
                             @endforeach
                         </ul>
@@ -1607,13 +1607,14 @@
                     </div>
                     <!-- [ page-header ] end -->
                     <!-- [ Main Content ] start -->
+                    
                     <div class="main-content">
                         <div class="row">
                             {{ $slot }}
                         </div>
                     </div>
 
-                   
+
                     <!-- [ Main Content ] end -->
                 </div>
                 <!-- [ Footer ] start -->
