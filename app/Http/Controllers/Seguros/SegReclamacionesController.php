@@ -35,12 +35,33 @@ class SegReclamacionesController extends Controller
             ->groupBy('seg_coberturas.id') // Asegúrate de agrupar por la columna que usas para la cobertura
             ->orderByDesc('reclamaciones_count')
             ->first();
-        return view("seguros.reclamaciones.index", compact('reclamaciones','coberturas'));
+        $counts = SegReclamaciones::with('tercero')->get()
+            ->groupBy(function ($reclamacion) {
+                return $reclamacion->tercero->genero;
+            });
+        $hombres = $counts->get('V', collect())->count();
+        $mujeres = $counts->get('H', collect())->count();
+
+        $vencidas = $this->listaReclamacionesVencidas();
+        
+        return view("seguros.reclamaciones.index", compact('reclamaciones','coberturas', 'mujeres', 'hombres', 'vencidas'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
+    private function listaReclamacionesVencidas()
+    {
+        Carbon::setLocale('es');
+        $reclamaciones = SegReclamaciones::where('updated_at', '<', Carbon::now()->subMonths(4))
+            ->get();
+
+        $reclamacionesFormateadas = $reclamaciones->map(function ($reclamacion) {
+            $tiempoTranscurrido = Carbon::parse($reclamacion->updated_at)->diffForHumans();
+            $reclamacion->tiempo_transcurrido = $tiempoTranscurrido;
+            return $reclamacion;
+        });
+
+        return $reclamacionesFormateadas;
+    }
+    
     public function create(Request $request)
     {
         $id = $request->query('a');
@@ -73,7 +94,6 @@ class SegReclamacionesController extends Controller
             'poliza_id' => $request->poliza_id,
             'valor_asegurado' => $request->valorAsegurado,
         ]);
-
         SegPoliza::where('id', $request->poliza_id)
             ->update(['reclamacion' => $reclamacion->id]);
         
@@ -84,7 +104,6 @@ class SegReclamacionesController extends Controller
             'fecha_actualizacion' => now()->toDateString(),
             'hora_actualizacion' => now()->toTimeString(),
         ]);
-
         $url = route('seguros.poliza.show', ['poliza' => 'ID']) . '?id=' . $request->asegurado;
         if ($reclamacion && $cambioEstado) {
             $accion = "add nueva reclamacion  " . $request->asegurado;
@@ -100,7 +119,7 @@ class SegReclamacionesController extends Controller
      */
     public function show(string $id)
     {
-        //
+        
     }
 
     /**
@@ -111,7 +130,9 @@ class SegReclamacionesController extends Controller
         $asegurado = SegAsegurado::where('cedula',$reclamacion->cedulaAsegurado)->with(['tercero','terceroAF'])->first();
         $poliza = SegPoliza::where('seg_asegurado_id', $reclamacion->cedulaAsegurado)->with(['plan.coberturas'])->first();
         $estados = SegEstadoReclamacion::all();
-        return view("seguros.reclamaciones.edit", compact('reclamacion','asegurado','poliza', 'estados'));
+        $hisreclamacion = SegCambioEstadoReclamacion::where('reclamacion_id', $reclamacion->id)->with(['estado'])->get();
+        
+        return view("seguros.reclamaciones.edit", compact('reclamacion','asegurado','poliza', 'estados', 'hisreclamacion'));
     }
     
     /**
@@ -119,7 +140,6 @@ class SegReclamacionesController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        dd($request->all());
         //cambiar el estado de la reclamacion
         $update = SegReclamaciones::where('id', $id)->update([
             'estado' => $request->estado_id,
