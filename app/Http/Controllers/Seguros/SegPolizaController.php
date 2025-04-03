@@ -107,9 +107,8 @@ class SegPolizaController extends Controller
             } else {
                 $failedRows[] = $row;
             }
-        }
-        
-        $this->auditoria("actualizar valor a pagar polizas con carga");
+        }        
+        $this->auditoria("actualizar valor a pagar polizas con carga excel");
         return view('seguros.polizas.edit', compact('failedRows'))->with('success', 'Se actualizaron exitosamente ' . $updatedCount . ' registros');
     }
 
