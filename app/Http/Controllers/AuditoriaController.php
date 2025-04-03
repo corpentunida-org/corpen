@@ -15,6 +15,7 @@ class AuditoriaController extends Controller
             'fechaRegistro' => $now->toDateString(),
             'horaRegistro' => $now->toTimeString(),
             'usuario'=> Auth::user()->name,
+            'usuario_id'=> Auth::user()->id,
             'accion'=> $action,
             'area'=> $area
         ]);

@@ -7,9 +7,8 @@
                 <i class="feather feather-alert-octagon fs-1"></i>
             </div>
             <div>
-                <p class="fw-bold mb-1 text-truncate-1-line">We need your attention!</p>
-                <p class="fs-12 fw-medium text-truncate-1-line">Your payment was declined. To start using tools, please
-                    <strong>Add Payment Method</strong>
+                <p class="fw-bold mb-1 text-truncate-1-line">Reclamaciones próximas a vencer!</p>
+                <p class="fs-12 fw-medium text-truncate-1-line">Procesos de reclamacion que llevan mas de 4 meses desde su ultima modificación. <strong>Click en el botón para ver listado</strong>
                 </p>
                 <a href="#reclamacionesvencer" class="btn btn-sm bg-soft-teal text-teal d-inline-block">Ver listado</a>
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
@@ -283,8 +282,7 @@
                                     </td>
                                     <td>{{ $r->cobertura->nombre }}</td>
                                     <td>$ {{ number_format($r->valor_asegurado) }} </td>
-                                    <td><span
-                                            class="badge bg-soft-primary text-primary">{{ $r->estadoReclamacion->nombre }}</span>
+                                    <td><span class="badge bg-soft-primary text-primary">{{ $r->estadoReclamacion->nombre }}</span>
                                     </td>
                                     <td>
                                         <div class="d-flex align-items-center gap-3">

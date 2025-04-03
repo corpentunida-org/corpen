@@ -15,6 +15,7 @@ class auditoria extends Model
         'fechaRegistro',
         'horaRegistro',
         'usuario',
+        'usuario_id',
         'accion',
         'area'
     ];
