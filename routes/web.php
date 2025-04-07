@@ -27,6 +27,7 @@ use App\Http\Controllers\Seguros\SegNovedadesController;
 use App\Http\Controllers\Cinco\TercerosController;
 use App\Http\Controllers\Cinco\MoviContCincoController;
 use App\Http\Controllers\Cinco\RetirosListadoController;
+use App\Http\Controllers\ResReservaController;
 
 /* Route::middleware(['auth'])->group(function () {
     Route::get('/', function () {
@@ -109,3 +110,9 @@ Route::post('/cartera/pdfMora', [ReadExelController::class, 'pdfMora'])->middlew
 Route::get('/inventario', [UserController::class, 'inventario'])->middleware('auth')->name('inventario');
 //Route::get('/inventario/{id}', [UserController::class, 'inventario'])->middleware('auth')->name('inventario');
 
+Route::get('user/validation/asociado', [UserController::class, 'validarAsociadoCreate'])->name('user.validar.asociado');
+Route::get('/consumir-api', [UserController::class, 'consumirEndpoint']);
+Route::post('validar/asociado', [UserController::class, 'validarAsociado'])->name('validar.asociado');
+
+Route::resource('reserva', ResReservaController::class)->names('reserva');
+Route::get('reservaI/{id}/create', [ResReservaController::class, 'createReserva'])->name('reserva.inmueble.create');

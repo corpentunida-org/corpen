@@ -7,10 +7,14 @@ use App\Models\User;
 use App\Models\Action;
 use App\Models\auditoria;
 use App\Models\Permisos;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Redirect;
 use Spatie\Permission\Models\Role;
 use App\Http\Controllers\AuditoriaController;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+
 
 
 class UserController extends Controller
@@ -129,11 +133,75 @@ class UserController extends Controller
         //$permisos = Permisos::where('role_id', $role)->get();
         $permisos = DB::table('role_has_permissions')->where('role_id', $role)->get();
         return $permisos;
-    }    
+    }
 
     public function inventario($id)
     {
         return 'Inventario';
     }
+
+    public function registerAsociado ()
+    {
+        return view('auth.registerAsociado');
+    }
+
+    public function consumirEndpoint( $nid )
+    {
+        $url = "https://www.siasoftapp.com:7006/api/Pastors"; // URL del endpoint
+        $token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6ImFkbWluQGdtYWlsLmNvbSIsImp0aSI6IjNjNTZjOTU1LTZiNDktNDhlZi04NjVjLWQ1MzViOTNkMjllMCIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJBZG1pbiIsIlVzZXJJZCI6IjEiLCJtYWlsIjoiYWRtaW5AZ21haWwuY29tIiwiVXNlcnJvbGUiOiJBZG1pbiIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6IkFkbWluIiwiZXhwIjoxNzQ2MTkzNzk1LCJpc3MiOiJteWFwcCIsImF1ZCI6Im15YXBwIn0.Cs5UU7RLmFQWsJg444rZTL2QtpRXS4cZEI_8jtzbUSw";
+
+        // Realizar la solicitud GET
+        $response = Http::withToken($token)
+            ->get($url, ['DocumentId' => $nid]); // Agregar parámetros a la URL
+
+        // Verificar si la llamada fue exitosa
+        if ($response->successful()) {
+            // Obtener JSON de respuesta
+            $json = $response->json();
+            return response()->json([
+                'status' => 'success',
+                'data' => $json, // JSON de respuesta
+            ], 200);
+        } else {
+            // Manejar el error
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Error al consumir el endpoint',
+                'error' => $response->body(), // Mostrar el error recibido
+                'code' => $response->status(),
+            ], $response->status());
+        }
+    }
+
+    public function validarAsociado( Request $request )
+    {
+        $nid = $request->input('nid'); // Obtiene el 'nid' del request
+        $asociado = $this->consumirEndpoint($nid); // Consume el endpoint
+        $birthdate = $request->input('fecha'); // Obtiene la fecha del request
+
+        // Asegúrate de convertirlo a un array si es un objeto (por seguridad)
+        $asociadoArray = is_array($asociado) ? $asociado : (array) $asociado;
+
+        //print_r($asociadoArray);
+        if ($asociadoArray['original']['status'] == "success") {
+            $birthdate = $asociadoArray['original']['data']['birthdate'];
+            $formattedBirthdate = Carbon::parse($birthdate)->format('Y-m-d');
+
+            if ($formattedBirthdate != $request->input('fecha')) {
+                return Redirect::back()->withErrors(['Los datos proporcionados no coinciden con nuestros registros. Por favor, comuníquese con nuestro soporte técnico para recibir asistencia.']);
+            }
+
+            return view('auth.registerAsociado', compact('nid', 'birthdate', 'asociadoArray'));
+
+        } else {
+            return Redirect::back()->withErrors(['Los datos proporcionados no coinciden con nuestros registros. Por favor, comuníquese con nuestro soporte técnico para recibir asistencia.']);
+        }
+    }
+
+    public function validarAsociadoCreate( )
+    {
+        return view('auth.validarAsociado');
+    }
+
 
 }
