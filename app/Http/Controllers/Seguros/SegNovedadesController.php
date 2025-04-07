@@ -68,7 +68,7 @@ class SegNovedadesController extends Controller
                 'id_poliza' => $request->id_poliza,
                 'valorpAseguradora' => $request->valorpagaraseguradora,
                 'valorPrimaPlan' => $request->valorPrima,
-                'planNuevo' => $request->planid,
+                'plan' => $request->planid,
                 'fechaNovedad' => $now->toDateString(),
                 'valorAsegurado' => (int) str_replace(',', '', $request->valorAsegurado),
                 'observaciones' => $request->observaciones,

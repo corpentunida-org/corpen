@@ -11,18 +11,22 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('SEG_tipoPolizas', function (Blueprint $table) {
-            $table->id('idPoliza');
-            $table->string('tipoPoliza');
+        Schema::create('seg_beneficios', function (Blueprint $table) {
+            $table->id();
+            $table->bigInteger('cedulaAsegurado');
+            $table->bigInteger('poliza');
+            $table->Integer('porcentajeDescuento');
+            $table->string('valorDescuento', length:100);
+            $table->string('observacion');
             $table->timestamps();
         });
     }
- 
+
     /**
      * Reverse the migrations.
      */
     public function down(): void
     {
-        Schema::dropIfExists('SEG_tipoPolizas');
+        Schema::dropIfExists('seg_beneficios');
     }
 };

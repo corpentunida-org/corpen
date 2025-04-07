@@ -143,7 +143,6 @@
                         </select>
                     </div>
 
-
                     <div class="col-lg-12 mb-4">
                         <label class="form-label">Observaciones</label>
                         <input type="text" class="form-control uppercase-input" name="observacion" required>

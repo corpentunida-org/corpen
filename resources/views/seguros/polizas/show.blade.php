@@ -1,3 +1,6 @@
+@php
+    $colors = ['info', 'warning', 'danger', 'success', 'primary'];
+@endphp
 <x-base-layout>
     @section('titlepage', 'Polizas')
     <x-success />
@@ -41,14 +44,16 @@
                         class="btn btn-sm bg-soft-danger text-danger">Activo en una reclamación</a>
                 @else
                     @can('seguros.poliza.update')
-                    <a href="{{ route('seguros.novedades.create', ['a' => $poliza->seg_asegurado_id]) }}" class="btn btn-light-brand">
-                        <i class="feather-check-circle me-2"></i>
-                        <span>Generar Novedad</span>
-                    </a>
+                        <a href="{{ route('seguros.novedades.create', ['a' => $poliza->seg_asegurado_id]) }}"
+                            class="btn btn-light-brand">
+                            <i class="feather-check-circle me-2"></i>
+                            <span>Generar Novedad</span>
+                        </a>
                     @endcan
                 @endif
             </div>
-            <div class="p-4 mb-4 d-xxl-flex d-xl-block d-md-flex align-items-center justify-content-between gap-4 border border-dashed border-gray-5 rounded-1">
+            <div
+                class="p-4 mb-4 d-xxl-flex d-xl-block d-md-flex align-items-center justify-content-between gap-4 border border-dashed border-gray-5 rounded-1">
                 <div>
                     <div class="fs-14 fw-bold text-dark mb-1">Seguro de vida
                         <a
@@ -66,8 +71,8 @@
                 <div class="hstack gap-3">
                     @if ($poliza->reclamacion == 0)
                         @can('seguros.reclamacion.store')
-                        <a href="{{ route('seguros.reclamacion.create', ['a' => $poliza->seg_asegurado_id]) }}"
-                            class="text-danger">Generar Reclamación</a>
+                            <a href="{{ route('seguros.reclamacion.create', ['a' => $poliza->seg_asegurado_id]) }}"
+                                class="text-danger">Generar Reclamación</a>
                         @endcan
                     @else
                         <a class="text-danger">{{ $poliza->esreclamacion->estadoReclamacion->nombre }}</a>
@@ -83,21 +88,21 @@
                             <h6 class="fs-13 fw-bold">{{ $cobertura->nombre }}</h6>
                             <p class="fs-12 fw-normal text-muted">Seguros de vida</p>
                         </div>
-                        @if ($cobertura->id==1)                                
+                        @if ($cobertura->id == 1)
                             @php $valoracalcular = $cobertura->pivot->valorAsegurado @endphp
                         @endif
                         <div class="mt-4">
-                            <span class="fs-16 fw-bold text-dark">                                
+                            <span class="fs-16 fw-bold text-dark">
                                 $
                                 @if ($cobertura->pivot->valorAsegurado == 0 || $cobertura->pivot->valorAsegurado == null)
                                     @php
                                         $valorcalculado = $valoracalcular * ($cobertura->pivot->porcentaje / 100);
                                     @endphp
                                     {{ number_format($valorcalculado) }}
-                                @else                                    
+                                @else
                                     {{ number_format($cobertura->pivot->valorAsegurado) }}
                                 @endif
-                                </span>
+                            </span>
                             <p class="fs-12 fw-normal text-muted">Valor asegurado</p>
                         </div>
                         <div class="position-absolute top-0 start-50 translate-middle">
@@ -109,79 +114,124 @@
 
         </div>
         @if ($grupoFamiliar->count() >= 1)
-            <div class="payment-history">
-                <div class="mb-4 px-4 d-flex align-items-center justify-content-between">
-                    <h5 class="fw-bold mb-0">Grupo Familiar:</h5>
-                </div>
-                <div class="table-responsive">
-                    <table class="table mb-0">
-                        <thead>
-                            <tr class="border-top">
-                                <th>Cedula</th>
-                                <th>Nombre</th>
-                                <th>Parentesco</th>
-                                <th>Plan</th>
-                                <th>Valor Asegurado</th>
-                                <th>Prima</th>
-                                <th class="text-end">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+            <div class="mb-4 px-4 d-flex align-items-center justify-content-between">
+                <h5 class="fw-bold mb-0">Grupo Familiar:</h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table mb-0">
+                    <thead>
+                        <tr class="border-top">
+                            <th>Cedula</th>
+                            <th>Nombre</th>
+                            <th>Parentesco</th>
+                            <th>Plan</th>
+                            <th>Valor Asegurado</th>
+                            <th>Prima</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
 
-                            @foreach ($grupoFamiliar as $familiar)
-                                <tr>
-                                    <td><a href="javascript:void(0);">{{ $familiar->cedula }}</a></td>
-                                    <td>{{ $familiar->tercero->nombre }}</td>
-                                    <td>{{ $familiar->parentesco }}</td>
-                                    <td><span class="badge bg-soft-warning text-warning">{{ $familiar->polizas->first()->plan->name }}</span>
-                                    </td>
-                                    <td>$ {{ number_format($familiar->polizas->first()->valor_asegurado) }}</td>
-                                    <td>$ {{ number_format($familiar->polizas->first()->valor_prima) }}</td>
-                                    <td class="hstack justify-content-end gap-4 text-end">
-                                        <form action="{{ route('seguros.poliza.show', ['poliza' => 'ID']) }}"
-                                            method="GET">
-                                            <div data-bs-toggle="tooltip" data-bs-trigger="hover"
-                                                data-bs-original-title="Ver Poliza">
-                                                <input type="hidden" name="id" id="valueCedula"
-                                                    value="{{ $familiar->cedula }}">
-                                                <button class="w-50 btn">
-                                                    <i class="feather feather-send fs-12"></i>
-                                                    <span></span>
-                                                </button>
-                                            </div>
-                                        </form>
-                                    </td>
-                                </tr>
+                        @foreach ($grupoFamiliar as $familiar)
+                            <tr>
+                                <td><a href="javascript:void(0);">{{ $familiar->cedula }}</a></td>
+                                <td>{{ $familiar->tercero->nombre }}</td>
+                                <td>{{ $familiar->parentesco }}</td>
+                                <td><span
+                                        class="badge bg-soft-warning text-warning">{{ $familiar->polizas->first()->plan->name }}</span>
+                                </td>
+                                <td>$ {{ number_format($familiar->polizas->first()->valor_asegurado) }}</td>
+                                <td>$ {{ number_format($familiar->polizas->first()->valor_prima) }}</td>
+                                <td class="hstack justify-content-end gap-4 text-end">
+                                    <form action="{{ route('seguros.poliza.show', ['poliza' => 'ID']) }}"
+                                        method="GET">
+                                        <div data-bs-toggle="tooltip" data-bs-trigger="hover"
+                                            data-bs-original-title="Ver Poliza">
+                                            <input type="hidden" name="id" id="valueCedula"
+                                                value="{{ $familiar->cedula }}">
+                                            <button class="w-50 btn">
+                                                <i class="feather feather-send fs-12"></i>
+                                                <span></span>
+                                            </button>
+                                        </div>
+                                    </form>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endif
+        <div class="accordion proposal-faq-accordion mt-4">
+            <div class="accordion-item mt-2">
+                <h2 class="accordion-header" id="flush-headingOne">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#flush-collapseOne" aria-expanded="false"
+                        aria-controls="flush-collapseOne">Actividad de la Póliza</button>
+                </h2>
+                <div id="flush-collapseOne" class="accordion-collapse collapse" aria-labelledby="flush-headingOne"
+                    data-bs-parent="#accordionFaqGroup" style="">
+                    <div class="accordion-body">
+                        <ul class="list-unstyled activity-feed">
+                            @foreach ($registrosnov as $i => $nov)
+                                <li
+                                    class="d-flex justify-content-between feed-item feed-item-{{ $colors[$i % count($colors)] }}">
+                                    <div>
+                                        <span class="text">{{ $nov->created_at }} <a
+                                                class="badge bg-soft-{{ $colors[$i % count($colors)] }} text-{{ $colors[$i % count($colors)] }} ms-1">
+                                                @if ($nov->valorAsegurado)
+                                                    Plan ${{ number_format($nov->valorAsegurado) }}
+                                                @else
+                                                    Descuento ${{ number_format($nov->valorDescuento) }}
+                                                @endif
+                                            </a></span>
+                                        <span class="text-truncate-1-line">
+                                            {{ strtoupper($nov->observaciones) }}
+                                        </span>
+                                    </div>
+                                </li>
                             @endforeach
-                        </tbody>
-                    </table>
-                </div>
-                <div class="p-4 mb-4 d-xxl-flex d-xl-block d-md-flex align-items-center justify-content-end gap-4">
-                    @if ($poliza->asegurado->parentesco == 'AF')
-                        <div class="d-flex gap-4 align-items-center justify-content-sm-end justify-content-between">
-                            <a href="javascript:void(0);" class="text-bold">Valor Titular</a>
-                            <a href="javascript:void(0);" class="btn bg-soft-info" style="font-size:20px;">$
-                                {{ number_format($poliza->asegurado->valorpAseguradora) }}</a>
-                        </div>
-                        <div class="d-flex gap-4 align-items-center justify-content-sm-end justify-content-between">
-                            <a href="javascript:void(0);" class="text-bold">Subsidio</a>
-                            <a href="javascript:void(0);" class="btn bg-soft-warning" style="font-size:20px;">$
-                                @if (!$poliza->asegurado->valorpAseguradora)
-                                    0
-                                @else
-                                    @php $subsicio = $totalPrima - $poliza->asegurado->valorpAseguradora @endphp {{ number_format($subsicio) }}
-                                @endif
-                            </a>
-                        </div>
-                    @endif
-                    <div class="d-flex gap-4 align-items-center justify-content-sm-end justify-content-between">
-                        <a href="javascript:void(0);" class="text-bold">Valor Aseguradora</a>
-                        <a href="javascript:void(0);" class="btn bg-soft-primary" style="font-size:20px;">$
-                            {{ number_format($totalPrima) }}</a>
+                        </ul>
                     </div>
                 </div>
             </div>
-        @endif
+        </div>
+        <div class="p-4 d-xxl-flex d-xl-block d-md-flex align-items-center justify-content-end gap-4">
+            @if ($poliza->asegurado->parentesco == 'AF')
+                <div class="d-flex gap-4 align-items-center justify-content-sm-end justify-content-between">
+                    <a href="javascript:void(0);" class="text-bold">Valor Titular</a>
+                    <a href="javascript:void(0);" class="btn bg-soft-info" style="font-size:20px;">$
+                        {{ number_format($poliza->valorpagaraseguradora) }}</a>
+                </div>
+                <div class="d-flex gap-4 align-items-center justify-content-sm-end justify-content-between">
+                    <a href="javascript:void(0);" class="text-bold">Subsidio</a>
+                    <a href="javascript:void(0);" class="btn bg-soft-warning" style="font-size:20px;">$
+                        @if (!$poliza->asegurado->valorpAseguradora)
+                            0
+                        @else
+                            @php 
+                            $subsidio = $totalPrima - $poliza->asegurado->valorpAseguradora;
+                            foreach ($beneficios as $beneficio) {                            
+                                $subsidio += $beneficio->valorDescuento;
+                            }
+                            @endphp 
+                            {{ number_format($subsidio) }}
+                        @endif
+                    </a>
+                </div>
+            @endif
+            <div class="d-flex gap-4 align-items-center justify-content-sm-end justify-content-between">
+                <a href="javascript:void(0);" class="text-bold">Valor Aseguradora</a>
+                <a href="javascript:void(0);" class="btn bg-soft-primary" style="font-size:20px;">$
+                    {{ number_format($totalPrima) }}</a>
+            </div>
+        </div>
+        <small class="form-text text-danger text-end mb-4" style="margin-right: 30px;">El valor a pagar es erroneo,
+            para corregirlo <a href="#" class="text-danger">click aqui</a></small>
+
+
+
+
 
         @if ($beneficiarios->isnotEmpty())
             @include('seguros.beneficiarios.show')
