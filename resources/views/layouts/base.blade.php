@@ -68,16 +68,13 @@
             <!--! ================================================================ !-->
             <nav class="nxl-navigation">
                 <div class="navbar-wrapper">
-                    <div class="m-header">
-                        <a href="{{ route('dashboard') }}" class="b-brand">
-                            <!-- ========   change your logo hear   ============ -->
+                    <a href="{{ route('dashboard') }}" class="b-brand d-flex justify-content-center align-items-center">
+                        <!-- ========   change your logo here   ============ -->
+                        <img src="https://www.fecp.org.co/images/CORPENTUNIDA_LOGO_PRINCIPAL.png" alt=""
+                             class="logo logo-sm" width="200px" />
+                    </a>
 
-                            <img src="{{ asset('assets/images/CORPENTUNIDA_LOGO_PRINCIPAL   (2).png') }}" alt=""
-                                class="logo logo-lg" />
-                            <img src="{{ asset('assets/images/CORPENTUNIDA_LOGO_PRINCIPAL   (2).png') }}" alt=""
-                                class="logo logo-sm" />
-                        </a>
-                    </div>
+
                     <div class="navbar-content">
                         <ul class="nxl-navbar">
                             <li class="nxl-item nxl-caption">
@@ -166,7 +163,7 @@
                             <div class="dropdown nxl-h-item">
                                 <a href="javascript:void(0);" data-bs-toggle="dropdown" role="button"
                                     data-bs-auto-close="outside">
-                                    <img src="assets/images/avatar/1.png" alt="user-image"
+                                    <img src="{{ asset('assets/images/avatar/1.png') }}" alt="user-image"
                                         class="img-fluid user-avtar me-0" />
                                 </a>
                                 <div class="dropdown-menu dropdown-menu-end nxl-h-dropdown nxl-user-dropdown">
@@ -208,7 +205,7 @@
             <!--! ================================================================ !-->
             <!--! [Start] Main Content !-->
             <!--! ================================================================ !-->
-            <main class="nxl-container">
+            <main class="nxl-container  ">
                 <div class="nxl-content">
                     <!-- [ page-header ] start -->
                     <div class="page-header">
@@ -225,7 +222,7 @@
                     </div>
                     <!-- [ page-header ] end -->
                     <!-- [ Main Content ] start -->
-                    
+
                     <div class="main-content">
                         <div class="row">
                             {{ $slot }}
