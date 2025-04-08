@@ -1,25 +1,7 @@
 
 <x-base-layout>
-    @section('titlepage', 'Reserva Asociado')
+    @section('titlepage', 'Confirmar reserva Asociado')
     <x-success />
-
-    <div class="row">
-        <div class="col-xxl-3 col-md-6">
-            @foreach($inmuebles as $inmueble)
-                <div class="card card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div class="me-3">
-                            <h5 class="fs-4">{{ $inmueble->name }}</h5>
-                            <span class="text-muted">{{ $inmueble->description }}</span>
-                        </div>
-                        <div class="btn btn-md btn-success">
-                            <a href="{{ route('reserva.inmueble.create', $inmueble->id) }}" style="color: white">Reservar</a>
-                        </div>
-                    </div>
-                </div>
-            @endforeach
-        </div>
-    </div>
 
     <div class="col-lg-12">
         <div class="card stretch stretch-full">
@@ -35,6 +17,7 @@
                             <thead>
                             <tr>
                                 <th>Inmueble</th>
+                                <th>Asociado</th>
                                 <th>Inicio</th>
                                 <th>Fin</th>
                                 <th>Estado</th>
@@ -53,7 +36,9 @@
                                             </a>
                                         </div>
                                     </td>
-
+                                    <td>
+                                        <div class="fw-semibold mb-1">{{ $reserva->user->name }}</div>
+                                    </td>
                                     <td>
                                         <div class="fw-semibold mb-1">{{ $reserva->fecha_inicio }}</div>
                                     </td>
@@ -66,12 +51,14 @@
 
                                     <td>
                                         <div class="hstack gap-2 justify-content-end">
-                                            <a href="{{ route('reserva.inmueble.soporte.create', $reserva->id) }}" class="btn btn-sm btn-success">
-                                                <i class="bi bi-cloud-upload"></i> <!-- Ícono de subir -->
-                                            </a>
-                                            <a href="{{ route('reserva.show', $reserva->id) }}"
+
+                                            <a href="{{ route('reserva.inmueble.confirmacion.show', $reserva->id) }}"
                                                class="btn btn-sm btn-primary">
                                                 <i class="bi bi-grid"></i>
+                                            </a>
+                                            <a href="{{ route('reserva.edit', $reserva->id) }}"
+                                               class="btn btn-sm btn-warning">
+                                                <i class="bi bi-pencil-square"></i>
                                             </a>
                                             <form action="{{ route('reserva.destroy', $reserva->id) }}" method="POST">
                                                 @csrf

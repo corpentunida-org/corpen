@@ -17,19 +17,25 @@
                     <h5 class="modal-title" id="reservaModalLabel">Crear Reserva</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form id="reservaForm">
+                <form id="reservaForm" action="{{ route('reserva.inmueble.store') }}" method="POST">
+                    @csrf
+                    <input type="hidden" name="inmueble_id" id="inmueble_id" value="{{ $inmueble->id }}">
                     <div class="modal-body">
                         <div class="mb-3">
-                            <label for="startDate" class="form-label">Fecha de Inicio</label>
-                            <input type="date" class="form-control" id="startDate" name="startDate" required>
+                            <label for="fechaInicio" class="form-label">Fecha de Inicio</label>
+                            <input type="text" class="form-control" id="fechaInicio" name="fechaInicio" required readonly>
                         </div>
                         <div class="mb-3">
                             <label for="endDate" class="form-label">Fecha de Fin</label>
-                            <input type="date" class="form-control" id="endDate" name="endDate" required>
+                            <input type="text" class="form-control" id="endDate" name="endDate" required>
                         </div>
                         <div class="mb-3">
-                            <label for="description" class="form-label">Descripción</label>
-                            <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
+                            <label for="celular" class="form-label">Número de celular</label>
+                            <input type="text" class="form-control" id="celular" name="celular" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Comentario de reserva</label>
+                            <textarea class="form-control" id="description" name="description" rows="3" ></textarea>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -53,25 +59,46 @@
                 z-index: auto;   /* Dejar que apile naturalmente los elementos */
 
             }
+            .modal-backdrop {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background-color: rgba(0, 0, 0, 0.5); /* Color de fondo semi-transparente */
+                z-index: 1040 !important; /* Nivel de apilamiento detrás del modal */
+            }
+
             .modal {
                 z-index: 1055 !important;
             }
 
-            .modal-backdrop {
-                z-index: 1045 !important;
-            }
             .content-area {
                 position: static !important; /* Elimina cualquier posible contexto de apilamiento */
-                z-index: auto !important; /* Garantiza que no interfiera */
-
             }
 
-
-
+            .nxl-container {
+                filter: none !important; /* Elimina cualquier posible filtro */
+            }
         </style>
     @endpush
 
     @push('scripts')
+        <script src="{{asset('assets/vendors/js/datepicker.min.js')}}"></script>
+        <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const endDateField = document.getElementById('endDate');
+
+                // Inicializa el Datepicker para endDate
+                const endDatePicker = new Datepicker(endDateField, {
+                    format: 'yyyy-mm-dd',
+                    autohide: true,
+                    todayBtn: true,
+                    clearBtn: true,
+                });
+            });
+        </script>
+
         <script>
             document.addEventListener('DOMContentLoaded', function () {
                 // Selecciona el contenedor del calendario
@@ -92,13 +119,27 @@
 
                     // Lista de eventos
                     events: [
-                        {
-                            title: 'Evento para hoy', // Nombre del evento
-                            start: todayDate,       // Fecha de inicio: hoy
-                            description: 'Evento fijo para el día actual.',
-                            backgroundColor: '#007bff', // Color del fondo del evento
-                            borderColor: '#007bff'      // Color del borde del evento
-                        }
+                        @foreach($reservas as $reserva)
+                            @if($reserva->nid == '0000000000')
+                                {
+                                    title: 'Adecuación', // Nombre del evento
+                                    start: '{{ $reserva->fecha_inicio }}', // Fecha de inicio obtenida del objeto $reserva
+                                    end: '{{ \Carbon\Carbon::parse($reserva->fecha_fin)->addDay()->format('Y-m-d') }}', // Suma 1 día a la fecha de fin
+                                    description: 'Alistamiento del apartamento.',
+                                    backgroundColor: '#4f545a', // Color del fondo del evento
+                                    borderColor: '#1b1c1e'      // Color del borde del evento
+                                },
+                            @else
+                                {
+                                    title: 'Reserva', // Nombre del evento
+                                    start: '{{ $reserva->fecha_inicio }}', // Fecha de inicio obtenida del objeto $reserva
+                                    end: '{{ \Carbon\Carbon::parse($reserva->fecha_fin)->addDay()->format('Y-m-d') }}', // Suma 1 día a la fecha de fin
+                                    description: 'Evento fijo para el día actual.',
+                                    backgroundColor: 'rgba(0,123,255,0.94)', // Color del fondo del evento
+                                    borderColor: '#073c8a'      // Color del borde del evento
+                                },
+                            @endif
+                        @endforeach
                     ],
 
                     // Evento: Detecta clic en un evento
@@ -121,7 +162,8 @@
 
 
                         // Establece la fecha seleccionada en el campo "Fecha de Inicio"
-                        document.getElementById('startDate').value = info.dateStr;
+                        document.getElementById('fechaInicio').value = (info.dateStr);
+
 
                         // Limpia los campos restantes (opcional)
                         document.getElementById('endDate').value = '';
@@ -132,28 +174,44 @@
                 // Renderiza el calendario en la página
                 calendar.render();
 
-                // Manejo del formulario de reserva
-                document.getElementById('reservaForm').addEventListener('submit', function(e) {
-                    e.preventDefault(); // Evita el envío normal del formulario
+                // Obtén los campos de fecha
+                const celularField = document.getElementById('celular');
+                const startDateField = document.getElementById('fechaInicio');
+                const endDateField = document.getElementById('endDate');
+                const form = document.getElementById('reservaForm');
+                form.addEventListener('submit', function(event) {
+                    // Obtén los valores de los campos
+                    const startDateValue = startDateField.value;
+                    const endDateValue = endDateField.value;
 
-                    // Obtén los valores del formulario
-                    const startDate = document.getElementById('startDate').value;
-                    const endDate = document.getElementById('endDate').value;
-                    const description = document.getElementById('description').value;
+                    // Convierte las fechas a objetos de Date
+                    const startDate = new Date(startDateValue);
+                    const endDate = new Date(endDateValue);
 
-                    // Aquí puedes procesar los datos, enviarlos al servidor con un fetch/AJAX, etc.
-                    alert(`Reserva creada:\nFecha de Inicio: ${startDate}\nFecha de Fin: ${endDate}\nDescripción: ${description}`);
+                    // Verifica si endDate es al menos un día después de startDate
+                    const differenceInTime = endDate - startDate; // Diferencia en milisegundos
+                    const differenceInDays = differenceInTime / (1000 * 60 * 60 * 24); // Diferencia en días
 
-                    // Cierra el modal
-                    document.getElementById('reservaModal').addEventListener('hidden.bs.modal', function () {
-                        const modalBackdrop = document.querySelector('.modal-backdrop');
-                        if (modalBackdrop) {
-                            modalBackdrop.remove();
-                        }
-                    });
+                    if (differenceInDays < 1) {
+                        // Si la diferencia es menor a un día, evita el envío y muestra un mensaje de error
+                        event.preventDefault();
+                        alert('La fecha de fin debe ser al menos un día posterior a la fecha de inicio.');
+                    }
+
+                    const celularValue = celularField.value;
+                    const celularRegex = /^\d{10}$/; // Expresión regular para validar 10 dígitos numéricos
+
+                    if (!celularRegex.test(celularValue)) {
+                        // Si el celular no cumple con el formato
+                        event.preventDefault();
+                        alert('El número de celular debe tener exactamente 10 dígitos numéricos.');
+                        return;
+                    }
 
                 });
+
             });
+
         </script>
     @endpush
 </x-base-layout>
