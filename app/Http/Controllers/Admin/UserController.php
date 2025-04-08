@@ -81,6 +81,7 @@ class UserController extends Controller
         foreach ($roles as $role) {
             Action::create([
                 'user_email' => $user->email,
+                'user_id' => $user->id,
                 'role_id' => $role,
             ]);
             $permisos_rol = $this->permisos_rol($role);

@@ -14,6 +14,7 @@ class Action extends Model
     protected $fillable = [
         'user_email',
         'role_id',
+        'user_id'
     ];
     /* public function role()
     {
