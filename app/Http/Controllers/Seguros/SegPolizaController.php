@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Seguros;
 
 use App\Http\Controllers\Controller;
+use App\Models\Seguros\SegBeneficios;
 use App\Models\Seguros\SegPoliza;
 use App\Models\Seguros\SegBeneficiario;
 use App\Models\Seguros\SegNovedades;
@@ -72,16 +73,25 @@ class SegPolizaController extends Controller
 
         $beneficiarios = SegBeneficiario::where('id_asegurado', $id)->get();
 
-        return view('seguros.polizas.show', compact('poliza', 'grupoFamiliar', 'totalPrima', 'beneficiarios'));
+        $novedades = SegNovedades::where('id_asegurado', $id)
+            ->where('id_poliza', $poliza->id)->get();
+        $beneficios = SegBeneficios::where('cedulaAsegurado', $id)
+            ->where('poliza', $poliza->id)->get();
+            $registrosnov = $novedades->merge($beneficios);
+            $registrosnov = $registrosnov->sortBy('created_at');
+        
+        return view('seguros.polizas.show', compact('poliza', 'grupoFamiliar', 'totalPrima', 'beneficiarios', 'beneficios','registrosnov'));
     }
 
     /**
      * Show the form for editing the specified resource.
      */
+
     public function edit(SegPoliza $segPoliza)
     {
         return view('seguros.polizas.edit');
     }
+
     public function upload(Request $request)
     {        
         $request->validate([
@@ -98,18 +108,27 @@ class SegPolizaController extends Controller
         foreach ($rows as $index => $row) {
             if ($index == 0) {
                 continue;
-            }         
+            }            
             $modeloData = SegPoliza::where('seg_asegurado_id', $row['cod_ter'])->first();
             if ($modeloData) {
+                SegNovedades::create([
+                    'id_asegurado' => $modeloData->seg_asegurado_id,
+                    'id_poliza' => $modeloData->id,
+                    'valorpagar' => $row['deb_mov'],
+                    'valorPrimaPlan' => $modeloData->valor_prima,
+                    'plan' => $modeloData->seg_plan_id,
+                    'fechaNovedad' => Carbon::now()->toDateString(),
+                    'valorAsegurado' => $modeloData->valor_asegurado,
+                    'observaciones' => $request->observacion,
+                ]);
                 $modeloData->valorpagaraseguradora = $row['deb_mov'];
                 $modeloData->save();
                 $updatedCount++;
             } else {
                 $failedRows[] = $row;
             }
-        }
-        
-        $this->auditoria("actualizar valor a pagar polizas con carga");
+        }        
+        $this->auditoria("actualizar valor a pagar polizas con carga excel");
         return view('seguros.polizas.edit', compact('failedRows'))->with('success', 'Se actualizaron exitosamente ' . $updatedCount . ' registros');
     }
 

@@ -14,7 +14,7 @@ class SegNovedades extends Model
         'id_asegurado',
         'retiro',
         'plan',
-        'valorpAseguradora',
+        'valorpagar',
         'valorAsegurado',
         'fechaNovedad',
         'observaciones',
