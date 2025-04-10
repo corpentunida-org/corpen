@@ -32,7 +32,7 @@ class SegReclamacionesController extends Controller
         $reclamaciones = SegReclamaciones::with(['asegurado.terceroAF', 'asegurado.tercero', 'cobertura'])->get();
         $coberturas = SegCobertura::select('seg_coberturas.*', DB::raw('COUNT(SEG_reclamaciones.idCobertura) as reclamaciones_count'))
             ->leftJoin('SEG_reclamaciones', 'seg_coberturas.id', '=', 'SEG_reclamaciones.idCobertura')
-            ->groupBy('seg_coberturas.id') // Asegúrate de agrupar por la columna que usas para la cobertura
+            ->groupBy('seg_coberturas.id') 
             ->orderByDesc('reclamaciones_count')
             ->first();
         $counts = SegReclamaciones::with('tercero')->get()

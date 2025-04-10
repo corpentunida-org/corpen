@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\PermissionsController;
 use App\Http\Controllers\IndexController;
 
 use Illuminate\Support\Facades\Route;
@@ -61,6 +62,7 @@ Route::get('/base', function () {
 Route::resource('users', UserController::class)->names('admin.users')->middleware(['auth', 'can:admin.users.index']);
 Route::resource('admin', AuditoriaController::class)->names('admin.auditoria')->middleware(['auth', 'can:admin.auditoria.index']);
 Route::resource('roles', RoleController::class)->names('admin.roles')->middleware(['auth']);
+Route::resource('permisos', PermissionsController::class)->names('admin.permisos')->middleware(['auth']);
 
 //RUTAS DE EXEQUIALES
 Route::get('asociados/{id}/generarpdf/{active}', [ComaeExCliController::class, 'generarpdf'])->name('asociados.generarpdf');
@@ -91,7 +93,6 @@ Route::get('/reclamacion/informe/excel', [SegReclamacionesController::class, 'ex
 Route::post('poliza/upload', [SegPolizaController::class, 'upload'])->name('seguros.poliza.upload');
 Route::get('/seguros/cxc', [SegPolizaController::class, 'exportcxc'])->name('seguros.poliza.download');
 
-
 //RUTAS CINCO
 Route::resource('terceros', TercerosController::class)->names('cinco.tercero')->middleware(['auth', 'can:cinco.tercero.index']);
 Route::resource('cinco', MoviContCincoController::class)->names('cinco.movcontables')->middleware(['auth', 'can:cinco.movcontables.index']);
@@ -100,8 +101,10 @@ Route::get('movcontables/{id}/reportepdf/', [MoviContCincoController::class, 'ge
 Route::get('/retirosname/{name}', [RetirosListadoController::class, 'namesearch'])->name('cinco.retiros.search');
 
 //RUTA CARTERA MOROSOS
-Route::resource('cartera', ReadExelController::class)->only(['index', 'store'])->middleware('auth')
-    ->names('cartera.morosos');
+Route::get('cartera', [ReadExelController::class, 'index'])
+    ->name('cartera.morosos.index')->middleware(['auth', 'can:cartera.listamorosos.generarcarta']);
+Route::post('cartera', [ReadExelController::class, 'store'])
+    ->name('cartera.morosos.store')->middleware(['auth', 'can:cartera.listamorosos.generarcarta']);
 Route::post('/cartera/pdfMora', [ReadExelController::class, 'pdfMora'])->middleware('auth')->name('cartera.morosos.pdfMora');
 
 //Módulo inventario
