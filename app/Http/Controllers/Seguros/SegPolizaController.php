@@ -75,6 +75,7 @@ class SegPolizaController extends Controller
 
         $novedades = SegNovedades::where('id_asegurado', $id)
             ->where('id_poliza', $poliza->id)->get();
+            
         $beneficios = SegBeneficios::where('cedulaAsegurado', $id)
             ->where('poliza', $poliza->id)->get();
             $registrosnov = $novedades->merge($beneficios);

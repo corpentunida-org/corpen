@@ -32,7 +32,7 @@
                                         <li
                                             class="px-4 my-2 fs-10 fw-bold text-uppercase text-muted text-spacing-1 d-flex align-items-center justify-content-between">
                                             <span>Permisos</span>
-                                            <a href="javascript:void(0);">
+                                            <a href="#cardAddPermisos">
                                                 <span class="avatar-text avatar-sm" data-bs-toggle="tooltip"
                                                     data-bs-trigger="hover" title=""
                                                     data-bs-original-title="Agregar Nuevo"> <i class="feather-plus"></i>
@@ -44,11 +44,11 @@
                                             @method('PUT')
                                             @foreach ($rol->permissionsRole as $listapermisos)
                                                 <li class="nav-item">
-                                                    <div class="nav-link">                                                        
+                                                    <div class="nav-link">
                                                         <div class="custom-control custom-checkbox">
                                                             <input type="checkbox" class="custom-control-input"
-                                                                id="checkbox{{ $listapermisos->id }}" name="permissions[]"
-                                                                value="{{ $listapermisos->id }}"
+                                                                id="checkbox{{ $listapermisos->id }}"
+                                                                name="permissions[]" value="{{ $listapermisos->id }}"
                                                                 @if (in_array($listapermisos->id, $rol->permissions->pluck('id')->toArray())) checked @endif>
                                                             <label class="custom-control-label c-pointer"
                                                                 for="checkbox{{ $listapermisos->id }}">{{ $listapermisos->name }}</label>
@@ -100,6 +100,58 @@
                 </form>
                 <script>
                     $('#formAddRole').submit(function(event) {
+                        var form = this;
+                        if (!form.checkValidity()) {
+                            $(form).addClass('was-validated');
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+                    });
+                </script>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-12">
+        <div class="card stretch stretch-full" id="cardAddPermisos">
+            <div class="card-header">
+                <h5 class="fw-bold mb-0">
+                    <span class="d-block mb-2">Crear un permiso </span>
+                    <span class="fs-12 fw-normal text-muted d-block">Nombre del permiso y su rol asignado</span>
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="mb-4">
+                    <div class="col-lg-3 fw-medium">Ejemplo para asignar un nombre rol</div>
+                    <div class="col-lg-9 hstack gap-1">
+                        <span class="badge bg-soft-primary text-primary">Nombre Rol</span> .
+                        <span class="badge bg-soft-success text-success">Area Especifica</span> .
+                        <span class="badge bg-soft-warning text-warning">Funcionalidad</span>
+                    </div>
+                </div>
+                <form method="POST" action="{{ route('admin.permisos.store') }}" id="formAddPermiso" novalidate>
+                    @csrf
+                    @method('POST')
+                    <div class="mb-4">
+                        <label class="form-label">Nombre del Permiso<span class="text-danger">*</span></label>
+                        <input type="text" class="form-control uppercase-input" name="permisoName" required>
+                    </div>
+                    <div class="mb-4">
+                        <select class="form-control" name="permisoRol">
+                            @foreach ($roles as $i => $rol)
+                                <option value="{{ $rol->id }}">{{ strtoupper($rol->name) }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="d-flex flex-row-reverse gap-2 mt-2">
+                        <button class="btn btn-success mt-4" data-bs-toggle="tooltip"
+                            title="Timesheets"type="submit">
+                            <i class="feather-plus me-2"></i>
+                            <span>Agregar Permiso</span>
+                        </button>
+                    </div>
+                </form>
+                <script>
+                    $('#formAddPermiso').submit(function(event) {
                         var form = this;
                         if (!form.checkValidity()) {
                             $(form).addClass('was-validated');
