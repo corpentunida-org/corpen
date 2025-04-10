@@ -51,6 +51,5 @@ class ReadExelController extends Controller
         
         return $pdf->download(date('Y-m-d') . " " . $request->CEDULA . " Reporte.pdf");
         //return view('cartera.morosospdf', ['registro' => $request, 'image_path' => public_path('assets/img/fondoPdf.jpg')]);
-    
     }
 }

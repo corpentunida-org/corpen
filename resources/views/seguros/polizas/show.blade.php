@@ -196,43 +196,71 @@
                 </div>
             </div>
         </div>
-        <div class="p-4 d-xxl-flex d-xl-block d-md-flex align-items-center justify-content-end gap-4">
-            @if ($poliza->asegurado->parentesco == 'AF')
+
+        @if ($poliza->asegurado->parentesco == 'AF')
+            <div class="p-4 d-xxl-flex d-xl-block d-md-flex align-items-center justify-content-end gap-4">
                 <div class="d-flex gap-4 align-items-center justify-content-sm-end justify-content-between">
                     <a href="javascript:void(0);" class="text-bold">Valor Titular</a>
                     <a href="javascript:void(0);" class="btn bg-soft-info" style="font-size:20px;">$
                         {{ number_format($poliza->valorpagaraseguradora) }}</a>
                 </div>
+
                 <div class="d-flex gap-4 align-items-center justify-content-sm-end justify-content-between">
-                    <a href="javascript:void(0);" class="text-bold">Subsidio</a>
-                    <a href="javascript:void(0);" class="btn bg-soft-warning" style="font-size:20px;">$
+                    <div href="" class="text-bold">Subsidio</div>
+                    <div href="" class="btn bg-soft-warning collapsed" data-bs-toggle="collapse"
+                        data-bs-target="#collapseOne" aria-expanded="false" style="font-size:20px;">$
                         @if (!$poliza->asegurado->valorpAseguradora)
                             0
                         @else
-                            @php 
-                            $subsidio = $totalPrima - $poliza->asegurado->valorpAseguradora;
-                            foreach ($beneficios as $beneficio) {                            
-                                $subsidio += $beneficio->valorDescuento;
-                            }
-                            @endphp 
+                            @php
+                                $sub = 0;
+                                foreach ($beneficios as $beneficio) {
+                                    $sub += $beneficio->valorDescuento;
+                                }
+                                $s = $totalPrima - $sub - $poliza->valorpagaraseguradora;
+                                $subsidio = $sub + $s;
+                            @endphp
                             {{ number_format($subsidio) }}
                         @endif
-                    </a>
+                    </div>
                 </div>
-            @endif
-            <div class="d-flex gap-4 align-items-center justify-content-sm-end justify-content-between">
-                <a href="javascript:void(0);" class="text-bold">Valor Aseguradora</a>
-                <a href="javascript:void(0);" class="btn bg-soft-primary" style="font-size:20px;">$
-                    {{ number_format($totalPrima) }}</a>
+
+                <div class="d-flex gap-4 align-items-center justify-content-sm-end justify-content-between">
+                    <div href="" class="text-bold">Valor Aseguradora</div>
+                    <div href="" class="btn bg-soft-primary" style="font-size:20px;">$
+                        {{ number_format($totalPrima) }}</div>
+                </div>
             </div>
-        </div>
-        <small class="form-text text-danger text-end mb-4" style="margin-right: 30px;">El valor a pagar es erroneo,
-            para corregirlo <a href="#" class="text-danger">click aqui</a></small>
-
-
-
-
-
+            <div id="collapseOne" class="accordion-collapse page-header-collapse collapse" style="">
+                <div class="accordion-body pb-2">
+                    <div class="table-responsive">
+                        <table class="table">                            
+                            <tbody>    
+                            @foreach ( $beneficios as $beneficio )                                                    
+                                <tr>
+                                    <td colspan="3"></td>
+                                    <td class="fw-semibold text-dark bg-gray-100 text-lg-end">Beneficio</td>
+                                    <td class="fw-bold text-dark bg-gray-100">+ $ {{number_format($beneficio->valorDescuento)}}</td>
+                                </tr>
+                            @endforeach   
+                                <tr>
+                                    <td colspan="3"></td>
+                                    <td class="fw-semibold text-dark bg-gray-100 text-lg-end">Subsidio Inicial</td>
+                                    <td class="fw-bold text-dark bg-gray-100"> $ {{number_format($s)}}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            @if ($poliza->valorpagaraseguradora + $subsidio != $totalPrima)
+                <small class="form-text text-danger text-end mb-4" style="margin-right: 30px;">El valor a pagar del
+                    titular es erroneo, para corregirlo
+                    <a href="{{ route('seguros.novedades.create', ['a' => $poliza->seg_asegurado_id]) }}"
+                        class="text-danger">click aqui</a></small>
+            @endif
+        @endif
         @if ($beneficiarios->isnotEmpty())
             @include('seguros.beneficiarios.show')
         @endif

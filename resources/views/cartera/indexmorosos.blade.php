@@ -53,7 +53,6 @@
         </div>
     </div>
 
-
     <div class="p-2" style="font-size: 11px;">
         @if (isset($data) && count($data) > 0)
             <table class="table table-striped">
