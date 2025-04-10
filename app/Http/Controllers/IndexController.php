@@ -29,10 +29,12 @@ class IndexController extends Controller
             return redirect()->route('seguros.poliza.index');
         } elseif ($roles->first()->name===('cinco')) {
             return redirect()->route('cinco.tercero.index');
+        } elseif ($roles->first()->name===('cartera')) {
+            return redirect()->route('cartera.morosos.index');
         } else {
-            return view('welcome');
+                return view('welcome');
+            }
         }
-    }
 
     /**
      * Show the form for creating a new resource.
