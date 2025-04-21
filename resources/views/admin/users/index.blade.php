@@ -186,43 +186,46 @@
                         </a>
                         <div class="dropdown-menu dropdown-menu-end">
                             <a href="{{ route('admin.users.create') }}" class="dropdown-item"><i
-                                class="feather-plus"></i>Crear Usuario</a>
+                                    class="feather-plus"></i>Crear Usuario</a>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="card-body custom-card-action">                
-                @foreach ($users as $user)
-                    <div class="w-100 d-flex align-items-center justify-content-between">
-                        <div class="d-flex align-items-center">
-                            <div class="avatar-image me-3">
-                                <i class="bi bi-person-circle"></i>
+            <div class="card-body custom-card-action">
+                <div class="mb-4 pb-1 d-flex">
+                    <input type="text" id="userSearch" class="form-control" placeholder="Buscar...">
+                </div>
+                <div id="userList">
+                    @foreach ($users as $user)
+                        <div class="user-item w-100 d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center">
+                                <div class="avatar-image me-3">
+                                    <i class="bi bi-person-circle"></i>
+                                </div>
+                                <div>
+                                    <a href="" class="d-flex align-items-center mb-1 user-name">{{ $user->name }}</a>
+                                    <div class="fs-12 fw-normal text-muted user-email">{{ $user->email }}</div>
+                                </div>
                             </div>
-                            <div>
-                                <a href="javascript:void(0)"
-                                    class="d-flex align-items-center mb-1">{{ $user->name }}</a>
-                                <div class="fs-12 fw-normal text-muted">{{ $user->email }}</div>
-                            </div>
-                        </div>
-                        <div class="dropdown hstack text-end justify-content-end">
-                            <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown"
-                                aria-expanded="false">
-                                <i class="feather feather-more-vertical"></i>
-                            </a>
-                            <ul class="dropdown-menu dropdown-menu-end" style="">
-                                <li>
-                                    <a href="{{ route('admin.users.edit', $user->id) }}" class="dropdown-item">
-                                        <i class="feather feather-eye me-3"></i>
-                                        <span>Ver detalle</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="javascript:void(0)" class="dropdown-item">
-                                        <i class="feather feather-share-2 me-3"></i>
-                                        <span>Compartir</span>
-                                    </a>
-                                </li>
-                                {{-- <li class="dropdown-divider"></li>
+                            <div class="dropdown hstack text-end justify-content-end">
+                                <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown"
+                                    aria-expanded="false">
+                                    <i class="feather feather-more-vertical"></i>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end" style="">
+                                    <li>
+                                        <a href="{{ route('admin.users.edit', $user->id) }}" class="dropdown-item">
+                                            <i class="feather feather-eye me-3"></i>
+                                            <span>Ver detalle</span>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="javascript:void(0)" class="dropdown-item">
+                                            <i class="feather feather-share-2 me-3"></i>
+                                            <span>Compartir</span>
+                                        </a>
+                                    </li>
+                                    {{-- <li class="dropdown-divider"></li>
                                 <li>
                                     <a href="javascript:void(0)" class="dropdown-item">
                                         <i class="feather feather-scissors me-3"></i>
@@ -235,19 +238,38 @@
                                         <span>Delete</span>
                                     </a>
                                 </li> --}}
-                            </ul>
+                                </ul>
+                            </div>
                         </div>
-                    </div>
-                    <hr class="border-dashed my-3">
-                @endforeach
-                
-            </div>
-            {{-- <a href="{{ route('admin.users.create') }}"
-                class="card-footer fs-11 fw-bold text-uppercase text-center">Añadir Usuario</a> --}}
-                <div class="card-footer d-flex justify-content-center">
-                    {{ $users->links() }}
+                        <hr class="border-dashed my-3">
+                    @endforeach
                 </div>
+            </div>
+
+            <div class="card-footer d-flex justify-content-center">
+                {{ $users->links() }}
+            </div>
         </div>
+    </div>
+    <script>
+        $(document).ready(function() {
+            $('#userSearch').on('keyup', function() {
+                let value = $(this).val().toLowerCase();
+
+                $('.user-item').each(function() {
+                    const name = $(this).find('.user-name').text().toLowerCase();
+                    const email = $(this).find('.user-email').text().toLowerCase();
+
+                    if (name.includes(value) || email.includes(value)) {
+                        $(this).show();
+                    } else {
+                        $(this).hide();
+                    }
+                });
+            });
+        });
+    </script>
+
     </div>
 
     <div class="col-xxl-4 col-lg-6">
@@ -305,4 +327,8 @@
             <a href="javascript:void(0);" class="card-footer fs-11 fw-bold text-uppercase text-center"></a>
         </div>
     </div>
+
+    {{-- ----------------------------------------------------------------------------------- --}}
+
+
 </x-base-layout>

@@ -181,8 +181,10 @@
                                                 class="badge bg-soft-{{ $colors[$i % count($colors)] }} text-{{ $colors[$i % count($colors)] }} ms-1">
                                                 @if ($nov->valorAsegurado)
                                                     Plan ${{ number_format($nov->valorAsegurado) }}
-                                                @else
+                                                @elseif ($nov->valorDescuento)
                                                     Descuento ${{ number_format($nov->valorDescuento) }}
+                                                @else
+                                                    Se Inicio un proceso de reclamación
                                                 @endif
                                             </a></span>
                                         <span class="text-truncate-1-line">
@@ -204,10 +206,9 @@
                     <a href="javascript:void(0);" class="btn bg-soft-info" style="font-size:20px;">$
                         {{ number_format($poliza->valorpagaraseguradora) }}</a>
                 </div>
-
                 <div class="d-flex gap-4 align-items-center justify-content-sm-end justify-content-between">
-                    <div href="" class="text-bold">Subsidio</div>
-                    <div href="" class="btn bg-soft-warning collapsed" data-bs-toggle="collapse"
+                    <div class="text-bold">Subsidio</div>
+                    <div class="btn bg-soft-warning collapsed" data-bs-toggle="collapse"
                         data-bs-target="#collapseOne" aria-expanded="false" style="font-size:20px;">$
                         @if (!$poliza->asegurado->valorpAseguradora)
                             0
@@ -240,7 +241,7 @@
                                 <tr>
                                     <td colspan="3"></td>
                                     <td class="fw-semibold text-dark bg-gray-100 text-lg-end">Beneficio</td>
-                                    <td class="fw-bold text-dark bg-gray-100">+ $ {{number_format($beneficio->valorDescuento)}}</td>
+                                    <td class="fw-bold text-dark bg-gray-100"> $ {{number_format($beneficio->valorDescuento)}}</td>
                                 </tr>
                             @endforeach   
                                 <tr>
@@ -254,7 +255,7 @@
                 </div>
             </div>
             
-            @if ($poliza->valorpagaraseguradora + $subsidio != $totalPrima)
+            @if ($poliza->valorpagaraseguradora + $subsidio != $totalPrima || $subsidio < 0)
                 <small class="form-text text-danger text-end mb-4" style="margin-right: 30px;">El valor a pagar del
                     titular es erroneo, para corregirlo
                     <a href="{{ route('seguros.novedades.create', ['a' => $poliza->seg_asegurado_id]) }}"

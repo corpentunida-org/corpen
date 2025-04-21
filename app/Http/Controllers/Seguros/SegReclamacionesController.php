@@ -140,6 +140,7 @@ class SegReclamacionesController extends Controller
      */
     public function update(Request $request, string $id)
     {
+        
         //cambiar el estado de la reclamacion
         $update = SegReclamaciones::where('id', $id)->update([
             'estado' => $request->estado_id,
@@ -153,6 +154,17 @@ class SegReclamacionesController extends Controller
             'fecha_actualizacion' => now()->toDateString(),
             'hora_actualizacion' => now()->toTimeString(),
         ]);
+
+        if($request->checkchangevalaseg == '1'){
+                 
+            $poliza = SegPoliza::find($request->poliza_id);
+            $nuevoMonto = $poliza->valor_asegurado * 0.5;
+            $poliza->valor_asegurado = $nuevoMonto;
+            $poliza->save();
+            SegReclamaciones::where('id', $id)->update([
+                'valor_asegurado' => $poliza->valor_asegurado,
+            ]);
+        }
 
         if ($update && $crear) {
             $accion = "update reclamacion id " . $id;
