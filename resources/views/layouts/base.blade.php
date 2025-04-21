@@ -294,8 +294,8 @@
             <script src="{{ asset('assets/vendors/js/chance.min.js') }}"></script>
             <script src="{{ asset('assets/vendors/js/tui-calendar.min.js') }}"></script>
             <script src="{{ asset('assets/vendors/js/tui-calendars.min.js') }}"></script>
-            <script src="{{ asset('assets/vendors/js/tui-schedules.min.js') }}"></script>
-            
+            <script src="{{ asset('assets/vendors/js/tui-schedules.min.js') }}"></script>            
+
 
             <!--! BEGIN: Apps Init  !-->
             <script src="{{ asset('assets/js/common-init.min.js') }}"></script>
