@@ -46,6 +46,8 @@
     <![endif]-->
     <!-- ICONOS BOOTSTRAP -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    @stack('style')
     <!-- Jquery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
@@ -63,18 +65,16 @@
             <!--! ================================================================ !-->
             <!--! [Start] Navigation Manu !-->
             <!--! ================================================================ !-->
+            
             <nav class="nxl-navigation">
                 <div class="navbar-wrapper">
-                    <div class="m-header">
-                        <a href="{{ route('dashboard') }}" class="b-brand">
-                            <!-- ========   change your logo hear   ============ -->
+                    <a href="{{ route('dashboard') }}" class="b-brand d-flex justify-content-center align-items-center">
+                        <!-- ========   change your logo here   ============ -->
+                        <img src="https://www.fecp.org.co/images/CORPENTUNIDA_LOGO_PRINCIPAL.png" alt=""
+                             class="logo logo-sm" width="200px" />
+                    </a>
 
-                            <img src="{{ asset('assets/images/CORPENTUNIDA_LOGO_PRINCIPAL   (2).png') }}" alt=""
-                                class="logo logo-lg" />
-                            <img src="{{ asset('assets/images/CORPENTUNIDA_LOGO_PRINCIPAL   (2).png') }}" alt=""
-                                class="logo logo-sm" />
-                        </a>
-                    </div>
+
                     <div class="navbar-content">
                         <ul class="nxl-navbar">
                             <li class="nxl-item nxl-caption">
