@@ -7,6 +7,7 @@ use App\Models\Seguros\SegBeneficios;
 use App\Models\Seguros\SegPoliza;
 use App\Models\Seguros\SegBeneficiario;
 use App\Models\Seguros\SegNovedades;
+use App\Models\Seguros\SegReclamaciones;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\AuditoriaController;
@@ -75,12 +76,14 @@ class SegPolizaController extends Controller
 
         $novedades = SegNovedades::where('id_asegurado', $id)
             ->where('id_poliza', $poliza->id)->get();
-            
+        $reclamacion = SegReclamaciones::where('cedulaAsegurado', $id)->get();
+        if ($reclamacion->isNotEmpty()) {
+            $novedades = $novedades->merge($reclamacion);
+        }
         $beneficios = SegBeneficios::where('cedulaAsegurado', $id)
             ->where('poliza', $poliza->id)->get();
             $registrosnov = $novedades->merge($beneficios);
             $registrosnov = $registrosnov->sortBy('created_at');
-        
         return view('seguros.polizas.show', compact('poliza', 'grupoFamiliar', 'totalPrima', 'beneficiarios', 'beneficios','registrosnov'));
     }
 
@@ -109,7 +112,7 @@ class SegPolizaController extends Controller
         foreach ($rows as $index => $row) {
             if ($index == 0) {
                 continue;
-            }            
+            }
             $modeloData = SegPoliza::where('seg_asegurado_id', $row['cod_ter'])->first();
             if ($modeloData) {
                 SegNovedades::create([

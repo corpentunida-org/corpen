@@ -67,7 +67,7 @@
                     </div>
                     <div class="mb-4">
                         <label class="form-label">Cobertura<span class="text-danger">*</span></label>
-                        <select name="cobertura_id" class="form-control">
+                        <select name="cobertura_id" class="form-control" id="Selectcobertura">
                             @foreach ($poliza->plan->coberturas as $cobertura)
                                 <option value="{{ $cobertura->id }}" @if ($cobertura->id == $reclamacion->idCobertura) selected @endif>
                                     {{ $cobertura->nombre }}</option>
@@ -135,7 +135,7 @@
 
                     <div class="mb-4">
                         <label class="form-label">Estado de la reclamación</label>
-                        <select name="estado_id" class="form-control">
+                        <select name="estado_id" class="form-control" id="Selectreclamacion">
                             @foreach ($estados as $e)
                                 <option value="{{ $e->id }}" @if ($e->id == $reclamacion->estado) selected @endif>
                                     {{ $e->nombre }}</option>
@@ -147,6 +147,14 @@
                         <label class="form-label">Observaciones</label>
                         <input type="text" class="form-control uppercase-input" name="observacion" required>
                         <input type="text" value="{{ $poliza->id }}" name="poliza_id" hidden>
+                    </div>
+                    <div class="nav-link" style="margin-left: 10px; display: none;" id="checkchangevalaseg">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="checkbox1" name="checkchangevalaseg"
+                                value="1">
+                            <label class="custom-control-label c-pointer" for="checkbox1">Actualizar valor asegurado
+                                al -50%</label>
+                        </div>
                     </div>
                     <div class="d-flex justify-content-end gap-2 mt-3">
                         <button class="btn btn-warning" title="Prestar servicio" type="submit">
@@ -168,6 +176,24 @@
             } else {
                 console.log($(this).serialize());
             }
+        });
+
+        $(document).ready(function() {
+            let cobertura = '5';
+            let reclamacion = '4';
+
+            function toggleDiv() {
+                if ($('#Selectreclamacion').val() === reclamacion && $('#Selectcobertura').val() === cobertura) {
+                    $('#checkchangevalaseg').show();
+                } else {
+                    $('#checkchangevalaseg').hide();
+                }
+            }
+
+            toggleDiv();
+
+            $('#Selectreclamacion').on('change', toggleDiv);
+            $('#Selectcobertura').on('change', toggleDiv);
         });
     </script>
 

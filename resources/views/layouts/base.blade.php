@@ -25,6 +25,10 @@
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/vendors/css/select2-theme.min.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/css/theme.min.css') }}" />
 
+    <link type="text/css" rel="stylesheet" href="{{ asset('assets/vendors/css/tui-calendar.min.css') }}">
+    <link type="text/css" rel="stylesheet" href="{{ asset('assets/vendors/css/tui-theme.min.css') }}">
+    <link type="text/css" rel="stylesheet" href="{{ asset('assets/vendors/css/tui-time-picker.min.css') }}">
+    <link type="text/css" rel="stylesheet" href="{{ asset('assets/vendors/css/tui-date-picker.min.css') }}">
 
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/vendors/css/tagify.min.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/vendors/css/tagify-data.min.css') }}">
@@ -123,18 +127,7 @@
                     <a href="javascript:void(0);" id="nxl-lavel-mega-menu-open">
                         <i class="feather-align-left"></i>
                     </a>
-                </div> --}}
-                        <!--! [End] nxl-lavel-mega-menu-toggle !-->
-                        <!--! [Start] nxl-lavel-mega-menu !-->
-                        <div class="nxl-drp-link nxl-lavel-mega-menu">
-                            <div class="nxl-lavel-mega-menu-toggle d-flex d-lg-none">
-                                <a href="javascript:void(0)" id="nxl-lavel-mega-menu-hide">
-                                    <i class="feather-arrow-left me-2"></i>
-                                    <span>Back</span>
-                                </a>
-                            </div>
-
-                        </div>
+                </div> -
                         <!--! [End] nxl-lavel-mega-menu !-->
                     </div>
                     <!--! [End] Header Left !-->
@@ -156,7 +149,8 @@
                                 <a href="javascript:void(0);" class="nxl-head-link me-0 dark-button">
                                     <i class="feather-moon"></i>
                                 </a>
-                                <a href="javascript:void(0);" class="nxl-head-link me-0 light-button" style="display: none">
+                                <a href="javascript:void(0);" class="nxl-head-link me-0 light-button"
+                                    style="display: none">
                                     <i class="feather-sun"></i>
                                 </a>
                             </div>
@@ -263,24 +257,38 @@
             <script src="{{ asset('assets/vendors/js/vendors.min.js') }}"></script>
             <!-- vendors.min.js {always must need to be top} -->
 
-            <script src="{{ asset('assets/js/customers-init.min.js') }}"></script>
-            <script src="{{ asset('assets/js/theme-customizer-init.min.js') }}"></script>
-            <!--! BEGIN: Vendors JS !-->
             <script src="{{ asset('assets/vendors/js/dataTables.min.js') }}"></script>
             <script src="{{ asset('assets/vendors/js/dataTables.bs5.min.js') }}"></script>
             <script src="{{ asset('assets/vendors/js/select2.min.js') }}"></script>
             <script src="{{ asset('assets/vendors/js/select2-active.min.js') }}"></script>
 
+            <script src="{{ asset('assets/js/customers-init.min.js') }}"></script>
+            <script src="{{ asset('assets/js/theme-customizer-init.min.js') }}"></script>
+            <!--! BEGIN: Vendors JS !-->
 
             <script src="{{ asset('assets/vendors/js/daterangepicker.min.js') }}"></script>
             <script src="{{ asset('assets/vendors/js/apexcharts.min.js') }}"></script>
             <script src="{{ asset('assets/vendors/js/circle-progress.min.js') }}"></script>
             <!--! END: Vendors JS !-->
+
+            <script src="{{ asset('assets/vendors/js/tui-code-snippet.min.js') }}"></script>
+            <script src="{{ asset('assets/vendors/js/tui-time-picker.min.js') }}"></script>
+            <script src="{{ asset('assets/vendors/js/tui-date-picker.min.js') }}"></script>
+            <script src="{{ asset('assets/vendors/js/moment.min.js') }}"></script>
+            <script src="{{ asset('assets/vendors/js/chance.min.js') }}"></script>
+            <script src="{{ asset('assets/vendors/js/tui-calendar.min.js') }}"></script>
+            <script src="{{ asset('assets/vendors/js/tui-calendars.min.js') }}"></script>
+            <script src="{{ asset('assets/vendors/js/tui-schedules.min.js') }}"></script>            
+
+
             <!--! BEGIN: Apps Init  !-->
             <script src="{{ asset('assets/js/common-init.min.js') }}"></script>
             <script src="{{ asset('assets/js/dashboard-init.min.js') }}"></script>
+            <script src="{{ asset('assets/js/theme-customizer-init.min.js') }}"></script>
 
             <script src="{{ asset('assets/js/projects-init.min.js') }}"></script>
+            <script src="{{ asset('assets/js/payment-init.min.js') }}"></script>
+
             <!--! END: Apps Init !-->
 
             <script src="{{ asset('assets/vendors/js/tagify.min.js') }}"></script>
