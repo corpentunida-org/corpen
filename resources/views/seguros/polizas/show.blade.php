@@ -181,8 +181,10 @@
                                                 class="badge bg-soft-{{ $colors[$i % count($colors)] }} text-{{ $colors[$i % count($colors)] }} ms-1">
                                                 @if ($nov->valorAsegurado)
                                                     Plan ${{ number_format($nov->valorAsegurado) }}
-                                                @else
+                                                @elseif ($nov->valorDescuento)
                                                     Descuento ${{ number_format($nov->valorDescuento) }}
+                                                @else
+                                                    Se Inicio un proceso de reclamación
                                                 @endif
                                             </a></span>
                                         <span class="text-truncate-1-line">
