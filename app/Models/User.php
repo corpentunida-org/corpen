@@ -21,7 +21,7 @@ class User extends Authenticatable
     use Notifiable;
     //use TwoFactorAuthenticatable;
     use HasRoles;
-    
+
     /**
      * The attributes that are mass assignable.
      *
@@ -31,6 +31,9 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'nid',
+        'fecha_nacimiento',
+        'type',
     ];
     public function roles()
     {
@@ -58,7 +61,7 @@ class User extends Authenticatable
 
     public function permissions()
     {
-        return $this->belongsToMany(Permisos::class, 'model_has_permissions', 'model_id', 'permission_id'); 
+        return $this->belongsToMany(Permisos::class, 'model_has_permissions', 'model_id', 'permission_id');
     }
 
     public function hasPermission($permiso)
@@ -66,14 +69,14 @@ class User extends Authenticatable
         return $this->permissions()->where('name', $permiso)->exists();
     }
 
-/* 
-    
+/*
+
     protected $appends = [
         'profile_photo_url',
 
     ];
 
-    
+
     protected function casts(): array
     {
         return [
@@ -81,5 +84,5 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     } */
- 
+
 }
