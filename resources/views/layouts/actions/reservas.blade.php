@@ -4,6 +4,6 @@
         <span class="nxl-mtext">Reservas</span><span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
     </a>
     <ul class="nxl-submenu">
-        <li class="nxl-item"><a class="nxl-link">Reservas</a></li>
+        <li class="nxl-item"><a class="nxl-link" href="{{ route('reserva.inmueble.confirmacion')}}">Reservas</a></li>
     </ul>
 </li>
