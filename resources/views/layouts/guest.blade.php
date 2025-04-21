@@ -30,6 +30,7 @@
     <![endif]-->
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <link rel="stylesheet" href="{{asset('assets/vendors/css/datepicker.min.css')}}" />
 
     <!-- Styles -->
     @livewireStyles
@@ -49,7 +50,7 @@
                             <img src="{{asset('assets/images/logo-abbr.png')}}" alt="" class="img-fluid">
                         </div>
                         <div class="creative-card-body card-body p-sm-5">
-                            
+
                             {{ $slot }}
                         </div>
                     </div>
@@ -220,7 +221,10 @@
 <!--! BEGIN: Theme Customizer  !-->
 <script src="{{asset('assets/js/theme-customizer-init.min.js')}}"></script>
 <!--! END: Theme Customizer !-->
+
 @livewireScripts
+
+@stack('scripts')
 </body>
 
 </html>
