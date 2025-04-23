@@ -36,6 +36,10 @@
 
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/vendors/css/datepicker.min.css') }}">
 
+    <!-- FullCalendar CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
+    <!-- FullCalendar JS -->
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
 
     <!--! END: Custom CSS-->
     <!--! HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries !-->
@@ -48,6 +52,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <!-- Jquery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    @stack('style')
 </head>
 
 <body>
@@ -69,7 +74,7 @@
                     <a href="{{ route('dashboard') }}" class="b-brand d-flex justify-content-center align-items-center">
                         <!-- ========   change your logo here   ============ -->
                         <img src="https://www.fecp.org.co/images/CORPENTUNIDA_LOGO_PRINCIPAL.png" alt=""
-                            class="logo logo-sm" width="200px">
+                            class="logo logo-sm" width="200px" />
                     </a>
                     <div class="navbar-content">
                         <ul class="nxl-navbar">
@@ -132,10 +137,10 @@
                             <!--! [Start] nxl-lavel-mega-menu-wrapper !-->
                             {{-- <div class="nxl-lavel-mega-menu-wrapper d-flex gap-3">
                         <!--! [Start] nxl-lavel-menu !-->
-                        
+
                         <!--! [End] nxl-lavel-menu !-->
                         <!--! [Start] nxl-h-item nxl-mega-menu !-->
-                        
+
                         <!--! [End] nxl-h-item nxl-mega-menu !-->
                     </div> --}}
                             <!--! [End] nxl-lavel-mega-menu-wrapper !-->
@@ -169,7 +174,7 @@
                             <div class="dropdown nxl-h-item">
                                 <a href="javascript:void(0);" data-bs-toggle="dropdown" role="button"
                                     data-bs-auto-close="outside">
-                                    <img src="assets/images/avatar/1.png" alt="user-image"
+                                    <img src="{{ asset('assets/images/avatar/1.png') }}" alt="user-image"
                                         class="img-fluid user-avtar me-0" />
                                 </a>
                                 <div class="dropdown-menu dropdown-menu-end nxl-h-dropdown nxl-user-dropdown">
@@ -310,6 +315,7 @@
 
             <script src="{{ asset('assets/js/proposal-create-init.min.js') }}"></script>
             <!--! END: Apps Init !-->
+            @stack('scripts')
         @endif
     @endauth
 </body>
