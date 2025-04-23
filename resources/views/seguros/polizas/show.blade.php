@@ -131,7 +131,6 @@
                         </tr>
                     </thead>
                     <tbody>
-
                         @foreach ($grupoFamiliar as $familiar)
                             <tr>
                                 <td><a href="javascript:void(0);">{{ $familiar->cedula }}</a></td>
@@ -213,7 +212,7 @@
                         @if (!$poliza->asegurado->valorpAseguradora)
                             0
                         @else
-                            @php
+                            @php                            
                                 $sub = 0;
                                 foreach ($beneficios as $beneficio) {
                                     $sub += $beneficio->valorDescuento;
