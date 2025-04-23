@@ -63,11 +63,13 @@
                 <div class="row">
                     <div class="d-flex align-items-center justify-content-between">
                         <div class="d-flex align-items-center justify-content-center">
+                            @can('seguros.poliza.update')
                             <a href="{{ route('seguros.poliza.edit', ['poliza' => 'excel']) }}"
                                 class="d-flex me-1 btn btn-light-brand">
                                 <i class="feather feather-edit-3 me-2"></i>
                                 <span>Actualizar Valor a Pagar</span>
                             </a>
+                            @endcan
                             <a href="{{ route('seguros.poliza.download') }}"
                                 class="d-flex me-1 px-3 bg-soft-indigo text-indigo border border-soft-indigo"
                                 style="padding: 12px 0 12px 0;">
@@ -76,10 +78,12 @@
                             </a>
                         </div>
                         <div class="d-flex align-items-center justify-content-center">
-                            <a href="" class="btn btn-primary">
+                            @can('seguros.poliza.store')
+                            <a href="#" class="btn btn-primary">
                                 <i class="feather-plus me-2"></i>
                                 <span>Crear Poliza</span>
                             </a>
+                            @endcan
                         </div>
                     </div>
                 </div>

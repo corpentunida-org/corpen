@@ -116,20 +116,20 @@
     <div class="col-xxl-12">
         <div class="card stratch">
             <div class="card-header">
-                <h5 class="card-title">Toda la lista de reclamación</h5>
+                <h5 class="card-title">Lista total de reclamación</h5>
                 <div class="card-header-action">
                     <div class="card-header-btn">
                         <div data-bs-toggle="tooltip" title="Delete">
-                            <a href="javascript:void(0);" class="avatar-text avatar-xs bg-danger"
+                            <a href="#" class="avatar-text avatar-xs bg-danger"
                                 data-bs-toggle="remove">
                             </a>
                         </div>
                         <div data-bs-toggle="tooltip" title="Refresh">
-                            <a href="javascript:void(0);" class="avatar-text avatar-xs bg-warning"
+                            <a href="#" class="avatar-text avatar-xs bg-warning"
                                 data-bs-toggle="refresh"> </a>
                         </div>
                         <div data-bs-toggle="tooltip" title="Maximize/Minimize">
-                            <a href="javascript:void(0);" class="avatar-text avatar-xs bg-success"
+                            <a href="#" class="avatar-text avatar-xs bg-success"
                                 data-bs-toggle="expand"> </a>
                         </div>
                     </div>
@@ -323,7 +323,6 @@
                                             </ul>
                                         </div>
                                     </td>
-
                                 </tr>
                             @endforeach
                         </tbody>
