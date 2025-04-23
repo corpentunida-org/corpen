@@ -12,7 +12,6 @@ class Action extends Model
     protected $table = 'actions';
     protected $primaryKey = 'id'; 
     protected $fillable = [
-        'user_email',
         'role_id',
         'user_id'
     ];
@@ -22,7 +21,7 @@ class Action extends Model
     } */
     public function user()
     {
-        return $this->belongsTo(User::class, 'user_email', 'email');
+        return $this->belongsTo(User::class, 'user_id', 'id');
     }
 
     public function role()
