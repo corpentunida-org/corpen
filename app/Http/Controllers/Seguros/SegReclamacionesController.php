@@ -29,7 +29,13 @@ class SegReclamacionesController extends Controller
     }
     public function index()
     {
-        $reclamaciones = SegReclamaciones::with(['asegurado.terceroAF', 'asegurado.tercero', 'cobertura'])->get();
+        Carbon::setLocale('es');
+        $rec = SegReclamaciones::with(['asegurado.terceroAF', 'asegurado.tercero', 'cobertura'])->get();
+        $reclamaciones = $rec->map(function ($reclamacion) {
+            $tiempoTranscurrido = Carbon::parse($reclamacion->updated_at)->diffForHumans();
+            $reclamacion->tiempo_transcurrido = $tiempoTranscurrido;
+            return $reclamacion;
+        });
         $coberturas = SegCobertura::select('seg_coberturas.*', DB::raw('COUNT(SEG_reclamaciones.idCobertura) as reclamaciones_count'))
             ->leftJoin('SEG_reclamaciones', 'seg_coberturas.id', '=', 'SEG_reclamaciones.idCobertura')
             ->groupBy('seg_coberturas.id') 
@@ -155,8 +161,7 @@ class SegReclamacionesController extends Controller
             'hora_actualizacion' => now()->toTimeString(),
         ]);
 
-        if($request->checkchangevalaseg == '1'){
-                 
+        if($request->checkchangevalaseg == '1'){                 
             $poliza = SegPoliza::find($request->poliza_id);
             $nuevoMonto = $poliza->valor_asegurado * 0.5;
             $poliza->valor_asegurado = $nuevoMonto;

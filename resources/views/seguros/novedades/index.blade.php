@@ -58,9 +58,11 @@
                                         @endif
                                     </td>
                                     <td>
+                                        @can('seguros.poliza.update')
                                         <a href="{{ route('seguros.novedades.create', ['a' => $reg->cedula]) }}"
                                             class="avatar-text avatar-md ms-auto"><i
                                                 class="feather-arrow-right"></i></a>
+                                        @endcan
                                     </td>
                                 </tr>
                             @endforeach

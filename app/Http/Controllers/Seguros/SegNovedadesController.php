@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Seguros;
 
 use App\Http\Controllers\Controller;
+use App\Models\Seguros\SegBeneficios;
 use App\Models\Seguros\SegCondicion;
 use App\Models\Seguros\SegNovedades;
 use App\Models\Seguros\SegAsegurado;
@@ -11,6 +12,7 @@ use App\Models\Seguros\SegPoliza;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Http\Controllers\AuditoriaController;
+use Illuminate\Support\Facades\DB;
 
 class SegNovedadesController extends Controller
 {
@@ -40,11 +42,17 @@ class SegNovedadesController extends Controller
 
         $condicion = SegCondicion::where('id', $idcondicion)->first(['descripcion']);
         
-        return view('seguros.novedades.create', compact('asegurado', 'planes', 'condicion'));
+        $grupoFamiliar = SegAsegurado::where('Titular', $asegurado->titular)->with('tercero', 'polizas.plan.coberturas')->get();
+        $totalPrima = DB::table('SEG_polizas')
+            ->whereIn('seg_asegurado_id', $grupoFamiliar->pluck('cedula'))
+            ->sum('valor_prima');
+
+        return view('seguros.novedades.create', compact('asegurado', 'planes', 'condicion', 'grupoFamiliar', 'totalPrima'));
     }
 
     public function store(Request $request)
     {
+        dd($request->all());
         $poliza = SegPoliza::findOrFail($request->id_poliza);
         $asegurado = SegAsegurado::where('cedula',$request->asegurado)->first();
         $now = Carbon::now();
@@ -53,7 +61,8 @@ class SegNovedadesController extends Controller
             'fecha_novedad' => $now->toDateString(),
             'extra_prima' => $request->extra_prima,
             'seg_plan_id' => $request->planid,
-            'descuento' => $request->descuento,
+            'descuento' => $request->valordescuento,
+            'descuentopor' => $request->descuento,
             'valor_prima' => (int) str_replace(',', '', $request->valorPrima),
             'valor_asegurado' => (int) str_replace(',', '', $request->valorAsegurado),
             'valorpagaraseguradora' => $request->valorpagaraseguradora,
@@ -61,6 +70,16 @@ class SegNovedadesController extends Controller
         $asegurado->update([
             'valorpAseguradora' => $request->valorpagaraseguradora,
         ]);
+
+        if (!empty($valordescuento) || !empty($descuento)) {
+            SegBeneficios::create([
+                'cedulaAsegurado' => $request->asegurado,
+                'poliza' => $request->id_poliza,
+                'porcentajeDescuento' => $request->descuento,
+                'valorDescuento' => $request->valordescuento,
+                'observaciones' => $request->observaciones,
+            ]);
+        }
 
         if ($poliza && $asegurado) {
             SegNovedades::create([
