@@ -22,6 +22,7 @@ class SegPoliza extends Model
         'valor_prima',
         'reclamacion',
         'descuento',
+        'descuentopor',
         'valor_asegurado',
         'valorpagaraseguradora',
         'created_at',
