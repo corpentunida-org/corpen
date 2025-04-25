@@ -178,8 +178,11 @@
                                     <div>
                                         <span class="text">{{ $nov->created_at }} <a
                                                 class="badge bg-soft-{{ $colors[$i % count($colors)] }} text-{{ $colors[$i % count($colors)] }} ms-1">
-                                                @if ($nov->valorAsegurado)
-                                                    Plan ${{ number_format($nov->valorAsegurado) }}
+                                                
+                                                @if (Str::contains(Str::lower($nov->observaciones), 'cambio de convenio'))
+                                                    Plan Anterior ${{ number_format($nov->valorAsegurado) }}
+                                                @elseif (Str::contains(Str::lower($nov->observaciones), 'valor a pagar'))
+                                                    Valor a Pagar ${{ number_format($nov->valorpagar) }}
                                                 @elseif ($nov->valorDescuento)
                                                     Descuento ${{ number_format($nov->valorDescuento) }}
                                                 @else
