@@ -84,6 +84,7 @@ class SegPolizaController extends Controller
             ->where('poliza', $poliza->id)->get();
             $registrosnov = $novedades->merge($beneficios);
             $registrosnov = $registrosnov->sortBy('created_at');
+            
         return view('seguros.polizas.show', compact('poliza', 'grupoFamiliar', 'totalPrima', 'beneficiarios', 'beneficios','registrosnov'));
     }
 
