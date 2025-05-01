@@ -12,12 +12,11 @@ class IndexController extends Controller
      */
     public function index()
     {
-        $userEmail = Auth::user()->email;
         $roles = \DB::table('roles')
-            ->join('actions', 'roles.id', '=', 'actions.role_id')
-            ->where('actions.user_id', '=', Auth::user()->id)
-            ->select('roles.*')
-            ->get();
+                ->join('actions', 'roles.id', '=', 'actions.role_id')
+                ->where('actions.user_id', '=', Auth::id())
+                ->select('roles.*')
+                ->get();
 
         if ($roles->first()->name===('admin')) {
             return redirect()->route('admin.users.index');
