@@ -116,24 +116,7 @@
     <div class="col-xxl-12">
         <div class="card stratch">
             <div class="card-header">
-                <h5 class="card-title">Toda la lista de reclamación</h5>
-                <div class="card-header-action">
-                    <div class="card-header-btn">
-                        <div data-bs-toggle="tooltip" title="Delete">
-                            <a href="javascript:void(0);" class="avatar-text avatar-xs bg-danger"
-                                data-bs-toggle="remove">
-                            </a>
-                        </div>
-                        <div data-bs-toggle="tooltip" title="Refresh">
-                            <a href="javascript:void(0);" class="avatar-text avatar-xs bg-warning"
-                                data-bs-toggle="refresh"> </a>
-                        </div>
-                        <div data-bs-toggle="tooltip" title="Maximize/Minimize">
-                            <a href="javascript:void(0);" class="avatar-text avatar-xs bg-success"
-                                data-bs-toggle="expand"> </a>
-                        </div>
-                    </div>
-                </div>
+                <h5 class="card-title">Lista total de reclamaciones</h5>                
             </div>
             <div class="card-body custom-card-action p-0">
                 <div class="table-responsive">
@@ -146,6 +129,7 @@
                                 <th>Cobertura</th>
                                 <th>Valor Asegurado</th>
                                 <th>Estado</th>
+                                <th>Fecha</th>
                                 <th class="text-end">Acción</th>
                             </tr>
                         </thead>
@@ -157,7 +141,7 @@
                                             <a href="javascript:void(0);">
                                                 <span class="d-block">{{ $r->asegurado->terceroAF->cedula }}</span>
                                                 <span
-                                                    class="fs-12 d-block fw-normal text-muted">{{ $r->asegurado->terceroAF->nombre }}</span>
+                                                    class="fs-12 d-block fw-normal text-muted text-wrap">{{ $r->asegurado->terceroAF->nombre }}</span>
                                             </a>
                                         </div>
                                     </td>
@@ -166,7 +150,7 @@
                                             <a href="javascript:void(0);">
                                                 <span class="d-block">{{ $r->cedulaAsegurado }}</span>
                                                 <span
-                                                    class="fs-12 d-block fw-normal text-muted">{{ $r->asegurado->tercero->nombre }}</span>
+                                                    class="fs-12 d-block fw-normal text-muted text-wrap">{{ $r->asegurado->tercero->nombre }}</span>
                                             </a>
                                         </div>
                                     </td>
@@ -177,6 +161,14 @@
                                     <td>$ {{ number_format($r->valor_asegurado) }} </td>
                                     <td><span
                                             class="badge bg-soft-primary text-primary">{{ $r->estadoReclamacion->nombre }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-3">
+                                            <a>
+                                                <span class="fs-12 d-block fw-normal">Inicio: {{date('Y-m-d', strtotime($r->created_at))}}
+                                                <span class="fs-12 d-block fw-normal text-danger">Ultimo cambio {{ $r->tiempo_transcurrido }}</span>
+                                            </a>
+                                        </div>
                                     </td>
                                     <td>
                                         <div class="dropdown">
@@ -221,28 +213,11 @@
     <div class="col-xxl-12">
         <div class="card stratch" id="reclamacionesvencer">
             <div class="card-header">
-                <h5 class="card-title">Reclamaciones próximas a vencer</h5>
-                <div class="card-header-action">
-                    <div class="card-header-btn">
-                        <div data-bs-toggle="tooltip" title="Delete">
-                            <a href="javascript:void(0);" class="avatar-text avatar-xs bg-danger"
-                                data-bs-toggle="remove">
-                            </a>
-                        </div>
-                        <div data-bs-toggle="tooltip" title="Refresh">
-                            <a href="javascript:void(0);" class="avatar-text avatar-xs bg-warning"
-                                data-bs-toggle="refresh"> </a>
-                        </div>
-                        <div data-bs-toggle="tooltip" title="Maximize/Minimize">
-                            <a href="javascript:void(0);" class="avatar-text avatar-xs bg-success"
-                                data-bs-toggle="expand"> </a>
-                        </div>
-                    </div>
-                </div>
+                <h5 class="card-title">Reclamaciones de más de 4 meses</h5>                
             </div>
             <div class="card-body custom-card-action p-0">
                 <div class="table-responsive">
-                    <table class="table table-hover" id="customerList">
+                    <table class="table table-hover">
                         <thead>
                             <tr>
                                 <th>Titular</th>
@@ -263,7 +238,7 @@
                                             <a href="javascript:void(0);">
                                                 <span class="d-block">{{ $r->asegurado->terceroAF->cedula }}</span>
                                                 <span
-                                                    class="fs-12 d-block fw-normal text-muted">{{ $r->asegurado->terceroAF->nombre }}</span>
+                                                    class="fs-12 d-block fw-normal text-muted text-wrap">{{ $r->asegurado->terceroAF->nombre }}</span>
                                             </a>
                                         </div>
                                     </td>
@@ -272,7 +247,7 @@
                                             <a href="javascript:void(0);">
                                                 <span class="d-block">{{ $r->cedulaAsegurado }}</span>
                                                 <span
-                                                    class="fs-12 d-block fw-normal text-muted">{{ $r->asegurado->tercero->nombre }}</span>
+                                                    class="fs-12 d-block fw-normal text-muted text-wrap">{{ $r->asegurado->tercero->nombre }}</span>
                                             </a>
                                         </div>
                                     </td>
@@ -291,7 +266,7 @@
                                             </a>
                                         </div>
                                     </td>
-                                    <td>
+                                    <td>                                        
                                         <div class="dropdown">
                                             <a href="javascript:void(0)" class="avatar-text avatar-md "
                                                 data-bs-toggle="dropdown" data-bs-offset="0,21">
@@ -323,7 +298,6 @@
                                             </ul>
                                         </div>
                                     </td>
-
                                 </tr>
                             @endforeach
                         </tbody>

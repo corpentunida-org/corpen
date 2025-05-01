@@ -131,7 +131,6 @@
                         </tr>
                     </thead>
                     <tbody>
-
                         @foreach ($grupoFamiliar as $familiar)
                             <tr>
                                 <td><a href="javascript:void(0);">{{ $familiar->cedula }}</a></td>
@@ -179,8 +178,11 @@
                                     <div>
                                         <span class="text">{{ $nov->created_at }} <a
                                                 class="badge bg-soft-{{ $colors[$i % count($colors)] }} text-{{ $colors[$i % count($colors)] }} ms-1">
-                                                @if ($nov->valorAsegurado)
-                                                    Plan ${{ number_format($nov->valorAsegurado) }}
+                                                
+                                                @if (Str::contains(Str::lower($nov->observaciones), 'cambio de convenio'))
+                                                    Plan Anterior ${{ number_format($nov->valorAsegurado) }}
+                                                @elseif (Str::contains(Str::lower($nov->observaciones), 'valor a pagar'))
+                                                    Valor a Pagar ${{ number_format($nov->valorpagar) }}
                                                 @elseif ($nov->valorDescuento)
                                                     Descuento ${{ number_format($nov->valorDescuento) }}
                                                 @else
@@ -213,7 +215,7 @@
                         @if (!$poliza->asegurado->valorpAseguradora)
                             0
                         @else
-                            @php
+                            @php                            
                                 $sub = 0;
                                 foreach ($beneficios as $beneficio) {
                                     $sub += $beneficio->valorDescuento;
@@ -257,14 +259,18 @@
             
             @if ($poliza->valorpagaraseguradora + $subsidio != $totalPrima || $subsidio < 0)
                 <small class="form-text text-danger text-end mb-4" style="margin-right: 30px;">El valor a pagar del
-                    titular es erroneo, para corregirlo
+                    titular es erroneo. 
+                    @can('seguros.poliza.update')
                     <a href="{{ route('seguros.novedades.create', ['a' => $poliza->seg_asegurado_id]) }}"
-                        class="text-danger">click aqui</a></small>
+                        class="text-danger"> Para corregirlo click aqui</a>
+                    @endcan
+                </small>
             @endif
         @endif
         @if ($beneficiarios->isnotEmpty())
             @include('seguros.beneficiarios.show')
         @endif
+        @can('seguros.beneficiarios.store')
         <div class="my-4 d-flex align-items-center justify-content-start">
             <div class="d-flex gap-2">
                 <a href="{{ route('seguros.beneficiario.create', ['a' => $poliza->seg_asegurado_id, 'p' => $poliza->id]) }}"
@@ -274,5 +280,6 @@
                 </a>
             </div>
         </div>
+        @endcan
     </div>
 </x-base-layout>
