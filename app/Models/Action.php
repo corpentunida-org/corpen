@@ -10,7 +10,7 @@ class Action extends Model
 {
     use HasFactory;
     protected $table = 'actions';
-    protected $primaryKey = 'id'; 
+    protected $primaryKey = 'id';
     protected $fillable = [
         'role_id',
         'user_id'

@@ -20,6 +20,14 @@
                 <form id="reservaForm" action="{{ route('reserva.inmueble.store') }}" method="POST">
                     @csrf
                     <input type="hidden" name="inmueble_id" id="inmueble_id" value="{{ $inmueble->id }}">
+                    <div>
+                        <div style="padding: 20px;text-align: justify">
+                            <strong>Estimado asociado:</strong>
+                            <br><br>Le recordamos tener en cuenta sus planes de viaje, los costos de desplazamiento y cualquier otro gasto en el que pueda incurrir al realizar esta reserva.
+                            Es importante que tenga presente que la responsabilidad total de la reserva recae sobre usted.
+                            En caso de presentarse inconvenientes,  <strong>Corpentunida no podrá realizar reembolsos del valor consignado</strong>, dado que este corresponde a una donación destinada a la continuidad del beneficio.
+                        </div>
+                    </div>
                     <div class="modal-body">
                         <div class="mb-3">
                             <label for="fechaInicio" class="form-label">Fecha de Inicio</label>

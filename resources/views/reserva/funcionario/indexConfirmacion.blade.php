@@ -37,7 +37,11 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <div class="fw-semibold mb-1">{{ $reserva->user->name }}</div>
+                                        @if( $reserva->endosada)
+                                            <div class="fw-semibold mb-1">{{ $reserva->name_reserva }}</div>
+                                        @else
+                                            <div class="fw-semibold mb-1">{{ $reserva->user->name }}</div>
+                                        @endif
                                     </td>
                                     <td>
                                         <div class="fw-semibold mb-1">{{ $reserva->fecha_inicio }}</div>
