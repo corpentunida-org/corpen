@@ -252,7 +252,7 @@ class ResReservaController extends Controller  implements HasMiddleware
 
         $texto = "Felicitaciones su reserva fue confirmada ingresando el día " . $reserva->fecha_inicio . " y saliendo el día: " . $reserva->fecha_fin . ", por favor tener en cuenta las siguientes recomendaciones: " . $request->input('comentario') . ". ¡Dios le bendiga!";
         Mail::to($reserva->user->email)
-            ->send(New ReservaInmueble($reserva->user->name, $texto, 'Confirmación de la reserva'));
+            ->send(New ReservaInmueble($reserva->user->name, $texto, 'Confirmación de la reserva', true));
 
         return redirect()->route('reserva.inmueble.confirmacion')->with('success', 'Reserva confirmada con éxito');
     }
