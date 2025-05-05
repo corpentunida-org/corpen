@@ -9,6 +9,7 @@ use App\Models\Seguros\SegAsegurado;
 use App\Models\Seguros\SegCobertura;
 use App\Models\Seguros\SegEstadoReclamacion;
 use App\Models\Seguros\SegCambioEstadoReclamacion;
+use App\Models\Seguros\SegDiagnosticos;
 use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\Exequial\ParentescosController;
 use Illuminate\Http\Request;
@@ -42,6 +43,9 @@ class SegReclamacionesController extends Controller
             ->orderByDesc('reclamaciones_count')
             ->first();
         $counts = SegReclamaciones::with('tercero')->get()
+            ->filter(function ($reclamacion) {
+                return $reclamacion->tercero !== null;
+            })
             ->groupBy(function ($reclamacion) {
                 return $reclamacion->tercero->genero;
             });
@@ -137,8 +141,9 @@ class SegReclamacionesController extends Controller
         $poliza = SegPoliza::where('seg_asegurado_id', $reclamacion->cedulaAsegurado)->with(['plan.coberturas'])->first();
         $estados = SegEstadoReclamacion::all();
         $hisreclamacion = SegCambioEstadoReclamacion::where('reclamacion_id', $reclamacion->id)->with(['estado'])->get();
-        
-        return view("seguros.reclamaciones.edit", compact('reclamacion','asegurado','poliza', 'estados', 'hisreclamacion'));
+        $diagnosticos = SegDiagnosticos::all();
+
+        return view("seguros.reclamaciones.edit", compact('reclamacion','asegurado','poliza', 'estados', 'hisreclamacion', 'diagnosticos'));
     }
     
     /**

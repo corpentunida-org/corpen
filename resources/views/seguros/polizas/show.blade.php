@@ -176,9 +176,8 @@
                                 <li
                                     class="d-flex justify-content-between feed-item feed-item-{{ $colors[$i % count($colors)] }}">
                                     <div>
-                                        <span class="text">{{ $nov->created_at }} <a
-                                                class="badge bg-soft-{{ $colors[$i % count($colors)] }} text-{{ $colors[$i % count($colors)] }} ms-1">
-                                                
+                                        <span class="text">{{ $nov->created_at }} 
+                                            <a class="badge bg-soft-{{ $colors[$i % count($colors)] }} text-{{ $colors[$i % count($colors)] }} ms-1">  
                                                 @if (Str::contains(Str::lower($nov->observaciones), 'cambio de convenio'))
                                                     Plan Anterior ${{ number_format($nov->valorAsegurado) }}
                                                 @elseif (Str::contains(Str::lower($nov->observaciones), 'valor a pagar'))
@@ -215,7 +214,7 @@
                         @if (!$poliza->asegurado->valorpAseguradora)
                             0
                         @else
-                            @php                            
+                            @php
                                 $sub = 0;
                                 foreach ($beneficios as $beneficio) {
                                     $sub += $beneficio->valorDescuento;
