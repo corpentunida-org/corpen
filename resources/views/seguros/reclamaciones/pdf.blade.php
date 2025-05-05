@@ -92,17 +92,17 @@
             @foreach ($registros as $r)
                 <tr>
                     <td>{{ $i }}</td>
-                    <td>{{ $r->cedulaAsegurado }}</td>
-                    <td>{{ $r->asegurado->tercero->nombre }}</td>
+                    <td>{{ $r->cedulaAsegurado ?? '' }}</td>
+                    <td>{{ $r->asegurado->tercero->nombre ?? ''}}</td>
                     <td>
                     @php                        
                         $edad = \Carbon\Carbon::parse($r->asegurado->tercero->fechaNacimiento)->age;
                     @endphp
                     {{$edad}}
                     </td>
-                    <td>{{ $r->asegurado->terceroAF->cedula }}</td>
-                    <td>{{ $r->asegurado->terceroAF->nombre }}</td>
-                    <td>{{ $r->asegurado->parentesco }}</td>
+                    <td>{{ $r->asegurado->terceroAF->cedula ?? ''}}</td>
+                    <td>{{ $r->asegurado->terceroAF->nombre ?? ''}}</td>
+                    <td>{{ $r->asegurado->parentesco ?? ''}}</td>
                     <td>{{ $r->cobertura->nombre }}</td>
                     <td>$ {{ number_format($r->valor_asegurado) }} </td>
                     <td>{{ $r->updated_at }}</td>

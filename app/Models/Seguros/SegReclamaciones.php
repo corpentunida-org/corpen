@@ -19,11 +19,16 @@ class SegReclamaciones extends Model
         'horaContacto',
         'nombreContacto',
         'parentescoContacto',
+        'telcontacto',
         'estado',
         'poliza_id',
-        'nombre_contingente',
-        'idBeneficiario'
+        'cedulaContacto',
+        'idBeneficiario',
+        'valor_asegurado',
+        'fecha_desembolso',
+        'finReclamacion',
     ];
+    
 
     public function asegurado()
     {

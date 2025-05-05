@@ -1,6 +1,7 @@
 <x-base-layout>
     <x-success />
     <x-error />
+    @if ($vencidas->count() != 0)
     <div class="col-lg-12">
         <div class="alert alert-dismissible d-flex alert-soft-teal-message" role="alert">
             <div class="me-4 d-none d-md-block">
@@ -14,6 +15,7 @@
             </div>
         </div>
     </div>
+    @endif
     <div class="col-lg-12">
         <div class="card stretch stretch-full" data-select2-id="select2-data-38-lija">
             <div class="card-body lead-status">
@@ -139,26 +141,26 @@
                                     <td>
                                         <div class="d-flex align-items-center gap-3">
                                             <a href="javascript:void(0);">
-                                                <span class="d-block">{{ $r->asegurado->terceroAF->cedula }}</span>
+                                                <span class="d-block">{{ $r->asegurado->terceroAF->cedula ?? ''}}</span>
                                                 <span
-                                                    class="fs-12 d-block fw-normal text-muted text-wrap">{{ $r->asegurado->terceroAF->nombre }}</span>
+                                                    class="fs-12 d-block fw-normal text-muted text-wrap">{{ $r->asegurado->terceroAF->nombre ?? ''}}</span>
                                             </a>
                                         </div>
                                     </td>
                                     <td>
                                         <div class="d-flex align-items-center gap-3">
                                             <a href="javascript:void(0);">
-                                                <span class="d-block">{{ $r->cedulaAsegurado }}</span>
+                                                <span class="d-block">{{ $r->cedulaAsegurado ?? ''}}</span>
                                                 <span
-                                                    class="fs-12 d-block fw-normal text-muted text-wrap">{{ $r->asegurado->tercero->nombre }}</span>
+                                                    class="fs-12 d-block fw-normal text-muted text-wrap">{{ $r->asegurado->tercero->nombre ?? '' }}</span>
                                             </a>
                                         </div>
                                     </td>
                                     <td><span
-                                            class="badge bg-gray-200 text-dark">{{ $r->asegurado->parentesco }}</span>
+                                            class="badge bg-gray-200 text-dark">{{ $r->asegurado->parentesco ?? ''}}</span>
                                     </td>
                                     <td>{{ $r->cobertura->nombre }}</td>
-                                    <td>$ {{ number_format($r->valor_asegurado) }} </td>
+                                    <td>$ {{ number_format((float)$r->valor_asegurado) }} </td>
                                     <td><span
                                             class="badge bg-soft-primary text-primary">{{ $r->estadoReclamacion->nombre }}</span>
                                     </td>
@@ -210,6 +212,8 @@
             </div>
         </div>
     </div>
+
+    @if ($vencidas->count() != 0)
     <div class="col-xxl-12">
         <div class="card stratch" id="reclamacionesvencer">
             <div class="card-header">
@@ -236,18 +240,18 @@
                                     <td>
                                         <div class="d-flex align-items-center gap-3">
                                             <a href="javascript:void(0);">
-                                                <span class="d-block">{{ $r->asegurado->terceroAF->cedula }}</span>
+                                                <span class="d-block">{{ $r->asegurado->terceroAF->cedula ?? ''}}</span>
                                                 <span
-                                                    class="fs-12 d-block fw-normal text-muted text-wrap">{{ $r->asegurado->terceroAF->nombre }}</span>
+                                                    class="fs-12 d-block fw-normal text-muted text-wrap">{{ $r->asegurado->terceroAF->nombre ?? ''}}</span>
                                             </a>
                                         </div>
                                     </td>
                                     <td>
                                         <div class="d-flex align-items-center gap-3">
                                             <a href="javascript:void(0);">
-                                                <span class="d-block">{{ $r->cedulaAsegurado }}</span>
+                                                <span class="d-block">{{ $r->cedulaAsegurado ?? ''}}</span>
                                                 <span
-                                                    class="fs-12 d-block fw-normal text-muted text-wrap">{{ $r->asegurado->tercero->nombre }}</span>
+                                                    class="fs-12 d-block fw-normal text-muted text-wrap">{{ $r->asegurado->tercero->nombre ?? ''}}</span>
                                             </a>
                                         </div>
                                     </td>
@@ -306,4 +310,5 @@
             </div>
         </div>
     </div>
+    @endif
 </x-base-layout>
