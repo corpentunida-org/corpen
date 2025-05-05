@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Models\Reserva\Res_condicion;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -16,15 +17,19 @@ class ReservaInmueble extends Mailable
     public $nombre;
     public $texto;
     public $asunto;
+    public $condiciones;
+    public $lista_condiciones;
 
     /**
      * Create a new message instance.
      */
-    public function __construct(string $nombre, string $texto, string $asunto = 'Sistema de reservas Corpentunida')
+    public function __construct(string $nombre, string $texto, string $asunto = 'Sistema de reservas Corpentunida', string $condiciones = null)
     {
         $this->nombre = $nombre;
         $this->texto = $texto;
         $this->asunto = $asunto;
+        $this->condiciones = $condiciones;
+        $this->lista_condiciones = Res_condicion::all();
     }
 
     /**
