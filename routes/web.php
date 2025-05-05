@@ -48,6 +48,10 @@ Route::get('/base', function () {
     return view('layouts.base');
 });
 
+Route::get('/apto-santamarta', function () {
+    return view('reserva.index');
+})->name('apto-santamarta');
+
 
 // Route::middleware([
 //     'auth:sanctum',
