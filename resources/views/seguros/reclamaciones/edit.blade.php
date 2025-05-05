@@ -14,8 +14,9 @@
                         <div>
                             <div class="fs-12 text-muted">Titular: </div>
                             <div class="fs-4 fw-bold text-dark"><span
-                                    class="counter">{{ $asegurado->terceroAF->nombre }}</span></div>
-                            <h3 class="fs-13 fw-semibold text-truncate-1-line">{{ $asegurado->terceroAF->cedula }}</h3>
+                                    class="counter">{{ $asegurado->terceroAF->nombre ?? '' }}</span></div>
+                            <h3 class="fs-13 fw-semibold text-truncate-1-line">{{ $asegurado->terceroAF->cedula ?? '' }}
+                            </h3>
                         </div>
                     </div>
                 </div>
@@ -35,12 +36,12 @@
                     <div class="row">
                         <div class="col-lg-4 mb-4">
                             <label class="form-label">Cédula Asegurado</label>
-                            <input type="text" class="form-control" name="asegurado" value="{{ $asegurado->cedula }}"
-                                readonly>
+                            <input type="text" class="form-control" name="asegurado"
+                                value="{{ $reclamacion->cedulaAsegurado }}" readonly>
                         </div>
                         <div class="col-lg-8 mb-4">
                             <label class="form-label">Nombre Asegurado</label>
-                            <input type="text" class="form-control" value="{{ $asegurado->tercero->nombre }}"
+                            <input type="text" class="form-control" value="{{ $asegurado->tercero->nombre ?? '' }}"
                                 readonly>
                         </div>
                     </div>
@@ -48,16 +49,18 @@
                         <div class="col-lg-3 mb-4">
                             <label class="form-label">Tipo de Afiliado<span class="text-danger">*</span></label>
                             <input class="form-control datepicker-input" name="contacto"
-                                value="{{ $asegurado->parentesco }}" readonly>
+                                value="{{ $asegurado->parentesco ?? '' }}" readonly>
                         </div>
                         <div class="col-lg-3 mb-4">
                             <label class="form-label">Genero <span class="text-danger">*</span></label>
                             <input class="form-control datepicker-input"
-                                value="{{ $asegurado->tercero->genero == 'V' ? 'Masculino' : 'Femenino' }}" readonly>
+                                value="{{ isset($asegurado->tercero) && $asegurado->tercero->genero === 'V' ? 'Masculino' : (isset($asegurado->tercero) && $asegurado->tercero->genero === 'H' ? 'Femenino' : '') }}"
+                                readonly>
                         </div>
                         <div class="col-lg-3 mb-4">
                             <label class="form-label">Distrito <span class="text-danger">*</span></label>
-                            <input class="form-control datepicker-input" value="" readonly>
+                            <input class="form-control datepicker-input"
+                                value="{{ $asegurad->tercero->distrito ?? '' }}" readonly>
                         </div>
                         <div class="col-lg-3 mb-4">
                             <label class="form-label">Fecha del siniestro <span class="text-danger">*</span></label>
@@ -68,18 +71,24 @@
                     <div class="mb-4">
                         <label class="form-label">Cobertura<span class="text-danger">*</span></label>
                         <select name="cobertura_id" class="form-control" id="Selectcobertura">
-                            @foreach ($poliza->plan->coberturas as $cobertura)
-                                <option value="{{ $cobertura->id }}" @if ($cobertura->id == $reclamacion->idCobertura) selected @endif>
-                                    {{ $cobertura->nombre }}</option>
-                            @endforeach
+                            @if (isset($poliza->plan))
+                                @foreach ($poliza->plan->coberturas as $cobertura)
+                                    <option value="{{ $cobertura->id }}"
+                                        @if ($cobertura->id == $reclamacion->idCobertura) selected @endif>
+                                        {{ $cobertura->nombre }}</option>
+                                @endforeach
+                            @endif
                         </select>
                     </div>
                     <div class="row">
                         <div class="col-lg-7 mb-4">
                             <label class="form-label">Diagnóstico <span class="text-danger">*</span></label>
                             <select name="diagnostico_id" class="form-control">
-                                <option value="1">opcion 1</option>
-                                <option value="2">opcion 2</option>
+                                @foreach ($diagnosticos as $d)
+                                    <option value="{{ $d->id }}"
+                                        @if ($d->id == $reclamacion->idDiagnostico) selected @endif>{{ $d->diagnostico }}
+                                    </option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="col-lg-5 mb-4">
@@ -114,7 +123,7 @@
                                 aria-labelledby="flush-headingOne" data-bs-parent="#accordionFaqGroup"
                                 style="">
                                 <div class="accordion-body">
-                                    <ul class="list-unstyled activity-feed">
+                                    <ul class="list-unstyled activity-feed">                                        
                                         @foreach ($hisreclamacion as $i => $hr)
                                             <li
                                                 class="d-flex justify-content-between feed-item feed-item-{{ $colors[$i % count($colors)] }}">
@@ -133,35 +142,43 @@
                         </div>
                     </div>
 
-                    <div class="mb-4">
-                        <label class="form-label">Estado de la reclamación</label>
-                        <select name="estado_id" class="form-control" id="Selectreclamacion">
-                            @foreach ($estados as $e)
-                                <option value="{{ $e->id }}" @if ($e->id == $reclamacion->estado) selected @endif>
-                                    {{ $e->nombre }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div class="col-lg-12 mb-4">
-                        <label class="form-label">Observaciones</label>
-                        <input type="text" class="form-control uppercase-input" name="observacion" required>
-                        <input type="text" value="{{ $poliza->id }}" name="poliza_id" hidden>
-                    </div>
-                    <div class="nav-link" style="margin-left: 10px; display: none;" id="checkchangevalaseg">
-                        <div class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input" id="checkbox1" name="checkchangevalaseg"
-                                value="1">
-                            <label class="custom-control-label c-pointer" for="checkbox1">Actualizar valor asegurado
-                                al -50%</label>
+                    <div class="row">
+                        <div class=" col-lg-9 mb-4">
+                            <label class="form-label">Estado de la reclamación</label>
+                            <select name="estado_id" class="form-control" id="Selectreclamacion">
+                                @foreach ($estados as $e)
+                                    <option value="{{ $e->id }}"
+                                        @if ($e->id == $reclamacion->estado) selected @endif>
+                                        {{ $e->nombre }}
+                                    </option>
+                                @endforeach
+                            </select>
                         </div>
-                    </div>
-                    <div class="d-flex justify-content-end gap-2 mt-3">
-                        <button class="btn btn-warning" title="Prestar servicio" type="submit">
-                            <i class="feather-plus me-2"></i>
-                            <span>Actualiza Cambios</span>
-                        </button>
-                    </div>
+                        
+                        <div class="col-lg-3 mb-4" id="inputvalordesembolsado" style="{{ $reclamacion->estado == 4 ? '' : 'display: none;' }}">
+                                <label class="form-label">Fecha desembolso <span class="text-danger">*</span></label>
+                                <input type="date" class="form-control" name="fechadesembolso"
+                                    value="{{ \Carbon\Carbon::parse($reclamacion->fecha_desembolso)->format('Y-m-d') }}">
+                        </div>                        
+
+                        <div class="col-lg-12 mb-4">
+                            <label class="form-label">Observaciones</label>
+                            <input type="text" class="form-control uppercase-input" name="observacion" required>
+                            <input type="text" value="{{ $poliza->id ?? '' }}" name="poliza_id" hidden>
+                        </div>
+                        <div class="nav-link" style="margin-left: 10px; display: none;" id="checkchangevalaseg">
+                            <div class="custom-control custom-checkbox">
+                                <input type="checkbox" class="custom-control-input" id="checkbox1"
+                                    name="checkchangevalaseg" value="1">
+                                <label class="custom-control-label c-pointer" for="checkbox1">Registrar desembolso del 50% al valor asegurado de la póliza</label>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-end gap-2 mt-3">
+                            <button class="btn btn-warning" title="Prestar servicio" type="submit">
+                                <i class="feather-plus me-2"></i>
+                                <span>Actualiza Cambios</span>
+                            </button>
+                        </div>
                 </form>
             </div>
         </div>
@@ -188,12 +205,19 @@
                 } else {
                     $('#checkchangevalaseg').hide();
                 }
+
+                if ($('#Selectreclamacion').val() === reclamacion) {
+                    $('#inputvalordesembolsado').show();
+                } else {
+                    $('#inputvalordesembolsado').hide();
+                }
             }
 
             toggleDiv();
 
             $('#Selectreclamacion').on('change', toggleDiv);
             $('#Selectcobertura').on('change', toggleDiv);
+
         });
     </script>
 

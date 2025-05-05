@@ -54,7 +54,7 @@
                         </div>
                         <div class="col-lg-4 mb-4">
                             <label class="form-label">Distrito <span class="text-danger">*</span></label>
-                            <input class="form-control datepicker-input" value="" readonly>
+                            <input class="form-control datepicker-input" value="{{ $asegurado->tercero->distrito }}" readonly>
                         </div>
                     </div>
                     <div class="row">
@@ -73,7 +73,6 @@
                                 <input type="text" class="form-control" name="valorAsegurado"
                                     value="{{ $poliza->plan->valor }}">
                             </div>
-
                         </div>
                     </div>
                     <div class="row">
