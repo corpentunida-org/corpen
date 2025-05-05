@@ -62,7 +62,8 @@
                                 </div>
                                 <div class="col-lg-4 mb-4">
                                     <label class="form-label">Valor asegurado</label>
-                                    <input type="text" id="valoraseguradoplan" name="valorAsegurado" class="form-control"
+                                    <input type="text" id="valoraseguradoplan" name="valorAsegurado"
+                                        class="form-control"
                                         value="$ {{ number_format($asegurado->polizas->first()->valor_asegurado) }}"
                                         disabled>
                                 </div>
@@ -107,7 +108,7 @@
                                         value="{{ $asegurado->polizas->first()->extra_prima }}">
                                 </div>
                             </div>
-                            @if ($asegurado->parentesco == 'AF')
+                            
                                 <div class="table-responsive">
                                     <table class="table mb-0">
                                         <thead>
@@ -123,7 +124,7 @@
                                         <tbody>
                                             @foreach ($grupoFamiliar as $gf)
                                                 <tr>
-                                                    <td><a href="javascript:void(0);">{{ $gf->cedula }}</a></td>
+                                                    <td><a href="{{ route('seguros.poliza.show', ['poliza' => 'ID']) . '?id=' . $gf->cedula; }}">{{ $gf->cedula }}</a></td>
                                                     <td>{{ $gf->tercero->nombre }}</td>
                                                     <td>{{ $gf->parentesco }}</td>
                                                     <td><span
@@ -143,19 +144,20 @@
                                         </tbody>
                                     </table>
                                 </div>
-                                <div class="row align-items-center justify-content-end">                                    
+                                <div class="row align-items-center justify-content-end">
                                     <div class="col-lg-9 text-end mt-4">
-                                        <label class="form-label">Valor a pagar <span class="text-danger">*</span></label>
+                                        <label class="form-label">Valor a pagar titular <span
+                                                class="text-danger">*</span></label>
                                     </div>
                                     <div class="col-lg-3 mt-4">
                                         <div class="input-group">
                                             <div class="input-group-text">$</div>
-                                            <input class="form-control" value="{{ $asegurado->valorpAseguradora }}"
+                                            <input class="form-control" value="{{ $asegurado->terceroAF->asegurados->first()->valorpAseguradora }}"
                                                 type="text" name="valorpagaraseguradora">
                                         </div>
                                     </div>
                                 </div>
-                            @endif
+                            
 
                             <div class="mb-4">
                                 <label class="form-label">Observacion<span class="text-danger">*</span></label>
@@ -173,10 +175,9 @@
                         </form>
                     </div>
                 </div>
-            </div>
-            <div class="tab-pane fade p-4" id="TaskTab" role="tabpanel">
-                <div class="col-lg-12 p-4">
-                    <form method="POST"
+
+                <div class="tab-pane fade p-4 " id="TaskTab" role="tabpanel">
+                    <form method="POST" class="p-4"
                         action="{{ route('seguros.poliza.destroy', ['poliza' => $asegurado->polizas->first()->id]) }}">
                         @csrf
                         @method('DELETE')
@@ -215,7 +216,6 @@
             </div>
         </div>
     </div>
-    </div>
     <script>
         $('#formAddNovedad').submit(function(event) {
             var form = this;
@@ -229,7 +229,7 @@
         });
 
         $('#selectPlan').on('change', function() {
-            const selected = $(this).find('option:selected');            
+            const selected = $(this).find('option:selected');
             $('#valoraseguradoplan').val("$ " + selected.data('valor'));
             $('#primaplan').val("$ " + selected.data('prima'));
         });

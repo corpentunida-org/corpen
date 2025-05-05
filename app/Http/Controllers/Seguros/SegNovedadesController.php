@@ -32,7 +32,7 @@ class SegNovedadesController extends Controller
     public function create(Request $request)
     {
         $id = $request->query('a');
-        $asegurado = SegAsegurado::where('cedula', $id)->with(['tercero', 'terceroAF', 'polizas.plan'])->first();
+        $asegurado = SegAsegurado::where('cedula', $id)->with(['tercero', 'terceroAF.asegurados', 'polizas.plan'])->first();
         $fechaNacimiento = $asegurado->tercero->fechaNacimiento;
         $edad = date_diff(date_create($fechaNacimiento), date_create('today'))->y;
         $idcondicion = app(SegPlanController::class)->getCondicion($edad);
@@ -46,13 +46,13 @@ class SegNovedadesController extends Controller
         $totalPrima = DB::table('SEG_polizas')
             ->whereIn('seg_asegurado_id', $grupoFamiliar->pluck('cedula'))
             ->sum('valor_prima');
-
+    
         return view('seguros.novedades.create', compact('asegurado', 'planes', 'condicion', 'grupoFamiliar', 'totalPrima'));
     }
 
     public function store(Request $request)
     {
-        dd($request->all());
+        
         $poliza = SegPoliza::findOrFail($request->id_poliza);
         $asegurado = SegAsegurado::where('cedula',$request->asegurado)->first();
         $now = Carbon::now();
