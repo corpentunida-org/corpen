@@ -80,7 +80,8 @@ class SegReclamacionesController extends Controller
         $estados = SegEstadoReclamacion::all();
         $parentescos = $controllerparen = app()->make(ParentescosController::class);
         $parentescos = $parentescos->index();
-        return view("seguros.reclamaciones.create", compact('asegurado','poliza', 'estados', 'parentescos'));
+        $diagnosticos = SegDiagnosticos::all();
+        return view("seguros.reclamaciones.create", compact('asegurado','poliza', 'estados', 'parentescos','diagnosticos'));
     }
 
     /**
@@ -99,11 +100,34 @@ class SegReclamacionesController extends Controller
             'horaContacto' => $request->horacontacto,
             'cedulaContacto'=>$request->cedulacontacto,
             'nombreContacto' => strtoupper($request->nombrecontacto),
+            'telcontacto' => $request->telcontacto,
             'parentescoContacto' => $request->parentesco_id,
             'estado' => $request->estado_id,
             'poliza_id' => $request->poliza_id,
             'valor_asegurado' => $request->valorAsegurado,
+            'fecha_desembolso' => $request->fechadesembolso,
         ]);
+        /* 
+        cedulaAsegurado bigint 
+idCobertura bigint 
+idDiagnostico bigint 
+otro varchar(255) 
+fechaSiniestro date 
+fechaContacto date 
+horaContacto time 
+nombreContacto varchar(100) 
+parentescoContacto varchar(255) 
+telcontacto varchar(45) 
+created_at timestamp 
+updated_at timestamp 
+estado int 
+poliza_id bigint 
+cedulaContacto bigint 
+idBeneficiario bigint 
+valor_asegurado varchar(45) 
+fecha_desembolso timestamp 
+finReclamacion
+        */
         SegPoliza::where('id', $request->poliza_id)
             ->update(['reclamacion' => $reclamacion->id]);
         

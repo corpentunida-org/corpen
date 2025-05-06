@@ -67,7 +67,7 @@
                             </select>
                         </div>
                         <div class="col-lg-5 mb-4">
-                            <label class="form-label">Valor Asegurado<span class="text-danger">*</span></label>
+                            <label class="form-label">Valor Asegurado a reclamar<span class="text-danger">*</span></label>
                             <div class="input-group mb-3">
                                 <span class="input-group-text">$</span>
                                 <input type="text" class="form-control" name="valorAsegurado"
@@ -79,8 +79,9 @@
                         <div class="col-lg-7 mb-4">
                             <label class="form-label">Diagnóstico <span class="text-danger">*</span></label>
                             <select name="diagnostico_id" class="form-control">
-                                <option value="1">opcion 1</option>
-                                <option value="2">opcion 2</option>
+                                @foreach ($diagnosticos as $d)
+                                    <option value="{{ $d->id }}">{{ $d->diagnostico }}</option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="col-lg-5 mb-4">
@@ -95,12 +96,16 @@
                         </div>
                         <div class="col-lg-6 mb-4">
                             <label class="form-label">Estado de la reclamación</label>
-                            <select name="estado_id" class="form-control">
+                            <select name="estado_id" class="form-control" id="SelectReclamacionEstado">
                                 @foreach ($estados as $e)
                                     <option value="{{ $e->id }}">{{ $e->nombre }}</option>
                                 @endforeach
                             </select>
                         </div>
+                    </div>
+                    <div class="col-lg-6 mb-4" id="divFechaDesembolso">
+                        <label class="form-label">Fecha del desembolso <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" name="fechadesembolso" required>
                     </div>
                 </div>
             </div>
@@ -131,7 +136,7 @@
                         </div>
                         <div class="col-lg-5 mb-4">
                             <label class="form-label">Telefono contacto<span class="text-danger">*</span></label>
-                            <input type="number" class="form-control" required>
+                            <input type="number" class="form-control" name="telcontacto" required>
                         </div>
                     </div>
                     <div class="row">
@@ -144,6 +149,12 @@
                             <input type="date" id="fechaActual" name="fechacontacto" class="form-control"
                                 required>
                         </div>
+                    </div>
+                    <div class="col-lg-12 mb-4">
+                        <label class="form-label">Beneficiario <span class="text-danger">*</span></label>
+                            <select name="beneficiario_id" class="form-control">
+                                <option value=""></option>
+                            </select>
                     </div>
                     <div class="col-lg-12 mb-4">
                         <label class="form-label">Observaciones</label>
@@ -178,6 +189,19 @@
                     console.log($(this).serialize());
                 }
             });
+
+            function toggleDiv() {               
+                if ($('#SelectReclamacionEstado').val() === '4') {
+                    $('#divFechaDesembolso').show();
+                } else {
+                    $('#divFechaDesembolso').hide();
+                }
+            }
+
+            toggleDiv();
+
+            $('#SelectReclamacionEstado').on('change', toggleDiv);
+        
         });
     </script>
 </x-base-layout>
