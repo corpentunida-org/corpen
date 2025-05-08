@@ -5,6 +5,7 @@
         }
     </style>
     <x-warning />
+    <x-success />
     <div class="col-12">
         <div class="card">
             <div class="card-body py-1 m-0">
@@ -79,10 +80,10 @@
                         </div>
                         <div class="d-flex align-items-center justify-content-center">
                             @can('seguros.poliza.store')
-                            <a href="#" class="btn btn-primary">
-                                <i class="feather-plus me-2"></i>
-                                <span>Crear Poliza</span>
-                            </a>
+                                <a href="{{route('seguros.poliza.create')}}" class="btn btn-primary">
+                                    <i class="feather-plus me-2"></i>
+                                    <span>Crear Poliza</span>
+                                </a>
                             @endcan
                         </div>
                     </div>
@@ -90,7 +91,6 @@
             </div>
         </div>
     </div>
-    
 
     @include('seguros.novedades.index')
 

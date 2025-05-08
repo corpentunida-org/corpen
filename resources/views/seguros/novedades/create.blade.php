@@ -146,8 +146,7 @@
                                 </div>
                                 <div class="row align-items-center justify-content-end">
                                     <div class="col-lg-9 text-end mt-4">
-                                        <label class="form-label">Valor a pagar titular <span
-                                                class="text-danger">*</span></label>
+                                        <label class="form-label">Valor a pagar titular <span class="text-danger">*</span></label>
                                     </div>
                                     <div class="col-lg-3 mt-4">
                                         <div class="input-group">

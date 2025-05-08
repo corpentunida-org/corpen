@@ -7,16 +7,17 @@ use App\Models\Seguros\SegBeneficios;
 use App\Models\Seguros\SegPoliza;
 use App\Models\Seguros\SegBeneficiario;
 use App\Models\Seguros\SegNovedades;
+use App\Models\Seguros\SegTercero;
+use App\Models\Seguros\SegAsegurado;
 use App\Models\Seguros\SegReclamaciones;
+use App\Models\Seguros\SegPlan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\AuditoriaController;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\ExcelImport;
-use App\Imports\ExcelExport; 
 
-use App\Models\Seguros\SegAsegurado;
 
 class SegPolizaController extends Controller
 {
@@ -42,7 +43,7 @@ class SegPolizaController extends Controller
      */
     public function create()
     {
-        
+        return view('seguros.polizas.create');
     }
 
     /**
@@ -50,7 +51,46 @@ class SegPolizaController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $tercero = SegTercero::create([
+            'cedula' => $request->tercedula,
+            'nombre' => strtoupper($request->ternombre),
+            'fechaNacimiento' => $request->fechaNacimiento,
+            'telefono' => $request->tertelefono,
+            'genero' => $request->tergenero,
+            'distrito' => $request->terdistrito            
+        ]);
+        if ($request->estitular === '1') {
+            $asegurado = SegAsegurado::create([
+                'cedula' => $tercero->cedula,
+                'parentesco' => 'AF',
+                'valorpAseguradora' => $request->valorpagaraseguradora,
+            ]);            
+        }else{
+            $asegurado = SegAsegurado::create([
+                'cedula' => $tercero->cedula,
+                'parentesco' => $request->parentesco,
+                'titular' => $request->titularasegurado,
+            ]);
+        }
+        $plan = SegPlan::find($request->selectPlanes);
+        $poliza = SegPoliza::create([
+            'seg_asegurado_id' => $asegurado->cedula,
+            'seg_convenio_id' => substr((string)$plan->seg_convenio_id, 4),
+            'active' => true,
+            'fecha_inicio' => Carbon::now()->toDateString(),
+            'seg_plan_id' => $request->selectPlanes,
+            'valor_asegurado' => $plan->valor,
+            'valor_prima' => $plan->prima,
+            'extra_prima' => $request->extra_prima,
+            'descuento' => $request->desval,
+            'descuentopor' => $request->despor,
+            'valorpagaraseguradora' => $request->valorpagaraseguradora,
+        ]);
+        $this->auditoria("TERCERO CREAD0 ID " . $tercero->cedula);
+        $this->auditoria("ASEGURADO CREADO ID " . $asegurado->cedula);
+        $this->auditoria("POLIZA CREADA ID " . $poliza->id);
+
+        return redirect()->route('seguros.poliza.index')->with('success', 'Poliza creada correctamente');
     }
 
     /**
@@ -135,6 +175,7 @@ class SegPolizaController extends Controller
         }        
         $this->auditoria("actualizar valor a pagar polizas con carga excel");
         return view('seguros.polizas.edit', compact('failedRows'))->with('success', 'Se actualizaron exitosamente ' . $updatedCount . ' registros');
+   
     }
 
     /**
