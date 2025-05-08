@@ -97,6 +97,7 @@ Route::post('/reclamacion/generarpdf', [SegReclamacionesController::class, 'gene
 Route::get('/reclamacion/informe/excel', [SegReclamacionesController::class, 'exportexcel'])->middleware('auth')->name('seguros.reclamacion.download');
 Route::post('poliza/upload', [SegPolizaController::class, 'upload'])->name('seguros.poliza.upload');
 Route::get('/seguros/cxc', [SegPolizaController::class, 'exportcxc'])->name('seguros.poliza.download');
+Route::get('/planes/{edad}', [SegPlanController::class, 'getPlanes'])->name('seguros.planes.getplanes');
 
 //RUTAS CINCO
 Route::resource('terceros', TercerosController::class)->names('cinco.tercero')->middleware(['auth', 'can:cinco.tercero.index']);

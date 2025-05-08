@@ -133,4 +133,12 @@ class SegPlanController extends Controller
             return null;
         }
     }
+
+    public function getPlanes($edad)
+    {
+        $condicion = $this->getCondicion($edad);
+        $planes = SegPlan::with('convenio')->where('condicion_id', $condicion)->where('vigente', true)->get();
+
+        return response()->json($planes);
+    }
 }

@@ -137,11 +137,11 @@
                                 $('#formUpdateTitular').submit(function (event) {
                                     var form = this;
                                     if (!form.checkValidity()) {
-                                        $(form).addClass('was-validated'); // Aplicar la clase al formulario que estás enviando
+                                        $(form).addClass('was-validated');
                                         event.preventDefault();
                                         event.stopPropagation();
                                     } else {
-                                        console.log($(this).serialize()); // Serializa y muestra los datos solo si la validación pasa
+                                        console.log($(this).serialize());
                                     }
                                 });
                             </script>
