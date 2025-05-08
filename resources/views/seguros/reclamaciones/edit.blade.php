@@ -220,7 +220,4 @@
 
         });
     </script>
-
-
-
 </x-base-layout>
