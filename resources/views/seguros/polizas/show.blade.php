@@ -176,8 +176,9 @@
                                 <li
                                     class="d-flex justify-content-between feed-item feed-item-{{ $colors[$i % count($colors)] }}">
                                     <div>
-                                        <span class="text">{{ $nov->created_at }} 
-                                            <a class="badge bg-soft-{{ $colors[$i % count($colors)] }} text-{{ $colors[$i % count($colors)] }} ms-1">  
+                                        <span class="text">{{ $nov->created_at }}
+                                            <a
+                                                class="badge bg-soft-{{ $colors[$i % count($colors)] }} text-{{ $colors[$i % count($colors)] }} ms-1">
                                                 @if (Str::contains(Str::lower($nov->observaciones), 'cambio de convenio'))
                                                     Plan Anterior ${{ number_format($nov->valorAsegurado) }}
                                                 @elseif (Str::contains(Str::lower($nov->observaciones), 'valor a pagar'))
@@ -197,6 +198,14 @@
                         </ul>
                     </div>
                 </div>
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <div class="filter-dropdown undefined">
+                <button class="btn btn-light-brand" id="btnCardBeneficios">
+                    <i class="feather-star me-2"></i>
+                    <span>Registrar un Beneficio</span>
+                </button>
             </div>
         </div>
 
@@ -236,32 +245,33 @@
             <div id="collapseOne" class="accordion-collapse page-header-collapse collapse" style="">
                 <div class="accordion-body pb-2">
                     <div class="table-responsive">
-                        <table class="table">                            
-                            <tbody>    
-                            @foreach ( $beneficios as $beneficio )                                                    
-                                <tr>
-                                    <td colspan="3"></td>
-                                    <td class="fw-semibold text-dark bg-gray-100 text-lg-end">Beneficio</td>
-                                    <td class="fw-bold text-dark bg-gray-100"> $ {{number_format($beneficio->valorDescuento)}}</td>
-                                </tr>
-                            @endforeach   
+                        <table class="table">
+                            <tbody>
+                                @foreach ($beneficios as $beneficio)
+                                    <tr>
+                                        <td colspan="3"></td>
+                                        <td class="fw-semibold text-dark bg-gray-100 text-lg-end">Beneficio</td>
+                                        <td class="fw-bold text-dark bg-gray-100"> $
+                                            {{ number_format($beneficio->valorDescuento) }}</td>
+                                    </tr>
+                                @endforeach
                                 <tr>
                                     <td colspan="3"></td>
                                     <td class="fw-semibold text-dark bg-gray-100 text-lg-end">Subsidio Inicial</td>
-                                    <td class="fw-bold text-dark bg-gray-100"> $ {{number_format($s)}}</td>
+                                    <td class="fw-bold text-dark bg-gray-100"> $ {{ number_format($s) }}</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
-            
+
             @if ($poliza->valorpagaraseguradora + $subsidio != $totalPrima || $subsidio < 0)
                 <small class="form-text text-danger text-end mb-4" style="margin-right: 30px;">El valor a pagar del
-                    titular es erroneo. 
+                    titular es erroneo.
                     @can('seguros.poliza.update')
-                    <a href="{{ route('seguros.novedades.create', ['a' => $poliza->seg_asegurado_id]) }}"
-                        class="text-danger"> Para corregirlo click aqui</a>
+                        <a href="{{ route('seguros.novedades.create', ['a' => $poliza->seg_asegurado_id]) }}"
+                            class="text-danger"> Para corregirlo click aqui</a>
                     @endcan
                 </small>
             @endif
@@ -270,15 +280,80 @@
             @include('seguros.beneficiarios.show')
         @endif
         @can('seguros.beneficiarios.store')
-        <div class="my-4 d-flex align-items-center justify-content-start">
-            <div class="d-flex gap-2">
-                <a href="{{ route('seguros.beneficiario.create', ['a' => $poliza->seg_asegurado_id, 'p' => $poliza->id]) }}"
-                    class="btn btn-success">
-                    <i class="feather-plus me-2"></i>
-                    <span>Agregar Beneficiario</span>
-                </a>
+            <div class="my-4 d-flex align-items-center justify-content-start">
+                <div class="d-flex gap-2">
+                    <a href="{{ route('seguros.beneficiario.create', ['a' => $poliza->seg_asegurado_id, 'p' => $poliza->id]) }}"
+                        class="btn btn-success">
+                        <i class="feather-plus me-2"></i>
+                        <span>Agregar Beneficiario</span>
+                    </a>
+                </div>
+            </div>
+        @endcan
+    </div>
+    <div id="CardAddBeneficios" class="col-lg-12" style="display: none;">
+        <div class="card stretch stretch-full">
+            <div class="card-header">
+                <h5 class="fw-bold mb-0">
+                    <span class="d-block mb-2">Crear Beneficio </span>
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" action="{{ route('seguros.beneficios.store') }}" id="formAddBeneficio"
+                    novalidate>
+                    @csrf
+                    @method('POST')
+                    <div class="row">
+                        <div class="col-lg-3 mb-4">
+                            <label class="form-label">Valor Beneficio<span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" name="valorbene">
+                            </div>
+                        </div>
+                        <div class="col-lg-3 mb-4">
+                            <label class="form-label">Porcentaje Beneficio<span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" name="porbene">
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+                        <div class="col-lg-6 mb-4">
+                            <label class="form-label">Observaciones<span class="text-danger">*</span></label>
+                            <input type="text" class="form-control text-uppercase" name="observacionesbene" required>
+                        </div>
+                        <input type="hidden" name="aseguradoId" value="{{ $poliza->seg_asegurado_id }}">
+                        <input type="hidden" name="polizaId" value="{{ $poliza->id }}">
+                    </div>
+                    <div class="d-flex flex-row-reverse gap-2 mt-2">
+                        <button class="btn btn-success mt-4" data-bs-toggle="tooltip" type="submit"
+                            data-bs-original-title="crear">
+                            <i class="feather-plus me-2"></i>
+                            <span>Registrar Beneficio</span>
+                        </button>
+                    </div>
+                </form>
+                <script>
+                    $(document).ready(function() {
+                        $('#formAddBeneficio').submit(function(event) {
+                            var form = this;
+                            if (!form.checkValidity()) {
+                                $(form).addClass('was-validated');
+                                event.preventDefault();
+                                event.stopPropagation();
+                            }
+                        });
+                        $('#btnCardBeneficios').on('click', function() {
+                            $('#CardAddBeneficios').show();
+                            $('#CardAddBeneficios').slideDown('fast', function() {
+                                $('html, body').animate({
+                                    scrollTop: $('#CardAddBeneficios').offset().top
+                                }, 500);
+                            });
+                        });
+                    });
+                </script>
             </div>
         </div>
-        @endcan
     </div>
 </x-base-layout>

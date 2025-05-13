@@ -24,6 +24,7 @@ use App\Http\Controllers\Seguros\SegCoberturaController;
 use App\Http\Controllers\Seguros\SegConvenioController;
 use App\Http\Controllers\Seguros\SegReclamacionesController;
 use App\Http\Controllers\Seguros\SegNovedadesController;
+use App\Http\Controllers\Seguros\SegBeneficiosController;
 
 use App\Http\Controllers\Cinco\TercerosController;
 use App\Http\Controllers\Cinco\MoviContCincoController;
@@ -98,6 +99,7 @@ Route::get('/reclamacion/informe/excel', [SegReclamacionesController::class, 'ex
 Route::post('poliza/upload', [SegPolizaController::class, 'upload'])->name('seguros.poliza.upload');
 Route::get('/seguros/cxc', [SegPolizaController::class, 'exportcxc'])->name('seguros.poliza.download');
 Route::get('/planes/{edad}', [SegPlanController::class, 'getPlanes'])->name('seguros.planes.getplanes');
+Route::resource('beneficios', SegBeneficiosController::class)->names('seguros.beneficios')->middleware(['auth',]);
 
 //RUTAS CINCO
 Route::resource('terceros', TercerosController::class)->names('cinco.tercero')->middleware(['auth', 'can:cinco.tercero.index']);
