@@ -35,11 +35,11 @@ class User extends Authenticatable
         'fecha_nacimiento',
         'type',
     ];
+
     public function roles()
     {
         return $this->belongsToMany(Role::class, 'actions', 'user_id', 'role_id');
     }
-
 
     public function actions()
     {

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Cinco;
 
 use App\Models\Cinco\MoviContCinco;
+use App\Models\Cinco\Terceros;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -38,7 +39,7 @@ class MoviContCincoController extends Controller
      */
     public function show(Request $request)
     {
-        $id = $request->input('id');
+        $id = $request->input('id');        
         $movimientos = MoviContCinco::where('Cedula', $id)
             ->with(['tercero', 'cuentaContable'])
             ->orderBy('Cuenta', 'asc')
@@ -52,10 +53,11 @@ class MoviContCincoController extends Controller
             ->orderBy('cuenta')
             ->get();
 
+        $fechas = Terceros::where('Cod_Ter', $id)->first();
         if ($movimientos->isEmpty()) {
             return redirect()->back()->with('warning', 'No hay registros con esa cedula ingresada.');
         }
-        return view('cinco.movcontables.show', compact('movimientos', 'cuentasAgrupadas', 'id'));
+        return view('cinco.movcontables.show', compact('movimientos', 'cuentasAgrupadas', 'id', 'fechas'));
     }
 
     /**

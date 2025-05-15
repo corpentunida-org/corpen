@@ -28,7 +28,7 @@ class UserController extends Controller
     public function index()
     {
         //$users = User::latest()->take(5)->get();
-        $users = User::paginate(4);
+        $users = User::where('type','!=', 'ASOCIADO')->paginate(4);
         return view('admin.users.index', compact('users'));
     }
 

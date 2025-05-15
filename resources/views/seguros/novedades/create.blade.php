@@ -93,73 +93,84 @@
                                 </div>
                                 <div class="col-lg-2 mb-4">
                                     <label class="form-label">Valor Descuento<span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" name="valordescuento"
-                                        value="{{ $asegurado->polizas->first()->descuento }}">
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="text" class="form-control" name="valordescuento"
+                                            value="{{ $asegurado->polizas->first()->descuento }}">
+                                    </div>
+
                                 </div>
                                 <div class="col-lg-2 mb-4">
                                     <label class="form-label">Porcentaje Descuento<span
                                             class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" name="descuento"
-                                        value="{{ $asegurado->polizas->first()->descuentopor }}">
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" name="descuento"
+                                            value="{{ $asegurado->polizas->first()->descuentopor }}">
+                                        <span class="input-group-text">%</span>
+                                    </div>
                                 </div>
                                 <div class="col-lg-2 mb-4">
-                                    <label class="form-label">Extra Prima<span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" name="extra_prima"
+                                    <label class="form-label">Valor Extra Prima<span class="text-danger">*</span></label>                                    
+                                    <div class="input-group">
+                                        <span class="input-group-text">$</span>
+                                        <input type="text" class="form-control" name="extra_prima"
                                         value="{{ $asegurado->polizas->first()->extra_prima }}">
+                                    </div>
                                 </div>
                             </div>
-                            
-                                <div class="table-responsive">
-                                    <table class="table mb-0">
-                                        <thead>
-                                            <tr class="border-top">
-                                                <th>Cedula</th>
-                                                <th>Nombre</th>
-                                                <th>Parentesco</th>
-                                                <th>Plan</th>
-                                                <th>Valor Asegurado</th>
-                                                <th>Prima</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach ($grupoFamiliar as $gf)
-                                                <tr>
-                                                    <td><a href="{{ route('seguros.poliza.show', ['poliza' => 'ID']) . '?id=' . $gf->cedula; }}">{{ $gf->cedula }}</a></td>
-                                                    <td>{{ $gf->tercero->nombre }}</td>
-                                                    <td>{{ $gf->parentesco }}</td>
-                                                    <td><span
-                                                            class="badge bg-soft-warning text-warning">{{ $gf->polizas->first()->plan->name }}</span>
-                                                    </td>
-                                                    <td>$ {{ number_format($gf->polizas->first()->valor_asegurado) }}
-                                                    </td>
-                                                    <td>$ {{ number_format($gf->polizas->first()->valor_prima) }}</td>
-                                                </tr>
-                                            @endforeach
-                                            <tr>
-                                                <td colspan="5" class="text-end">Total</td>
-                                                <td><span class="badge bg-gray-200 text-dark"
-                                                        style="font-size: 15px;">$
-                                                        {{ number_format($totalPrima) }} </span></td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                                <div class="row align-items-center justify-content-end">
-                                    <div class="col-lg-9 text-end mt-4">
-                                        <label class="form-label">Valor a pagar titular <span class="text-danger">*</span></label>
-                                    </div>
-                                    <div class="col-lg-3 mt-4">
-                                        <div class="input-group">
-                                            <div class="input-group-text">$</div>
-                                            <input class="form-control" value="{{ $asegurado->terceroAF->asegurados->first()->valorpAseguradora }}"
-                                                type="text" name="valorpagaraseguradora">
-                                        </div>
-                                    </div>
-                                </div>
-                            
 
+                            <div class="table-responsive">
+                                <table class="table mb-0">
+                                    <thead>
+                                        <tr class="border-top">
+                                            <th>Cedula</th>
+                                            <th>Nombre</th>
+                                            <th>Parentesco</th>
+                                            <th>Plan</th>
+                                            <th>Valor Asegurado</th>
+                                            <th>Prima</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($grupoFamiliar as $gf)
+                                            <tr>
+                                                <td><a
+                                                        href="{{ route('seguros.poliza.show', ['poliza' => 'ID']) . '?id=' . $gf->cedula }}">{{ $gf->cedula }}</a>
+                                                </td>
+                                                <td>{{ $gf->tercero->nombre }}</td>
+                                                <td>{{ $gf->parentesco }}</td>
+                                                <td><span
+                                                        class="badge bg-soft-warning text-warning">{{ $gf->polizas->first()->plan->name }}</span>
+                                                </td>
+                                                <td>$ {{ number_format($gf->polizas->first()->valor_asegurado) }}
+                                                </td>
+                                                <td>$ {{ number_format($gf->polizas->first()->valor_prima) }}</td>
+                                            </tr>
+                                        @endforeach
+                                        <tr>
+                                            <td colspan="5" class="text-end">Total</td>
+                                            <td><span class="badge bg-gray-200 text-dark" style="font-size: 15px;">$
+                                                    {{ number_format($totalPrima) }} </span></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="row align-items-center justify-content-end">
+                                <div class="col-lg-9 text-end mt-4">
+                                    <label class="form-label">Valor a pagar titular <span
+                                            class="text-danger">*</span></label>
+                                </div>
+                                <div class="col-lg-3 mt-4">
+                                    <div class="input-group">
+                                        <div class="input-group-text">$</div>
+                                        <input class="form-control"
+                                            value="{{ $asegurado->terceroAF->asegurados->first()->valorpAseguradora }}"
+                                            type="text" name="valorpagaraseguradora">
+                                    </div>
+                                </div>
+                            </div>
                             <div class="mb-4">
-                                <label class="form-label">Observacion<span class="text-danger">*</span></label>
+                                <label class="form-label">Observación<span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" name="observaciones" required>
                                 <input type="hidden" name="id_poliza"
                                     value="{{ $asegurado->polizas->first()->id }}">
