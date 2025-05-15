@@ -9,6 +9,7 @@ use App\Models\Seguros\SegPlan;
 use Illuminate\Http\Request;
 use App\Http\Controllers\AuditoriaController;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class SegBeneficiosController extends Controller
 {
@@ -32,9 +33,25 @@ class SegBeneficiosController extends Controller
     {
         $fechaMax = Carbon::today()->copy()->subYears($request->edad_minima);
         $fechaMin = Carbon::today()->copy()->subYears($request->edad_maxima + 1)->addDay();
-        $listadata = SegPoliza::whereHas('tercero', function ($query) use ($fechaMin, $fechaMax) {
-            $query->whereBetween('fechaNacimiento', [$fechaMin, $fechaMax]);
-        })->where('active', true)->with(['plan', 'tercero', 'asegurado'])->get();
+
+        $query = SegPoliza::where('active', true)
+            ->whereHas('tercero', function ($q) use ($fechaMin, $fechaMax) {
+                $q->whereBetween('fechaNacimiento', [$fechaMin, $fechaMax]);
+            });
+
+        if ($request->tipo !== 'TODOS') {
+            $query->whereHas('asegurado', function ($q) use ($request) {
+                $q->where('parentesco', $request->tipo);
+            });
+        }
+
+        if ($request->plan !== 'TODOS') {
+            $query->whereHas('plan', function ($q) use ($request) {
+                $q->where('valor', $request->plan);
+            });
+        }
+        $listadata = $query->with(['plan', 'tercero', 'asegurado'])->get();
+
         $planes = SegPlan::where('vigente', true)->where('condicion_id', 2)->get();
         return view('seguros.beneficios.index', compact('listadata', 'planes'));
     }
@@ -52,17 +69,32 @@ class SegBeneficiosController extends Controller
      */
     public function store(Request $request)
     {
-        $beneficio = SegBeneficios::create([
-            'cedulaAsegurado' => $request->aseguradoId,
-            'poliza' => $request->polizaId,
-            'porcentajeDescuento' => $request->porbene,
-            'valorDescuento' => $request->valorbene,
-            'observaciones' => strtoupper($request->observacionesbene)
-        ]);
-        if ($beneficio) {
-            $accion = "add beneficio a " . $request->aseguradoId . " por valor de " . $request->valorbene;
+        if ($request->grupo) {
+            foreach ($request->beneficio as $item) {
+                SegBeneficios::create([
+                    'cedulaAsegurado' => $item['cedula'],
+                    'poliza' => $item['poliza'],
+                    'porcentajeDescuento' => $request->despor,
+                    'valorDescuento' => $request->desval,
+                    'observaciones' => strtoupper($request->observaciones),
+                ]);
+            }
+            $accion = "add beneficio grupal valor de " . $request->desval;
             $this->auditoria($accion);
-            return redirect()->back()->with('success', 'Se agrego correctamente el beneficio.');
+            return redirect()->route('seguros.beneficios.index')->with('success', 'Se agrego correctamente el beneficio.');
+        } else {
+            $beneficio = SegBeneficios::create([
+                'cedulaAsegurado' => $request->aseguradoId,
+                'poliza' => $request->polizaId,
+                'porcentajeDescuento' => $request->porbene,
+                'valorDescuento' => $request->valorbene,
+                'observaciones' => strtoupper($request->observacionesbene)
+            ]);
+            if ($beneficio) {
+                $accion = "add beneficio a " . $request->aseguradoId . " por valor de " . $request->valorbene;
+                $this->auditoria($accion);
+                return redirect()->back()->with('success', 'Se agrego correctamente el beneficio.');
+            }
         }
     }
 

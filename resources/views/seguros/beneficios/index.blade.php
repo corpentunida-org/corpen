@@ -1,4 +1,5 @@
 <x-base-layout>
+<x-success />
     <div class="col-lg-12">
         <div class="card stretch stretch-full">
             <div class="card-body lead-status">
@@ -29,15 +30,15 @@
                         <div class="col-xxl-3 col-md-2  mb-4">
                             <label class="form-label">Tipo Afiliado</label>
                             <select class="form-control" name="tipo">
-                                <option value="AF">Titular</option>
-                                <option value="CO">Conyugue</option>
-                                <option value="TODOS">Todos</option>
+                                <option value="AF">TITULAR</option>
+                                <option value="CO">CONYUGUE</option>
+                                <option value="TODOS">TODOS</option>
                             </select>
                         </div>
                         <div class="col-xxl-4 col-md-3  mb-4">
                             <label class="form-label">Plan</label>
                             <select class="form-control" name="plan">
-                                <option value="todos">Todos</option>
+                                <option value="TODOS">TODOS</option>
                                 @foreach ($planes as $plan)
                                     <option value="{{ $plan->valor }}">{{ $plan->name }} -
                                         ${{ number_format($plan->valor) }}</option>
@@ -59,11 +60,20 @@
                     <h5 class="card-title">Lista de datos</h5>
                 </div>
                 <div class="card-body">
+                @if ($listadata->isEmpty())
+                    <div class="alert alert-danger" role="alert">
+                        No se encontraron resultados para los filtros seleccionados.
+                    </div>                    
+                @else
+                    <form action="{{ route('seguros.beneficios.store') }}" method="post" id="formAddBeneficios"
+                        class="row" novalidate>
+                        @method('POST')
+                        @csrf
                     <div class="row">
                         <div class="col-lg-2 mb-4">
                             <label class="form-label">Descuento Porcentaje</label>
                             <div class="input-group">
-                                <input type="number" class="form-control" name="despor">
+                                <input type="number" class="form-control" value="0" name="despor" required>
                                 <span class="input-group-text">%</span>
                             </div>
                         </div>
@@ -71,20 +81,18 @@
                             <label class="form-label">Descuento Valor</label>
                             <div class="input-group">
                                 <span class="input-group-text">$</span>
-                                <input type="number" class="form-control" name="desval" value="0">
+                                <input type="number" class="form-control" name="desval" required>
                             </div>
                         </div>
                         <div class="col-lg-8 mb-4">
-
                             <label class="form-label">Observación<span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" name="observaciones" required>
-
+                            <input type="text" class="form-control text-uppercase" name="observaciones" required>
                         </div>
                     </div>
-
-                    <div class="mb-4 d-flex justify-content-end">
-                        <button type="button" class="btn btn-md btn-primary">Aplicar</button>
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="btn btn-md btn-primary">Aplicar</button>
                     </div>
+                    <span class="fs-12 fw-normal text-muted text-truncate-1-line text-end pt-1">{{$listadata->count()}} Registros</span>
                     <div class="table-responsive">
                         <table class="table table-hover">
                             <thead>
@@ -100,8 +108,9 @@
                                     <tr>
                                         <td>
                                             <div class="d-flex align-items-center gap-3">
-                                                <a href="javascript:void(0);">
+                                                <a>
                                                     <span class="d-block">{{ $i->seg_asegurado_id ?? '' }}</span>
+                                                    <input type="hidden" name="beneficio[{{ $loop->index }}][cedula]" value="{{ $i->seg_asegurado_id }}">
                                                     <span
                                                         class="fs-12 d-block fw-normal text-muted text-wrap">{{ $i->tercero->nombre ?? '' }}</span>
                                                 </a>
@@ -116,19 +125,30 @@
                                                  ${{ number_format($i->plan->valor) }}</a>
                                             <p class="fs-12 text-muted text-truncate-1-line tickets-sort-desc">Valor Prima: ${{number_format($i->plan->prima)}}</p>
                                         </td>
-                                        
+                                        <input type="hidden" name="beneficio[{{ $loop->index }}][poliza]" value="{{ $i->id }}">
                                     </tr>
                                 @endforeach
                             </tbody>
                         </table>
                     </div>
+                    <input type="hidden" name="grupo" value=true>
+                    </form>
                 </div>
+                @endif
             </div>
         </div>
     @endif
     <script>
         $(document).ready(function() {
             $('#formFiltroBeneficios').submit(function(event) {
+                var form = this;
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    $(form).addClass('was-validated');
+                }
+            });
+            $('#formAddBeneficios').submit(function(event) {
                 var form = this;
                 if (!form.checkValidity()) {
                     event.preventDefault();
