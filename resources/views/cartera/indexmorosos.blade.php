@@ -72,7 +72,7 @@
                                 <td>{{ $cell }}</td>
                             @endforeach
                             @if ($rowIndex != 0)
-                                <td><button {{-- onclick="abrirWhatsApp(this)" --}} class="badge text-bg-primary text-wrap border border-0">Enviar Mensaje</button></td>
+                                <td><button onclick="abrirWhatsApp(this)" class="badge text-bg-primary text-wrap border border-0">Enviar Mensaje</button></td>
                             @endif
                         </tr>
                     </form>
@@ -86,6 +86,7 @@
             var cedula = fila.find('td:eq(0)').text();
             var nombre = fila.find('td:eq(1)').text();
             var telefono = fila.find('td:eq(2)').text();
+            console.log("estas entrando aca pa?" + telefono);
 
             var mensaje = encodeURIComponent(`Dios lo bendiga Hermano ${nombre} CC ${cedula},\n 
             Adjunto encontrará el reporte de su estado de cuenta del crédito Rapicredito de Libre Inversión\nPor favor, verificar si tiene alguna novedad o inquietud frente a la información suministrada.\n
@@ -94,7 +95,6 @@
             Cordialmente, \n
             Fabian Andres Fandiño\nAuxiliar de Cartera`);
             var url = "https://web.whatsapp.com/send?phone=57" + telefono + "&text=" + mensaje;
-            //console.log(url)
             window.open(url, '_blank');
         }
     </script>

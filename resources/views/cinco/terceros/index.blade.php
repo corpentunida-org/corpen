@@ -52,7 +52,7 @@
                         <thead>
                             <tr>
                                 <th scope="col">Tercero</th>
-                                <th scope="col">Fecha Ingreso</th>
+                                <th scope="col">Fecha Corpentunida</th>
                                 <th scope="col">Fecha Primer Aporte</th>
                                 <th scope="col">Fecha Ministerio</th>
                                 <th scope="col" class="text-end">Acción</th>

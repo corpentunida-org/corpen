@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Seguros;
 
 use App\Http\Controllers\Controller;
 use App\Models\Seguros\SegBeneficios;
+use App\Models\Seguros\SegPoliza;
+use App\Models\Seguros\SegPlan;
 use Illuminate\Http\Request;
 use App\Http\Controllers\AuditoriaController;
+use Carbon\Carbon;
 
 class SegBeneficiosController extends Controller
 {
@@ -13,14 +16,27 @@ class SegBeneficiosController extends Controller
      * Display a listing of the resource.
      */
 
-    private function auditoria($accion){
+    private function auditoria($accion)
+    {
         $auditoriaController = app(AuditoriaController::class);
         $auditoriaController->create($accion, "SEGUROS");
     }
-    
+
     public function index()
     {
-        //
+        $planes = SegPlan::where('vigente', true)->where('condicion_id', 2)->get();
+        return view('seguros.beneficios.index', compact('planes'));
+    }
+
+    public function listFilter(Request $request)
+    {
+        $fechaMax = Carbon::today()->copy()->subYears($request->edad_minima);
+        $fechaMin = Carbon::today()->copy()->subYears($request->edad_maxima + 1)->addDay();
+        $listadata = SegPoliza::whereHas('tercero', function ($query) use ($fechaMin, $fechaMax) {
+            $query->whereBetween('fechaNacimiento', [$fechaMin, $fechaMax]);
+        })->where('active', true)->with(['plan', 'tercero', 'asegurado'])->get();
+        $planes = SegPlan::where('vigente', true)->where('condicion_id', 2)->get();
+        return view('seguros.beneficios.index', compact('listadata', 'planes'));
     }
 
     /**
@@ -53,15 +69,15 @@ class SegBeneficiosController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(SegAsegurado $segAsegurado)
+    public function show(SegBeneficios $SegBeneficios)
     {
-        
+
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(SegAsegurado $segAsegurado)
+    public function edit(SegBeneficios $SegBeneficios)
     {
         //
     }
@@ -69,7 +85,7 @@ class SegBeneficiosController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, SegAsegurado $segAsegurado)
+    public function update(Request $request, SegBeneficios $SegBeneficios)
     {
         //
     }
@@ -77,7 +93,7 @@ class SegBeneficiosController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(SegAsegurado $segAsegurado)
+    public function destroy(SegBeneficios $SegBeneficios)
     {
         //
     }
