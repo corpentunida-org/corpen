@@ -5,6 +5,7 @@ namespace App\Models\Seguros;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+
 class SegPoliza extends Model
 {
     use HasFactory;
@@ -47,4 +48,7 @@ class SegPoliza extends Model
     public function esreclamacion(){
         return $this->belongsTo(SegReclamaciones::class, 'reclamacion', 'id');
     }   
+
+    
+
 }
