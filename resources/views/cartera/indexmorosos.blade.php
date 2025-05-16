@@ -82,6 +82,7 @@
     </div>
     <script>
         function abrirWhatsApp(boton) {
+            $(boton).removeClass('text-bg-primary').addClass('text-bg-success');
             var fila = $(boton).closest('tr');
             var cedula = fila.find('td:eq(0)').text();
             var nombre = fila.find('td:eq(1)').text();

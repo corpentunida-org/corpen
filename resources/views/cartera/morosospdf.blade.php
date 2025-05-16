@@ -133,7 +133,9 @@
         </table>
 
         <p>Último mes cancelado <strong>
-                {{ \Carbon\Carbon::createFromFormat('d/m/Y', $registro->MES_CANCELADO)->locale('es')->isoFormat('MMMM - YYYY') }}
+                {{ $registro->MES_CANCELADO 
+                    ? \Carbon\Carbon::createFromFormat('d/m/Y', $registro->MES_CANCELADO)->locale('es')->isoFormat('MMMM - YYYY') 
+                    : 'NINGUNO' }}
             </strong>, para quedar al día debe cancelar el valor de <strong> $
                 {{ number_format($registro->CANCELAR_VALOR_DE) }} </strong></p>
 
