@@ -87,10 +87,11 @@
             var cedula = fila.find('td:eq(0)').text();
             var nombre = fila.find('td:eq(1)').text();
             var telefono = fila.find('td:eq(2)').text();
+            var linea = fila.find('td:eq(3)').text();
             console.log("estas entrando aca pa?" + telefono);
 
             var mensaje = encodeURIComponent(`Dios lo bendiga Hermano ${nombre} CC ${cedula},\n 
-            Adjunto encontrará el reporte de su estado de cuenta del crédito Rapicredito de Libre Inversión\nPor favor, verificar si tiene alguna novedad o inquietud frente a la información suministrada.\n
+            Adjunto encontrará el reporte de su estado de cuenta del crédito ${linea}\nPor favor, verificar si tiene alguna novedad o inquietud frente a la información suministrada.\n
             Quedo atento a cualquier comentario o sugerencia que desee compartir.\n
             Gracias por su atención.\n
             Cordialmente, \n
