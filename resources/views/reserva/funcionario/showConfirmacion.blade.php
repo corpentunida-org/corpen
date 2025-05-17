@@ -25,7 +25,11 @@
                 <strong>Nombre del asociado:</strong>
             </div>
             <div class="col-8">
-                {{ $reserva->user->name }}
+                @if( $reserva->endosada)
+                    <span class="badge bg-warning">Endosado</span> - {{ $reserva->name_reserva }}
+                @else
+                   {{ $reserva->user->name }}
+                @endif
             </div>
         </div>
         <hr>
@@ -108,6 +112,7 @@
         </div>
         <hr>
 
+        @if( $reserva->res_status_id == 1)
         <div class="row mt-4">
             <div class="col-12 d-flex justify-content-end gap-2">
                 <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#confirmarReservaModal">
@@ -121,6 +126,7 @@
                 <button type="button" class="btn btn-danger">Cancelar</button>
             </div>
         </div>
+        @endif
 
     </div>
 

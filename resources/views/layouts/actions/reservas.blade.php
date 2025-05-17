@@ -6,4 +6,7 @@
     <ul class="nxl-submenu">
         <li class="nxl-item"><a class="nxl-link" href="{{ route('reserva.inmueble.confirmacion')}}">Reservas</a></li>
     </ul>
+    <ul class="nxl-submenu">
+        <li class="nxl-item"><a class="nxl-link" href="{{ route('reserva.inmueble.historico')}}">Historicos</a></li>
+    </ul>
 </li>
