@@ -257,5 +257,15 @@ class ResReservaController extends Controller  implements HasMiddleware
         return redirect()->route('reserva.inmueble.confirmacion')->with('success', 'Reserva confirmada con éxito');
     }
 
+    public function indexHistorico ()
+    {
+        $reservas = Res_reserva::where('res_status_id', '>', 1)
+            ->where('nid', '<>', '0000000000')
+            ->orderBy('fecha_inicio', 'asc')
+            ->get();
+
+        return view('reserva.funcionario.historico', compact('reservas'));
+    }
+
 
 }
