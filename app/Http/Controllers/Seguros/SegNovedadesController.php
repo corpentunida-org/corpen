@@ -94,7 +94,7 @@ class SegNovedadesController extends Controller
             ]);
             $accion = "novedad en poliza  " . $request->id_poliza . " Asegurado " . $request->asegurado;
             $this->auditoria($accion); 
-            return redirect()->route('seguros.polizas.index')->with('success', 'Novedad registrada correctamente');
+            return redirect()->route('seguros.poliza.index')->with('success', 'Novedad registrada correctamente');
         }
         return redirect()->back()->with('error', 'No se pudo registrar la novedad.');
     }
