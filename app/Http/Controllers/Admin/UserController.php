@@ -103,7 +103,6 @@ class UserController extends Controller
 
     public function update(Request $request, User $user)
     {
-        dd($request->all());
         $update = [];
         if(strtoupper($request->input('name'))!== $user->name){
             $update['name'] = strtoupper($request->input('name'));
@@ -111,8 +110,10 @@ class UserController extends Controller
         if ($request->input('pass') != null) {
             $update['password'] = bcrypt($request->input('pass'));
         }
-        if(!empty($update)){$user->update($update);}
-        
+        if(!empty($update)){
+            $user->update($update);
+            $this->auditoria('Se actualizó el usuario ' . $user->id);
+        }        
         $currentPermissions = $user->permissions()->pluck('id')->toArray();
         $permissions = $request->input('permissions', []);
         $permissionsToAdd = array_diff($permissions, $currentPermissions);
@@ -125,12 +126,22 @@ class UserController extends Controller
         if (!empty($permissionsToRemove)) {
             $user->permissions()->detach($permissionsToRemove);
         }
-
-        $rolesAsignados = Action::where('user_id', $user->id)
-            ->where('role_id', $request->rolnuevo)->exists();
-
-        if ($rolesAsignados) {
-            
+        if (!Action::where('user_id', $user->id)
+           ->where('role_id', $request->rolnuevo)
+           ->exists()) {        
+            Action::create([
+                'user_id' => $user->id,
+                'role_id' => $request->rolnuevo,
+            ]); 
+            $permisos_rol = $this->permisos_rol($request->rolnuevo);
+            foreach ($permisos_rol as $p) {
+                DB::table('model_has_permissions')->insert([
+                    'permission_id' => $p->permission_id,
+                    'model_type' => 'App\Models\User',
+                    'model_id' => $user->id,
+                ]);
+            }
+            $this->auditoria('Se agregó el rol id ' . $request->rolnuevo . " al usuario " . $user->id);
         }
         return redirect()->route('admin.users.edit', $user->id)->with('success', 'Usuario actualizado correctamente.');
     }
