@@ -12,7 +12,7 @@
         <label for="search-input" class="col-form-label mb-0">Buscar por:</label>
     </div>
     <div class="col">
-        <input type="text" name="id" class="form-control" id="valueCedula" placeholder="cédula titular"
+        <input type="text" name="id" class="form-control" id="valueCedula" placeholder="cédula"
             aria-controls="customerList">
     </div>
     <div class="col-auto">

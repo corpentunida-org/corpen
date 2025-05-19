@@ -15,8 +15,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\AuditoriaController;
 use Carbon\Carbon;
-use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\ExcelImport;
+use App\Imports\ExcelExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 
 class SegPolizaController extends Controller
