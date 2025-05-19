@@ -28,10 +28,11 @@ class UserController extends Controller
     public function index()
     {
         //$users = User::latest()->take(5)->get();
-        $users = User::where('type','!=', 'ASOCIADO')->paginate(4);
+        $users = User::where('type', null)->paginate(4);
         return view('admin.users.index', compact('users'));
     }
 
+    
     public function edit(User $user)
     {
         $roles = Role::all();
@@ -136,17 +137,28 @@ class UserController extends Controller
         return $permisos;
     }
 
+    public function show(Request $request)
+    {
+        $query = $request->input('query');
+
+        $usuariosfiltrados = User::whereNull('type')
+            ->where('name', 'like', '%' . $query . '%')
+            ->get();
+
+        return view('admin.users.index', compact('usuariosfiltrados'));
+    }
+
     public function inventario($id)
     {
         return 'Inventario';
     }
 
-    public function registerAsociado ()
+    public function registerAsociado()
     {
         return view('auth.registerAsociado');
     }
 
-    public function consumirEndpoint( $nid )
+    public function consumirEndpoint($nid)
     {
         $url = "https://www.siasoftapp.com:7006/api/Pastors"; // URL del endpoint
         $token = env('TOKEN_ADMIN');
@@ -174,7 +186,7 @@ class UserController extends Controller
         }
     }
 
-    public function validarAsociado( Request $request )
+    public function validarAsociado(Request $request)
     {
         $nid = $request->input('nid'); // Obtiene el 'nid' del request
         $asociado = $this->consumirEndpoint($nid); // Consume el endpoint
@@ -199,7 +211,7 @@ class UserController extends Controller
         }
     }
 
-    public function validarAsociadoCreate( )
+    public function validarAsociadoCreate()
     {
         return view('auth.validarAsociado');
     }

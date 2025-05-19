@@ -222,6 +222,10 @@
                         data-bs-target="#collapseOne" aria-expanded="false" style="font-size:20px;">$
                         @if (!$poliza->asegurado->valorpAseguradora)
                             0
+                            @php
+                                $subsidio = 0;
+                                $s = 0;
+                            @endphp
                         @else
                             @php
                                 $sub = 0;

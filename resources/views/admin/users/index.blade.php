@@ -192,82 +192,66 @@
                 </div>
             </div>
             <div class="card-body custom-card-action">
-                <div class="mb-4 pb-1 d-flex">
-                    <input type="text" id="userSearch" class="form-control" placeholder="Buscar...">
-                </div>
+                <form action="{{ route('admin.users.show', 1) }}" method="GET">
+                    <div class="mb-4 pb-1 d-flex">
+                        <input type="text" name="query" id="userSearch" class="form-control"
+                            placeholder="Buscar por nombre de usuario...">
+                        <button type="submit" class="btn btn-primary ms-2">Buscar</button>
+                    </div>
+                </form>
                 <div id="userList">
-                    @foreach ($users as $user)
-                        <div class="user-item w-100 d-flex align-items-center justify-content-between">
-                            <div class="d-flex align-items-center">
-                                <div class="avatar-image me-3">
-                                    <i class="bi bi-person-circle"></i>
-                                </div>
-                                <div>
-                                    <a href="" class="d-flex align-items-center mb-1 user-name">{{ $user->name }}</a>
-                                    <div class="fs-12 fw-normal text-muted user-email">{{ $user->email }}</div>
-                                </div>
-                            </div>
-                            <div class="dropdown hstack text-end justify-content-end">
-                                <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown"
-                                    aria-expanded="false">
-                                    <i class="feather feather-more-vertical"></i>
-                                </a>
-                                <ul class="dropdown-menu dropdown-menu-end" style="">
-                                    <li>
-                                        <a href="{{ route('admin.users.edit', $user->id) }}" class="dropdown-item">
-                                            <i class="feather feather-eye me-3"></i>
-                                            <span>Ver detalle</span>
+                    @if (isset($usuariosfiltrados))
+                        <div id="userList">
+                            @forelse ($usuariosfiltrados as $user)
+                                <div class="user-item w-100 d-flex align-items-center justify-content-between">
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-image me-3">
+                                            <i class="bi bi-person-circle fs-3"></i>
+                                        </div>
+                                        <div>
+                                            <a href="#" class="d-flex align-items-center mb-1 user-name">{{ $user->name }}</a>
+                                            <div class="fs-12 fw-normal text-muted user-email">{{ $user->email }}</div>
+                                        </div>
+                                    </div>
+                                    <div class="dropdown hstack text-end justify-content-end">
+                                        <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown"
+                                            aria-expanded="false">
+                                            <i class="feather feather-more-vertical"></i>
                                         </a>
-                                    </li>
-                                    <li>
-                                        <a href="javascript:void(0)" class="dropdown-item">
-                                            <i class="feather feather-share-2 me-3"></i>
-                                            <span>Compartir</span>
-                                        </a>
-                                    </li>
-                                    {{-- <li class="dropdown-divider"></li>
-                                <li>
-                                    <a href="javascript:void(0)" class="dropdown-item">
-                                        <i class="feather feather-scissors me-3"></i>
-                                        <span>Backup</span>
-                                    </a>
-                                </li>
-                                <li>
-                                    <a href="javascript:void(0)" class="dropdown-item">
-                                        <i class="feather feather-x me-3"></i>
-                                        <span>Delete</span>
-                                    </a>
-                                </li> --}}
-                                </ul>
-                            </div>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <li>
+                                                <a href="{{ route('admin.users.edit', $user->id) }}" class="dropdown-item">
+                                                    <i class="feather feather-eye me-3"></i>
+                                                    <span>Ver detalle</span>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a href="javascript:void(0)" class="dropdown-item">
+                                                    <i class="feather feather-share-2 me-3"></i>
+                                                    <span>Compartir</span>
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <hr class="border-dashed my-3">
+                            @empty
+                                <p>No se encontraron usuarios.</p>
+                            @endforelse
                         </div>
-                        <hr class="border-dashed my-3">
-                    @endforeach
+                    @endif
                 </div>
             </div>
 
             <div class="card-footer d-flex justify-content-center">
+            @if (isset($users))
                 {{ $users->links() }}
+            @endif
             </div>
         </div>
     </div>
     <script>
-        $(document).ready(function() {
-            $('#userSearch').on('keyup', function() {
-                let value = $(this).val().toLowerCase();
 
-                $('.user-item').each(function() {
-                    const name = $(this).find('.user-name').text().toLowerCase();
-                    const email = $(this).find('.user-email').text().toLowerCase();
-
-                    if (name.includes(value) || email.includes(value)) {
-                        $(this).show();
-                    } else {
-                        $(this).hide();
-                    }
-                });
-            });
-        });
     </script>
 
     </div>
@@ -302,12 +286,10 @@
                             </div>
                         </a>
                         <div class="dropdown-menu dropdown-menu-end">
-                            <a href="javascript:void(0);" class="dropdown-item"><i
-                                    class="feather-at-sign"></i>New</a>
+                            <a href="javascript:void(0);" class="dropdown-item"><i class="feather-at-sign"></i>New</a>
                             <a href="javascript:void(0);" class="dropdown-item"><i
                                     class="feather-calendar"></i>Event</a>
-                            <a href="javascript:void(0);" class="dropdown-item"><i
-                                    class="feather-bell"></i>Snoozed</a>
+                            <a href="javascript:void(0);" class="dropdown-item"><i class="feather-bell"></i>Snoozed</a>
                             <a href="javascript:void(0);" class="dropdown-item"><i
                                     class="feather-trash-2"></i>Deleted</a>
                             <div class="dropdown-divider"></div>
