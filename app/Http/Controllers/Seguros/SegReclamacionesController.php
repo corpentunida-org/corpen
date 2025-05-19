@@ -215,6 +215,7 @@ class SegReclamacionesController extends Controller
         $pdf = Pdf::loadView('seguros.reclamaciones.pdf', 
             ['registros' => $registros,'image_path' => public_path('assets/images/CORPENTUNIDA_LOGO PRINCIPAL  (2).png'),])
                 ->setPaper('letter', 'landscape');
+
         return $pdf->download(date('Y-m-d') . " Reporte.pdf");
         //return view('seguros.reclamaciones.pdf', ['registros' => $registros, 'image_path' => public_path('assets/images/CORPENTUNIDA_LOGO PRINCIPAL  (2).png')]);
     }
@@ -229,15 +230,14 @@ class SegReclamacionesController extends Controller
             $fechaNacimiento = Carbon::parse($item->tercero?->fecha_nacimiento);
             return [
                 'N°' => $index + 1,
-                'ASEGURADO CÉDULA' => $item->cedulaAsegurado,
-                'ASEGURADO' => $item->asegurado->tercero->nombre,
-                'EDAD' => $fechaNacimiento,
-                'TITULAR CEDULA' => $item->asegurado->terceroAF->cedula,
-                'TITULAR' => $item->asegurado->terceroAF->nombre,
-                'PARENTESCO' => $item->asegurado->parentesco,
+                'ASEGURADO CÉDULA' => $item->cedulaAsegurado?? '',
+                'ASEGURADO' => $item->asegurado->tercero->nombre ?? '',
+                'EDAD' => $item->tercero->edad ?? ' ',  
+                'TITULAR CEDULA' => $item->asegurado->terceroAF->cedula ?? '',
+                'TITULAR' => $item->asegurado->terceroAF->nombre ?? '',
+                'PARENTESCO' => $item->asegurado->parentesco ?? '',
                 'COBERTURA' => $item->cobertura->nombre,
-                'VALOR ASEGURADO' => $item->valor_asegurado,
-                'DIAGNOSTICO' => $item->diagnostico->nombre ?? $item->otro,
+                'VALOR ASEGURADO' => $item->valor_asegurado ?? '',
                 'FECHA ACTUALIZACIÓN' => $item->updated_at,
                 'ESTADO' => $item->estadoReclamacion->nombre,
             ];
