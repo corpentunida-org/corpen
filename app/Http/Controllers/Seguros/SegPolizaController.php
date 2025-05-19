@@ -58,14 +58,15 @@ class SegPolizaController extends Controller
             'fechaNacimiento' => $request->fechaNacimiento,
             'telefono' => $request->tertelefono,
             'genero' => $request->tergenero,
-            'distrito' => $request->terdistrito            
+            'distrito' => $request->terdistrito
         ]);
         if ($request->estitular === '1') {
             $asegurado = SegAsegurado::create([
                 'cedula' => $tercero->cedula,
                 'parentesco' => 'AF',
+                'titular' => $tercero->cedula,
                 'valorpAseguradora' => $request->valorpagaraseguradora,
-            ]);            
+            ]);
         }else{
             $asegurado = SegAsegurado::create([
                 'cedula' => $tercero->cedula,
@@ -91,7 +92,7 @@ class SegPolizaController extends Controller
         $this->auditoria("ASEGURADO CREADO ID " . $asegurado->cedula);
         $this->auditoria("POLIZA CREADA ID " . $poliza->id);
 
-        return redirect()->route('seguros.poliza.index')->with('success', 'Poliza creada correctamente');
+        return redirect()->route('seguros.poliza.show', ['poliza' => 1, 'id' => $tercero->cedula])->with('success', 'Se creó correctamente la póliza');
     }
 
     /**
