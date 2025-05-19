@@ -10,6 +10,14 @@ class SegTercero extends Model
     use HasFactory;
     
     protected $table = 'SEG_terceros';
+    protected $fillable = [
+        'cedula',
+        'nombre',
+        'fechaNacimiento',
+        'telefono',
+        'genero',
+        'distrito'   
+    ];
     public function getEdadAttribute()
     {
         if ($this->fechaNacimiento) {
