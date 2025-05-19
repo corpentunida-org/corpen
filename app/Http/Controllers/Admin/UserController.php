@@ -55,8 +55,6 @@ class UserController extends Controller
             ->where('model_id', $user->id)
             ->pluck('permission_id')
             ->toArray();
-
-
         return view('admin.users.edit', compact('user', 'roles', 'acciones', 'fecha', 'permisosUsuario', 'permisosAsignados'));
     }
 
@@ -105,29 +103,36 @@ class UserController extends Controller
 
     public function update(Request $request, User $user)
     {
-        $update = [
-            'name' => strtoupper($request->input('name'))
-        ];
+        dd($request->all());
+        $update = [];
+        if(strtoupper($request->input('name'))!== $user->name){
+            $update['name'] = strtoupper($request->input('name'));
+        }
         if ($request->input('pass') != null) {
             $update['password'] = bcrypt($request->input('pass'));
         }
-        $success = $user->update($update);
-        if ($success) {
-            $currentPermissions = $user->permissions()->pluck('id')->toArray();
-            $permissions = $request->input('permissions', []);
-            $permissionsToAdd = array_diff($permissions, $currentPermissions);
-            $permissionsToRemove = array_diff($currentPermissions, $permissions);
-            if (!empty($permissionsToAdd)) {
-                $user->permissions()->attach($permissionsToAdd, [
-                    'model_type' => 'App\Models\User'
-                ]);
-            }
-            if (!empty($permissionsToRemove)) {
-                $user->permissions()->detach($permissionsToRemove);
-            }
-            return redirect()->route('admin.users.edit', $user->id)->with('success', 'Usuario actualizado correctamente.');
+        if(!empty($update)){$user->update($update);}
+        
+        $currentPermissions = $user->permissions()->pluck('id')->toArray();
+        $permissions = $request->input('permissions', []);
+        $permissionsToAdd = array_diff($permissions, $currentPermissions);
+        $permissionsToRemove = array_diff($currentPermissions, $permissions);
+        if (!empty($permissionsToAdd)) {
+            $user->permissions()->attach($permissionsToAdd, [
+                'model_type' => 'App\Models\User'
+            ]);
         }
-        return redirect()->route('admin.users.edit', $user->id)->with('error', 'No se pudo actualizar el usuario. Intente mas tarde.');
+        if (!empty($permissionsToRemove)) {
+            $user->permissions()->detach($permissionsToRemove);
+        }
+
+        $rolesAsignados = Action::where('user_id', $user->id)
+            ->where('role_id', $request->rolnuevo)->exists();
+
+        if ($rolesAsignados) {
+            
+        }
+        return redirect()->route('admin.users.edit', $user->id)->with('success', 'Usuario actualizado correctamente.');
     }
 
     private function permisos_rol($role)

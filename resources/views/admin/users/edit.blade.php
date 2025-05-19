@@ -16,8 +16,8 @@
                         </div>
                     </div>
                     <div class="mb-4">
-                        <a href="javascript:void(0);" class="fs-14 fw-bold d-block"> {{ $user->name }}</a>
-                        <a href="javascript:void(0);" class="fs-12 fw-normal text-muted d-block">{{ $user->email }}</a>
+                        <a class="fs-14 fw-bold d-block"> {{ $user->name }}</a>
+                        <a class="fs-12 fw-normal text-muted d-block">{{ $user->email }}</a>
                     </div>
                     <div class="fs-12 fw-normal text-muted text-center d-flex flex-wrap gap-3 mb-4">
                         <div class="flex-fill py-3 px-4 rounded-1 d-none d-sm-block border border-dashed border-gray-5">
@@ -60,7 +60,6 @@
                                 </div>
                             </div>
                         </div>
-
                         <div class="row mb-4 align-items-center">
                             <div class="col-lg-2">
                                 <span class="text-muted fw-medium hstack gap-3 mr-3"><i
@@ -83,10 +82,17 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="row mb-4">
+                            <div class="col-lg-2 fw-medium">Roles Asignados</div>
+                            <div class="col-lg-10 hstack gap-1">
+                                @foreach ($user->actions as $rol)
+                                    <a href="#" class="badge bg-soft-primary text-primary">{{ strtoupper($rol->role->name) }}</a>     
+                                @endforeach
+                            </div>
+                        </div>
                         <div class="row mb-4 align-items-center">
                             <div class="col-lg-2">
-                                <span class="text-muted fw-medium hstack gap-3 mr-3"><i
-                                        class="bi bi-ui-checks-grid"></i>Permisos</span>
+                                <span class="text-muted fw-medium hstack gap-3 mr-3"><i class="bi bi-ui-checks-grid"></i>Permisos</span>
                             </div>
                             <div class="col-lg-10">
                                 <div class="row">
@@ -110,6 +116,18 @@
                             </div>
                         </div>
                     </ul>
+                    <div id="contenedor-roles">
+                        <div class="mb-4 rol-row">
+                            <label class="form-label">Adicionar un Rol<span class="text-danger">*</span></label>
+                            <select class="form-control" name="rolnuevo">
+                                @foreach ($roles as $rol)
+                                    <option value="{{ $rol->id }}" {{ $user->actions->first()?->role?->id === $rol->id ? 'selected' : '' }}>
+                                        {{ strtoupper($rol->name) }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            </div>
+                        </div>
                     <div class="d-flex gap-2 text-center pt-4">
                         <a href="javascript:void(0);" class="w-50 btn btn-light-brand">
                             <i class="feather-trash-2 me-2"></i>
