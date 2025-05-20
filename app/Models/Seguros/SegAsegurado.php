@@ -10,6 +10,9 @@ class SegAsegurado extends Model
     use HasFactory;
     protected $table = 'SEG_asegurados';
     protected $fillable = [
+        'cedula',         
+        'parentesco',      
+        'titular',
         'valorpAseguradora'
     ];
 
@@ -25,12 +28,12 @@ class SegAsegurado extends Model
 
     public function polizas()
     {
-        return $this->hasMany(SegPoliza::class, 'seg_asegurado_id','cedula');
+        return $this->hasMany(SegPoliza::class, 'seg_asegurado_id', 'cedula');
     }
 
     public function reclamacion()
     {
-        return $this->hasMany(SegReclamaciones::class, 'cedulaAsegurado','cedula');
+        return $this->hasMany(SegReclamaciones::class, 'cedulaAsegurado', 'cedula');
     }
 
     public function novedades()

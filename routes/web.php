@@ -66,6 +66,8 @@ Route::get('/apto-santamarta', function () {
 
 //ADMIN
 Route::resource('users', UserController::class)->names('admin.users')->middleware(['auth', 'can:admin.users.index']);
+
+
 Route::resource('admin', AuditoriaController::class)->names('admin.auditoria')->middleware(['auth', 'can:admin.auditoria.index']);
 Route::resource('roles', RoleController::class)->names('admin.roles')->middleware(['auth']);
 Route::resource('permisos', PermissionsController::class)->names('admin.permisos')->middleware(['auth']);
@@ -73,15 +75,12 @@ Route::resource('permisos', PermissionsController::class)->names('admin.permisos
 //RUTAS DE EXEQUIALES
 Route::get('asociados/{id}/generarpdf/{active}', [ComaeExCliController::class, 'generarpdf'])->name('asociados.generarpdf');
 Route::resource('asociados', ComaeExCliController::class)->names('exequial.asociados')->middleware(['auth', 'can:exequial.asociados.index']);
-
 Route::get('/prestarServicio/generarpdf', [MaeC_ExSerController::class, 'generarpdf'])->middleware('auth')->name('prestarServicio.generarpdf');
 Route::resource('prestarServicio', MaeC_ExSerController::class)->names('exequial.prestarServicio')->middleware(['auth', 'can:exequial.prestarServicio.index']);
 Route::get('/prestarServicio/{id}/generarpdf', [MaeC_ExSerController::class, 'reporteIndividual'])->name('prestarServicio.repIndividual');
 Route::get('/exportar-datos', [MaeC_ExSerController::class, 'exportData']);
-
 Route::resource('beneficiarios', ComaeExRelParController::class)->middleware('auth')->names('exequial.beneficiarios');
 Route::resource('terceros', ComaeTerController::class)->middleware('auth')->names('exequial.terceros');
-
 Route::get('/parentescosall', [ParentescosController::class, 'index'])->name('exequial.parentescosall');
 Route::get('/plansall', [PlanController::class, 'index'])->name('exequial.plansall');
 

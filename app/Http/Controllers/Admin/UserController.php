@@ -28,10 +28,11 @@ class UserController extends Controller
     public function index()
     {
         //$users = User::latest()->take(5)->get();
-        $users = User::where('type','!=', 'ASOCIADO')->paginate(4);
+        $users = User::where('type', null)->paginate(4);
         return view('admin.users.index', compact('users'));
     }
 
+    
     public function edit(User $user)
     {
         $roles = Role::all();
@@ -54,8 +55,6 @@ class UserController extends Controller
             ->where('model_id', $user->id)
             ->pluck('permission_id')
             ->toArray();
-
-
         return view('admin.users.edit', compact('user', 'roles', 'acciones', 'fecha', 'permisosUsuario', 'permisosAsignados'));
     }
 
@@ -104,29 +103,47 @@ class UserController extends Controller
 
     public function update(Request $request, User $user)
     {
-        $update = [
-            'name' => strtoupper($request->input('name'))
-        ];
+        $update = [];
+        if(strtoupper($request->input('name'))!== $user->name){
+            $update['name'] = strtoupper($request->input('name'));
+        }
         if ($request->input('pass') != null) {
             $update['password'] = bcrypt($request->input('pass'));
         }
-        $success = $user->update($update);
-        if ($success) {
-            $currentPermissions = $user->permissions()->pluck('id')->toArray();
-            $permissions = $request->input('permissions', []);
-            $permissionsToAdd = array_diff($permissions, $currentPermissions);
-            $permissionsToRemove = array_diff($currentPermissions, $permissions);
-            if (!empty($permissionsToAdd)) {
-                $user->permissions()->attach($permissionsToAdd, [
-                    'model_type' => 'App\Models\User'
+        if(!empty($update)){
+            $user->update($update);
+            $this->auditoria('Se actualizó el usuario ' . $user->id);
+        }        
+        $currentPermissions = $user->permissions()->pluck('id')->toArray();
+        $permissions = $request->input('permissions', []);
+        $permissionsToAdd = array_diff($permissions, $currentPermissions);
+        $permissionsToRemove = array_diff($currentPermissions, $permissions);
+        if (!empty($permissionsToAdd)) {
+            $user->permissions()->attach($permissionsToAdd, [
+                'model_type' => 'App\Models\User'
+            ]);
+        }
+        if (!empty($permissionsToRemove)) {
+            $user->permissions()->detach($permissionsToRemove);
+        }
+        if (!Action::where('user_id', $user->id)
+           ->where('role_id', $request->rolnuevo)
+           ->exists()) {        
+            Action::create([
+                'user_id' => $user->id,
+                'role_id' => $request->rolnuevo,
+            ]); 
+            $permisos_rol = $this->permisos_rol($request->rolnuevo);
+            foreach ($permisos_rol as $p) {
+                DB::table('model_has_permissions')->insert([
+                    'permission_id' => $p->permission_id,
+                    'model_type' => 'App\Models\User',
+                    'model_id' => $user->id,
                 ]);
             }
-            if (!empty($permissionsToRemove)) {
-                $user->permissions()->detach($permissionsToRemove);
-            }
-            return redirect()->route('admin.users.edit', $user->id)->with('success', 'Usuario actualizado correctamente.');
+            $this->auditoria('Se agregó el rol id ' . $request->rolnuevo . " al usuario " . $user->id);
         }
-        return redirect()->route('admin.users.edit', $user->id)->with('error', 'No se pudo actualizar el usuario. Intente mas tarde.');
+        return redirect()->route('admin.users.edit', $user->id)->with('success', 'Usuario actualizado correctamente.');
     }
 
     private function permisos_rol($role)
@@ -136,17 +153,28 @@ class UserController extends Controller
         return $permisos;
     }
 
+    public function show(Request $request)
+    {
+        $query = $request->input('query');
+
+        $usuariosfiltrados = User::whereNull('type')
+            ->where('name', 'like', '%' . $query . '%')
+            ->get();
+
+        return view('admin.users.index', compact('usuariosfiltrados'));
+    }
+
     public function inventario($id)
     {
         return 'Inventario';
     }
 
-    public function registerAsociado ()
+    public function registerAsociado()
     {
         return view('auth.registerAsociado');
     }
 
-    public function consumirEndpoint( $nid )
+    public function consumirEndpoint($nid)
     {
         $url = "https://www.siasoftapp.com:7006/api/Pastors"; // URL del endpoint
         $token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6ImFkbWluQGdtYWlsLmNvbSIsImp0aSI6IjNjNTZjOTU1LTZiNDktNDhlZi04NjVjLWQ1MzViOTNkMjllMCIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJBZG1pbiIsIlVzZXJJZCI6IjEiLCJtYWlsIjoiYWRtaW5AZ21haWwuY29tIiwiVXNlcnJvbGUiOiJBZG1pbiIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6IkFkbWluIiwiZXhwIjoxNzQ2MTkzNzk1LCJpc3MiOiJteWFwcCIsImF1ZCI6Im15YXBwIn0.Cs5UU7RLmFQWsJg444rZTL2QtpRXS4cZEI_8jtzbUSw";
@@ -174,7 +202,7 @@ class UserController extends Controller
         }
     }
 
-    public function validarAsociado( Request $request )
+    public function validarAsociado(Request $request)
     {
         $nid = $request->input('nid'); // Obtiene el 'nid' del request
         $asociado = $this->consumirEndpoint($nid); // Consume el endpoint
@@ -199,7 +227,7 @@ class UserController extends Controller
         }
     }
 
-    public function validarAsociadoCreate( )
+    public function validarAsociadoCreate()
     {
         return view('auth.validarAsociado');
     }
