@@ -1,5 +1,6 @@
 <x-base-layout>
 <x-success />
+<x-error />
     <div class="col-lg-12">
         <div class="card stretch stretch-full">
             <div class="card-body lead-status">
@@ -9,8 +10,7 @@
                         <span class="fs-12 fw-normal text-muted text-truncate-1-line">Lista de filtros </span>
                     </h5>
                 </div>
-                <form class="row" method="post" action="{{ route('seguros.beneficios.list') }}"
-                    id="formFiltroBeneficios" novalidate>
+                <form class="row" method="post" action="{{ route('seguros.beneficios.list') }}" id="formFiltroBeneficios" novalidate>
                     @method('POST')
                     @csrf
                     <div class="row">
