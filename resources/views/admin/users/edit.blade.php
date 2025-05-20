@@ -60,7 +60,6 @@
                                 </div>
                             </div>
                         </div>
-
                         <div class="row mb-4 align-items-center">
                             <div class="col-lg-2">
                                 <span class="text-muted fw-medium hstack gap-3 mr-3"><i
