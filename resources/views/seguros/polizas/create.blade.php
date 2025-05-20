@@ -1,4 +1,5 @@
 <x-base-layout>
+    <x-error />
     <div class="col-xxl-12 col-xl-12">
         <div class="card border-top-0">
             <div class="card-header p-0">

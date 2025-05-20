@@ -21,7 +21,6 @@
                         </div>
                     </div>
                 </div>
-
                 <div class="col-sm-12 col-md-6 d-flex justify-content-end align-items-center">
                     <x-input-search-seguros></x-input-search-seguros>
                 </div>
@@ -43,6 +42,7 @@
                     <a href="{{ route('seguros.reclamacion.edit', ['reclamacion' => $poliza->esreclamacion->id]) }}"
                         class="btn btn-sm bg-soft-danger text-danger">Activo en una reclamación</a>
                 @else
+                    @if($poliza->active)
                     @can('seguros.poliza.update')
                         <a href="{{ route('seguros.novedades.create', ['a' => $poliza->seg_asegurado_id]) }}"
                             class="btn btn-light-brand">
@@ -50,6 +50,13 @@
                             <span>Generar Novedad</span>
                         </a>
                     @endcan
+                    @else
+                        <a class="btn bg-soft-danger text-danger">
+                            <i class="feather-x-circle me-2"></i>
+                            <span>Poliza Cancelada</span>
+                        </a>
+                    @endif
+
                 @endif
             </div>
             <div
@@ -69,13 +76,15 @@
                         </strong>{{ $poliza->extra_prima }}%</div>
                 </div>
                 <div class="hstack gap-3">
-                    @if ($poliza->reclamacion == 0)
-                        @can('seguros.reclamacion.store')
-                            <a href="{{ route('seguros.reclamacion.create', ['a' => $poliza->seg_asegurado_id]) }}"
-                                class="text-danger">Generar Reclamación</a>
-                        @endcan
-                    @else
-                        <a class="text-danger">{{ $poliza->esreclamacion->estadoReclamacion->nombre }}</a>
+                    @if($poliza->active)
+                        @if ($poliza->reclamacion == 0)
+                            @can('seguros.reclamacion.store')
+                                <a href="{{ route('seguros.reclamacion.create', ['a' => $poliza->seg_asegurado_id]) }}"
+                                    class="text-danger">Generar Reclamación</a>
+                            @endcan
+                        @else
+                            <a class="text-danger">{{ $poliza->esreclamacion->estadoReclamacion->nombre }}</a>
+                        @endif
                     @endif
                 </div>
             </div>
@@ -113,7 +122,7 @@
             </div>
 
         </div>
-        @if ($grupoFamiliar->count() >= 1)
+        @if ($grupoFamiliar->count() >= 1 && $poliza->active)
             <div class="mb-4 px-4 d-flex align-items-center justify-content-between">
                 <h5 class="fw-bold mb-0">Grupo Familiar:</h5>
             </div>
@@ -185,6 +194,8 @@
                                                     Valor a Pagar ${{ number_format($nov->valorpagar) }}
                                                 @elseif ($nov->valorDescuento)
                                                     Descuento ${{ number_format($nov->valorDescuento) }}
+                                                @elseif ($nov->retiro)
+                                                    Se canceló la póliza
                                                 @else
                                                     Se Inicio un proceso de reclamación
                                                 @endif
@@ -200,16 +211,18 @@
                 </div>
             </div>
         </div>
-        <div class="d-flex gap-2">
-            <div class="filter-dropdown undefined">
-                <button class="btn btn-light-brand" id="btnCardBeneficios">
-                    <i class="feather-star me-2"></i>
-                    <span>Registrar un Beneficio</span>
-                </button>
+        @if($poliza->active)
+            <div class="d-flex gap-2">
+                <div class="filter-dropdown undefined">
+                    <button class="btn btn-light-brand" id="btnCardBeneficios">
+                        <i class="feather-star me-2"></i>
+                        <span>Registrar un Beneficio</span>
+                    </button>
+                </div>
             </div>
-        </div>
+        @endif
 
-        @if ($poliza->asegurado->parentesco == 'AF')
+        @if ($poliza->asegurado->parentesco == 'AF' && $poliza->active)
             <div class="p-4 d-xxl-flex d-xl-block d-md-flex align-items-center justify-content-end gap-4">
                 <div class="d-flex gap-4 align-items-center justify-content-sm-end justify-content-between">
                     <a href="javascript:void(0);" class="text-bold">Valor Titular</a>
@@ -280,20 +293,22 @@
                 </small>
             @endif
         @endif
-        @if ($beneficiarios->isnotEmpty())
+        @if ($beneficiarios->isnotEmpty() && $poliza->active)
             @include('seguros.beneficiarios.show')
         @endif
-        @can('seguros.beneficiarios.store')
-            <div class="my-4 d-flex align-items-center justify-content-start">
-                <div class="d-flex gap-2">
-                    <a href="{{ route('seguros.beneficiario.create', ['a' => $poliza->seg_asegurado_id, 'p' => $poliza->id]) }}"
-                        class="btn btn-success">
-                        <i class="feather-plus me-2"></i>
-                        <span>Agregar Beneficiario</span>
-                    </a>
+        @if ($poliza->active)            
+            @can('seguros.beneficiarios.store')
+                <div class="my-4 d-flex align-items-center justify-content-start">
+                    <div class="d-flex gap-2">
+                        <a href="{{ route('seguros.beneficiario.create', ['a' => $poliza->seg_asegurado_id, 'p' => $poliza->id]) }}"
+                            class="btn btn-success">
+                            <i class="feather-plus me-2"></i>
+                            <span>Agregar Beneficiario</span>
+                        </a>
+                    </div>
                 </div>
-            </div>
-        @endcan
+            @endcan
+        @endif
     </div>
     <div id="CardAddBeneficios" class="col-lg-12" style="display: none;">
         <div class="card stretch stretch-full">
