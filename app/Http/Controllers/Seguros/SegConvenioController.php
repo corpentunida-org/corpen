@@ -69,8 +69,7 @@ class SegConvenioController extends Controller
                 'valor' => $planData['vasegurado'],
                 'prima' => $planData['vprima'],
                 'condicion_id' => $planData['condicion'],
-            ]);
-           
+            ]);           
             $coberturas = SegPlan_cobertura::where('plan_id', $planId)->get();
             foreach ($coberturas as $cobertura) {
                 $coberturaData = [

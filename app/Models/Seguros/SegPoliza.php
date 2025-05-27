@@ -46,7 +46,7 @@ class SegPoliza extends Model
     }
 
     public function esreclamacion(){
-        return $this->belongsTo(SegReclamaciones::class, 'reclamacion', 'id');
+        return $this->hasMany(SegReclamaciones::class, 'poliza_id', 'id');
     }   
 
     

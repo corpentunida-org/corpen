@@ -98,7 +98,6 @@
                                         <input type="text" class="form-control" name="valordescuento"
                                             value="{{ $asegurado->polizas->first()->descuento }}">
                                     </div>
-
                                 </div>
                                 <div class="col-lg-2 mb-4">
                                     <label class="form-label">Porcentaje Descuento<span
@@ -120,6 +119,7 @@
                             </div>
 
                             <div class="table-responsive">
+                                <label class="form-label">Grupo Familiar</span></label>
                                 <table class="table mb-0">
                                     <thead>
                                         <tr class="border-top">
