@@ -31,7 +31,7 @@ class SegReclamacionesController extends Controller
     public function index()
     {
         Carbon::setLocale('es');
-        $rec = SegReclamaciones::with(['asegurado.terceroAF', 'asegurado.tercero', 'cobertura'])->get();
+        $rec = SegReclamaciones::with(['asegurado.terceroAF', 'asegurado.tercero', 'cobertura', 'tercero'])->get();
         $reclamaciones = $rec->map(function ($reclamacion) {
             $tiempoTranscurrido = Carbon::parse($reclamacion->updated_at)->diffForHumans();
             $reclamacion->tiempo_transcurrido = $tiempoTranscurrido;

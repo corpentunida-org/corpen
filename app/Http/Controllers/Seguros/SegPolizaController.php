@@ -88,6 +88,10 @@ class SegPolizaController extends Controller
                 ]);
             }
             $plan = SegPlan::find($request->selectPlanes);
+            $valorPrimaFinal = $plan->prima;
+            if ($request->extra_prima !== null && $request->extra_prima != 0) {
+                $valorPrimaFinal += ($plan->prima * $request->extra_prima) / 100;
+            }
             $poliza = SegPoliza::create([
                 'seg_asegurado_id' => $asegurado->cedula,
                 'seg_convenio_id' => substr((string) $plan->seg_convenio_id, 4),
@@ -95,12 +99,20 @@ class SegPolizaController extends Controller
                 'fecha_inicio' => Carbon::now()->toDateString(),
                 'seg_plan_id' => $request->selectPlanes,
                 'valor_asegurado' => $plan->valor,
-                'valor_prima' => $plan->prima,
+                'valor_prima' => $valorPrimaFinal,
                 'extra_prima' => $request->extra_prima,
                 'descuento' => $request->desval,
                 'descuentopor' => $request->despor,
                 'valorpagaraseguradora' => $request->valorpagaraseguradora,
             ]);
+            if ($request->agregarbene) {
+                SegBeneficios::create([
+                    'cedulaAsegurado' => $asegurado->cedula,
+                    'poliza' => $poliza->id,
+                    'porcentajeDescuento' => $request->despor,
+                    'valorDescuento' => $request->desval,
+                ]);
+            }
             $this->auditoria("TERCERO CREAD0 ID " . $tercero->cedula);
             $this->auditoria("ASEGURADO CREADO ID " . $asegurado->cedula);
             $this->auditoria("POLIZA CREADA ID " . $poliza->id);
@@ -128,7 +140,8 @@ class SegPolizaController extends Controller
             ->sum('valor_prima');
 
         $beneficiarios = SegBeneficiario::where('id_asegurado', $id)->get();
-
+        //dd($poliza);
+        //validar estos registros
         $novedades = SegNovedades::where('id_asegurado', $id)
             ->where('id_poliza', $poliza->id)->get();
         $reclamacion = SegReclamaciones::where('cedulaAsegurado', $id)->get();

@@ -17,9 +17,10 @@ class SegPlanController extends Controller
      * Display a listing of the resource.
      */
 
-    private function auditoria($accion){
+    private function auditoria($accion)
+    {
         $auditoriaController = app(AuditoriaController::class);
-        $auditoriaController->create($accion, "SEGUROS");
+        $auditoriaController->create($accion, 'SEGUROS');
     }
 
     public function index()
@@ -56,22 +57,21 @@ class SegPlanController extends Controller
         if (!$plan->exists) {
             return redirect()->back()->with('error', 'No se pudo procesar el plan.');
         }
-        
-        $coberturaIds = $request->input('cobertura_id'); 
+
+        $coberturaIds = $request->input('cobertura_id');
         $valoresAse = $request->input('valorAsegurado');
         $valoresCob = $request->input('valorPrima');
 
         for ($i = 0; $i < count($coberturaIds); $i++) {
-            $plan->coberturas()->attach(
-                $coberturaIds[$i], [
-                    'valorAsegurado' => $valoresAse[$i],
-                    'valorCobertura' => $valoresCob[$i],
-                ]
-            );
+            $plan->coberturas()->attach($coberturaIds[$i], [
+                'valorAsegurado' => $valoresAse[$i],
+                'valorCobertura' => $valoresCob[$i],
+            ]);
         }
         $idConvenio = $request->input('idConveniobusqueda');
-        $this->auditoria("PLAN CREADO ID " . $plan->id);
-        return redirect()->action([SegConvenioController::class, 'show'], ['convenio' => $idConvenio])
+        $this->auditoria('PLAN CREADO ID ' . $plan->id);
+        return redirect()
+            ->action([SegConvenioController::class, 'show'], ['convenio' => $idConvenio])
             ->with('success', 'Plan creado correctamente.');
     }
 
@@ -89,7 +89,7 @@ class SegPlanController extends Controller
     public function edit($id)
     {
         $segPlan = SegPlan::with('coberturas')->findOrFail($id);
-        $coberturas = SegCobertura::all();
+        $coberturas = SegCobertura::where('convenio_id', $soloConvenioId = substr($segPlan->seg_convenio_id, 4))->get();
         $convenios = SegConvenio::all();
         $condiciones = SegCondicion::all();
         return view('seguros.planes.edit', compact('segPlan', 'coberturas', 'convenios', 'condiciones'));
@@ -98,9 +98,32 @@ class SegPlanController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, SegPlan $segPlan)
+    public function update(Request $request, $id)
     {
-        //
+        $plan = SegPlan::findOrFail($id); // <-- forzamos a buscar manualmente
+        $plan->update([
+            'seg_convenio_id' => $request->input('convenio'),
+            'name' => $request->input('name'),
+            'condicion_id' => $request->input('condicion_id'),
+            'valor' => $request->input('valorPlanAsegurado'),
+            'prima' => $request->input('prima'),
+        ]);
+
+        $coberturas = $request->input('cobertura');
+        $valoresAsegurados = $request->input('valorAsegurado');
+        $valoresPrimas = $request->input('valorPrima');
+
+        $syncData = [];
+
+        foreach ($coberturas as $index => $coberturaId) {
+            $syncData[$coberturaId] = [
+                'valorAsegurado' => $valoresAsegurados[$index] ?? 0,
+                'valorCobertura' => $valoresPrimas[$index] ?? 0,
+            ];
+        }
+
+        $plan->coberturas()->sync($syncData);
+        return redirect()->route('seguros.planes.edit', $plan->id)->with('success', 'Plan actualizado correctamente');
     }
 
     /**
@@ -111,7 +134,7 @@ class SegPlanController extends Controller
         SegPlan_cobertura::where('plan_id', $plan->id)->delete();
         $plandelete = SegPlan::findOrFail($plan->id);
         $plandelete->delete();
-        $this->auditoria("PLAN ELIMINADO ID" . $plan->id);
+        $this->auditoria('PLAN ELIMINADO ID' . $plan->id);
         return redirect()->back()->with('success', 'Plan eliminado correctamente.');
     }
 
