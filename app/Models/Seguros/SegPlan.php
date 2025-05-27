@@ -9,13 +9,10 @@ class SegPlan extends Model
 {
     use HasFactory;
     protected $table = 'SEG_plans';
-    protected $fillable = [
-        'name',
-        'valor',
-        'prima', 
-        'seg_convenio_id', 
-        'condicion_id', 
-    ];
+    protected $primaryKey = 'id';
+    public $incrementing = true;
+    protected $keyType = 'int';
+    protected $fillable = ['name', 'valor', 'prima', 'seg_convenio_id', 'condicion_id'];
 
     public function condicion()
     {
@@ -24,9 +21,7 @@ class SegPlan extends Model
 
     public function coberturas()
     {
-        return $this->belongsToMany(
-        SegCobertura::class,'seg_plan_cobertura','plan_id','cobertura_id')
-                ->withPivot('valorAsegurado', 'valorCobertura','porcentaje');
+        return $this->belongsToMany(SegCobertura::class, 'seg_plan_cobertura', 'plan_id', 'cobertura_id')->withPivot('valorAsegurado', 'valorCobertura', 'porcentaje');
     }
 
     public function polizas()
@@ -38,7 +33,4 @@ class SegPlan extends Model
     {
         return $this->belongsTo(SegConvenio::class, 'seg_convenio_id', 'idConvenio');
     }
-    
 }
-
-

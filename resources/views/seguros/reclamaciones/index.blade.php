@@ -152,23 +152,22 @@
                                             <a href="javascript:void(0);">
                                                 <span class="d-block">{{ $r->cedulaAsegurado ?? ''}}</span>
                                                 <span
-                                                    class="fs-12 d-block fw-normal text-muted text-wrap">{{ $r->asegurado->tercero->nombre ?? '' }}</span>
+                                                    class="fs-12 d-block fw-normal text-muted text-wrap">{{ $r->tercero->nombre ?? '' }}</span>
                                             </a>
                                         </div>
                                     </td>
                                     <td><span
                                             class="badge bg-gray-200 text-dark">{{ $r->asegurado->parentesco ?? ''}}</span>
                                     </td>
-                                    <td>{{ $r->cobertura->nombre }}</td>
+                                    <td class="text-wrap">{{ $r->cobertura->nombre }}</td>
                                     <td>$ {{ number_format((float)$r->valor_asegurado) }} </td>
-                                    <td><span
-                                            class="badge bg-soft-primary text-primary">{{ $r->estadoReclamacion->nombre }}</span>
+                                    <td><span class="badge bg-soft-primary text-primary text-wrap">{{ $r->estadoReclamacion->nombre }}</span>
                                     </td>
                                     <td>
                                         <div class="d-flex align-items-center gap-3">
                                             <a>
                                                 <span class="fs-12 d-block fw-normal">Inicio: {{date('Y-m-d', strtotime($r->created_at))}}
-                                                <span class="fs-12 d-block fw-normal text-danger">Ultimo cambio {{ $r->tiempo_transcurrido }}</span>
+                                                <span class="fs-12 d-block fw-normal text-danger text-wrap">Ultimo cambio {{ $r->tiempo_transcurrido }}</span>
                                             </a>
                                         </div>
                                     </td>

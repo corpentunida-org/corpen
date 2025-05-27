@@ -89,7 +89,7 @@
                                 </div>
                             </div>
                             <div class="mb-4">
-                                <a href="javascript:void(0);" class="btn btn-primary wd-200" id="add-cobertura">
+                                <a class="btn btn-primary wd-200" id="add-cobertura">
                                     <i class="feather-plus me-2"></i>
                                     <span>Agregar cobertura</span>
                                 </a>
