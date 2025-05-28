@@ -45,7 +45,6 @@
                                     <label class="form-label">Cédula Asegurado</label>
                                     <input type="text" class="form-control" name="asegurado"
                                         value="{{ $asegurado->cedula }}" readonly>
-
                                 </div>
                                 <div class="col-lg-8 mb-4">
                                     <label class="form-label">Nombre Asegurado</label>
@@ -109,16 +108,44 @@
                                     </div>
                                 </div>
                                 <div class="col-lg-2 mb-4">
-                                    <label class="form-label">Valor Extra Prima<span class="text-danger">*</span></label>                                    
+                                    <label class="form-label">Valor Extra Prima<span
+                                            class="text-danger">*</span></label>
                                     <div class="input-group">
                                         <span class="input-group-text">$</span>
                                         <input type="text" class="form-control" name="extra_prima"
-                                        value="{{ $asegurado->polizas->first()->extra_prima }}">
+                                            value="{{ $asegurado->polizas->first()->extra_prima }}">
                                     </div>
                                 </div>
-                            </div>
-
-                            <div class="table-responsive">
+                            </div>                            
+                            @if ($reclamaciones->isNotEmpty())
+                                <div class="table-responsive">
+                                    <label class="form-label"><span class="text-danger">Afectaciones a la
+                                            Póliza</span></span></label>
+                                    <table class="table mb-0">
+                                        <thead>
+                                            <tr class="border-top">
+                                                <th>Cobertura</th>
+                                                <th>Diagnóstico </th>
+                                                <th>Porcentaje</th>
+                                                <th>Fecha desembolso</th>
+                                                <th>Valor Asegurado</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach ($reclamaciones as $rec)
+                                                <tr>
+                                                    <td>{{ $rec->cobertura->nombre }}</td>
+                                                    <td class="text-wrap">{{ $rec->diagnostico->diagnostico ?? $rec->otro }}</td>
+                                                    <td>{{ $rec->cobertura->porcentajeReclamacion }} % </td>
+                                                    <td>{{ $rec->fecha_desembolso }}</td>
+                                                    <td>${{ number_format($rec->valor_asegurado) }}</td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @endif
+                            <div class="table-responsive mt-4">
                                 <label class="form-label">Grupo Familiar</span></label>
                                 <table class="table mb-0">
                                     <thead>

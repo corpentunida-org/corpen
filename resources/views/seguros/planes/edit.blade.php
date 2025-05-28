@@ -15,8 +15,7 @@
             <div class="tab-content">
                 <div class="tab-pane fade p-4 active show" id="securityTab" role="tabpanel">
                     <div class="col-lg-12 p-4">
-                        <form id="formEditPlan" method="POST"
-                            action="{{ route('seguros.planes.update', ['plan' => $segPlan->id]) }}" novalidate>
+                        <form id="formEditPlan" method="POST" action="{{ route('seguros.planes.update', ['plan' => $segPlan->id]) }}" novalidate>
                             @csrf
                             @method('PUT')
                             <div class="mb-4">
