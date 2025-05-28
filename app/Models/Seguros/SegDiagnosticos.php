@@ -9,6 +9,12 @@ class SegDiagnosticos extends Model
 {
     use HasFactory;
     protected $table = 'seg_diagnosticos';
+    protected $primaryKey = 'id';
+
+    protected $fillable = [
+        'id',
+        'diagnostico',
+    ];
 
     public function reclamacion()
     {

@@ -9,6 +9,7 @@ use App\Models\Seguros\SegNovedades;
 use App\Models\Seguros\SegAsegurado;
 use App\Models\Seguros\SegPlan;
 use App\Models\Seguros\SegPoliza;
+use App\Models\Seguros\SegReclamaciones;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Http\Controllers\AuditoriaController;
@@ -46,8 +47,9 @@ class SegNovedadesController extends Controller
         $totalPrima = DB::table('SEG_polizas')
             ->whereIn('seg_asegurado_id', $grupoFamiliar->pluck('cedula'))
             ->sum('valor_prima');
-    
-        return view('seguros.novedades.create', compact('asegurado', 'planes', 'condicion', 'grupoFamiliar', 'totalPrima'));
+        
+        $reclamaciones = SegReclamaciones::where('cedulaAsegurado', $asegurado->cedula)->with(['cobertura','diagnostico'])->get();
+        return view('seguros.novedades.create', compact('asegurado', 'planes', 'condicion', 'grupoFamiliar', 'totalPrima', 'reclamaciones'));
     }
 
     public function store(Request $request)
