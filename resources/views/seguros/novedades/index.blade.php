@@ -5,7 +5,7 @@
                 <div class="card-header-action">
                     <div class="card-header-btn">
                         <div data-bs-toggle="tooltip" title="Delete">
-                            <a href="javascript:void(0);" class="avatar-text avatar-xs bg-danger" data-bs-toggle="remove">
+                            <a class="avatar-text avatar-xs bg-danger" data-bs-toggle="remove">
                             </a>
                         </div>
                         <div data-bs-toggle="tooltip" title="Refresh">
