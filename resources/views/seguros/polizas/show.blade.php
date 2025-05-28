@@ -37,7 +37,7 @@
                         <h5 class="fw-bold mb-0">{{ $poliza->tercero->nombre }}:</h5>
                         <div class="fs-12 text-muted">{{ $poliza->seg_asegurado_id }}</div>
                     </div>
-                </div>                
+                </div>
                 @if (!$poliza->active || $poliza->esreclamacion->contains('idCobertura', 1))
                     <a href="#flush-collapseOne" class="btn bg-soft-danger text-danger">
                         <i class="feather-x-circle me-2"></i>
@@ -85,7 +85,18 @@
                         @else
                             <a class="text-danger">{{ $poliza->esreclamacion->estadoReclamacion->nombre }}</a>
                         @endif
-                    @endif --}}
+                    @endif --}}                    
+                    @if($poliza->active && $poliza->esreclamacion->contains('finReclamacion', 0))
+                        @php
+                            $reclamacionActiva = $poliza->esreclamacion->firstWhere('finReclamacion', 0);
+                        @endphp
+                        <span class="text-danger">{{ $reclamacionActiva->estadoReclamacion->nombre }}</span>
+                    @elseif ($poliza->active)
+                        @can('seguros.reclamacion.store')
+                                <a href="{{ route('seguros.reclamacion.create', ['a' => $poliza->seg_asegurado_id]) }}"
+                                    class="text-danger">Generar Reclamación</a>
+                        @endcan
+                    @endif
                 </div>
             </div>
 

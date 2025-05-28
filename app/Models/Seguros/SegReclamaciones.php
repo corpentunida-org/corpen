@@ -25,6 +25,7 @@ class SegReclamaciones extends Model
         'cedulaContacto',
         'idBeneficiario',
         'valor_asegurado',
+        'porreclamar',
         'fecha_desembolso',
         'finReclamacion',
     ];
@@ -43,6 +44,11 @@ class SegReclamaciones extends Model
     public function cobertura()
     {
         return $this->belongsTo(SegCobertura::class, 'idCobertura', 'id');
+    }
+
+    public function diagnostico()
+    {
+        return $this->belongsTo(SegDiagnosticos::class, 'idDiagnostico', 'id');
     }
 
     public function estadoReclamacion()
