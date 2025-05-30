@@ -1,0 +1,281 @@
+<?php
+
+namespace App\Http\Controllers\Seguros;
+
+use App\Http\Controllers\Controller;
+use App\Models\Seguros\SegBeneficios;
+use App\Models\Seguros\SegPoliza;
+use App\Models\Seguros\SegBeneficiario;
+use App\Models\Seguros\SegNovedades;
+use App\Models\Seguros\SegTercero;
+use App\Models\Seguros\SegAsegurado;
+use App\Models\Seguros\SegReclamaciones;
+use App\Models\Seguros\SegPlan;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\AuditoriaController;
+use Carbon\Carbon;
+use App\Imports\ExcelImport;
+use App\Imports\ExcelExport;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Http\Controllers\Exequial\ComaeTerController;
+
+
+class SegPolizaController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     */
+    private function auditoria($accion)
+    {
+        $auditoriaController = app(AuditoriaController::class);
+        $auditoriaController->create($accion, "SEGUROS");
+    }
+
+    public function index()
+    {
+        $update = SegAsegurado::where('parentesco', 'AF')
+            ->whereHas('polizas', function ($query) {
+                $query->whereNull('valorpagaraseguradora')
+                    ->orWhere('valorpagaraseguradora', ' ');
+            })->get();
+
+        return view('seguros.polizas.index', compact('update'));
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        return view('seguros.polizas.create');
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(Request $request)
+    {
+        $terceroontable = SegTercero::where('cedula', $request->tercedula)->exists();
+        if ($terceroontable) {
+            return redirect()->route('seguros.poliza.create')->with('error', 'Ya existe un tercero con la cédula ingresada');
+        }
+        $controllerapi = new ComaeTerController();
+        $terapi = $controllerapi->show($request->tercedula);
+        if ($terapi->getStatusCode() === 404) {
+            return redirect()->route('seguros.poliza.create')->with('error', 'La cédula ingresada no coincide con ningún documento en SiaSoft');
+        } else {
+            $tercero = SegTercero::create([
+                'cedula' => $request->tercedula,
+                'nombre' => strtoupper($request->ternombre),
+                'fechaNacimiento' => $request->fechaNacimiento,
+                'telefono' => $request->tertelefono,
+                'genero' => $request->tergenero,
+                'distrito' => $request->terdistrito
+            ]);
+            if ($request->estitular === '1') {
+                $asegurado = SegAsegurado::create([
+                    'cedula' => $tercero->cedula,
+                    'parentesco' => 'AF',
+                    'titular' => $tercero->cedula,
+                    'valorpAseguradora' => $request->valorpagaraseguradora,
+                ]);
+            } else {
+                $asegurado = SegAsegurado::create([
+                    'cedula' => $tercero->cedula,
+                    'parentesco' => $request->parentesco,
+                    'titular' => $request->titularasegurado,
+                ]);
+            }
+            $plan = SegPlan::find($request->selectPlanes);
+            $valorPrimaFinal = $plan->prima;
+            if ($request->extra_prima !== null && $request->extra_prima != 0) {
+                $valorPrimaFinal += ($plan->prima * $request->extra_prima) / 100;
+            }
+            $poliza = SegPoliza::create([
+                'seg_asegurado_id' => $asegurado->cedula,
+                'seg_convenio_id' => substr((string) $plan->seg_convenio_id, 4),
+                'active' => true,
+                'fecha_inicio' => Carbon::now()->toDateString(),
+                'seg_plan_id' => $request->selectPlanes,
+                'valor_asegurado' => $plan->valor,
+                'valor_prima' => $valorPrimaFinal,
+                'extra_prima' => $request->extra_prima,
+                'descuento' => $request->desval,
+                'descuentopor' => $request->despor,
+                'valorpagaraseguradora' => $request->valorpagaraseguradora,
+            ]);
+            if ($request->agregarbene) {
+                SegBeneficios::create([
+                    'cedulaAsegurado' => $asegurado->cedula,
+                    'poliza' => $poliza->id,
+                    'porcentajeDescuento' => $request->despor,
+                    'valorDescuento' => $request->desval,
+                ]);
+            }
+            $this->auditoria("TERCERO CREAD0 ID " . $tercero->cedula);
+            $this->auditoria("ASEGURADO CREADO ID " . $asegurado->cedula);
+            $this->auditoria("POLIZA CREADA ID " . $poliza->id);
+
+            return redirect()->route('seguros.poliza.show', ['poliza' => 1, 'id' => $tercero->cedula])->with('success', 'Se creó correctamente la póliza');
+        }
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(Request $request)
+    {
+        $id = $request->input('id');
+        $poliza = SegPoliza::where('seg_asegurado_id', $id)
+            ->with(['tercero', 'asegurado', 'asegurado.terceroAF', 'plan.condicion', 'plan.coberturas', 'esreclamacion.estadoReclamacion'])->first();
+        if (!$poliza) {
+            return redirect()->route('seguros.poliza.index')->with('warning', 'No se encontró la cédula como asegurado de una poliza');
+        }
+        $titularCedula = $poliza->asegurado->titular;
+        $grupoFamiliar = SegAsegurado::where('Titular', $titularCedula)->with('tercero', 'polizas.plan.coberturas')->get();
+
+        $totalPrima = DB::table('SEG_polizas')
+            ->whereIn('seg_asegurado_id', $grupoFamiliar->pluck('cedula'))
+            ->sum('valor_prima');
+
+        $beneficiarios = SegBeneficiario::where('id_asegurado', $id)->get();
+        
+        $novedades = SegNovedades::where('id_asegurado', $id)->where('id_poliza', $poliza->id)->get();
+        $reclamacion = SegReclamaciones::where('cedulaAsegurado', $id)->with('cambiosEstado')->get();
+        $beneficios = SegBeneficios::where('cedulaAsegurado', $id)->where('poliza', $poliza->id)->get();
+        $registrosnov = collect()
+            ->merge($novedades)
+            ->merge($reclamacion)
+            ->merge($beneficios)
+            ->sortBy('created_at')->values();
+        
+        return view('seguros.polizas.show', compact('poliza', 'grupoFamiliar', 'totalPrima', 'beneficiarios', 'beneficios', 'registrosnov'));
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+
+    public function edit(SegPoliza $segPoliza)
+    {
+        return view('seguros.polizas.edit');
+    }
+
+    public function upload(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv',
+        ]);
+
+        $file = $request->file('file');
+        $import = new ExcelImport();
+        $rows = Excel::toArray(new ExcelImport(), $request->file('file'))[0];
+
+        $updatedCount = 0;
+        $failedRows = [];
+
+        foreach ($rows as $index => $row) {
+            if ($index == 0) {
+                continue;
+            }
+            $modeloData = SegPoliza::where('seg_asegurado_id', $row['cod_ter'])->first();
+            if ($modeloData) {
+                SegNovedades::create([
+                    'id_asegurado' => $modeloData->seg_asegurado_id,
+                    'id_poliza' => $modeloData->id,
+                    'valorpagar' => $row['deb_mov'],
+                    'valorPrimaPlan' => $modeloData->valor_prima,
+                    'plan' => $modeloData->seg_plan_id,
+                    'fechaNovedad' => Carbon::now()->toDateString(),
+                    'valorAsegurado' => $modeloData->valor_asegurado,
+                    'observaciones' => $request->observacion,
+                ]);
+                $modeloData->valorpagaraseguradora = $row['deb_mov'];
+                $modeloData->save();
+                $updatedCount++;
+            } else {
+                $failedRows[] = $row;
+            }
+        }
+        $this->auditoria("actualizar valor a pagar polizas con carga excel");
+        return view('seguros.polizas.edit', compact('failedRows'))->with('success', 'Se actualizaron exitosamente ' . $updatedCount . ' registros');
+
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, SegPoliza $segPoliza)
+    {
+
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy($poliza, Request $request)
+    {
+        $now = Carbon::now();
+        SegNovedades::create([
+            'id_asegurado' => $request->input('aseguradoid'),
+            'id_poliza' => $poliza,
+            'fechaNovedad' => $now->toDateString(),
+            'retiro' => true,
+            'observaciones' => $request->input('observacionretiro'),
+        ]);
+        SegPoliza::where('id', $poliza)->update(['active' => false]);
+        $accion = "cancelar poliza id  " . $poliza;
+        $this->auditoria($accion);
+        return redirect()->route('seguros.poliza.index')->with('success', 'Se canceló el plan correctamente');
+    }
+
+    public function namesearch(Request $request)
+    {
+        $name = str_replace(' ', '%', $request->input('id'));
+        $asegurados = SegAsegurado::with('tercero') // Cargar la relación 'tercero'
+            ->whereHas('tercero', function ($query) use ($name) {
+                $query->where('nombre', 'like', '%' . $name . '%');
+            })->get();
+        return view('seguros.polizas.search', compact('asegurados'));
+    }
+
+    public function exportcxc()
+    {
+        $datos = SegPoliza::where('active', true)->with(['tercero', 'asegurado'])->get();
+        $headings = [
+            'POLIZA',
+            'ID',
+            'NOMBRE',
+            'NUM DOC',
+            'FECHA NAC',
+            'GENERO',
+            'EDAD',
+            'DOC AF',
+            'PARENTESCO',
+            'FEC NOVEDAD',
+            'VALOR ASEGURADO',
+            'EXTRA PRIMA',
+            'PRIMA'
+        ];
+        $datosFormateados = $datos->map(function ($item) {
+            $fechaNacimiento = Carbon::parse($item->tercero?->fecha_nacimiento);
+            return [
+                'poliza' => $item->seg_convenio_id,
+                'id' => $item->id,
+                'nombre' => $item->tercero->nombre ?? ' ',
+                'num_doc' => $item->seg_asegurado_id,
+                'fecha_nac' => $fechaNacimiento,
+                'genero' => $item->tercero->genero ?? '',
+                'edad' => $fechaNacimiento->age ?? '0',
+                'doc_af' => $item->asegurado->titular ?? '',
+                'parentesco' => $item->asegurado->parentesco ?? ' ',
+                'fec_novedad' => $item->fecha_novedad,
+                'valor_asegurado' => $item->valor_asegurado,
+                'extra_prima' => $item->extra_prima,
+                'prima' => $item->valor_prima
+            ];
+        });
+        return Excel::download(new ExcelExport($datosFormateados, $headings), 'DATOS SEGUROS VIDA.xlsx');
+    }
+}
