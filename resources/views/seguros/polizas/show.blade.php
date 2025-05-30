@@ -76,30 +76,19 @@
                         </strong>{{ $poliza->extra_prima }}%</div>
                 </div>
                 <div class="hstack gap-3">
-                    {{-- @if ($poliza->active)
-                        @if ($poliza->reclamacion == 0)
-                            @can('seguros.reclamacion.store')
-                                <a href="{{ route('seguros.reclamacion.create', ['a' => $poliza->seg_asegurado_id]) }}"
-                                    class="text-danger">Generar Reclamación</a>
-                            @endcan
-                        @else
-                            <a class="text-danger">{{ $poliza->esreclamacion->estadoReclamacion->nombre }}</a>
-                        @endif
-                    @endif --}}                    
-                    @if($poliza->active && $poliza->esreclamacion->contains('finReclamacion', 0))
+                    @if ($poliza->active && $poliza->esreclamacion->contains('finReclamacion', 0))
                         @php
                             $reclamacionActiva = $poliza->esreclamacion->firstWhere('finReclamacion', 0);
                         @endphp
                         <span class="text-danger">{{ $reclamacionActiva->estadoReclamacion->nombre }}</span>
                     @elseif ($poliza->active)
                         @can('seguros.reclamacion.store')
-                                <a href="{{ route('seguros.reclamacion.create', ['a' => $poliza->seg_asegurado_id]) }}"
-                                    class="text-danger">Generar Reclamación</a>
+                            <a href="{{ route('seguros.reclamacion.create', ['a' => $poliza->seg_asegurado_id]) }}"
+                                class="text-danger">Generar Reclamación</a>
                         @endcan
                     @endif
                 </div>
             </div>
-
             <div class="d-flex flex-wrap justify-content-center" style="height: auto;">
                 @foreach ($poliza->plan->coberturas as $cobertura)
                     @if ($poliza->esreclamacion->contains('idCobertura', $cobertura->id))
@@ -109,25 +98,21 @@
                             <div class="d-flex flex-column align-items-center justify-content-between text-center p-4 mb-4 bg-soft-100 border border-dashed border-gray-5 rounded-1 position-relative"
                                 style="flex: 1 1 calc(100% / 7); max-width: calc(100% / 7); min-width: 150px; margin: 5px;">
                     @endif
-
                     <div style="height: 60%;">
                         <h6 class="fs-13 fw-bold">{{ $cobertura->nombre }}</h6>
                         <p class="fs-12 fw-normal text-muted">Seguros de vida</p>
                     </div>
                     @if ($cobertura->id == 1)
-                        @php $valoracalcular = $cobertura->pivot->valorAsegurado @endphp
+                        {{-- @php $valoracalcular = $cobertura->pivot->valorAsegurado @endphp //valor full plan --}}
+                        @php $valoracalcular = $poliza->valor_asegurado @endphp
                     @endif
                     <div class="mt-4">
                         <span class="fs-16 fw-bold text-dark">
                             $
-                            @if ($cobertura->pivot->valorAsegurado == 0 || $cobertura->pivot->valorAsegurado == null)
-                                @php
-                                    $valorcalculado = $valoracalcular * ($cobertura->pivot->porcentaje / 100);
-                                @endphp
-                                {{ number_format($valorcalculado) }}
-                            @else
-                                {{ number_format($cobertura->pivot->valorAsegurado) }}
-                            @endif
+                            @php
+                                $valorcalculado = $valoracalcular * ($cobertura->pivot->porcentaje / 100) ?? 0;
+                            @endphp
+                            {{ number_format($valorcalculado) }}
                         </span>
                         <p class="fs-12 fw-normal text-muted">Valor asegurado</p>
                     </div>
@@ -199,33 +184,40 @@
             <div id="flush-collapseOne" class="accordion-collapse collapse" aria-labelledby="flush-headingOne"
                 data-bs-parent="#accordionFaqGroup" style="">
                 <div class="accordion-body">
-                    <ul class="list-unstyled activity-feed">
-                        @foreach ($registrosnov as $i => $nov)
-                            <li
-                                class="d-flex justify-content-between feed-item feed-item-{{ $colors[$i % count($colors)] }}">
-                                <div>
-                                    <span class="text">{{ $nov->created_at }}
-                                        <a
-                                            class="badge bg-soft-{{ $colors[$i % count($colors)] }} text-{{ $colors[$i % count($colors)] }} ms-1">
-                                            @if (Str::contains(Str::lower($nov->observaciones), 'cambio de convenio'))
-                                                Plan Anterior ${{ number_format($nov->valorAsegurado) }}
-                                            @elseif (Str::contains(Str::lower($nov->observaciones), 'valor a pagar'))
-                                                Valor a Pagar ${{ number_format($nov->valorpagar) }}
-                                            @elseif ($nov->valorDescuento)
-                                                Descuento ${{ number_format($nov->valorDescuento) }}
-                                            @elseif ($nov->retiro)
-                                                Se canceló la póliza
-                                            @else
-                                                Se Inicio un proceso de reclamación
-                                            @endif
-                                        </a></span>
-                                    <span class="text-truncate-1-line">
-                                        {{ strtoupper($nov->observaciones) }}
-                                    </span>
-                                </div>
-                            </li>
-                        @endforeach
-                    </ul>
+                    <div class="table-responsive">
+                        <table class="table mb-0">
+                            <thead>
+                                <tr class="border-top">
+                                    <th>Fecha</th>
+                                    <th>Acción </th>
+                                    <th>Observación</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>{{ $poliza->created_at }}</td>
+                                    <td><span class="badge bg-soft-warning text-warning">NOVEDADES</span></td>
+                                    <td>SE CREÓ LA PÓLIZA</td>
+                                </tr>
+                                @foreach ($registrosnov as $i)
+                                    <tr>
+                                        <td>{{ $i->created_at }}</td>
+                                        @php
+                                            $colorspan = 'primary';
+                                            $modelo = class_basename($i);
+                                            if ($modelo === 'SegNovedades') {$colorspan = 'warning';} 
+                                            elseif ($modelo === 'SegReclamaciones') {$colorspan = 'danger';} 
+                                            elseif ($modelo === 'SegBeneficios') {$colorspan = 'success';}
+                                        @endphp
+                                        <td><span
+                                                class="badge bg-soft-{{ $colorspan }} text-{{ $colorspan }}">{{strtoupper(substr($modelo, 3))}}</span>
+                                        </td>
+                                        <td>{{ strtoupper($i->observaciones ?? $i->cambiosEstado->last()->observacion) }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -346,7 +338,17 @@
                             <label class="form-label">Valor Beneficio<span class="text-danger">*</span></label>
                             <div class="input-group">
                                 <span class="input-group-text">$</span>
-                                <input type="number" class="form-control" name="valorbene">
+                                <input type="number" class="form-control" name="valorbene" id="inputValorBene">
+                                <div class="fs-12 fw-normal text-muted text-truncate-1-line pt-1">
+                                    <div class="custom-control custom-checkbox" style="display: none;"
+                                        id="checkvalbeneficio">
+                                        <input type="checkbox" class="form-check-input ml-3" id="checkbox2"
+                                            name="checkconfirmarbene" value=true>
+                                        <label class="form-check-label" for="checkbox2"
+                                            id="labeltextbeneficio"></label>
+                                    </div>
+                                </div>
+                                <input type="hidden" name="valorPrima" id="inputvalorprima">
                             </div>
                         </div>
                         <div class="col-lg-3 mb-4">
@@ -389,6 +391,20 @@
                                     scrollTop: $('#CardAddBeneficios').offset().top
                                 }, 500);
                             });
+                        });
+                        $('#inputValorBene').on('input', function() {
+                            var valor = parseFloat($(this).val().trim()); // convierte a número
+                            var valorOriginal = parseFloat({{ $poliza->valor_prima }});
+                            if (!isNaN(valor) && valor > 0) {
+                                $('#checkvalbeneficio').slideDown();
+                            } else {
+                                /*$('#labeltextbeneficio').text('Confirmar el valor a pagar de $'+valorprima);*/
+                                $('#checkvalbeneficio').slideUp();
+                                $('#checkbox2').prop('checked', false);
+                            }
+                            var valorprima = valorOriginal - (isNaN(valor) ? 0 : valor);
+                            $('#labeltextbeneficio').text('Confirmar valor prima $' + valorprima);
+                            $('#inputvalorprima').val(valorprima);
                         });
                     });
                 </script>

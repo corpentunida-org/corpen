@@ -56,7 +56,7 @@
                                 <div class="col-lg-4 mb-4">
                                     <label class="form-label">Plan</label>
                                     <input type="text"
-                                        class="form-control uppercase-input"value="{{ $asegurado->polizas->first()->plan->name }}"
+                                        class="form-control uppercase-input" value="{{ $asegurado->polizas->first()->plan->name }}"
                                         disabled>
                                 </div>
                                 <div class="col-lg-4 mb-4">
