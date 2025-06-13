@@ -177,7 +177,7 @@ class UserController extends Controller
     public function consumirEndpoint($nid)
     {
         $url = "https://www.siasoftapp.com:7006/api/Pastors"; // URL del endpoint
-        $token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6ImFkbWluQGdtYWlsLmNvbSIsImp0aSI6IjNjNTZjOTU1LTZiNDktNDhlZi04NjVjLWQ1MzViOTNkMjllMCIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJBZG1pbiIsIlVzZXJJZCI6IjEiLCJtYWlsIjoiYWRtaW5AZ21haWwuY29tIiwiVXNlcnJvbGUiOiJBZG1pbiIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6IkFkbWluIiwiZXhwIjoxNzQ2MTkzNzk1LCJpc3MiOiJteWFwcCIsImF1ZCI6Im15YXBwIn0.Cs5UU7RLmFQWsJg444rZTL2QtpRXS4cZEI_8jtzbUSw";
+        $token = env('TOKEN_ADMIN');
 
         // Realizar la solicitud GET
         $response = Http::withToken($token)

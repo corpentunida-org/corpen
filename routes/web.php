@@ -54,19 +54,9 @@ Route::get('/apto-santamarta', function () {
 })->name('apto-santamarta');
 
 
-// Route::middleware([
-//     'auth:sanctum',
-//     config('jetstream.auth_session'),
-//     'verified',
-// ])->group(function () {
-//     Route::get('/dashboard', function () {
-//         return view('dashboard');
-//     })->name('dashboard');
-// });
 
 //ADMIN
 Route::resource('users', UserController::class)->names('admin.users')->middleware(['auth', 'can:admin.users.index']);
-
 
 Route::resource('admin', AuditoriaController::class)->names('admin.auditoria')->middleware(['auth', 'can:admin.auditoria.index']);
 Route::resource('roles', RoleController::class)->names('admin.roles')->middleware(['auth']);
@@ -85,6 +75,7 @@ Route::get('/parentescosall', [ParentescosController::class, 'index'])->name('ex
 Route::get('/plansall', [PlanController::class, 'index'])->name('exequial.plansall');
 
 //RUTAS SEGUROS
+Route::get('/poliza/formato', [SegPolizaController::class, 'exportarFormato'])->name('seguros.poliza.formato');
 Route::resource('poliza', SegPolizaController::class)->names('seguros.poliza')->middleware(['auth', 'can:seguros.poliza.index']);
 Route::get('/polizaname/{name}', [SegPolizaController::class, 'namesearch'])->name('poliza.search');
 Route::resource('plan', SegPlanController::class)->names('seguros.planes')->middleware('auth');
@@ -96,6 +87,8 @@ Route::resource('novedades', SegNovedadesController::class)->names('seguros.nove
 Route::post('/reclamacion/generarpdf', [SegReclamacionesController::class, 'generarpdf'])->middleware('auth')->name('seguros.reclamacion.generarpdf');
 Route::get('/reclamacion/informe/excel', [SegReclamacionesController::class, 'exportexcel'])->middleware('auth')->name('seguros.reclamacion.download');
 Route::post('poliza/upload', [SegPolizaController::class, 'upload'])->name('seguros.poliza.upload');
+Route::post('poliza/create/upload', [SegPolizaController::class, 'uploadCreate'])->name('seguros.poliza.createupload');
+Route::get('/poliza/create/upload', function () {return view('seguros.polizas.upload');})->name('seguros.poliza.viewupload');
 Route::get('/seguros/cxc', [SegPolizaController::class, 'exportcxc'])->name('seguros.poliza.download');
 Route::get('/planes/{edad}', [SegPlanController::class, 'getPlanes'])->name('seguros.planes.getplanes');
 Route::resource('beneficios', SegBeneficiosController::class)->names('seguros.beneficios')->middleware(['auth',]);
@@ -134,3 +127,5 @@ Route::get('reservaI/confirmacion', [ResReservaController::class, 'indexConfirma
 Route::get('reservaI/confirmacion/{id}/show', [ResReservaController::class, 'showConfirmacion'])->name('reserva.inmueble.confirmacion.show');
 Route::post('reservaI/notificar/ajuste', [ResReservaController::class, 'notificarAjuste'])->name('reserva.inmueble.notificar.ajuste');
 Route::post('reservaI/confirmar', [ResReservaController::class, 'confirmar'])->name('reserva.inmueble.confirmar');
+
+Route::get('reservaI/historico', [ResReservaController::class, 'indexHistorico'])->name('reserva.inmueble.historico');

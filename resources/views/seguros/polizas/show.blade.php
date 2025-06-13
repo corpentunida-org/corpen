@@ -27,14 +27,17 @@
             </div>
         </div>
     </div>
-    <div class="card pb-4">
-        <div class="subscription-plan px-4 pt-4 mb-3">
+    <div class="col-lg-12 pb-4">
+        <div class="card stretch stretch-full px-4 pt-4 mb-3">
             <div class="mb-4 d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center justify-content-start gap-4">
                     <div class="btn btn-sm btn-light-brand p-3 bg-soft-primary">{{ $poliza->asegurado->parentesco }}
                     </div>
                     <div>
-                        <h5 class="fw-bold mb-0">{{ $poliza->tercero->nombre }}:</h5>
+                        <h5 class="fw-bold mb-0">{{ $poliza->tercero->nombre }} @if ($poliza->asegurado->viuda)
+                                <span class="badge bg-danger text-white ms-2">VIUDA</span>
+                            @endif
+                        </h5>
                         <div class="fs-12 text-muted">{{ $poliza->seg_asegurado_id }}</div>
                     </div>
                 </div>
@@ -184,40 +187,33 @@
             <div id="flush-collapseOne" class="accordion-collapse collapse" aria-labelledby="flush-headingOne"
                 data-bs-parent="#accordionFaqGroup" style="">
                 <div class="accordion-body">
-                    <div class="table-responsive">
-                        <table class="table mb-0">
-                            <thead>
-                                <tr class="border-top">
-                                    <th>Fecha</th>
-                                    <th>Acción </th>
-                                    <th>Observación</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>{{ $poliza->created_at }}</td>
-                                    <td><span class="badge bg-soft-warning text-warning">NOVEDADES</span></td>
-                                    <td>SE CREÓ LA PÓLIZA</td>
-                                </tr>
-                                @foreach ($registrosnov as $i)
-                                    <tr>
-                                        <td>{{ $i->created_at }}</td>
-                                        @php
-                                            $colorspan = 'primary';
-                                            $modelo = class_basename($i);
-                                            if ($modelo === 'SegNovedades') {$colorspan = 'warning';} 
-                                            elseif ($modelo === 'SegReclamaciones') {$colorspan = 'danger';} 
-                                            elseif ($modelo === 'SegBeneficios') {$colorspan = 'success';}
-                                        @endphp
-                                        <td><span
-                                                class="badge bg-soft-{{ $colorspan }} text-{{ $colorspan }}">{{strtoupper(substr($modelo, 3))}}</span>
-                                        </td>
-                                        <td>{{ strtoupper($i->observaciones ?? $i->cambiosEstado->last()->observacion) }}</td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+                    <ul class="list-unstyled activity-feed">
+                        @foreach ($registrosnov as $i => $nov)
+                            <li
+                                class="d-flex justify-content-between feed-item feed-item-{{ $colors[$i % count($colors)] }}">
+                                <div>
+                                    <span class="text">{{ $nov->created_at }}
+                                        <a
+                                            class="badge bg-soft-{{ $colors[$i % count($colors)] }} text-{{ $colors[$i % count($colors)] }} ms-1">
+                                            @if (Str::contains(Str::lower($nov->observaciones), 'cambio de convenio'))
+                                                Plan Anterior ${{ number_format($nov->valorAsegurado) }}
+                                            @elseif (Str::contains(Str::lower($nov->observaciones), 'valor a pagar'))
+                                                Valor a Pagar ${{ number_format($nov->valorpagar) }}
+                                            @elseif ($nov->valorDescuento)
+                                                Descuento ${{ number_format($nov->valorDescuento) }}
+                                            @elseif ($nov->retiro)
+                                                Se canceló la póliza
+                                            @else
+                                                Se Inicio un proceso de reclamación
+                                            @endif
+                                        </a></span>
+                                    <span class="text-truncate-1-line">
+                                        {{ strtoupper($nov->observaciones) }}
+                                    </span>
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
                 </div>
             </div>
         </div>
@@ -233,93 +229,94 @@
         </div>
     @endif
 
-    @if ($poliza->asegurado->parentesco == 'AF' && $poliza->active)
-        <div class="p-4 d-xxl-flex d-xl-block d-md-flex align-items-center justify-content-end gap-4">
-            <div class="d-flex gap-4 align-items-center justify-content-sm-end justify-content-between">
-                <a href="javascript:void(0);" class="text-bold">Valor Titular</a>
-                <a href="javascript:void(0);" class="btn bg-soft-info" style="font-size:20px;">$
-                    {{ number_format($poliza->valorpagaraseguradora) }}</a>
-            </div>
-            <div class="d-flex gap-4 align-items-center justify-content-sm-end justify-content-between">
-                <div class="text-bold">Subsidio</div>
-                <div class="btn bg-soft-warning collapsed" data-bs-toggle="collapse" data-bs-target="#collapseOne"
-                    aria-expanded="false" style="font-size:20px;">$
-                    @if (!$poliza->asegurado->valorpAseguradora)
-                        0
-                        @php
-                            $subsidio = 0;
-                            $s = 0;
-                        @endphp
-                    @else
-                        @php
-                            $sub = 0;
-                            foreach ($beneficios as $beneficio) {
-                                $sub += $beneficio->valorDescuento;
-                            }
-                            $s = $totalPrima - $sub - $poliza->valorpagaraseguradora;
-                            $subsidio = $sub + $s;
-                        @endphp
-                        {{ number_format($subsidio) }}
-                    @endif
+        @if (($poliza->asegurado->parentesco == 'AF' || $poliza->asegurado->viuda) && $poliza->active)
+            <div class="p-4 d-xxl-flex d-xl-block d-md-flex align-items-center justify-content-end gap-4">
+                <div class="d-flex gap-4 align-items-center justify-content-sm-end justify-content-between">
+                    <a href="javascript:void(0);" class="text-bold">Valor Titular</a>
+                    <a href="javascript:void(0);" class="btn bg-soft-info" style="font-size:20px;">$
+                        {{ number_format($poliza->valorpagaraseguradora) }}</a>
+                </div>
+                <div class="d-flex gap-4 align-items-center justify-content-sm-end justify-content-between">
+                    <div class="text-bold">Subsidio</div>
+                    <div class="btn bg-soft-warning collapsed" data-bs-toggle="collapse"
+                        data-bs-target="#collapseOne" aria-expanded="false" style="font-size:20px;">$
+                        @if (!$poliza->asegurado->valorpAseguradora)
+                            0
+                            @php
+                                $subsidio = 0;
+                                $s = 0;
+                            @endphp
+                        @else
+                            @php
+                                $sub = 0;
+                                foreach ($beneficios as $beneficio) {
+                                    $sub += $beneficio->valorDescuento;
+                                }
+                                $s = $totalPrima - $sub - $poliza->valorpagaraseguradora;
+                                $subsidio = $sub + $s;
+                            @endphp
+                            {{ number_format($subsidio) }}
+                        @endif
+                    </div>
+                </div>
+
+                <div class="d-flex gap-4 align-items-center justify-content-sm-end justify-content-between">
+                    <div href="" class="text-bold">Valor Aseguradora</div>
+                    <div href="" class="btn bg-soft-primary" style="font-size:20px;">$
+                        {{ number_format($totalPrima) }}</div>
                 </div>
             </div>
-
-            <div class="d-flex gap-4 align-items-center justify-content-sm-end justify-content-between">
-                <div href="" class="text-bold">Valor Aseguradora</div>
-                <div href="" class="btn bg-soft-primary" style="font-size:20px;">$
-                    {{ number_format($totalPrima) }}</div>
-            </div>
-        </div>
-        <div id="collapseOne" class="accordion-collapse page-header-collapse collapse" style="">
-            <div class="accordion-body pb-2">
-                <div class="table-responsive">
-                    <table class="table">
-                        <tbody>
-                            @foreach ($beneficios as $beneficio)
+            <div id="collapseOne" class="accordion-collapse page-header-collapse collapse" style="">
+                <div class="accordion-body pb-2">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <tbody>
+                                @foreach ($beneficios as $beneficio)
+                                    <tr>
+                                        <td colspan="3"></td>
+                                        <td class="fw-semibold text-dark bg-gray-100 text-lg-end">Beneficio</td>
+                                        <td class="fw-bold text-dark bg-gray-100"> $
+                                            {{ number_format($beneficio->valorDescuento) }}</td>
+                                    </tr>
+                                @endforeach
                                 <tr>
                                     <td colspan="3"></td>
-                                    <td class="fw-semibold text-dark bg-gray-100 text-lg-end">Beneficio</td>
-                                    <td class="fw-bold text-dark bg-gray-100"> $
-                                        {{ number_format($beneficio->valorDescuento) }}</td>
+                                    <td class="fw-semibold text-dark bg-gray-100 text-lg-end">Subsidio Inicial</td>
+                                    <td class="fw-bold text-dark bg-gray-100"> $ {{ number_format($s) }}</td>
                                 </tr>
-                            @endforeach
-                            <tr>
-                                <td colspan="3"></td>
-                                <td class="fw-semibold text-dark bg-gray-100 text-lg-end">Subsidio Inicial</td>
-                                <td class="fw-bold text-dark bg-gray-100"> $ {{ number_format($s) }}</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        @if ($poliza->valorpagaraseguradora + $subsidio != $totalPrima || $subsidio < 0)
-            <small class="form-text text-danger text-end mb-4" style="margin-right: 30px;">El valor a pagar del
-                titular es erroneo.
-                @can('seguros.poliza.update')
-                    <a href="{{ route('seguros.novedades.create', ['a' => $poliza->seg_asegurado_id]) }}"
-                        class="text-danger"> Para corregirlo click aqui</a>
-                @endcan
-            </small>
+            @if ($poliza->valorpagaraseguradora + $subsidio != $totalPrima || $subsidio < 0)
+                <small class="form-text text-danger text-end mb-4" style="margin-right: 30px;">El valor a pagar del
+                    titular es erroneo.
+                    @can('seguros.poliza.update')
+                        <a href="{{ route('seguros.novedades.create', ['a' => $poliza->seg_asegurado_id]) }}"
+                            class="text-danger"> Para corregirlo click aqui</a>
+                    @endcan
+                </small>
+            @endif
         @endif
-    @endif
-    @if ($beneficiarios->isnotEmpty() && $poliza->active)
-        @include('seguros.beneficiarios.show')
-    @endif
-    @if ($poliza->active)
-        @can('seguros.beneficiarios.store')
-            <div class="my-4 d-flex align-items-center justify-content-start">
-                <div class="d-flex gap-2">
-                    <a href="{{ route('seguros.beneficiario.create', ['a' => $poliza->seg_asegurado_id, 'p' => $poliza->id]) }}"
-                        class="btn btn-success">
-                        <i class="feather-plus me-2"></i>
-                        <span>Agregar Beneficiario</span>
-                    </a>
+        @if ($beneficiarios->isnotEmpty() && $poliza->active)
+            @include('seguros.beneficiarios.show')
+        @endif
+        @if ($poliza->active)
+            @can('seguros.beneficiarios.store')
+                <div class="my-4 d-flex align-items-center justify-content-start">
+                    <div class="d-flex gap-2">
+                        <a href="{{ route('seguros.beneficiario.create', ['a' => $poliza->seg_asegurado_id, 'p' => $poliza->id]) }}"
+                            class="btn btn-success">
+                            <i class="feather-plus me-2"></i>
+                            <span>Agregar Beneficiario</span>
+                        </a>
+                    </div>
                 </div>
-            </div>
-        @endcan
-    @endif
+            @endcan
+        @endif
+    </div>
     </div>
     <div id="CardAddBeneficios" class="col-lg-12" style="display: none;">
         <div class="card stretch stretch-full">
@@ -391,20 +388,6 @@
                                     scrollTop: $('#CardAddBeneficios').offset().top
                                 }, 500);
                             });
-                        });
-                        $('#inputValorBene').on('input', function() {
-                            var valor = parseFloat($(this).val().trim()); // convierte a número
-                            var valorOriginal = parseFloat({{ $poliza->valor_prima }});
-                            if (!isNaN(valor) && valor > 0) {
-                                $('#checkvalbeneficio').slideDown();
-                            } else {
-                                /*$('#labeltextbeneficio').text('Confirmar el valor a pagar de $'+valorprima);*/
-                                $('#checkvalbeneficio').slideUp();
-                                $('#checkbox2').prop('checked', false);
-                            }
-                            var valorprima = valorOriginal - (isNaN(valor) ? 0 : valor);
-                            $('#labeltextbeneficio').text('Confirmar valor prima $' + valorprima);
-                            $('#inputvalorprima').val(valorprima);
                         });
                     });
                 </script>
