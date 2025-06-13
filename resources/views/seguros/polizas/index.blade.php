@@ -80,10 +80,15 @@
                         </div>
                         <div class="d-flex align-items-center justify-content-center">
                             @can('seguros.poliza.store')
-                                <a href="{{route('seguros.poliza.create')}}" class="btn btn-primary">
+                                <a href="{{route('seguros.poliza.create')}}" class="d-flex me-1 btn btn-primary">
                                     <i class="feather-plus me-2"></i>
-                                    <span>Crear Poliza</span>
-                                </a>
+                                    <span>Crear Póliza Individual</span>
+                                </a>                            
+                            <a href="{{ route('seguros.poliza.viewupload') }}"
+                                class="d-flex me-1 btn btn-light-brand ml-1">
+                                <i class="feather-upload me-2"></i>
+                                <span>Subir Excel Crear Póliza</span>
+                            </a>
                             @endcan
                         </div>
                     </div>

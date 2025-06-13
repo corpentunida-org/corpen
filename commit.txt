@@ -1,0 +1,2 @@
+commit desde wsl:ubuntu
+cambio desde el archivo txt
