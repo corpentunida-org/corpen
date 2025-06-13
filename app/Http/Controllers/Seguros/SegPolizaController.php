@@ -168,7 +168,7 @@ class SegPolizaController extends Controller
         $rows = Excel::toArray(new ExcelImport(), $request->file('file'))[0];
         $updatedCount = 0;
         $failedRows = [];
-        /*foreach ($rows as $index => $row) {
+        foreach ($rows as $index => $row) {
             //validar campos
             if (!in_array(strtoupper($row['genero']), ['V', 'H'])) {
                 $failedRows[] = [
@@ -206,9 +206,9 @@ class SegPolizaController extends Controller
                 }
             }            
             $asegurado = SegAsegurado::where('cedula', $tercero->id)->first();
-            if (!$asegurado) {
+            if (!$asegurado) {                
                 $asegurado = SegAsegurado::create([
-                    'cedula' => $tercero->id,
+                    'cedula' => $tercero->cedula,
                     'parentesco' => $row['parentesco'],
                     'titular' => $row['titular'] ?? $tercero->cedula,
                     'valorpAseguradora' => $row['valor_titular'] ?? null,
@@ -223,8 +223,7 @@ class SegPolizaController extends Controller
                     $failedRows[] = [
                         'cedula' => $row['num_doc'],
                         'obser' => 'No se encontró un plan con el valor asegurado de ' . $row['valor_asegurado'],
-                    ];
-                    continue;
+                    ];continue;
                 }
                 $poliza = SegPoliza::create([
                     'seg_asegurado_id' => $asegurado->cedula,
@@ -238,20 +237,15 @@ class SegPolizaController extends Controller
                     'valorpagaraseguradora' => $row['valor_titular'] ?? null,
                 ]);
                 $updatedCount++;
-                //$this->auditoria('POLIZA CREADA ID ' . $poliza->id);
+                $this->auditoria('POLIZA CREADA ID ' . $poliza->id);
             } else {
                 $failedRows[] = [
                     'cedula' => $row['num_doc'],
                     'obser' => 'Ya existe una póliza para este asegurado.',
                 ];
             }
-        }*/
-        $failedRows[] = [
-            'cedula' => 'a ver pues!',
-            'obser' => 'Ya existe una póliza para este asegurado.',
-        ];
-        //return view('seguros.polizas.upload', compact('failedRows'))->with('success', 'Se actualizaron exitosamente ');
-        return redirect()->route('seguros.poliza.viewupload') // o la ruta correspondiente
+        }
+        return redirect()->route('seguros.poliza.viewupload')
             ->with('success', 'Se actualizaron exitosamente ' . $updatedCount . ' registros')
             ->with('failedRows', $failedRows);
     }
