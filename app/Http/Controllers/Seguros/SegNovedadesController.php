@@ -49,6 +49,7 @@ class SegNovedadesController extends Controller
             ->sum('valor_prima');
         
         $reclamaciones = SegReclamaciones::where('cedulaAsegurado', $asegurado->cedula)->with(['cobertura','diagnostico'])->get();
+        
         return view('seguros.novedades.create', compact('asegurado', 'planes', 'condicion', 'grupoFamiliar', 'totalPrima', 'reclamaciones'));
     }
 
