@@ -36,8 +36,7 @@ class SegPolizaController extends Controller
         $update = SegAsegurado::where('parentesco', 'AF')
             ->whereHas('polizas', function ($query) {
                 $query->whereNull('valorpagaraseguradora')->orWhere('valorpagaraseguradora', ' ');
-            })
-            ->get();
+            })->get();
 
         return view('seguros.polizas.index', compact('update'));
     }
@@ -144,8 +143,12 @@ class SegPolizaController extends Controller
         $novedades = SegNovedades::where('id_asegurado', $id)->where('id_poliza', $poliza->id)->get();
         $reclamacion = SegReclamaciones::where('cedulaAsegurado', $id)->with('cambiosEstado')->get();
         $beneficios = SegBeneficios::where('cedulaAsegurado', $id)->where('poliza', $poliza->id)->get();
-        $registrosnov = collect()->merge($novedades)->merge($reclamacion)->merge($beneficios)->sortBy('created_at')->values();
-
+        $registrosnov = collect()
+            ->merge($novedades)
+            ->merge($reclamacion)
+            ->merge($beneficios)
+            ->sortBy('created_at')->values();
+            
         return view('seguros.polizas.show', compact('poliza', 'grupoFamiliar', 'totalPrima', 'beneficiarios', 'beneficios', 'registrosnov'));
     }
 
