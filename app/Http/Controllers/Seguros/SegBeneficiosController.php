@@ -43,16 +43,20 @@ class SegBeneficiosController extends Controller
         });
 
         if ($request->tipo !== 'TODOS') {
-            $query->whereHas('asegurado', function ($q) use ($request) {
-                $q->where('parentesco', $request->tipo);
-            });
+            if ($request->tipo === 'VIUDA') {
+                $query->whereHas('asegurado', function ($q) use ($request) {
+                    $q->where('viuda', true);
+                });
+            } else {
+                $query->whereHas('asegurado', function ($q) use ($request) {
+                    $q->where('parentesco', $request->tipo);
+                });
+            }
         }
 
-        if ($request->plan !== 'TODOS') {
-            $query->whereHas('plan', function ($q) use ($request) {
-                $q->where('valor', $request->plan);
-            });
-        }
+        $query->whereHas('plan', function ($q) use ($request) {
+            $q->whereIn('valor', $request->planes);
+        });
         $listadata = $query->with(['plan', 'tercero', 'asegurado'])->get();
 
         $planes = SegPlan::where('vigente', true)->where('condicion_id', 2)->get();
@@ -111,7 +115,9 @@ class SegBeneficiosController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(SegBeneficios $SegBeneficios) {}
+    public function show(SegBeneficios $SegBeneficios)
+    {
+    }
 
     /**
      * Show the form for editing the specified resource.
