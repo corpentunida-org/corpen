@@ -18,6 +18,7 @@ class SegNovedades extends Model
         'valorAsegurado',
         'fechaNovedad',
         'observaciones',
+        'valorPrimaPlan'
     ];
 
     public function tercero()
