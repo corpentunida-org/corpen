@@ -15,7 +15,7 @@
                     @method('POST')
                     @csrf
                     <div class="row">
-                        <div class="col-xxl-5 col-md-6  mb-4">
+                        <div class="col-12 col-lg-4 mb-4">
                             <label class="form-label">Edad</label>
                             <div class="row pt-3">
                                 <div class="col-xxl-6 col-md-6">
@@ -28,7 +28,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-xxl-3 col-md-2  mb-4">
+                        <div class="col-12 col-lg-3 mb-4">
                             <label class="form-label">Tipo Afiliado</label>
                             <select class="form-control mt-3" name="tipo">
                                 <option value="AF">TITULAR</option>
@@ -39,13 +39,12 @@
                                 <option value="TODOS">TODOS</option>
                             </select>
                         </div>
-                        <div class="col-xxl-4 col-md-3  mb-4">
+                        <div class="col-12 col-lg-5 mb-4">
                             <label class="form-label">Planes</label>
                             <div class="row">
                                 @php
                                     $columnas = array_chunk($planes->toArray(), ceil(count($planes) / 2));
-                                @endphp
-                                
+                                @endphp                                
                                 @foreach ($columnas as $columna)
                                     <div class="col-6">                                        
                                         @foreach ($columna as $plan)
