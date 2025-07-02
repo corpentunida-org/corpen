@@ -29,7 +29,6 @@ class SegReclamaciones extends Model
         'fecha_desembolso',
         'finReclamacion',
     ];
-    
 
     public function asegurado()
     {

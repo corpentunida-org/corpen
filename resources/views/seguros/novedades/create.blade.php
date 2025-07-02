@@ -108,12 +108,12 @@
                                     </div>
                                 </div>
                                 <div class="col-lg-2 mb-4">
-                                    <label class="form-label">Valor Extra Prima<span
+                                    <label class="form-label">Porcentaje Extra Prima<span
                                             class="text-danger">*</span></label>
                                     <div class="input-group">
-                                        <span class="input-group-text">$</span>
                                         <input type="text" class="form-control" name="extra_prima"
                                             value="{{ $asegurado->polizas->first()->extra_prima }}">
+                                        <span class="input-group-text">%</span>
                                     </div>
                                 </div>
                             </div>                            
@@ -181,24 +181,26 @@
                                         </tr>
                                     </tbody>
                                 </table>
-                            </div>
-                            <div class="row align-items-center justify-content-end">
-                                <div class="col-lg-9 text-end mt-4">
-                                    <label class="form-label">Valor a pagar titular <span
-                                            class="text-danger">*</span></label>
-                                </div>
-                                <div class="col-lg-3 mt-4">
-                                    <div class="input-group">
-                                        <div class="input-group-text">$</div>
-                                        <input class="form-control"
-                                            value="{{ $asegurado->terceroAF->asegurados->first()->valorpAseguradora }}"
-                                            type="text" name="valorpagaraseguradora">
+                            </div>                            
+                            @if ($asegurado->parentesco == 'AF' || $asegurado->viuda)
+                                <div class="row align-items-center justify-content-end">
+                                    <div class="col-lg-9 text-end mt-4">
+                                        <label class="form-label">Valor a pagar titular <span
+                                                class="text-danger">*</span></label>
+                                    </div>
+                                    <div class="col-lg-3 mt-4">
+                                        <div class="input-group">
+                                            <div class="input-group-text">$</div>
+                                            <input class="form-control"
+                                                value="{{ $asegurado->terceroAF->asegurados->first()->valorpAseguradora }}"
+                                                type="text" name="valorpagaraseguradora">
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            @endif
                             <div class="mb-4">
                                 <label class="form-label">Observación<span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" name="observaciones" required>
+                                <input type="text" class="form-control text-uppercase" name="observaciones" required>
                                 <input type="hidden" name="id_poliza"
                                     value="{{ $asegurado->polizas->first()->id }}">
                             </div>
