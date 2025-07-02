@@ -33,7 +33,7 @@ class SegConvenioController extends Controller
             ->where('idConvenio', $idConvenio)
             ->first();
         $planes = $convenio->plan->groupBy('condicion');
-        /* dd($convenio); */
+        dd($planes);
         return view('seguros.convenio.show', compact('convenio', 'planes'));
     }
 

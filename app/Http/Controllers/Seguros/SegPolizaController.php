@@ -36,8 +36,7 @@ class SegPolizaController extends Controller
         $update = SegAsegurado::where('parentesco', 'AF')
             ->whereHas('polizas', function ($query) {
                 $query->whereNull('valorpagaraseguradora')->orWhere('valorpagaraseguradora', ' ');
-            })->get();
-
+            })->paginate(7);
         return view('seguros.polizas.index', compact('update'));
     }
 
@@ -147,7 +146,7 @@ class SegPolizaController extends Controller
             ->merge($novedades)
             ->merge($reclamacion)
             ->merge($beneficios)
-            ->sortBy('created_at')->values();
+            ->sortBy('updated_at')->values();
             
         return view('seguros.polizas.show', compact('poliza', 'grupoFamiliar', 'totalPrima', 'beneficiarios', 'beneficios', 'registrosnov'));
     }

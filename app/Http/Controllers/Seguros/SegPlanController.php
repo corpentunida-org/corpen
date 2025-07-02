@@ -100,7 +100,8 @@ class SegPlanController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $plan = SegPlan::findOrFail($id); // <-- forzamos a buscar manualmente
+        
+        $plan = SegPlan::findOrFail($id);
         $plan->update([
             'seg_convenio_id' => $request->input('convenio'),
             'name' => $request->input('name'),
@@ -112,14 +113,19 @@ class SegPlanController extends Controller
         $coberturas = $request->input('cobertura');
         $valoresAsegurados = $request->input('valorAsegurado');
         $valoresPrimas = $request->input('valorPrima');
+        $valoresExtra = $request->input('desextraprima');
 
         $syncData = [];
 
         foreach ($coberturas as $index => $coberturaId) {
-            $syncData[$coberturaId] = [
-                'valorAsegurado' => $valoresAsegurados[$index] ?? 0,
-                'valorCobertura' => $valoresPrimas[$index] ?? 0,
-            ];
+            $cobertura = SegCobertura::where('nombre', $coberturaId)->first();
+            if ($cobertura) {
+                $syncData[$cobertura->id] = [
+                    'valorAsegurado' => $valoresAsegurados[$index] ?? 0,
+                    'valorCobertura' => $valoresPrimas[$index] ?? 0,
+                    'extra' => $valoresExtra[$index] ?? null,
+                ];
+            }
         }
 
         $plan->coberturas()->sync($syncData);
