@@ -33,12 +33,13 @@
             <div class="card stretch stretch-full">
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between">
-                        <a href="{{ url('terceros/' . $id) }}?id={{ $id }}" class="avatar-text avatar-lg bg-soft-primary text-primary border-soft-primary rounded">
+                        <a href="{{ url('terceros/' . $id) }}?id={{ $id }}" class="avatar-text avatar-lg bg-soft-primary text-primary border-soft-primary rounded"
+                        data-bs-toggle="tooltip" title="Actualizar Fecha" data-bs-original-title="Update">
                             <i class="feather-user-plus"></i>
                         </a>
                         <div class="text-end">
                             <p class="fs-11 fw-medium text-uppercase text-muted mb-1">Fecha Ingreso a Corpentunida</p>
-                            <h5>{{$fechas->Fecha_Ipuc}}</h5>
+                            <h5>{{$fechas->Fecha_Ipuc ?? 'sin fecha'}}</h5>
                         </div>
                     </div>
                 </div>                
@@ -48,12 +49,13 @@
             <div class="card stretch stretch-full">
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between">
-                        <a href="{{ url('terceros/' . $id) }}?id={{ $id }}" class="avatar-text avatar-lg bg-soft-primary text-primary border-soft-primary rounded">
+                        <a href="{{ url('terceros/' . $id) }}?id={{ $id }}" class="avatar-text avatar-lg bg-soft-primary text-primary border-soft-primary rounded"
+                        data-bs-toggle="tooltip" title="Actualizar Fecha" data-bs-original-title="Update">
                             <i class="feather-bar-chart-2"></i>
                         </a>
                         <div class="text-end">
                             <p class="fs-11 fw-medium text-uppercase text-muted mb-1">Fecha Primer Aporte</p>
-                            <h5>{{$fechas->Fec_Aport}}</h5>
+                            <h5>{{$fechas->Fec_Aport ?? 'sin fecha'}}</h5>
                         </div>
                     </div>
                 </div>                
@@ -62,13 +64,14 @@
         <div class="col-lg-4">
             <div class="card stretch stretch-full">
                 <div class="card-body">
-                    <div class="d-flex align-items-center justify-content-between">
-                        <a href="{{ url('terceros/' . $id) }}?id={{ $id }}" class="avatar-text avatar-lg bg-soft-primary text-primary border-soft-primary rounded">
+                    <div class="d-flex align-items-center justify-content-between">                    
+                        <a href="{{ url('terceros/' . $id) }}?id={{ $id }}" class="avatar-text avatar-lg bg-soft-primary text-primary border-soft-primary rounded"
+                        data-bs-toggle="tooltip" title="Actualizar Fecha" data-bs-original-title="Update">
                             <i class="feather-briefcase"></i>
                         </a>
                         <div class="text-end">
                             <p class="fs-11 fw-medium text-uppercase text-muted mb-1">Fecha Ingreso al Ministerio</p>
-                            <h5>{{$fechas->Fec_Minis}}</h5>
+                            <h5>{{$fechas->Fec_Minis ?? 'sin fecha'}}</h5>
                         </div>
                     </div>
                 </div>                

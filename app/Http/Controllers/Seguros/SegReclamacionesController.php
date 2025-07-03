@@ -158,7 +158,7 @@ class SegReclamacionesController extends Controller
      * Show the form for editing the specified resource.
      */
     public function edit(SegReclamaciones $reclamacion)
-    {
+    {        
         $asegurado = SegAsegurado::where('cedula', $reclamacion->cedulaAsegurado)
             ->with(['tercero', 'terceroAF'])
             ->first();
@@ -178,11 +178,15 @@ class SegReclamacionesController extends Controller
      * Update the specified resource in storage.
      */
     public function update(Request $request, string $id)
-    {
-        //cambiar el estado de la reclamacion
-        $update = SegReclamaciones::where('id', $id)->update([
+    {        
+        $dataupdate = [
             'estado' => $request->estado_id,
-        ]);
+        ];
+        if (!empty($request->fechadesembolso) && $request->estado_id == 4) {
+            $dataupdate['finReclamacion'] = true;
+            $dataupdate['fecha_desembolso'] = $request->fechadesembolso;            
+        }       
+        $update = SegReclamaciones::where('id', $id)->update($dataupdate);
 
         //crear registro cambio de estado de la reclamacion
         $crear = SegCambioEstadoReclamacion::create([

@@ -29,7 +29,6 @@ class SegReclamaciones extends Model
         'fecha_desembolso',
         'finReclamacion',
     ];
-    
 
     public function asegurado()
     {
@@ -55,4 +54,8 @@ class SegReclamaciones extends Model
     {
         return $this->belongsTo(SegEstadoReclamacion::class, 'estado', 'id');
     }
+
+    public function cambiosEstado(){
+        return $this->hasMany(SegCambioEstadoReclamacion::class, 'reclamacion_id', 'id');
+    } 
 }

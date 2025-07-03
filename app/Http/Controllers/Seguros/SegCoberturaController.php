@@ -40,11 +40,11 @@ class SegCoberturaController extends Controller
             'nombre' => strtoupper($request->input('cobname')),
             'convenio_id' => $request->input('cobconvenio'),
             'observacion' => $request->input('cobOservacion'),
+            'porcentajeReclamacion' => $request->input('porreclamacion', null),
         ]);
         if (!$cobertura->exists) {
             return redirect()->back()->with('error', 'No se pudo procesar la cobertura.');
         }
-
         $this->auditoria("COBERTURA CREADA ID " . $cobertura->id);
         return redirect()->route('seguros.planes.index')->with('success', 'La cobertura fue creada exitosamente.');
     }
