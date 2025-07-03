@@ -205,7 +205,7 @@
                                             </tr>
                                             @foreach ($registrosnov as $i)
                                                 <tr>
-                                                    <td>{{ $i->created_at }}</td>
+                                                    <td>{{ $i->updated_at }}</td>
                                                     @php
                                                         $colorspan = 'primary';
                                                         $modelo = class_basename($i);
