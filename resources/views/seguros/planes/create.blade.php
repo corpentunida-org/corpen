@@ -41,8 +41,7 @@
                                     </div>
                                     <div class="col-lg-4">
                                         <label class="form-label">Condición<span class="text-danger">*</span></label>
-                                        <select class="form-control" name="condicion_id">
-                                            <option value="0" selected>Sin Condición</option>
+                                        <select class="form-control" name="condicion_id">                                            
                                             @foreach ($condiciones as $condicion)
                                                 <option value="{{ $condicion->id }}">
                                                     {{ $condicion->descripcion }}
@@ -55,12 +54,14 @@
                             <div class="mb-4">
                                 <div class="row">
                                     <div class="col-lg-6">
-                                        <label class="form-label">Valor Plan<span class="text-danger">*</span></label>
+                                        <label class="form-label">Valor Asegurado Plan<span
+                                                class="text-danger">*</span></label>
                                         <input type="number" class="uppercase-input form-control"
                                             name="valorPlanAsegurado" required>
                                     </div>
                                     <div class="col-lg-6">
-                                        <label class="form-label">Total Prima<span class="text-danger">*</span></label>
+                                        <label class="form-label">Total Valor Prima<span
+                                                class="text-danger">*</span></label>
                                         <input type="number" class="form-control" name="prima" id="prima" required>
                                         <div class="invalid-feedback">
                                             La suma de las coberturas debe dar el valor total de la prima.
@@ -71,7 +72,7 @@
                             <div id="coberturas-container">
                                 <div class="mb-4 cobertura-row">
                                     <div class="row">
-                                        <div class="col-lg-6">
+                                        <div class="col-lg-5">
                                             <label class="form-label">Cobertura <span
                                                     class="text-danger">*</span></label>
                                             <select class="form-control" name="cobertura_id[]"
@@ -82,10 +83,18 @@
                                                     class="text-danger">*</span></label>
                                             <input type="number" class="form-control" name="valorAsegurado[]" required>
                                         </div>
-                                        <div class="col-lg-3">
+                                        <div class="col-lg-2">
                                             <label class="form-label">Valor Cobertura<span
                                                     class="text-danger">*</span></label>
                                             <input type="number" class="form-control" name="valorPrima[]" required>
+                                        </div>
+                                        <div class="col-lg-2">
+                                            <label class="form-label">Porcentaje al Valor Total</label>
+                                            <div class="input-group">
+                                                <input type="number" class="form-control" name="poralvalorasegurado[]" min="0"
+                                                    max="100" value="100" id="inputporcober">
+                                                <span class="input-group-text">%</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -109,28 +118,31 @@
                         <script>
                             $(document).ready(function () {
                                 $('#convenio_id').on('change', function () {
-                                    //var convenioId = $(this).val();
                                     idAseguradora = $(this).find(':selected').data('idaseguradora');
                                     idBusqueda = $(this).find(':selected').data('id');
                                     $('#idConveniobusqueda').val(idBusqueda);
                                     $('#cobertura_id').empty();
                                     var url = '{{ route("seguros.cobertura.show", ":cobertura") }}';
-                                    console.log(idAseguradora);
                                     $.ajax({
                                         url: url.replace(':cobertura', idAseguradora),
                                         method: 'GET',
                                         success: function (data) {
-                                            console.log(data);
                                             data.forEach(function (cobertura) {
-                                                $('#cobertura_id').append('<option value="' + cobertura
-                                                    .id + '">' + cobertura.nombre + '</option>');
+                                                $('#cobertura_id').append(
+                                                    '<option value="' + cobertura.id + '" data-porcentaje="' + cobertura.porcentajeReclamacion + '">' +
+                                                    cobertura.nombre +
+                                                    '</option>'
+                                                );
                                             });
                                         },
                                         error: function () {
                                             alert('Hubo un error al cargar las coberturas.');
                                         }
                                     });
-
+                                });
+                                $('#cobertura_id').on('change', function () {
+                                    var porcentaje = $(this).find('option:selected').data('porcentaje');
+                                    $('#inputporcober').val(porcentaje ?? '');
                                 });
 
                                 $('#formAddPlan').submit(function (event) {
@@ -213,7 +225,6 @@
                                     <input type="tect" class="uppercase-input form-control" name="cobOservacion">
                                 </div>
                             </div>
-
 
                             <div class="d-flex flex-row-reverse gap-2 mt-2">
                                 <button class="btn btn-success mt-4" data-bs-toggle="tooltip" title="Timesheets"
