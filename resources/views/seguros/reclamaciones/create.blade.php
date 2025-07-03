@@ -94,9 +94,9 @@
                     <div class="row">
                         <div class="col-lg-4 mb-4">
                             <label class="form-label">Cobertura<span class="text-danger">*</span></label>
-                            <select name="cobertura_id" class="form-control">
+                            <select name="cobertura_id" class="form-control" id="selectCobertura">
                                 @foreach ($poliza->plan->coberturas as $cobertura)
-                                    <option value="{{ $cobertura->id }}">{{ $cobertura->nombre }}</option>
+                                    <option value="{{ $cobertura->id }}" data-porcentaje="{{ $cobertura->porcentajeReclamacion }}">{{ $cobertura->nombre }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -261,6 +261,12 @@
                     console.log($(this).serialize());
                 }
             });
+
+            $('#selectCobertura').on('change', function () {
+            var porcentaje = $(this).find(':selected').data('porcentaje');
+                $('input[name="porValorAsegurado"]').val(porcentaje ?? '');
+            });
+            $('#selectCobertura').trigger('change');
 
             function toggleDiv() {
                 if ($('#SelectReclamacionEstado').val() === '4') {
