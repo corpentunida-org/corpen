@@ -14,6 +14,8 @@ class SegPlan_cobertura extends Model
         'cobertura_id',
         'valorAsegurado',
         'valorCobertura',
+        'porcentaje',
+        'extra',
     ];
 
     public function cobertura()

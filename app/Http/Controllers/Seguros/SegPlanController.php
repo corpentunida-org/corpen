@@ -47,6 +47,7 @@ class SegPlanController extends Controller
      */
     public function store(Request $request)
     {
+        dd($request->all());
         $plan = SegPlan::create([
             'name' => strtoupper($request->input('name')),
             'valor' => $request->input('valorPlanAsegurado'),
@@ -61,11 +62,13 @@ class SegPlanController extends Controller
         $coberturaIds = $request->input('cobertura_id');
         $valoresAse = $request->input('valorAsegurado');
         $valoresCob = $request->input('valorPrima');
+        $valorporcentaje = $request->input('poralvalorasegurado');
 
         for ($i = 0; $i < count($coberturaIds); $i++) {
             $plan->coberturas()->attach($coberturaIds[$i], [
                 'valorAsegurado' => $valoresAse[$i],
                 'valorCobertura' => $valoresCob[$i],
+                'porcentaje' => $valorporcentaje[$i] ?? 0,
             ]);
         }
         $idConvenio = $request->input('idConveniobusqueda');
