@@ -29,7 +29,9 @@ use App\Http\Controllers\Seguros\SegBeneficiosController;
 use App\Http\Controllers\Cinco\TercerosController;
 use App\Http\Controllers\Cinco\MoviContCincoController;
 use App\Http\Controllers\Cinco\RetirosListadoController;
+use App\Http\Controllers\Creditos\CongregacionController;
 use App\Http\Controllers\ResReservaController;
+use App\Models\Creditos\Congregacion;
 
 /* Route::middleware(['auth'])->group(function () {
     Route::get('/', function () {
@@ -66,8 +68,6 @@ Route::get('/apto-santamarta', function () {
 
 //ADMIN
 Route::resource('users', UserController::class)->names('admin.users')->middleware(['auth', 'can:admin.users.index']);
-
-
 Route::resource('admin', AuditoriaController::class)->names('admin.auditoria')->middleware(['auth', 'can:admin.auditoria.index']);
 Route::resource('roles', RoleController::class)->names('admin.roles')->middleware(['auth']);
 Route::resource('permisos', PermissionsController::class)->names('admin.permisos')->middleware(['auth']);
@@ -136,3 +136,6 @@ Route::post('reservaI/notificar/ajuste', [ResReservaController::class, 'notifica
 Route::post('reservaI/confirmar', [ResReservaController::class, 'confirmar'])->name('reserva.inmueble.confirmar');
 
 Route::get('reservaI/historico', [ResReservaController::class, 'indexHistorico'])->name('reserva.inmueble.historico');
+
+//CREDITOS
+Route::resource('congregaciones', CongregacionController::class)->names('creditos.congregaciones');
