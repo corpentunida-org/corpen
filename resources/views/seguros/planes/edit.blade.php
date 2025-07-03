@@ -71,7 +71,7 @@
                                 @foreach ($segPlan->coberturas as $cobertura)
                                     <div class="mb-4 cobertura-row">
                                         <div class="row">
-                                            <div class="col-lg-6">
+                                            <div class="col-lg-5">
                                                 <label class="form-label">Cobertura <span
                                                         class="text-danger">*</span></label>
                                                 <input type="text" class="form-control" name="cobertura[]"
@@ -83,11 +83,19 @@
                                                 <input type="number" class="form-control" name="valorAsegurado[]"
                                                     value="{{ $cobertura->pivot->valorAsegurado }}" >
                                             </div>
-                                            <div class="col-lg-3">
+                                            <div class="col-lg-2">
                                                 <label class="form-label">Valor Cobertura<span
                                                         class="text-danger">*</span></label>
                                                 <input type="number" class="form-control" name="valorPrima[]"
                                                     value="{{ $cobertura->pivot->valorCobertura }}">
+                                            </div>
+                                            <div class="col-lg-2">
+                                                <label class="form-label">Extraprima<span
+                                                        class="text-danger">*</span></label>
+                                                <div class="input-group">
+                                                    <input type="number" class="form-control" name="desextraprima[]" value="{{$cobertura->pivot->extra}}">
+                                                    <span class="input-group-text">%</span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

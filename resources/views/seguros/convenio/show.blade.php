@@ -33,7 +33,7 @@
             </div>
         </div>
     </div>
-    @foreach ($planes as $condicionId => $planesGrupo)
+    @foreach ($planes as $condicionId => $planesGrupo)    
         <div class="col-12">
             <div class="card stretch stretch-full">
                 <div class="card-body">
