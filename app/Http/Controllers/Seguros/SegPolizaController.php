@@ -326,7 +326,7 @@ class SegPolizaController extends Controller
     public function namesearch(Request $request)
     {
         $name = str_replace(' ', '%', $request->input('id'));
-        $asegurados = SegAsegurado::with('tercero')
+        $asegurados = SegAsegurado::with(['tercero','polizas'])
             ->whereHas('tercero', function ($query) use ($name) {
                 $query->where('nombre', 'like', '%' . $name . '%');
             })
