@@ -104,7 +104,7 @@
                                 <th scope="col" class="text-end">Acción</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody>                        
                             @foreach ($asegurados as $a)
                                 <tr>
                                     <td>
@@ -121,8 +121,8 @@
                                     <td>
                                         <span class="badge bg-gray-200 text-dark">{{ $a->parentesco }}</span>
                                     </td>
-                                    <td>$ {{ $a->valorAsegurado }}</td>
-                                    <td>$ {{ $a->valorprima }}</td>
+                                    <td>$ {{ number_format($a->polizas->first()->valor_asegurado ?? '') }}</td>
+                                    <td>$ {{ number_format($a->polizas->first()->valor_prima) ?? '' }}</td>
                                     <td>
                                         <form action="{{ route('seguros.poliza.show',['poliza' => 'ID']) }}" class="avatar-text avatar-md ms-auto" method="GET">
                                             <input type="hidden" name="id" value="{{ $a->cedula }}">
