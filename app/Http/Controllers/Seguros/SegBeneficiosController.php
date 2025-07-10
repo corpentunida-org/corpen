@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Seguros;
 
 use App\Http\Controllers\Controller;
+use App\Models\Seguros\SegAsegurado;
 use App\Models\Seguros\SegBeneficios;
 use App\Models\Seguros\SegPoliza;
 use App\Models\Seguros\SegPlan;
@@ -20,7 +21,7 @@ class SegBeneficiosController extends Controller
     private function auditoria($accion)
     {
         $auditoriaController = app(AuditoriaController::class);
-        $auditoriaController->create($accion, "SEGUROS");
+        $auditoriaController->create($accion, 'SEGUROS');
     }
 
     public function index()
@@ -32,24 +33,30 @@ class SegBeneficiosController extends Controller
     public function listFilter(Request $request)
     {
         $fechaMax = Carbon::today()->copy()->subYears($request->edad_minima);
-        $fechaMin = Carbon::today()->copy()->subYears($request->edad_maxima + 1)->addDay();
+        $fechaMin = Carbon::today()
+            ->copy()
+            ->subYears($request->edad_maxima + 1)
+            ->addDay();
 
-        $query = SegPoliza::where('active', true)
-            ->whereHas('tercero', function ($q) use ($fechaMin, $fechaMax) {
-                $q->whereBetween('fechaNacimiento', [$fechaMin, $fechaMax]);
-            });
+        $query = SegPoliza::where('active', true)->whereHas('tercero', function ($q) use ($fechaMin, $fechaMax) {
+            $q->whereBetween('fechaNacimiento', [$fechaMin, $fechaMax]);
+        });
 
         if ($request->tipo !== 'TODOS') {
-            $query->whereHas('asegurado', function ($q) use ($request) {
-                $q->where('parentesco', $request->tipo);
-            });
+            if ($request->tipo === 'VIUDA') {
+                $query->whereHas('asegurado', function ($q) use ($request) {
+                    $q->where('viuda', true);
+                });
+            } else {
+                $query->whereHas('asegurado', function ($q) use ($request) {
+                    $q->where('parentesco', $request->tipo);
+                });
+            }
         }
 
-        if ($request->plan !== 'TODOS') {
-            $query->whereHas('plan', function ($q) use ($request) {
-                $q->where('valor', $request->plan);
-            });
-        }
+        $query->whereHas('plan', function ($q) use ($request) {
+            $q->whereIn('valor', $request->planes);
+        });
         $listadata = $query->with(['plan', 'tercero', 'asegurado'])->get();
 
         $planes = SegPlan::where('vigente', true)->where('condicion_id', 2)->get();
@@ -79,7 +86,7 @@ class SegBeneficiosController extends Controller
                     'observaciones' => strtoupper($request->observaciones),
                 ]);
             }
-            $accion = "add beneficio grupal valor de " . $request->desval;
+            $accion = 'add beneficio grupal valor de ' . $request->desval;
             $this->auditoria($accion);
             return redirect()->route('seguros.beneficios.index')->with('success', 'Se agrego correctamente el beneficio.');
         } else {
@@ -88,10 +95,17 @@ class SegBeneficiosController extends Controller
                 'poliza' => $request->polizaId,
                 'porcentajeDescuento' => $request->porbene,
                 'valorDescuento' => $request->valorbene,
-                'observaciones' => strtoupper($request->observacionesbene)
+                'observaciones' => strtoupper($request->observacionesbene),
             ]);
+            if ($request->boolean('checkconfirmarbene')) {
+                $asegurado = SegAsegurado::where('cedula', $request->aseguradoId)->first();
+                $poliza = SegPoliza::where('seg_asegurado_id', $asegurado->titular)->first();
+                $poliza->update([
+                    'valorpagaraseguradora' => floatval($poliza->valorpagaraseguradora) - floatval($request->valorbene),
+                ]);
+            }
             if ($beneficio) {
-                $accion = "add beneficio a " . $request->aseguradoId . " por valor de " . $request->valorbene;
+                $accion = 'add beneficio a ' . $request->aseguradoId . ' por valor de ' . $request->valorbene;
                 $this->auditoria($accion);
                 return redirect()->back()->with('success', 'Se agrego correctamente el beneficio.');
             }
@@ -103,7 +117,6 @@ class SegBeneficiosController extends Controller
      */
     public function show(SegBeneficios $SegBeneficios)
     {
-
     }
 
     /**

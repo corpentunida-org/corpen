@@ -10,9 +10,10 @@
                             aria-selected="true">Crear Plan</a>
                     </li>
                     @can('seguros.cobertura.store')
-                    <li class="nav-item flex-fill border-top" role="presentation">
-                        <a class="nav-link" data-bs-toggle="tab" data-bs-target="#taskTab" aria-selected="false">Crear Cobertura</a>
-                    </li>
+                        <li class="nav-item flex-fill border-top" role="presentation">
+                            <a class="nav-link" data-bs-toggle="tab" data-bs-target="#taskTab" aria-selected="false">Crear
+                                Cobertura</a>
+                        </li>
                     @endcan
                 </ul>
             </div>
@@ -28,14 +29,15 @@
                                         <label class="form-label">Convenio<span class="text-danger">*</span></label>
                                         <select class="form-control" name="convenio" id="convenio_id" required>
                                             @foreach ($convenios as $convenio)
-                                                <option value="{{ $convenio->idConvenio }}" data-idaseguradora="{{ $convenio->idAseguradora }}" data-id="{{ $convenio->id }}">{{ $convenio->nombre }}</option>
+                                                <option value="{{ $convenio->idConvenio }}"
+                                                    data-idaseguradora="{{ $convenio->idAseguradora }}"
+                                                    data-id="{{ $convenio->id }}">{{ $convenio->nombre }}</option>
                                             @endforeach
                                         </select>
                                     </div>
                                     <div class="col-lg-5">
                                         <label class="form-label">Nombre Plan<span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control uppercase-input" name="name"
-                                            required>
+                                        <input type="text" class="form-control uppercase-input" name="name" required>
                                     </div>
                                     <div class="col-lg-4">
                                         <label class="form-label">Condición<span class="text-danger">*</span></label>
@@ -59,8 +61,7 @@
                                     </div>
                                     <div class="col-lg-6">
                                         <label class="form-label">Total Prima<span class="text-danger">*</span></label>
-                                        <input type="number" class="form-control" name="prima" id="prima"
-                                            required>
+                                        <input type="number" class="form-control" name="prima" id="prima" required>
                                         <div class="invalid-feedback">
                                             La suma de las coberturas debe dar el valor total de la prima.
                                         </div>
@@ -73,7 +74,8 @@
                                         <div class="col-lg-6">
                                             <label class="form-label">Cobertura <span
                                                     class="text-danger">*</span></label>
-                                            <select class="form-control" name="cobertura_id[]" id="cobertura_id"></select>
+                                            <select class="form-control" name="cobertura_id[]"
+                                                id="cobertura_id"></select>
                                         </div>
                                         <div class="col-lg-3">
                                             <label class="form-label">Valor Asegurado<span
@@ -105,33 +107,33 @@
                             </div>
                         </form>
                         <script>
-                            $(document).ready(function() {
-                                $('#convenio_id').on('change', function() {
+                            $(document).ready(function () {
+                                $('#convenio_id').on('change', function () {
                                     //var convenioId = $(this).val();
                                     idAseguradora = $(this).find(':selected').data('idaseguradora');
                                     idBusqueda = $(this).find(':selected').data('id');
                                     $('#idConveniobusqueda').val(idBusqueda);
-                                    $('#cobertura_id').empty();                                    
-                                        var url = '{{ route("seguros.cobertura.show", ":cobertura") }}';
-                                        console.log(idAseguradora);
-                                        $.ajax({
-                                            url: url.replace(':cobertura', idAseguradora),                                            
-                                            method: 'GET',
-                                            success: function(data) {
-                                                console.log(data);
-                                                data.forEach(function(cobertura) {
-                                                    $('#cobertura_id').append('<option value="' + cobertura
-                                                        .id + '">' + cobertura.nombre + '</option>');
-                                                });
-                                            },
-                                            error: function() {
-                                                alert('Hubo un error al cargar las coberturas.');
-                                            }
-                                        });
-                                    
+                                    $('#cobertura_id').empty();
+                                    var url = '{{ route("seguros.cobertura.show", ":cobertura") }}';
+                                    console.log(idAseguradora);
+                                    $.ajax({
+                                        url: url.replace(':cobertura', idAseguradora),
+                                        method: 'GET',
+                                        success: function (data) {
+                                            console.log(data);
+                                            data.forEach(function (cobertura) {
+                                                $('#cobertura_id').append('<option value="' + cobertura
+                                                    .id + '">' + cobertura.nombre + '</option>');
+                                            });
+                                        },
+                                        error: function () {
+                                            alert('Hubo un error al cargar las coberturas.');
+                                        }
+                                    });
+
                                 });
 
-                                $('#formAddPlan').submit(function(event) {
+                                $('#formAddPlan').submit(function (event) {
                                     var form = this;
                                     if (!form.checkValidity()) {
                                         $(form).addClass('was-validated');
@@ -139,7 +141,7 @@
                                         event.stopPropagation();
                                     } else {
                                         var totalValorPrima = 0;
-                                        $('input[name="valorPrima[]"]').each(function() {
+                                        $('input[name="valorPrima[]"]').each(function () {
                                             var valor = parseFloat($(this).val()) || 0;
                                             totalValorPrima += valor;
                                         });
@@ -156,7 +158,7 @@
                                         }
                                     }
                                 });
-                                $('#add-cobertura').click(function() {
+                                $('#add-cobertura').click(function () {
                                     const container = document.getElementById('coberturas-container');
                                     const coberturaRow = document.querySelector('.cobertura-row');
 
@@ -173,8 +175,8 @@
                 </div>
                 <div class="tab-pane fade p-4" id="taskTab" role="tabpanel">
                     <div class="col-lg-12 p-4">
-                        <form method="POST" action="{{ route('seguros.cobertura.store') }}"
-                            id="formAddCobertura"novalidate>
+                        <form method="POST" action="{{ route('seguros.cobertura.store') }}" id="formAddCobertura"
+                            novalidate>
                             @csrf
                             @method('POST')
                             <div class="mb-4">
@@ -184,16 +186,24 @@
                                         <select class="form-control" name="cobconvenio">
                                             @foreach ($convenios as $convenio)
                                                 <option value="{{ $convenio->id }}">
-                                                    {{ $convenio->id }} - {{ $convenio->nombre }}
+                                                    {{ $convenio->idAseguradora }} - {{ $convenio->nombre }}
                                                 </option>
                                             @endforeach
                                         </select>
                                     </div>
-                                    <div class="col-lg-8">
+                                    <div class="col-lg-6">
                                         <label class="form-label">Nombre Cobertura<span
                                                 class="text-danger">*</span></label>
-                                        <input type="text" class="form-control uppercase-input" name="cobname"
-                                            required>
+                                        <input type="text" class="form-control uppercase-input" name="cobname" required>
+                                    </div>
+                                    <div class="col-lg-2">
+                                        <label class="form-label">Porcentaje Reclamacion<span
+                                                class="text-danger">*</span></label>
+                                        <div class="input-group">
+                                            <input type="text" class="form-control uppercase-input"
+                                                name="porreclamacion" required>
+                                            <span class="input-group-text">%</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -206,8 +216,8 @@
 
 
                             <div class="d-flex flex-row-reverse gap-2 mt-2">
-                                <button class="btn btn-success mt-4" data-bs-toggle="tooltip"
-                                    title="Timesheets"type="submit">
+                                <button class="btn btn-success mt-4" data-bs-toggle="tooltip" title="Timesheets"
+                                    type="submit">
                                     <i class="feather-plus me-2"></i>
                                     <span>Agregar Cobertura</span>
                                 </button>
@@ -215,7 +225,7 @@
 
                         </form>
                         <script>
-                            $('#formAddCobertura').submit(function(event) {
+                            $('#formAddCobertura').submit(function (event) {
                                 var form = this;
                                 if (!form.checkValidity()) {
                                     $(form).addClass('was-validated');

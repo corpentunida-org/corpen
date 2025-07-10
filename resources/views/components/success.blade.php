@@ -1,5 +1,4 @@
 <div>
-    <!-- The whole future lies in uncertainty: live immediately. - Seneca -->
     @if (session('success'))
     <div class="alert alert-dismissible p-4 mt-3 alert-soft-success-message" role="alert">
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
