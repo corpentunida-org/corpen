@@ -4,26 +4,32 @@ namespace App\Models\Creditos;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Creditos\claseCongregacion;
 
 class Congregacion extends Model
 {
-    use HasFactory; //hacer las consultas mas faciles
-    protected $table = 'CRE_Congregaciones';
+    use HasFactory;
+
+    protected $table = 'Congregaciones';
 
     protected $fillable = [
-        'Codigo',
-        'Nombre_templo',
-        'Estado',
-        'Clase',
-        'Municipio',
-        'Direccion',
-        'Telefono',
-        'Celular',
-        'Dist',
-        'Fecha_Ap',
-        'Fecha_Cie',
-        'Obser',
-        'Pastor',
+        'codigo',
+        'nombre',
+        'estado',
+        'clase',
+        'municipio',
+        'direccion',
+        'telefono',
+        'celular',
+        'distrito',
+        'apertura',
+        'cierre',
+        'observacion',
+        'pastor',
     ];
 
+public function claseCongregacion()
+{
+    return $this->belongsTo(ClaseCongregacion::class, 'clase', 'id');
+}
 }

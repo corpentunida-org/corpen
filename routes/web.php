@@ -132,4 +132,7 @@ Route::post('reservaI/confirmar', [ResReservaController::class, 'confirmar'])->n
 Route::get('reservaI/historico', [ResReservaController::class, 'indexHistorico'])->name('reserva.inmueble.historico');
 
 //CREDITOS
-Route::resource('congregaciones', CongregacionController::class)->names('creditos.congregaciones');
+Route::prefix('creditos')->name('creditos.')->group(function () {
+    // Esta línea crea la ruta GET /creditos/congregaciones que apunta al método index() del controlador
+    Route::resource('congregaciones', CongregacionController::class);
+});
