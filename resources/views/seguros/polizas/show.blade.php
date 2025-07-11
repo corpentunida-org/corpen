@@ -253,21 +253,21 @@
                             <div class="text-bold">Subsidio</div>
                             <div class="btn bg-soft-warning collapsed" data-bs-toggle="collapse"
                                 data-bs-target="#collapseOne" aria-expanded="false" style="font-size:20px;">$
-                                @if (!$poliza->asegurado->valorpAseguradora)
+                                @if (!$poliza->asegurado->valorpAseguradora || $totalPrima==0)
                                     0
                                     @php
                                         $subsidio = 0;
                                         $s = 0;
                                     @endphp
-                                @else
-                                    @php
-                                        $sub = 0;
-                                        foreach ($beneficios as $beneficio) {
-                                            $sub += $beneficio->valorDescuento;
-                                        }
-                                        $s = $totalPrima - $sub - $poliza->valorpagaraseguradora;
-                                        $subsidio = $sub + $s;
-                                    @endphp
+                                @else                                    
+                                        @php
+                                            $sub = 0;
+                                            foreach ($beneficios as $beneficio) {
+                                                $sub += $beneficio->valorDescuento;
+                                            }
+                                            $s = $totalPrima - $sub - $poliza->valorpagaraseguradora;
+                                            $subsidio = $sub + $s;
+                                        @endphp                                    
                                     {{ number_format($subsidio) }}
                                 @endif
                             </div>
