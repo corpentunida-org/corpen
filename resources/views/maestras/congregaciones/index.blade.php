@@ -11,7 +11,7 @@
             <div class="mb-4 px-4 d-flex align-items-center justify-content-between">
                 <h5 class="fw-bold mb-0">Congregaciones</h5>
                 {{-- Botón para ir al formulario de creación --}}
-                <a href="{{ route('creditos.congregaciones.create') }}" class="btn btn-success">
+                <a href="{{ route('maestras.congregacion.create') }}" class="btn btn-success">
                     <i class="feather-plus me-2"></i>
                     <span>Crear Nueva</span>
                 </a>
@@ -56,13 +56,13 @@
                                         </a>
                                         <ul class="dropdown-menu">
                                             <li>
-                                                <a class="dropdown-item" href="{{ route('creditos.congregaciones.edit', $congregacion->codigo) }}">
+                                                <a class="dropdown-item" href="{{ route('maestras.congregacion.edit', $congregacion->codigo) }}">
                                                     <i class="feather feather-edit-3 me-3"></i>
                                                     <span>Editar</span>
                                                 </a>
                                             </li>
                                             <li>                                        
-                                                <form action="{{ route('creditos.congregaciones.destroy', $congregacion->codigo) }}" method="POST">
+                                                <form action="{{ route('maestras.congregacion.destroy', $congregacion->codigo) }}" method="POST">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="dropdown-item btnEliminar">

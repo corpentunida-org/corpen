@@ -56,7 +56,6 @@
                                                 </label>
                                             </div>
                                         @endif
-
                                         @foreach ($columna as $plan)
                                             <div class="form-check">
                                                 <input class="form-check-input" type="checkbox" name="planes[]"
@@ -113,6 +112,7 @@
                                             <input type="text" class="form-control text-uppercase" name="observaciones" required>
                                         </div>
                                     </div>
+                                    <input type="hidden" name="grupo" value=true>
                                     <div class="d-flex justify-content-end">
                                         <button type="submit" class="btn btn-md btn-primary">Aplicar</button>
                                     </div>
@@ -161,7 +161,7 @@
                                             </tbody>
                                         </table>
                                     </div>
-                                    <input type="hidden" name="grupo" value=true>
+
                                 </form>
                             </div>
                         @endif
@@ -170,6 +170,30 @@
         @endif
         <script>
             $(document).ready(function () {
+                const $todos = $('#planesTODOS');
+                const $planes = $('input[name="planes[]"]');
+
+                function actualizarRequerido() {
+                    const algunoMarcado = $planes.is(':checked');
+
+                    if (algunoMarcado) {
+                        $todos.prop('required', false);
+                    } else {
+                        $todos.prop('required', true);
+                    }
+                }
+                $todos.on('change', function () {
+                    if ($(this).is(':checked')) {
+                        $planes.prop('checked', false);
+                    }
+                    actualizarRequerido();
+                });
+                $planes.on('change', function () {
+                    if ($(this).is(':checked')) {
+                        $todos.prop('checked', false);
+                    }
+                    actualizarRequerido();
+                });
                 $('#formFiltroBeneficios').submit(function (event) {
                     var form = this;
                     if (!form.checkValidity()) {
@@ -186,6 +210,7 @@
                         $(form).addClass('was-validated');
                     }
                 });
+
             });
         </script>
 </x-base-layout>
