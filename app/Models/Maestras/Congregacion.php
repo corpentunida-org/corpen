@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Models\Creditos;
+namespace App\Models\Maestras;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Creditos\claseCongregacion;
+use App\Models\Maestras\claseCongregacion;
 
 class Congregacion extends Model
 {
