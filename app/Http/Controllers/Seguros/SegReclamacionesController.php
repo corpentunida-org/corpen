@@ -107,7 +107,7 @@ class SegReclamacionesController extends Controller
             'valor_asegurado' => $request->valorAsegurado,
             'porreclamar' => $request->porValorAsegurado,
             'fecha_desembolso' => $request->fechadesembolso,
-        ];
+        ];        
         if (is_null($request->diagnostico_id)) {
             if ($request->boolean('adddiagnostico')) {
                 $diag = SegDiagnosticos::create([

@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Controllers\Creditos;
+namespace App\Http\Controllers\Maestras;
 
 use App\Http\Controllers\Controller;
-use App\Models\Creditos\claseCongregacion;
-use App\Models\Creditos\Congregacion;
+use App\Models\Maestras\claseCongregacion;
+use App\Models\Maestras\Congregacion;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -19,7 +19,7 @@ class CongregacionController extends Controller
 
  // debería ser un objeto ClaseCongregacion
 
-        return view('creditos.congregaciones.index', compact('congregacion'));
+        return view('maestras.congregaciones.index', compact('congregacion'));
     }
 
     /**
@@ -28,7 +28,7 @@ class CongregacionController extends Controller
     public function create()
     {
         $claselist = claseCongregacion::all();
-        return view('creditos.congregaciones.create',compact('claselist'));
+        return view('maestras.congregaciones.create',compact('claselist'));
     }
 
     /**
@@ -54,16 +54,17 @@ class CongregacionController extends Controller
 
         Congregacion::create($request->all());
 
-        return redirect()->route('creditos.congregaciones.index')
+        return redirect()->route('maestras.congregacion.index')
                          ->with('success', '¡Congregación creada exitosamente!');
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Congregacion $congregacione)
+    public function edit($congregacionid)
     {
-        return view('creditos.congregaciones.edit', ['congregacion' => $congregacione]);
+        $congregacion = Congregacion::where('codigo', $congregacionid)->first();
+        return view('maestras.congregaciones.edit', compact('congregacion'));
     }
 
     /**
@@ -94,7 +95,7 @@ class CongregacionController extends Controller
 
         $congregacione->update($request->all());
 
-        return redirect()->route('creditos.congregaciones.index')
+        return redirect()->route('maestras.congregacion.index')
                          ->with('success', '¡Congregación actualizada exitosamente!');
     }
 
