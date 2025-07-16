@@ -1,5 +1,4 @@
 {{-- resources/views/creditos/congregaciones/create.blade.php --}}
-
 <x-base-layout>
     @section('titlepage', 'Registrar Nueva Congregación')
 
@@ -25,7 +24,7 @@
                 <h5 class="card-title">Formulario de Registro de Congregación</h5>
             </div>
             <div class="card-body">
-                <form action="{{ route('creditos.congregaciones.store') }}" method="POST" id="formCreateCongregacion" novalidate>
+                <form action="{{ route('maestras.congregacion.store') }}" method="POST" id="formCreateCongregacion" novalidate>
                     @csrf
                     <div class="table-responsive">
                         <table class="table table-borderless table-hover mb-0">
@@ -136,7 +135,7 @@
                             <i class="feather-plus me-2"></i>
                             <span>Guardar Congregación</span>
                         </button>
-                        <a href="{{ route('creditos.congregaciones.index') }}" class="btn btn-light">
+                        <a href="{{ route('maestras.congregacion.index') }}" class="btn btn-light">
                             Cancelar
                         </a>
                     </div>

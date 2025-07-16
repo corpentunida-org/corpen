@@ -1,6 +1,12 @@
 <x-base-layout>
-    <x-warning />
-    <x-success />
+    @if(isset($success))
+        <div class="alert alert-dismissible p-4 mt-3 alert-soft-success-message" role="alert">
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        <p class="mb-0">
+            {{ $success }}
+        </p>
+    </div>
+    @endif
     <div class="col-lg-12">
         <div class="card stretch stretch-full">
             <div class="card-body lead-status">
@@ -23,7 +29,8 @@
                         @endif
                     </div>
                     <div class="mb-3">
-                        <label for="observacion" class="form-label">Observación <span class="text-danger">*</span></label>
+                        <label for="observacion" class="form-label">Observación <span
+                                class="text-danger">*</span></label>
                         <input type="text" class="form-control uppercase-input" name="observacion" required>
                     </div>
                     <div class="d-flex justify-content-end gap-2">
@@ -41,13 +48,12 @@
                     <div class="card-header-action">
                         <div class="card-header-btn">
                             <div data-bs-toggle="tooltip" title="Delete">
-                                <a href="javascript:void(0);" class="avatar-text avatar-xs bg-danger"
-                                    data-bs-toggle="remove">
+                                <a href="javascript:void(0);" class="avatar-text avatar-xs bg-danger" data-bs-toggle="remove">
                                 </a>
                             </div>
                             <div data-bs-toggle="tooltip" title="Refresh">
-                                <a href="javascript:void(0);" class="avatar-text avatar-xs bg-warning"
-                                    data-bs-toggle="refresh"> </a>
+                                <a href="javascript:void(0);" class="avatar-text avatar-xs bg-warning" data-bs-toggle="refresh">
+                                </a>
                             </div>
                             <div data-bs-toggle="tooltip" title="Maximize/Minimize">
                                 <a href="" class="avatar-text avatar-xs bg-success" data-bs-toggle="expand"> </a>

@@ -1,11 +1,15 @@
 <?php
 
-namespace App\Models\Creditos;
+namespace App\Models\Maestras;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+<<<<<<< HEAD:app/Models/Creditos/Congregacion.php
 // No necesitas importar el modelo ClaseCongregacion aquí si ya está en el namespace correcto.
 // use App\Models\Creditos\claseCongregacion;
+=======
+use App\Models\Maestras\claseCongregacion;
+>>>>>>> main:app/Models/Maestras/Congregacion.php
 
 class Congregacion extends Model
 {
