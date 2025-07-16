@@ -6,6 +6,7 @@ use App\Models\Cinco\RetirosListado;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\Cinco\Terceros;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class RetirosListadoController extends Controller
@@ -22,7 +23,8 @@ class RetirosListadoController extends Controller
     {
         $name = str_replace(' ', '%', $request->input('id'));
         $terceros = Terceros::whereHas('tercero', function ($query) use ($name) {
-                $query->where('Nom_Ter', 'like', '%' . $name . '%');})->get();
+            $query->where('Nom_Ter', 'like', '%' . $name . '%');
+        })->get();
         return view('seguros.polizas.search', compact('asegurados'));
     }
 
@@ -49,41 +51,72 @@ class RetirosListadoController extends Controller
     {
         $id = $request->input('id');
         $tercero = Terceros::where('Cod_Ter', $id)->first();
-        //dd($tercero->Fec_Minis);
-        //$arrayliquidacion = $this->liquidaciones($tercero->Fec_Minis);
-        return view('cinco.retiros.show', compact('tercero'));
+        $arrayliquidacion = $this->liquidaciones($tercero->Fec_Minis);
+        return view('cinco.retiros.show', compact('tercero', 'arrayliquidacion'));
     }
 
     private function liquidaciones(string $fechaminis)
     {
         $arrayliquidacion = [];
         $fecha = Carbon::parse($fechaminis);
-        $dia = $fecha->day;
-        $mes = $fecha->month;
-        $año = $fecha->year;
-        dd($dia, $mes, $año);
+        $anioActual = Carbon::now()->year;
+        if ($fecha->year < 2006) {
+            $anioInicio = 2006;
+        } else {
+            $anioInicio = $fecha->year;
+        }
+        for ($i = $anioInicio; $i <= $anioActual; $i++) {
+            if ($i < 2017) {
+                $arrayliquidacion[$i] = $this->antes2017($fecha, $i);
+            } else {
+                $resultado = $this->despues2017($fecha, $i);
+                if (!is_null($resultado)) {
+                    $arrayliquidacion[$i] = $resultado;
+                }
+            }
+        }
         return $arrayliquidacion;
     }
-    /* private double anio2007(int cod_ter)
-        {
-            double calculo = 0;
-            var r = retAnioMesDia(cod_ter);
-            int valorFijo = 576000;
-            if (r.Item1 < 2007)
-            {
-                calculo = valorFijo;
-                return calculo;
-            }
-            else if (r.Item1 == 2007)
-            {
-                int difMes = 12 - r.Item2;
-                int difDia = 31 - r.Item3;
 
-                calculo = ((difMes * valorFijo) / 12) + (((difDia * valorFijo) / 12) / 30);
-                return (int)Math.Ceiling(calculo);
+    private function antes2017($fecha, $i)
+    {
+        $valorFijo = DB::table('CIN_condicionesRetiros')->where('anio', $i)->first();
+        if ($fecha->year === $i) {
+            $difMes = 12 - $fecha->month;
+            $difDia = 31 - $fecha->day;
+            $calculo = (($difMes * $valorFijo->valor) / 12) + ((($difDia * $valorFijo->valor) / 12) / 30);
+            return round($calculo);
+        } else {
+            $calculo = $valorFijo->valor;
+            return $calculo;
+        }
+    }
+    private function calculoPlus($fecha, $i, $plusVal)
+    {
+        if (Carbon::now()->year - $fecha->year > 5) {
+            $fechaFin = Carbon::parse($i);
+            $diferencia = $fecha->diffInDays($fechaFin);
+            return ($diferencia / (365 / 12)) * $plusVal;
+        } else {
+            return 0;
+        }
+    }
+    private function despues2017($fecha, $i)
+    {
+        $valorFijo = DB::table('CIN_condicionesRetiros')->where('anio', $i)->first();
+        if ($valorFijo) {
+            $plus = $this->calculoPlus($fecha, $i . '-12-31', $valorFijo->plus) ?? 0;
+            if ($fecha->year === $i) {
+                $difMes = 12 - $fecha->month;
+                $difDia = 31 - $fecha->day;
+                $liquidacion = (($difMes * $valorFijo->valor) / 12) + ((($difDia * $valorFijo->valor) / 12) / 30);
+                return [$liquidacion, $plus];
+            } else {
+                return [$valorFijo->valor, $plus];
             }
-            else return calculo;
-        } */
+        }
+    }
+
     public function edit(RetirosListado $retirosListado)
     {
         //

@@ -16,7 +16,8 @@
                                             <div class="fs-4 fw-bold text-dark"><span
                                                     class="counter">{{ $tercero->Nom_Ter }}</span></div>
                                             <h3 class="fs-13 fw-semibold text-truncate-1-line">
-                                                {{ $tercero->Cod_Ter }}</h3>
+                                                {{ $tercero->Cod_Ter }}
+                                            </h3>
                                         </div>
                                     </div>
                                 </div>
@@ -49,13 +50,13 @@
                     <p class="fs-12 text-muted pt-3">Buscar por nombre: </p>
                     <div class="hstack">
                         <a href="javascript:void(0)" class="search-form-open-toggle">
-                            <div class="avatar-text avatar-md" data-bs-toggle="tooltip" data-bs-trigger="hover"
-                                title="" data-bs-original-title="Search">
+                            <div class="avatar-text avatar-md" data-bs-toggle="tooltip" data-bs-trigger="hover" title=""
+                                data-bs-original-title="Search">
                                 <i class="feather-search"></i>
                             </div>
                         </a>
-                        <form action="{{ route('poliza.search', ['name' => 'ID']) }}" method="GET"
-                            class="search-form"style="display: none">
+                        <form action="{{ route('poliza.search', ['name' => 'ID']) }}" method="GET" class="search-form"
+                            style="display: none">
                             <div class="search-form-inner">
                                 <a href="javascript:void(0)" class="search-form-close-toggle">
                                     <div class="avatar-text avatar-md" data-bs-toggle="tooltip" data-bs-trigger="hover"
@@ -73,62 +74,65 @@
             </div>
         </div>
     </div>
-
-    <div class="col-lg-12">
-        <div class="card stretch stretch-full">
-            <div class="card-header">
-                <h5 class="card-title">Calculo Liquidación</h5>
-                <div class="card-header-action">
-                    <div class="card-header-btn">
-                        <div data-bs-toggle="tooltip" title="" data-bs-original-title="Delete">
-                            <a href="javascript:void(0);" class="avatar-text avatar-xs bg-danger"
-                                data-bs-toggle="remove"> </a>
-                        </div>
-                        <div data-bs-toggle="tooltip" title="" data-bs-original-title="Refresh">
-                            <a href="javascript:void(0);" class="avatar-text avatar-xs bg-warning"
-                                data-bs-toggle="refresh"> </a>
-                        </div>
-                        <div data-bs-toggle="tooltip" title="" data-bs-original-title="Maximize/Minimize">
-                            <a href="javascript:void(0);" class="avatar-text avatar-xs bg-success"
-                                data-bs-toggle="expand"> </a>
-                        </div>
-                    </div>
-                    <div class="dropdown">
-                        <a href="javascript:void(0);" class="avatar-text avatar-sm" data-bs-toggle="dropdown"
-                            data-bs-offset="25, 25">
-                            <div data-bs-toggle="tooltip" title="" data-bs-original-title="Options">
-                                <i class="feather-more-vertical"></i>
-                            </div>
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="card stretch stretch-full">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <a href="{{ url('terceros/ID') }}?id={{ $tercero->Cod_Ter }}"
+                            class="avatar-text avatar-lg bg-soft-primary text-primary border-soft-primary rounded"
+                            data-bs-toggle="tooltip" title="" data-bs-original-title="Actualizar Fecha">
+                            <i class="feather-briefcase"></i>
                         </a>
-                        <div class="dropdown-menu dropdown-menu-end">
-                            <a href="javascript:void(0);" class="dropdown-item"><i
-                                    class="feather-at-sign"></i>New</a>
-                            <a href="javascript:void(0);" class="dropdown-item"><i
-                                    class="feather-calendar"></i>Event</a>
-                            <a href="javascript:void(0);" class="dropdown-item"><i
-                                    class="feather-bell"></i>Snoozed</a>
-                            <a href="javascript:void(0);" class="dropdown-item"><i
-                                    class="feather-trash-2"></i>Deleted</a>
-                            <div class="dropdown-divider"></div>
-                            <a href="javascript:void(0);" class="dropdown-item"><i
-                                    class="feather-settings"></i>Settings</a>
-                            <a href="javascript:void(0);" class="dropdown-item"><i class="feather-life-buoy"></i>Tips
-                                &amp; Tricks</a>
+                        <div class="text-end">
+                            <p class="fs-11 fw-medium text-uppercase text-muted mb-1">Fecha Ingreso al Ministerio</p>
+                            <h5 class="bg-soft-primary text-primary">{{$tercero->Fec_Minis}}</h5>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="card-body custom-card-action p-0">
-                <div class="d-flex align-items-center justify-content-between p-4">                    
-                    <div>
-                        <div><span class="badge bg-soft-primary text-primary" style="font-size:15px;">{{$tercero->Fec_Minis}}</span></div>
-                        <div class="fs-12 text-end" style="font-size:15px;">Fecha Ingreso al Ministerio</div>
-                    </div>
-                    <div>
-                        <div class="fw-bold text-dark">{{$tercero->Fec_Aport}}</div>
-                        <div class="fs-12 text-end">Fecha Primer Aporte</div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card stretch stretch-full">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <a href="{{ url('terceros/ID') }}?id={{ $tercero->Cod_Ter }}"
+                            class="avatar-text avatar-lg bg-soft-primary text-primary border-soft-primary rounded"
+                            data-bs-toggle="tooltip" title="" data-bs-original-title="Actualizar Fecha">
+                            <i class="feather-bar-chart-2"></i>
+                        </a>
+                        <div class="text-end">
+                            <p class="fs-11 fw-medium text-uppercase text-muted mb-1">Fecha Primer Aporte</p>
+                            <h5>{{$tercero->Fec_Aport ?? 'sin fecha'}}</h5>
+                        </div>
                     </div>
                 </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card stretch stretch-full">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <a href="{{ url('terceros/ID') }}?id={{ $tercero->Cod_Ter }}"
+                            class="avatar-text avatar-lg bg-soft-primary text-primary border-soft-primary rounded"
+                            data-bs-toggle="tooltip" title="" data-bs-original-title="Actualizar Fecha">
+                            <i class="feather-user-plus"></i>
+                        </a>
+                        <div class="text-end">
+                            <p class="fs-11 fw-medium text-uppercase text-muted mb-1">Fecha Ingreso a Corpentunida</p>
+                            <h5>{{$tercero->Fecha_Ipuc ?? 'sin fecha'}}</h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-12">
+        <div class="card stretch stretch-full">
+            <div class="card-header">
+                <h5 class="card-title">Cálculo Liquidación</h5>
+            </div>
+            <div class="card-body custom-card-action p-3">
                 <div class="table-responsive">
                     <table class="table table-hover mb-0">
                         <thead>
@@ -140,18 +144,51 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td>
-                                    <a href="javascript:void(0);">Liquidacion 2025</a>
-                                </td>
-                                <td>$250.00 USD</td>
-                                <td>$250.00 USD</td>
-                                <td>
-                                    <span class="badge bg-gray-200 text-dark">$250.00 USD</span>
-                                </td>
-                            </tr>
+                            @php
+                                $totalAcomulado = 0;
+                            @endphp
+                            @foreach ($arrayliquidacion as $a => $valor)
+                                <tr>
+                                    <td>
+                                        <a href="#">Liquidación {{$a}}</a>
+                                    </td>
+                                    <td>
+                                        @if (is_array($valor))
+                                            ${{number_format($valor[0])}}
+                                        @else
+                                            ${{number_format($valor)}}
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if (is_array($valor))
+                                            ${{number_format($valor[1])}}
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if (is_array($valor))
+                                            <span class="badge bg-gray-200 text-dark">
+                                                @php 
+                                                    $total = $valor[0] + $valor[1];
+                                                @endphp
+                                                    ${{number_format($total)}}                                    
+                                                </span>
+                                        @endif
+                                        </td>
+                                    </tr>
+                                    @php
+                                        if (is_array($valor)) {
+                                            $totalAcomulado += $valor[0] + $valor[1];
+                                        } else {
+                                            $totalAcomulado += $valor;
+                                        }
+                                    @endphp
+                            @endforeach
                         </tbody>
                     </table>
+                </div>
+                <div class="d-flex justify-content-end gap-2 mt-3">
+                    <p class="mt-3" >Suma Total: </p>
+                    <h3 class="badge bg-soft-primary text-primary pt-3 px-3 fs-6">${{ number_format(ceil($totalAcomulado)) }}</h3>
                 </div>
             </div>
         </div>
