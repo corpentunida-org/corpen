@@ -13,15 +13,26 @@ class CongregacionController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-       $congregacion = Congregacion::with('claseCongregacion')->get();
+        // ... (toda la lógica de búsqueda se queda igual)
+        $query = Congregacion::query()->with('claseCongregacion');
+        $busqueda = trim($request->input('search'));
 
- // debería ser un objeto ClaseCongregacion
+        if (!empty($busqueda)) {
+            $query->where(function($q) use ($busqueda) {
+                $q->where('nombre', 'LIKE', "%{$busqueda}%")
+                ->orWhere('codigo', 'LIKE', "%{$busqueda}%")
+                ->orWhere('municipio', 'LIKE', "%{$busqueda}%")
+                ->orWhere('pastor', 'LIKE', "%{$busqueda}%");
+            });
+        }
 
-        return view('creditos.congregaciones.index', compact('congregacion'));
+        // CAMBIO: Simplemente elimina .withQueryString() de esta línea
+        $congregaciones = $query->paginate(5); 
+
+        return view('creditos.congregaciones.index', compact('congregaciones'));
     }
-
     /**
      * Show the form for creating a new resource.
      */
@@ -60,48 +71,52 @@ class CongregacionController extends Controller
 
     /**
      * Show the form for editing the specified resource.
-     */
-    public function edit(Congregacion $congregacione)
+     *///
+ public function edit($codigo)
     {
-        return view('creditos.congregaciones.edit', ['congregacion' => $congregacione]);
+        // 1. Buscamos la congregación que se va a editar.
+        $congregacion = Congregacion::findOrFail($codigo);
+        
+        // 2. [NUEVO] Obtenemos TODAS las clases de congregación para llenar el menú desplegable.
+        $clases = ClaseCongregacion::all();
+        
+        // 3. [MODIFICADO] Pasamos AMBOS datos a la vista: la congregación y la lista de clases.
+        return view('creditos.congregaciones.edit', compact('congregacion', 'clases'));
     }
 
     /**
-     * Update the specified resource in storage.
+     * Actualiza la congregación en la base de datos.
      */
-    public function update(Request $request, Congregacion $congregacione)
+    public function update(Request $request, $codigo)
     {
-        $request->validate([
-            'codigo' => [
-                'required',
-                'string',
-                'max:255',
-                Rule::unique('Congregaciones', 'codigo')->ignore($congregacione->id),
-            ],
-            'nombre' => 'required|string|max:255',
-            'estado' => 'required|in:1,0',
-            'clase' => 'nullable|integer',
-            'municipio' => 'nullable|string|max:255',
-            'direccion' => 'nullable|string|max:255',
-            'telefono' => 'nullable|string|max:45',
-            'celular' => 'nullable|string|max:45',
-            'distrito' => 'nullable|string|max:10',
-            'apertura' => 'nullable|string|max:45',
-            'cierre' => 'nullable|string|max:45',
-            'observacion' => 'nullable|string|max:255',
-            'pastor' => 'nullable|integer',
+        $congregacion = Congregacion::findOrFail($codigo);
+
+        $validatedData = $request->validate([
+            'nombre'      => 'required|string|max:255',
+            'pastor'      => 'required|string|max:100',
+            'clase'       => 'required|string',
+            'estado'      => 'required|string|in:A,I', // 'in:A,I' es una mejor validación
+            'municipio'   => 'required|string',
+            // ...el resto de tus validaciones
+            'observacion' => 'nullable|string',
         ]);
 
-        $congregacione->update($request->all());
+        /**
+         * ¡AQUÍ ESTÁ LA MAGIA!
+         * Traducimos el valor de 'estado' antes de guardarlo.
+         */
+        $validatedData['estado'] = ($validatedData['estado'] == 'A') ? 1 : 0;
+
+        $congregacion->update($validatedData);
 
         return redirect()->route('creditos.congregaciones.index')
-                         ->with('success', '¡Congregación actualizada exitosamente!');
+                        ->with('success', '¡AHORA SÍ! ¡Congregación actualizada exitosamente!');
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(string $codigo)
     {
         //
     }

@@ -23,7 +23,7 @@ use HasFactory;
     //relacionar el nombre con la misma tabla para que no hayan confuciones 
     public function congregaciones()
 {
-    return $this->hasMany(Congregacion::class, 'clase', 'id');
+    return $this->hasMany(Congregacion::class, 'id', 'clase');
 }
 
 }
