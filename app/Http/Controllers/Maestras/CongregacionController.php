@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Controllers\Creditos;
+namespace App\Http\Controllers\Maestras;
 
 use App\Http\Controllers\Controller;
-use App\Models\Creditos\claseCongregacion;
-use App\Models\Creditos\Congregacion;
+use App\Models\Maestras\claseCongregacion;
+use App\Models\Maestras\Congregacion;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -28,10 +28,14 @@ class CongregacionController extends Controller
             });
         }
 
+<<<<<<< HEAD:app/Http/Controllers/Creditos/CongregacionController.php
         // CAMBIO: Simplemente elimina .withQueryString() de esta línea
         $congregaciones = $query->paginate(5); 
 
         return view('creditos.congregaciones.index', compact('congregaciones'));
+=======
+        return view('maestras.congregaciones.index', compact('congregacion'));
+>>>>>>> main:app/Http/Controllers/Maestras/CongregacionController.php
     }
     /**
      * Show the form for creating a new resource.
@@ -39,7 +43,7 @@ class CongregacionController extends Controller
     public function create()
     {
         $claselist = claseCongregacion::all();
-        return view('creditos.congregaciones.create',compact('claselist'));
+        return view('maestras.congregaciones.create',compact('claselist'));
     }
 
     /**
@@ -65,12 +69,13 @@ class CongregacionController extends Controller
 
         Congregacion::create($request->all());
 
-        return redirect()->route('creditos.congregaciones.index')
+        return redirect()->route('maestras.congregacion.index')
                          ->with('success', '¡Congregación creada exitosamente!');
     }
 
     /**
      * Show the form for editing the specified resource.
+<<<<<<< HEAD:app/Http/Controllers/Creditos/CongregacionController.php
      *///
  public function edit($codigo)
     {
@@ -82,6 +87,13 @@ class CongregacionController extends Controller
         
         // 3. [MODIFICADO] Pasamos AMBOS datos a la vista: la congregación y la lista de clases.
         return view('creditos.congregaciones.edit', compact('congregacion', 'clases'));
+=======
+     */
+    public function edit($congregacionid)
+    {
+        $congregacion = Congregacion::where('codigo', $congregacionid)->first();
+        return view('maestras.congregaciones.edit', compact('congregacion'));
+>>>>>>> main:app/Http/Controllers/Maestras/CongregacionController.php
     }
 
     /**
@@ -109,8 +121,13 @@ class CongregacionController extends Controller
 
         $congregacion->update($validatedData);
 
+<<<<<<< HEAD:app/Http/Controllers/Creditos/CongregacionController.php
         return redirect()->route('creditos.congregaciones.index')
                         ->with('success', '¡AHORA SÍ! ¡Congregación actualizada exitosamente!');
+=======
+        return redirect()->route('maestras.congregacion.index')
+                         ->with('success', '¡Congregación actualizada exitosamente!');
+>>>>>>> main:app/Http/Controllers/Maestras/CongregacionController.php
     }
 
     /**

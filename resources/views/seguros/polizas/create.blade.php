@@ -241,6 +241,11 @@
                 base = selectValorDeTexto(texto);
                 $('#valorpagaraseguradora').val(base);
             });}
+            $('#inputextraprima').on('blur', function () {
+                valorBase = parseFloat($('#valorpagaraseguradora').val());
+                valormasextra = valorBase * (1 + (parseFloat($(this).val()) / 100))
+                $('#valorpagaraseguradora').val(Math.floor(valormasextra));
+            });
 
             /*
             function calculoextraprima() {

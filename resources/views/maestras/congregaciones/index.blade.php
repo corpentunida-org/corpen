@@ -10,7 +10,12 @@
         <div class="card-body">
             <div class="mb-4 px-4 d-flex align-items-center justify-content-between">
                 <h5 class="fw-bold mb-0">Congregaciones</h5>
+<<<<<<< HEAD:resources/views/creditos/congregaciones/index.blade.php
                 <a href="{{ route('creditos.congregaciones.create') }}" class="btn btn-success">
+=======
+                {{-- Botón para ir al formulario de creación --}}
+                <a href="{{ route('maestras.congregacion.create') }}" class="btn btn-success">
+>>>>>>> main:resources/views/maestras/congregaciones/index.blade.php
                     <i class="feather-plus me-2"></i>
                     <span>Crear Nueva</span>
                 </a>
@@ -63,16 +68,25 @@
                                         </a>
                                         <ul class="dropdown-menu">
                                             <li>
+<<<<<<< HEAD:resources/views/creditos/congregaciones/index.blade.php
                                                 <a class="dropdown-item"
                                                     href="{{ route('creditos.congregaciones.edit', $congregacion->codigo) }}">
+=======
+                                                <a class="dropdown-item" href="{{ route('maestras.congregacion.edit', $congregacion->codigo) }}">
+>>>>>>> main:resources/views/maestras/congregaciones/index.blade.php
                                                     <i class="feather feather-edit-3 me-3"></i>
                                                     <span>Editar</span>
                                                 </a>
                                             </li>
+<<<<<<< HEAD:resources/views/creditos/congregaciones/index.blade.php
                                             <li>
                                                 <form
                                                     action="{{ route('creditos.congregaciones.destroy', $congregacion->codigo) }}"
                                                     method="POST">
+=======
+                                            <li>                                        
+                                                <form action="{{ route('maestras.congregacion.destroy', $congregacion->codigo) }}" method="POST">
+>>>>>>> main:resources/views/maestras/congregaciones/index.blade.php
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="dropdown-item btnEliminar">

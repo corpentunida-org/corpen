@@ -161,9 +161,9 @@
                         <div class="col-lg-3"></div>
                         <div class="col-lg-4 nav-link mt-1" id="checkconfirmarvalorasegurado">
                             <div class="custom-control custom-checkbox" style="padding-left: 30px;">
-                                <input type="checkbox" class="custom-control-input" id="checkbox3"
+                                <input type="checkbox" class="custom-control-input"
                                         name="cambiovalasegurado" checked>
-                                <label class="custom-control-label c-pointer" for="checkbox3">Modificar el valor asegurado</label>
+                                <label class="custom-control-label c-pointer">Modificar el valor asegurado</label>
                             </div>
                         </div>
                     </div>
@@ -173,9 +173,9 @@
                             <input type="date" class="form-control" name="fechadesembolso">
                             <div class="nav-link mt-1" id="checkconfirmarfinrec">
                                 <div class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input" id="checkbox3"
-                                        name="finreclamacion" checked>
-                                    <label class="custom-control-label c-pointer" for="checkbox3">Marcar como fin de
+                                    <input type="checkbox" class="custom-control-input"
+                                        name="finreclamacion">
+                                    <label class="custom-control-label c-pointer">Marcar como fin de
                                         la reclamación</label>
                                 </div>
                             </div>
@@ -273,10 +273,12 @@
                     $('#divFechaDesembolso').show();
                     $('#checkconfirmarvalorasegurado').show();                    
                     $('#divFechaDesembolso input[name="fechadesembolso"]').attr('required', true);
+                    $('input[name="finreclamacion"]').prop('checked', true);
                 } else {
                     $('#divFechaDesembolso').hide();
                     $('#checkconfirmarvalorasegurado').hide();  
                     $('#divFechaDesembolso input[name="fechadesembolso"]').removeAttr('required');
+                    $('input[name="finreclamacion"]').prop('checked', false);
                 }
             }
             toggleDiv();

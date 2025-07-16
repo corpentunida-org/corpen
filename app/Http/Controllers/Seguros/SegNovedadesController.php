@@ -60,7 +60,7 @@ class SegNovedadesController extends Controller
     public function store(Request $request)
     {
         $poliza = SegPoliza::findOrFail($request->id_poliza);
-        $plan = SegPlan::findOrFail($request->planid);        
+        $plan = SegPlan::findOrFail($request->planid);
         $asegurado = SegAsegurado::where('cedula', $request->asegurado)->first();
         $now = Carbon::now();
         $data = [
@@ -73,10 +73,10 @@ class SegNovedadesController extends Controller
             'valorpagaraseguradora' => $request->valorpagaraseguradora,
         ];
         $valorprima = $plan->prima;
-        if (blank($request->extra_prima)){
+        if (blank($request->extra_prima)) {
             $data['valor_prima'] = $valorprima;
-        }else{
-            $valorprima = $plan->prima * (1 + $request->extra_prima / 100);            
+        } else {
+            $valorprima = $plan->prima * (1 + $request->extra_prima / 100);
             $data['valor_prima'] = intval($valorprima);
         }
         $poliza->update($data);
@@ -105,7 +105,9 @@ class SegNovedadesController extends Controller
             ]);
             $accion = "novedad en poliza  " . $request->id_poliza . " Asegurado " . $request->asegurado;
             $this->auditoria($accion);
-            return redirect()->route('seguros.poliza.index')->with('success', 'Novedad registrada correctamente');
+            $url = route('seguros.poliza.show', ['poliza' => 'ID']) . '?id=' . $request->asegurado;
+            return redirect()->to($url)
+                ->with('success', 'Novedad registrada correctamente');
         }
         return redirect()->back()->with('error', 'No se pudo registrar la novedad.');
     }

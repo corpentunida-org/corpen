@@ -29,9 +29,10 @@ use App\Http\Controllers\Seguros\SegBeneficiosController;
 use App\Http\Controllers\Cinco\TercerosController;
 use App\Http\Controllers\Cinco\MoviContCincoController;
 use App\Http\Controllers\Cinco\RetirosListadoController;
-use App\Http\Controllers\Creditos\CongregacionController;
+
 use App\Http\Controllers\ResReservaController;
-use App\Models\Creditos\Congregacion;
+
+use App\Http\Controllers\Maestras\CongregacionController;
 
 /* Route::middleware(['auth'])->group(function () {
     Route::get('/', function () {
@@ -131,8 +132,5 @@ Route::post('reservaI/confirmar', [ResReservaController::class, 'confirmar'])->n
 
 Route::get('reservaI/historico', [ResReservaController::class, 'indexHistorico'])->name('reserva.inmueble.historico');
 
-//CREDITOS
-Route::prefix('creditos')->name('creditos.')->group(function () {
-    // Esta línea crea la ruta GET /creditos/congregaciones que apunta al método index() del controlador
-    Route::resource('congregaciones', CongregacionController::class);
-});
+//MAESTRAS
+Route::resource('maestras', CongregacionController::class)->names('maestras.congregacion')->middleware(['auth']);

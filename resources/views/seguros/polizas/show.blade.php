@@ -69,7 +69,7 @@
                         <a href="javascript:void(0);"
                             class="badge bg-primary text-white ms-2">{{ $poliza->plan->name }}</a>
                     </div>
-                    <div class="fs-12 text-muted">{{ $poliza->plan->condicion->descripcion }}</div>
+                    <div class="fs-12 text-muted">{{ $poliza->plan->condicion->descripcion ?? '' }}</div>
                 </div>
                 <div class="my-3 my-xxl-0 my-md-3 my-md-0">
                     <div class="fs-20 text-dark"><span class="fw-bold">$
@@ -205,7 +205,7 @@
                                             </tr>
                                             @foreach ($registrosnov as $i)
                                                 <tr>
-                                                    <td>{{ $i->created_at }}</td>
+                                                    <td>{{ $i->updated_at }}</td>
                                                     @php
                                                         $colorspan = 'primary';
                                                         $modelo = class_basename($i);
@@ -253,21 +253,21 @@
                             <div class="text-bold">Subsidio</div>
                             <div class="btn bg-soft-warning collapsed" data-bs-toggle="collapse"
                                 data-bs-target="#collapseOne" aria-expanded="false" style="font-size:20px;">$
-                                @if (!$poliza->asegurado->valorpAseguradora)
+                                @if (!$poliza->asegurado->valorpAseguradora || $totalPrima==0)
                                     0
                                     @php
                                         $subsidio = 0;
                                         $s = 0;
                                     @endphp
-                                @else
-                                    @php
-                                        $sub = 0;
-                                        foreach ($beneficios as $beneficio) {
-                                            $sub += $beneficio->valorDescuento;
-                                        }
-                                        $s = $totalPrima - $sub - $poliza->valorpagaraseguradora;
-                                        $subsidio = $sub + $s;
-                                    @endphp
+                                @else                                    
+                                        @php
+                                            $sub = 0;
+                                            foreach ($beneficios as $beneficio) {
+                                                $sub += $beneficio->valorDescuento;
+                                            }
+                                            $s = $totalPrima - $sub - $poliza->valorpagaraseguradora;
+                                            $subsidio = $sub + $s;
+                                        @endphp                                    
                                     {{ number_format($subsidio) }}
                                 @endif
                             </div>

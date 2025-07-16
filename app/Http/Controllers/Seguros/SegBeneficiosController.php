@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers\Seguros;
 
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Models\Seguros\SegAsegurado;
 use App\Models\Seguros\SegBeneficios;
 use App\Models\Seguros\SegPoliza;
 use App\Models\Seguros\SegPlan;
-use Illuminate\Http\Request;
 use App\Http\Controllers\AuditoriaController;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
+
 
 class SegBeneficiosController extends Controller
 {
@@ -32,36 +33,38 @@ class SegBeneficiosController extends Controller
 
     public function listFilter(Request $request)
     {
-        $fechaMax = Carbon::today()->copy()->subYears($request->edad_minima);
-        $fechaMin = Carbon::today()
-            ->copy()
-            ->subYears($request->edad_maxima + 1)
-            ->addDay();
+        $query = SegPoliza::with(['asegurado', 'tercero', 'plan']);
+        $fechaMax = Carbon::now()->subYears($request->edad_minima)->endOfDay(); // el más joven
+        $fechaMin = Carbon::now()->subYears($request->edad_maxima)->startOfDay(); // el más viejo
 
-        $query = SegPoliza::where('active', true)->whereHas('tercero', function ($q) use ($fechaMin, $fechaMax) {
+        $query->whereHas('tercero', function ($q) use ($fechaMin, $fechaMax) {
             $q->whereBetween('fechaNacimiento', [$fechaMin, $fechaMax]);
         });
 
-        if ($request->tipo !== 'TODOS') {
-            if ($request->tipo === 'VIUDA') {
-                $query->whereHas('asegurado', function ($q) use ($request) {
-                    $q->where('viuda', true);
-                });
-            } else {
-                $query->whereHas('asegurado', function ($q) use ($request) {
-                    $q->where('parentesco', $request->tipo);
-                });
-            }
+        $tipoAsegurado = $request->tipo;
+        if ($tipoAsegurado === 'VIUDA') {
+            $query->whereHas('asegurado', function ($q) {
+                $q->where('viuda', true);
+            });            
+        } else {
+            $query->whereHas('asegurado', function ($q) use ($tipoAsegurado) {
+                $q->where('parentesco', $tipoAsegurado);
+            });
         }
 
-        $query->whereHas('plan', function ($q) use ($request) {
-            $q->whereIn('valor', $request->planes);
-        });
-        $listadata = $query->with(['plan', 'tercero', 'asegurado'])->get();
+        if (!empty($planesSeleccionados)) {
+            $query->whereIn('seg_plan_id', $planesSeleccionados);
+        }
+        $listadata = $query->get();
 
-        $planes = SegPlan::where('vigente', true)->where('condicion_id', 2)->get();
+        $planes = SegPlan::where('vigente', true)
+            ->where('condicion_id', 2)
+            ->get();
+        
         return view('seguros.beneficios.index', compact('listadata', 'planes'));
     }
+
+
 
     /**
      * Show the form for creating a new resource.
