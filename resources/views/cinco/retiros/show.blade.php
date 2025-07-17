@@ -43,37 +43,6 @@
         </div>
     </div>
 
-    <div class="content-area ps ps--active-y" style="height: 100px;">
-        <div class="content-area-header bg-white sticky-top">
-            <div class="page-header-right ms-auto">
-                <div class="hstack gap-2">
-                    <p class="fs-12 text-muted pt-3">Buscar por nombre: </p>
-                    <div class="hstack">
-                        <a href="javascript:void(0)" class="search-form-open-toggle">
-                            <div class="avatar-text avatar-md" data-bs-toggle="tooltip" data-bs-trigger="hover" title=""
-                                data-bs-original-title="Search">
-                                <i class="feather-search"></i>
-                            </div>
-                        </a>
-                        <form action="{{ route('poliza.search', ['name' => 'ID']) }}" method="GET" class="search-form"
-                            style="display: none">
-                            <div class="search-form-inner">
-                                <a href="javascript:void(0)" class="search-form-close-toggle">
-                                    <div class="avatar-text avatar-md" data-bs-toggle="tooltip" data-bs-trigger="hover"
-                                        title="" data-bs-original-title="Back">
-                                        <i class="feather-arrow-left"></i>
-                                    </div>
-                                </a>
-                                <input type="search" name="id" class="py-3 px-0 border-0 w-100"
-                                    placeholder="Buscar por nombre..." autocomplete="off">
-                                <button type="submit" class="btn btn-primary">Buscar</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
     <div class="row">
         <div class="col-lg-4">
             <div class="card stretch stretch-full">
@@ -127,10 +96,10 @@
             </div>
         </div>
     </div>
-    <div class="col-lg-12">
+    <div class="col-lg-7">
         <div class="card stretch stretch-full">
             <div class="card-header">
-                <h5 class="card-title">Cálculo Liquidación</h5>
+                <h5 class="card-title">Cálculo Liquidación</h5>                
             </div>
             <div class="card-body custom-card-action p-3">
                 <div class="table-responsive">
@@ -148,47 +117,73 @@
                                 $totalAcomulado = 0;
                             @endphp
                             @foreach ($arrayliquidacion as $a => $valor)
-                                <tr>
-                                    <td>
-                                        <a href="#">Liquidación {{$a}}</a>
-                                    </td>
-                                    <td>
-                                        @if (is_array($valor))
-                                            ${{number_format($valor[0])}}
-                                        @else
-                                            ${{number_format($valor)}}
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @if (is_array($valor))
-                                            ${{number_format($valor[1])}}
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @if (is_array($valor))
-                                            <span class="badge bg-gray-200 text-dark">
-                                                @php 
-                                                    $total = $valor[0] + $valor[1];
-                                                @endphp
-                                                    ${{number_format($total)}}                                    
-                                                </span>
-                                        @endif
-                                        </td>
+                                        <tr>
+                                            <td>
+                                                <a href="#">Liquidación {{$a}}</a>
+                                            </td>
+                                            <td>
+                                                @if (is_array($valor))
+                                                    ${{number_format($valor[0])}}
+                                                @else
+                                                    ${{number_format($valor)}}
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if (is_array($valor))
+                                                    ${{number_format($valor[1])}}
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if (is_array($valor))
+                                                    <span class="badge bg-gray-200 text-dark">
+                                                        @php 
+                                                            $total = $valor[0] + $valor[1];
+                                                        @endphp
+                                                                ${{number_format($total)}}                                    
+                                                        </span>
+                                                @endif
+                                            </td>
                                     </tr>
-                                    @php
-                                        if (is_array($valor)) {
-                                            $totalAcomulado += $valor[0] + $valor[1];
-                                        } else {
-                                            $totalAcomulado += $valor;
-                                        }
-                                    @endphp
+                                @php
+                                    if (is_array($valor)) {
+                                        $totalAcomulado += $valor[0] + $valor[1];
+                                    } else {
+                                        $totalAcomulado += $valor;
+                                    }
+                                @endphp
                             @endforeach
                         </tbody>
                     </table>
                 </div>
                 <div class="d-flex justify-content-end gap-2 mt-3">
-                    <p class="mt-3" >Suma Total: </p>
+                                            <p class="mt-3" >Suma Total: </p>
                     <h3 class="badge bg-soft-primary text-primary pt-3 px-3 fs-6">${{ number_format(ceil($totalAcomulado)) }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-12">
+        <div class="card stretch stretch-full">
+            <div class="card-header">
+            <a href="{{ route('cinco.liquidacionretiro', $tercero->Cod_Ter) }}"
+                    class="btn btn-md bg-soft-teal text-teal border-soft-teal">Generar PDF</a></div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        <label class="form-label">Tipo de Retiro<span class="text-danger">*</span></label>
+                        <input type="text" class="form-control text-uppercase" name="tipoRetiro" required>
+                    </div>
+                    <div class="col-3">
+                        <label class="form-label">Fecha ultimo aporte<span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" name="FechaUltimoAporte" required>
+                    </div>
+                    <div class="col-3">
+                        <a href="javascript:void(0)" class="d-flex me-1" data-alert-target="invoicSendMessage" data-modal-message="Confirmar los datos exactos para realizar la liquidacion">
+                                        <div class="avatar-text avatar-md" data-bs-toggle="tooltip" data-bs-trigger="hover" title="Send Invoice">
+                                            <i class="feather feather-send"></i>
+                                        </div>
+                                    </a>
+                    </div>
                 </div>
             </div>
         </div>
