@@ -16,7 +16,8 @@ class RetirosListadoController extends Controller
      */
     public function index()
     {
-        return view('cinco.retiros.index');
+        $tabla = DB::table('CIN_condicionesRetiros')->get();
+        return view('cinco.retiros.index', compact('tabla'));
     }
 
     public function namesearch(Request $request)
@@ -33,7 +34,8 @@ class RetirosListadoController extends Controller
      */
     public function create()
     {
-        //
+        $tabla = DB::table('CIN_condicionesRetiros')->get();
+        return view('cinco.retiros.create', compact('tabla'));
     }
 
     /**
@@ -86,7 +88,14 @@ class RetirosListadoController extends Controller
             $difDia = 31 - $fecha->day;
             $calculo = (($difMes * $valorFijo->valor) / 12) + ((($difDia * $valorFijo->valor) / 12) / 30);
             return round($calculo);
-        } else {
+        }else if ($fecha->year < 2006) {
+            $difAnio = 2006 - $fecha->year;
+            $difMes = 12 - $fecha->month;
+            $difDia = 31 - $fecha->day;
+            $calculo = ($difAnio * $valorFijo->valor) + (($difMes * $valorFijo->valor) / 12) + ((($difDia * $valorFijo->valor) / 12) / 30);
+            return round($calculo);
+        } 
+        else {
             $calculo = $valorFijo->valor;
             return $calculo;
         }
