@@ -42,118 +42,150 @@
             <div class="tab-content">
                 <div class="tab-pane fade p-4 active show" id="infoTab" role="tabpanel">
 
-                    <form method="POST" action="{{ route('maestras.congregacion.update', $congregacion->codigo) }}"
-                        id="formUpdateCongregacion" novalidate>
-                        @csrf
-                        @method('PUT') {{-- Directiva para indicar que es una actualización --}}
+                <form method="POST" action="{{ route('maestras.congregacion.update', $congregacion->codigo) }}"
+                    id="formUpdateCongregacion" novalidate>
+                    @csrf
+                    @method('PUT')
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Código <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" name="Codigo"
-                                    value="{{ $congregacion->codigo }}" required>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Nombre del Templo <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control text-uppercase" name="Nombre_templo"
-                                    value="{{$congregacion->nombre }}" required>
-                            </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Código <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" name="codigo" value="{{ $congregacion->codigo }}" readonly>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Nombre del Templo <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control text-uppercase" name="nombre"
+                                value="{{ old('nombre', $congregacion->nombre) }}" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Pastor</label>
+                            <input type="number" class="form-control" name="pastor"
+                                value="{{ old('pastor', $congregacion->pastor) }}"> <br>
+
+                                @php
+                                    $pastorSeleccionado = $pastores->firstWhere('cod_ter', old('pastor', $congregacion->pastor));
+                                @endphp
+
+                                <input type="text" class="form-control" value="{{ $pastorSeleccionado?->nom_ter ?? 'No encontrado' }}" disabled>
+
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Clase</label>
+                            <select class="form-select" name="clase" required>
+                                @foreach($clases as $c)
+                                    <option value="{{ $c->id }}" {{ old('clase', $congregacion->clase) == $c->id ? 'selected' : '' }}>
+                                        {{ $c->nombre }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Estado <span class="text-danger">*</span></label>
+                            <select class="form-select" name="estado" required>
+                                <option value="1" {{ old('estado', $congregacion->estado) == 1 ? 'selected' : '' }}>Activo</option>
+                                <option value="0" {{ old('estado', $congregacion->estado) == 0 ? 'selected' : '' }}>Inactivo</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Municipio</label>
+                            <select class="form-select" name="municipio" required>
+                                <option value="" disabled {{ old('municipio', $congregacion->municipio) ? '' : 'selected' }}>Seleccione un municipio</option>
+                                @foreach($municipios as $m)
+                                    <option value="{{ $m->id }}" {{ old('municipio', $congregacion->municipio) == $m->id ? 'selected' : '' }}>
+                                        {{ $m->nombre }}
+                                    </option>
+                                @endforeach
+                            </select>
                         </div>
 
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Pastor</label>
-                                <input type="text" class="form-control text-uppercase" name="Pastor"
-                                    value="{{ old('Pastor', $congregacion->Pastor) }}">
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Clase</label>
-                                <input type="text" class="form-control" name="Clase"
-                                    value="{{ old('Clase', $congregacion->Clase) }}">
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Estado <span class="text-danger">*</span></label>
-                                <select class="form-select" name="Estado" required>
-                                    <option value="A" {{ old('Estado', $congregacion->Estado) == 'A' ? 'selected' : '' }}>
-                                        Activo</option>
-                                    <option value="I" {{ old('Estado', $congregacion->Estado) == 'I' ? 'selected' : '' }}>
-                                        Inactivo</option>
-                                </select>
-                            </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Dirección</label>
+                            <input type="text" class="form-control" name="direccion"
+                                value="{{ old('direccion', $congregacion->direccion) }}">
                         </div>
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Municipio</label>
-                                <input type="text" class="form-control" name="Municipio"
-                                    value="{{ old('Municipio', $congregacion->Municipio) }}">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Dirección</label>
-                                <input type="text" class="form-control" name="Direccion"
-                                    value="{{ old('Direccion', $congregacion->Direccion) }}">
-                            </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Teléfono</label>
+                            <input type="tel" class="form-control" name="telefono"
+                                value="{{ old('telefono', $congregacion->telefono) }}">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Celular</label>
+                            <input type="tel" class="form-control" name="celular"
+                                value="{{ old('celular', $congregacion->celular) }}">
                         </div>
 
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Teléfono</label>
-                                <input type="tel" class="form-control" name="Telefono"
-                                    value="{{ old('Telefono', $congregacion->Telefono) }}">
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Celular</label>
-                                <input type="tel" class="form-control" name="Celular"
-                                    value="{{ old('Celular', $congregacion->Celular) }}">
-                            </div>
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label">Distrito</label>
-                                <input type="text" class="form-control" name="Dist"
-                                    value="{{ old('Dist', $congregacion->distrito) }}">
-                            </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Distrito <span class="text-danger">*</span></label>
+                            <select class="form-select @error('distrito') is-invalid @enderror" name="distrito" required>
+                                <option value="" disabled {{ old('distrito', $congregacion->distrito) ? '' : 'selected' }}>Seleccione un distrito...</option>
+
+                                @foreach($distritos as $distrito)
+                                    <option value="{{ $distrito->COD_DIST }}" {{ old('distrito', $congregacion->distrito) == $distrito->COD_DIST ? 'selected' : '' }}>
+                                        {{ $distrito->NOM_DIST }}
+                                    </option>
+                                @endforeach
+                            </select>
+
+                            @error('distrito')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
                         </div>
 
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Fecha Apertura</label>
-                                <input type="date" class="form-control" name="Fecha_Ap"
-                                    value="{{ old('Fecha_Ap', $congregacion->Fecha_Ap) }}">
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Fecha Cierre</label>
-                                <input type="date" class="form-control" name="Fecha_Cie"
-                                    value="{{ old('Fecha_Cie', $congregacion->Fecha_Cie) }}">
-                            </div>
-                        </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Observaciones</label>
-                            <textarea class="form-control" name="Obser"
-                                rows="3">{{ old('Obser', $congregacion->Obser) }}</textarea>
-                        </div>
+                    </div>
 
-                        <div class="d-flex flex-row-reverse gap-2 mt-4">
-                            <button class="btn btn-warning" type="submit">
-                                <i class="feather-save me-2"></i>
-                                <span>Actualizar Congregación</span>
-                            </button>
-                            <a href="{{ route('maestras.congregacion.index') }}" class="btn btn-light">Cancelar</a>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Fecha Apertura</label>
+                            <input type="date" class="form-control" name="apertura"
+                                value="{{ old('apertura', $congregacion->apertura) }}" required>
                         </div>
-                    </form>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Fecha Cierre</label>
+                            <input type="date" class="form-control" name="cierre"
+                                value="{{ old('cierre', $congregacion->cierre) }}">
+                        </div>
+                    </div>
 
-                    <script>
-                        (function () {
-                            'use strict'
-                            const form = document.getElementById('formUpdateCongregacion');
-                            form.addEventListener('submit', function (event) {
-                                if (!form.checkValidity()) {
-                                    event.preventDefault();
-                                    event.stopPropagation();
-                                }
-                                form.classList.add('was-validated');
-                            }, false);
-                        })();
-                    </script>
+                    <div class="mb-3">
+                        <label class="form-label">Observaciones</label>
+                        <textarea class="form-control" name="observacion" rows="3" required>{{ old('observacion', $congregacion->observacion) }}</textarea>
+                    </div>
+
+                    <div class="d-flex flex-row-reverse gap-2 mt-4">
+                        <button class="btn btn-warning" type="submit">
+                            <i class="feather-save me-2"></i>
+                            <span>Actualizar Congregación</span>
+                        </button>
+                        <a href="{{ route('maestras.congregacion.index') }}" class="btn btn-light">Cancelar</a>
+                    </div>
+                </form>
+
+                <script>
+                    (function () {
+                        'use strict'
+                        const form = document.getElementById('formUpdateCongregacion');
+                        form.addEventListener('submit', function (event) {
+                            if (!form.checkValidity()) {
+                                event.preventDefault();
+                                event.stopPropagation();
+                            }
+                            form.classList.add('was-validated');
+                        }, false);
+                    })();
+                </script>
+
 
                 </div>
             </div>

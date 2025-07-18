@@ -132,5 +132,11 @@ Route::post('reservaI/confirmar', [ResReservaController::class, 'confirmar'])->n
 
 Route::get('reservaI/historico', [ResReservaController::class, 'indexHistorico'])->name('reserva.inmueble.historico');
 
-//MAESTRAS
-Route::resource('maestras', CongregacionController::class)->names('maestras.congregacion')->middleware(['auth']);
+//MAESTRAS CONGREGACION
+Route::resource('maestras', CongregacionController::class)
+     ->names('maestras.congregacion')
+     ->parameter('maestras', 'congregacion') 
+     ->middleware(['auth']);
+Route::get('/buscar-pastor', [App\Http\Controllers\Maestras\CongregacionController::class, 'buscarPastor'])->name('buscar.pastor');
+
+Route::get('maestras/{congregacion}', [CongregacionController::class, 'show'])->name('maestras.congregacion.show');

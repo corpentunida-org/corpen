@@ -4,12 +4,11 @@ namespace App\Models\Maestras;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-<<<<<<< HEAD:app/Models/Creditos/Congregacion.php
-// No necesitas importar el modelo ClaseCongregacion aquí si ya está en el namespace correcto.
-// use App\Models\Creditos\claseCongregacion;
-=======
 use App\Models\Maestras\claseCongregacion;
->>>>>>> main:app/Models/Maestras/Congregacion.php
+use App\Models\Maestras\maeDistritos;
+use App\Models\Maestras\maeTerceros;
+use App\Models\Maestras\maeMunicipios;
+
 
 class Congregacion extends Model
 {
@@ -32,6 +31,7 @@ class Congregacion extends Model
      * Asegúrate de que CADA campo que quieres guardar desde un formulario esté en esta lista.
      */
     protected $fillable = [
+        'codigo',
         'nombre',
         'pastor',
         'clase',
@@ -57,4 +57,21 @@ class Congregacion extends Model
     {
         return $this->belongsTo(ClaseCongregacion::class, 'clase', 'id');
     }
+
+
+    public function maeDistritos()
+    {
+        return $this->belongsTo(maeDistritos::class, 'distrito', 'COD_DIST');
+    }
+
+    public function maeTerceros()
+    {
+        return $this->belongsTo(maeTerceros::class, 'pastor', 'cod_ter');
+    }
+
+    public function maeMunicipios()
+    {
+        return $this->belongsTo(maeMunicipios::class, 'municipio', 'id');
+    }
 }
+
