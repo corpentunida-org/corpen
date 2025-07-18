@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\Request;
+
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Pagination\Paginator;
 
@@ -24,5 +26,10 @@ class AppServiceProvider extends ServiceProvider
     {
         
         Paginator::useBootstrap();
+
+        if (Request::is('maestras/congregacion*')) {
+        Paginator::defaultView('components.maestras.congregaciones.pagination');
+    }
+        
     }
 }
