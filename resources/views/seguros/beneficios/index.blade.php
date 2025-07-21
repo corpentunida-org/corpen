@@ -93,27 +93,36 @@
                                     @method('POST')
                                     @csrf
                                     <div class="row">
-                                        <div class="col-lg-2 mb-4">
+                                        <div class="col-lg-2">
+                                            <label class="form-label">Descuento Valor</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">$</span>
+                                                <input type="number" class="form-control" name="desval" id="inputdesval" required>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-2">
                                             <label class="form-label">Descuento Porcentaje</label>
                                             <div class="input-group">
                                                 <input type="number" class="form-control" value="0" name="despor" required>
                                                 <span class="input-group-text">%</span>
                                             </div>
                                         </div>
-                                        <div class="col-lg-2 mb-4">
-                                            <label class="form-label">Descuento Valor</label>
-                                            <div class="input-group">
-                                                <span class="input-group-text">$</span>
-                                                <input type="number" class="form-control" name="desval" required>
-                                            </div>
-                                        </div>
-                                        <div class="col-lg-8 mb-4">
+                                        <div class="col-lg-8">
                                             <label class="form-label">Observación<span class="text-danger">*</span></label>
                                             <input type="text" class="form-control text-uppercase" name="observaciones" required>
                                         </div>
+                                        <div class="fs-12 fw-normal text-muted text-truncate-1-line pt-1">
+                                            <div class="custom-control custom-checkbox" style="display: none;"
+                                                id="checkvalbeneficio">
+                                                <input type="checkbox" class="form-check-input ml-3" id="checkbox2"
+                                                    name="checkconfirmarbene" value=true>
+                                                <label class="form-check-label" for="checkbox2" id="labeltextbeneficio">Confirmar
+                                                    restar el valor de descuento al valor prima</label>
+                                            </div>
+                                        </div>
                                     </div>
                                     <input type="hidden" name="grupo" value=true>
-                                    <div class="d-flex justify-content-end">
+                                    <div class="d-flex justify-content-end mt-2">
                                         <button type="submit" class="btn btn-md btn-primary">Aplicar</button>
                                     </div>
                                     <span class="fs-12 fw-normal text-muted text-truncate-1-line text-end pt-1">
@@ -138,7 +147,6 @@
                                                                 <input type="hidden" name="beneficio[{{ $loop->index }}][cedula]"
                                                                     value="{{ $i->seg_asegurado_id }}">
                                                             </a>
-
                                                         </td>
                                                         <td><span
                                                                 class="fs-12 d-block fw-normal text-wrap">{{ $i->tercero->nombre ?? '' }}</span>
@@ -148,11 +156,12 @@
                                                         </td>
                                                         <td><a>{{$i->tercero->edad}}</a></td>
                                                         <td>
-                                                            <a><span class="fs-12 fw-normal text-muted"> {{$i->plan->name}} - </span>
-                                                                ${{ number_format($i->plan->valor) }}</a>
+                                                            <a><span class="fs-12 fw-normal text-muted"> {{$i->plan->name ?? ''}} -
+                                                                </span>
+                                                                ${{ number_format($i->valor_asegurado ?? '0') }}</a>
                                                             <p class="fs-12 text-muted text-truncate-1-line tickets-sort-desc">Valor
                                                                 Prima:
-                                                                ${{number_format($i->plan->prima)}}</p>
+                                                                ${{number_format($i->primapagar ?? '0')}}</p>
                                                         </td>
                                                         <input type="hidden" name="beneficio[{{ $loop->index }}][poliza]"
                                                             value="{{ $i->id }}">
@@ -168,6 +177,84 @@
                 </div>
             </div>
         @endif
+        @if(isset($beneficios))
+            <div class="col-lg-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title">Historial Beneficios Registrados</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="customerList">
+                                <thead>
+                                    <tr>
+                                        <th>Asegurado</th>
+                                        <th>Valor Descuento</th>                                        
+                                        <th>Valor Actual a Pagar</th>                                        
+                                        <th>Observación</th>
+                                        <th>Fecha Registro</th>
+                                        <th class="text-end">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($beneficios as $b)
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center gap-3">
+                                                    <a href="javascript:void(0);">
+                                                        <span class="d-block">{{ $b->tercero->nombre ?? ''}}</span>
+                                                        <span
+                                                            class="fs-12 d-block fw-normal text-muted text-wrap">{{ $b->cedulaAsegurado ?? ''}}</span>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                            <td>$ {{ number_format( $b->valorDescuento) }} </td>
+                                            <td>$ {{$b->polizarel->primapagar}}</td>
+                                            <td><span
+                                                    class="badge bg-soft-primary text-primary text-wrap">{{ $b->observaciones }}</span>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center gap-3">
+                                                    <a>
+                                                        <span class="fs-12 d-block fw-normal">Inicio:
+                                                            {{date('Y-m-d', strtotime($b->created_at))}}
+                                                    </a>
+                                                </div>
+                                            </td>                                            
+                                            <td>
+                                                <div class="dropdown">
+                                                    <a href="javascript:void(0)" class="avatar-text avatar-md "
+                                                        data-bs-toggle="dropdown" data-bs-offset="0,21">
+                                                        <i class="feather feather-more-vertical"></i>
+                                                    </a>
+                                                    <ul class="dropdown-menu" data-popper-placement="bottom-end"
+                                                        style="position: absolute; inset: 0px auto auto 0px; margin: 0px; transform: translate3d(-195px, 51px, 0px);">
+                                                        <li>
+                                                            <a href=""
+                                                                class="dropdown-item">
+                                                                <i class="feather feather-edit-3 me-3"></i>
+                                                                <span>Editar</span>
+                                                            </a>
+                                                        </li>
+
+                                                        <li>
+                                                            <a class="dropdown-item" href="javascript:void(0)">
+                                                                <i class="feather feather-trash-2 me-3"></i>
+                                                                <span>Eliminar</span>
+                                                            </a>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
         <script>
             $(document).ready(function () {
                 const $todos = $('#planesTODOS');
@@ -175,7 +262,6 @@
 
                 function actualizarRequerido() {
                     const algunoMarcado = $planes.is(':checked');
-
                     if (algunoMarcado) {
                         $todos.prop('required', false);
                     } else {
@@ -208,6 +294,17 @@
                         event.preventDefault();
                         event.stopPropagation();
                         $(form).addClass('was-validated');
+                    }
+                });
+                $('#inputdesval').on('input', function () {
+                    console.log("hola?")
+                    var valor = parseFloat($(this).val().trim());
+                    if (!isNaN(valor) && valor > 0) {
+                        $('#checkvalbeneficio').slideDown();
+                    } else {
+                        /*$('#labeltextbeneficio').text('Confirmar el valor a pagar de $'+valorprima);*/
+                        $('#checkvalbeneficio').slideUp();
+                        $('#checkbox2').prop('checked', false);
                     }
                 });
 
