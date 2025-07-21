@@ -199,6 +199,20 @@
             <small>Código: {{ $congregacion->maeTerceros->cod_ter ?? 'N/A' }}</small>
         </td>
     </tr>
+    <tr>
+        <th>Pastor Anterior</th>
+        <td>
+            @if($congregacion->pastorAnteriorObj)
+                <strong>{{ $congregacion->pastorAnteriorObj->nom_ter }}</strong><br>
+                <small>Código: {{ $congregacion->pastorAnteriorObj->cod_ter }}</small><br>
+                <small>Teléfono: {{ $congregacion->pastorAnteriorObj->tel1 ?? 'N/D' }}</small><br>
+                <small>Email: {{ $congregacion->pastorAnteriorObj->email ?? 'N/D' }}</small><br>
+                <small>Distrito: {{ $congregacion->pastorAnteriorObj->cod_dist ?? 'No asignado' }}</small>
+            @else
+                <span class="text-muted">No registrado</span>
+            @endif
+        </td>
+    </tr>
 </table>
 
 <div class="metadata">

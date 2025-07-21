@@ -3,8 +3,17 @@
 <x-base-layout>
     @section('titlepage', 'Editar Congregación')
 
+    {{-- 🔔 Alerta de advertencia si el pastor no existe --}}
+    @if(session('warning'))
+        <div class="alert alert-warning alert-dismissible fade show mt-3" role="alert">
+            {{ session('warning') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+    @endif
+
     {{-- Encabezado con el nombre de la congregación --}}
     <div class="col-lg-12">
+
         <div class="card stretch stretch-full">
             <div class="card-body task-header d-lg-flex align-items-center justify-content-between">
                 <div class="mb-4 mb-lg-0">
@@ -23,7 +32,7 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </div> 
     </div>
 
     {{-- Formulario dentro de una tarjeta con pestañas --}}
@@ -60,18 +69,28 @@
                     </div>
 
                     <div class="row">
+
                         <div class="col-md-4 mb-3">
-                            <label class="form-label">Pastor</label>
-                            <input type="number" class="form-control" name="pastor"
-                                value="{{ old('pastor', $congregacion->pastor) }}"> <br>
 
-                                @php
-                                    $pastorSeleccionado = $pastores->firstWhere('cod_ter', old('pastor', $congregacion->pastor));
-                                @endphp
+                            <label class="form-label"> CC Pastor Actual</label>
+                            
+                            <input type="number" class="form-control" name="pastor" id="cedulaPastor"
+                                value="{{ old('pastor', $congregacion->pastor) }}" required> <br>
 
-                                <input type="text" class="form-control" value="{{ $pastorSeleccionado?->nom_ter ?? 'No encontrado' }}" disabled>
+                            <input type="text" class="form-control" id="nombrePastor"
+                                value="{{ $pastorSeleccionado?->nom_ter ?? 'No encontrado' }}" disabled>
 
                         </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">CC Pastor Anterior</label>
+
+                            <input type="number" class="form-control" name="pastorAnterior" id="cedulaPastorAnterior"
+                                value="{{ old('pastorAnterior', $congregacion->pastorAnterior) }}"> <br>
+
+                            <input type="text" class="form-control" id="nombrePastorAnterior"
+                                value="{{ $pastorAnteriorSeleccionado?->nom_ter ?? 'No encontrado' }}" disabled>
+                        </div>
+
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Clase</label>
                             <select class="form-select" name="clase" required>
@@ -185,6 +204,50 @@
                         }, false);
                     })();
                 </script>
+
+                {{-- Buscar Nombre del Pastor --}}
+                <script>
+                    function buscarPastorPorCampo(cedulaInputId, nombreInputId) {
+                        const cedulaInput = document.getElementById(cedulaInputId);
+                        const nombreInput = document.getElementById(nombreInputId);
+
+                        function buscar(cedula) {
+                            if (cedula.length >= 5) {
+                                nombreInput.value = 'Buscando...';
+                                fetch(`/buscar-pastor?cedula=${cedula}`)
+                                    .then(res => {
+                                        if (!res.ok) throw new Error();
+                                        return res.json();
+                                    })
+                                    .then(data => {
+                                        nombreInput.value = data.nombre;
+                                    })
+                                    .catch(() => {
+                                        nombreInput.value = '❌ No encontrado';
+                                    });
+                            } else {
+                                nombreInput.value = '';
+                            }
+                        }
+
+                        cedulaInput.addEventListener('input', () => buscar(cedulaInput.value));
+                        cedulaInput.addEventListener('paste', () => {
+                            setTimeout(() => buscar(cedulaInput.value), 10);
+                        });
+
+                        // Ejecutar al cargar si hay valor
+                        document.addEventListener('DOMContentLoaded', () => {
+                            if (cedulaInput.value.length >= 5) {
+                                buscar(cedulaInput.value);
+                            }
+                        });
+                    }
+
+                    // Activar búsqueda en ambos campos
+                    buscarPastorPorCampo('cedulaPastor', 'nombrePastor');
+                    buscarPastorPorCampo('cedulaPastorAnterior', 'nombrePastorAnterior');
+                </script>
+
 
 
                 </div>

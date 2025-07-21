@@ -31,11 +31,10 @@
                     </div>
                 </form>
             </div>
-
             {{-- FIN DEL FORMULARIO DE BÚSQUEDA --}}
 
             <div class="table-responsive">
-                <table class="table table-hover mb-0">
+                <table class="table table-hover mb-0 align-middle small" style="font-size: 0.875rem;">
                     <thead>
                         <tr class="border-top">
                             <th>Código</th>
@@ -45,28 +44,32 @@
                             <th>Distrito</th>
                             <th>Municipio</th>
                             <th>CC Pastor</th>
-                            <th>Nombre Pastor</th>
+                            {{-- <th>Nombre Pastor</th> --}}
                             <th class="text-end">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach ($congregaciones as $congregacion)
-                            <tr>
-                                <td><a href="javascript:void(0);">{{ $congregacion->codigo }}</a></td>
-                                <td>{{ $congregacion->nombre }}</td>
-                                <td>
+                            <tr class="py-1">
+                                <td class="py-1 px-2"><a href="javascript:void(0);">{{ $congregacion->codigo }}</a></td>
+                                <td class="py-1 px-2">{{ $congregacion->nombre }}</td>
+                                <td class="py-1 px-2">
                                     @if ($congregacion->estado)
                                         <span class="badge bg-soft-success text-success">Activo</span>
                                     @else
                                         <span class="badge bg-soft-danger text-danger">Inactivo</span>
                                     @endif
                                 </td>
-                                <td>{{ $congregacion->claseCongregacion->nombre ?? '' }}</td>
-                                <td>{{ $congregacion->maeDistritos->NOM_DIST ?? '' }}</td>
-                                <td>{{ $congregacion->maeMunicipios->nombre ?? '' }}</td>
-                                <td>{{ $congregacion->pastor }}</td>
-                                <td>{{ $congregacion->maeTerceros->nom_ter ?? '' }}</td>
-                                <td class="hstack justify-content-end gap-4 text-end">
+                                <td class="py-1 px-2">{{ $congregacion->claseCongregacion->nombre ?? '' }}</td>
+                                <td class="py-1 px-2">{{ $congregacion->maeDistritos->NOM_DIST ?? '' }}</td>
+                                <td class="py-1 px-2">{{ $congregacion->maeMunicipios->nombre ?? '' }}</td>
+                                <td class="py-1 px-2" title="{{ $congregacion->maeTerceros->nom_ter ?? 'Nombre no disponible' }}">
+                                    {{ $congregacion->pastor }}
+                                </td>
+                                
+                                {{-- <td class="py-1 px-2">{{ $congregacion->maeTerceros->nom_ter ?? '' }}</td> --}}
+                                
+                                <td class="hstack justify-content-end gap-4 text-end py-1 px-2">
                                     <div class="dropdown open">
                                         <a href="javascript:void(0)" class="avatar-text avatar-md"
                                            data-bs-toggle="dropdown" data-bs-offset="0,21">
@@ -104,12 +107,9 @@
                 </table>
             </div>
 
-<div class="d-flex justify-content-center mt-4">
-    {{ $congregaciones->appends(request()->except('page'))->links('components.maestras.congregaciones.pagination') }}
-</div>
-
-
-
+            <div class="d-flex justify-content-center mt-4">
+                {{ $congregaciones->appends(request()->except('page'))->links('components.maestras.congregaciones.pagination') }}
+            </div>
         </div>
     </div>
 
@@ -120,7 +120,6 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Alerta para botón "Crear Nueva"
             document.querySelectorAll('.btnCrear').forEach(function (btn) {
                 btn.addEventListener('click', function (e) {
                     e.preventDefault();
@@ -149,7 +148,6 @@
                 });
             });
 
-            // Alerta para botón "Ver"
             document.querySelectorAll('.btnVer').forEach(function (btn) {
                 btn.addEventListener('click', function (e) {
                     e.preventDefault();
@@ -178,7 +176,6 @@
                 });
             });
 
-            // Alerta para botón "Editar"
             document.querySelectorAll('.btnEditar').forEach(function (btn) {
                 btn.addEventListener('click', function (e) {
                     e.preventDefault();
@@ -207,7 +204,6 @@
                 });
             });
 
-            // Alerta para botón "Eliminar"
             document.querySelectorAll('.formEliminar').forEach(function (form) {
                 form.addEventListener('submit', function (e) {
                     e.preventDefault();
