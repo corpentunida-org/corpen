@@ -34,6 +34,7 @@ class Congregacion extends Model
         'codigo',
         'nombre',
         'pastor',
+        'pastorAnterior',
         'clase',
         'estado',
         'municipio',
@@ -67,6 +68,11 @@ class Congregacion extends Model
     public function maeTerceros()
     {
         return $this->belongsTo(maeTerceros::class, 'pastor', 'cod_ter');
+    }
+
+    public function pastorAnteriorObj()
+    {
+        return $this->belongsTo(maeTerceros::class, 'pastorAnterior', 'cod_ter');
     }
 
     public function maeMunicipios()

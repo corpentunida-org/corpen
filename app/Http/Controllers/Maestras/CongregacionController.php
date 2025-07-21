@@ -35,7 +35,7 @@ class CongregacionController extends Controller
         }
 
         // CAMBIO: Simplemente elimina .withQueryString() de esta línea
-        $congregaciones = $query->paginate(5);
+        $congregaciones = $query->paginate(10);
 
         return view('maestras.congregaciones.index', compact('congregaciones'));
     }
@@ -114,6 +114,7 @@ class CongregacionController extends Controller
         $congregacion->update([
             'nombre'      => strtoupper($request->nombre), // Se mantiene la conversión a mayúsculas
             'pastor'      => $request->pastor,
+            'pastorAnterior'      => $request->pastorAnterior,
             'estado'      => $request->estado,
             'clase'       => $request->clase,
             'municipio'   => $request->municipio,
@@ -125,10 +126,10 @@ class CongregacionController extends Controller
             'cierre'      => $request->cierre,
             'observacion' => $request->observacion,
         ]);
-
+       
         // Se redirige a la lista de congregaciones con un mensaje de éxito.
         return redirect()->route('maestras.congregacion.index')
-            ->with('success', '¡Congregación actualizada exitosamente!');
+            ->with('success', '¡Congregación actualizada exitosamente, y distrito del pastor sincronizado!');
     }
 
     /**
@@ -167,43 +168,42 @@ class CongregacionController extends Controller
         }
     }
 
-public function show($codigo)
-{
-    $congregacion = Congregacion::with([
-        'claseCongregacion',
-        'maeDistritos',
-        'maeMunicipios',
-        'maeTerceros'
-    ])->where('codigo', $codigo)->firstOrFail();
 
-    // Si el request trae ?pdf=1, generar el PDF con la MISMA vista show
-    if (request()->has('pdf')) {
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('maestras.congregaciones.show', compact('congregacion'))
-                    ->setPaper('a4', 'portrait');
+
+    public function show($codigo)
+    {
+        $congregacion = Congregacion::with([
+            'claseCongregacion',
+            'maeDistritos',
+            'maeMunicipios',
+            'maeTerceros'
+        ])->where('codigo', $codigo)->firstOrFail();
+
+        // Si el request trae ?pdf=1, generar el PDF con la MISMA vista show
+        if (request()->has('pdf')) {
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('maestras.congregaciones.show', compact('congregacion'))
+                        ->setPaper('a4', 'portrait');
+
+            return $pdf->download('Informe_Congregacion_' . $congregacion->codigo . '.pdf');
+        }
+
+        // Si no es PDF, muestra la vista normalmente
+        return view('maestras.congregaciones.show', compact('congregacion'));
+    }
+    public function generarPdf($codigo)
+    {
+        $congregacion = Congregacion::with([
+            'claseCongregacion',
+            'maeDistritos',
+            'maeMunicipios',
+            'maeTerceros'
+        ])->where('codigo', $codigo)->firstOrFail();
+
+        $pdf = Pdf::loadView('maestras.congregacion.pdf', compact('congregacion'))
+                ->setPaper('a4', 'portrait');
 
         return $pdf->download('Informe_Congregacion_' . $congregacion->codigo . '.pdf');
     }
-
-    // Si no es PDF, muestra la vista normalmente
-    return view('maestras.congregaciones.show', compact('congregacion'));
-}
-
-
-
-public function generarPdf($codigo)
-{
-    $congregacion = Congregacion::with([
-        'claseCongregacion',
-        'maeDistritos',
-        'maeMunicipios',
-        'maeTerceros'
-    ])->where('codigo', $codigo)->firstOrFail();
-
-    $pdf = Pdf::loadView('maestras.congregacion.pdf', compact('congregacion'))
-              ->setPaper('a4', 'portrait');
-
-    return $pdf->download('Informe_Congregacion_' . $congregacion->codigo . '.pdf');
-}
 
 
 
