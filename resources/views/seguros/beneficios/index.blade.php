@@ -189,8 +189,8 @@
                                 <thead>
                                     <tr>
                                         <th>Asegurado</th>
-                                        <th>Valor Descuento</th>                                        
-                                        <th>Valor Actual a Pagar</th>                                        
+                                        <th>Valor Descuento</th>
+                                        <th>Valor Actual a Pagar</th>
                                         <th>Observación</th>
                                         <th>Fecha Registro</th>
                                         <th class="text-end">Acción</th>
@@ -208,7 +208,7 @@
                                                     </a>
                                                 </div>
                                             </td>
-                                            <td>$ {{ number_format( $b->valorDescuento) }} </td>
+                                            <td>$ {{ number_format($b->valorDescuento) }} </td>
                                             <td>$ {{$b->polizarel->primapagar}}</td>
                                             <td><span
                                                     class="badge bg-soft-primary text-primary text-wrap">{{ $b->observaciones }}</span>
@@ -220,7 +220,7 @@
                                                             {{date('Y-m-d', strtotime($b->created_at))}}
                                                     </a>
                                                 </div>
-                                            </td>                                            
+                                            </td>
                                             <td>
                                                 <div class="dropdown">
                                                     <a href="javascript:void(0)" class="avatar-text avatar-md "
@@ -230,18 +230,34 @@
                                                     <ul class="dropdown-menu" data-popper-placement="bottom-end"
                                                         style="position: absolute; inset: 0px auto auto 0px; margin: 0px; transform: translate3d(-195px, 51px, 0px);">
                                                         <li>
-                                                            <a href=""
-                                                                class="dropdown-item">
+                                                            <a href="" class="dropdown-item">
                                                                 <i class="feather feather-edit-3 me-3"></i>
                                                                 <span>Editar</span>
                                                             </a>
                                                         </li>
-
                                                         <li>
-                                                            <a class="dropdown-item" href="javascript:void(0)">
-                                                                <i class="feather feather-trash-2 me-3"></i>
-                                                                <span>Eliminar</span>
-                                                            </a>
+                                                            <form action="{{ route('seguros.beneficios.destroy', $b->id) }}"
+                                                                method="POST">
+                                                                @csrf
+                                                                @method('DELETE')
+                                                                <input type="hidden" name="opcdestroy" value="individual" id="InputDestroy">
+                                                                <button type="submit" class="dropdown-item btnAbrirModalDestroy">
+                                                                    <i class="bi bi-person-x-fill"></i>                                                                    
+                                                                    <span>Eliminar Individual</span>
+                                                                </button>
+                                                            </form>
+                                                        </li>
+                                                        <li>
+                                                            <form action="{{ route('seguros.beneficios.destroy', $b->id) }}"
+                                                                method="POST">
+                                                                @csrf
+                                                                @method('DELETE')
+                                                                <input type="hidden" name="opcdestroy" value="grupo" id="InputDestroy">
+                                                                <button type="submit" class="dropdown-item btnAbrirModalDestroy">
+                                                                    <i class="feather feather-trash-2 me-3"></i>
+                                                                    <span>Eliminar Grupo</span>
+                                                                </button>
+                                                            </form>
                                                         </li>
                                                     </ul>
                                                 </div>
@@ -302,12 +318,36 @@
                     if (!isNaN(valor) && valor > 0) {
                         $('#checkvalbeneficio').slideDown();
                     } else {
-                        /*$('#labeltextbeneficio').text('Confirmar el valor a pagar de $'+valorprima);*/
                         $('#checkvalbeneficio').slideUp();
                         $('#checkbox2').prop('checked', false);
                     }
                 });
-
+                document.querySelectorAll('.btnAbrirModalDestroy').forEach(function (btn) {
+                    btn.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        const formulario = btn.closest('form');
+                        Swal.fire({
+                            title: '¿Está seguro de eliminar el beneficio?',
+                            text: 'Una vez eliminado, no podrá deshacer este beneficio.',
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: '#dc3545',
+                            cancelButtonColor: '#6c757d',
+                            confirmButtonText: 'Eliminar',
+                            cancelButtonText: 'Cancelar',
+                            showClass: {
+                                popup: 'animate__animated animate__zoomIn'
+                            },
+                            hideClass: {
+                                popup: 'animate__animated animate__zoomOut'
+                            }
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                formulario.submit();
+                            }
+                        });
+                    });
+                });
             });
         </script>
 </x-base-layout>

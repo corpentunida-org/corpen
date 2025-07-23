@@ -315,6 +315,7 @@
 
             <script src="{{ asset('assets/js/proposal-create-init.min.js') }}"></script>
             <!--! END: Apps Init !-->
+            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
             @stack('scripts')
         @endif
     @endauth
