@@ -12,6 +12,14 @@ class SegBeneficios extends Model
     protected $table = 'seg_beneficios';
 
     protected $fillable = [
-        'cedulaAsegurado', 'poliza','porcentajeDescuento', 'valorDescuento','observaciones'
+        'cedulaAsegurado', 'poliza','porcentajeDescuento', 'valorDescuento','observaciones','valorpagaranterior', 'active', 'fechaFin'
     ];
+    public function tercero()
+    {
+        return $this->belongsTo(SegTercero::class, 'cedulaAsegurado', 'cedula');
+    }
+    public function polizarel()
+    {
+        return $this->belongsTo(SegPoliza::class, 'poliza', 'id');
+    }
 }

@@ -1,7 +1,7 @@
 <x-base-layout>
     @section('titlepage', 'Beneficiarios')
+    <x-warning />        
     <div class="col-12">
-        <x-warning />        
         <div class="card stretch stretch-full">
             <div class="card-body">
                 <div class="row">
@@ -120,5 +120,4 @@
             </div>
         </div>
     </div>
-
 </x-base-layout>>

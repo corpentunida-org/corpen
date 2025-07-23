@@ -299,6 +299,7 @@
 
             <!--! BEGIN: Apps Init  !-->
             <script src="{{ asset('assets/js/common-init.min.js') }}"></script>
+            <script src="{{ asset('assets/js/invoice-view-init.min.js') }}"></script>
             <script src="{{ asset('assets/js/dashboard-init.min.js') }}"></script>
             <script src="{{ asset('assets/js/theme-customizer-init.min.js') }}"></script>
 
@@ -314,6 +315,7 @@
 
             <script src="{{ asset('assets/js/proposal-create-init.min.js') }}"></script>
             <!--! END: Apps Init !-->
+            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
             @stack('scripts')
         @endif
     @endauth

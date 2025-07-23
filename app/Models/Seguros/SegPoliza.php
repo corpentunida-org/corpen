@@ -26,6 +26,7 @@ class SegPoliza extends Model
         'descuentopor',
         'valor_asegurado',
         'valorpagaraseguradora',
+        'primapagar',
         'created_at',
         'updated_at',
     ];

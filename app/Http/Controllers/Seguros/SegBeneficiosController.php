@@ -27,15 +27,16 @@ class SegBeneficiosController extends Controller
 
     public function index()
     {
+        $beneficios = SegBeneficios::with(['tercero', 'polizarel'])->where('active', true)->get();
         $planes = SegPlan::where('vigente', true)->where('condicion_id', 2)->get();
-        return view('seguros.beneficios.index', compact('planes'));
+        return view('seguros.beneficios.index', compact('planes', 'beneficios'));
     }
 
     public function listFilter(Request $request)
     {
         $query = SegPoliza::with(['asegurado', 'tercero', 'plan']);
-        $fechaMax = Carbon::now()->subYears($request->edad_minima)->endOfDay(); // el más joven
-        $fechaMin = Carbon::now()->subYears($request->edad_maxima)->startOfDay(); // el más viejo
+        $fechaMax = Carbon::now()->subYears($request->edad_minima)->endOfDay();
+        $fechaMin = Carbon::now()->subYears($request->edad_maxima)->startOfDay();
 
         $query->whereHas('tercero', function ($q) use ($fechaMin, $fechaMax) {
             $q->whereBetween('fechaNacimiento', [$fechaMin, $fechaMax]);
@@ -45,26 +46,29 @@ class SegBeneficiosController extends Controller
         if ($tipoAsegurado === 'VIUDA') {
             $query->whereHas('asegurado', function ($q) {
                 $q->where('viuda', true);
-            });            
+            });
         } else {
             $query->whereHas('asegurado', function ($q) use ($tipoAsegurado) {
                 $q->where('parentesco', $tipoAsegurado);
             });
         }
 
-        if (!empty($planesSeleccionados)) {
-            $query->whereIn('seg_plan_id', $planesSeleccionados);
+        if ($request->has('planes')) {
+            $valoresPlanes = $request->planes;
+            $query->whereHas('plan', function ($q) use ($valoresPlanes) {
+                $q->where('vigente', true)
+                    ->whereIn('valor', $valoresPlanes);
+            });
         }
+
         $listadata = $query->get();
 
         $planes = SegPlan::where('vigente', true)
             ->where('condicion_id', 2)
             ->get();
-        
+
         return view('seguros.beneficios.index', compact('listadata', 'planes'));
     }
-
-
 
     /**
      * Show the form for creating a new resource.
@@ -80,24 +84,53 @@ class SegBeneficiosController extends Controller
     public function store(Request $request)
     {
         if ($request->grupo) {
-            foreach ($request->beneficio as $item) {
-                SegBeneficios::create([
-                    'cedulaAsegurado' => $item['cedula'],
-                    'poliza' => $item['poliza'],
-                    'porcentajeDescuento' => $request->despor,
-                    'valorDescuento' => $request->desval,
-                    'observaciones' => strtoupper($request->observaciones),
-                ]);
+            if (filter_var($request->checkconfirmarbene)) {
+                foreach ($request->beneficio as $item) {
+                    $poliza = SegPoliza::where('id', $item['poliza'])->first();
+                    SegBeneficios::create([
+                        'cedulaAsegurado' => $item['cedula'],
+                        'poliza' => $item['poliza'],
+                        'porcentajeDescuento' => $request->despor,
+                        'valorDescuento' => $request->desval,
+                        'observaciones' => strtoupper($request->observaciones),
+                        'valorpagaranterior' => $poliza->primapagar
+                    ]);
+                    $poliza->update([
+                        'primapagar' => floatval($poliza->primapagar) - floatval($request->desval),
+                    ]);
+                    $asegurado = SegAsegurado::where('cedula', $item['cedula'])->first();
+                    if (filter_var($asegurado->viuda)) {
+                        SegPoliza::where('seg_asegurado_id', $item['cedula'])->update([
+                            'valorpagaraseguradora' => floatval($poliza->valorpagaraseguradora) - floatval($request->desval),
+                        ]);
+                    } else {
+                        SegPoliza::where('seg_asegurado_id', $asegurado->titular)->update([
+                            'valorpagaraseguradora' => floatval($poliza->valorpagaraseguradora) - floatval($request->desval),
+                        ]);
+                    }
+                }
+            } else {
+                foreach ($request->beneficio as $item) {
+                    SegBeneficios::create([
+                        'cedulaAsegurado' => $item['cedula'],
+                        'poliza' => $item['poliza'],
+                        'porcentajeDescuento' => $request->despor,
+                        'valorDescuento' => $request->desval,
+                        'observaciones' => strtoupper($request->observaciones),
+                    ]);
+                }
             }
             $accion = 'add beneficio grupal valor de ' . $request->desval;
             $this->auditoria($accion);
             return redirect()->route('seguros.beneficios.index')->with('success', 'Se agrego correctamente el beneficio.');
         } else {
+            $valorAnterior = (int) $request->valorbene + (int) $request->valorPrima;
             $beneficio = SegBeneficios::create([
                 'cedulaAsegurado' => $request->aseguradoId,
                 'poliza' => $request->polizaId,
                 'porcentajeDescuento' => $request->porbene,
                 'valorDescuento' => $request->valorbene,
+                'valorpagaranterior' => $valorAnterior,
                 'observaciones' => strtoupper($request->observacionesbene),
             ]);
             if ($request->boolean('checkconfirmarbene')) {
@@ -105,6 +138,9 @@ class SegBeneficiosController extends Controller
                 $poliza = SegPoliza::where('seg_asegurado_id', $asegurado->titular)->first();
                 $poliza->update([
                     'valorpagaraseguradora' => floatval($poliza->valorpagaraseguradora) - floatval($request->valorbene),
+                ]);
+                SegPoliza::where('seg_asegurado_id', $request->aseguradoId)->update([
+                    'primapagar' => $request->valorPrima
                 ]);
             }
             if ($beneficio) {
@@ -141,8 +177,45 @@ class SegBeneficiosController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(SegBeneficios $SegBeneficios)
+    public function destroy($id, Request $request)
     {
-        //
+        $beneficio = SegBeneficios::find($id);
+        if ($request->opcdestroy == 'individual') {
+            $titular = SegAsegurado::where('cedula', $beneficio->cedulaAsegurado)->value('titular');
+            $beneficio->update([
+                'active' => false,
+                'fechaFin' => Carbon::now()->toDateTimeString(),
+            ]);
+            $poliza = SegPoliza::where('id', $beneficio->poliza)->first();
+            $poliza->update([
+                'primapagar' => $beneficio->valorpagaranterior,
+            ]);
+            $titularpol = SegPoliza::where('seg_asegurado_id', $titular)->first();
+            $titularpol->update([
+                'valorpagaraseguradora' => $titularpol->valorpagaraseguradora + $beneficio->valorDescuento,
+            ]);
+            return redirect()->back()->with('success', 'Se elimino correctamente el beneficio.');
+        } elseif ($request->opcdestroy == 'grupo') {            
+            $grupo = SegBeneficios::where('observaciones', $beneficio->observaciones)->get();
+            $cantupd = 0;
+            foreach ($grupo as $item) {
+                $titular = SegAsegurado::where('cedula', $beneficio->cedulaAsegurado)->value('titular');
+                $upd = $item->update([
+                    'active' => false,
+                    'fechaFin' => Carbon::now()->toDateTimeString(),
+                ]);
+                $poliza = SegPoliza::where('id', $item->poliza)->update([
+                    'primapagar' => $item->valorpagaranterior,
+                ]);
+                $titularpol = SegPoliza::where('seg_asegurado_id', $titular)->first();
+                $titularpol->update([
+                    'valorpagaraseguradora' => $titularpol->valorpagaraseguradora + $beneficio->valorDescuento,
+                ]);
+                if ($upd) {
+                    $cantupd++;
+                }
+            }
+            return redirect()->back()->with('success', 'Se elimino correctamente el beneficio a ' . $cantupd . ' asegurados.');
+        }
     }
 }
