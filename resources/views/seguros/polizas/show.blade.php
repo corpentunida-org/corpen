@@ -82,7 +82,8 @@
                         @endif
                     </div>
                     <div class="fs-12 text-muted mt-1">EXTRA:
-                        <strong class="text-dark">{{ $poliza->extra_prima }}%</strong></div>
+                        <strong class="text-dark">{{ $poliza->extra_prima }}%</strong>
+                    </div>
                 </div>
                 <div class="hstack gap-3">
                     @if ($poliza->active && $poliza->esreclamacion->contains('finReclamacion', 0))
@@ -136,7 +137,7 @@
                 @endforeach
                 </div>
 
-                @if ($grupoFamiliar->count() >= 1 && $poliza->active)
+                @if ($grupoFamiliar->count() >= 1)
                     <div class="mb-4 px-4 d-flex align-items-center justify-content-between">
                         <h5 class="fw-bold mb-0">Grupo Familiar:</h5>
                     </div>
@@ -160,12 +161,15 @@
                                         <td><a href="javascript:void(0);">{{ $familiar->cedula }}</a></td>
                                         <td>{{ $familiar->tercero->nombre }}</td>
                                         <td>{{ $familiar->parentesco }}</td>
-                                        <td><span
-                                                class="badge bg-soft-warning text-warning">{{ $familiar->polizas->first()->plan->name }}</span>
+                                        <td><span class="badge bg-soft-warning text-warning">{{ $familiar->polizas->first()->plan->name ?? '' }}</span>
                                         </td>
-                                        <td>$ {{ number_format($familiar->polizas->first()->valor_asegurado) }}</td>
-                                        <td>$ {{ number_format($familiar->polizas->first()->valor_prima) }}</td>
-                                        <td>$ {{ number_format($familiar->polizas->first()->primapagar) }}</td>
+                                        <td>@if($familiar->polizas->first())
+                                            $ {{ number_format($familiar->polizas->first()->valor_asegurado) }}
+                                        @endif</td>
+                                        <td>@if($familiar->polizas->first())
+                                            $ {{ number_format($familiar->polizas->first()->valor_prima) }}@endif</td>
+                                        <td>@if($familiar->polizas->first())
+                                            $ {{ number_format($familiar->polizas->first()->primapagar) }}@endif</td>
                                         <td class="hstack justify-content-end gap-4 text-end">
                                             <form action="{{ route('seguros.poliza.show', ['poliza' => 'ID']) }}" method="GET">
                                                 <div data-bs-toggle="tooltip" data-bs-trigger="hover"

@@ -12,7 +12,7 @@ class SegBeneficios extends Model
     protected $table = 'seg_beneficios';
 
     protected $fillable = [
-        'cedulaAsegurado', 'poliza','porcentajeDescuento', 'valorDescuento','observaciones','valorpagaranterior'
+        'cedulaAsegurado', 'poliza','porcentajeDescuento', 'valorDescuento','observaciones','valorpagaranterior', 'active', 'fechaFin'
     ];
     public function tercero()
     {
