@@ -141,7 +141,7 @@ class SegPolizaController extends Controller
 
         $novedades = SegNovedades::where('id_asegurado', $id)->where('id_poliza', $poliza->id)->get();
         $reclamacion = SegReclamaciones::where('cedulaAsegurado', $id)->with('cambiosEstado')->get();
-        $beneficios = SegBeneficios::where('cedulaAsegurado', $id)->where('poliza', $poliza->id)->get();
+        $beneficios = SegBeneficios::where('cedulaAsegurado', $id)->where('poliza', $poliza->id)->where('active', true)->get();
         $registrosnov = collect()
             ->merge($novedades)
             ->merge($reclamacion)
@@ -236,6 +236,7 @@ class SegPolizaController extends Controller
                     'seg_plan_id' => $plan_id->id,
                     'valor_asegurado' => $row['valor_asegurado'],
                     'valor_prima' => $row['prima'],
+                    'primapagar' => $row['prima'],
                     'extra_prima' => $row['extra_prim'] ?? 0,
                     'valorpagaraseguradora' => $row['valor_titular'] ?? null,
                 ]);
