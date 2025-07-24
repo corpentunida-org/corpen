@@ -32,7 +32,10 @@ use App\Http\Controllers\Cinco\RetirosListadoController;
 
 use App\Http\Controllers\ResReservaController;
 
+
+//MAESTARS
 use App\Http\Controllers\Maestras\CongregacionController;
+use App\Http\Controllers\Maestras\MaeTercerosController;
 
 /* Route::middleware(['auth'])->group(function () {
     Route::get('/', function () {
@@ -132,11 +135,29 @@ Route::post('reservaI/confirmar', [ResReservaController::class, 'confirmar'])->n
 
 Route::get('reservaI/historico', [ResReservaController::class, 'indexHistorico'])->name('reserva.inmueble.historico');
 
-//MAESTRAS CONGREGACION
+
+
+// ✅ Terceros con prefijo 'maestras-terceros' o algo único
+Route::prefix('maestras/terceros')->middleware('auth')->name('maestras.terceros.')->group(function () {
+    Route::get('/', [MaeTercerosController::class, 'index'])->name('index');
+    Route::get('create', [MaeTercerosController::class, 'create'])->name('create');
+    Route::post('/', [MaeTercerosController::class, 'store'])->name('store');
+    Route::get('{tercero}/edit', [MaeTercerosController::class, 'edit'])->name('edit');
+    Route::put('{tercero}', [MaeTercerosController::class, 'update'])->name('update');
+    Route::get('{tercero}', [MaeTercerosController::class, 'show'])->name('show');
+    Route::delete('{tercero}', [MaeTercerosController::class, 'destroy'])->name('destroy');
+});
+
+
+
+// ✅ LUEGO las rutas de congregaciones
 Route::resource('maestras', CongregacionController::class)
      ->names('maestras.congregacion')
-     ->parameter('maestras', 'congregacion') 
+     ->parameter('maestras', 'congregacion')
      ->middleware(['auth']);
-Route::get('/buscar-pastor', [App\Http\Controllers\Maestras\CongregacionController::class, 'buscarPastor'])->name('buscar.pastor');
 
-Route::get('maestras/{congregacion}', [CongregacionController::class, 'show'])->name('maestras.congregacion.show');
+Route::get('/buscar-pastor', [CongregacionController::class, 'buscarPastor'])
+    ->name('buscar.pastor');
+
+Route::get('maestras/{congregacion}', [CongregacionController::class, 'show'])
+    ->name('maestras.congregacion.show');
