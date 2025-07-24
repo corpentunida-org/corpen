@@ -9,7 +9,12 @@ use App\Models\Maestras\Congregacion;
 class maeTerceros extends Model
 {
     use HasFactory;
+    
     protected $table = 'MaeTerceros';
+
+    protected $primaryKey = 'cod_ter';
+    public $incrementing = false;
+    protected $keyType = 'string';
 
     public $timestamps = false; // <- esto evita el error con updated_at
 
@@ -187,4 +192,5 @@ class maeTerceros extends Model
     {
         return $this->hasMany(Congregacion::class, 'cod_ter', 'pastor');
     }
+
 }
