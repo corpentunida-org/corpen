@@ -240,9 +240,11 @@
                                                                 method="POST">
                                                                 @csrf
                                                                 @method('DELETE')
-                                                                <input type="hidden" name="opcdestroy" value="individual" id="InputDestroy">
-                                                                <button type="submit" class="dropdown-item btnAbrirModalDestroy">
-                                                                    <i class="bi bi-person-x-fill"></i>                                                                    
+                                                                <input type="hidden" name="opcdestroy" value="individual"
+                                                                    id="InputDestroy">
+                                                                <button type="submit"
+                                                                    class="dropdown-item btnAbrirModalDestroy" data-text="(individual)">
+                                                                    <i class="bi bi-person-x-fill"></i>
                                                                     <span>Eliminar Individual</span>
                                                                 </button>
                                                             </form>
@@ -252,8 +254,10 @@
                                                                 method="POST">
                                                                 @csrf
                                                                 @method('DELETE')
-                                                                <input type="hidden" name="opcdestroy" value="grupo" id="InputDestroy">
-                                                                <button type="submit" class="dropdown-item btnAbrirModalDestroy">
+                                                                <input type="hidden" name="opcdestroy" value="grupo"
+                                                                    id="InputDestroy">
+                                                                <button type="submit"
+                                                                    class="dropdown-item btnAbrirModalDestroy" data-text="(grupal)">
                                                                     <i class="feather feather-trash-2 me-3"></i>
                                                                     <span>Eliminar Grupo</span>
                                                                 </button>
@@ -326,15 +330,19 @@
                     btn.addEventListener('click', function (e) {
                         e.preventDefault();
                         const formulario = btn.closest('form');
+                        let Text = btn.getAttribute('data-text');
                         Swal.fire({
                             title: '¿Está seguro de eliminar el beneficio?',
-                            text: 'Una vez eliminado, no podrá deshacer este beneficio.',
+                            text: `Una vez eliminado, no podrá deshacer este beneficio. ${Text}`,
                             icon: 'warning',
                             showCancelButton: true,
-                            confirmButtonColor: '#dc3545',
-                            cancelButtonColor: '#6c757d',
                             confirmButtonText: 'Eliminar',
                             cancelButtonText: 'Cancelar',
+                            customClass: {
+                                confirmButton: 'btn btn-danger mx-1',
+                                cancelButton: 'btn btn-secondary mx-1'
+                            },
+                            buttonsStyling: false,
                             showClass: {
                                 popup: 'animate__animated animate__zoomIn'
                             },

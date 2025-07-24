@@ -161,15 +161,16 @@
                                         <td><a href="javascript:void(0);">{{ $familiar->cedula }}</a></td>
                                         <td>{{ $familiar->tercero->nombre }}</td>
                                         <td>{{ $familiar->parentesco }}</td>
-                                        <td><span class="badge bg-soft-warning text-warning">{{ $familiar->polizas->first()->plan->name ?? '' }}</span>
+                                        <td><span
+                                                class="badge bg-soft-warning text-warning">{{ $familiar->polizas->first()->plan->name ?? '' }}</span>
                                         </td>
                                         <td>@if($familiar->polizas->first())
                                             $ {{ number_format($familiar->polizas->first()->valor_asegurado) }}
                                         @endif</td>
                                         <td>@if($familiar->polizas->first())
-                                            $ {{ number_format($familiar->polizas->first()->valor_prima) }}@endif</td>
+                                        $ {{ number_format($familiar->polizas->first()->valor_prima) }}@endif</td>
                                         <td>@if($familiar->polizas->first())
-                                            $ {{ number_format($familiar->polizas->first()->primapagar) }}@endif</td>
+                                        $ {{ number_format($familiar->polizas->first()->primapagar) }}@endif</td>
                                         <td class="hstack justify-content-end gap-4 text-end">
                                             <form action="{{ route('seguros.poliza.show', ['poliza' => 'ID']) }}" method="GET">
                                                 <div data-bs-toggle="tooltip" data-bs-trigger="hover"
@@ -384,7 +385,7 @@
                         <div class="col-lg-3 mb-4">
                             <label class="form-label">Porcentaje Beneficio<span class="text-danger">*</span></label>
                             <div class="input-group">
-                                <input type="number" class="form-control" name="porbene">
+                                <input type="number" class="form-control" min="0" max="100" name="porbene" id="inputporbene">
                                 <span class="input-group-text">%</span>
                             </div>
                         </div>
@@ -433,6 +434,24 @@
                             var valorprima = valorOriginal - (isNaN(valor) ? 0 : valor);
                             $('#labeltextbeneficio').text('Confirmar valor prima $' + valorprima);
                             $('#inputvalorprima').val(valorprima);
+                        });
+                        $('#inputporbene').on('input', function () {
+                            var porcentaje = parseFloat($(this).val().trim());
+                            var valorOriginal = parseFloat("{{ $poliza->valor_prima}}");
+                            
+                                if(!isNaN(porcentaje) && porcentaje > 0) {
+                                $('#checkvalbeneficio').slideDown();
+                                } else {
+                                    $('#inputValorBene').val('');
+                                    $('#checkvalbeneficio').slideUp();
+                                    $('#checkbox2').prop('checked', false);
+                                }
+                                let valorDescuento = (valorOriginal * porcentaje) / 100;
+                                $('#inputValorBene').val(valorDescuento);
+                                var valorprima = Math.ceil(valorOriginal - valorDescuento);
+                                $('#labeltextbeneficio').text('Confirmar valor prima $' + valorprima);
+                                $('#inputvalorprima').val(valorprima);
+                            
                         });
                     });
                 </script>
