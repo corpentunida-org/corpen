@@ -96,6 +96,8 @@ Route::get('/seguros/cxc', [SegPolizaController::class, 'exportcxc'])->name('seg
 Route::get('/planes/{edad}', [SegPlanController::class, 'getPlanes'])->name('seguros.planes.getplanes');
 Route::resource('beneficios', SegBeneficiosController::class)->names('seguros.beneficios')->middleware(['auth',]);
 Route::post('beneficios/list', [SegBeneficiosController::class, 'listFilter'])->name('seguros.beneficios.list');
+Route::post('/seguros/filtopolizas', [SegBeneficiosController::class, 'exportFiltroPdf'])->name('seguros.poliza.filtros');
+Route::post('/seguros/filtopolizas/excel', [SegBeneficiosController::class, 'exportexcel'])->middleware('auth')->name('seguros.poliza.filtroexcel');
 
 //RUTAS CINCO
 Route::resource('terceros', TercerosController::class)->names('cinco.tercero')->middleware(['auth', 'can:cinco.tercero.index']);

@@ -250,7 +250,7 @@ class SegReclamacionesController extends Controller
 
     public function exportexcel()
     {
-        $datos = SegReclamaciones::with(['asegurado.terceroAF', 'asegurado.tercero', 'cobertura'])->get();
+        $datos = SegReclamaciones::with(['asegurado.terceroAF', 'asegurado.tercero', 'cobertura', 'diagnostico'])->get();
         $headings = ['N°', 'ASEGURADO CÉDULA', 'ASEGURADO', 'EDAD', 'TITULAR CEDULA', 'TITULAR', 'PARENTESCO', 'COBERTURA', 'VALOR ASEGURADO', 'DIAGNOSTICO', 'FECHA ACTUALIZACIÓN', 'ESTADO'];
         $datosFormateados = $datos->map(function ($item, $index) {
             $fechaNacimiento = Carbon::parse($item->tercero?->fecha_nacimiento);
@@ -264,6 +264,7 @@ class SegReclamacionesController extends Controller
                 'PARENTESCO' => $item->asegurado->parentesco ?? '',
                 'COBERTURA' => $item->cobertura->nombre,
                 'VALOR ASEGURADO' => $item->valor_asegurado ?? '',
+                'DIAGNOSTICO' => $item->diagnostico->diagnostico ?? '',
                 'FECHA ACTUALIZACIÓN' => $item->updated_at,
                 'ESTADO' => $item->estadoReclamacion->nombre,
             ];
