@@ -101,7 +101,7 @@ class ComaeExRelParController extends Controller
             'documentBeneficiaryId' => $request->cedula,
             'dateBirthDate' => $request->fechaNacimiento,
         ]);
-        ComaeExRelPar::where('cod_cli', $request->cedula)->update([
+        ComaeExRelPar::where('cedula', $request->cedula)->update([
             'nombre' => $request->names,
             'cod_par' => $request->parentesco,
             'fec_nac' => $request->fechaNacimiento,
@@ -126,7 +126,7 @@ class ComaeExRelParController extends Controller
             'Accept' => '*/*',
             'Authorization' => 'Bearer ' . $token,
         ])->delete(env('API_PRODUCCION') . '/api/Exequiales/Beneficiary?idUser=' . $id);
-        ComaeExRelPar::where('cod_cli', $request->cedula)->update([
+        ComaeExRelPar::where('cedula', $request->cedula)->update([
             'estado' => false,
         ]);
         $url = route('exequial.asociados.show', ['asociado' => 'ID']) . '?id=' . $request->documentid;
