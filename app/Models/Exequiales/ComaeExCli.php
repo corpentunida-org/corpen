@@ -8,43 +8,35 @@ use Illuminate\Database\Eloquent\Model;
 class ComaeExCli extends Model
 {
     use HasFactory;
-    protected $table = 'EXE_CoMae_ExCli'; // Nombre de la tabla en la base de datos
-    protected $primaryKey = 'cedula'; // Nombre de la clave primaria en la tabla
-    public $incrementing = false; // Indica si la clave primaria es autoincrementable o no
+    protected $table = 'EXE_ExCli'; 
+    protected $primaryKey = 'cod_cli';
 
-    // Define las columnas de la tabla que deseas utilizar
     protected $fillable = [
-        'cedula',
-        'apellido',
-        'nombre',
-        'distrito_id',
-        'direccion',
-        'ciudad_id',
+        'idrow',
+        'cod_cli',
+        'benef',
+        'cod_plan',
+        'fec_ing',
+        'cod_cco',
         'estado',
-        'celular',
-        'email',
-        'fechaNacimiento',
-        'observacion_familia',
-        'observacion',
+        'fec_ini',
+        'por_descto',
+        'contrato',
     ];
 
-    /* public function distrito()
-    {
-        return $this->belongsTo(Distrito::class);
-    } */
 
     public function beneficiarios()
     {
         return $this->hasMany(ComaeExRelPar::class, 'cedulaAsociado', 'cedula');
     }
 
-    public function ciudade() 
+    public function ciudade()
     {
         return $this->belongsTo(Ciudades::class, 'ciudad_id', 'codigo');
     }
 
     public function distrito()
     {
-        return $this->belongsTo(Distritos::class,'distrito_id', 'cod_dist');
+        return $this->belongsTo(Distritos::class, 'distrito_id', 'cod_dist');
     }
 }

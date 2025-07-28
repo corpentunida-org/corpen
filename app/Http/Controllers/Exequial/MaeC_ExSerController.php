@@ -63,9 +63,8 @@ class MaeC_ExSerController extends Controller
                 "observation"=> "PASTOR FALLECIDO" . $request->observation,
                 "stade"=> false
             ]);
+            ComaeExCli::where('cod_cli', $request->cedulaTitular)->update(['estado' => false]);
             $request->parentesco = "TITULAR";
-            // return redirect()->back()
-            //                  ->with('error', 'EN EL IF del titular');
         }else{
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $token,
@@ -77,6 +76,10 @@ class MaeC_ExSerController extends Controller
                 "dateEntry"=>$request->dateInit ? $request->dateInit : ' ',
                 "documentBeneficiaryId" => $request->cedulaFallecido,
                 "dateBirthDate"=>$request->fecNacFallecido,
+            ]);
+            ComaeExRelPar::where('cod_cli', $request->cedula)->update([
+                'estado' => false,
+                'tipo' => 'I',
             ]);
         }
         
@@ -193,11 +196,6 @@ class MaeC_ExSerController extends Controller
             'dateBirthDate' => $fechaActual,
         ]);
         if ($response->successful()) {
-            //$deleted  = ExMonitoria::where('id', $id)->delete();
-            // if($deleted > 0){
-            //     return response()->json(['message' => 'Eliminacion exitosa']);
-            // }
-            // return response()->json(['message' => $response]);
             return response()->json([
                 'status' => $response->status(),
                 'headers' => $response->headers(),

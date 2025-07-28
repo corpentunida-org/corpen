@@ -8,29 +8,20 @@ use Illuminate\Database\Eloquent\Model;
 class ComaeExRelPar extends Model
 {
     use HasFactory;
-    //protected $table = 'coMaeExRelPar';
-    protected $table = 'EXE_CoMae_ExRelPar';
+    protected $table = 'EXE_ExRelPar';
     protected $primaryKey = 'cedula'; 
     public $timestamps = false;
     protected $fillable = [
+        'idrow',
         'cedula',
         'nombre',
-        'parentesco',
-        'cedulaAsociado',
-        'fechaNacimiento',
-        'fechaIngreso',
+        'cod_par',
+        'tipo',
+        'fec_ing',
+        'fec_nac',
+        'estado',
+        'cod_cli',
     ];
-    /*
-        idrow (int)
-        cod_cli (15)
-        nombre (50)
-        edad (numeric 3,0)
-        cod_par (2)
-        tipo (1)
-        fec_ing (datetime)
-        cedula (15)
-        fec_nac(datetime)
-    */
 
     public function asociado()
     {
