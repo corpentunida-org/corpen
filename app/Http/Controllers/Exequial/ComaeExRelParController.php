@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Exequial;
 use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\Exequial\ComaeExCliController;
 use App\Http\Controllers\Controller;
+use App\Models\Exequiales\ComaeExRelPar;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
@@ -63,6 +64,16 @@ class ComaeExRelParController extends Controller
                 'codeParentesco' => $request->codePar,
                 'type' => "A"
             ]);
+        ComaeExRelPar::create([
+            'cedula' => $request->documentid,
+            'nombre' => strtoupper($request->apellidos . ' ' . $request->nombres),
+            'cod_par' => $request->codePar,
+            'tipo' => "A",
+            'fec_ing' => $fechaActual,
+            'fec_nac' => $request->fechaNacimiento,
+            'estado' => true,
+            'cod_cli' => $request->cedulaAsociado
+        ]);
         if ($response->successful()) {
             $accion = "add beneficiario " . $request->documentid;
             $this->auditoria($accion, "EXEQUIALES");
@@ -90,6 +101,11 @@ class ComaeExRelParController extends Controller
             'documentBeneficiaryId' => $request->cedula,
             'dateBirthDate' => $request->fechaNacimiento,
         ]);
+        ComaeExRelPar::where('cedula', $request->cedula)->update([
+            'nombre' => strtoupper($request->names),
+            'cod_par' => $request->parentesco,
+            'fec_nac' => $request->fechaNacimiento,
+        ]);
         $url = route('exequial.asociados.show', ['asociado' => 'ID']) . '?id=' . $request->documentid;      
         if ($response->successful()) {
             $accion = "update beneficiario " . $request->cedula;
@@ -110,6 +126,9 @@ class ComaeExRelParController extends Controller
             'Accept' => '*/*',
             'Authorization' => 'Bearer ' . $token,
         ])->delete(env('API_PRODUCCION') . '/api/Exequiales/Beneficiary?idUser=' . $id);
+        ComaeExRelPar::where('cedula', $request->cedula)->update([
+            'estado' => false,
+        ]);
         $url = route('exequial.asociados.show', ['asociado' => 'ID']) . '?id=' . $request->documentid;
         if ($response->successful()) {
             $accion = "delete beneficiario " . $request->beneid;

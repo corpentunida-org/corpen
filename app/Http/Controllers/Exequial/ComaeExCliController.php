@@ -19,15 +19,16 @@ class ComaeExCliController extends Controller
         $this->middleware(['auth']);
     } */
 
-    private function auditoria($accion,$area){
+    private function auditoria($accion, $area)
+    {
         $auditoriaController = app(AuditoriaController::class);
-        $auditoriaController->create($accion,$area);
+        $auditoriaController->create($accion, $area);
     }
 
     public function index()
     {
         $token = env('TOKEN_ADMIN');
-        
+
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
         ])->get(env('API_PRODUCCION') . '/api/District');
@@ -40,15 +41,16 @@ class ComaeExCliController extends Controller
     }
 
     //Datos solo del titular
-    public function titularShow($id){
+    public function titularShow($id)
+    {
         //API        
         $token = env('TOKEN_ADMIN');
         $titular = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
         ])->get(env('API_PRODUCCION') . '/api/Exequiales/Tercero', [
-            'documentId' => $id,
-        ]);
-        
+                    'documentId' => $id,
+                ]);
+
         if ($titular->successful()) {
             return $titular->json();
         } else {
@@ -56,7 +58,8 @@ class ComaeExCliController extends Controller
         }
     }
 
-    public function edit($id) {
+    public function edit($id)
+    {
         $jsonTit = $this->titularShow($id);
         $controllerplanes = app()->make(PlanController::class);
         return view('exequial.asociados.edit', [
@@ -70,19 +73,19 @@ class ComaeExCliController extends Controller
         //API
         $token = env('TOKEN_ADMIN');
         $id = $request->input('id');
-        
+
         $titular = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
-        ])->get(env('API_PRODUCCION') .'/api/Exequiales/Tercero', [
-            'documentId' => $id,
-        ]);
-        
+        ])->get(env('API_PRODUCCION') . '/api/Exequiales/Tercero', [
+                    'documentId' => $id,
+                ]);
+
         $beneficiarios = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
-        ])->get(env('API_PRODUCCION') .'/api/Exequiales', [
-            'documentId' => $id,
-        ]);
-        
+        ])->get(env('API_PRODUCCION') . '/api/Exequiales', [
+                    'documentId' => $id,
+                ]);
+
         if ($titular->successful() && $beneficiarios->successful()) {
             $jsonTit = $titular->json();
             $jsonBene = $beneficiarios->json();
@@ -96,32 +99,29 @@ class ComaeExCliController extends Controller
                 'beneficiarios' => $jsonBene,
             ]);
         } else {
-            /* return response()->json([
-                'error' => 'Something went wrong',
-                'titular_status' => $titular->status(),
-                'titular_response' => $titular->json(),
-                'beneficiarios_status' => $beneficiarios->status(),
-                'beneficiarios_response' => $beneficiarios->json(),
-            ], 500); */
             return redirect()->route('exequial.asociados.index')->with('warning', 'No se encontró la cédula como titular de exequiales');
         }
-
     }
 
-    public function validarRegistro(Request $request){
+    public function validarRegistro(Request $request)
+    {
         $id = $request->input('id');
         $asociado = ComaeExCli::where('cedula', $id)->first();
-        if($asociado) return "1";
-        else{
+        if ($asociado)
+            return "1";
+        else {
             $tercero = ComaeTer::where('cod-ter', $id)->first();
-            if ($tercero) return '2';
-            else return '0';
+            if ($tercero)
+                return '2';
+            else
+                return '0';
         }
     }
 
-    public function create(Request $request){
+    public function create(Request $request)
+    {
         $controllerplan = app()->make(PlanController::class);
-        return view('exequial.asociados.create',[
+        return view('exequial.asociados.create', [
             'plans' => $controllerplan->index(),
         ]);
     }
@@ -135,20 +135,25 @@ class ComaeExCliController extends Controller
             'Authorization' => 'Bearer ' . $token,
             'Accept' => 'application/json',
         ])->post(env('API_PRODUCCION') . '/api/Exequiales/Tercero', [
-            'documentId' => $request->documentId,
-            'obsevations' => $request->observaciones,
-            'dateStart' => $fechaActual,
-            'descuento' => $request->discount,
-            'codePlan' => $request->plan,
-            'codeCenterCost' => "C1010"
-        ]);        
+                    'documentId' => $request->documentId,
+                    'obsevations' => $request->observaciones,
+                    'dateStart' => $fechaActual,
+                    'descuento' => $request->discount,
+                    'codePlan' => $request->plan,
+                    'codeCenterCost' => "C1010"
+                ]);
+        ComaeExCli::create([
+            'cod_cli' => $request->documentId,
+            'cod_plan' => $request->plan,
+            'fec_ing' => $fechaActual,
+            'cod_cco' => "C1010",
+            'estado' => true,
+            'fec_ini' => $fechaActual,
+            'por_descto' => $request->discount,
+        ]);
         if ($response->successful()) {
             $accion = "add titular " . $request->documentId;
             $this->auditoria($accion, "EXEQUIALES");
-            /* return response()->json([
-                'redirect' => route('exequial.beneficiarios.show', ['beneficiario' => $request->documentId]),
-                'message' => 'Titular añadido exitosamente.'
-            ]); */
             $url = route('exequial.asociados.show', ['asociado' => 'ID']) . '?id=' . $request->cedulaAsociado;
             return redirect()->to($url)->with('success', 'Titular agregado exitosamente');
         } else {
@@ -157,22 +162,30 @@ class ComaeExCliController extends Controller
             return redirect()->back()->with('error', $message);
         }
     }
-    
 
-    public function update(Request $request){
+
+    public function update(Request $request)
+    {
         //$this->authorize('update', auth()->user());
         $token = env('TOKEN_ADMIN');
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
             'Accept' => 'application/json',
         ])->patch(env('API_PRODUCCION') . '/api/Exequiales/Tercero', [
-            'documentId' => $request->documentid,
-            'dateInit' => $request->dateInit,
-            'codePlan'=> $request->codePlan,
-            'discount'=> $request->discount,
-            'observation'=> $request->observation,
-            'stade'=> true
+                    'documentId' => $request->documentid,
+                    'dateInit' => $request->dateInit,
+                    'codePlan' => $request->codePlan,
+                    'discount' => $request->discount,
+                    'observation' => $request->observation,
+                    'stade' => true
+                ]);
+        ComaeExCli::where('cod_cli', $request->documentid)->update([
+            'cod_plan' => $request->codePlan,
+            'por_descto' => $request->discount,
+            'observacion' => $request->observation,
+            'estado' => true,
         ]);
+
         $url = route('exequial.asociados.show', ['asociado' => 'ID']) . '?id=' . $request->documentid;
         if ($response->successful()) {
             $accion = "update titular " . $request->documentid;
@@ -193,18 +206,18 @@ class ComaeExCliController extends Controller
         $titular = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
         ])->get(env('API_PRODUCCION') . '/api/Exequiales/Tercero', [
-            'documentId' => $id,
-        ]);
+                    'documentId' => $id,
+                ]);
         $beneficiarios = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
         ])->get(env('API_PRODUCCION') . '/api/Exequiales', [
-            'documentId' => $id,
-        ]);
+                    'documentId' => $id,
+                ]);
         $personalTitular = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
         ])->get(env('API_PRODUCCION') . '/api/Pastors', [
-            'documentId' => $id,
-        ]);
+                    'documentId' => $id,
+                ]);
 
         if ($titular->successful() && $beneficiarios->successful()) {
             $jsonTit = $titular->json();
@@ -224,12 +237,12 @@ class ComaeExCliController extends Controller
             $isActive = filter_var($active, FILTER_VALIDATE_BOOLEAN);
             if ($isActive) {
                 $pdf = Pdf::loadView('exequial.asociados.showpdf', $data)->setPaper('letter', 'landscape');
-                return $pdf->download(date('Y-m-d') . " Reporte " .  $jsonTit['documentId'] . '.pdf');
+                return $pdf->download(date('Y-m-d') . " Reporte " . $jsonTit['documentId'] . '.pdf');
             } else {
                 $pdf = Pdf::loadView('exequial.asociados.showpdf2', $data)->setPaper('letter', 'landscape');
-                return $pdf->download(date('Y-m-d') . " Reporte " .  $jsonTit['documentId'] . '.pdf');
+                return $pdf->download(date('Y-m-d') . " Reporte " . $jsonTit['documentId'] . '.pdf');
             }
         }
     }
-    
+
 }
