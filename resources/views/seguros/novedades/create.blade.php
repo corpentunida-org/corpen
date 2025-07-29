@@ -81,7 +81,7 @@
                                             <option value="{{ $plan->id }}" data-valor="{{ $plan->valor }}"
                                                 data-prima="{{ $plan->prima }}"
                                                 {{ $asegurado->polizas->first()->plan->id == $plan->id ? 'selected' : '' }}>
-                                                {{ $plan->convenio->nombre }} - {{ $plan->name }} -
+                                                {{ $plan->convenio->nombre ?? ''}} - {{ $plan->name }} -
                                                 ${{ number_format($plan->valor) }} -
                                                 ${{ number_format($plan->prima) }}
                                             </option>
