@@ -51,7 +51,7 @@ class SegBeneficiosController extends Controller
             $query->whereHas('asegurado', function ($q) {
                 $q->where('viuda', true);
             });
-        } else {
+        } else if($tipoAsegurado != 'TODOS') {
             $query->whereHas('asegurado', function ($q) use ($tipoAsegurado) {
                 $q->where('parentesco', $tipoAsegurado);
             });
