@@ -193,6 +193,7 @@ class SegBeneficiosController extends Controller
             $titularpol->update([
                 'valorpagaraseguradora' => $titularpol->valorpagaraseguradora + $beneficio->valorDescuento,
             ]);
+            $this->auditoria("Eliminar beneficio a " . $beneficio->cedulaAsegurado);
             return redirect()->back()->with('success', 'Se elimino correctamente el beneficio.');
         } elseif ($request->opcdestroy == 'grupo') {
             $grupo = SegBeneficios::where('observaciones', $beneficio->observaciones)->get();
@@ -214,6 +215,7 @@ class SegBeneficiosController extends Controller
                     $cantupd++;
                 }
             }
+            $this->auditoria("Eliminar beneficio grupal " . $cantupd ." registros. Observacion: ". $beneficio->observaciones);
             return redirect()->back()->with('success', 'Se elimino correctamente el beneficio a ' . $cantupd . ' asegurados.');
         }
     }
