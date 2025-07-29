@@ -9,7 +9,7 @@ class ComaeExCli extends Model
 {
     use HasFactory;
     protected $table = 'EXE_ExCli'; 
-    protected $primaryKey = 'cod_cli';
+    public $timestamps = true;
 
     protected $fillable = [
         'idrow',

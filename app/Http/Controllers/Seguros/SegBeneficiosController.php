@@ -16,7 +16,6 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\ExcelExport;
 
 
-
 class SegBeneficiosController extends Controller
 {
     /**

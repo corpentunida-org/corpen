@@ -81,6 +81,7 @@
                 <div class="card">
                     <div class="card-header">
                         <h5 class="card-title">Lista de datos</h5>
+                        @if ($listadata->isnotEmpty())
                         <div class="d-flex justify-content-end gap-2 mt-3">
                             <form action="{{ route('seguros.poliza.filtros') }}" method="POST">
                                 @csrf
@@ -93,6 +94,7 @@
                                 <button type="submit" class="btn btn-sm bg-soft-warning text-warning">Descargar Excel</button>
                             </form>
                         </div>
+                        @endif
                     </div>
                     <div class="card-body">
                         @if ($listadata->isEmpty())

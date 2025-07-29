@@ -66,7 +66,7 @@ class ComaeExRelParController extends Controller
             ]);
         ComaeExRelPar::create([
             'cedula' => $request->documentid,
-            'nombre' => $request->apellidos . ' ' . $request->nombres,
+            'nombre' => strtoupper($request->apellidos . ' ' . $request->nombres),
             'cod_par' => $request->codePar,
             'tipo' => "A",
             'fec_ing' => $fechaActual,
@@ -102,7 +102,7 @@ class ComaeExRelParController extends Controller
             'dateBirthDate' => $request->fechaNacimiento,
         ]);
         ComaeExRelPar::where('cedula', $request->cedula)->update([
-            'nombre' => $request->names,
+            'nombre' => strtoupper($request->names),
             'cod_par' => $request->parentesco,
             'fec_nac' => $request->fechaNacimiento,
         ]);
