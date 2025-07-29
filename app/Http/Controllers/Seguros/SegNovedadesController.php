@@ -44,7 +44,7 @@ class SegNovedadesController extends Controller
 
         $planes = SegPlan::where('condicion_id', $idcondicion)
             ->where('vigente', true)->with(['convenio'])->get();
-
+        
         $condicion = SegCondicion::where('id', $idcondicion)->first(['descripcion']);
 
         $grupoFamiliar = SegAsegurado::where('Titular', $asegurado->titular)->with('tercero', 'polizas.plan.coberturas')->get();
