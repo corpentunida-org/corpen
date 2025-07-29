@@ -81,6 +81,20 @@
                 <div class="card">
                     <div class="card-header">
                         <h5 class="card-title">Lista de datos</h5>
+                        @if ($listadata->isnotEmpty())
+                        <div class="d-flex justify-content-end gap-2 mt-3">
+                            <form action="{{ route('seguros.poliza.filtros') }}" method="POST">
+                                @csrf
+                                <input type="hidden" name="listadata" value="{{ json_encode($listadata) }}">
+                                <button type="submit" class="btn btn-sm bg-soft-teal text-teal">Descargar PDF</button>
+                            </form>
+                            <form action="{{route('seguros.poliza.filtroexcel')}}" method="POST">
+                                @csrf
+                                <input type="hidden" name="listadata" value="{{ json_encode($listadata) }}">
+                                <button type="submit" class="btn btn-sm bg-soft-warning text-warning">Descargar Excel</button>
+                            </form>
+                        </div>
+                        @endif
                     </div>
                     <div class="card-body">
                         @if ($listadata->isEmpty())
@@ -88,6 +102,7 @@
                                 No se encontraron resultados para los filtros seleccionados.
                             </div>
                         @else
+
                                 <form action="{{ route('seguros.beneficios.store') }}" method="post" id="formAddBeneficios"
                                     class="row" novalidate>
                                     @method('POST')
@@ -242,8 +257,8 @@
                                                                 @method('DELETE')
                                                                 <input type="hidden" name="opcdestroy" value="individual"
                                                                     id="InputDestroy">
-                                                                <button type="submit"
-                                                                    class="dropdown-item btnAbrirModalDestroy" data-text="(individual)">
+                                                                <button type="submit" class="dropdown-item btnAbrirModalDestroy"
+                                                                    data-text="(individual)">
                                                                     <i class="bi bi-person-x-fill"></i>
                                                                     <span>Eliminar Individual</span>
                                                                 </button>
@@ -256,8 +271,8 @@
                                                                 @method('DELETE')
                                                                 <input type="hidden" name="opcdestroy" value="grupo"
                                                                     id="InputDestroy">
-                                                                <button type="submit"
-                                                                    class="dropdown-item btnAbrirModalDestroy" data-text="(grupal)">
+                                                                <button type="submit" class="dropdown-item btnAbrirModalDestroy"
+                                                                    data-text="(grupal)">
                                                                     <i class="feather feather-trash-2 me-3"></i>
                                                                     <span>Eliminar Grupo</span>
                                                                 </button>

@@ -10,7 +10,10 @@ use App\Models\Seguros\SegBeneficios;
 use App\Models\Seguros\SegPoliza;
 use App\Models\Seguros\SegPlan;
 use App\Http\Controllers\AuditoriaController;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\ExcelExport;
 
 
 class SegBeneficiosController extends Controller
@@ -34,6 +37,7 @@ class SegBeneficiosController extends Controller
 
     public function listFilter(Request $request)
     {
+        DB::enableQueryLog();
         $query = SegPoliza::with(['asegurado', 'tercero', 'plan']);
         $fechaMax = Carbon::now()->subYears($request->edad_minima)->endOfDay();
         $fechaMin = Carbon::now()->subYears($request->edad_maxima)->startOfDay();
@@ -47,22 +51,17 @@ class SegBeneficiosController extends Controller
             $query->whereHas('asegurado', function ($q) {
                 $q->where('viuda', true);
             });
-        } else {
+        } else if($tipoAsegurado != 'TODOS') {
             $query->whereHas('asegurado', function ($q) use ($tipoAsegurado) {
                 $q->where('parentesco', $tipoAsegurado);
             });
         }
 
         if ($request->has('planes')) {
-            $valoresPlanes = $request->planes;
-            $query->whereHas('plan', function ($q) use ($valoresPlanes) {
-                $q->where('vigente', true)
-                    ->whereIn('valor', $valoresPlanes);
-            });
+            $valoresPlanes = array_map('intval', $request->planes);
+            $query->whereIn('valor_asegurado', $valoresPlanes)->get();
         }
-
         $listadata = $query->get();
-
         $planes = SegPlan::where('vigente', true)
             ->where('condicion_id', 2)
             ->get();
@@ -194,8 +193,9 @@ class SegBeneficiosController extends Controller
             $titularpol->update([
                 'valorpagaraseguradora' => $titularpol->valorpagaraseguradora + $beneficio->valorDescuento,
             ]);
+            $this->auditoria("Eliminar beneficio a " . $beneficio->cedulaAsegurado);
             return redirect()->back()->with('success', 'Se elimino correctamente el beneficio.');
-        } elseif ($request->opcdestroy == 'grupo') {            
+        } elseif ($request->opcdestroy == 'grupo') {
             $grupo = SegBeneficios::where('observaciones', $beneficio->observaciones)->get();
             $cantupd = 0;
             foreach ($grupo as $item) {
@@ -215,7 +215,38 @@ class SegBeneficiosController extends Controller
                     $cantupd++;
                 }
             }
+            $this->auditoria("Eliminar beneficio grupal " . $cantupd ." registros. Observacion: ". $beneficio->observaciones);
             return redirect()->back()->with('success', 'Se elimino correctamente el beneficio a ' . $cantupd . ' asegurados.');
         }
+    }
+
+    public function exportFiltroPdf(Request $request)
+    {
+        $registros = json_decode($request->listadata, true);
+        $pdf = Pdf::loadView('seguros.beneficios.filtropdf', ['registros' => $registros, 'image_path' => public_path('assets/images/CORPENTUNIDA_LOGO PRINCIPAL  (2).png')])->setPaper('letter', 'landscape');
+
+        return $pdf->download(date('Y-m-d') . ' Lista Polizas.pdf');
+        //return view('seguros.beneficios.filtropdf', ['registros' => $registros, 'image_path' => public_path('assets/images/CORPENTUNIDA_LOGO PRINCIPAL  (2).png')]);
+    }
+
+    public function exportexcel(Request $request)
+    {
+        $datos = json_decode($request->listadata, true);
+        $headings = ['N°', 'Cedula Asegurado', 'Nombre Asegurado', 'Parentesco', 'Edad', 'Plan', 'Valor a Pagar'];
+        $datosFormateados = collect($datos)->map(function ($item, $index) {
+            $edad = Carbon::parse($item['tercero']['fechaNacimiento'])->age;
+            return [
+                'N°' => $index + 1,
+                'CÉDULA ASEGURADO' => $item['seg_asegurado_id'] ?? '',
+                'NOMBRE ASEGURADO' => $item['tercero']['nombre'] ?? '',
+                'PARENTESCO' => $item['asegurado']['parentesco'] ?? '',
+                'EDAD' => $edad,
+                'PLAN' => $item['plan']['name'] ?? '',
+                'VALOR ASEGURADO' => is_numeric($item['valor_asegurado']) ? number_format((float) $item['valor_asegurado']) : '',
+                'VALOR A PAGAR' => is_numeric($item['primapagar']) ? number_format((float) $item['primapagar']) : '',
+            ]
+            ;
+        });
+        return Excel::download(new ExcelExport($datosFormateados, $headings), date('Y-m-d') . ' Lista Polizas.xlsx');
     }
 }
