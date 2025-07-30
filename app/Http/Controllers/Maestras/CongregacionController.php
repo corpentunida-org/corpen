@@ -11,6 +11,7 @@ use App\Models\Maestras\Congregacion;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
+
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class CongregacionController extends Controller
@@ -34,8 +35,11 @@ class CongregacionController extends Controller
             });
         }
 
+        
         // CAMBIO: Simplemente elimina .withQueryString() de esta línea
-        $congregaciones = $query->paginate(10);
+        $congregaciones = $query
+        ->orderBy('codigo', 'desc')
+        ->paginate(10);
 
         return view('maestras.congregaciones.index', compact('congregaciones'));
     }
@@ -96,6 +100,8 @@ class CongregacionController extends Controller
      */
     public function edit(Congregacion $congregacion)
     {
+
+        
         $clases = claseCongregacion::all();
         $distritos = maeDistritos::all(); //get
         $pastores = maeTerceros::all();

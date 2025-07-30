@@ -35,31 +35,35 @@
                 <table class="table table-hover mb-0 align-middle small" style="font-size: 0.875rem;">
                     <thead>
                         <tr class="border-top">
-                            <th>Id</th>
-                            <th>Cedula</th>
-                            <th>Nombre Completo</th>
-                            <th>Celular</th>
-                            <th>Estado</th>
-
-                            <th class="text-end">Acciones</th>
+                            <th class="py-1 px-2">ID</th>
+                            <th class="py-1 px-2">Cédula</th>
+                            <th class="py-1 px-2">Nombre Completo</th>
+                            <th class="py-1 px-2">Celular</th>
+                            <th class="py-1 px-2">Estado</th>
+                            <th class="py-1 px-2 text-end">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach ($terceros as $tercero)
-                            <tr>
-                                <td>{{ $tercero->id }}</td>
-                                <td>{{ $tercero->cod_ter }}</td>
-                                <td>{{ $tercero->nom_ter }}</td>
-                                <td>{{ $tercero->cel ?? '-' }}</td>
-                                <td>{{ $tercero->estado ?? '-' }}</td>
-
-                                <td class="hstack justify-content-end gap-4 text-end">
+                            <tr class="py-1">
+                                <td class="py-1 px-2">{{ $tercero->id }}</td>
+                                <td class="py-1 px-2">{{ $tercero->cod_ter }}</td>
+                                <td class="py-1 px-2">{{ $tercero->nom_ter }}</td>
+                                <td class="py-1 px-2">{{ $tercero->cel ?? '-' }}</td>
+                                <td class="py-1 px-2">
+                                    @if ($tercero->estado === 'ACTIVO')
+                                        <span class="badge bg-soft-success text-success">Activo</span>
+                                    @elseif ($tercero->estado === 'INACTIVO')
+                                        <span class="badge bg-soft-danger text-danger">Inactivo</span>
+                                    @else
+                                        <span class="badge bg-secondary text-white">{{ $tercero->estado ?? '-' }}</span>
+                                    @endif
+                                </td>
+                                <td class="hstack justify-content-end gap-4 text-end py-1 px-2">
                                     <div class="dropdown open">
-
                                         <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown">
                                             <i class="feather feather-more-horizontal"></i>
                                         </a>
-
                                         <ul class="dropdown-menu">
                                             <li>
                                                 <a class="dropdown-item btnVer" href="{{ route('maestras.terceros.show', $tercero->cod_ter) }}">

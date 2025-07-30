@@ -158,7 +158,7 @@ class maeTerceros extends Model
         'tel',
         'mail_conyu', 
         'num_hijos', 
-        'parentezco', 
+        'parentesco', 
         'nom_conyug', 
         'id_conyuge', 
         'est_civil',
