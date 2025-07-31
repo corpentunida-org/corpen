@@ -10,6 +10,8 @@ class Terceros extends Model
     use HasFactory;
     protected $table = 'CIN_Terceros';
     protected $fillable = [
+        'Cod_Ter',
+        'Nom_Ter',
         'Fec_Ing',
         'Fec_Minis',
         'Fec_Aport',
