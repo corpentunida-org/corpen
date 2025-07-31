@@ -4,7 +4,7 @@ namespace App\Models\Cinco;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Maestras\
+use App\Models\Maestras\maeTerceros;
 
 class MoviContCinco extends Model
 {
@@ -18,7 +18,7 @@ class MoviContCinco extends Model
 
     public function tercero()
     {
-        return $this->belongsTo(Terceros::class, 'Cedula', 'Cod_Ter');
+        return $this->belongsTo(maeTerceros::class, 'Cedula', 'Cod_Ter');
     }
 
 }

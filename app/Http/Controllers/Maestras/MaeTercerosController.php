@@ -33,15 +33,15 @@ class MaeTercerosController extends Controller
         return view('maestras.terceros.edit', compact('tercero'));
     }
 
-public function update(Request $request, MaeTerceros $tercero)
-{
-    // dd($request->all());
+    public function update(Request $request, MaeTerceros $tercero)
+    {
+        // dd($request->all());
 
-    $tercero->update($request->all());
+        $tercero->update($request->all());
 
-    return redirect()->route('maestras.terceros.index')
-                    ->with('success', 'Tercero actualizado correctamente.');
-}
+        return redirect()->route('maestras.terceros.index')
+                        ->with('success', 'Tercero actualizado correctamente.');
+    }
 
 
 

@@ -18,7 +18,11 @@ class maeTerceros extends Model
 
     public $timestamps = false; // <- esto evita el error con updated_at
 
-
+    protected $casts = [
+        'fec_minis' => 'datetime',
+        'fecha_ipuc' => 'datetime',
+        'fec_aport'  => 'datetime',
+    ];
     protected $fillable = [
         'id',
         'cod_ter', 
