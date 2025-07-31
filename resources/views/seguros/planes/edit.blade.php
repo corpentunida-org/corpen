@@ -7,8 +7,7 @@
             <div class="card-header p-0">
                 <ul class="nav nav-tabs flex-wrap w-100 text-center customers-nav-tabs" id="myTab" role="tablist">
                     <li class="nav-item flex-fill border-top" role="presentation">
-                        <a class="nav-link active" data-bs-toggle="tab" data-bs-target="#securityTab"
-                            aria-selected="true">Editar Plan</a>
+                        <a class="nav-link active" data-bs-toggle="tab" data-bs-target="#securityTab" aria-selected="true">Editar Plan</a>
                     </li>
                 </ul>
             </div>
