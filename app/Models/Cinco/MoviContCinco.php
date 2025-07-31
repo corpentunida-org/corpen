@@ -4,6 +4,7 @@ namespace App\Models\Cinco;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Maestras\
 
 class MoviContCinco extends Model
 {
