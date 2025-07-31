@@ -32,9 +32,7 @@
         <div class="col-lg-4">
             <div class="card stretch stretch-full">
                 <div class="card-body">
-                    <div class="d-flex align-items-center justify-content-between">
-                        {{-- <a href="{{ url('terceros/' . $id) }}?id={{ $id }}" class="avatar-text avatar-lg bg-soft-primary text-primary border-soft-primary rounded"
-                        data-bs-toggle="tooltip" title="Actualizar Fecha" data-bs-original-title="Update"> --}}
+                    <div class="d-flex align-items-center justify-content-between">                        
                         <a href="{{ route('cinco.tercero.show', ['tercero' => $id, 'id' => $id]) }}" class="avatar-text avatar-lg bg-soft-primary text-primary border-soft-primary rounded"
                         data-bs-toggle="tooltip" title="Actualizar Fecha" data-bs-original-title="Update">
                             <i class="feather-user-plus"></i>
@@ -51,8 +49,7 @@
             <div class="card stretch stretch-full">
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between">
-                        <a href="{{ url('terceros/' . $id) }}?id={{ $id }}" class="avatar-text avatar-lg bg-soft-primary text-primary border-soft-primary rounded"
-                        data-bs-toggle="tooltip" title="Actualizar Fecha" data-bs-original-title="Update">
+                        <a href="{{ route('cinco.tercero.show', ['tercero' => $id, 'id' => $id]) }}" class="avatar-text avatar-lg bg-soft-primary text-primary border-soft-primary rounded">
                             <i class="feather-bar-chart-2"></i>
                         </a>
                         <div class="text-end">
@@ -67,8 +64,7 @@
             <div class="card stretch stretch-full">
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between">                    
-                        <a href="{{ url('terceros/' . $id) }}?id={{ $id }}" class="avatar-text avatar-lg bg-soft-primary text-primary border-soft-primary rounded"
-                        data-bs-toggle="tooltip" title="Actualizar Fecha" data-bs-original-title="Update">
+                        <a href="{{ route('cinco.tercero.show', ['tercero' => $id, 'id' => $id]) }}" class="avatar-text avatar-lg bg-soft-primary text-primary border-soft-primary rounded">
                             <i class="feather-briefcase"></i>
                         </a>
                         <div class="text-end">
