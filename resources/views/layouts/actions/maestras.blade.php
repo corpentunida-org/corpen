@@ -1,28 +1,3 @@
-{{-- 
-
-<li class="nxl-item nxl-hasmenu {{ request()->routeIs('creditos.congregaciones.*') ? 'active' : '' }}">
-    <a href="javascript:void(0);" class="nxl-link">
-        <span class="nxl-micon"><i class="bi bi-database"></i></span>
-        <span class="nxl-mtext">Maestras</span><span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
-    </a>
-    <ul class="nxl-submenu">
-        <li class="nxl-item">
-            <a class="nxl-link" href="#">Terceros</a>
-        </li>
-    </ul>
-    <ul class="nxl-submenu">
-        <li class="nxl-item">
-            <a class="nxl-link" href="{{ route('maestras.congregacion.index') }}">Congregaciones</a>
-        </li>
-    </ul>
-</li>
-
---}}
-
-
-
-
-
 <li class="nxl-item nxl-hasmenu {{ request()->routeIs('maestras.terceros.*', 'maestras.congregacion.*') ? 'active' : '' }}">
     <a href="javascript:void(0);" class="nxl-link">
         <span class="nxl-micon"><i class="bi bi-database"></i></span>
