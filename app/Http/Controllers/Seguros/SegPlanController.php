@@ -102,11 +102,9 @@ class SegPlanController extends Controller
      * Update the specified resource in storage.
      */
     public function update(Request $request, $id)
-    {
-        
+    {        
         $plan = SegPlan::findOrFail($id);
         $plan->update([
-            'seg_convenio_id' => $request->input('convenio'),
             'name' => $request->input('name'),
             'condicion_id' => $request->input('condicion_id'),
             'valor' => $request->input('valorPlanAsegurado'),
