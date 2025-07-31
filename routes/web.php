@@ -38,6 +38,9 @@ use App\Http\Controllers\ResReservaController;
 use App\Http\Controllers\Maestras\CongregacionController;
 use App\Http\Controllers\Maestras\MaeTercerosController;
 
+
+//CRDITOS
+use App\Http\Controllers\Creditos\estado1\Estado1Controller;
 /* Route::middleware(['auth'])->group(function () {
     Route::get('/', function () {
         //return view('exequial.asociados.index');
@@ -143,17 +146,16 @@ Route::get('reservaI/historico', [ResReservaController::class, 'indexHistorico']
 
 
 // ✅ Terceros con prefijo 'maestras-terceros' o algo único
-Route::prefix('maestras/terceros')->middleware('auth')->name('maestras.terceros.')->group(function () {
-    Route::get('/', [MaeTercerosController::class, 'index'])->name('index');
-    Route::get('create', [MaeTercerosController::class, 'create'])->name('create');
-    Route::post('/', [MaeTercerosController::class, 'store'])->name('store');
-    Route::get('{tercero}/edit', [MaeTercerosController::class, 'edit'])->name('edit');
-    Route::put('{tercero}', [MaeTercerosController::class, 'update'])->name('update');
-    Route::get('{tercero}', [MaeTercerosController::class, 'show'])->name('show');
-    Route::delete('{tercero}', [MaeTercerosController::class, 'destroy'])->name('destroy');
+Route::prefix('maestras')->middleware('auth')->group(function () {
+    Route::resource('terceros', MaeTercerosController::class)
+        ->names('maestras.terceros')
+        ->parameters(['terceros' => 'tercero']);
 });
 
+Route::get('maestras/terceros/{tercero}/pdf', [MaeTercerosController::class, 'generarPdf'])
+    ->name('maestras.terceros.generarPdf');
 
+//
 
 // ✅ LUEGO las rutas de congregaciones
 Route::resource('maestras', CongregacionController::class)
@@ -166,3 +168,37 @@ Route::get('/buscar-pastor', [CongregacionController::class, 'buscarPastor'])
 
 Route::get('maestras/{congregacion}', [CongregacionController::class, 'show'])
     ->name('maestras.congregacion.show');
+
+//CREDITOS
+
+// Rutas para los formularios de cada etapa
+Route::get('/creditos/estado1/formDocumentos', function () {
+    return view('creditos.estado1.form');
+})->name('creditos.estado1.form');
+
+Route::post('/creditos/calcular-amortizacion', [Estado1Controller::class, 'calcularAmortizacion'])->name('creditos.estado1.calcular');
+
+
+Route::get('/creditos/estado2/formSolicitud', function () {
+    return view('creditos.estado2.form');
+})->name('creditos.estado2.form');
+
+Route::get('/creditos/estado3/formAnalisis', function () {
+    return view('creditos.estado3.form');
+})->name('creditos.estado3.form');
+
+Route::get('/creditos/estado4/formAprobacion', function () {
+    return view('creditos.estado4.form');
+})->name('creditos.estado4.form');
+
+Route::get('/creditos/estado5/formNotificacion', function () {
+    return view('creditos.estado5.form');
+})->name('creditos.estado5.form');
+
+Route::get('/creditos/estado6/formDesembolso', function () {
+    return view('creditos.estado6.form');
+})->name('creditos.estado6.form');
+
+Route::get('/creditos/estado7/formCartera', function () {
+    return view('creditos.estado7.form');
+})->name('creditos.estado7.form');
