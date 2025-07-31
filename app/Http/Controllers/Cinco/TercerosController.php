@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Cinco;
 
 use App\Http\Controllers\Controller;
 use App\Models\Cinco\Terceros;
+use App\Models\Maestras\maeTerceros;
 use Illuminate\Http\Request;
 use App\Http\Controllers\AuditoriaController;
 
@@ -48,6 +49,17 @@ class TercerosController extends Controller
         $id = $request->input('id');
         $tercero = Terceros::where('Cod_Ter', $id)->first();
         if (!$tercero) {
+            $ter = maeTerceros::where('cod_ter', $id)->first();
+            if ($ter) {
+                $tercero = Terceros::create([
+                    'Cod_Ter' => $ter->cod_ter,
+                    'Nom_Ter' => $ter->nom_ter,
+                    'Fec_Ipuc' => $ter->fecha_ipuc,
+                    'Fec_Minis' => $ter->fec_minis,
+                    'Fec_Aport' => $ter->fec_aport,
+                ]);                
+                return view('cinco.terceros.show', compact('tercero'));
+            }
             return redirect()->route('cinco.tercero.index')->with('warning', 'No existe esa cédula en la lista de terceros cinco');
         }
         return view('cinco.terceros.show', compact('tercero'));
@@ -76,6 +88,12 @@ class TercerosController extends Controller
             'verificado'=> true,
             'verificadousuario'=> auth()->user()->name
         ]);
+        maeTerceros::where('cod_ter', $id)->update([
+            'fecha_ipuc' => $request->input('Fec_Ing'),
+            'fec_minis' => $request->input('Fec_Minis'),
+            'fec_aport' => $request->input('Fec_Aport'),
+        ]);
+
         $accion = "Actualizar fechas terceros " . $id;
         $this->auditoria($accion);
         return redirect()->back()->with('success', 'Registro actualizado correctamente.');

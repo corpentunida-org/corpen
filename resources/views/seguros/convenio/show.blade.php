@@ -64,8 +64,7 @@
                                             </a>
                                             <div class="dropdown-menu dropdown-menu-end" style="">
                                             @can('seguros.planes.update')
-                                                <a class="dropdown-item"
-                                                    href="{{ route('seguros.planes.edit', ['plan' => $plan->id]) }}">Editar</a>
+                                                <a class="dropdown-item" href="{{ route('seguros.planes.edit', ['plan' => $plan->id]) }}">Editar</a>
                                                     @endcan
                                                     @can('seguros.planes.destroy')
                                                 <form
