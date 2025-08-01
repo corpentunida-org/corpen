@@ -32,6 +32,8 @@ use App\Http\Controllers\Cinco\RetirosListadoController;
 
 use App\Http\Controllers\ResReservaController;
 
+//ARCHIVO
+use App\Http\Controllers\Archivo\CargoController;
 
 //MAESTARS
 use App\Http\Controllers\Maestras\CongregacionController;
@@ -39,7 +41,7 @@ use App\Http\Controllers\Maestras\MaeTercerosController;
 
 
 //CRDITOS
-use App\Http\Controllers\Creditos\estado1\Estado1Controller;
+use App\Http\Controllers\Creditos\Estado1\Estado1Controller;
 /* Route::middleware(['auth'])->group(function () {
     Route::get('/', function () {
         //return view('exequial.asociados.index');
@@ -164,36 +166,37 @@ Route::get('/buscar-pastor', [CongregacionController::class, 'buscarPastor'])
 Route::get('maestras/{congregacion}', [CongregacionController::class, 'show'])
     ->name('maestras.congregacion.show');
 
-//CREDITOS
-
-// Rutas para los formularios de cada etapa
-Route::get('/creditos/estado1/formDocumentos', function () {
-    return view('creditos.estado1.form');
-})->name('creditos.estado1.form');
-
-Route::post('/creditos/calcular-amortizacion', [Estado1Controller::class, 'calcularAmortizacion'])->name('creditos.estado1.calcular');
 
 
-Route::get('/creditos/estado2/formSolicitud', function () {
-    return view('creditos.estado2.form');
-})->name('creditos.estado2.form');
 
-Route::get('/creditos/estado3/formAnalisis', function () {
-    return view('creditos.estado3.form');
-})->name('creditos.estado3.form');
+    
+//CREDITOS ***
+Route::prefix('creditos/estado1')->name('estado1.')->group(function () {
+    Route::get('/', [Estado1Controller::class, 'index'])->name('index');
+    Route::get('/create', [Estado1Controller::class, 'create'])->name('create');
+    Route::post('/store', [Estado1Controller::class, 'store'])->name('store');
+    Route::get('/edit/{fabrica}', [Estado1Controller::class, 'edit'])->name('edit');
+    Route::put('/update/{fabrica}', [Estado1Controller::class, 'update'])->name('update');
+    Route::delete('/destroy/{fabrica}', [Estado1Controller::class, 'destroy'])->name('destroy');
 
-Route::get('/creditos/estado4/formAprobacion', function () {
-    return view('creditos.estado4.form');
-})->name('creditos.estado4.form');
+    Route::get('/formulario', [Estado1Controller::class, 'mostrarFormulario'])->name('form');
+});
 
-Route::get('/creditos/estado5/formNotificacion', function () {
-    return view('creditos.estado5.form');
-})->name('creditos.estado5.form');
 
-Route::get('/creditos/estado6/formDesembolso', function () {
-    return view('creditos.estado6.form');
-})->name('creditos.estado6.form');
+//GESTION DOCUMENTAL
+/* Route::prefix('archivo')->group(function () {
+    Route::resource('cargos', CargoController::class)
+        ->names('archivo.cargo')
+        ->parameters(['cargos' => 'cargo']);
+})->middleware('auth'); */
 
-Route::get('/creditos/estado7/formCartera', function () {
-    return view('creditos.estado7.form');
-})->name('creditos.estado7.form');
+
+/* Route::prefix('archivo')->resource('cargos', CargoController::class)->names('archivo.cargo')->middleware(['auth']);
+ */
+
+
+Route::prefix('archivo')->middleware('auth')->group(function () {
+    Route::resource('cargos', CargoController::class)
+        ->names('archivo.cargo')
+        ->parameters(['cargos' => 'cargo']);
+});

@@ -6,8 +6,21 @@
     </a>
 
     <ul class="nxl-submenu">
-        <li class="nxl-item {{ request()->routeIs('creditos.estado1.*') ? 'active' : '' }}">
-            <a class="nxl-link" href="{{ route('creditos.estado1.form') }}">Etapa 1 - Documentación</a>
-        </li>
+
+    {{-- Etapa 1 --}}
+    <li class="nxl-item {{ request()->routeIs('estado1.index') ? 'active' : '' }}">
+        <a href="javascript:void(0);" class="nxl-link">
+            Maestras
+            <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
+        </a>
+        <ul class="nxl-submenu">
+            <li class="nxl-item">
+                <a class="nxl-link" href="{{ route('estado1.index') }}" style="text-decoration: none;">
+                    Lista de Fábricas
+                </a>
+            </li>
+        </ul>
+    </li>
+
     </ul>
 </li>
