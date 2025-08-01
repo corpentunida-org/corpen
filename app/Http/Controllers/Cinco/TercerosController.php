@@ -78,23 +78,22 @@ class TercerosController extends Controller
      */
     public function update(Request $request, $id)
     {        
-        $ter = Terceros::where('Cod_Ter', $id)->first();
-        
+        $ter = Terceros::where('Cod_Ter', $id->cod_ter)->first();
         $ter->update([
-            'Fec_Ing' => $request->input('Fec_Ing'),            
+            'Fec_Ing' => $request->input('Fec_Ing'),
             'Fec_Minis' => $request->input('Fec_Minis'),            
             'Fec_Aport' => $request->input('Fec_Aport'),
-            'observacion'=> $request->input('observacion'),
+            'observacion'=> strtoupper($request->input('observacion')),
             'verificado'=> true,
             'verificadousuario'=> auth()->user()->name
         ]);
-        maeTerceros::where('cod_ter', $id)->update([
+        maeTerceros::where('cod_ter', $id->cod_ter)->update([
             'fecha_ipuc' => $request->input('Fec_Ing'),
             'fec_minis' => $request->input('Fec_Minis'),
             'fec_aport' => $request->input('Fec_Aport'),
         ]);
 
-        $accion = "Actualizar fechas terceros " . $id;
+        $accion = "Actualizar fechas terceros " . $id->cod_ter;
         $this->auditoria($accion);
         return redirect()->back()->with('success', 'Registro actualizado correctamente.');
     }
