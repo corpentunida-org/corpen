@@ -93,10 +93,10 @@
                 <tr>
                     <td>{{ $i }}</td>
                     <td>{{ $r->cedulaAsegurado ?? '' }}</td>
-                    <td>{{ $r->asegurado->tercero->nombre ?? ''}}</td>                  
+                    <td>{{ $r->asegurado->tercero->nom_ter ?? ''}}</td>                  
                     <td>{{ $r->asegurado->tercero->edad ?? '' }}</td>               
-                    <td>{{ $r->asegurado->terceroAF->cedula ?? ''}}</td>
-                    <td>{{ $r->asegurado->terceroAF->nombre ?? ''}}</td>
+                    <td>{{ $r->asegurado->terceroAF->cod_ter ?? ''}}</td>
+                    <td>{{ $r->asegurado->terceroAF->cod_ter ?? ''}}</td>
                     <td>{{ $r->asegurado->parentesco ?? ''}}</td>
                     <td>{{ $r->cobertura->nombre }}</td>
                     <td>$ {{ is_numeric($r->valor_asegurado) ? number_format((float) $r->valor_asegurado) : '' }} </td>

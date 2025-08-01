@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Seguros;
 
 use App\Http\Controllers\Controller;
+use App\Models\Maestras\maeTerceros;
 use App\Models\Seguros\SegBeneficios;
 use App\Models\Seguros\SegPoliza;
 use App\Models\Seguros\SegBeneficiario;
@@ -187,24 +188,42 @@ class SegPolizaController extends Controller
             }
             $tercero = SegTercero::where('cedula', $row['num_doc'])->first();
             if (!$tercero) {
-                try {
-                    $fechaNacimiento = Carbon::create(1899, 12, 30)->addDays($row['fecha_nac'])->toDateString();
-                    $edad = Carbon::parse($fechaNacimiento)->age;
-                    if ($edad < 0 || $edad > 120) {
-                        throw new \Exception("Edad inválida: $edad años. Fuera del rango permitido.");
+                $maeTercero = maeTerceros::where('cod_ter', $row['num_doc'])->first();
+                if (!$maeTercero) {
+                    try {
+                        $fechaNacimiento = Carbon::create(1899, 12, 30)->addDays($row['fecha_nac'])->toDateString();
+                        $edad = Carbon::parse($fechaNacimiento)->age;
+                        if ($edad < 0 || $edad > 120) {
+                            throw new \Exception("Edad inválida: $edad años. Fuera del rango permitido.");
+                        }
+                        $tercero = SegTercero::create([
+                            'cedula' => $row['num_doc'],
+                            'nombre' => $row['nombre'],
+                            'fechaNacimiento' => $fechaNacimiento,
+                            'genero' => $row['genero'],
+                        ]);
+                        maeTerceros::create([
+                            'cod_ter' => $row['num_doc'],
+                            'nom_ter' => $row['nombre'],
+                            'fec_nac' => $fechaNacimiento,
+                            'sexo' => $row['genero'],
+                        ]);
+
+                    } catch (\Exception $e) {
+                        $failedRows[] = [
+                            'cedula' => $row['num_doc'],
+                            'obser' => 'La fecha de nacimiento no esta en el formato correcto',
+                        ];
+                        continue;
                     }
+                }
+                else{
                     $tercero = SegTercero::create([
-                        'cedula' => $row['num_doc'],
-                        'nombre' => $row['nombre'],
-                        'fechaNacimiento' => $fechaNacimiento,
-                        'genero' => $row['genero'],
+                        'cedula' => $maeTercero->cod_ter,
+                        'nombre' => $maeTercero->nom_ter,
+                        'fechaNacimiento' => $maeTercero->fec_nac,
+                        'genero' => $maeTercero->sexo,
                     ]);
-                } catch (\Exception $e) {
-                    $failedRows[] = [
-                        'cedula' => $row['num_doc'],
-                        'obser' => 'La fecha de nacimiento no esta en el formato correcto',
-                    ];
-                    continue;
                 }
             }
             $asegurado = SegAsegurado::where('cedula', $tercero->id)->first();
@@ -288,7 +307,7 @@ class SegPolizaController extends Controller
                 $failedRows[] = $row;
             }
         }
-        $this->auditoria('actualizar valor a pagar polizas con carga excel');         
+        $this->auditoria('actualizar valor a pagar polizas con carga excel');
         return view('seguros.polizas.edit', [
             'success' => 'Se actualizaron exitosamente ' . $updatedCount . ' registros',
             'failedRows' => $failedRows,
@@ -327,9 +346,9 @@ class SegPolizaController extends Controller
     public function namesearch(Request $request)
     {
         $name = str_replace(' ', '%', $request->input('id'));
-        $asegurados = SegAsegurado::with(['tercero','polizas'])
+        $asegurados = SegAsegurado::with(['tercero', 'polizas'])
             ->whereHas('tercero', function ($query) use ($name) {
-                $query->where('nombre', 'like', '%' . $name . '%');
+                $query->where('nom_ter', 'like', '%' . $name . '%');
             })
             ->get();
         return view('seguros.polizas.search', compact('asegurados'));

@@ -164,7 +164,7 @@
                                                             </a>
                                                         </td>
                                                         <td><span
-                                                                class="fs-12 d-block fw-normal text-wrap">{{ $i->tercero->nombre ?? '' }}</span>
+                                                                class="fs-12 d-block fw-normal text-wrap">{{ $i->tercero->nom_ter ?? '' }}</span>
                                                         </td>
                                                         <td><span
                                                                 class="badge bg-gray-200 text-dark">{{ $i->asegurado->parentesco }}</span>
@@ -217,7 +217,7 @@
                                             <td>
                                                 <div class="d-flex align-items-center gap-3">
                                                     <a href="javascript:void(0);">
-                                                        <span class="d-block">{{ $b->tercero->nombre ?? ''}}</span>
+                                                        <span class="d-block">{{ $b->tercero->nom_ter ?? ''}}</span>
                                                         <span
                                                             class="fs-12 d-block fw-normal text-muted text-wrap">{{ $b->cedulaAsegurado ?? ''}}</span>
                                                     </a>

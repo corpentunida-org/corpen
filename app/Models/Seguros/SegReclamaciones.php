@@ -2,6 +2,7 @@
 
 namespace App\Models\Seguros;
 
+use App\Models\Maestras\maeTerceros;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -35,9 +36,13 @@ class SegReclamaciones extends Model
         return $this->belongsTo(SegAsegurado::class, 'cedulaAsegurado', 'cedula');
     }
 
-    public function tercero()
+    /* public function tercero()
     {
         return $this->belongsTo(SegTercero::class, 'cedulaAsegurado', 'cedula');
+    } */
+    public function tercero()
+    {
+        return $this->belongsTo(maeTerceros::class, 'cedulaAsegurado', 'cod_ter');
     }
 
     public function cobertura()
