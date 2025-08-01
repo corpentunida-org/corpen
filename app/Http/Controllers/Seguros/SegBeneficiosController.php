@@ -160,9 +160,10 @@ class SegBeneficiosController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(SegBeneficios $SegBeneficios)
+    public function edit($id)
     {
-        //
+        $SegBeneficios = SegBeneficios::findOrFail($id);
+        return view('seguros.beneficios.edit', compact('SegBeneficios'));
     }
 
     /**
