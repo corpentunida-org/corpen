@@ -88,7 +88,7 @@
                     @method('POST')
                     <div class="mb-4">
                         <label class="form-label">Nombre del Rol<span class="text-danger">*</span></label>
-                        <input type="text" class="form-control uppercase-input" name="namerole" required>
+                        <input type="text" class="form-control" name="namerole" required>
                     </div>
 
                     <div class="d-flex flex-row-reverse gap-2 mt-2">

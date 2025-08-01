@@ -16,7 +16,7 @@
                         <div>
                             <div class="fs-12 text-muted">Titular: </div>
                             <div class="fs-4 fw-bold text-dark"><span
-                                    class="counter">{{ $poliza->asegurado->terceroAF->nombre }}</span></div>
+                                    class="counter">{{ $poliza->asegurado->terceroAF->nom_ter }}</span></div>
                             <h3 class="fs-13 fw-semibold text-truncate-1-line">{{ $poliza->asegurado->titular }}</h3>
                         </div>
                     </div>
@@ -34,7 +34,7 @@
                     <div class="btn btn-sm btn-light-brand p-3 bg-soft-primary">{{ $poliza->asegurado->parentesco }}
                     </div>
                     <div>
-                        <h5 class="fw-bold mb-0">{{ $poliza->tercero->nombre }} @if ($poliza->asegurado->viuda)
+                        <h5 class="fw-bold mb-0">{{ $poliza->tercero->nom_ter }} @if ($poliza->asegurado->viuda)
                             <span class="badge bg-danger text-white ms-2">VIUDA</span>
                         @endif
                         </h5>
@@ -149,8 +149,7 @@
                                     <th>Nombre</th>
                                     <th>Parentesco</th>
                                     <th>Plan</th>
-                                    <th>Valor Asegurado</th>
-                                    <th>Prima Aseguradora</th>
+                                    <th>Beneficio</th>
                                     <th>Prima </th>
                                     <th class="text-end">Acciones</th>
                                 </tr>
@@ -159,16 +158,35 @@
                                 @foreach ($grupoFamiliar as $familiar)
                                     <tr>
                                         <td><a href="javascript:void(0);">{{ $familiar->cedula }}</a></td>
-                                        <td>{{ $familiar->tercero->nombre }}</td>
+                                        <td>{{ $familiar->tercero->nom_ter }}</td>
                                         <td>{{ $familiar->parentesco }}</td>
-                                        <td><span
-                                                class="badge bg-soft-warning text-warning">{{ $familiar->polizas->first()->plan->name ?? '' }}</span>
+                                        <td>
+                                            @if($familiar->polizas->first())
+                                            <div class="fw-semibold mb-1">$ {{ number_format($familiar->polizas->first()->valor_asegurado) }}</div>
+                                            <div class="d-flex gap-3"><a href="#"
+                                                    class="hstack gap-1 fs-11 fw-normal">
+                                                    <span class="badge bg-soft-warning text-warning">{{ $familiar->polizas->first()->plan->name ?? '' }}</span></a>
+                                                    <a
+                                                    href="#" class="hstack gap-1 fs-11 fw-normal">
+                                                        $ {{ number_format($familiar->polizas->first()->plan->prima) ?? '' }}</a></div>
+                                            @endif
                                         </td>
-                                        <td>@if($familiar->polizas->first())
-                                            $ {{ number_format($familiar->polizas->first()->valor_asegurado) }}
-                                        @endif</td>
-                                        <td>@if($familiar->polizas->first())
-                                        $ {{ number_format($familiar->polizas->first()->valor_prima) }}@endif</td>
+                                        <td>
+                                            @php
+                                                $valortotalbene = null;
+                                                $poliza = $familiar->polizas->first();
+
+                                                if ($poliza && $poliza->plan) {
+                                                    $valortotalbene = $poliza->plan->prima - $poliza->primapagar;
+                                                }
+                                            @endphp
+
+                                            @if (!is_null($valortotalbene))
+                                                <span class="{{ $valortotalbene != 0 ? 'badge bg-soft-success text-success' : '' }}">
+                                                    $ {{ number_format($valortotalbene) }}
+                                                </span>
+                                            @endif
+                                        </td>                                        
                                         <td>@if($familiar->polizas->first())
                                         $ {{ number_format($familiar->polizas->first()->primapagar) }}@endif</td>
                                         <td class="hstack justify-content-end gap-4 text-end">
@@ -385,7 +403,8 @@
                         <div class="col-lg-3 mb-4">
                             <label class="form-label">Porcentaje Beneficio<span class="text-danger">*</span></label>
                             <div class="input-group">
-                                <input type="number" class="form-control" min="0" max="100" name="porbene" id="inputporbene">
+                                <input type="number" class="form-control" min="0" max="100" name="porbene"
+                                    id="inputporbene">
                                 <span class="input-group-text">%</span>
                             </div>
                         </div>
@@ -438,20 +457,20 @@
                         $('#inputporbene').on('input', function () {
                             var porcentaje = parseFloat($(this).val().trim());
                             var valorOriginal = parseFloat("{{ $poliza->valor_prima}}");
-                            
-                                if(!isNaN(porcentaje) && porcentaje > 0) {
+
+                            if (!isNaN(porcentaje) && porcentaje > 0) {
                                 $('#checkvalbeneficio').slideDown();
-                                } else {
-                                    $('#inputValorBene').val('');
-                                    $('#checkvalbeneficio').slideUp();
-                                    $('#checkbox2').prop('checked', false);
-                                }
-                                let valorDescuento = (valorOriginal * porcentaje) / 100;
-                                $('#inputValorBene').val(valorDescuento);
-                                var valorprima = Math.ceil(valorOriginal - valorDescuento);
-                                $('#labeltextbeneficio').text('Confirmar valor prima $' + valorprima);
-                                $('#inputvalorprima').val(valorprima);
-                            
+                            } else {
+                                $('#inputValorBene').val('');
+                                $('#checkvalbeneficio').slideUp();
+                                $('#checkbox2').prop('checked', false);
+                            }
+                            let valorDescuento = (valorOriginal * porcentaje) / 100;
+                            $('#inputValorBene').val(valorDescuento);
+                            var valorprima = Math.ceil(valorOriginal - valorDescuento);
+                            $('#labeltextbeneficio').text('Confirmar valor prima $' + valorprima);
+                            $('#inputvalorprima').val(valorprima);
+
                         });
                     });
                 </script>

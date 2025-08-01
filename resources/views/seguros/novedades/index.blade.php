@@ -45,7 +45,7 @@
                                         <i class="bi bi-person-circle"></i>
                                         <div>
                                             <span class="text-truncate-1-line">{{ $reg->cedula }}</span>
-                                            <small class="fs-12 fw-normal text-muted">{{ $reg->tercero->nombre }}</small>
+                                            <small class="fs-12 fw-normal text-muted">{{ $reg->tercero->nom_ter ?? '' }}</small>
                                         </div>
                                     </a></td>
                                 <td class="text-primary">{{ $reg->polizas->first()->plan->name }}</td>

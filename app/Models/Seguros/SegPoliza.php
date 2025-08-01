@@ -4,6 +4,7 @@ namespace App\Models\Seguros;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Maestras\maeTerceros;
 
 
 class SegPoliza extends Model
@@ -33,7 +34,7 @@ class SegPoliza extends Model
 
     public function asegurado()
     {
-        return $this->belongsTo(SegAsegurado::class, 'seg_asegurado_id','cedula');
+        return $this->belongsTo(SegAsegurado::class, 'seg_asegurado_id', 'cedula');
     }
 
     public function plan()
@@ -41,15 +42,20 @@ class SegPoliza extends Model
         return $this->belongsTo(SegPlan::class, 'seg_plan_id', 'id');
     }
 
-    public function tercero()
+    /* public function tercero()
     {
         return $this->belongsTo(SegTercero::class, 'seg_asegurado_id', 'cedula');
+    } */
+    public function tercero()
+    {
+        return $this->belongsTo(maeTerceros::class, 'seg_asegurado_id', 'cod_ter');
     }
 
-    public function esreclamacion(){
+    public function esreclamacion()
+    {
         return $this->hasMany(SegReclamaciones::class, 'poliza_id', 'id');
-    }   
+    }
 
-    
+
 
 }

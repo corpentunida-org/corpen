@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Cinco;
 
 use App\Models\Cinco\MoviContCinco;
 use App\Models\Maestras\maeTerceros;
+use App\Models\Cinco\Terceros;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -54,10 +55,11 @@ class MoviContCincoController extends Controller
             ->get();
 
         $fechas = maeTerceros::select('nom_ter','fec_minis', 'fecha_ipuc', 'fec_aport')->where('Cod_Ter', $id)->first();
+        $tercero = Terceros::where('cod_ter', $id)->first();
         if ($movimientos->isEmpty()) {
             return redirect()->back()->with('warning', 'No hay registros con esa cedula ingresada.');
         }
-        return view('cinco.movcontables.show', compact('movimientos', 'cuentasAgrupadas', 'id', 'fechas'));
+        return view('cinco.movcontables.show', compact('movimientos', 'cuentasAgrupadas', 'id', 'fechas', 'tercero'));
     }
 
     /**
