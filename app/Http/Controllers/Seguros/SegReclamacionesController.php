@@ -45,13 +45,12 @@ class SegReclamacionesController extends Controller
                 return $reclamacion->tercero !== null;
             })
             ->groupBy(function ($reclamacion) {
-                return $reclamacion->tercero->genero;
+                return $reclamacion->tercero->sexo;
             });
         $hombres = $counts->get('V', collect())->count();
         $mujeres = $counts->get('H', collect())->count();
 
         $vencidas = $this->listaReclamacionesVencidas();
-
         return view('seguros.reclamaciones.index', compact('reclamaciones', 'coberturas', 'mujeres', 'hombres', 'vencidas'));
     }
 

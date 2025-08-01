@@ -16,7 +16,7 @@
                         <div>
                             <div class="fs-12 text-muted">Titular: </div>
                             <div class="fs-4 fw-bold text-dark"><span
-                                    class="counter">{{ $poliza->asegurado->terceroAF->nombre }}</span></div>
+                                    class="counter">{{ $poliza->asegurado->terceroAF->nom_ter }}</span></div>
                             <h3 class="fs-13 fw-semibold text-truncate-1-line">{{ $poliza->asegurado->titular }}</h3>
                         </div>
                     </div>
@@ -34,7 +34,7 @@
                     <div class="btn btn-sm btn-light-brand p-3 bg-soft-primary">{{ $poliza->asegurado->parentesco }}
                     </div>
                     <div>
-                        <h5 class="fw-bold mb-0">{{ $poliza->tercero->nombre }} @if ($poliza->asegurado->viuda)
+                        <h5 class="fw-bold mb-0">{{ $poliza->tercero->nom_ter }} @if ($poliza->asegurado->viuda)
                             <span class="badge bg-danger text-white ms-2">VIUDA</span>
                         @endif
                         </h5>
@@ -158,7 +158,7 @@
                                 @foreach ($grupoFamiliar as $familiar)
                                     <tr>
                                         <td><a href="javascript:void(0);">{{ $familiar->cedula }}</a></td>
-                                        <td>{{ $familiar->tercero->nombre }}</td>
+                                        <td>{{ $familiar->tercero->nom_ter }}</td>
                                         <td>{{ $familiar->parentesco }}</td>
                                         <td>
                                             @if($familiar->polizas->first())

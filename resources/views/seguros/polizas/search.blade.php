@@ -112,7 +112,7 @@
                                         <div class="hstack gap-4">
                                             <i class="bi bi-person-circle"></i>
                                             <div>
-                                                <div class="fw-bold text-dark">{{ $a->tercero->nombre }}</div>
+                                                <div class="fw-bold text-dark">{{ $a->tercero->nom_ter }}</div>
                                                 <div class="fs-12 text-muted">Cédula:
                                                     <a class="badge bg-soft-primary text-primary">{{ $a->cedula }}</a>
                                                 </div>
@@ -122,7 +122,7 @@
                                     <td>
                                         <span class="badge bg-gray-200 text-dark">{{ $a->parentesco }}</span>
                                     </td>
-                                    <td>$ {{ number_format($a->polizas->first()->valor_asegurado ?? '') }}</td>
+                                    <td>$ {{ number_format(floatval($a->polizas->first()->valor_asegurado ?? 0)) }}</td>
                                     <td>$ {{ number_format($a->polizas->first()->valor_prima) ?? '' }}</td>
                                     <td>$ {{ number_format($a->polizas->first()->primapagar) ?? '' }}</td>
                                     <td>

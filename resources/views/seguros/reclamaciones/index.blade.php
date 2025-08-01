@@ -141,9 +141,9 @@
                                     <td>
                                         <div class="d-flex align-items-center gap-3">
                                             <a href="javascript:void(0);">
-                                                <span class="d-block">{{ $r->asegurado->terceroAF->cedula ?? ''}}</span>
+                                                <span class="d-block">{{ $r->asegurado->terceroAF->cod_ter ?? ''}}</span>
                                                 <span
-                                                    class="fs-12 d-block fw-normal text-muted text-wrap">{{ $r->asegurado->terceroAF->nombre ?? ''}}</span>
+                                                    class="fs-12 d-block fw-normal text-muted text-wrap">{{ $r->asegurado->terceroAF->nom_ter ?? ''}}</span>
                                             </a>
                                         </div>
                                     </td>
@@ -152,7 +152,7 @@
                                             <a href="javascript:void(0);">
                                                 <span class="d-block">{{ $r->cedulaAsegurado ?? ''}}</span>
                                                 <span
-                                                    class="fs-12 d-block fw-normal text-muted text-wrap">{{ $r->tercero->nombre ?? '' }}</span>
+                                                    class="fs-12 d-block fw-normal text-muted text-wrap">{{ $r->tercero->nom_ter ?? '' }}</span>
                                             </a>
                                         </div>
                                     </td>
@@ -239,9 +239,9 @@
                                     <td>
                                         <div class="d-flex align-items-center gap-3">
                                             <a href="javascript:void(0);">
-                                                <span class="d-block">{{ $r->asegurado->terceroAF->cedula ?? ''}}</span>
+                                                <span class="d-block">{{ $r->asegurado->terceroAF->cod_ter ?? ''}}</span>
                                                 <span
-                                                    class="fs-12 d-block fw-normal text-muted text-wrap">{{ $r->asegurado->terceroAF->nombre ?? ''}}</span>
+                                                    class="fs-12 d-block fw-normal text-muted text-wrap">{{ $r->asegurado->terceroAF->nom_ter ?? ''}}</span>
                                             </a>
                                         </div>
                                     </td>
@@ -250,7 +250,7 @@
                                             <a href="javascript:void(0);">
                                                 <span class="d-block">{{ $r->cedulaAsegurado ?? ''}}</span>
                                                 <span
-                                                    class="fs-12 d-block fw-normal text-muted text-wrap">{{ $r->asegurado->tercero->nombre ?? ''}}</span>
+                                                    class="fs-12 d-block fw-normal text-muted text-wrap">{{ $r->asegurado->tercero->nom_ter ?? ''}}</span>
                                             </a>
                                         </div>
                                     </td>

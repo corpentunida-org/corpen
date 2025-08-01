@@ -188,6 +188,14 @@ class maeTerceros extends Model
         'email_fac',
     ];
 
+    public function getEdadAttribute()
+    {
+        if ($this->fec_nac) {
+            return Carbon::parse($this->fechaNacimiento)->age;
+        }
+        return null;
+    }
+
     /**
      * Relación uno a muchos con Congregaciones
      * Un tercero puede estar relacionado con muchas congregaciones
