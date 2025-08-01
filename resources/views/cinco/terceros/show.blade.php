@@ -5,8 +5,14 @@
     <div class="col-12">
         <div class="card stretch stretch-full">
             <div class="card-body">
-                <div class="row">                    
-                    <div class="col-sm-12 d-flex justify-content-end ">
+                <div class="row">
+                    <div class="col-sm-6">
+                        <form action="{{ route('cinco.movcontables.show', ['cinco' => 'ID']) }}" method="GET">                            
+                            <input type="hidden" name="id" value="{{ $tercero->Cod_Ter }}">
+                            <button type="submit" class="btn btn-light-brand w-25"><i class="feather-send"></i><span> IR A MOV CONTABLE CINCO</span></button>
+                        </form>                        
+                    </div>
+                    <div class="col-sm-6 d-flex justify-content-end ">
                         <form method="GET" class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
                             <label for="search-input" class="mb-0 me-2">Buscar:</label>
                             <input type="text" name="id" class="form-control form-control-sm" id="valueCedula"
@@ -45,10 +51,10 @@
                     </div>
                 </div>
                 @can('cinco.tercero.update')
-                <form action="{{ route('cinco.tercero.update', $tercero->Cod_Ter) }}" method="POST"
-                    id="formEditfechasCinco" novalidate>
-                    @csrf
-                    @method('PUT')
+                    <form action="{{ route('cinco.tercero.update', $tercero->Cod_Ter) }}" method="POST"
+                        id="formEditfechasCinco" novalidate>
+                        @csrf
+                        @method('PUT')
                 @endcan
                     <div class="row mb-4 align-items-center">
                         <div class="col-lg-4">
@@ -93,25 +99,26 @@
                         <div class="col-lg-8">
                             <div class="input-group">
                                 <div class="input-group-text"><i class="feather-type"></i></div>
-                                <input type="text" class="form-control" value="{{ $tercero->observacion }}" placeholder="Observación de actualización" name="observacion" required>
+                                <input type="text" class="form-control text-uppercase"
+                                    value="{{ $tercero->observacion }}" placeholder="Observación de actualización"
+                                    name="observacion" required>
                             </div>
                         </div>
                     </div>
                     @can('cinco.tercero.update')
-                    <div class="d-flex flex-row-reverse gap-2 mt-2">
-                        <button class="btn btn-warning mt-4" data-bs-toggle="tooltip" title="Timesheets"
-                            type="submit">
-                            <i class="feather-plus me-2"></i>
-                            <span>Editar Fechas</span>
-                        </button>
-                    </div>
+                        <div class="d-flex flex-row-reverse gap-2 mt-2">
+                            <button class="btn btn-warning mt-4" data-bs-toggle="tooltip" title="Timesheets" type="submit">
+                                <i class="feather-plus me-2"></i>
+                                <span>Editar Fechas</span>
+                            </button>
+                        </div>
                     @endcan
                 </form>
             </div>
         </div>
     </div>
     <script>
-        $('#formEditfechasCinco').submit(function(event) {
+        $('#formEditfechasCinco').submit(function (event) {
             var form = this;
             if (!form.checkValidity()) {
                 $(form).addClass('was-validated');

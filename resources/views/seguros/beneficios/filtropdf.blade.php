@@ -87,13 +87,13 @@
             @endphp
             @foreach ($registros as $r)
                 @php
-                    $fechaNacimiento = $r['tercero']['fechaNacimiento'] ?? null;
+                    $fechaNacimiento = $r['tercero']['fec_nac'] ?? null;
                     $edad = $fechaNacimiento ? \Carbon\Carbon::parse($fechaNacimiento)->age : ' ';
                 @endphp
                 <tr>
                     <td>{{ $i }}</td>
                     <td>{{ $r['seg_asegurado_id'] ?? '' }}</td>
-                    <td>{{ $r['tercero']['nombre'] ?? '' }}</td>
+                    <td>{{ $r['tercero']['nom_ter'] ?? '' }}</td>
                     <td>{{ $r['asegurado']['parentesco'] ?? '' }}</td>
                     <td>{{ $edad }}</td>
                     <td>$ {{ is_numeric($r['valor_asegurado']) ? number_format((float) $r['valor_asegurado']) : '' }} </td>

@@ -14,8 +14,8 @@
                         <div>
                             <div class="fs-12 text-muted">Titular: </div>
                             <div class="fs-4 fw-bold text-dark"><span
-                                    class="counter">{{ $asegurado->terceroAF->nombre ?? '' }}</span></div>
-                            <h3 class="fs-13 fw-semibold text-truncate-1-line">{{ $asegurado->terceroAF->cedula ?? '' }}
+                                    class="counter">{{ $asegurado->terceroAF->nom_ter ?? '' }}</span></div>
+                            <h3 class="fs-13 fw-semibold text-truncate-1-line">{{ $asegurado->terceroAF->cod_ter ?? '' }}
                             </h3>
                         </div>
                     </div>
@@ -41,7 +41,7 @@
                         </div>
                         <div class="col-lg-8 mb-4">
                             <label class="form-label">Nombre Asegurado</label>
-                            <input type="text" class="form-control" value="{{ $asegurado->tercero->nombre ?? '' }}"
+                            <input type="text" class="form-control" value="{{ $asegurado->tercero->nom_ter ?? '' }}"
                                 readonly>
                         </div>
                     </div>
@@ -54,13 +54,13 @@
                         <div class="col-lg-3 mb-4">
                             <label class="form-label">Genero <span class="text-danger">*</span></label>
                             <input class="form-control datepicker-input"
-                                value="{{ isset($asegurado->tercero) && $asegurado->tercero->genero === 'V' ? 'Masculino' : (isset($asegurado->tercero) && $asegurado->tercero->genero === 'H' ? 'Femenino' : '') }}"
+                                value="{{ isset($asegurado->tercero) && $asegurado->tercero->sexo === 'V' ? 'Masculino' : (isset($asegurado->tercero) && $asegurado->tercero->sexo === 'H' ? 'Femenino' : '') }}"
                                 readonly>
                         </div>
                         <div class="col-lg-3 mb-4">
                             <label class="form-label">Distrito <span class="text-danger">*</span></label>
                             <input class="form-control datepicker-input"
-                                value="{{ $asegurad->tercero->distrito ?? '' }}" readonly>
+                                value="{{ $asegurad->tercero->cod_dist ?? '' }}" readonly>
                         </div>
                         <div class="col-lg-3 mb-4">
                             <label class="form-label">Fecha del siniestro <span class="text-danger">*</span></label>

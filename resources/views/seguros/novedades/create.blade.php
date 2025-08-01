@@ -11,7 +11,7 @@
                         <div>
                             <div class="fs-12 text-muted">Titular: </div>
                             <div class="fs-4 fw-bold text-dark"><span
-                                    class="counter">{{ $asegurado->terceroAF->nombre }}</span></div>
+                                    class="counter">{{ $asegurado->terceroAF->nom_ter }}</span></div>
                             <h3 class="fs-13 fw-semibold text-truncate-1-line">{{ $asegurado->titular }}</h3>
                         </div>
                     </div>
@@ -48,7 +48,7 @@
                                 </div>
                                 <div class="col-lg-8 mb-4">
                                     <label class="form-label">Nombre Asegurado</label>
-                                    <input type="text" class="form-control" value="{{ $asegurado->tercero->nombre }}"
+                                    <input type="text" class="form-control" value="{{ $asegurado->tercero->nom_ter }}"
                                         disabled>
                                 </div>
                             </div>
@@ -164,7 +164,7 @@
                                                 <td><a
                                                         href="{{ route('seguros.poliza.show', ['poliza' => 'ID']) . '?id=' . $gf->cedula }}">{{ $gf->cedula }}</a>
                                                 </td>
-                                                <td>{{ $gf->tercero->nombre }}</td>
+                                                <td>{{ $gf->tercero->nom_ter }}</td>
                                                 <td>{{ $gf->parentesco }}</td>
                                                 <td><span
                                                         class="badge bg-soft-warning text-warning">{{ $gf->polizas->first()->plan->name }}</span>
@@ -192,7 +192,7 @@
                                         <div class="input-group">
                                             <div class="input-group-text">$</div>
                                             <input class="form-control"
-                                                value="{{ $asegurado->terceroAF->asegurados->first()->valorpAseguradora }}"
+                                                value="{{ $asegurado->polizas->first()->valorpagaraseguradora }}"
                                                 type="text" name="valorpagaraseguradora">
                                         </div>
                                     </div>
@@ -228,7 +228,7 @@
                             </div>
                             <div class="col-lg-8 mb-4">
                                 <label class="form-label">Nombre Asegurado</label>
-                                <input type="text" class="form-control" value="{{ $asegurado->tercero->nombre }}"
+                                <input type="text" class="form-control" value="{{ $asegurado->tercero->nom_ter }}"
                                     disabled>
                             </div>
                         </div>

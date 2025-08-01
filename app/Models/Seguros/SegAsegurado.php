@@ -2,6 +2,7 @@
 
 namespace App\Models\Seguros;
 
+use App\Models\Maestras\maeTerceros;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -16,14 +17,23 @@ class SegAsegurado extends Model
         'valorpAseguradora'
     ];
 
-    public function terceroAF()
+    /* public function terceroAF()
     {
         return $this->belongsTo(SegTercero::class, 'titular', 'cedula');
+    } */
+
+    public function terceroAF()
+    {
+        return $this->belongsTo(maeTerceros::class, 'titular', 'cod_ter');
     }
 
-    public function tercero()
+    /* public function tercero()
     {
         return $this->belongsTo(SegTercero::class, 'cedula', 'cedula');
+    } */
+    public function tercero()
+    {
+        return $this->belongsTo(maeTerceros::class, 'cedula', 'cod_ter');
     }
 
     public function polizas()
