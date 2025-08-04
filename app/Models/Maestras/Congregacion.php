@@ -15,7 +15,7 @@ class Congregacion extends Model
     use HasFactory;
 
     // --- CONFIGURACIÓN DE LA TABLA Y CLAVE PRIMARIA (YA ESTÁ BIEN) ---
-    protected $table = 'Congregaciones';
+    protected $table = 'MaeCongregaciones';
     protected $primaryKey = 'codigo';
     public $incrementing = false;
     protected $keyType = 'string';
