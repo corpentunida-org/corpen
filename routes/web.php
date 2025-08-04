@@ -36,6 +36,7 @@ use App\Http\Controllers\ResReservaController;
 //ARCHIVO
 use App\Http\Controllers\Archivo\CargoController;
 
+
 //MAESTARS
 use App\Http\Controllers\Maestras\CongregacionController;
 use App\Http\Controllers\Maestras\MaeTercerosController;
@@ -194,6 +195,13 @@ Route::prefix('creditos/estado1')
 
 //GESTION DOCUMENTAL
 Route::prefix('archivo')->middleware('auth')->group(function () {
+
+    // <-- CAMBIO CLAVE: Ruta segura para ver/descargar los manuales.
+    // Solo usuarios autenticados pueden acceder a esta URL.
+    Route::get('cargos/{cargo}/ver-manual', [CargoController::class, 'verManual'])
+         ->name('archivo.cargo.verManual');
+
+    // Tu Route::resource se mantiene igual, pero ahora la ruta de arriba la complementa.
     Route::resource('cargos', CargoController::class)
         ->names('archivo.cargo')
         ->parameters(['cargos' => 'cargo']);
