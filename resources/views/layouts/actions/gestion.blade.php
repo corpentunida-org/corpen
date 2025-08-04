@@ -1,6 +1,6 @@
 <li class="nxl-item nxl-hasmenu {{ request()->routeIs('archivo.cargo.*', 'archivo.area.*') ? 'active' : '' }}">
     <a href="javascript:void(0);" class="nxl-link">
-        <span class="nxl-micon"><i class="bi bi-database"></i></span>
+        <span class="nxl-micon"><i class="bi bi-collection"></i></span>
         <span class="nxl-mtext">Gestión Documental</span>
         <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
     </a>
