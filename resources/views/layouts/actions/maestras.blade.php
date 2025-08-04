@@ -1,6 +1,6 @@
 <li class="nxl-item nxl-hasmenu {{ request()->routeIs('maestras.terceros.*', 'maestras.congregacion.*') ? 'active' : '' }}">
     <a href="javascript:void(0);" class="nxl-link">
-        <span class="nxl-micon"><i class="bi bi-database"></i></span>
+        <span class="nxl-micon"><i class="bi bi-stack"></i></span>
         <span class="nxl-mtext">Maestras</span>
         <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
     </a>
@@ -14,4 +14,3 @@
         </li>
     </ul>
 </li>
-

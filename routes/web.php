@@ -33,6 +33,8 @@ use App\Http\Controllers\Cinco\CondicionesRetirosController;
 
 use App\Http\Controllers\ResReservaController;
 
+//ARCHIVO
+use App\Http\Controllers\Archivo\CargoController;
 
 //MAESTARS
 use App\Http\Controllers\Maestras\CongregacionController;
@@ -40,7 +42,7 @@ use App\Http\Controllers\Maestras\MaeTercerosController;
 
 
 //CRDITOS
-use App\Http\Controllers\Creditos\estado1\Estado1Controller;
+use App\Http\Controllers\Creditos\Estado1\Estado1Controller;
 /* Route::middleware(['auth'])->group(function () {
     Route::get('/', function () {
         //return view('exequial.asociados.index');
@@ -169,36 +171,30 @@ Route::get('/buscar-pastor', [CongregacionController::class, 'buscarPastor'])
 Route::get('maestras/{congregacion}', [CongregacionController::class, 'show'])
     ->name('maestras.congregacion.show');
 
-//CREDITOS
-
-// Rutas para los formularios de cada etapa
-Route::get('/creditos/estado1/formDocumentos', function () {
-    return view('creditos.estado1.form');
-})->name('creditos.estado1.form');
-
-Route::post('/creditos/calcular-amortizacion', [Estado1Controller::class, 'calcularAmortizacion'])->name('creditos.estado1.calcular');
 
 
-Route::get('/creditos/estado2/formSolicitud', function () {
-    return view('creditos.estado2.form');
-})->name('creditos.estado2.form');
 
-Route::get('/creditos/estado3/formAnalisis', function () {
-    return view('creditos.estado3.form');
-})->name('creditos.estado3.form');
+    
+//CREDITOS ***
+// Definimos un grupo principal que aplica el prefijo, el nombre y la autenticación
+Route::prefix('creditos/estado1')
+->name('estado1.')
+->middleware('auth')
+->group(function () {
 
-Route::get('/creditos/estado4/formAprobacion', function () {
-    return view('creditos.estado4.form');
-})->name('creditos.estado4.form');
+    // 1. Definimos la ruta personalizada primero
+    Route::get('/formulario', [Estado1Controller::class, 'mostrarFormulario'])->name('form');
+    
+    // 2. Definimos las 7 rutas CRUD con una sola línea
+    //    Usamos '' como URI porque el prefijo ya está definido en el grupo.
+    Route::resource('', Estado1Controller::class)
+        ->parameters(['' => 'fabrica']); // 3. Le decimos que el parámetro se llama {fabrica}
+});
 
-Route::get('/creditos/estado5/formNotificacion', function () {
-    return view('creditos.estado5.form');
-})->name('creditos.estado5.form');
 
-Route::get('/creditos/estado6/formDesembolso', function () {
-    return view('creditos.estado6.form');
-})->name('creditos.estado6.form');
-
-Route::get('/creditos/estado7/formCartera', function () {
-    return view('creditos.estado7.form');
-})->name('creditos.estado7.form');
+//GESTION DOCUMENTAL
+Route::prefix('archivo')->middleware('auth')->group(function () {
+    Route::resource('cargos', CargoController::class)
+        ->names('archivo.cargo')
+        ->parameters(['cargos' => 'cargo']);
+});
