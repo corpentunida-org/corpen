@@ -57,7 +57,7 @@
     @if (isset($cargo) && $cargo->manual_funciones)
         <div class="mt-2">
             <small>Archivo actual: 
-                <a href="{{ Storage::url($cargo->manual_funciones) }}" target="_blank">
+                <a href="{{ route('archivo.cargo.verManual', $cargo->id) }}" target="_blank">
                     <i class="bi bi-file-earmark-pdf"></i> Ver Manual
                 </a>
             </small>

@@ -36,7 +36,7 @@
                             <strong>Manual de Funciones:</strong>
                             <p>
                                 {{-- Usamos Storage::url() que es la forma más robusta --}}
-                                <a href="{{ Storage::url($cargo->manual_funciones) }}" target="_blank" class="btn btn-outline-danger btn-sm mt-1">
+                                <a href="{{ route('archivo.cargo.verManual', $cargo->id) }}" target="_blank" class="btn btn-outline-danger btn-sm mt-1">
                                     <i class="bi bi-file-earmark-pdf me-2"></i> Ver Documento
                                 </a>
                             </p>
