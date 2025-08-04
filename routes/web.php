@@ -171,30 +171,23 @@ Route::get('maestras/{congregacion}', [CongregacionController::class, 'show'])
 
     
 //CREDITOS ***
-Route::prefix('creditos/estado1')->name('estado1.')->group(function () {
-    Route::get('/', [Estado1Controller::class, 'index'])->name('index');
-    Route::get('/create', [Estado1Controller::class, 'create'])->name('create');
-    Route::post('/store', [Estado1Controller::class, 'store'])->name('store');
-    Route::get('/edit/{fabrica}', [Estado1Controller::class, 'edit'])->name('edit');
-    Route::put('/update/{fabrica}', [Estado1Controller::class, 'update'])->name('update');
-    Route::delete('/destroy/{fabrica}', [Estado1Controller::class, 'destroy'])->name('destroy');
+// Definimos un grupo principal que aplica el prefijo, el nombre y la autenticación
+Route::prefix('creditos/estado1')
+->name('estado1.')
+->middleware('auth')
+->group(function () {
 
+    // 1. Definimos la ruta personalizada primero
     Route::get('/formulario', [Estado1Controller::class, 'mostrarFormulario'])->name('form');
+    
+    // 2. Definimos las 7 rutas CRUD con una sola línea
+    //    Usamos '' como URI porque el prefijo ya está definido en el grupo.
+    Route::resource('', Estado1Controller::class)
+        ->parameters(['' => 'fabrica']); // 3. Le decimos que el parámetro se llama {fabrica}
 });
 
 
 //GESTION DOCUMENTAL
-/* Route::prefix('archivo')->group(function () {
-    Route::resource('cargos', CargoController::class)
-        ->names('archivo.cargo')
-        ->parameters(['cargos' => 'cargo']);
-})->middleware('auth'); */
-
-
-/* Route::prefix('archivo')->resource('cargos', CargoController::class)->names('archivo.cargo')->middleware(['auth']);
- */
-
-
 Route::prefix('archivo')->middleware('auth')->group(function () {
     Route::resource('cargos', CargoController::class)
         ->names('archivo.cargo')

@@ -47,11 +47,24 @@
                value="{{ old('gmail_corporativo', $cargo->gmail_corporativo ?? '') }}">
     </div>
 
-    <div class="col-md-6">
-        <label for="manual_funciones" class="form-label">Manual de funciones (PDF)</label>
-        <input type="text" name="manual_funciones" id="manual_funciones" class="form-control"
-               value="{{ old('manual_funciones', $cargo->manual_funciones ?? '') }}">
-    </div>
+
+<div class="col-md-6">
+    <label for="manual_funciones" class="form-label">Manual de funciones (PDF)</label>
+    {{-- CAMBIO AQUÍ: de type="text" a type="file" --}}
+    <input type="file" name="manual_funciones" id="manual_funciones" class="form-control" accept=".pdf">
+    
+    {{-- Lógica para mostrar el archivo actual en la vista de edición --}}
+    @if (isset($cargo) && $cargo->manual_funciones)
+        <div class="mt-2">
+            <small>Archivo actual: 
+                <a href="{{ Storage::url($cargo->manual_funciones) }}" target="_blank">
+                    <i class="bi bi-file-earmark-pdf"></i> Ver Manual
+                </a>
+            </small>
+        </div>
+    @endif
+</div>
+
 
     <div class="col-md-6">
         <label for="empleado_cedula" class="form-label">Cédula del empleado</label>
