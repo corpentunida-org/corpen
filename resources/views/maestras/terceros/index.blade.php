@@ -50,15 +50,16 @@
                                 <td class="py-1 px-2">{{ $tercero->cod_ter }}</td>
                                 <td class="py-1 px-2">{{ $tercero->nom_ter }}</td>
                                 <td class="py-1 px-2">{{ $tercero->cel ?? '-' }}</td>
+                                
+                                {{-- SECCIÓN CORREGIDA --}}
                                 <td class="py-1 px-2">
-                                    @if ($tercero->estado === 'ACTIVO')
+                                    @if ($tercero->estado == 1 || $tercero->estado === 'A')
                                         <span class="badge bg-soft-success text-success">Activo</span>
-                                    @elseif ($tercero->estado === 'INACTIVO')
-                                        <span class="badge bg-soft-danger text-danger">Inactivo</span>
                                     @else
-                                        <span class="badge bg-secondary text-white">{{ $tercero->estado ?? '-' }}</span>
+                                        <span class="badge bg-soft-danger text-danger">Inactivo</span>
                                     @endif
                                 </td>
+                                
                                 <td class="hstack justify-content-end gap-4 text-end py-1 px-2">
                                     <div class="dropdown open">
                                         <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown">
@@ -100,6 +101,7 @@
     </div>
 
     @push('scripts')
+        {{-- Tu código de SweetAlert se mantiene igual --}}
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <script>
