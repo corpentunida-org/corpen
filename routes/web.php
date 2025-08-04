@@ -43,7 +43,7 @@ use App\Http\Controllers\Maestras\MaeTercerosController;
 
 
 //CRDITOS
-use App\Http\Controllers\Creditos\Estado1\Estado1Controller;
+use App\Http\Controllers\Creditos\Estado1Controller;
 /* Route::middleware(['auth'])->group(function () {
     Route::get('/', function () {
         //return view('exequial.asociados.index');
@@ -178,7 +178,7 @@ Route::get('maestras/{congregacion}', [CongregacionController::class, 'show'])
     
 //CREDITOS ***
 // Definimos un grupo principal que aplica el prefijo, el nombre y la autenticación
-Route::prefix('creditos/estado1')
+Route::prefix('creditos')
 ->name('estado1.')
 ->middleware('auth')
 ->group(function () {

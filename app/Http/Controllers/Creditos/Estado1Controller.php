@@ -1,7 +1,7 @@
 <?php
 
 
-namespace App\Http\Controllers\Creditos\Estado1;
+namespace App\Http\Controllers\Creditos;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
