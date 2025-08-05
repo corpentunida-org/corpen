@@ -30,12 +30,12 @@ class SegConvenioController extends Controller
     {
         $c = SegConvenio::findOrFail($id);
         $idConvenio = $c->idConvenio;
-        $convenio = SegConvenio::with(['plan.condicion'])
+        $convenio = SegConvenio::with(['plan.condicioncorpen'])
             ->where('idConvenio', $idConvenio)
             ->first();
         $planes = $convenio->plan->filter(function ($plan) {
-                return $plan->condicion !== null && $plan->condicion->descripcion !== null;})
-            ->groupBy(function ($plan) {return $plan->condicion->descripcion;});
+                return $plan->condicioncorpen !== null && $plan->condicioncorpen->descripcion !== null;})
+            ->groupBy(function ($plan) {return $plan->condicioncorpen->descripcion;});
         return view('seguros.convenio.show', compact('convenio', 'planes'));
     }
 

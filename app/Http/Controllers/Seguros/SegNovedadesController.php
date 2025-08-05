@@ -37,12 +37,13 @@ class SegNovedadesController extends Controller
     public function create(Request $request)
     {
         $id = $request->query('a');
-        $asegurado = SegAsegurado::where('cedula', $id)->with(['tercero', 'terceroAF.asegurados', 'polizas.plan'])->first();
-        $fechaNacimiento = $asegurado->tercero->fechaNacimiento;
-        $edad = date_diff(date_create($fechaNacimiento), date_create('today'))->y;
+        //$asegurado = SegAsegurado::where('cedula', $id)->with(['tercero', 'terceroAF.asegurados', 'polizas.plan'])->first();
+        $asegurado = SegAsegurado::where('cedula', $id)->with(['tercero', 'terceroAF', 'polizas.plan'])->first();
+        
+        $edad = date_diff(date_create($asegurado->tercero->fec_nac), date_create('today'))->y;
         $idcondicion = app(SegPlanController::class)->getCondicion($edad);
 
-        $planes = SegPlan::where('condicion_id', $idcondicion)
+        $planes = SegPlan::where('condicion_corpen', $idcondicion)
             ->where('vigente', true)->with(['convenio'])->get();
         
         $condicion = SegCondicion::where('id', $idcondicion)->first(['descripcion']);

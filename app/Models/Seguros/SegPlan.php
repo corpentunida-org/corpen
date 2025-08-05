@@ -12,11 +12,16 @@ class SegPlan extends Model
     protected $primaryKey = 'id';
     public $incrementing = true;
     protected $keyType = 'int';
-    protected $fillable = ['name', 'valor', 'prima', 'seg_convenio_id', 'condicion_id'];
+    protected $fillable = ['name', 'valor', 'prima_aseguradora','prima_pastor','prima_asegurado','condicion_corpen', 'seg_convenio_id', 'condicion_id','vigente'];
 
     public function condicion()
     {
         return $this->belongsTo(SegCondicion::class, 'condicion_id', 'id');
+    }
+
+    public function condicioncorpen()
+    {
+        return $this->belongsTo(SegCondicion::class, 'condicion_corpen', 'id');
     }
 
     public function coberturas()
