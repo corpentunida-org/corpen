@@ -86,9 +86,9 @@ class SegPolizaController extends Controller
                 ]);
             }
             $plan = SegPlan::find($request->selectPlanes);
-            $valorPrimaFinal = $plan->prima;
+            $valorPrimaFinal = $plan->prima_aseguradora;
             if ($request->extra_prima !== null && $request->extra_prima != 0) {
-                $valorPrimaFinal += ($plan->prima * $request->extra_prima) / 100;
+                $valorPrimaFinal += ($plan->prima_aseguradora * $request->extra_prima) / 100;
             }
             $poliza = SegPoliza::create([
                 'seg_asegurado_id' => $asegurado->cedula,
@@ -365,7 +365,7 @@ class SegPolizaController extends Controller
             return [
                 'poliza' => $item->seg_convenio_id,
                 'id' => $item->id,
-                'nombre' => $item->tercero->nombre ?? ' ',
+                'nombre' => $item->tercero->nom_ter ?? ' ',
                 'num_doc' => $item->seg_asegurado_id,
                 'fecha_nac' => $fechaNacimiento,
                 'genero' => $item->tercero->genero ?? '',

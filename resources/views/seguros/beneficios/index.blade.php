@@ -245,7 +245,7 @@
                                                     <ul class="dropdown-menu" data-popper-placement="bottom-end"
                                                         style="position: absolute; inset: 0px auto auto 0px; margin: 0px; transform: translate3d(-195px, 51px, 0px);">
                                                         <li>
-                                                            <a href="" class="dropdown-item">
+                                                            <a href="{{ route('seguros.beneficios.edit', $b->id) }}" class="dropdown-item">
                                                                 <i class="feather feather-edit-3 me-3"></i>
                                                                 <span>Editar</span>
                                                             </a>

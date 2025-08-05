@@ -17,7 +17,7 @@
                             <div class="fs-12 text-muted">Titular: </div>
                             <div class="fs-4 fw-bold text-dark"><span
                                     class="counter">{{ $poliza->asegurado->terceroAF->nom_ter }}</span></div>
-                            <h3 class="fs-13 fw-semibold text-truncate-1-line">{{ $poliza->asegurado->titular }}</h3>
+                            <h3 class="fs-13 fw-semibold text-truncate-1-line">{{ $poliza->seg_asegurado_id }}</h3>
                         </div>
                     </div>
                 </div>
@@ -69,7 +69,7 @@
                         <a href="javascript:void(0);"
                             class="badge bg-primary text-white ms-2">{{ $poliza->plan->name ?? '' }}</a>
                     </div>
-                    <div class="fs-12 text-muted">{{ $poliza->plan->condicion->descripcion ?? '' }}</div>
+                    <div class="fs-12 text-muted">{{ $poliza->plan->condicioncorpen->descripcion ?? '' }}</div>
                 </div>
                 <div class="my-3 my-xxl-0 my-md-3 my-md-0">
                     <div class="fs-20 text-dark">
@@ -158,7 +158,7 @@
                                 @foreach ($grupoFamiliar as $familiar)
                                     <tr>
                                         <td><a href="javascript:void(0);">{{ $familiar->cedula }}</a></td>
-                                        <td>{{ $familiar->tercero->nom_ter }}</td>
+                                        <td>{{ $familiar->tercero->nom_ter ?? ' ' }}</td>
                                         <td>{{ $familiar->parentesco }}</td>
                                         <td>
                                             @if($familiar->polizas->first())
@@ -168,16 +168,13 @@
                                                     <span class="badge bg-soft-warning text-warning">{{ $familiar->polizas->first()->plan->name ?? '' }}</span></a>
                                                     <a
                                                     href="#" class="hstack gap-1 fs-11 fw-normal">
-                                                        $ {{ number_format($familiar->polizas->first()->plan->prima) ?? '' }}</a></div>
+                                                        $ {{ number_format($familiar->polizas->first()->plan->prima_aseguradora) ?? '' }}</a></div>
                                             @endif
                                         </td>
                                         <td>
                                             @php
-                                                $valortotalbene = null;
-                                                $poliza = $familiar->polizas->first();
-
-                                                if ($poliza && $poliza->plan) {
-                                                    $valortotalbene = $poliza->plan->prima - $poliza->primapagar;
+                                                if ($familiar->polizas->first()) {
+                                                    $valortotalbene = floatval($familiar->polizas->first()->plan->prima_aseguradora) - floatval($familiar->polizas->first()->primapagar);
                                                 }
                                             @endphp
 
@@ -280,9 +277,10 @@
                         </div>
                     </div>
                 @endif
-                @if (($poliza->asegurado->parentesco == 'AF' || $poliza->asegurado->viuda) && $poliza->active)
-                    <div class="p-4 d-xxl-flex d-xl-block d-md-flex align-items-center justify-content-end gap-4">
+                
 
+                @if (($poliza->asegurado->parentesco === 'AF' || $poliza->asegurado->viuda) && $poliza->active)
+                    <div class="p-4 d-xxl-flex d-xl-block d-md-flex align-items-center justify-content-end gap-4">
                         <div class="d-flex gap-4 align-items-center justify-content-sm-end justify-content-between">
                             <div href="" class="text-bold">Valor Aseguradora</div>
                             <div href="" class="btn bg-soft-primary" style="font-size:20px;">$
@@ -443,7 +441,7 @@
                         });
                         $('#inputValorBene').on('input', function () {
                             var valor = parseFloat($(this).val().trim());
-                            var valorOriginal = parseFloat("{{ $poliza->valor_prima}}");
+                            var valorOriginal = parseFloat("{{ $poliza->primapagar}}");
                             if (!isNaN(valor) && valor > 0) {
                                 $('#checkvalbeneficio').slideDown();
                             } else {
@@ -456,7 +454,7 @@
                         });
                         $('#inputporbene').on('input', function () {
                             var porcentaje = parseFloat($(this).val().trim());
-                            var valorOriginal = parseFloat("{{ $poliza->valor_prima}}");
+                            var valorOriginal = parseFloat("{{ $poliza->primapagar}}");
 
                             if (!isNaN(porcentaje) && porcentaje > 0) {
                                 $('#checkvalbeneficio').slideDown();
