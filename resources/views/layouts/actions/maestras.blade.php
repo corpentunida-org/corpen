@@ -1,4 +1,4 @@
-<li class="nxl-item nxl-hasmenu {{ request()->routeIs('maestras.terceros.*', 'maestras.congregacion.*') ? 'active' : '' }}">
+<li class="nxl-item nxl-hasmenu {{ request()->routeIs('maestras.terceros.*', 'maestras.congregacion.*', 'maestras.tipos.*') ? 'active' : '' }}">
     <a href="javascript:void(0);" class="nxl-link">
         <span class="nxl-micon"><i class="bi bi-stack"></i></span>
         <span class="nxl-mtext">Maestras</span>
@@ -12,5 +12,11 @@
         <li class="nxl-item {{ request()->routeIs('maestras.congregacion.*') ? 'active' : '' }}">
             <a class="nxl-link" href="{{ route('maestras.congregacion.index') }}">Congregaciones</a>
         </li>
+        
+        {{-- ======================= NUEVO ELEMENTO AÑADIDO ======================= --}}
+        <li class="nxl-item {{ request()->routeIs('maestras.tipos.*') ? 'active' : '' }}">
+            <a class="nxl-link" href="{{ route('maestras.tipos.index') }}">Tipos</a>
+        </li>
+        {{-- ====================================================================== --}}
     </ul>
 </li>

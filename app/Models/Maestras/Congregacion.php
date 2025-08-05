@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Maestras\claseCongregacion;
 use App\Models\Maestras\maeDistritos;
 use App\Models\Maestras\maeTerceros;
-use App\Models\Maestras\maeMunicipios;
+use App\Models\Maestras\MaeMunicipios;
 
 
 class Congregacion extends Model
@@ -79,5 +79,6 @@ class Congregacion extends Model
     {
         return $this->belongsTo(maeMunicipios::class, 'municipio', 'id');
     }
+
 }
 

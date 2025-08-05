@@ -158,7 +158,6 @@ class CongregacionController extends Controller
                 ->with('error', 'No se pudo eliminar la congregación. Es posible que esté asociada a otros registros.');
         }
     }
-
     /**
      * PARA TRAER EL NOMBRE DEL TERCERO
      */
@@ -173,9 +172,6 @@ class CongregacionController extends Controller
             return response()->json(['nombre' => 'No encontrado'], 404);
         }
     }
-
-
-
     public function show($codigo)
     {
         $congregacion = Congregacion::with([
@@ -210,9 +206,6 @@ class CongregacionController extends Controller
 
         return $pdf->download('Informe_Congregacion_' . $congregacion->codigo . '.pdf');
     }
-
-
-
 }
 
 
