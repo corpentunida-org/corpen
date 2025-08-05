@@ -79,7 +79,7 @@
                                                  ${{ number_format($plan->valor) }}</div>
                                              <p
                                                  class="fs-12 fw-medium text-muted text-spacing-1 mb-0 text-truncate-1-line">
-                                                 Prima: ${{ number_format($plan->prima) }}</p>
+                                                 Prima: ${{ number_format($plan->prima_aseguradora) }}</p>
                                          </div>
                                      </div>
                                  </div>

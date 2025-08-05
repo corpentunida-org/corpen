@@ -30,12 +30,12 @@ class SegConvenioController extends Controller
     {
         $c = SegConvenio::findOrFail($id);
         $idConvenio = $c->idConvenio;
-        $convenio = SegConvenio::with(['plan.condicion'])
+        $convenio = SegConvenio::with(['plan.condicioncorpen'])
             ->where('idConvenio', $idConvenio)
             ->first();
         $planes = $convenio->plan->filter(function ($plan) {
-                return $plan->condicion !== null && $plan->condicion->descripcion !== null;})
-            ->groupBy(function ($plan) {return $plan->condicion->descripcion;});
+                return $plan->condicioncorpen !== null && $plan->condicioncorpen->descripcion !== null;})
+            ->groupBy(function ($plan) {return $plan->condicioncorpen->descripcion;});
         return view('seguros.convenio.show', compact('convenio', 'planes'));
     }
 
@@ -126,9 +126,9 @@ class SegConvenioController extends Controller
                 ->where('seg_convenio_id', $convenioanio . $convenioid)->first();
             if ($plan) {
                 if ($poliza->extra_prima != 0) {
-                    $planprima = (($plan->prima * $poliza->extra_prima) / 100) + $plan->prima;
+                    $planprima = (($plan->prima_aseguradora * $poliza->extra_prima) / 100) + $plan->prima_aseguradora;
                 } else {
-                    $planprima = $plan->prima;
+                    $planprima = $plan->prima_aseguradora;
                 }
                 $poliza->update([
                     'seg_plan_id' => $plan->id,
