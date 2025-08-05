@@ -5,6 +5,7 @@ namespace App\Models\Maestras;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\Maestras\maeTerceros;
 use App\Models\User;
 
 class MaeTipos extends Model
@@ -58,5 +59,12 @@ class MaeTipos extends Model
     public function maeTipos()
     {
         return $this->belongsTo(maeTipos::class, 'codigo', 'tip_prv');
+    }
+    public function maeTerceros()
+    {
+        // Esto le dice a Laravel:
+        // "Busca en la tabla MaeTerceros todos los registros donde la columna 'tip_prv'
+        // coincida con la columna 'codigo' de este MaeTipo."
+        return $this->hasMany(MaeTerceros::class, 'tip_prv', 'codigo');
     }
 }

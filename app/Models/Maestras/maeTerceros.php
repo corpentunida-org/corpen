@@ -198,4 +198,5 @@ class maeTerceros extends Model
     {
         return $this->belongsTo(maeTipos::class, 'tip_prv', 'codigo');
     }
+    
 }

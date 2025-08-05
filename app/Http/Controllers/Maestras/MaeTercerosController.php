@@ -52,24 +52,41 @@ class MaeTercerosController extends Controller
 
     public function create()
     {
+        $tipos = MaeTipos::all();
+
         // Aquí retornas la vista para crear un nuevo tercero
-        return view('maestras.terceros.create');
+        return view('maestras.terceros.create', compact('tipos'));
     }
 
-    public function store(Request $request)
-    {
-        maeTerceros::create([
-            'cod_ter' => $request->cod_ter,
-            'nom_ter' => $request->nombre,   // Aquí mapeas nombre => nom_ter
-            'cel' => $request->telefono,    // Mapeas telefono => tel1
-            'dir' => $request->direccion,    // Mapeas direccion => dir
-            'ciudad' => $request->ciudad,
-            'dpto' => $request->departamento,
-            // y así con los demás si quieres
-        ]);
+// En tu TercerosController.php
 
-        return redirect()->route('maestras.terceros.index')->with('success', 'Tercero creado correctamente.');
-    }
+public function store(Request $request)
+{
+    // Opcional pero muy recomendado: Añade validación
+    $request->validate([
+        'cod_ter' => 'required|string|max:20|unique:MaeTerceros,cod_ter',
+        'nombre' => 'required|string|max:255',
+        'tip_prv' => 'required', // Asegura que se seleccionó un tipo
+        // ... otras reglas de validación para teléfono, email, etc.
+    ]);
+
+    maeTerceros::create([
+        'cod_ter' => $request->cod_ter,
+        'nom_ter' => $request->nombre,
+        // ===== CORRECCIÓN AQUÍ =====
+        'tip_prv' => $request->tip_prv, // Debe ser 'tip_prv' para que coincida con el name del select
+        // ===========================
+        'cel'     => $request->telefono,
+        'dir'     => $request->direccion,
+        'ciudad'  => $request->ciudad,
+        'dpto'    => $request->departamento,
+        'email'   => $request->email, // No olvides guardar el email también
+    ]);
+
+    return redirect()
+        ->route('maestras.terceros.index')
+        ->with('success', 'Tercero creado correctamente.');
+}
 
     public function destroy(maeTerceros $tercero) {
         $tercero->delete();
