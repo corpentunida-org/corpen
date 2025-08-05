@@ -37,12 +37,9 @@
         <div class="col-12">
             <div class="card stretch stretch-full">
                 <div class="card-body">
-                    <div class="hstack justify-content-between flex-wrap flex-md-nowrap mb-4">
-                        @if ($planesGrupo->pluck('condicion_id')->contains(0))
-                            @continue
-                        @endif
+                    <div class="hstack justify-content-between flex-wrap flex-md-nowrap mb-4">                        
                         <div>
-                            <h5 class="mb-1">{{ $planesGrupo->first()->condicion->descripcion }}</h5>
+                            <h5 class="mb-1">{{ $planesGrupo->first()->condicioncorpen->descripcion }}</h5>
                         </div>
                         <div class="hstack gap-3 btn-light-brand py-2 px-4">
                             <h6 class="fs-12 fw-bolder mb-0">{{ $planesGrupo->first()->convenio->nombre }}</h6>
@@ -86,7 +83,16 @@
                                                 ${{ number_format($plan->valor) }}</div>
                                             <p
                                                 class="fs-12 fw-medium text-muted text-spacing-1 mb-0 text-truncate-1-line">
-                                                Prima: ${{ number_format($plan->prima_aseguradora) }}</p>
+                                                <span class="fw-semibold text-dark">Prima:</span>
+                                                    ${{ number_format($plan->prima_aseguradora) }}</p>
+                                                <p
+                                                class="fs-12 fw-medium text-muted text-spacing-1 mb-0 text-truncate-1-line">
+                                                <span class="fw-semibold text-dark">Prima Asegurado:</span>
+                                                  ${{ number_format($plan->prima_asegurado) }}</p>
+                                                <p
+                                                class="fs-12 fw-medium text-muted text-spacing-1 mb-0 text-truncate-1-line">
+                                                <span class="fw-semibold text-dark">Prima Pastor:</span>
+                                                  ${{ number_format($plan->prima_asegurado) }}</p>
                                         </div>
                                     </div>
                                 </div>

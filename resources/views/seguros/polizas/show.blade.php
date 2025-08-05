@@ -69,7 +69,7 @@
                         <a href="javascript:void(0);"
                             class="badge bg-primary text-white ms-2">{{ $poliza->plan->name ?? '' }}</a>
                     </div>
-                    <div class="fs-12 text-muted">{{ $poliza->plan->condicion->descripcion ?? '' }}</div>
+                    <div class="fs-12 text-muted">{{ $poliza->plan->condicioncorpen->descripcion ?? '' }}</div>
                 </div>
                 <div class="my-3 my-xxl-0 my-md-3 my-md-0">
                     <div class="fs-20 text-dark">

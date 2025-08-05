@@ -105,25 +105,28 @@ class SegPlanController extends Controller
     {        
         $plan = SegPlan::findOrFail($id);
         $plan->update([
-            'name' => $request->input('name'),
-            'condicion_id' => $request->input('condicion_id'),
+            'name' => strtoupper($request->input('name')),
             'valor' => $request->input('valorPlanAsegurado'),
-            'prima' => $request->input('prima'),
+            'prima_aseguradora' => $request->input('primabase'),
+            'prima_pastor' => $request->input('primapastor'),
+            'prima_asegurado' => $request->input('primaasegurado')            
         ]);
 
         $coberturas = $request->input('cobertura');
         $valoresAsegurados = $request->input('valorAsegurado');
+        $porValaAsegurado = $request->input('porvalAsegurado');
         $valoresPrimas = $request->input('valorPrima');
         $valoresExtra = $request->input('desextraprima');
 
         $syncData = [];
 
-        foreach ($coberturas as $index => $coberturaId) {
-            $cobertura = SegCobertura::where('nombre', $coberturaId)->first();
+        foreach ($coberturas as $index => $coberturaInd) {
+            $cobertura = SegCobertura::where('nombre', $coberturaInd)->first();
             if ($cobertura) {
                 $syncData[$cobertura->id] = [
                     'valorAsegurado' => $valoresAsegurados[$index] ?? 0,
                     'valorCobertura' => $valoresPrimas[$index] ?? 0,
+                    'porcentaje' => $porValaAsegurado[$index] ?? 0,
                     'extra' => $valoresExtra[$index] ?? null,
                 ];
             }
@@ -147,7 +150,7 @@ class SegPlanController extends Controller
 
     public function getCondicion($edad)
     {
-        if ($edad >= 0 && $edad <= 17) {
+        /* if ($edad >= 0 && $edad <= 17) {
             return 1; // Asegurados desde 0 años hasta 17 años
         } elseif ($edad >= 18 && $edad <= 65) {
             return 2; // Asegurados desde 18 años hasta 65 años
@@ -161,6 +164,13 @@ class SegPlanController extends Controller
             return 6; // Asegurados desde 90 años
         } else {
             return null;
+        } */
+        if ($edad >= 0 && $edad <= 80) {
+            return 8;
+        } elseif ($edad > 80 && $edad <= 90) {
+            return 9;
+        } elseif ($edad > 90) {
+            return 10;
         }
     }
 
