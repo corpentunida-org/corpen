@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\Maestras\maeTerceros;
 use App\Models\User;
 
+
 class MaeTipos extends Model
 {
     use HasFactory, SoftDeletes;
