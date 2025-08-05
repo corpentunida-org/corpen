@@ -81,7 +81,7 @@
                                                         class="text-danger">*</span></label>
                                                 <input type="number" class="form-control"
                                                     name="planes[{{ $plan->id }}][vprima]"
-                                                    value="{{ $plan->prima }}" required>
+                                                    value="{{ $plan->prima_aseguradora }}" required>
                                             </div>
                                             <div class="col-lg-4">
                                                 <label class="form-label">Condición<span

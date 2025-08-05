@@ -4,6 +4,7 @@ namespace App\Models\Maestras;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 use App\Models\Maestras\Congregacion;
 
 class maeTerceros extends Model
@@ -191,7 +192,7 @@ class maeTerceros extends Model
     public function getEdadAttribute()
     {
         if ($this->fec_nac) {
-            return Carbon::parse($this->fechaNacimiento)->age;
+            return Carbon::parse($this->fec_nac)->age;
         }
         return null;
     }

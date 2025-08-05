@@ -43,7 +43,7 @@ class SegBeneficiosController extends Controller
         $fechaMin = Carbon::now()->subYears($request->edad_maxima)->startOfDay();
 
         $query->whereHas('tercero', function ($q) use ($fechaMin, $fechaMax) {
-            $q->whereBetween('fechaNacimiento', [$fechaMin, $fechaMax]);
+            $q->whereBetween('fec_nac', [$fechaMin, $fechaMax]);
         });
 
         $tipoAsegurado = $request->tipo;
@@ -51,7 +51,7 @@ class SegBeneficiosController extends Controller
             $query->whereHas('asegurado', function ($q) {
                 $q->where('viuda', true);
             });
-        } else if($tipoAsegurado != 'TODOS') {
+        } else if ($tipoAsegurado != 'TODOS') {
             $query->whereHas('asegurado', function ($q) use ($tipoAsegurado) {
                 $q->where('parentesco', $tipoAsegurado);
             });
@@ -155,6 +155,7 @@ class SegBeneficiosController extends Controller
      */
     public function show(SegBeneficios $SegBeneficios)
     {
+
     }
 
     /**
@@ -163,15 +164,34 @@ class SegBeneficiosController extends Controller
     public function edit($id)
     {
         $SegBeneficios = SegBeneficios::findOrFail($id);
-        return view('seguros.beneficios.edit', compact('SegBeneficios'));
+        $poliza = SegPoliza::with(['tercero'])->findOrFail($SegBeneficios->poliza);
+        return view('seguros.beneficios.edit', compact('SegBeneficios', 'poliza'));
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, SegBeneficios $SegBeneficios)
+    public function update(Request $request, SegBeneficios $beneficio)
     {
-        //
+        if ($request->checkconfirmarbene) {
+            $update = SegBeneficios::find($beneficio->id);
+            $anteriorbeneficio = $update->valorDescuento;
+            $update->update([
+                'valorDescuento' => $request->desval,
+                'porcentajeDescuento' => $request->porval,
+            ]);
+            SegPoliza::where('id', $beneficio->poliza)->update([
+                'primapagar' => $request->valorPrima,
+            ]);
+            $difbeneficio = floatval($request->desval) - floatval( $anteriorbeneficio);
+            $polizatitular = SegPoliza::where('seg_asegurado_id', $request->titular)->first();
+            $polizatitular->update([
+                'valorpagaraseguradora' => floatval($polizatitular->valorpagaraseguradora) - $difbeneficio,
+            ]);
+            $this->auditoria("Actualizar beneficio id " . $beneficio->id . " con el valor de " . $request->desval);
+            return redirect()->route('seguros.beneficios.index')->with('success', 'Se actualizo correctamente el beneficio.');
+        }
+        return redirect()->route('seguros.beneficios.index')->with('error', 'No se actualizó el beneficio, debe confirmar el cambio de valores.');
     }
 
     /**
@@ -216,7 +236,7 @@ class SegBeneficiosController extends Controller
                     $cantupd++;
                 }
             }
-            $this->auditoria("Eliminar beneficio grupal " . $cantupd ." registros. Observacion: ". $beneficio->observaciones);
+            $this->auditoria("Eliminar beneficio grupal " . $cantupd . " registros. Observacion: " . $beneficio->observaciones);
             return redirect()->back()->with('success', 'Se elimino correctamente el beneficio a ' . $cantupd . ' asegurados.');
         }
     }
@@ -235,11 +255,11 @@ class SegBeneficiosController extends Controller
         $datos = json_decode($request->listadata, true);
         $headings = ['N°', 'Cedula Asegurado', 'Nombre Asegurado', 'Parentesco', 'Edad', 'Plan', 'Valor a Pagar'];
         $datosFormateados = collect($datos)->map(function ($item, $index) {
-            $edad = Carbon::parse($item['tercero']['fechaNacimiento'])->age;
+            $edad = Carbon::parse($item['tercero']['fec_nac'])->age;
             return [
                 'N°' => $index + 1,
                 'CÉDULA ASEGURADO' => $item['seg_asegurado_id'] ?? '',
-                'NOMBRE ASEGURADO' => $item['tercero']['nombre'] ?? '',
+                'NOMBRE ASEGURADO' => $item['tercero']['nom_ter'] ?? '',
                 'PARENTESCO' => $item['asegurado']['parentesco'] ?? '',
                 'EDAD' => $edad,
                 'PLAN' => $item['plan']['name'] ?? '',

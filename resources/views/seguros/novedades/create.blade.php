@@ -79,11 +79,11 @@
                                     <select class="form-control" name="planid" id="selectPlan">
                                         @foreach ($planes as $plan)
                                             <option value="{{ $plan->id }}" data-valor="{{ $plan->valor }}"
-                                                data-prima="{{ $plan->prima }}"
+                                                data-prima="{{ $plan->prima_aseguradora }}"
                                                 {{ $asegurado->polizas->first()->plan->id == $plan->id ? 'selected' : '' }}>
                                                 {{ $plan->convenio->nombre ?? ''}} - {{ $plan->name }} -
                                                 ${{ number_format($plan->valor) }} -
-                                                ${{ number_format($plan->prima) }}
+                                                ${{ number_format($plan->prima_aseguradora) }}
                                             </option>
                                         @endforeach
                                     </select>

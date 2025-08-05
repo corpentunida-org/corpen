@@ -72,11 +72,11 @@ class SegNovedadesController extends Controller
             'valor_asegurado' => $plan->valor,
             'valorpagaraseguradora' => $request->valorpagaraseguradora,
         ];
-        $valorprima = $plan->prima;
+        $valorprima = $plan->prima_aseguradora;
         if (blank($request->extra_prima)) {
             $data['valor_prima'] = $valorprima;
         } else {
-            $valorprima = $plan->prima * (1 + $request->extra_prima / 100);
+            $valorprima = $plan->prima_aseguradora * (1 + $request->extra_prima / 100);
             $data['valor_prima'] = intval($valorprima);
         }
         $poliza->update($data);
