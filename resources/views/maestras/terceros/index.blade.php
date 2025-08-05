@@ -40,6 +40,7 @@
                             <th class="py-1 px-2">Nombre Completo</th>
                             <th class="py-1 px-2">Celular</th>
                             <th class="py-1 px-2">Estado</th>
+                            <th class="py-1 px-2">Tipo</th>
                             <th class="py-1 px-2 text-end">Acciones</th>
                         </tr>
                     </thead>
@@ -59,7 +60,9 @@
                                         <span class="badge bg-soft-danger text-danger">Inactivo</span>
                                     @endif
                                 </td>
-                                
+
+                                <td class="py-1 px-2">{{ $tercero->maeTipos->nombre ?? '' }}</td>
+
                                 <td class="hstack justify-content-end gap-4 text-end py-1 px-2">
                                     <div class="dropdown open">
                                         <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown">

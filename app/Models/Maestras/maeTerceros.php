@@ -5,6 +5,7 @@ namespace App\Models\Maestras;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Maestras\Congregacion;
+use App\Models\Maestras\MaeTipos;
 
 class maeTerceros extends Model
 {
@@ -205,4 +206,9 @@ class maeTerceros extends Model
         return $this->hasMany(Congregacion::class, 'cod_ter', 'pastor');
     }
 
+    public function maeTipos()
+    {
+        return $this->belongsTo(maeTipos::class, 'tip_prv', 'codigo');
+    }
+    
 }
