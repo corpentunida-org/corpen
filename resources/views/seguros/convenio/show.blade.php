@@ -62,17 +62,17 @@
                                             <div class="dropdown-menu dropdown-menu-end" style="">
                                             @can('seguros.planes.update')
                                                 <a class="dropdown-item" href="{{ route('seguros.planes.edit', ['plan' => $plan->id]) }}">Editar</a>
-                                                    @endcan
-                                                    @can('seguros.planes.destroy')
+                                            @endcan
+                                            @can('seguros.planes.destroy')
                                                 <form
                                                     action="{{ route('seguros.planes.destroy', ['plan' => $plan->id]) }}"
                                                     method="POST">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit"
-                                                        class="dropdown-item btnEliminar">Eliminar</button>
+                                                        class="dropdown-item btnAbrirModalDestroy" data-text="plan ">Eliminar</button>
                                                 </form>
-                                                @endcan
+                                            @endcan
                                             </div>
                                         </div>
                                         <div class="text-center">

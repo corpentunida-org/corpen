@@ -103,6 +103,7 @@ class SegPlanController extends Controller
      */
     public function update(Request $request, $id)
     {        
+        $convenioId = $request->input('convenio');
         $plan = SegPlan::findOrFail($id);
         $plan->update([
             'name' => strtoupper($request->input('name')),
@@ -131,9 +132,9 @@ class SegPlanController extends Controller
                 ];
             }
         }
-
         $plan->coberturas()->sync($syncData);
-        return redirect()->route('seguros.planes.edit', $plan->id)->with('success', 'Plan actualizado correctamente');
+        //return redirect()->route('seguros.planes.edit', $plan->id)->with('success', 'Plan actualizado correctamente');
+        return redirect()->route('seguros.convenio.show', $convenioId)->with('success', 'Plan actualizado correctamente');
     }
 
     /**
