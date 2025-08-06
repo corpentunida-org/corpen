@@ -151,35 +151,39 @@ Route::post('reservaI/confirmar', [ResReservaController::class, 'confirmar'])->n
 Route::get('reservaI/historico', [ResReservaController::class, 'indexHistorico'])->name('reserva.inmueble.historico');
 
 
+//TERCEROS
+    // TERCEROS
+        Route::prefix('maestras')->middleware('auth')->name('maestras.')->group(function () {
+            Route::resource('terceros', MaeTercerosController::class)
+                ->names('terceros')
+                ->parameters(['terceros' => 'tercero']);
 
-// TERCEROS
-    Route::prefix('maestras')->middleware('auth')->group(function () {
-        Route::resource('terceros', MaeTercerosController::class)
-            ->names('maestras.terceros')
-            ->parameters(['terceros' => 'tercero']);
-    });
+            Route::get('terceros/{tercero}/pdf', [MaeTercerosController::class, 'generarPdf'])
+                ->name('terceros.generarPdf');
+        });
+    //
+    //TIPO
+        Route::prefix('maestras')->middleware('auth')->name('maestras.')->group(function () {
+            Route::resource('tipos', MaeTiposController::class)
+                ->names('tipos')
+                ->parameters(['tipos' => 'tipo']);
+        });
 
-    Route::get('maestras/terceros/{tercero}/pdf', [MaeTercerosController::class, 'generarPdf'])
-        ->name('maestras.terceros.generarPdf');
+    //
+    // CONGREGACION
+        Route::middleware(['auth'])->group(function () {
+
+            Route::resource('maestras', CongregacionController::class)
+                ->names('maestras.congregacion')
+                ->parameter('maestras', 'congregacion');
+
+            Route::get('/buscar-pastor', [CongregacionController::class, 'buscarPastor'])
+                ->name('buscar.pastor');
+
+        });
+    //
 //
-//TIPO
-    Route::prefix('maestras')->middleware('auth')->name('maestras.')->group(function () {
-        Route::resource('tipos', MaeTiposController::class);
-    });
-//
-// CONGREGACION
-    Route::resource('maestras', CongregacionController::class)
-        ->names('maestras.congregacion')
-        ->parameter('maestras', 'congregacion')
-        ->middleware(['auth']);
 
-    Route::get('/buscar-pastor', [CongregacionController::class, 'buscarPastor'])
-        ->name('buscar.pastor');
-
-    Route::get('maestras/{congregacion}', [CongregacionController::class, 'show'])
-        ->name('maestras.congregacion.show');
-//
-    
 //CREDITOS ***
 // Definimos un grupo principal que aplica el prefijo, el nombre y la autenticación
 Route::prefix('creditos/estado1')
