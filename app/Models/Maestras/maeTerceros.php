@@ -196,7 +196,7 @@ class maeTerceros extends Model
 
     public function maeTipos()
     {
-        return $this->belongsTo(maeTipo::class, 'tip_prv', 'codigo');
+        return $this->belongsTo(MaeTipo::class, 'tip_prv', 'codigo');
     }
     
 }
