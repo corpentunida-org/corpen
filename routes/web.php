@@ -147,36 +147,30 @@ Route::get('reservaI/historico', [ResReservaController::class, 'indexHistorico']
 
 
 //TERCEROS
-    // TERCEROS
-        Route::prefix('maestras')->middleware('auth')->name('maestras.')->group(function () {
-            Route::resource('terceros', MaeTercerosController::class)
-                ->names('terceros')
-                ->parameters(['terceros' => 'tercero']);
+    // ARCHIVO DE RUTAS UNIFICADO
+    Route::prefix('maestras')->middleware('auth')->name('maestras.')->group(function () {
 
-            Route::get('terceros/{tercero}/pdf', [MaeTercerosController::class, 'generarPdf'])
-                ->name('terceros.generarPdf');
-        });
-    //
-    //TIPO
-        Route::prefix('maestras')->middleware('auth')->name('maestras.')->group(function () {
-            Route::resource('tipos', MaeTiposController::class)
-                ->names('tipos')
-                ->parameters(['tipos' => 'tipo']);
-        });
+        // TERCEROS
+        Route::resource('terceros', MaeTercerosController::class)
+            ->names('terceros')
+            ->parameters(['terceros' => 'tercero']);
 
-    //
-    // CONGREGACION
-        Route::middleware(['auth'])->group(function () {
+        Route::get('terceros/{tercero}/pdf', [MaeTercerosController::class, 'generarPdf'])
+            ->name('terceros.generarPdf');
 
-            Route::resource('maestras', CongregacionController::class)
-                ->names('maestras.congregacion')
-                ->parameter('maestras', 'congregacion');
+        // TIPO
+        Route::resource('tipos', MaeTiposController::class)
+            ->names('tipos')
+            ->parameters(['tipos' => 'tipo']);
 
-            Route::get('/buscar-pastor', [CongregacionController::class, 'buscarPastor'])
-                ->name('buscar.pastor');
+        // CONGREGACION (CORREGIDO)
+        Route::resource('congregaciones', CongregacionController::class)
+            ->names('congregacion')
+            ->parameters(['congregaciones' => 'congregacion']);
 
-        });
-    //
+        Route::get('buscar-pastor', [CongregacionController::class, 'buscarPastor'])
+            ->name('buscar.pastor');
+    });
 //
 
 //CREDITOS ***
