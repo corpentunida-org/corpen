@@ -9,7 +9,7 @@ use App\Models\Maestras\maeTerceros;
 use App\Models\User;
 
 
-class MaeTipos extends Model
+class MaeTipo extends Model
 {
     use HasFactory, SoftDeletes;
 
@@ -59,7 +59,7 @@ class MaeTipos extends Model
 
     public function maeTipos()
     {
-        return $this->belongsTo(maeTipos::class, 'codigo', 'tip_prv');
+        return $this->belongsTo(maeTipo::class, 'codigo', 'tip_prv');
     }
     public function maeTerceros()
     {
