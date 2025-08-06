@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Maestras;
 
 use App\Http\Controllers\Controller;
 use App\Models\Maestras\maeTerceros;
-use App\Models\Maestras\MaeTipos;
+use App\Models\Maestras\MaeTipo;
 use Illuminate\Http\Request;
 
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -35,7 +35,7 @@ class MaeTercerosController extends Controller
 
     public function edit(maeTerceros $tercero)
     {
-        $tipos = MaeTipos::all();
+        $tipos = MaeTipo::all();
 
         return view('maestras.terceros.edit', compact('tercero','tipos'));
     }
@@ -52,7 +52,7 @@ class MaeTercerosController extends Controller
 
     public function create()
     {
-        $tipos = MaeTipos::all();
+        $tipos = MaeTipo::all();
 
         // Aquí retornas la vista para crear un nuevo tercero
         return view('maestras.terceros.create', compact('tipos'));
