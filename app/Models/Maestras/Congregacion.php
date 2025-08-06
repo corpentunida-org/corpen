@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Maestras\claseCongregacion;
 use App\Models\Maestras\maeDistritos;
 use App\Models\Maestras\maeTerceros;
-use App\Models\Maestras\MaeMunicipios;
+use App\Models\Maestras\maeMunicipios;
 
 
 class Congregacion extends Model
