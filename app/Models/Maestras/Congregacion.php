@@ -56,7 +56,7 @@ class Congregacion extends Model
      */
     public function claseCongregacion()
     {
-        return $this->belongsTo(ClaseCongregacion::class, 'clase', 'id');
+        return $this->belongsTo(claseCongregacion::class, 'clase', 'id');
     }
 
 
@@ -77,7 +77,7 @@ class Congregacion extends Model
 
     public function maeMunicipios()
     {
-        return $this->belongsTo(maeMunicipios::class, 'municipio', 'id');
+        return $this->belongsTo(MaeMunicipios::class, 'municipio', 'id');
     }
 
 }
