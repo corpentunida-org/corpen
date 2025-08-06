@@ -1,5 +1,5 @@
-<div class="modal fade-scale" id="ModalConfirmacionEliminar" aria-hidden="true" aria-labelledby="languageSelectModalLabel"
-    tabindex="-1">
+{{-- <div class="modal fade-scale" id="ModalConfirmacionEliminar" aria-hidden="true"
+    aria-labelledby="languageSelectModalLabel" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered ">
         <div class="modal-content bg-soft-primary border-0">
             <div class="modal-header">
@@ -18,5 +18,38 @@
                 </div>
             </div>
         </div>
-    </div>  
+    </div>
 </div>
+--}}
+<script>
+    document.querySelectorAll('.btnAbrirModalDestroy').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            const formulario = btn.closest('form');
+            let Text = btn.getAttribute('data-text');
+            Swal.fire({
+                title: `¿Está seguro de eliminar el ${Text}?`,
+                text: `Una vez eliminado, no podrá deshacer esta acción. `,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Eliminar',
+                cancelButtonText: 'Cancelar',
+                customClass: {
+                    confirmButton: 'btn btn-danger mx-1',
+                    cancelButton: 'btn btn-secondary mx-1'
+                },
+                buttonsStyling: false,
+                showClass: {
+                    popup: 'animate__animated animate__zoomIn'
+                },
+                hideClass: {
+                    popup: 'animate__animated animate__zoomOut'
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    formulario.submit();
+                }
+            });
+        });
+    });
+</script>
