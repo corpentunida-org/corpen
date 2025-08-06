@@ -77,7 +77,7 @@ class Congregacion extends Model
 
     public function maeMunicipios()
     {
-        return $this->belongsTo(MaeMunicipios::class, 'municipio', 'id');
+        return $this->belongsTo(MaeMunicipios::class, 'municipio', 'id'); //listo
     }
 
 }
