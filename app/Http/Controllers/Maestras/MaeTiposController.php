@@ -63,10 +63,10 @@ class MaeTiposController extends Controller
      */
     public function store(Request $request)
     {
-        // Se cambió 'unique:MaeTipos,codigo' a 'unique:mae_tipos,codigo'
+        // Se cambió 'unique:MaeTipos,codigo' a 'unique:MaeTipos,codigo'
         // Es la convención para referirse a la tabla en las reglas de validación.
         $validated = $request->validate([
-            'codigo' => 'required|string|max:10|unique:mae_tipos,codigo',
+            'codigo' => 'required|string|max:10|unique:MaeTipos,codigo',
             'nombre' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
             'grupo' => 'nullable|string|max:50',
