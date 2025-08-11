@@ -5,11 +5,11 @@ namespace App\Models\Archivo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Cargo extends Model
+class GdoCargo extends Model
 {
     use HasFactory;
 
-    protected $table = 'GDO_cargo';
+    protected $table = 'gdo_cargo';
 
     protected $fillable = [
         'nombre_cargo',
@@ -21,6 +21,7 @@ class Cargo extends Model
         'correo_corporativo',
         'gmail_corporativo',
         'manual_funciones',
+        'GDO_area_id',
         'empleado_cedula',
         'estado',
         'observacion',
@@ -30,4 +31,12 @@ class Cargo extends Model
         'estado' => 'boolean',
         'salario_base' => 'decimal:2',
     ];
+
+    // Área a la que pertenece este cargo
+    public function gdoArea()
+    {
+        return $this->belongsTo(GdoArea::class, 'GDO_area_id', 'id');
+    }
+
+
 }
