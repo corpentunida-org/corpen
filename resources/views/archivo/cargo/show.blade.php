@@ -25,6 +25,13 @@
                     <p class="mb-2"><strong>Extensión:</strong><br> {{ $cargo->ext_corporativo ?? '-' }}</p>
                     <p class="mb-2"><strong>Correo Corporativo:</strong><br> {{ $cargo->correo_corporativo ?? '-' }}</p>
                 </div>
+                {{-- Área --}}
+                <div class="col-md-6">
+                    <label class="form-label">Área</label>
+                    <p class="form-control-plaintext">
+                        {{ $cargo->gdoArea->nombre ?? 'Sin área asignada' }}
+                    </p>
+                </div>
 
                 {{-- Sección de Observaciones y Manual --}}
                 <div class="col-md-12 mt-4">

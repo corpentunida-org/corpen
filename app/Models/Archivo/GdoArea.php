@@ -4,6 +4,7 @@ namespace App\Models\Archivo;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Archivo\GdoCargo;
 
 class GdoArea extends Model
 {
@@ -20,6 +21,7 @@ class GdoArea extends Model
     protected $fillable = [
         'nombre',
         'descripcion',
+        'GDO_cargo_id',
         'estado',
     ];
 
@@ -46,4 +48,19 @@ class GdoArea extends Model
     {
         return ucwords($value);
     }
+
+    // Cargo que es jefe del área
+    public function jefeCargo()
+    {
+        return $this->hasOne(GdoCargo::class, 'id', 'GDO_cargo_id');
+    }
+
+    // Cargos que pertenecen a esta área
+    public function cargos()
+    {
+        return $this->hasMany(GdoCargo::class, 'GDO_area_id', 'id');
+    }
+
+    
+
 }

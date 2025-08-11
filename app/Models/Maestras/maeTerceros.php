@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
 use App\Models\Maestras\Congregacion;
-use App\Models\Maestras\MaeTipos;
+use App\Models\Maestras\MaeTipo;
 
 class maeTerceros extends Model
 {

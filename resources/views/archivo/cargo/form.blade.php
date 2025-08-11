@@ -84,4 +84,20 @@
         <label for="observacion" class="form-label">Observaciones</label>
         <textarea name="observacion" id="observacion" class="form-control" rows="3">{{ old('observacion', $cargo->observacion ?? '') }}</textarea>
     </div>
+
+    {{-- Selección de Área --}}
+    <div class="col-md-6">
+        <label for="GDO_area_id" class="form-label">Área</label>
+        <select name="GDO_area_id" id="GDO_area_id" class="form-select">
+            <option value="">-- Seleccione un área --</option>
+            @foreach($areas as $area)
+                <option value="{{ $area->id }}" 
+                    {{ old('GDO_area_id', $cargo->GDO_area_id ?? '') == $area->id ? 'selected' : '' }}>
+                    {{ $area->nombre }}
+                </option>
+            @endforeach
+        </select>
+    </div>
+
+
 </div>
