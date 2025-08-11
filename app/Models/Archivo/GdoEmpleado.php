@@ -34,8 +34,8 @@ class GdoEmpleado extends Model
     /**
      * Campos que serán tratados como fechas por Eloquent.
      */
-    protected $dates = [
-        'nacimiento',
+    protected $casts  = [
+        'nacimiento' => 'datetime',
         'created_at',
         'updated_at',
     ];

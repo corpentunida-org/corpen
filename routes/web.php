@@ -33,7 +33,10 @@ use App\Http\Controllers\Cinco\RetirosListadoController;
 use App\Http\Controllers\ResReservaController;
 
 //ARCHIVO
-use App\Http\Controllers\Archivo\CargoController;
+use App\Http\Controllers\Archivo\GdoCargoController;
+use App\Http\Controllers\Archivo\GdoAreaController;
+use App\Http\Controllers\Archivo\GdoEmpleadoController;
+
 
 
 //MAESTARS
@@ -191,15 +194,29 @@ Route::prefix('creditos/estado1')
 
 
 //GESTION DOCUMENTAL
-Route::prefix('archivo')->middleware('auth')->group(function () {
+    Route::prefix('archivo')->middleware('auth')->group(function () {
 
-    // <-- CAMBIO CLAVE: Ruta segura para ver/descargar los manuales.
-    // Solo usuarios autenticados pueden acceder a esta URL.
-    Route::get('cargos/{cargo}/ver-manual', [CargoController::class, 'verManual'])
-         ->name('archivo.cargo.verManual');
+        // <-- CAMBIO CLAVE: Ruta segura para ver/descargar los manuales.
+        // Solo usuarios autenticados pueden acceder a esta URL.
+        Route::get('cargos/{cargo}/ver-manual', [GdoCargoController::class, 'verManual'])
+            ->name('archivo.cargo.verManual');
 
-    // Tu Route::resource se mantiene igual, pero ahora la ruta de arriba la complementa.
-    Route::resource('cargos', CargoController::class)
-        ->names('archivo.cargo')
-        ->parameters(['cargos' => 'cargo']);
-});
+        // Tu Route::resource se mantiene igual, pero ahora la ruta de arriba la complementa.
+        Route::resource('cargos', GdoCargoController::class)
+            ->names('archivo.cargo')
+            ->parameters(['cargos' => 'cargo']);
+    });
+    Route::prefix('archivo')->middleware('auth')->group(function () {
+
+        // Ruta resource para Áreas
+        Route::resource('areas', GdoAreaController::class)
+            ->names('archivo.area')
+            ->parameters(['areas' => 'area']);
+    });
+    Route::prefix('archivo')->middleware('auth')->group(function () {
+
+        // Ruta resource para Empleados
+        Route::resource('empleados', GdoEmpleadoController::class)
+            ->names('archivo.empleado')
+            ->parameters(['empleados' => 'empleado']);
+    });
