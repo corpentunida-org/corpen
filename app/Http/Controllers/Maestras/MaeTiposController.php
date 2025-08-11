@@ -110,7 +110,7 @@ class MaeTiposController extends Controller
     {
         // Se corrigió la regla de validación para apuntar a la tabla correcta
         $validated = $request->validate([
-            'codigo' => 'required|string|max:10|unique:mae_tipos,codigo,' . $tipo->id,
+            'codigo' => 'required|string|max:10|unique:MaeTipos,codigo,' . $tipo->id,
             'nombre' => 'required|string|max:255',
             'descripcion' => 'nullable|string',
             'grupo' => 'nullable|string|max:50',
