@@ -4,7 +4,10 @@ namespace App\Http\Controllers\Archivo;
 
 use App\Http\Controllers\Controller;
 use App\Models\Archivo\GdoCargo;
+
 use App\Models\Archivo\GdoArea;
+use App\Models\Archivo\GdoEmpleado;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -42,7 +45,7 @@ class GdoCargoController extends Controller
             'gmail_corporativo'    => 'nullable|email|max:255',
             'manual_funciones'     => 'nullable|file|mimes:pdf|max:2048',
             'GDO_area_id'          => 'nullable|exists:gdo_area,id',
-            'empleado_cedula'      => 'nullable|string|max:50',
+            'GDO_empleados_cedula'      => 'nullable|string|max:50',
             'estado'               => 'nullable|boolean',
             'observacion'          => 'nullable|string',
         ]);
@@ -66,8 +69,11 @@ class GdoCargoController extends Controller
 
     public function edit(GdoCargo $cargo)
     {
+        $cargo->load('empleado'); // para cargar la relación 1:1
         $areas = GdoArea::orderBy('nombre')->get();
-        return view('archivo.cargo.edit', compact('cargo', 'areas'));
+        $empleados = GdoEmpleado::all();
+
+        return view('archivo.cargo.edit', compact('cargo', 'areas', 'empleados'));
     }
 
     public function update(Request $request, GdoCargo $cargo)
@@ -83,7 +89,7 @@ class GdoCargoController extends Controller
             'gmail_corporativo'    => 'nullable|email|max:255',
             'manual_funciones'     => 'nullable|file|mimes:pdf|max:2048',
             'GDO_area_id'          => 'nullable|exists:gdo_area,id',
-            'empleado_cedula'      => 'nullable|string|max:50',
+            'GDO_empleados_cedula'      => 'nullable|string|max:50',
             'estado'               => 'nullable|boolean',
             'observacion'          => 'nullable|string',
         ]);

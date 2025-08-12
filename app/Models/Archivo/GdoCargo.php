@@ -22,7 +22,7 @@ class GdoCargo extends Model
         'gmail_corporativo',
         'manual_funciones',
         'GDO_area_id',
-        'empleado_cedula',
+        'GDO_empleados_cedula',
         'estado',
         'observacion',
     ];
@@ -36,6 +36,12 @@ class GdoCargo extends Model
     public function gdoArea()
     {
         return $this->belongsTo(GdoArea::class, 'GDO_area_id', 'id');
+    }
+
+    public function empleado()
+    {
+        // belongsTo(ClaseRelacionada, campo_foraneo_en_gdo_cargo, campo_local_en_gdo_empleados)
+        return $this->belongsTo(GdoEmpleado::class, 'GDO_empleados_cedula', 'cedula');
     }
 
 

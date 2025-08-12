@@ -17,7 +17,7 @@
                                 {{ $cargo->nombre_cargo }}
                             </div>
                             <h3 class="fs-13 fw-semibold text-truncate-1-line">
-                                Cédula Asociada: {{ $cargo->empleado_cedula ?? 'N/A' }}
+                                Cédula Asociada: {{ $cargo->GDO_empleados_cedula ?? 'N/A' }}
                             </h3>
                         </div>
                     </div>
