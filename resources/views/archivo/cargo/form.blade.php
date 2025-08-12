@@ -48,29 +48,37 @@
     </div>
 
 
+    <div class="col-md-6">
+        <label for="manual_funciones" class="form-label">Manual de funciones (PDF)</label>
+        {{-- CAMBIO AQUÍ: de type="text" a type="file" --}}
+        <input type="file" name="manual_funciones" id="manual_funciones" class="form-control" accept=".pdf">
+        
+        {{-- Lógica para mostrar el archivo actual en la vista de edición --}}
+        @if (isset($cargo) && $cargo->manual_funciones)
+            <div class="mt-2">
+                <small>Archivo actual: 
+                    <a href="{{ route('archivo.cargo.verManual', $cargo->id) }}" target="_blank">
+                        <i class="bi bi-file-earmark-pdf"></i> Ver Manual
+                    </a>
+                </small>
+            </div>
+        @endif
+    </div>
+
+
 <div class="col-md-6">
-    <label for="manual_funciones" class="form-label">Manual de funciones (PDF)</label>
-    {{-- CAMBIO AQUÍ: de type="text" a type="file" --}}
-    <input type="file" name="manual_funciones" id="manual_funciones" class="form-control" accept=".pdf">
-    
-    {{-- Lógica para mostrar el archivo actual en la vista de edición --}}
-    @if (isset($cargo) && $cargo->manual_funciones)
-        <div class="mt-2">
-            <small>Archivo actual: 
-                <a href="{{ route('archivo.cargo.verManual', $cargo->id) }}" target="_blank">
-                    <i class="bi bi-file-earmark-pdf"></i> Ver Manual
-                </a>
-            </small>
-        </div>
-    @endif
+    <label for="GDO_empleados_cedula" class="form-label">Empleado</label>
+    <select name="GDO_empleados_cedula" id="GDO_empleados_cedula" class="form-control">
+        <option value="">-- Seleccione un empleado --</option>
+        @foreach($empleados as $empleado)
+            <option value="{{ $empleado->cedula }}"
+                {{ old('GDO_empleados_cedula', $cargo->empleado->cedula ?? '') == $empleado->cedula ? 'selected' : '' }}>
+                {{ $empleado->nombre_completo }} ({{ $empleado->cedula }})
+            </option>
+        @endforeach
+    </select>
 </div>
 
-
-    <div class="col-md-6">
-        <label for="empleado_cedula" class="form-label">Cédula del empleado</label>
-        <input type="text" name="empleado_cedula" id="empleado_cedula" class="form-control"
-               value="{{ old('empleado_cedula', $cargo->empleado_cedula ?? '') }}">
-    </div>
 
     <div class="col-md-3">
         <label for="estado" class="form-label">Estado</label>
