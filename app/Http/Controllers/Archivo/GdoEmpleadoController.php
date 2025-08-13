@@ -4,6 +4,10 @@ namespace App\Http\Controllers\Archivo;
 
 use App\Http\Controllers\Controller;
 use App\Models\Archivo\GdoEmpleado;
+
+use App\Models\Archivo\GdoDocsEmpleados; // <--- Dasbohard
+
+
 use Illuminate\Http\Request;
 
 class GdoEmpleadoController extends Controller
@@ -68,11 +72,30 @@ class GdoEmpleadoController extends Controller
     /**
      * Mostrar un empleado específico.
      */
-    public function show(GdoEmpleado $empleado)
-    {
-        return view('archivo.empleado.show', compact('empleado'));
-    }
+    /**
+     * Muestra los detalles de un empleado específico y sus documentos asociados.
+     *
+     * @param  \App\Models\Archivo\GdoEmpleado  $empleado
+     * @return \Illuminate\View\View
+     */
+        public function show(GdoEmpleado $empleado)
+        {
+            // Cargar el cargo del empleado para evitar consultas adicionales en la vista.
+            $empleado->load('cargo');
 
+            // OBTENER LOS DOCUMENTOS USANDO LA RELACIÓN DEFINIDA EN EL MODELO.
+            // La consulta ahora se basa en la cédula del empleado, tal como lo definiste.
+            $documentosDelEmpleado = GdoDocsEmpleados::where('empleado_id', $empleado->cedula)
+                                                    ->with('tipoDocumento') // Carga previamente el nombre del tipo de documento
+                                                    ->latest('fecha_subida') // Ordena por fecha, los más nuevos primero
+                                                    ->paginate(10, ['*'], 'docs_page'); // Pagina los resultados y usa un nombre de página único
+
+            // Retorna la vista con los datos del empleado y sus documentos.
+            return view('archivo.empleado.show', [
+                'empleado' => $empleado,
+                'documentosDelEmpleado' => $documentosDelEmpleado,
+            ]);
+        }
     /**
      * Mostrar formulario de edición.
      */

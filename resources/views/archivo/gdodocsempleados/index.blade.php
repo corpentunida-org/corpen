@@ -6,49 +6,62 @@
         </div>
     @endif
 
-    <div class="card shadow-sm">
+    <div class="card">
         <div class="card-body">
-            {{-- Encabezado --}}
+            {{-- Encabezado y botón Crear --}}
             <div class="mb-4 px-4 d-flex align-items-center justify-content-between">
-                <h5 class="fw-bold mb-0 text-purple">Listado de Empleados</h5>
-                <a href="{{ route('archivo.empleado.create') }}" class="btn btn-success btnCrear">
+                <h5 class="fw-bold mb-0">Documentos de Empleados</h5>
+                <a href="{{ route('archivo.gdodocsempleados.create') }}" class="btn btn-success btnCrear">
                     <i class="bi bi-plus-lg me-2"></i>
-                    <span>Nuevo Empleado</span>
+                    <span>Nuevo Documento</span>
                 </a>
             </div>
 
             {{-- Buscador --}}
             <div class="px-4 pb-4">
-                <form action="{{ route('archivo.empleado.index') }}" method="GET">
+                <form method="GET" action="{{ route('archivo.gdodocsempleados.index') }}">
                     <div class="input-group shadow-sm rounded">
                         <span class="input-group-text bg-white border-end-0">
                             <i class="bi bi-search text-muted"></i>
                         </span>
-                        <input type="search" name="search" class="form-control border-start-0" placeholder="Buscar por cédula o nombre..." value="{{ $search }}">
+                        <input type="search" name="search" class="form-control border-start-0" placeholder="Buscar por empleado o tipo documento..." value="{{ $search ?? '' }}">
                         <button class="btn btn-outline-primary" type="submit">Buscar</button>
                     </div>
                 </form>
             </div>
 
-            {{-- Tabla --}}
+            {{-- Tabla de Documentos --}}
             <div class="table-responsive">
                 <table class="table table-hover mb-0 align-middle small">
-                    <thead class="table-purple text-white">
-                        <tr>
-                            <th>Cédula</th>
-                            <th>Nombre Completo</th>
-                            <th>Correo</th>
-                            <th>Celular</th>
+                    <thead class="table-light">
+                        <tr class="border-top">
+                            <th>Empleado</th>
+                            <th>Tipo Documento</th>
+                            <th>Archivo</th>
+                            <th>Fecha</th>
                             <th class="text-end">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse ($empleados as $empleado)
+                        @forelse ($gdodocsempleados as $doc)
                             <tr>
-                                <td>{{ $empleado->cedula }}</td>
-                                <td>{{ $empleado->apellido1 }} {{ $empleado->apellido2 }} {{ $empleado->nombre1 }} {{ $empleado->nombre2 }}</td>
-                                <td>{{ $empleado->correo_personal }}</td>
-                                <td>{{ $empleado->celular_personal }}</td>
+                                <td>
+                                    @if($doc->empleado)
+                                        {{ $doc->empleado->apellido1 }} {{ $doc->empleado->apellido2 }} {{ $doc->empleado->nombre1 }} {{ $doc->empleado->nombre2 }}
+                                    @else
+                                        —
+                                    @endif
+                                </td>
+                                <td>{{ $doc->tipoDocumento->nombre ?? '—' }}</td>
+                                <td>
+                                    @if($doc->ruta_archivo)
+                                        <a href="{{ route('gdodocsempleados.ver', $doc->id) }}" target="_blank" class="btn btn-sm btn-primary">Ver</a>
+                                        <a href="{{ route('gdodocsempleados.download', $doc->id) }}" class="btn btn-sm btn-success">Descargar</a>
+                                    @else
+                                        —
+                                    @endif
+                                </td>
+                                <td>{{ $doc->fecha_subida ? $doc->fecha_subida->format('d/m/Y') : '—' }}</td>
                                 <td class="text-end">
                                     <div class="dropdown">
                                         <a href="#" class="avatar-text avatar-md" data-bs-toggle="dropdown">
@@ -56,18 +69,13 @@
                                         </a>
                                         <ul class="dropdown-menu dropdown-menu-end">
                                             <li>
-                                                <a class="dropdown-item btnVer" href="{{ route('archivo.empleado.show', $empleado->id) }}">
-                                                    <i class="bi bi-eye me-3"></i> Ver
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <a class="dropdown-item btnEditar" href="{{ route('archivo.empleado.edit', $empleado->id) }}">
+                                                <a class="dropdown-item btnEditar" href="{{ route('archivo.gdodocsempleados.edit', $doc->id) }}">
                                                     <i class="bi bi-pencil-square me-3"></i> Editar
                                                 </a>
                                             </li>
                                             <li><hr class="dropdown-divider"></li>
                                             <li>
-                                                <form action="{{ route('archivo.empleado.destroy', $empleado->id) }}" method="POST" class="formEliminar">
+                                                <form action="{{ route('archivo.gdodocsempleados.destroy', $doc->id) }}" method="POST" class="formEliminar">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="dropdown-item text-danger">
@@ -81,7 +89,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-center py-4">No se encontraron empleados.</td>
+                                <td colspan="5" class="text-center py-4">No se encontraron documentos de empleados.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -89,16 +97,15 @@
             </div>
 
             {{-- Paginación --}}
-            @if ($empleados->hasPages())
+            @if ($gdodocsempleados->hasPages())
                 <div class="d-flex justify-content-center mt-4">
-                    {{ $empleados->appends(request()->query())->links('components.maestras.congregaciones.pagination') }}
+                    {{ $gdodocsempleados->appends(request()->query())->links() }}
                 </div>
             @endif
         </div>
     </div>
 
     @push('scripts')
-        {{-- Animaciones y SweetAlert --}}
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
@@ -124,16 +131,7 @@
                 document.querySelectorAll('.btnCrear').forEach(btn => {
                     btn.addEventListener('click', function (e) {
                         e.preventDefault();
-                        confirmarAccion('¿Crear un nuevo empleado?', 'Serás redirigido al formulario de creación.', 'info', () => {
-                            window.location.href = btn.getAttribute('href');
-                        });
-                    });
-                });
-
-                document.querySelectorAll('.btnVer').forEach(btn => {
-                    btn.addEventListener('click', function (e) {
-                        e.preventDefault();
-                        confirmarAccion('¿Ver detalles?', 'Se mostrarán los detalles completos del empleado.', 'info', () => {
+                        confirmarAccion('¿Crear un nuevo documento?', 'Serás redirigido al formulario de creación.', 'info', () => {
                             window.location.href = btn.getAttribute('href');
                         });
                     });
@@ -142,7 +140,7 @@
                 document.querySelectorAll('.btnEditar').forEach(btn => {
                     btn.addEventListener('click', function (e) {
                         e.preventDefault();
-                        confirmarAccion('¿Editar este empleado?', 'Serás redirigido al formulario de edición.', 'question', () => {
+                        confirmarAccion('¿Editar este documento?', 'Serás redirigido al formulario de edición.', 'question', () => {
                             window.location.href = btn.getAttribute('href');
                         });
                     });
@@ -151,18 +149,17 @@
                 document.querySelectorAll('.formEliminar').forEach(form => {
                     form.addEventListener('submit', function (e) {
                         e.preventDefault();
-                        confirmarAccion('¿Eliminar este empleado?', 'Esta acción no se puede deshacer.', 'warning', () => {
+                        confirmarAccion('¿Eliminar este documento?', 'Esta acción no se puede deshacer.', 'warning', () => {
                             form.submit();
                         });
                     });
                 });
+
+                var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+                var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                  return new bootstrap.Tooltip(tooltipTriggerEl)
+                })
             });
         </script>
     @endpush
-
-    <style>
-        .text-purple { color: #2e2e2e; }
-        .table-purple { background-color: #b5b3b8; }
-        .table-purple th { color: #fff; }
-    </style>
 </x-base-layout>

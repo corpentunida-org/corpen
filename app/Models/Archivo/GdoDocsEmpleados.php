@@ -9,39 +9,44 @@ class GdoDocsEmpleados extends Model
 {
     use HasFactory;
 
-    /**
-     * Nombre de la tabla en la base de datos.
-     */
+    // Nombre de la tabla en la base de datos
     protected $table = 'gdo_docs_empleados';
 
-    /**
-     * Campos que se pueden asignar masivamente.
-     */
+    // Campos que se pueden asignar masivamente
     protected $fillable = [
+        'empleado_id',
+        'tipo_documento_id',
         'ruta_archivo',
         'fecha_subida',
         'observaciones',
     ];
 
-    /**
-     * Campos que serán tratados como fechas por Eloquent.
-     */
-    protected $dates = [
-        'fecha_subida',
-        'created_at',
-        'updated_at',
+    // Campos que serán tratados como fechas por Eloquent
+    protected $casts = [
+        'fecha_subida' => 'datetime',
+        'created_at'   => 'datetime',
+        'updated_at'   => 'datetime',
     ];
 
     /**
-     * Relación con empleado (opcional para cuando se agregue la FK).
+     * Relación con el empleado
+     * Asumiendo que 'empleado_id' referencia 'cedula' en la tabla empleados
      */
-    // public function empleado()
-    // {
-    //     return $this->belongsTo(GdoEmpleado::class, 'empleado_id');
-    // }
+    public function empleado()
+    {
+        return $this->belongsTo(GdoEmpleado::class, 'empleado_id', 'cedula');
+    }
 
     /**
-     * Accesor para mostrar solo el nombre del archivo sin la ruta.
+     * Relación con el tipo de documento
+     */
+    public function tipoDocumento()
+    {
+        return $this->belongsTo(GdoTipoDocumento::class, 'tipo_documento_id', 'id');
+    }
+
+    /**
+     * Accesor para mostrar solo el nombre del archivo sin la ruta
      */
     public function getNombreArchivoAttribute()
     {

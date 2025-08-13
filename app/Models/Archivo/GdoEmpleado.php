@@ -32,13 +32,31 @@ class GdoEmpleado extends Model
     ];
 
     /**
-     * Campos que serán tratados como fechas por Eloquent.
+     * Conversión automática de campos a tipos de dato.
      */
-    protected $casts  = [
+    protected $casts = [
         'nacimiento' => 'datetime',
-        'created_at',
-        'updated_at',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
+
+    /**
+     * Relación con los documentos de empleado.
+     */
+    public function documentos()
+    {
+        return $this->hasMany(GdoDocsEmpleados::class, 'empleado_id', 'cedula');
+    }
+
+
+    /**
+     * Relación con el cargo.
+     */
+    public function cargo()
+    {
+        // hasOne(ClaseRelacionada, campo_foraneo_en_gdo_cargo, campo_local_en_gdo_empleados)
+        return $this->hasOne(GdoCargo::class, 'GDO_empleados_cedula', 'cedula');
+    }
 
     /**
      * Accessor para obtener el nombre completo.
@@ -63,10 +81,4 @@ class GdoEmpleado extends Model
     {
         $this->attributes['correo_personal'] = strtolower($value);
     }
-    public function cargo()
-    {
-        // hasOne(ClaseRelacionada, campo_foraneo_en_gdo_cargo, campo_local_en_gdo_empleados)
-        return $this->hasOne(GdoCargo::class, 'GDO_empleados_cedula', 'cedula');
-    }
-
 }
