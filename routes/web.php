@@ -37,6 +37,8 @@ use App\Http\Controllers\ResReservaController;
 use App\Http\Controllers\Archivo\GdoCargoController;
 use App\Http\Controllers\Archivo\GdoAreaController;
 use App\Http\Controllers\Archivo\GdoEmpleadoController;
+use App\Http\Controllers\Archivo\GdoTipoDocumentoController;
+use App\Http\Controllers\Archivo\GdoDocsEmpleadosController;
 
 
 
@@ -198,30 +200,44 @@ Route::prefix('creditos/estado1')
 });
 
 
-//GESTION DOCUMENTAL
-    Route::prefix('archivo')->middleware('auth')->group(function () {
+// GESTION DOCUMENTAL
+Route::prefix('archivo')->middleware('auth')->group(function () {
 
-        // <-- CAMBIO CLAVE: Ruta segura para ver/descargar los manuales.
-        // Solo usuarios autenticados pueden acceder a esta URL.
-        Route::get('cargos/{cargo}/ver-manual', [GdoCargoController::class, 'verManual'])
-            ->name('archivo.cargo.verManual');
+    // <-- CAMBIO CLAVE: Ruta segura para ver/descargar los manuales.
+    Route::get('cargos/{cargo}/ver-manual', [GdoCargoController::class, 'verManual'])
+        ->name('archivo.cargo.verManual');
 
-        // Tu Route::resource se mantiene igual, pero ahora la ruta de arriba la complementa.
-        Route::resource('cargos', GdoCargoController::class)
-            ->names('archivo.cargo')
-            ->parameters(['cargos' => 'cargo']);
-    });
-    Route::prefix('archivo')->middleware('auth')->group(function () {
+    // Recursos
+    Route::resource('cargos', GdoCargoController::class)
+        ->names('archivo.cargo')
+        ->parameters(['cargos' => 'cargo']);
 
-        // Ruta resource para Áreas
-        Route::resource('areas', GdoAreaController::class)
-            ->names('archivo.area')
-            ->parameters(['areas' => 'area']);
-    });
-    Route::prefix('archivo')->middleware('auth')->group(function () {
+    Route::resource('areas', GdoAreaController::class)
+        ->names('archivo.area')
+        ->parameters(['areas' => 'area']);
 
-        // Ruta resource para Empleados
-        Route::resource('empleados', GdoEmpleadoController::class)
-            ->names('archivo.empleado')
-            ->parameters(['empleados' => 'empleado']);
-    });
+    Route::resource('empleados', GdoEmpleadoController::class)
+        ->names('archivo.empleado')
+        ->parameters(['empleados' => 'empleado']);
+
+    Route::resource('gdotipodocumento', GdoTipoDocumentoController::class)
+        ->names('archivo.gdotipodocumento')
+        ->parameters(['gdotipodocumento' => 'tipoDocumento']);
+
+    Route::resource('gdodocsempleados', GdoDocsEmpleadosController::class)
+        ->names('archivo.gdodocsempleados')
+        ->parameters(['gdodocsempleados' => 'gdodocsempleado']);
+
+Route::get('gdodocsempleados/ver/{id}', [GdoDocsEmpleadosController::class, 'verArchivo'])
+     ->name('gdodocsempleados.ver')
+     ->middleware('auth');
+
+Route::get('gdodocsempleados/download/{id}', [GdoDocsEmpleadosController::class, 'download'])
+     ->name('gdodocsempleados.download')
+     ->middleware('auth');
+
+        
+
+
+});
+//
