@@ -1,9 +1,10 @@
 @php
     // Definimos si estamos en modo de edición para usarlo fácilmente en el formulario.
-    $isEdit = isset($empleado->id); 
+    $isEdit = isset($empleado->id);
 @endphp
 
-<form action="{{ $isEdit ? route('archivo.empleado.update', $empleado->id) : route('archivo.empleado.store') }}" method="POST">
+{{-- IMPORTANTE: El atributo enctype es fundamental para que la subida de archivos funcione. --}}
+<form action="{{ $isEdit ? route('archivo.empleado.update', $empleado->id) : route('archivo.empleado.store') }}" method="POST" enctype="multipart/form-data">
     @csrf
     @if($isEdit)
         @method('PUT')
@@ -14,10 +15,31 @@
         <legend class="fs-6 fw-bold border-bottom pb-2 mb-3">
             <i class="bi bi-person-badge text-primary me-2"></i> Información Personal
         </legend>
+
+        {{-- NUEVO: Sección para la foto de perfil --}}
+        <div class="row g-3 mb-4 align-items-center">
+            <div class="col-md-8">
+                <label for="ubicacion_foto" class="form-label">Foto de Perfil (Opcional)</label>
+                <input class="form-control @error('ubicacion_foto') is-invalid @enderror" type="file" id="ubicacion_foto" name="ubicacion_foto" accept="image/*">
+                @error('ubicacion_foto')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+                <small class="form-text text-muted">Archivos permitidos: JPG, PNG, GIF. Tamaño máximo: 2MB.</small>
+            </div>
+             {{-- Vista previa de la foto actual en modo edición --}}
+            @if ($isEdit && $empleado->ubicacion_foto)
+                <div class="col-md-4 text-center">
+                    <img src="{{ asset('storage/' . $empleado->ubicacion_foto) }}" alt="Foto actual" class="img-thumbnail rounded-circle" style="width: 100px; height: 100px; object-fit: cover;">
+                    <small class="d-block text-muted mt-1">Foto Actual</small>
+                </div>
+            @endif
+        </div>
+
+        {{-- Campos de Cédula y Nombres --}}
         <div class="row g-3">
             <div class="col-md-4">
                 <div class="form-floating">
-                    <input type="text" name="cedula" id="cedula" class="form-control @error('cedula') is-invalid @enderror" placeholder="Cédula" value="{{ old('cedula', $empleado->cedula ?? '') }}" required>
+                    <input type="text" name="cedula" id="cedula" class="form-control @error('cedula') is-invalid @enderror" placeholder="Cédula" value="{{ old('cedula', $empleado->cedula ?? '') }}" required {{ $isEdit ? 'readonly' : '' }}>
                     <label for="cedula">Cédula</label>
                     @error('cedula') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
