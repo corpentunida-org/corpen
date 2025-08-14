@@ -4,13 +4,12 @@
     @push('styles')
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
         <style>
-            /* Paleta de colores y variables para fácil mantenimiento */
+            /* Se eliminó la clase .profile-avatar para evitar conflictos. Los estilos se aplicarán en línea. */
             :root {
                 --bs-body-bg-rgb: 248, 249, 250;
                 --subtle-border-color: #dee2e6;
                 --subtle-bg-color: #f1f3f5;
             }
-
             body { background-color: rgb(var(--bs-body-bg-rgb)); }
             .card {
                 border-radius: .75rem;
@@ -29,30 +28,10 @@
                 border-color: var(--bs-primary) var(--bs-primary) #fff;
                 background-color: #fff;
             }
-            .nav-tabs .nav-link i {
-                margin-right: 0.5rem;
-                color: var(--bs-secondary-text-emphasis);
-            }
-            .nav-tabs .nav-link.active i {
-                color: var(--bs-primary);
-            }
-
-            /* Estilo de avatar profesional */
-            .profile-avatar {
-                width: 80px; height: 80px; border-radius: 50%;
-                background-color: var(--bs-primary-bg-subtle);
-                color: var(--bs-primary-text-emphasis);
-                display: flex; align-items: center; justify-content: center;
-                font-size: 2.5rem; font-weight: 600;
-            }
-
-            /* Estilo consistente para detalles (ícono + texto) */
-            .detail-item {
-                display: flex; align-items: flex-start; gap: 1rem;
-            }
+            .nav-tabs .nav-link i { margin-right: 0.5rem; color: var(--bs-secondary-text-emphasis); }
+            .nav-tabs .nav-link.active i { color: var(--bs-primary); }
+            .detail-item { display: flex; align-items: flex-start; gap: 1rem; }
             .detail-item i { font-size: 1.5rem; color: #6c757d; margin-top: .25rem; }
-
-            /* ESTADO VACÍO PROFESIONAL Y FUNCIONAL */
             .professional-empty-state {
                 background-color: var(--subtle-bg-color);
                 border: 1px dashed var(--subtle-border-color);
@@ -60,10 +39,7 @@
                 padding: 2.5rem;
                 text-align: center;
             }
-            .professional-empty-state i {
-                font-size: 2rem;
-                color: #adb5bd;
-            }
+            .professional-empty-state i { font-size: 2rem; color: #adb5bd; }
         </style>
     @endpush
 
@@ -74,9 +50,23 @@
         <div class="col-lg-4 order-lg-2">
             <div class="card position-sticky" style="top: 20px;">
                 <div class="card-body text-center p-4">
-                    <div class="profile-avatar mx-auto mb-3">
-                        {{ substr($empleado->nombre1, 0, 1) }}{{ substr($empleado->apellido1, 0, 1) }}
+                    
+                    {{-- ======================================================== --}}
+                    {{--  SOLUCIÓN FINAL CON ESTILOS EN LÍNEA (A PRUEBA DE TODO)  --}}
+                    {{-- ======================================================== --}}
+                    
+                    <div class="mx-auto mb-3">
+                        @if ($empleado->ubicacion_foto)
+                            <img src="{{ route('archivo.empleado.verFoto', $empleado->id) }}" 
+                                 alt="Foto de perfil de {{ $empleado->nombre_completo }}"
+                                 style="width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        @else
+                            <div style="width: 50px; height: 50px; border-radius: 50%; background-color: var(--bs-primary-bg-subtle); color: var(--bs-primary-text-emphasis); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 600; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                                {{ substr($empleado->nombre1, 0, 1) }}{{ substr($empleado->apellido1, 0, 1) }}
+                            </div>
+                        @endif
                     </div>
+                    
                     <h5 class="fw-bold mb-1">{{ $empleado->nombre_completo }}</h5>
                     <p class="text-muted">C.C. {{ $empleado->cedula }}</p>
                     <hr class="my-4">
@@ -88,7 +78,7 @@
             </div>
         </div>
 
-        {{-- COLUMNA IZQUIERDA (Main Content) --}}
+        {{-- COLUMNA IZQUIERDA (Main Content) - Sin cambios, código restaurado --}}
         <div class="col-lg-8 order-lg-1">
             <div class="card">
                 <div class="card-header bg-white border-bottom p-0">
@@ -208,10 +198,6 @@
                                 <a href="{{ route('archivo.gdodocsempleados.create', ['empleado_cedula' => $empleado->cedula]) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus-lg me-1"></i> Añadir</a>
                             </div>
 
-                            {{-- ============================================= --}}
-                            {{--           AQUÍ ESTÁ LA CORRECCIÓN           --}}
-                            {{-- ============================================= --}}
-
                             @forelse ($documentosDelEmpleado as $doc)
                                 <div class="list-group-item d-flex justify-content-between align-items-center px-0 py-3">
                                     <div class="d-flex align-items-center">
@@ -232,7 +218,7 @@
                                     <h6 class="fw-bold">Sin Documentos Adjuntos</h6>
                                     <p class="text-muted small">Aún no se han cargado documentos para este perfil.</p>
                                 </div>
-                            @endforelse {{-- ESTA LÍNEA ES LA QUE PROBABLEMENTE FALTABA O ESTABA MAL ESCRITA --}}
+                            @endforelse
                             
                             @if ($documentosDelEmpleado->hasPages())
                                 <div class="mt-4">{{ $documentosDelEmpleado->links('pagination::bootstrap-5-sm') }}</div>
@@ -246,9 +232,85 @@
     </div>
 
     @push('scripts')
+        {{-- Librerías requeridas --}}
         <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-        {{-- (Coloca aquí el bloque <script> de las respuestas anteriores si lo necesitas) --}}
+
+        {{-- 6. JAVASCRIPT REUTILIZABLE Y DECLARATIVO --}}
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                // Configuración de notificaciones Toastr
+                toastr.options = {
+                    "closeButton": true,
+                    "progressBar": true,
+                    "positionClass": "toast-bottom-right",
+                };
+
+                // Muestra un mensaje de éxito si existe en la sesión
+                @if (session('success'))
+                    toastr.success("{{ session('success') }}");
+                @endif
+
+                // Inicializa todos los tooltips de Bootstrap en la página
+                var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+                var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                    return new bootstrap.Tooltip(tooltipTriggerEl)
+                });
+
+                // Listener para los enlaces con confirmación (como el botón de Editar Perfil)
+                document.body.addEventListener('click', function(e) {
+                    const swalConfirm = e.target.closest('.swal-confirm');
+                    if (swalConfirm) {
+                        e.preventDefault(); // Previene la navegación inmediata
+                        const title = swalConfirm.dataset.swalTitle || '¿Estás seguro?';
+                        const text = swalConfirm.dataset.swalText || '';
+                        const icon = swalConfirm.dataset.swalIcon || 'question';
+                        
+                        Swal.fire({
+                            title: title,
+                            text: text,
+                            icon: icon,
+                            showCancelButton: true,
+                            confirmButtonColor: '#0d6efd',
+                            cancelButtonColor: '#6c757d',
+                            confirmButtonText: 'Sí, continuar',
+                            cancelButtonText: 'Cancelar',
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                window.location.href = swalConfirm.getAttribute('href');
+                            }
+                        });
+                    }
+                });
+
+                // Listener para formularios con confirmación (como un futuro botón de eliminar)
+                document.body.addEventListener('submit', function(e) {
+                    const swalConfirmForm = e.target.closest('.swal-confirm-form');
+                    if (swalConfirmForm) {
+                        e.preventDefault(); // Previene el envío inmediato del formulario
+                        const submitButton = swalConfirmForm.querySelector('[type="submit"]');
+                        const title = submitButton.dataset.swalTitle || '¿Estás seguro?';
+                        const text = submitButton.dataset.swalText || '';
+                        const icon = submitButton.dataset.swalIcon || 'warning';
+
+                        Swal.fire({
+                            title: title,
+                            text: text,
+                            icon: icon,
+                            showCancelButton: true,
+                            confirmButtonColor: '#d33',
+                            cancelButtonColor: '#6c757d',
+                            confirmButtonText: 'Sí, eliminar',
+                            cancelButtonText: 'Cancelar',
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                swalConfirmForm.submit();
+                            }
+                        });
+                    }
+                });
+            });
+        </script>
     @endpush
 
 </x-base-layout>

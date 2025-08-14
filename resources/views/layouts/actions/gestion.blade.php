@@ -1,4 +1,4 @@
-<li class="nxl-item nxl-hasmenu {{ request()->routeIs('archivo.cargo.*', 'archivo.area.*', 'archivo.empleado.*', 'archivo.gdotipodocumento.*', 'archivo.gdodocsempleados.*') ? 'active' : '' }}">
+<li class="nxl-item nxl-hasmenu {{ request()->routeIs('archivo.cargo.*', 'archivo.area.*', 'archivo.empleado.*', 'archivo.categoria.*', 'archivo.gdotipodocumento.*', 'archivo.gdodocsempleados.*') ? 'active' : '' }}">
     <a href="javascript:void(0);" class="nxl-link">
         <span class="nxl-micon"><i class="bi bi-collection"></i></span>
         <span class="nxl-mtext">Gestión Documental</span>
@@ -7,7 +7,7 @@
 
     <ul class="nxl-submenu">
         {{-- Submenú para Empleados y Documentos --}}
-        <li class="nxl-item nxl-hasmenu {{ request()->routeIs('archivo.empleado.*', 'archivo.cargo.*', 'archivo.area.*', 'archivo.gdotipodocumento.*', 'archivo.gdodocsempleados.*') ? 'active' : '' }}">
+        <li class="nxl-item nxl-hasmenu {{ request()->routeIs('archivo.empleado.*', 'archivo.cargo.*', 'archivo.area.*', 'archivo.categoria.*', 'archivo.gdotipodocumento.*', 'archivo.gdodocsempleados.*') ? 'active' : '' }}">
             <a href="javascript:void(0);" class="nxl-link">
                 <span class="nxl-micon"><i class="bi bi-people-fill"></i></span>
                 Empleados & Documentos
@@ -32,6 +32,13 @@
                     <a class="nxl-link" href="{{ route('archivo.area.index') }}" style="text-decoration: none;">
                         <span class="nxl-micon"><i class="bi bi-grid-fill"></i></span>
                         Áreas
+                    </a>
+                </li>
+
+                <li class="nxl-item {{ request()->routeIs('archivo.categorias.index') ? 'active' : '' }}">
+                    <a class="nxl-link" href="{{ route('archivo.categorias.index') }}" style="text-decoration: none;">
+                        <span class="nxl-micon"><i class="bi bi-tags-fill"></i></span>
+                        Categorías de Documentos
                     </a>
                 </li>
 
