@@ -88,11 +88,12 @@
                                                 <p
                                                 class="fs-12 fw-medium text-muted text-spacing-1 mb-0 text-truncate-1-line">
                                                 <span class="fw-semibold text-dark">Prima Asegurado:</span>
-                                                  ${{ number_format($plan->prima_asegurado) }}</p>
+                                                    ${{ number_format($plan->prima_asegurado) }}</p>
                                                 <p
                                                 class="fs-12 fw-medium text-muted text-spacing-1 mb-0 text-truncate-1-line">
                                                 <span class="fw-semibold text-dark">Prima Pastor:</span>
-                                                  ${{ number_format($plan->prima_asegurado) }}</p>
+                                                    ${{ number_format($plan->prima_pastor) }}</p>
+                                                  
                                         </div>
                                     </div>
                                 </div>

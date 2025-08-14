@@ -69,7 +69,7 @@
     <table>
         <thead>
             <tr>
-                <th colspan="11" style="text-align: center;">INFORME RECLAMACIONES</th>
+                <th colspan="12" style="text-align: center;">INFORME RECLAMACIONES</th>
             </tr>
         </thead>
         <tbody>
@@ -83,6 +83,7 @@
                 <th>Parentesco</th>
                 <th>Cobertura</th>
                 <th>Valor Asegurado</th>
+                <th>Fecha Siniestro</th>
                 <th>Fecha Actualización</th>
                 <th>Estado</th>
             </tr>
@@ -100,6 +101,7 @@
                     <td>{{ $r->asegurado->parentesco ?? ''}}</td>
                     <td>{{ $r->cobertura->nombre }}</td>
                     <td>$ {{ is_numeric($r->valor_asegurado) ? number_format((float) $r->valor_asegurado) : '' }} </td>
+                    <td>{{ $r->fechaSiniestro }}</td>
                     <td>{{ $r->updated_at }}</td>
                     <td>{{ $r->estadoReclamacion->nombre }}</td>
                 </tr>
