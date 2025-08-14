@@ -41,7 +41,7 @@
                     <tbody>
                         @foreach ($update as $reg)
                             <tr>
-                                <td><a class="hstack gap-3">
+                                <td><a href="{{ route('seguros.poliza.show', ['poliza' => 'ID']) . '?id=' . $reg->cedula }}" class="hstack gap-3">
                                         <i class="bi bi-person-circle"></i>
                                         <div>
                                             <span class="text-truncate-1-line">{{ $reg->cedula }}</span>

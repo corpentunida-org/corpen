@@ -37,10 +37,13 @@ class SegNovedadesController extends Controller
     public function create(Request $request)
     {
         $id = $request->query('a');
-        //$asegurado = SegAsegurado::where('cedula', $id)->with(['tercero', 'terceroAF.asegurados', 'polizas.plan'])->first();
+        $isactive = SegPoliza::where('seg_asegurado_id', $id)->where('seg_convenio_id', '23055455')->first();
+        if (!$isactive->active) {
+            abort(403, 'La póliza está inactiva.');
+        }
         $asegurado = SegAsegurado::where('cedula', $id)->with(['tercero', 'terceroAF', 'polizas.plan'])->first();
         
-        $edad = date_diff(date_create($asegurado->tercero->fec_nac), date_create('today'))->y;
+        $edad = date_diff(date_create($asegurado->tercero_preferido->fec_nac), date_create('today'))->y;
         $idcondicion = app(SegPlanController::class)->getCondicion($edad);
 
         $planes = SegPlan::where('condicion_corpen', $idcondicion)

@@ -82,18 +82,19 @@
                     <div class="card-header">
                         <h5 class="card-title">Lista de datos</h5>
                         @if ($listadata->isnotEmpty())
-                        <div class="d-flex justify-content-end gap-2 mt-3">
-                            <form action="{{ route('seguros.poliza.filtros') }}" method="POST">
-                                @csrf
-                                <input type="hidden" name="listadata" value="{{ json_encode($listadata) }}">
-                                <button type="submit" class="btn btn-sm bg-soft-teal text-teal">Descargar PDF</button>
-                            </form>
-                            <form action="{{route('seguros.poliza.filtroexcel')}}" method="POST">
-                                @csrf
-                                <input type="hidden" name="listadata" value="{{ json_encode($listadata) }}">
-                                <button type="submit" class="btn btn-sm bg-soft-warning text-warning">Descargar Excel</button>
-                            </form>
-                        </div>
+                            <div class="d-flex justify-content-end gap-2 mt-3">
+                                <form action="{{ route('seguros.poliza.filtros') }}" method="POST">
+                                    @csrf
+                                    <input type="hidden" name="listadata" value="{{ json_encode($listadata) }}">
+                                    <button type="submit" class="btn btn-sm bg-soft-teal text-teal">Descargar PDF</button>
+                                </form>
+                                <form action="{{route('seguros.poliza.filtroexcel')}}" method="POST">
+                                    @csrf
+                                    <input type="hidden" name="listadata" value="{{ json_encode($listadata) }}">
+                                    <button type="submit" class="btn btn-sm bg-soft-warning text-warning">Descargar
+                                        Excel</button>
+                                </form>
+                            </div>
                         @endif
                     </div>
                     <div class="card-body">
@@ -139,9 +140,8 @@
                                     <input type="hidden" name="grupo" value=true>
                                     <div class="d-flex justify-content-end mt-2">
                                         <button type="submit" class="btn btn-md btn-primary">Aplicar</button>
-                                    </div>
-                                    <span class="fs-12 fw-normal text-muted text-truncate-1-line text-end pt-1">
-                                        Se encontraron <span style="font-weight: bold">{{$listadata->count()}}</span> pólizas</span>
+                                    </div>                                    
+                                    <h3 class="mb-3">Se encontraron <span class="text-primary">{{$listadata->count()}}</span> pólizas</h3>
                                     <div class="table-responsive">
                                         <table class="table table-hover">
                                             <thead>
@@ -151,6 +151,7 @@
                                                     <th>Parentesco</th>
                                                     <th>Edad</th>
                                                     <th>Plan</th>
+                                                    <th class="text-end">Acción</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -177,6 +178,15 @@
                                                             <p class="fs-12 text-muted text-truncate-1-line tickets-sort-desc">Valor
                                                                 Prima:
                                                                 ${{number_format($i->primapagar ?? '0')}}</p>
+                                                        </td>
+                                                        <td class="text-end">
+                                                            <div class="hstack gap-2 justify-content-end">
+                                                                <a href="{{ route('seguros.poliza.show', ['poliza' => 'ID']) . '?id=' . $i->seg_asegurado_id }}"
+                                                                    class="avatar-text avatar-md" data-bs-toggle="tooltip" title=""
+                                                                    data-bs-original-title="Ver detalle póliza">
+                                                                    <i class="feather-arrow-right"></i>
+                                                                </a>
+                                                            </div>
                                                         </td>
                                                         <input type="hidden" name="beneficio[{{ $loop->index }}][poliza]"
                                                             value="{{ $i->id }}">
@@ -242,10 +252,17 @@
                                                         data-bs-toggle="dropdown" data-bs-offset="0,21">
                                                         <i class="feather feather-more-vertical"></i>
                                                     </a>
-                                                    <ul class="dropdown-menu" data-popper-placement="bottom-end"
-                                                        style="position: absolute; inset: 0px auto auto 0px; margin: 0px; transform: translate3d(-195px, 51px, 0px);">
+                                                    <ul class="dropdown-menu" data-popper-placement="bottom-end">
                                                         <li>
-                                                            <a href="{{ route('seguros.beneficios.edit', $b->id) }}" class="dropdown-item">
+                                                            <a href="{{ route('seguros.poliza.show', ['poliza' => 'ID']) . '?id=' . $b->cedulaAsegurado }}"
+                                                                class="dropdown-item">
+                                                                <i class="feather-arrow-right"></i>
+                                                                <span>Detalle póliza</span>
+                                                            </a>
+                                                        </li>
+                                                        <li>
+                                                            <a href="{{ route('seguros.beneficios.edit', $b->id) }}"
+                                                                class="dropdown-item">
                                                                 <i class="feather feather-edit-3 me-3"></i>
                                                                 <span>Editar</span>
                                                             </a>
@@ -332,7 +349,6 @@
                     }
                 });
                 $('#inputdesval').on('input', function () {
-                    console.log("hola?")
                     var valor = parseFloat($(this).val().trim());
                     if (!isNaN(valor) && valor > 0) {
                         $('#checkvalbeneficio').slideDown();

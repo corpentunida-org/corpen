@@ -11,9 +11,9 @@
                 </ul>
             </div>
             <div class="tab-content">
-                <div class="tab-pane fade p-4 active show" id="securityTab" role="tabpanel">
+                <div class="tab-pane fade p-4 active show col-lg-12 p-4" id="securityTab" role="tabpanel">
                     <form action={{ route('seguros.poliza.store') }} method="POST" id="formAddPoliza"
-                        class="col-lg-12 p-4" novalidate>
+                        novalidate>
                         @csrf
                         @method('POST')
                         <div class="mb-3 d-flex align-items-center justify-content-between">
@@ -73,7 +73,8 @@
                             <div class="col-lg-4 mb-4">
                                 <label class="form-label">Porcentaje Extraprima</label>
                                 <div class="input-group">
-                                    <input type="number" class="form-control" name="extra_prima" id="inputextraprima" value="0" required>
+                                    <input type="number" class="form-control" name="extra_prima" id="inputextraprima"
+                                        value="0" required>
                                     <span class="input-group-text">%</span>
                                 </div>
                             </div>
@@ -116,11 +117,22 @@
                             </div>
                         </div>
                         <div class="col-lg-3 mb-4" id="divestitular">
-                            <label class="form-label">Valor a pagar<span class="text-danger">*</span></label>
+                            <label class="form-label">Total valor a pagar grupo Familiar<span
+                                    class="text-danger">*</span></label>
                             <div class="input-group">
                                 <div class="input-group-text">$</div>
                                 <input class="form-control" type="number" name="valorpagaraseguradora"
                                     id="valorpagaraseguradora" required>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-3 mb-4">
+                            <label class="form-label">Valor a Pagar Individual<span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <div class="input-group-text">$</div>
+                                <input class="form-control" type="number" name="valorindividual" id="valorindividual"
+                                    required>
+                                <input type="hidden" id="primaaseguradora">
                             </div>
                         </div>
                         <div class="row" id="divnottitular">
@@ -144,6 +156,28 @@
                             </button>
                         </div>
                     </form>
+                    <div class="mb-3 d-flex align-items-center justify-content-between">
+                        <h5 class="fw-bold mb-0 me-4">
+                            <span class="d-block mb-2">Plan: </span>
+                            <span class="fs-12 d-block fw-normal text-muted">Descuento General por Corpentunida</span>
+                        </h5>
+                    </div>
+                    <div class="row">
+                        <div class="col-lg-3 mb-4">
+                            <label class="form-label">Pastor</label>
+                            <div class="input-group">
+                                <div class="input-group-text">$</div>
+                                <input class="form-control" type="number" id="pastordescuentocorpen">
+                            </div>
+                        </div>    
+                        <div class="col-lg-3 mb-4">
+                            <label class="form-label">Asegurados</label>
+                            <div class="input-group">
+                                <input class="form-control" value="10" type="number" id="aseguradodescuentocorpen">
+                                <div class="input-group-text">%</div>
+                            </div>
+                        </div>                  
+                    </div>
                 </div>
             </div>
         </div>
@@ -190,8 +224,15 @@
                             $select.empty().append(
                                 '<option value="">Seleccione un plan</option>');
                             planes.forEach(function (plan) {
+                                //console.log(plan);
                                 $select.append(
-                                    `<option value="${plan.id}">${plan.convenio.nombre} - ${plan.name} - $${plan.valor.toLocaleString('es-CL')} - $${plan.prima.toLocaleString('es-CL')}</option>`
+                                    `<option value="${plan.id}"
+                                        data-as="${plan.prima_asegurado}" 
+                                        data-pas="${plan.prima_pastor}" data-base="${plan.prima_aseguradora}">                                        
+                                        ${plan.convenio?.nombre ?? 'SIN CONVENIO'} - ${plan.name} - 
+                                        $${Number(plan.valor).toLocaleString('es-CO')} - 
+                                        $${Number(plan.prima_aseguradora).toLocaleString('es-CO')}
+                                    </option>`
                                 );
                             });
                         },
@@ -199,6 +240,16 @@
                             alert('No se pudieron cargar los planes.');
                         }
                     });
+                    /* $descuendoedadcorpenpastor = 0;
+                    if (edad >= 65) {
+                        $descuendoedadcorpenpastor = 50646;
+                    else if (edad > 65 && edad <= 70) {
+                        $descuendoedadcorpenpastor = 40127;
+                    }
+                    else if (edad < 70) {
+                        $descuendoedadcorpenpastor = 22594;
+                    }
+                    $('#pastordescuentocorpen').val($descuendoedadcorpenpastor); */
                 } else {
                     $('#edad').val('');
                 }
@@ -234,33 +285,45 @@
                 }
                 return 0;
             }
-            selectvalorapagar();
-            function selectvalorapagar(){
-            $('#selectPlanes').on('change', function () {
-                texto = $(this).find("option:selected").text();
-                base = selectValorDeTexto(texto);
-                $('#valorpagaraseguradora').val(base);
-            });}
-            $('#inputextraprima').on('blur', function () {
-                valorBase = parseFloat($('#valorpagaraseguradora').val());
-                valormasextra = valorBase * (1 + (parseFloat($(this).val()) / 100))
-                $('#valorpagaraseguradora').val(Math.floor(valormasextra));
-            });
 
-            /*
-            function calculoextraprima() {
-                let extraprima = parseFloat($('#inputextraprima').val()) || 0;
-                let base = parseFloat($('#valorpagaraseguradora').val()) || 0;
+            function selectvalorapagar() {
+                $('#selectPlanes, #checkbox1').on('change', function () {
+                    let option = $('#selectPlanes').find("option:selected");
+                    let estaTitular = $('#checkbox1').is(':checked');
+                    let base = estaTitular
+                        ? option.data('pas')
+                        : option.data('as');
+                    
+                    $('#valorindividual').val(base);
+                    console.log(option.data('base'));
+                    $('#primaaseguradora').val(option.data('base'));
+                });
+            }
+            $('#selectPlanes').on('change', selectvalorapagar);
+            $('#checkbox1').on('change', selectvalorapagar);
+
+            selectvalorapagar();
+
+            $('#inputextraprima').on('blur', function () {
+                console.log($('#primaaseguradora').val());
+                valorBase = parseFloat($('#primaaseguradora').val());
+                valormasextra = valorBase * (1 + (parseFloat($(this).val()) / 100))
+                $('#valorindividual').val(Math.floor(valormasextra));
+            });
+            
+            /* function calculoextraprima() {
+                let extraprima = parseFloat($('#valorindividual').val()) || 0;
+                let base = parseFloat($('#valorindividual').val()) || 0;
                 if (extraprima > 0) {
                     valor = base + (base * extraprima / 100)
-                    $('#valorpagaraseguradora').val(valor);
+                    $('#valorindividual').val(valor);
                 }
                 else {
                     selectvalorapagar();
                 }
-            }
-            $('#inputextraprima').on('input', calculoextraprima);
-            */
+            } 
+            $('#inputextraprima').on('input', calculoextraprima);*/
+           
         });
     </script>
 </x-base-layout>
