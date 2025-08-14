@@ -19,6 +19,8 @@ class GdoEmpleado extends Model
      */
     protected $fillable = [
         'cedula',
+        'fecha_expedida',
+        'lugar_exp',
         'apellido1',
         'apellido2',
         'nombre1',
@@ -29,6 +31,10 @@ class GdoEmpleado extends Model
         'correo_personal',
         'celular_personal',
         'celular_acudiente',
+        'ubicacion_foto',
+        'direccion_residencia',
+        'entidad_eps',
+                
     ];
 
     /**

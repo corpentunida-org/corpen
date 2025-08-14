@@ -4,20 +4,20 @@
     @push('styles')
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
         <style>
-            /* Estilo para avatares con iniciales */
-            .avatar-initials {
+            /*
+             * Los estilos de tamaño se han movido directamente a las etiquetas HTML
+             * para garantizar que se apliquen. Aquí solo quedan estilos generales.
+             */
+            .avatar-container {
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                width: 40px;
-                height: 40px;
+                overflow: hidden;
                 border-radius: 50%;
                 background-color: var(--bs-primary-bg-subtle);
                 color: var(--bs-primary-text-emphasis);
                 font-weight: 600;
-                font-size: 1rem;
             }
-            /* Consistencia en los botones de la tabla */
             .table-actions .btn {
                 width: 35px;
                 height: 35px;
@@ -25,7 +25,6 @@
                 align-items: center;
                 justify-content: center;
             }
-            /* Ocultar el spinner de los inputs de tipo search */
             input[type="search"]::-webkit-search-cancel-button { -webkit-appearance:none; }
         </style>
     @endpush
@@ -46,13 +45,13 @@
                 <div class="col-lg-4 col-md-6 mb-3 mb-md-0">
                     <form method="GET" action="{{ route('archivo.empleado.index') }}">
                         <div class="input-group">
-                            <input type="search" name="search" class="form-control" placeholder="Buscar por cédula o nombre..." value="{{ $search }}">
+                            <input type="search" name="search" class="form-control" placeholder="Buscar por cédula o nombre..." value="{{ $search ?? '' }}">
                             <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
                         </div>
                     </form>
                 </div>
                 <div class="col-lg-3 col-md-6 text-md-end">
-                    <a href="{{ route('archivo.empleado.create') }}" 
+                    <a href="{{ route('archivo.empleado.create') }}"
                        class="btn btn-primary rounded-pill px-4 py-2 w-100 w-md-auto btn-hover-lift swal-confirm"
                        data-swal-title="¿Registrar nuevo empleado?"
                        data-swal-text="Serás redirigido al formulario de creación."
@@ -82,9 +81,22 @@
                                 {{-- Celda de Empleado con avatar y nombre completo --}}
                                 <td class="px-4">
                                     <div class="d-flex align-items-center">
-                                        <div class="avatar-initials me-3">
-                                            {{ strtoupper(substr($empleado->nombre1 ?? '?', 0, 1) . substr($empleado->apellido1 ?? '?', 0, 1)) }}
-                                        </div>
+
+                                        {{-- SOLUCIÓN FINAL CON ESTILOS EN LÍNEA --}}
+                                        @if ($empleado->ubicacion_foto)
+                                            {{-- Estilo aplicado directamente a la imagen --}}
+                                            <img src="{{ route('archivo.empleado.verFoto', $empleado->id) }}"
+                                                 alt="Foto de {{ $empleado->nombre_completo }}"
+                                                 class="me-3"
+                                                 style="width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 1px solid #ddd;">
+                                        @else
+                                            {{-- Estilo aplicado directamente al contenedor de iniciales --}}
+                                            <div class="avatar-container me-3" 
+                                                 style="width: 28px; height: 28px; font-size: 0.75rem; border: 1px solid #ddd;">
+                                                {{ strtoupper(substr($empleado->nombre1 ?? '?', 0, 1) . substr($empleado->apellido1 ?? '?', 0, 1)) }}
+                                            </div>
+                                        @endif
+
                                         <div>
                                             <div class="fw-bold">{{ $empleado->nombre_completo }}</div>
                                             <small class="text-muted">C.C. {{ $empleado->cedula }}</small>
@@ -100,8 +112,8 @@
                                 <td class="text-center px-4 table-actions">
                                     <div class="btn-group">
                                         <a href="{{ route('archivo.empleado.show', $empleado->id) }}" class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip" title="Ver Detalles"><i class="bi bi-eye-fill"></i></a>
-                                        <a href="{{ route('archivo.empleado.edit', $empleado->id) }}" 
-                                           class="btn btn-sm btn-outline-secondary swal-confirm" 
+                                        <a href="{{ route('archivo.empleado.edit', $empleado->id) }}"
+                                           class="btn btn-sm btn-outline-secondary swal-confirm"
                                            data-bs-toggle="tooltip" title="Editar"
                                            data-swal-title="¿Editar este empleado?"
                                            data-swal-icon="question">
@@ -110,10 +122,10 @@
                                         <form action="{{ route('archivo.empleado.destroy', $empleado->id) }}" method="POST" class="d-inline swal-confirm-form">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-outline-danger" 
+                                            <button type="submit" class="btn btn-sm btn-outline-danger"
                                                     data-bs-toggle="tooltip" title="Eliminar"
                                                     data-swal-title="¿Estás seguro de eliminar?"
-                                                    data-swal-text="Esta acción no se puede deshacer."
+                                                    data-swal-text="Esta acción no se puede deshacer y borrará la foto."
                                                     data-swal-icon="warning">
                                                 <i class="bi bi-trash-fill"></i>
                                             </button>
@@ -136,7 +148,7 @@
                     </tbody>
                 </table>
             </div>
-            
+
             {{-- 5. PAGINACIÓN --}}
             @if ($empleados->hasPages())
                 <div class="card-footer bg-white border-0">
@@ -159,10 +171,10 @@
                 @if (session('success'))
                     toastr.success("{{ session('success') }}");
                 @endif
-                
+
                 var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
                 var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) { return new bootstrap.Tooltip(tooltipTriggerEl) });
-                
+
                 document.body.addEventListener('click', function(e) {
                     const swalConfirm = e.target.closest('.swal-confirm');
                     if (swalConfirm) {

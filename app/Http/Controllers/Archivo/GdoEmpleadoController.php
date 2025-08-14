@@ -4,11 +4,9 @@ namespace App\Http\Controllers\Archivo;
 
 use App\Http\Controllers\Controller;
 use App\Models\Archivo\GdoEmpleado;
-
-use App\Models\Archivo\GdoDocsEmpleados; // <--- Dasbohard
-
-
+use App\Models\Archivo\GdoDocsEmpleados;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage; // Importante para manejar archivos
 
 class GdoEmpleadoController extends Controller
 {
@@ -28,7 +26,7 @@ class GdoEmpleadoController extends Controller
             })
             ->orderBy('apellido1')
             ->orderBy('apellido2')
-            ->paginate(10)
+            ->paginate(7)
             ->appends(['search' => $search]);
 
         return view('archivo.empleado.index', compact('empleados', 'search'));
@@ -39,7 +37,7 @@ class GdoEmpleadoController extends Controller
      */
     public function create()
     {
-        $empleado = null;
+        $empleado = new GdoEmpleado();
         return view('archivo.empleado.create', compact('empleado'));
     }
 
@@ -48,7 +46,7 @@ class GdoEmpleadoController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
+        $validatedData = $request->validate([
             'cedula' => 'required|string|max:20|unique:gdo_empleados,cedula',
             'apellido1' => 'required|string|max:50',
             'apellido2' => 'nullable|string|max:50',
@@ -60,9 +58,17 @@ class GdoEmpleadoController extends Controller
             'correo_personal' => 'nullable|email|max:100',
             'celular_personal' => 'nullable|string|max:20',
             'celular_acudiente' => 'nullable|string|max:20',
+            // Se mantiene la validación de la imagen
+            'ubicacion_foto' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
-        GdoEmpleado::create($request->all());
+        if ($request->hasFile('ubicacion_foto')) {
+            // CORREGIDO: Guardar en el disco local (privado) en la carpeta especificada
+            $path = $request->file('ubicacion_foto')->store('gestion/fotosempleados');
+            $validatedData['ubicacion_foto'] = $path;
+        }
+
+        GdoEmpleado::create($validatedData);
 
         return redirect()
             ->route('archivo.empleado.index')
@@ -72,30 +78,20 @@ class GdoEmpleadoController extends Controller
     /**
      * Mostrar un empleado específico.
      */
-    /**
-     * Muestra los detalles de un empleado específico y sus documentos asociados.
-     *
-     * @param  \App\Models\Archivo\GdoEmpleado  $empleado
-     * @return \Illuminate\View\View
-     */
-        public function show(GdoEmpleado $empleado)
-        {
-            // Cargar el cargo del empleado para evitar consultas adicionales en la vista.
-            $empleado->load('cargo');
+    public function show(GdoEmpleado $empleado)
+    {
+        $empleado->load('cargo');
+        $documentosDelEmpleado = GdoDocsEmpleados::where('empleado_id', $empleado->cedula)
+                                                ->with('tipoDocumento')
+                                                ->latest('fecha_subida')
+                                                ->paginate(10, ['*'], 'docs_page');
 
-            // OBTENER LOS DOCUMENTOS USANDO LA RELACIÓN DEFINIDA EN EL MODELO.
-            // La consulta ahora se basa en la cédula del empleado, tal como lo definiste.
-            $documentosDelEmpleado = GdoDocsEmpleados::where('empleado_id', $empleado->cedula)
-                                                    ->with('tipoDocumento') // Carga previamente el nombre del tipo de documento
-                                                    ->latest('fecha_subida') // Ordena por fecha, los más nuevos primero
-                                                    ->paginate(10, ['*'], 'docs_page'); // Pagina los resultados y usa un nombre de página único
+        return view('archivo.empleado.show', [
+            'empleado' => $empleado,
+            'documentosDelEmpleado' => $documentosDelEmpleado,
+        ]);
+    }
 
-            // Retorna la vista con los datos del empleado y sus documentos.
-            return view('archivo.empleado.show', [
-                'empleado' => $empleado,
-                'documentosDelEmpleado' => $documentosDelEmpleado,
-            ]);
-        }
     /**
      * Mostrar formulario de edición.
      */
@@ -109,7 +105,7 @@ class GdoEmpleadoController extends Controller
      */
     public function update(Request $request, GdoEmpleado $empleado)
     {
-        $request->validate([
+        $validatedData = $request->validate([
             'cedula' => 'required|string|max:20|unique:gdo_empleados,cedula,' . $empleado->id,
             'apellido1' => 'required|string|max:50',
             'apellido2' => 'nullable|string|max:50',
@@ -121,9 +117,20 @@ class GdoEmpleadoController extends Controller
             'correo_personal' => 'nullable|email|max:100',
             'celular_personal' => 'nullable|string|max:20',
             'celular_acudiente' => 'nullable|string|max:20',
+            'ubicacion_foto' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
-        $empleado->update($request->all());
+        if ($request->hasFile('ubicacion_foto')) {
+            // 1. CORREGIDO: Borrar la foto anterior del disco local.
+            if ($empleado->ubicacion_foto) {
+                Storage::delete($empleado->ubicacion_foto);
+            }
+            // 2. CORREGIDO: Guardar la nueva foto en el disco local.
+            $path = $request->file('ubicacion_foto')->store('gestion/fotosempleados');
+            $validatedData['ubicacion_foto'] = $path;
+        }
+
+        $empleado->update($validatedData);
 
         return redirect()
             ->route('archivo.empleado.index')
@@ -135,10 +142,34 @@ class GdoEmpleadoController extends Controller
      */
     public function destroy(GdoEmpleado $empleado)
     {
+        // CORREGIDO: Borrar la foto asociada del disco local.
+        if ($empleado->ubicacion_foto) {
+            Storage::delete($empleado->ubicacion_foto);
+        }
+
         $empleado->delete();
 
         return redirect()
             ->route('archivo.empleado.index')
             ->with('success', 'Empleado eliminado correctamente.');
+    }
+
+    /**
+     * NUEVO: Método para servir la imagen de forma segura.
+     * Este método se encarga de leer el archivo del storage privado y enviarlo al navegador.
+     *
+     * @param  \App\Models\Archivo\GdoEmpleado  $empleado
+     * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
+     */
+    public function verFoto(GdoEmpleado $empleado)
+    {
+        // Validamos que el empleado realmente tenga una foto y que el archivo exista en el disco.
+        if (!$empleado->ubicacion_foto || !Storage::exists($empleado->ubicacion_foto)) {
+            // Si no se encuentra, abortamos con un error 404 (Not Found).
+            abort(404, 'Imagen no encontrada.');
+        }
+
+        // Retornamos la respuesta del archivo. Laravel se encarga de los encabezados correctos.
+        return Storage::response($empleado->ubicacion_foto);
     }
 }

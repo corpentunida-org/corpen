@@ -39,6 +39,8 @@ use App\Http\Controllers\Archivo\GdoAreaController;
 use App\Http\Controllers\Archivo\GdoEmpleadoController;
 use App\Http\Controllers\Archivo\GdoTipoDocumentoController;
 use App\Http\Controllers\Archivo\GdoDocsEmpleadosController;
+use App\Http\Controllers\Archivo\GdoCategoriaDocumentoController;
+
 
 
 
@@ -220,9 +222,17 @@ Route::prefix('archivo')->middleware('auth')->group(function () {
         ->names('archivo.empleado')
         ->parameters(['empleados' => 'empleado']);
 
+Route::get('empleados/{empleado}/foto', [GdoEmpleadoController::class, 'verFoto'])
+     ->name('archivo.empleado.verFoto')
+     ->middleware('auth');
+     
     Route::resource('gdotipodocumento', GdoTipoDocumentoController::class)
         ->names('archivo.gdotipodocumento')
         ->parameters(['gdotipodocumento' => 'tipoDocumento']);
+
+    Route::resource('categorias', GdoCategoriaDocumentoController::class)
+        ->names('archivo.categorias')
+        ->parameters(['categorias' => 'categoria']);
 
     Route::resource('gdodocsempleados', GdoDocsEmpleadosController::class)
         ->names('archivo.gdodocsempleados')
