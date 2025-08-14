@@ -103,6 +103,7 @@ class SegPlanController extends Controller
      */
     public function update(Request $request, $id)
     {        
+        $convenioId = $request->input('convenio');
         $plan = SegPlan::findOrFail($id);
         $plan->update([
             'name' => strtoupper($request->input('name')),
@@ -131,9 +132,9 @@ class SegPlanController extends Controller
                 ];
             }
         }
-
         $plan->coberturas()->sync($syncData);
-        return redirect()->route('seguros.planes.edit', $plan->id)->with('success', 'Plan actualizado correctamente');
+        //return redirect()->route('seguros.planes.edit', $plan->id)->with('success', 'Plan actualizado correctamente');
+        return redirect()->route('seguros.convenio.show', $convenioId)->with('success', 'Plan actualizado correctamente');
     }
 
     /**
@@ -150,10 +151,8 @@ class SegPlanController extends Controller
 
     public function getCondicion($edad)
     {
-        /* if ($edad >= 0 && $edad <= 17) {
-            return 1; // Asegurados desde 0 años hasta 17 años
-        } elseif ($edad >= 18 && $edad <= 65) {
-            return 2; // Asegurados desde 18 años hasta 65 años
+        if ($edad >= 0 && $edad <= 65) {
+            return 8;
         } elseif ($edad >= 66 && $edad <= 70) {
             return 3; // Asegurados desde 66 años hasta 70 años
         } elseif ($edad >= 71 && $edad <= 80) {
@@ -164,21 +163,13 @@ class SegPlanController extends Controller
             return 6; // Asegurados desde 90 años
         } else {
             return null;
-        } */
-        if ($edad >= 0 && $edad <= 80) {
-            return 8;
-        } elseif ($edad > 80 && $edad <= 90) {
-            return 9;
-        } elseif ($edad > 90) {
-            return 10;
         }
     }
 
     public function getPlanes($edad)
     {
         $condicion = $this->getCondicion($edad);
-        $planes = SegPlan::with('convenio')->where('condicion_id', $condicion)->where('vigente', true)->get();
-
+        $planes = SegPlan::with('convenio')->where('condicion_corpen', $condicion)->where('vigente', true)->get();
         return response()->json($planes);
     }
 }

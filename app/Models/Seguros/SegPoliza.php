@@ -42,13 +42,25 @@ class SegPoliza extends Model
         return $this->belongsTo(SegPlan::class, 'seg_plan_id', 'id');
     }
 
-    /* public function tercero()
-    {
-        return $this->belongsTo(SegTercero::class, 'seg_asegurado_id', 'cedula');
-    } */
     public function tercero()
     {
         return $this->belongsTo(maeTerceros::class, 'seg_asegurado_id', 'cod_ter');
+    }
+    public function terceroAlt()
+    {
+        return $this->belongsTo(SegTercero::class, 'seg_asegurado_id', 'cedula');
+    }
+    public function getNombreTerceroAttribute()
+    {
+        if ($this->tercero) {
+            return $this->tercero->nom_ter;
+        }
+
+        if ($this->terceroAlt) {
+            return $this->terceroAlt->nombre;
+        }
+
+        return 'No se encuentra registrado.';
     }
 
     public function esreclamacion()

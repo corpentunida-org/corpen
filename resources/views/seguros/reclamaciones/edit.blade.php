@@ -41,7 +41,7 @@
                         </div>
                         <div class="col-lg-8 mb-4">
                             <label class="form-label">Nombre Asegurado</label>
-                            <input type="text" class="form-control" value="{{ $asegurado->tercero->nom_ter ?? '' }}"
+                            <input type="text" class="form-control" value="{{ $asegurado->tercero->nom_ter ?? ' ' }}"
                                 readonly>
                         </div>
                     </div>

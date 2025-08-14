@@ -198,6 +198,13 @@ class maeTerceros extends Model
         return null;
     }
 
+    public function getGeneroAttribute(){
+        if ($this->sexo) {
+            return $this->sexo === 'V' ? 'Masculino' : 'Femenino';
+        }
+        return null;
+    }
+
     /**
      * Relación uno a muchos con Congregaciones
      * Un tercero puede estar relacionado con muchas congregaciones

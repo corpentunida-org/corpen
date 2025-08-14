@@ -11,8 +11,8 @@
                         <div>
                             <div class="fs-12 text-muted">Titular: </div>
                             <div class="fs-4 fw-bold text-dark"><span
-                                    class="counter">{{ $asegurado->terceroAF->nom_ter }}</span></div>
-                            <h3 class="fs-13 fw-semibold text-truncate-1-line">{{ $asegurado->terceroAF->cod_ter }}</h3>
+                                    class="counter">{{ $poliza->asegurado->nombre_titular ?? ' ' }}</span></div>
+                            <h3 class="fs-13 fw-semibold text-truncate-1-line">{{ $asegurado->tercero_preferido->cod_ter }}</h3>
                         </div>
                     </div>
                 </div>
@@ -32,7 +32,7 @@
                     </div>
                     <div class="col-lg-5 mb-4">
                         <label class="form-label">Nombre Asegurado</label>
-                        <input type="text" class="form-control" value="{{ $asegurado->tercero->nom_ter }}" readonly>
+                        <input type="text" class="form-control" value="{{ $asegurado->nombre_tercero ?? 'No hay un nombre asignado' }}" readonly>
                     </div>
                     <div class="col-lg-2 mb-4">
                         <label class="form-label">Tipo de Afiliado</label>
@@ -42,12 +42,11 @@
                     <div class="col-lg-2 mb-4">
                         <label class="form-label">Genero</label>
                         <input class="form-control datepicker-input"
-                            value="{{ $asegurado->tercero->sexo == 'V' ? 'Masculino' : ($asegurado->tercero->sexo == 'H' ? 'Femenino' : 'Asignar') }}" readonly>
+                            value="{{ $asegurado->tercero?->sexo == 'V' ? 'Masculino' : ($asegurado->tercero?->sexo == 'H' ? 'Femenino' : 'Asignar') }}" readonly>
                     </div>
                     <div class="col-lg-1 mb-4">
                         <label class="form-label">Distrito</label>
-                        <input class="form-control datepicker-input" value="{{ $asegurado->tercero->cod_dist }}"
-                            readonly>
+                        <input class="form-control datepicker-input" value="{{ $asegurado->tercero->cod_dist ?? ' ' }}" readonly>
                     </div>
                 </div>
             </div>
@@ -58,9 +57,7 @@
             <div class="card-body">
                 @if ($reclamaciones->isNotEmpty())
                     <div class="table-responsive mb-4">
-                        <label class="form-label"><span class="text-danger">HISTORIAL DE AFECTACIONES A
-                                ESTA
-                                PÓLIZA</span></span></label>
+                        <label class="form-label"><span class="text-danger">HISTORIAL DE AFECTACIONES A ESTA PÓLIZA</span></label>
                         <table class="table mb-4">
                             <thead>
                                 <tr class="border-top">
@@ -85,8 +82,7 @@
                         </table>
                     </div>
                 @endif
-                <label class="form-label"><span class="text-danger">CREAR UN PROCESO DE
-                        RECLAMACIÓN</span></span></label>
+                <label class="form-label"><span class="text-danger">CREAR UN PROCESO DE RECLAMACIÓN</span></span></label>
                 <form method="post" action="{{ route('seguros.reclamacion.store') }}" class="row"
                     id="formAddReclamacion" novalidate>
                     @csrf
@@ -175,7 +171,7 @@
                                 <div class="custom-control custom-checkbox">
                                     <input type="checkbox" class="custom-control-input"
                                         name="finreclamacion">
-                                    <label class="custom-control-label c-pointer">Marcar como fin de
+                                    <label class="custom-control-label c-pointer">Marcar como cierre de
                                         la reclamación</label>
                                 </div>
                             </div>

@@ -20,6 +20,8 @@
     <!--! END: Vendors CSS-->
     <!--! BEGIN: Custom CSS-->
 
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/vendors/css/dataTables.bs5.min.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/vendors/css/select2.min.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/vendors/css/select2-theme.min.css') }}">
@@ -40,6 +42,7 @@
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
     <!-- FullCalendar JS -->
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <!--! END: Custom CSS-->
     <!--! HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries !-->
@@ -276,6 +279,9 @@
 
             <script src="{{ asset('assets/vendors/js/vendors.min.js') }}"></script>
             <!-- vendors.min.js {always must need to be top} -->
+            
+            <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+            <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
             <script src="{{ asset('assets/vendors/js/dataTables.min.js') }}"></script>
             <script src="{{ asset('assets/vendors/js/dataTables.bs5.min.js') }}"></script>
@@ -289,6 +295,7 @@
             <script src="{{ asset('assets/vendors/js/daterangepicker.min.js') }}"></script>
             <script src="{{ asset('assets/vendors/js/apexcharts.min.js') }}"></script>
             <script src="{{ asset('assets/vendors/js/circle-progress.min.js') }}"></script>
+
             <!--! END: Vendors JS !-->
 
             <script src="{{ asset('assets/vendors/js/tui-code-snippet.min.js') }}"></script>
