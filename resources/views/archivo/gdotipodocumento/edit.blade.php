@@ -1,40 +1,39 @@
 <x-base-layout>
-    <div class="card">
-        <!-- Esta es una tarjeta de Bootstrap que sirve para contener el formulario de edición. -->
-        
-        <div class="card-body">
-            <!-- El "cuerpo" de la tarjeta, donde se colocan los contenidos internos como títulos y formularios. -->
+    <div class="row justify-content-center animate-on-load">
+        <div class="col-lg-6"> {{-- Columna más estrecha, ideal para formularios simples --}}
+            
+            <div class="card border-0 shadow-sm" style="border-radius: .75rem;">
+                <div class="card-body p-4 p-lg-5">
 
-            <h5 class="fw-bold mb-4">Editar Tipo de Documento</h5>
-            <!-- Título del formulario con negrita (fw-bold) y margen inferior (mb-4). -->
+                    {{-- Cabecera Minimalista --}}
+                    <div class="text-center mb-4">
+                        <i class="bi bi-tags-fill fs-1 text-primary"></i>
+                        <h3 class="card-title fw-light mt-2 mb-0">Editar Tipo de Documento</h3>
+                        <p class="text-muted">Ajusta el nombre de la categoría.</p>
+                    </div>
 
-            <form action="{{ route('archivo.gdotipodocumento.update', $tipoDocumento->id) }}" method="POST">
-                <!-- Formulario HTML que enviará los datos al servidor. 
-                    - 'action' indica la ruta donde se enviarán los datos para actualizar un tipo de documento.
-                    - Se usa 'route' de Laravel para generar la URL automáticamente, pasando el ID del tipo de documento.
-                    - 'method="POST"' porque HTML no soporta PUT directamente; Laravel interpreta el método real con @method('PUT'). -->
+                    <form action="{{ route('archivo.gdotipodocumento.update', $tipoDocumento->id) }}" method="POST">
+                        @csrf
+                        @method('PUT')
 
-                @csrf
-                <!-- Token CSRF de Laravel para proteger el formulario contra ataques de tipo CSRF. Es obligatorio en formularios POST. -->
+                        {{-- Se incluye el nuevo y limpio formulario --}}
+                        @include('archivo.gdotipodocumento.form')
 
-                @method('PUT')
-                <!-- Indica a Laravel que el método HTTP real será PUT (usado para actualizar registros). -->
+                        {{-- Separador y botones de acción refinados --}}
+                        <hr class="my-4">
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ route('archivo.gdotipodocumento.index') }}" class="btn btn-light rounded-pill px-4 py-2">
+                                Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary rounded-pill px-4 py-2 btn-hover-lift">
+                                <i class="bi bi-check-lg me-1"></i> Actualizar
+                            </button>
+                        </div>
+                    </form>
 
-                @include('archivo.gdotipodocumento.form')
-                <!-- Incluye otro archivo Blade llamado 'form.blade.php' que contiene los campos del formulario 
-                    (por ejemplo: nombre del tipo de documento, descripción, etc.). Esto evita repetir código. -->
-
-                <div class="mt-4">
-                    <!-- Contenedor para los botones con margen superior (mt-4). -->
-
-                    <button type="submit" class="btn btn-primary">Actualizar</button>
-                    <!-- Botón que envía el formulario al servidor para guardar los cambios. -->
-
-                    <a href="{{ route('archivo.gdotipodocumento.index') }}" class="btn btn-secondary">Cancelar</a>
-                    <!-- Botón que redirige al usuario de vuelta al listado de tipos de documento sin guardar cambios. -->
                 </div>
-            </form>
+            </div>
+
         </div>
     </div>
-
 </x-base-layout>
