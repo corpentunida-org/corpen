@@ -1,5 +1,6 @@
 @php
-    $isEdit = isset($empleado);
+    // Definimos si estamos en modo de edición para usarlo fácilmente en el formulario.
+    $isEdit = isset($empleado->id); 
 @endphp
 
 <form action="{{ $isEdit ? route('archivo.empleado.update', $empleado->id) : route('archivo.empleado.store') }}" method="POST">
@@ -8,144 +9,117 @@
         @method('PUT')
     @endif
 
-    <div class="mb-3">
-        <label for="cedula" class="form-label">Cédula</label>
-        <input type="text" 
-               class="form-control @error('cedula') is-invalid @enderror" 
-               id="cedula" 
-               name="cedula" 
-               value="{{ old('cedula', $empleado->cedula ?? '') }}" 
-               required>
-        @error('cedula')
-            <div class="invalid-feedback">{{ $message }}</div>
-        @enderror
+    {{-- Sección 1: Información Personal --}}
+    <fieldset class="mb-4">
+        <legend class="fs-6 fw-bold border-bottom pb-2 mb-3">
+            <i class="bi bi-person-badge text-primary me-2"></i> Información Personal
+        </legend>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="form-floating">
+                    <input type="text" name="cedula" id="cedula" class="form-control @error('cedula') is-invalid @enderror" placeholder="Cédula" value="{{ old('cedula', $empleado->cedula ?? '') }}" required>
+                    <label for="cedula">Cédula</label>
+                    @error('cedula') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                </div>
+            </div>
+        </div>
+        <div class="row g-3 mt-1">
+            <div class="col-md-6">
+                <div class="form-floating">
+                    <input type="text" name="nombre1" id="nombre1" class="form-control @error('nombre1') is-invalid @enderror" placeholder="Primer Nombre" value="{{ old('nombre1', $empleado->nombre1 ?? '') }}" required>
+                    <label for="nombre1">Primer Nombre</label>
+                    @error('nombre1') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-floating">
+                    <input type="text" name="nombre2" id="nombre2" class="form-control" placeholder="Segundo Nombre" value="{{ old('nombre2', $empleado->nombre2 ?? '') }}">
+                    <label for="nombre2">Segundo Nombre</label>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-floating">
+                    <input type="text" name="apellido1" id="apellido1" class="form-control @error('apellido1') is-invalid @enderror" placeholder="Primer Apellido" value="{{ old('apellido1', $empleado->apellido1 ?? '') }}" required>
+                    <label for="apellido1">Primer Apellido</label>
+                    @error('apellido1') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-floating">
+                    <input type="text" name="apellido2" id="apellido2" class="form-control" placeholder="Segundo Apellido" value="{{ old('apellido2', $empleado->apellido2 ?? '') }}">
+                    <label for="apellido2">Segundo Apellido</label>
+                </div>
+            </div>
+        </div>
+    </fieldset>
+
+    {{-- Sección 2: Datos Demográficos --}}
+    <fieldset class="mb-4">
+        <legend class="fs-6 fw-bold border-bottom pb-2 mb-3">
+            <i class="bi bi-calendar-heart text-info me-2"></i> Datos Demográficos
+        </legend>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="form-floating">
+                    <input type="date" name="nacimiento" id="nacimiento" class="form-control @error('nacimiento') is-invalid @enderror" placeholder="Fecha de Nacimiento" value="{{ old('nacimiento', optional($empleado->nacimiento ?? null)->format('Y-m-d')) }}">
+                    <label for="nacimiento">Fecha de Nacimiento</label>
+                    @error('nacimiento') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-floating">
+                    <input type="text" name="lugar" id="lugar" class="form-control" placeholder="Lugar de Nacimiento" value="{{ old('lugar', $empleado->lugar ?? '') }}">
+                    <label for="lugar">Lugar de Nacimiento</label>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="form-floating">
+                    <select class="form-select @error('sexo') is-invalid @enderror" id="sexo" name="sexo">
+                        <option value="" selected>Seleccione...</option>
+                        <option value="M" {{ old('sexo', $empleado->sexo ?? '') == 'M' ? 'selected' : '' }}>Masculino</option>
+                        <option value="F" {{ old('sexo', $empleado->sexo ?? '') == 'F' ? 'selected' : '' }}>Femenino</option>
+                    </select>
+                    <label for="sexo">Sexo</label>
+                    @error('sexo') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                </div>
+            </div>
+        </div>
+    </fieldset>
+
+    {{-- Sección 3: Información de Contacto --}}
+    <fieldset>
+        <legend class="fs-6 fw-bold border-bottom pb-2 mb-3">
+            <i class="bi bi-telephone-plus text-success me-2"></i> Información de Contacto
+        </legend>
+        <div class="row g-3">
+            <div class="col-md-12">
+                <div class="form-floating">
+                    <input type="email" name="correo_personal" id="correo_personal" class="form-control @error('correo_personal') is-invalid @enderror" placeholder="Correo Personal" value="{{ old('correo_personal', $empleado->correo_personal ?? '') }}">
+                    <label for="correo_personal">Correo Personal</label>
+                    @error('correo_personal') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-floating">
+                    <input type="text" name="celular_personal" id="celular_personal" class="form-control" placeholder="Celular Personal" value="{{ old('celular_personal', $empleado->celular_personal ?? '') }}">
+                    <label for="celular_personal">Celular Personal</label>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-floating">
+                    <input type="text" name="celular_acudiente" id="celular_acudiente" class="form-control" placeholder="Celular Acudiente" value="{{ old('celular_acudiente', $empleado->celular_acudiente ?? '') }}">
+                    <label for="celular_acudiente">Celular Acudiente</label>
+                </div>
+            </div>
+        </div>
+    </fieldset>
+
+    {{-- Separador y botones de acción --}}
+    <hr class="my-4">
+    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+        <a href="{{ route('archivo.empleado.index') }}" class="btn btn-light rounded-pill px-4 py-2">Cancelar</a>
+        <button type="submit" class="btn btn-primary rounded-pill px-4 py-2 btn-hover-lift">
+            <i class="bi bi-check-lg me-1"></i> {{ $isEdit ? 'Actualizar' : 'Guardar' }} Empleado
+        </button>
     </div>
-
-    <div class="mb-3">
-        <label for="apellido1" class="form-label">Primer Apellido</label>
-        <input type="text" 
-               class="form-control @error('apellido1') is-invalid @enderror" 
-               id="apellido1" 
-               name="apellido1" 
-               value="{{ old('apellido1', $empleado->apellido1 ?? '') }}" 
-               required>
-        @error('apellido1')
-            <div class="invalid-feedback">{{ $message }}</div>
-        @enderror
-    </div>
-
-    <div class="mb-3">
-        <label for="apellido2" class="form-label">Segundo Apellido</label>
-        <input type="text" 
-               class="form-control @error('apellido2') is-invalid @enderror" 
-               id="apellido2" 
-               name="apellido2" 
-               value="{{ old('apellido2', $empleado->apellido2 ?? '') }}">
-        @error('apellido2')
-            <div class="invalid-feedback">{{ $message }}</div>
-        @enderror
-    </div>
-
-    <div class="mb-3">
-        <label for="nombre1" class="form-label">Primer Nombre</label>
-        <input type="text" 
-               class="form-control @error('nombre1') is-invalid @enderror" 
-               id="nombre1" 
-               name="nombre1" 
-               value="{{ old('nombre1', $empleado->nombre1 ?? '') }}" 
-               required>
-        @error('nombre1')
-            <div class="invalid-feedback">{{ $message }}</div>
-        @enderror
-    </div>
-
-    <div class="mb-3">
-        <label for="nombre2" class="form-label">Segundo Nombre</label>
-        <input type="text" 
-               class="form-control @error('nombre2') is-invalid @enderror" 
-               id="nombre2" 
-               name="nombre2" 
-               value="{{ old('nombre2', $empleado->nombre2 ?? '') }}">
-        @error('nombre2')
-            <div class="invalid-feedback">{{ $message }}</div>
-        @enderror
-    </div>
-
-    <div class="mb-3">
-        <label for="nacimiento" class="form-label">Fecha de Nacimiento</label>
-        <input type="date" 
-               class="form-control @error('nacimiento') is-invalid @enderror" 
-               id="nacimiento" 
-               name="nacimiento" 
-               value="{{ old('nacimiento', optional($empleado)->nacimiento instanceof \Illuminate\Support\Carbon ? $empleado->nacimiento->format('Y-m-d') : '') }}"
-        @error('nacimiento')
-            <div class="invalid-feedback">{{ $message }}</div>
-        @enderror
-    </div>
-
-    <div class="mb-3">
-        <label for="lugar" class="form-label">Lugar</label>
-        <input type="text" 
-               class="form-control @error('lugar') is-invalid @enderror" 
-               id="lugar" 
-               name="lugar" 
-               value="{{ old('lugar', $empleado->lugar ?? '') }}">
-        @error('lugar')
-            <div class="invalid-feedback">{{ $message }}</div>
-        @enderror
-    </div>
-
-    <div class="mb-3">
-        <label for="sexo" class="form-label">Sexo</label>
-        <select class="form-select @error('sexo') is-invalid @enderror" id="sexo" name="sexo">
-            <option value="" {{ old('sexo', $empleado->sexo ?? '') == '' ? 'selected' : '' }}>Seleccione</option>
-            <option value="M" {{ old('sexo', $empleado->sexo ?? '') == 'M' ? 'selected' : '' }}>Masculino</option>
-            <option value="F" {{ old('sexo', $empleado->sexo ?? '') == 'F' ? 'selected' : '' }}>Femenino</option>
-        </select>
-        @error('sexo')
-            <div class="invalid-feedback">{{ $message }}</div>
-        @enderror
-    </div>
-
-    <div class="mb-3">
-        <label for="correo_personal" class="form-label">Correo Personal</label>
-        <input type="email" 
-               class="form-control @error('correo_personal') is-invalid @enderror" 
-               id="correo_personal" 
-               name="correo_personal" 
-               value="{{ old('correo_personal', $empleado->correo_personal ?? '') }}">
-        @error('correo_personal')
-            <div class="invalid-feedback">{{ $message }}</div>
-        @enderror
-    </div>
-
-    <div class="mb-3">
-        <label for="celular_personal" class="form-label">Celular Personal</label>
-        <input type="text" 
-               class="form-control @error('celular_personal') is-invalid @enderror" 
-               id="celular_personal" 
-               name="celular_personal" 
-               value="{{ old('celular_personal', $empleado->celular_personal ?? '') }}">
-        @error('celular_personal')
-            <div class="invalid-feedback">{{ $message }}</div>
-        @enderror
-    </div>
-
-    <div class="mb-3">
-        <label for="celular_acudiente" class="form-label">Celular Acudiente</label>
-        <input type="text" 
-               class="form-control @error('celular_acudiente') is-invalid @enderror" 
-               id="celular_acudiente" 
-               name="celular_acudiente" 
-               value="{{ old('celular_acudiente', $empleado->celular_acudiente ?? '') }}">
-        @error('celular_acudiente')
-            <div class="invalid-feedback">{{ $message }}</div>
-        @enderror
-    </div>
-
-    <button type="submit" class="btn btn-{{ $isEdit ? 'primary' : 'success' }}">
-        {{ $isEdit ? 'Actualizar' : 'Guardar' }}
-    </button>
-
-    <a href="{{ route('archivo.empleado.index') }}" class="btn btn-secondary ms-2">Cancelar</a>
 </form>

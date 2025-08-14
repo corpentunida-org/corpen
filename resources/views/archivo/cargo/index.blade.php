@@ -1,195 +1,188 @@
 <x-base-layout>
-    @if (session('success'))
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
 
-    <div class="card">
-        <div class="card-body">
-            <div class="mb-4 px-4 d-flex align-items-center justify-content-between">
-                <h5 class="fw-bold mb-0">Cargos Registrados</h5>
-                {{-- 1. CLASE AÑADIDA AQUÍ --}}
-                <a href="{{ route('archivo.cargo.create') }}" class="btn btn-success btnCrear">
-                    <i class="bi bi-plus-lg me-2"></i>
-                    <span>Crear Nuevo</span>
-                </a>
-            </div>
+    {{-- 1. SECCIÓN DE ESTILOS Y LIBRERÍAS --}}
+    @push('styles')
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
+        <style>
+            .table-actions .btn { width: 35px; height: 35px; display: inline-flex; align-items: center; justify-content: center; }
+            input[type="search"]::-webkit-search-cancel-button { -webkit-appearance:none; }
+        </style>
+    @endpush
 
-            {{-- Buscador --}}
-            <div class="px-4 pb-4">
-                <form action="{{ route('archivo.cargo.index') }}" method="GET">
-                    <div class="input-group shadow-sm rounded">
-                        <span class="input-group-text bg-white border-end-0">
-                            <i class="bi bi-search text-muted"></i>
-                        </span>
-                        <input type="text" name="search" class="form-control border-start-0" placeholder="Buscar por nombre de cargo..." value="{{ request('search') }}">
-                        <button class="btn btn-outline-primary" type="submit">Buscar</button>
+    {{-- 2. PANEL DE CONTROL --}}
+    <div class="card card-friendly animate-on-load mb-4">
+        <div class="card-body p-3 p-lg-4">
+            <div class="row align-items-center">
+                <div class="col-lg-5 col-md-12 mb-3 mb-lg-0">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-briefcase-fill fs-2 text-primary me-3"></i>
+                        <div>
+                            <h4 class="fw-bold mb-0">Gestión de Cargos</h4>
+                            <small class="text-muted">Administra los puestos y responsabilidades.</small>
+                        </div>
                     </div>
-                </form>
+                </div>
+                <div class="col-lg-4 col-md-6 mb-3 mb-md-0">
+                    <form method="GET" action="{{ route('archivo.cargo.index') }}">
+                        <div class="input-group">
+                            <input type="search" name="search" class="form-control" placeholder="Buscar por nombre de cargo..." value="{{ request('search') }}">
+                            <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
+                        </div>
+                    </form>
+                </div>
+                <div class="col-lg-3 col-md-6 text-md-end">
+                    <a href="{{ route('archivo.cargo.create') }}" 
+                       class="btn btn-primary rounded-pill px-4 py-2 w-100 w-md-auto btn-hover-lift swal-confirm"
+                       data-swal-title="¿Crear un nuevo cargo?"
+                       data-swal-text="Serás redirigido al formulario de creación."
+                       data-swal-icon="info">
+                        <i class="bi bi-plus-lg me-1"></i> Nuevo Cargo
+                    </a>
+                </div>
             </div>
+        </div>
+    </div>
 
-            {{-- Tabla --}}
+    {{-- 3. ZONA DE DATOS --}}
+    <div class="card card-friendly animate-on-load" style="animation-delay: 0.1s;">
+        <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-hover mb-0 align-middle small">
+                <table class="table table-hover mb-0 align-middle">
                     <thead class="table-light">
-                        <tr class="border-top">
-                            <th>ID</th>
-                            <th>Nombre</th>
-                            <th>Área</th>
-                            <th>Teléfono</th>
-                            <th class="text-center">Manual</th>
-                            <th class="text-center">Estado</th>
-                            <th class="text-end">Acciones</th>
+                        <tr>
+                            <th class="py-3 px-4">Nombre del Cargo</th>
+                            <th class="py-3 px-4">Área</th>
+                            <th class="py-3 px-4 text-center">Manual</th>
+                            <th class="py-3 px-4 text-center">Estado</th>
+                            <th class="py-3 px-4 text-center">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse ($cargos as $cargo)
                             <tr>
-                                <td>{{ $cargo->id }}</td>
-                                <td>{{ $cargo->nombre_cargo }}</td>
-                                <td>{{ $cargo->gdoArea->nombre ?? 'Sin área' }}</td>
-                                <td>{{ $cargo->telefono_corporativo ?? '-' }}</td>
-                                <td class="text-center">
+                                <td class="px-4">
+                                    <div class="fw-bold">{{ $cargo->nombre_cargo }}</div>
+                                    @if($cargo->telefono_corporativo)
+                                        <small class="text-muted"><i class="bi bi-telephone-fill me-1"></i> {{ $cargo->telefono_corporativo }}</small>
+                                    @endif
+                                </td>
+                                
+                                {{-- =============================================== --}}
+                                {{--           CELDA CORREGIDA AQUÍ           --}}
+                                {{-- =============================================== --}}
+                                <td class="px-4">
+                                    @if ($cargo->gdoArea)
+                                        {{ $cargo->gdoArea->nombre }}
+                                    @else
+                                        <span class="text-muted fst-italic">Sin área</span>
+                                    @endif
+                                </td>
+                                
+                                <td class="text-center px-4">
                                     @if ($cargo->manual_funciones)
-                                        <span class="text-success" data-bs-toggle="tooltip" title="Manual cargado">
-                                            <i class="bi bi-check-circle-fill"></i>
-                                        </span>
+                                        <i class="bi bi-check-circle-fill fs-5 text-success" data-bs-toggle="tooltip" title="Sí tiene manual"></i>
                                     @else
-                                        <span class="text-muted" data-bs-toggle="tooltip" title="Sin manual">
-                                            <i class="bi bi-x-circle"></i>
-                                        </span>
+                                        <i class="bi bi-x-circle fs-5 text-muted" data-bs-toggle="tooltip" title="No tiene manual"></i>
                                     @endif
                                 </td>
-                                <td class="text-center">
+                                <td class="text-center px-4">
                                     @if ($cargo->estado)
-                                        <span class="badge bg-success-soft text-success">Activo</span>
+                                        <span class="badge rounded-pill bg-success">Activo</span>
                                     @else
-                                        <span class="badge bg-danger-soft text-danger">Inactivo</span>
+                                        <span class="badge rounded-pill bg-secondary">Inactivo</span>
                                     @endif
                                 </td>
-                                <td class="text-end">
-                                    <div class="dropdown">
-                                        <a href="#" class="avatar-text avatar-md" data-bs-toggle="dropdown">
-                                            <i class="bi bi-three-dots-vertical"></i>
+                                <td class="text-center px-4 table-actions">
+                                    <div class="btn-group">
+                                        <a href="{{ route('archivo.cargo.show', $cargo->id) }}" class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip" title="Ver Detalles"><i class="bi bi-eye-fill"></i></a>
+                                        <a href="{{ route('archivo.cargo.edit', $cargo->id) }}" 
+                                           class="btn btn-sm btn-outline-secondary swal-confirm" 
+                                           data-bs-toggle="tooltip" title="Editar"
+                                           data-swal-title="¿Editar este cargo?"
+                                           data-swal-icon="question">
+                                           <i class="bi bi-pencil-fill"></i>
                                         </a>
-                                        <ul class="dropdown-menu dropdown-menu-end">
-                                            <li>
-                                                {{-- 2. CLASE AÑADIDA AQUÍ --}}
-                                                <a class="dropdown-item btnVer" href="{{ route('archivo.cargo.show', $cargo->id) }}">
-                                                    <i class="bi bi-eye me-3"></i> Ver
-                                                </a>
-                                            </li>
-                                            <li>
-                                                {{-- 3. CLASE AÑADIDA AQUÍ --}}
-                                                <a class="dropdown-item btnEditar" href="{{ route('archivo.cargo.edit', $cargo->id) }}">
-                                                    <i class="bi bi-pencil-square me-3"></i> Editar
-                                                </a>
-                                            </li>
-                                            <li><hr class="dropdown-divider"></li>
-                                            <li>
-                                                {{-- 4. CLASE AÑADIDA AQUÍ --}}
-                                                <form action="{{ route('archivo.cargo.destroy', $cargo->id) }}" method="POST" class="formEliminar">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="dropdown-item text-danger">
-                                                        <i class="bi bi-trash-fill me-3"></i> Eliminar
-                                                    </button>
-                                                </form>
-                                            </li>
-                                        </ul>
+                                        <form action="{{ route('archivo.cargo.destroy', $cargo->id) }}" method="POST" class="d-inline swal-confirm-form">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" 
+                                                    data-bs-toggle="tooltip" title="Eliminar"
+                                                    data-swal-title="¿Estás seguro de eliminar?"
+                                                    data-swal-text="Esta acción no se puede deshacer."
+                                                    data-swal-icon="warning">
+                                                <i class="bi bi-trash-fill"></i>
+                                            </button>
+                                        </form>
                                     </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="text-center py-4">No se encontraron cargos.</td>
+                                <td colspan="5">
+                                    <div class="text-center py-5 px-4">
+                                        <i class="bi bi-person-badge display-1 text-muted mb-3"></i>
+                                        <h4 class="fw-bold">No se encontraron cargos</h4>
+                                        <p class="text-muted">Intenta ajustar tu búsqueda o crea el primer cargo.</p>
+                                    </div>
+                                </td>
                             </tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
-
+            
             @if ($cargos->hasPages())
-                <div class="d-flex justify-content-center mt-4">
-                    {{ $cargos->appends(request()->query())->links('components.maestras.congregaciones.pagination') }}
+                <div class="card-footer bg-white border-0">
+                    {{ $cargos->appends(request()->query())->links() }}
                 </div>
             @endif
         </div>
     </div>
 
-    {{-- 5. SECCIÓN DE SCRIPTS REEMPLAZADA POR LA VERSIÓN COMPLETA --}}
     @push('scripts')
-        {{-- Dependencias para las alertas --}}
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+        {{-- El JavaScript no necesita cambios --}}
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-        
         <script>
             document.addEventListener('DOMContentLoaded', function () {
-                // Función reutilizable para las alertas de confirmación
-                function confirmarAccion(titulo, texto, icono, callback) {
-                    Swal.fire({
-                        title: titulo,
-                        text: texto,
-                        icon: icono,
-                        showCancelButton: true,
-                        confirmButtonColor: '#198754',
-                        cancelButtonColor: '#6c757d',
-                        confirmButtonText: 'Sí, continuar',
-                        cancelButtonText: 'Cancelar',
-                        showClass: { popup: 'animate__animated animate__fadeIn' },
-                        hideClass: { popup: 'animate__animated animate__fadeOut' }
-                    }).then((result) => {
-                        if (result.isConfirmed) callback();
-                    });
-                }
-
-                // Evento para el botón Crear
-                document.querySelectorAll('.btnCrear').forEach(btn => {
-                    btn.addEventListener('click', function (e) {
-                        e.preventDefault();
-                        confirmarAccion('¿Crear un nuevo cargo?', 'Serás redirigido al formulario de creación.', 'info', () => {
-                            window.location.href = btn.getAttribute('href');
-                        });
-                    });
-                });
-
-                // Evento para el botón Ver
-                document.querySelectorAll('.btnVer').forEach(btn => {
-                    btn.addEventListener('click', function (e) {
-                        e.preventDefault();
-                        confirmarAccion('¿Ver detalles del cargo?', 'Se mostrarán los detalles completos del cargo.', 'info', () => {
-                            window.location.href = btn.getAttribute('href');
-                        });
-                    });
-                });
-
-                // Evento para el botón Editar
-                document.querySelectorAll('.btnEditar').forEach(btn => {
-                    btn.addEventListener('click', function (e) {
-                        e.preventDefault();
-                        confirmarAccion('¿Editar este cargo?', 'Serás redirigido al formulario de edición.', 'question', () => {
-                            window.location.href = btn.getAttribute('href');
-                        });
-                    });
-                });
-
-                // Evento para el formulario de Eliminar
-                document.querySelectorAll('.formEliminar').forEach(form => {
-                    form.addEventListener('submit', function (e) {
-                        e.preventDefault();
-                        confirmarAccion('¿Eliminar este cargo?', 'Esta acción no se puede deshacer.', 'warning', () => {
-                            form.submit();
-                        });
-                    });
-                });
+                toastr.options = { "closeButton": true, "progressBar": true, "positionClass": "toast-bottom-right", };
+                @if (session('success'))
+                    toastr.success("{{ session('success') }}");
+                @endif
                 
-                // Script para inicializar los tooltips de Bootstrap
                 var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-                var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-                  return new bootstrap.Tooltip(tooltipTriggerEl)
-                })
+                var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) { return new bootstrap.Tooltip(tooltipTriggerEl) });
+                
+                document.body.addEventListener('click', function(e) {
+                    const swalConfirm = e.target.closest('.swal-confirm');
+                    if (swalConfirm) {
+                        e.preventDefault();
+                        const title = swalConfirm.dataset.swalTitle || '¿Estás seguro?';
+                        const text = swalConfirm.dataset.swalText || '';
+                        const icon = swalConfirm.dataset.swalIcon || 'question';
+                        Swal.fire({
+                            title: title, text: text, icon: icon, showCancelButton: true,
+                            confirmButtonColor: '#0d6efd', cancelButtonColor: '#6c757d',
+                            confirmButtonText: 'Sí, continuar', cancelButtonText: 'Cancelar',
+                        }).then((result) => { if (result.isConfirmed) { window.location.href = swalConfirm.getAttribute('href'); } });
+                    }
+                });
+
+                document.body.addEventListener('submit', function(e) {
+                    const swalConfirmForm = e.target.closest('.swal-confirm-form');
+                    if (swalConfirmForm) {
+                        e.preventDefault();
+                        const submitButton = swalConfirmForm.querySelector('[type="submit"]');
+                        const title = submitButton.dataset.swalTitle || '¿Estás seguro?';
+                        const text = submitButton.dataset.swalText || '';
+                        const icon = submitButton.dataset.swalIcon || 'warning';
+                        Swal.fire({
+                            title: title, text: text, icon: icon, showCancelButton: true,
+                            confirmButtonColor: '#d33', cancelButtonColor: '#6c757d',
+                            confirmButtonText: 'Sí, eliminar', cancelButtonText: 'Cancelar',
+                        }).then((result) => { if (result.isConfirmed) { swalConfirmForm.submit(); } });
+                    }
+                });
             });
         </script>
     @endpush
