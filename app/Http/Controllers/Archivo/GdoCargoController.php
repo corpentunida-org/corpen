@@ -29,8 +29,12 @@ class GdoCargoController extends Controller
     public function create()
     {
         $areas = GdoArea::orderBy('nombre')->get();
-        return view('archivo.cargo.create', compact('areas'));
+        $empleados = GdoEmpleado::all();
+        $cargo = new GdoCargo(); // para que no dé error con $cargo en old()
+
+        return view('archivo.cargo.create', compact('areas', 'empleados', 'cargo'));
     }
+
 
     public function store(Request $request)
     {
