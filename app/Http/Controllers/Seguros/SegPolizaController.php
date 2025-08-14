@@ -166,8 +166,6 @@ class SegPolizaController extends Controller
         $request->validate([
             'file' => 'required|mimes:xlsx,xls,csv',
         ]);
-        $file = $request->file('file');
-        $import = new ExcelImport();
         $rows = Excel::toArray(new ExcelImport(), $request->file('file'))[0];
         $updatedCount = 0;
         $failedRows = [];
@@ -189,9 +187,9 @@ class SegPolizaController extends Controller
             $tercero = SegTercero::where('cedula', $row['num_doc'])->first();
             if (!$tercero) {
                 $maeTercero = maeTerceros::where('cod_ter', $row['num_doc'])->first();
+                $fechaNacimiento = Carbon::create(1899, 12, 30)->addDays($row['fecha_nac'])->toDateString();
                 if (!$maeTercero) {
-                    try {
-                        $fechaNacimiento = Carbon::create(1899, 12, 30)->addDays($row['fecha_nac'])->toDateString();
+                    try {                        
                         $edad = Carbon::parse($fechaNacimiento)->age;
                         if ($edad < 0 || $edad > 120) {
                             throw new \Exception("Edad inválida: $edad años. Fuera del rango permitido.");
@@ -218,6 +216,11 @@ class SegPolizaController extends Controller
                     }
                 }
                 else{
+                    $maeTercero->update([
+                        'nom_ter' => $row['nombre'],
+                        'fec_nac' => $fechaNacimiento,
+                        'sexo' => $row['genero'],
+                    ]);
                     $tercero = SegTercero::create([
                         'cedula' => $maeTercero->cod_ter,
                         'nombre' => $maeTercero->nom_ter,
@@ -226,7 +229,7 @@ class SegPolizaController extends Controller
                     ]);
                 }
             }
-            $asegurado = SegAsegurado::where('cedula', $tercero->id)->first();
+            $asegurado = SegAsegurado::where('cedula', $tercero->cedula)->first();
             if (!$asegurado) {
                 $asegurado = SegAsegurado::create([
                     'cedula' => $tercero->cedula,
@@ -255,7 +258,7 @@ class SegPolizaController extends Controller
                     'seg_plan_id' => $plan_id->id,
                     'valor_asegurado' => $row['valor_asegurado'],
                     'valor_prima' => $row['prima'],
-                    'primapagar' => $row['prima'],
+                    'primapagar' => $row['prima_corpen'],
                     'extra_prima' => $row['extra_prim'] ?? 0,
                     'valorpagaraseguradora' => $row['valor_titular'] ?? null,
                 ]);
@@ -323,7 +326,7 @@ class SegPolizaController extends Controller
 
     public function exportarFormato()
     {
-        $headings = ['POLIZA', 'TIP_DOC', 'NUM_DOC', 'NOMBRE', 'GENERO', 'FECHA_NAC', 'PARENTESCO', 'TITULAR', 'VALOR_ASEGURADO', 'EXTRA PRIM', 'PRIMA', 'VALOR_TITULAR'];
+        $headings = ['POLIZA', 'TIP_DOC', 'NUM_DOC', 'NOMBRE', 'GENERO', 'FECHA_NAC', 'PARENTESCO', 'TITULAR', 'VALOR_ASEGURADO', 'EXTRA PRIM', 'PRIMA', 'PRIMA_CORPEN', 'VALOR_TITULAR'];
         return Excel::download(new ExcelExport([], $headings), 'POLIZAS.xlsx');
     }
 

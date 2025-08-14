@@ -16,8 +16,8 @@
                         <div>
                             <div class="fs-12 text-muted">Titular: </div>
                             <div class="fs-4 fw-bold text-dark"><span
-                                    class="counter">{{ $poliza->asegurado->terceroAF->nom_ter }}</span></div>
-                            <h3 class="fs-13 fw-semibold text-truncate-1-line">{{ $poliza->seg_asegurado_id }}</h3>
+                                    class="counter">{{ $poliza->asegurado->nombre_titular ?? ' ' }}</span></div>
+                            <h3 class="fs-13 fw-semibold text-truncate-1-line">{{ $poliza->asegurado->titular }}</h3>
                         </div>
                     </div>
                 </div>
@@ -34,7 +34,7 @@
                     <div class="btn btn-sm btn-light-brand p-3 bg-soft-primary">{{ $poliza->asegurado->parentesco }}
                     </div>
                     <div>
-                        <h5 class="fw-bold mb-0">{{ $poliza->tercero->nom_ter }} @if ($poliza->asegurado->viuda)
+                        <h5 class="fw-bold mb-0">{{ $poliza->nombre_tercero }} @if ($poliza->asegurado->viuda)
                             <span class="badge bg-danger text-white ms-2">VIUDA</span>
                         @endif
                         </h5>
@@ -168,13 +168,13 @@
                                                     <span class="badge bg-soft-warning text-warning">{{ $familiar->polizas->first()->plan->name ?? '' }}</span></a>
                                                     <a
                                                     href="#" class="hstack gap-1 fs-11 fw-normal">
-                                                        $ {{ number_format($familiar->polizas->first()->plan->prima_aseguradora) ?? '' }}</a></div>
+                                                        $ {{ number_format($familiar->polizas->first()->plan->prima_asegurado) ?? '' }}</a></div>
                                             @endif
                                         </td>
                                         <td>
                                             @php
                                                 if ($familiar->polizas->first()) {
-                                                    $valortotalbene = floatval($familiar->polizas->first()->plan->prima_aseguradora) - floatval($familiar->polizas->first()->primapagar);
+                                                    $valortotalbene = floatval($familiar->polizas->first()->valor_prima) - floatval($familiar->polizas->first()->primapagar);
                                                 }
                                             @endphp
 

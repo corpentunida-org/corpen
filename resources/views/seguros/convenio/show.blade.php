@@ -62,17 +62,17 @@
                                             <div class="dropdown-menu dropdown-menu-end" style="">
                                             @can('seguros.planes.update')
                                                 <a class="dropdown-item" href="{{ route('seguros.planes.edit', ['plan' => $plan->id]) }}">Editar</a>
-                                                    @endcan
-                                                    @can('seguros.planes.destroy')
+                                            @endcan
+                                            @can('seguros.planes.destroy')
                                                 <form
                                                     action="{{ route('seguros.planes.destroy', ['plan' => $plan->id]) }}"
                                                     method="POST">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit"
-                                                        class="dropdown-item btnEliminar">Eliminar</button>
+                                                        class="dropdown-item btnAbrirModalDestroy" data-text="plan ">Eliminar</button>
                                                 </form>
-                                                @endcan
+                                            @endcan
                                             </div>
                                         </div>
                                         <div class="text-center">
@@ -88,11 +88,12 @@
                                                 <p
                                                 class="fs-12 fw-medium text-muted text-spacing-1 mb-0 text-truncate-1-line">
                                                 <span class="fw-semibold text-dark">Prima Asegurado:</span>
-                                                  ${{ number_format($plan->prima_asegurado) }}</p>
+                                                    ${{ number_format($plan->prima_asegurado) }}</p>
                                                 <p
                                                 class="fs-12 fw-medium text-muted text-spacing-1 mb-0 text-truncate-1-line">
                                                 <span class="fw-semibold text-dark">Prima Pastor:</span>
-                                                  ${{ number_format($plan->prima_asegurado) }}</p>
+                                                    ${{ number_format($plan->prima_pastor) }}</p>
+                                                  
                                         </div>
                                     </div>
                                 </div>

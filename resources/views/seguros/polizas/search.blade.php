@@ -112,7 +112,7 @@
                                         <div class="hstack gap-4">
                                             <i class="bi bi-person-circle"></i>
                                             <div>
-                                                <div class="fw-bold text-dark">{{ $a->tercero->nom_ter }}</div>
+                                                <div class="fw-bold text-dark">{{ $a->tercero->nom_ter ?? ' ' }}</div>
                                                 <div class="fs-12 text-muted">Cédula:
                                                     <a class="badge bg-soft-primary text-primary">{{ $a->cedula }}</a>
                                                 </div>
