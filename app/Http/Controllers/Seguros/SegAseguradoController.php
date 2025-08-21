@@ -13,7 +13,7 @@ class SegAseguradoController extends Controller
      */
     public function index()
     {
-        //
+
     }
 
     /**
@@ -53,7 +53,7 @@ class SegAseguradoController extends Controller
      */
     public function update(Request $request, SegAsegurado $segAsegurado)
     {
-        //
+        
     }
 
     /**

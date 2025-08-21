@@ -17,10 +17,8 @@ class CreditoController extends Controller
      */
     public function index()
     {
-        // Optimizamos la consulta cargando las relaciones principales para evitar el problema N+1.
-        $creditos = Credito::with(['estado', 'lineaCredito', 'tercero'])->latest()->paginate(15);
-
-        return view('creditos.index', compact('creditos'));
+        $creditos = Credito::where('cre_estados_id', 16)->with('tercero','lineaCredito.tipoCredito', 'estado.etapa')->paginate(10);
+        return view('creditos.creditos.index', compact('creditos'));
     }
 
     /**

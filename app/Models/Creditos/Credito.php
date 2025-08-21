@@ -90,9 +90,9 @@ class Credito extends Model
      * Nota: Se especifica la llave foránea y la llave del dueño (owner key)
      * porque no siguen la convención estándar de Laravel (ej: tercero_id).
      */
-    public function tercero(): BelongsTo
+    public function tercero()
     {
-        return $this->belongsTo(maeTerceros::class, 'mae_terceros_cedula', 'cedula');
+        return $this->belongsTo(maeTerceros::class, 'mae_terceros_cod_ter', 'cod_ter');
     }
 
 

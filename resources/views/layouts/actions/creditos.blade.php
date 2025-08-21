@@ -7,7 +7,7 @@
 
     <ul class="nxl-submenu">
         <li class="nxl-item">
-            <a class="nxl-link" href="#">Documentación</a>
+            <a class="nxl-link" href="{{route('creditos.credito.index')}}">Créditos</a>
         </li>
         <li class="nxl-item">
             <a class="nxl-link" href="#">Análisis</a>
@@ -24,5 +24,8 @@
         <li class="nxl-item">
             <a class="nxl-link" href="#">Recaudo</a>
         </li>
+        {{-- <li class="nxl-item"><a class="nxl-link" href="">Solicitud</a></li>
+        <li class="nxl-item"><a class="nxl-link" href="">Analisis</a></li>
+        <li class="nxl-item"><a class="nxl-link" href="">Desembolsos</a></li> --}}
     </ul>
 </li>
