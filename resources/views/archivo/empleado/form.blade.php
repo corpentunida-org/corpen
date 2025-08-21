@@ -26,13 +26,14 @@
                 @enderror
                 <small class="form-text text-muted">Archivos permitidos: JPG, PNG, GIF. Tamaño máximo: 2MB.</small>
             </div>
-             {{-- Vista previa de la foto actual en modo edición --}}
-            @if ($isEdit && $empleado->ubicacion_foto)
-                <div class="col-md-4 text-center">
-                    <img src="{{ asset('storage/' . $empleado->ubicacion_foto) }}" alt="Foto actual" class="img-thumbnail rounded-circle" style="width: 100px; height: 100px; object-fit: cover;">
-                    <small class="d-block text-muted mt-1">Foto Actual</small>
-                </div>
-            @endif
+        {{-- Vista previa de la foto actual en modo edición --}}
+        @if ($isEdit && $empleado->ubicacion_foto)
+            <div class="col-md-4 text-center">
+                {{-- LÍNEA CORREGIDA --}}
+                <img src="{{ route('archivo.empleado.verFoto', $empleado->id) }}" alt="Foto actual" class="img-thumbnail rounded-circle" style="width: 100px; height: 100px; object-fit: cover;">
+                <small class="d-block text-muted mt-1">Foto Actual</small>
+            </div>
+        @endif
         </div>
 
         {{-- Campos de Cédula y Nombres --}}
