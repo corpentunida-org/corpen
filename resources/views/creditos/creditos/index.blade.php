@@ -34,7 +34,7 @@
                                                     <button type="submit" class="btn btn-primary">Buscar</button>
                                                 </div>
                                             </form>
-                                        </div>
+                                        </div>  
                                     </div>
                                 </div>
                             </div>
@@ -43,6 +43,10 @@
                     <div class="col-sm-12 col-md-5 d-flex justify-content-end align-items-center">
                         <x-input-search-creditos></x-input-search-creditos>
                     </div>
+                        {{-- Botón que lleva a la página de creación de créditos --}}
+                        <a href="{{ route('creditos.credito.create') }}" class="btn btn-primary d-flex align-items-center">
+                            <i class="feather-plus me-1"></i> Nuevo Crédito
+                        </a>
                 </div>
             </div>
         </div>
@@ -82,8 +86,8 @@
                         <tr>
                             <th>Titular</th>
                             <th>Linea de Crédito</th>
-                            <th>Valor Asegurado</th>
-                            <th>Valor a Pagar</th>
+                            <th>Valor </th>
+                            <th>Cuota</th>
                             <th class="text-end">Acción</th>
                         </tr>
                     </thead>

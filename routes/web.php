@@ -184,9 +184,22 @@ Route::get('reservaI/historico', [ResReservaController::class, 'indexHistorico']
 //
 
 //CREDITOS 
-Route::resource('creditos', CreditoController::class)->names('creditos.credito')->middleware(['auth']);
+Route::resource('creditos', CreditoController::class)
+    ->names('creditos.credito')
+    ->middleware(['auth']);
 
+Route::prefix('creditos')->middleware('auth')->group(function () {
 
+    /**
+     * Define todas las rutas estándar (index, create, store, show, edit, update, destroy)
+     * para el CreditoController, siguiendo la convención de nombres y parámetros
+     * que te gusta.
+     */
+    Route::resource('credito', CreditoController::class)
+         ->names('creditos.credito')
+         ->parameters(['credito' => 'credito']);
+
+});
 
 
 // GESTION DOCUMENTAL
