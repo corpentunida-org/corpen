@@ -168,7 +168,7 @@
                                                     <span class="badge bg-soft-warning text-warning">{{ $familiar->polizas->first()->plan->name ?? '' }}</span></a>
                                                     <a
                                                     href="#" class="hstack gap-1 fs-11 fw-normal">
-                                                        $ {{ number_format($familiar->polizas->first()->plan->prima_asegurado) ?? '' }}</a></div>
+                                                        $ {{ number_format($familiar->polizas->first()->valor_prima) ?? '' }}</a></div>
                                             @endif
                                         </td>
                                         <td>

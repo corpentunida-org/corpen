@@ -6,7 +6,6 @@
     </a>
 
     <ul class="nxl-submenu">
-        {{-- Etapa 1 --}}
         <li class="nxl-item {{ request()->routeIs('estado1.index') ? 'active' : '' }}">
             <a href="javascript:void(0);" class="nxl-link">
                 Maestras
@@ -20,5 +19,8 @@
                 </li>
             </ul>
         </li>
+        {{-- <li class="nxl-item"><a class="nxl-link" href="">Solicitud</a></li>
+        <li class="nxl-item"><a class="nxl-link" href="">Analisis</a></li>
+        <li class="nxl-item"><a class="nxl-link" href="">Desembolsos</a></li> --}}
     </ul>
 </li>
