@@ -2,6 +2,12 @@
 
 namespace App\Models;
 
+use App\Models\Cartera\Acuerdo;
+use App\Models\Creditos\Observacion;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+
+
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -67,6 +73,22 @@ class User extends Authenticatable
     public function hasPermission($permiso)
     {
         return $this->permissions()->where('name', $permiso)->exists();
+    }
+
+
+    public function acuerdosRegistrados(): HasMany
+    {
+        return $this->hasMany(Acuerdo::class, 'user_id');
+    }
+
+
+    /**
+     * Obtiene todas las observaciones registradas por este usuario.
+     * Te permitirá hacer: $usuario->observacionesRegistradas
+     */
+    public function observacionesRegistradas(): HasMany
+    {
+        return $this->hasMany(Observacion::class, 'user_id');
     }
 
 /*
