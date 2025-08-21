@@ -55,14 +55,21 @@
                         <span class="text-danger">
                             <i class="feather-check fs-10"></i>
                         </span>
-                        <span class="fs-12 fw-normal text-truncate-1-line">"PRIMA": Valor pago mensual del plan, en
+                        <span class="fs-12 fw-normal text-truncate-1-line">"PRIMA": Valor pago mensual del plan de la aseguradora, en
                             valores numericos</span>
                     </li>
                     <li class="d-flex align-items-start mb-1">
                         <span class="text-danger">
                             <i class="feather-check fs-10"></i>
                         </span>
-                        <span class="fs-12 fw-normal text-truncate-1-line">"VALOR_TITULAR": Valor a pagar del titular,
+                        <span class="fs-12 fw-normal text-truncate-1-line">"PRIMA_CORPEN": Valor pago mensual del titular por su plan, en
+                            valores numericos</span>
+                    </li>
+                    <li class="d-flex align-items-start mb-1">
+                        <span class="text-danger">
+                            <i class="feather-check fs-10"></i>
+                        </span>
+                        <span class="fs-12 fw-normal text-truncate-1-line">"VALOR_TITULAR": Valor a pagar agrupado del titular,
                             en valores numericos (solo si aplica)</span>
                     </li>
                 </ul>
