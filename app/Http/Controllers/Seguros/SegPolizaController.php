@@ -372,14 +372,14 @@ class SegPolizaController extends Controller
             ->get();
         $headings = ['POLIZA', 'ID', 'NOMBRE', 'NUM DOC', 'FECHA NAC', 'GENERO', 'EDAD', 'DOC AF', 'PARENTESCO', 'FEC NOVEDAD', 'VALOR ASEGURADO', 'EXTRA PRIMA', 'PRIMA'];
         $datosFormateados = $datos->map(function ($item) {
-            $fechaNacimiento = Carbon::parse($item->tercero?->fec_nac);
+            $fechaNacimiento = Carbon::parse($item->fecha_nacimiento);
             return [
                 'poliza' => $item->seg_convenio_id,
                 'id' => $item->id,
-                'nombre' => $item->tercero->nom_ter ?? ' ',
+                'nombre' => $item->nombre_tercero ?? ' ',
                 'num_doc' => $item->seg_asegurado_id,
                 'fecha_nac' => $fechaNacimiento,
-                'genero' => $item->tercero->genero ?? '',
+                'genero' => $item->genero ?? '',
                 'edad' => $fechaNacimiento->age ?? '0',
                 'doc_af' => $item->asegurado->titular ?? '',
                 'parentesco' => $item->asegurado->parentesco ?? ' ',

@@ -41,18 +41,13 @@ use App\Http\Controllers\Archivo\GdoTipoDocumentoController;
 use App\Http\Controllers\Archivo\GdoDocsEmpleadosController;
 use App\Http\Controllers\Archivo\GdoCategoriaDocumentoController;
 
-
-
-
 //MAESTARS
 use App\Http\Controllers\Maestras\CongregacionController;
 use App\Http\Controllers\Maestras\MaeTercerosController;
 use App\Http\Controllers\Maestras\MaeTiposController;
 
-
-
-//CRDITOS
-use App\Http\Controllers\Creditos\Estado1\Estado1Controller;
+//CREDITOS
+use App\Http\Controllers\Creditos\CreditoController;
 
 
 /* Route::middleware(['auth'])->group(function () {
@@ -188,21 +183,10 @@ Route::get('reservaI/historico', [ResReservaController::class, 'indexHistorico']
     });
 //
 
-//CREDITOS ***
-// Definimos un grupo principal que aplica el prefijo, el nombre y la autenticación
-Route::prefix('creditos/estado1')
-->name('estado1.')
-->middleware('auth')
-->group(function () {
+//CREDITOS 
+Route::resource('creditos', CreditoController::class)->names('creditos.credito')->middleware(['auth']);
 
-    // 1. Definimos la ruta personalizada primero
-    Route::get('/formulario', [Estado1Controller::class, 'mostrarFormulario'])->name('form');
-    
-    // 2. Definimos las 7 rutas CRUD con una sola línea
-    //    Usamos '' como URI porque el prefijo ya está definido en el grupo.
-    Route::resource('', Estado1Controller::class)
-        ->parameters(['' => 'fabrica']); // 3. Le decimos que el parámetro se llama {fabrica}
-});
+
 
 
 // GESTION DOCUMENTAL

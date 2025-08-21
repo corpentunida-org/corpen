@@ -6,22 +6,8 @@
     </a>
 
     <ul class="nxl-submenu">
-<<<<<<< HEAD
-        <li class="nxl-item {{ request()->routeIs('estado1.index') ? 'active' : '' }}">
-            <a href="javascript:void(0);" class="nxl-link">
-                Maestras
-                <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
-            </a>
-            <ul class="nxl-submenu">
-                <li class="nxl-item">
-                    <a class="nxl-link" href="{{ route('estado1.index') }}" style="text-decoration: none;">
-                        Lista de Fábricas
-                    </a>
-                </li>
-            </ul>
-=======
         <li class="nxl-item">
-            <a class="nxl-link" href="#">Documentación</a>
+            <a class="nxl-link" href="{{route('creditos.credito.index')}}">Créditos</a>
         </li>
         <li class="nxl-item">
             <a class="nxl-link" href="#">Análisis</a>
@@ -37,7 +23,6 @@
         </li>
         <li class="nxl-item">
             <a class="nxl-link" href="#">Recaudo</a>
->>>>>>> d4babf93324986015595bd34d318c1dd7bbe63ae
         </li>
         {{-- <li class="nxl-item"><a class="nxl-link" href="">Solicitud</a></li>
         <li class="nxl-item"><a class="nxl-link" href="">Analisis</a></li>
