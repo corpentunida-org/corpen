@@ -36,7 +36,7 @@ class SegPolizaController extends Controller
     {
         $update = SegAsegurado::where('parentesco', 'AF')
             ->whereHas('polizas', function ($query) {
-                $query->whereNull('valorpagaraseguradora')->orWhere('valorpagaraseguradora', ' ');
+                $query->whereNull('valorpAseguradora');
             })->paginate(7);
         return view('seguros.polizas.index', compact('update'));
     }
@@ -138,16 +138,19 @@ class SegPolizaController extends Controller
 
         $totalPrima = DB::table('SEG_polizas')->whereIn('seg_asegurado_id', $grupoFamiliar->pluck('cedula'))->sum('valor_prima');
 
+        if ($poliza->asegurado->parentesco === 'AF') {
+            $primaAseguradora = DB::table('SEG_polizas')->whereIn('seg_asegurado_id', $grupoFamiliar->pluck('cedula'))->sum('primapagar');
+            if ($poliza->valorpagaraseguradora != $primaAseguradora) {
+                $poliza->update(['valorpagaraseguradora' => $primaAseguradora]);
+            }
+        }
+
         $beneficiarios = SegBeneficiario::where('id_asegurado', $id)->get();
 
         $novedades = SegNovedades::where('id_asegurado', $id)->where('id_poliza', $poliza->id)->get();
         $reclamacion = SegReclamaciones::where('cedulaAsegurado', $id)->with('cambiosEstado')->get();
         $beneficios = SegBeneficios::where('cedulaAsegurado', $id)->where('poliza', $poliza->id)->where('active', true)->get();
-        $registrosnov = collect()
-            ->merge($novedades)
-            ->merge($reclamacion)
-            ->merge($beneficios)
-            ->sortBy('updated_at')->values();
+        $registrosnov = collect()->merge($novedades)->merge($reclamacion)->merge($beneficios)->sortBy('updated_at')->values();
 
         return view('seguros.polizas.show', compact('poliza', 'grupoFamiliar', 'totalPrima', 'beneficiarios', 'beneficios', 'registrosnov'));
     }
@@ -189,7 +192,7 @@ class SegPolizaController extends Controller
                 $maeTercero = maeTerceros::where('cod_ter', $row['num_doc'])->first();
                 $fechaNacimiento = Carbon::create(1899, 12, 30)->addDays($row['fecha_nac'])->toDateString();
                 if (!$maeTercero) {
-                    try {                        
+                    try {
                         $edad = Carbon::parse($fechaNacimiento)->age;
                         if ($edad < 0 || $edad > 120) {
                             throw new \Exception("Edad inválida: $edad años. Fuera del rango permitido.");
@@ -206,7 +209,6 @@ class SegPolizaController extends Controller
                             'fec_nac' => $fechaNacimiento,
                             'sexo' => $row['genero'],
                         ]);
-
                     } catch (\Exception $e) {
                         $failedRows[] = [
                             'cedula' => $row['num_doc'],
@@ -214,8 +216,7 @@ class SegPolizaController extends Controller
                         ];
                         continue;
                     }
-                }
-                else{
+                } else {
                     $maeTercero->update([
                         'nom_ter' => $row['nombre'],
                         'fec_nac' => $fechaNacimiento,
@@ -239,23 +240,23 @@ class SegPolizaController extends Controller
                 ]);
             }
             $poliza = SegPoliza::where('seg_asegurado_id', $asegurado->cedula)->first();
+            $condicion_id = app(SegPlanController::class)->getCondicion($tercero->edad);
+            $plan_id = SegPlan::select('id')->where('vigente', true)->where('condicion_corpen', $condicion_id)->where('valor', $row['valor_asegurado'])->first();
+            $plan_id_value = $plan_id ? $plan_id->id : 77;
+            /*if (!$plan_id) {                
+                $failedRows[] = [
+                    'cedula' => $row['num_doc'],
+                    'obser' => 'No se encontró un plan con el valor asegurado de ' . $row['valor_asegurado'],
+                ];
+                continue;
+            }*/
             if (!$poliza) {
-                $condicion_id = app(SegPlanController::class)->getCondicion($tercero->edad);
-                $plan_id = SegPlan::select('id')->where('vigente', true)->where('condicion_id', $condicion_id)
-                    ->where('valor', $row['valor_asegurado'])->first();
-                if (!$plan_id) {
-                    $failedRows[] = [
-                        'cedula' => $row['num_doc'],
-                        'obser' => 'No se encontró un plan con el valor asegurado de ' . $row['valor_asegurado'],
-                    ];
-                    continue;
-                }
                 $poliza = SegPoliza::create([
                     'seg_asegurado_id' => $asegurado->cedula,
                     'seg_convenio_id' => $row['poliza'],
                     'active' => true,
                     'fecha_inicio' => Carbon::now()->toDateString(),
-                    'seg_plan_id' => $plan_id->id,
+                    'seg_plan_id' => $plan_id_value,
                     'valor_asegurado' => $row['valor_asegurado'],
                     'valor_prima' => $row['prima'],
                     'primapagar' => $row['prima_corpen'],
@@ -265,21 +266,30 @@ class SegPolizaController extends Controller
                 $updatedCount++;
                 $this->auditoria('POLIZA CREADA ID ' . $poliza->id);
             } else {
-                $failedRows[] = [
+                $poliza->update([
+                    'fecha_inicio' => Carbon::now()->toDateString(),
+                    'seg_plan_id' => $plan_id_value,
+                    'valor_asegurado' => $row['valor_asegurado'],
+                    'valor_prima' => $row['prima'],
+                    'primapagar' => $row['prima_corpen'],
+                    'extra_prima' => $row['extra_prim'] ?? 0,
+                    'valorpagaraseguradora' => $row['valor_titular'] ?? null,
+                ]);
+                $updatedCount++;
+                /*$failedRows[] = [
                     'cedula' => $row['num_doc'],
                     'obser' => 'Ya existe una póliza para este asegurado.',
-                ];
+                ];*/
             }
         }
-        return redirect()->route('seguros.poliza.viewupload')
+        return redirect()
+            ->route('seguros.poliza.viewupload')
             ->with('success', 'Se actualizaron exitosamente ' . $updatedCount . ' registros')
             ->with('failedRows', $failedRows);
     }
 
-
     public function upload(Request $request)
     {
-
         $request->validate([
             'file' => 'required|mimes:xlsx,xls,csv',
         ]);
@@ -320,9 +330,7 @@ class SegPolizaController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, SegPoliza $segPoliza)
-    {
-    }
+    public function update(Request $request, SegPoliza $segPoliza) {}
 
     public function exportarFormato()
     {
@@ -364,7 +372,7 @@ class SegPolizaController extends Controller
             ->get();
         $headings = ['POLIZA', 'ID', 'NOMBRE', 'NUM DOC', 'FECHA NAC', 'GENERO', 'EDAD', 'DOC AF', 'PARENTESCO', 'FEC NOVEDAD', 'VALOR ASEGURADO', 'EXTRA PRIMA', 'PRIMA'];
         $datosFormateados = $datos->map(function ($item) {
-            $fechaNacimiento = Carbon::parse($item->tercero?->fecha_nacimiento);
+            $fechaNacimiento = Carbon::parse($item->tercero?->fec_nac);
             return [
                 'poliza' => $item->seg_convenio_id,
                 'id' => $item->id,
