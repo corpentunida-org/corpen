@@ -15,12 +15,34 @@ class CreditoController extends Controller
     /**
      * Muestra una lista de todos los créditos.
      */
+
     public function index()
     {
-        $creditos = Credito::where('cre_estados_id', 16)->with('tercero','lineaCredito.tipoCredito', 'estado.etapa')->paginate(10);
-        return view('creditos.creditos.index', compact('creditos'));
-    }
+        // 1. Empezamos la consulta con query() para poder añadirle condiciones.
+        $query = Credito::query();
 
+        // 2. Aplicamos el filtro de búsqueda si el parámetro 'nombre' existe en la URL.
+        $query->when(request('nombre'), function ($q, $nombre) {
+            // Usamos whereHas para buscar en la tabla relacionada 'tercero'.
+            // Esto buscará créditos DONDE el tercero asociado CUMPLA esta condición.
+            return $q->whereHas('tercero', function ($subQuery) use ($nombre) {
+                // Buscamos coincidencias parciales en el nombre del tercero.
+                $subQuery->where('nom_ter', 'like', "%{$nombre}%");
+            });
+        });
+
+        // 3. Añadimos el resto de tu lógica original.
+        // El filtro de estado y el Eager Loading se aplican a la consulta ya filtrada (o no).
+        $creditos = $query->where('cre_estados_id', 16)
+                          ->with('tercero', 'lineaCredito.tipoCredito', 'estado.etapa')
+                          ->paginate(10);
+
+        // 4. Devolvemos la vista con los créditos (filtrados o no).
+        return view('creditos.creditos.index', compact('creditos'));
+/* 
+        $creditos = Credito::where('cre_estados_id', 16)->with('tercero','lineaCredito.tipoCredito', 'estado.etapa')->paginate(10);
+        return view('creditos.creditos.index', compact('creditos')); */
+    }
     /**
      * Muestra el formulario para crear un nuevo crédito.
      */
@@ -31,7 +53,7 @@ class CreditoController extends Controller
         $lineasCredito = LineaCredito::all();
         $terceros = maeTerceros::all();
 
-        return view('creditos.create', compact('estados', 'lineasCredito', 'terceros'));
+        return view('creditos.creditos.crear', compact('estados', 'lineasCredito', 'terceros'));
     }
 
     /**
