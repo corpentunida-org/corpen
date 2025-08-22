@@ -1,13 +1,11 @@
-<div class="payment-history">
-    <div class="mb-4 px-4 d-flex align-items-center justify-content-between">
+<div class="payment-history mt-3">
+    <div class="my-4 px-4 d-flex align-items-center justify-content-between">
         <h5 class="fw-bold mb-0">Beneficiarios:</h5>
     </div>
     <div class="table">
         <table class="table mb-0">
             <thead>
-                <tr class="border-top">
-                    <th>Tipo Documento</th>
-                    <th>Cedula</th>
+                <tr class="border-top">                    
                     <th>Nombre</th>
                     <th>Parentesco</th>
                     <th>Porcentaje</th>
@@ -16,11 +14,9 @@
             </thead>
             <tbody>
                 @foreach ($beneficiarios as $b)
-                    <tr>
-                        <td>{{ $b->tipo_documento_id }}</td>
-                        <td><a href="javascript:void(0);">{{ $b->cedula }}</a></td>
-                        <td>{{ $b->nombre }}</td>
-                        <td>{{ $b->parentescos->name }}</td>
+                    <tr>                        
+                        <td>{{ $b->nombre ?? ' ' }}</td>
+                        <td>{{ $b->parentesco }}</td>
                         <td><span class="badge bg-soft-warning text-warning">{{ $b->porcentaje }}%</span></td>
                         <td class="hstack justify-content-end gap-4 text-end">
                             <div class="dropdown open">
@@ -40,7 +36,7 @@
                                         <form action="{{ route('seguros.beneficiario.destroy', ['beneficiario' => $b->id]) }}"method="POST">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="dropdown-item btnEliminar">
+                                            <button type="submit" class="dropdown-item btnAbrirModalDestroy" data-text="beneficiario">
                                                 <i class="feather feather-trash-2 me-3"></i>
                                                 <span>Eliminar</span>
                                             </button>
@@ -55,18 +51,3 @@
         </table>
     </div>
 </div>
-<script>
-    $(document).ready(function() {
-        $('.btnEliminar').click(function(event) {
-            event.preventDefault();
-            formToSubmit = $(this).closest('form');
-            $('#ModalConfirmacionEliminar').modal('show');
-            $('#botonSiModal').off('click').on('click', function() {
-                if (formToSubmit) {
-                    formToSubmit.off('submit');
-                    formToSubmit.submit();
-                }
-            });
-        });
-    });
-</script>
