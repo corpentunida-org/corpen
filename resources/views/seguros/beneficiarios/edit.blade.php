@@ -9,7 +9,7 @@
                         </div>
                         <div>
                             <div class="fs-4 fw-bold text-dark"><span
-                                    class="counter">{{ $beneficiario->asegurado->tercero->nombre }}</span></div>
+                                    class="counter">{{ $beneficiario->asegurado->nombre_titular }}</span></div>
                             <h3 class="fs-13 fw-semibold text-truncate-1-line">{{ $beneficiario->asegurado->cedula }}
                             </h3>
                         </div>
