@@ -36,6 +36,16 @@
 
         <div class="row">
             <div class="col-4">
+                <strong>Documento de identidad:</strong>
+            </div>
+            <div class="col-8">
+                {{ $reserva->nid }}
+            </div>
+        </div>
+        <hr>
+
+        <div class="row">
+            <div class="col-4">
                 <strong>Contacto del asociado:</strong>
             </div>
             <div class="col-8">
