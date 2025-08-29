@@ -30,7 +30,7 @@ class PermissionsController extends Controller
         if (!$permiso) {
             return redirect()->back()->with('error', 'No se pudo crear el permiso');
         }
-        return redirect()->back()->with('success', 'Permiso creado con permiso');
+        return redirect()->back()->with('success', 'Permiso creado correctamente');
     }
 
 

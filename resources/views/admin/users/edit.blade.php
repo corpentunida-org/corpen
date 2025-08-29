@@ -131,11 +131,43 @@
                     <div class="d-flex gap-2 text-center pt-4">
                         <a href="javascript:void(0);" class="w-50 btn btn-light-brand">
                             <i class="feather-trash-2 me-2"></i>
-                            <span>Delete</span>
+                            <span>Eliminar un Rol</span>
                         </a>
                         <button type="submit" class="w-50 btn btn-primary">
                             <i class="feather-edit me-2"></i>
                             <span>Guardar Cambios</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-12">
+        <div class="card stretch stretch-full" id="cardAddPermisos">
+            <div class="card-header">
+                <h5 class="fw-bold mb-0">
+                    <span class="d-block mb-2">Eliminar Rol asociado</span>
+                </h5>
+            </div>
+            <div class="card-body p-4">                
+                <form method="POST" action="{{ route('admin.permisos.store') }}" id="formAddPermiso" novalidate>
+                    @csrf
+                    @method('POST')                    
+                    <div class="mb-4">
+                        <label class="form-label">Seleccione el Rol<span class="text-danger">*</span></label>
+                        <select class="form-control" name="rolaeliminar">
+                            @foreach ($user->actions as $rol)
+                                <option value="{{ $rol->id }}" {{ $user->actions->first()?->role?->id === $rol->id ? 'selected' : '' }}>
+                                    {{ strtoupper($rol->role->name) }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="d-flex flex-row-reverse gap-2 mt-2">
+                        <button class="btn btn-danger mt-4" data-bs-toggle="tooltip"
+                            title="Timesheets"type="submit">
+                            <i class="feather-plus me-2"></i>
+                            <span>Eliminar</span>
                         </button>
                     </div>
                 </form>
