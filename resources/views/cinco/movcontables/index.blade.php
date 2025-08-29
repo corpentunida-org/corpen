@@ -18,7 +18,7 @@
                                                     <i class="feather-search"></i>
                                                 </div>
                                             </a>
-                                            <form action="{{ route('poliza.search', ['name' => 'ID']) }}" method="GET"
+                                            <form action="{{ route('cinco.retiros.search', ['name' => 'ID']) }}" method="GET"
                                                 class="search-form" style="display: none">
                                                 <div class="search-form-inner pt-4">
                                                     <a href="" class="search-form-close-toggle">

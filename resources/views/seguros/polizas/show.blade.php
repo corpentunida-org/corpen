@@ -158,7 +158,7 @@
                                 @foreach ($grupoFamiliar as $familiar)
                                     <tr>
                                         <td><a href="javascript:void(0);">{{ $familiar->cedula }}</a></td>
-                                        <td>{{ $familiar->tercero->nom_ter ?? ' ' }}</td>
+                                        <td>{{ $familiar->nombre_tercero ?? ' ' }}</td>
                                         <td>{{ $familiar->parentesco }}</td>
                                         <td>
                                             @if($familiar->polizas->first())
@@ -267,17 +267,18 @@
                         </div>
                     </div>
                 </div>
-                @if ($poliza->active)
-                    <div class="d-flex gap-2">
-                        <div class="filter-dropdown undefined">
-                            <button class="btn btn-light-brand" id="btnCardBeneficios">
-                                <i class="feather-star me-2"></i>
-                                <span>Registrar un Beneficio</span>
-                            </button>
+                @can('seguros.beneficios.store')
+                    @if ($poliza->active)
+                        <div class="d-flex gap-2">
+                            <div class="filter-dropdown undefined">
+                                <button class="btn btn-light-brand" id="btnCardBeneficios">
+                                    <i class="feather-star me-2"></i>
+                                    <span>Registrar un Beneficio</span>
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                @endif
-                
+                    @endif 
+                @endcan
 
                 @if (($poliza->asegurado->parentesco === 'AF' || $poliza->asegurado->viuda) && $poliza->active)
                     <div class="p-4 d-xxl-flex d-xl-block d-md-flex align-items-center justify-content-end gap-4">
@@ -342,8 +343,7 @@
                     </div>
 
                     @if ($poliza->valorpagaraseguradora + $subsidio != $totalPrima || $subsidio < 0)
-                        <small class="form-text text-danger text-end mb-4" style="margin-right: 30px;">El valor a pagar del
-                            titular es erroneo.
+                        <small class="form-text text-danger text-end mb-4" style="margin-right: 30px;">El valor a pagar del titular es erroneo.
                             @can('seguros.poliza.update')
                                 <a href="{{ route('seguros.novedades.create', ['a' => $poliza->seg_asegurado_id]) }}"
                                     class="text-danger"> Para corregirlo click aqui</a>
@@ -351,9 +351,11 @@
                         </small>
                     @endif
                 @endif
-                @if ($beneficiarios->isnotEmpty() && $poliza->active)
-                    @include('seguros.beneficiarios.show')
-                @endif
+                @can('seguros.beneficiarios.index')
+                    @if ($beneficiarios->isnotEmpty() && $poliza->active)
+                        @include('seguros.beneficiarios.show')
+                    @endif
+                @endcan
                 @if ($poliza->active)
                     @can('seguros.beneficiarios.store')
                         <div class="my-4 d-flex align-items-center justify-content-start">

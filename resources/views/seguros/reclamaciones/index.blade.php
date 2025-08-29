@@ -140,6 +140,12 @@
                                             </a>
                                             <ul class="dropdown-menu" data-popper-placement="bottom-end"
                                                 style="position: absolute; inset: 0px auto auto 0px; margin: 0px; transform: translate3d(-195px, 51px, 0px);">
+                                                <li>
+                                                    <a class="dropdown-item" href="{{ route('seguros.poliza.show', ['poliza' => 'ID']) . '?id=' . $r->cedulaAsegurado }}">
+                                                        <i class="bi bi-person-circle"></i>
+                                                        <span>Ver Poliza</span>
+                                                    </a>
+                                                </li>
                                                 @can('seguros.reclamacion.update')
                                                     <li>
                                                         <a href="{{ route('seguros.reclamacion.edit', ['reclamacion' => $r->id]) }}"
@@ -238,6 +244,12 @@
                                             </a>
                                             <ul class="dropdown-menu" data-popper-placement="bottom-end"
                                                 style="position: absolute; inset: 0px auto auto 0px; margin: 0px; transform: translate3d(-195px, 51px, 0px);">
+                                                <li>
+                                                    <a class="dropdown-item" href="{{ route('seguros.poliza.show', ['poliza' => 'ID']) . '?id=' . $reg->cedulaAsegurado }}">
+                                                        <i class="bi bi-person-circle"></i>
+                                                        <span>Ver Poliza</span>
+                                                    </a>
+                                                </li>
                                                 @can('seguros.reclamacion.update')
                                                     <li>
                                                         <a href="{{ route('seguros.reclamacion.edit', ['reclamacion' => $r->id]) }}"
@@ -253,12 +265,12 @@
                                                         <span>Imprimir</span>
                                                     </a>
                                                 </li>
-                                                <li>
+                                                {{-- <li>
                                                     <a class="dropdown-item" href="javascript:void(0)">
                                                         <i class="feather feather-trash-2 me-3"></i>
                                                         <span>Eliminar</span>
                                                     </a>
-                                                </li>
+                                                </li> --}}
                                             </ul>
                                         </div>
                                     </td>
