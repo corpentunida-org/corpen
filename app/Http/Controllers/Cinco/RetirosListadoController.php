@@ -23,10 +23,8 @@ class RetirosListadoController extends Controller
     public function namesearch(Request $request)
     {
         $name = str_replace(' ', '%', $request->input('id'));
-        $terceros = Terceros::whereHas('tercero', function ($query) use ($name) {
-            $query->where('Nom_Ter', 'like', '%' . $name . '%');
-        })->get();
-        return view('seguros.polizas.search', compact('asegurados'));
+        $terceros = Terceros::where('Nom_Ter', 'like', '%' . $name . '%')->get();
+        return view('cinco.movcontables.search', compact('terceros'));
     }
 
     /**

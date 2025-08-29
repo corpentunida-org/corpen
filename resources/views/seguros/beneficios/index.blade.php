@@ -103,7 +103,6 @@
                                 No se encontraron resultados para los filtros seleccionados.
                             </div>
                         @else
-
                                 <form action="{{ route('seguros.beneficios.store') }}" method="post" id="formAddBeneficios"
                                     class="row" novalidate>
                                     @method('POST')
@@ -260,6 +259,7 @@
                                                                 <span>Detalle póliza</span>
                                                             </a>
                                                         </li>
+                                                        @can('seguros.beneficios.update')
                                                         <li>
                                                             <a href="{{ route('seguros.beneficios.edit', $b->id) }}"
                                                                 class="dropdown-item">
@@ -267,6 +267,8 @@
                                                                 <span>Editar</span>
                                                             </a>
                                                         </li>
+                                                        @endcan
+                                                        @can('seguros.beneficios.destroy')
                                                         <li>
                                                             <form action="{{ route('seguros.beneficios.destroy', $b->id) }}"
                                                                 method="POST">
@@ -295,6 +297,7 @@
                                                                 </button>
                                                             </form>
                                                         </li>
+                                                        @endcan
                                                     </ul>
                                                 </div>
                                             </td>

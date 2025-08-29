@@ -84,11 +84,11 @@
                                     <i class="feather-plus me-2"></i>
                                     <span>Crear Póliza Individual</span>
                                 </a>                            
-                            <a href="{{ route('seguros.poliza.viewupload') }}"
-                                class="d-flex me-1 btn btn-light-brand ml-1">
-                                <i class="feather-upload me-2"></i>
-                                <span>Subir Excel Crear Póliza</span>
-                            </a>
+                                <a href="{{ route('seguros.poliza.viewupload') }}"
+                                    class="d-flex me-1 btn btn-light-brand ml-1">
+                                    <i class="feather-upload me-2"></i>
+                                    <span>Subir Excel Crear Póliza</span>
+                                </a>
                             @endcan
                         </div>
                     </div>

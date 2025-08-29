@@ -13,8 +13,7 @@
                                         <div class="hstack">
                                             <a href="" class="search-form-open-toggle">
                                                 <div class="avatar-text avatar-md" data-bs-toggle="tooltip"
-                                                    data-bs-trigger="hover" title=""
-                                                    data-bs-original-title="Search">
+                                                    data-bs-trigger="hover" title="" data-bs-original-title="Search">
                                                     <i class="feather-search"></i>
                                                 </div>
                                             </a>
@@ -28,9 +27,7 @@
                                                             <i class="feather-arrow-left"></i>
                                                         </div>
                                                     </a>
-                                                    <input type="search" name="id"
-                                                        class="px-0 border-0 w-100"
-                                                        placeholder="Buscar por nombre..." autocomplete="off">
+                                                    <input type="search" name="id" class="px-0 border-0 w-100" placeholder="Buscar por nombre..." autocomplete="off">
                                                     <button type="submit" class="btn btn-primary">Buscar</button>
                                                 </div>
                                             </form>
@@ -55,29 +52,8 @@
     <div class="card stratch">
         <div class="card-header">
             <h5 class="card-title">{{$creditos->first()->estado->nombre}} - {{$creditos->first()->estado->etapa->nombre}}</h5>
-            <div class="card-header-action">
-                <div class="card-header-btn">
-                    <div data-bs-toggle="tooltip" title="Delete">
-                        <a class="avatar-text avatar-xs bg-danger" data-bs-toggle="remove">
-                        </a>
-                    </div>
-                    <div data-bs-toggle="tooltip" title="Refresh">
-                        <a href="javascript:void(0);" class="avatar-text avatar-xs bg-warning" data-bs-toggle="refresh">
-                        </a>
-                    </div>
-                    <div data-bs-toggle="tooltip" title="Maximize/Minimize">
-                        <a href="" class="avatar-text avatar-xs bg-success" data-bs-toggle="expand"> </a>
-                    </div>
-                </div>
-                <div class="dropdown">
-                    <a href="javascript:void(0);" class="avatar-text avatar-sm" data-bs-toggle="dropdown"
-                        data-bs-offset="25, 25">
-                        <div data-bs-toggle="tooltip" title="Options">
-                            <i class="feather-more-vertical"></i>
-                        </div>
-                    </a>
-                </div>
-            </div>
+            <a href="" class="d-flex me-1 btn btn-primary"><i class="feather-plus me-2"></i><span>Crear una Solicitud</span>
+            </a>
         </div>
         <div class="card-body custom-card-action p-0">
             <div class="table-responsive">
