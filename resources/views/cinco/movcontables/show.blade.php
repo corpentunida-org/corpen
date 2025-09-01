@@ -163,6 +163,16 @@
                                         </tbody>
                                     </table>
                                 </div>
+                                @if (isset($faltantes) && $c->cuenta == '416542')
+                                    <div class="mx-4">
+                                        <h5>Fecha de aportes faltantes:</h5>
+                                        <span class="fw-normal text-muted">
+                                            @foreach ($faltantes as $f)
+                                                <li>{{ $f }}</li>
+                                            @endforeach
+                                        </span>
+                                    </div>
+                                @endif
                             </div>
                         </div>
                     @endforeach

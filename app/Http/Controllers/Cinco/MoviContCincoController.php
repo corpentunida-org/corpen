@@ -40,13 +40,57 @@ class MoviContCincoController extends Controller
      */
     public function show(Request $request)
     {
-        $id = $request->input('id');        
+        $id = $request->input('id');
         $movimientos = MoviContCinco::where('Cedula', $id)
             ->with(['tercero', 'cuentaContable'])
             ->orderBy('Cuenta', 'asc')
-            ->orderBy('Fecha', 'asc')
+            ->orderBy('id', 'asc')
             ->get();
 
+        $ap = MoviContCinco::where('Cedula', $id)->where('Cuenta', '416542')->orderBy('id', 'asc')->get();
+        $meses = [
+            'ENE' => 1,
+            'FEB' => 2,
+            'MAR' => 3,
+            'ABR' => 4,
+            'MAY' => 5,
+            'JUN' => 6,
+            'JUL' => 7,
+            'AGO' => 8,
+            'SEP' => 9,
+            'OCT' => 10,
+            'NOV' => 11,
+            'DIC' => 12
+        ];
+        $faltantes = [];
+        $ultimo = null;
+        $mesesInv = array_flip($meses);
+        foreach ($ap as $mov) {
+            if (preg_match('/(\d{4})-([A-Z]{3})\s*a\s*(\d{4})-([A-Z]{3})/i', $mov->Observacion, $match)) {
+                $anioInicio = intval($match[1]);
+                $mesInicio = $meses[strtoupper($match[2])];
+                $anioFin = intval($match[3]);
+                $mesFin = $meses[strtoupper($match[4])];
+
+                if ($ultimo) {
+                    $a = $ultimo['anio'];
+                    $m = $ultimo['mes'] + 1;
+                    if ($m > 12) {
+                        $m = 1;
+                        $a++;
+                    }                   
+                    while (!($a == $anioInicio && $m == $mesInicio)) {
+                        $faltantes[] = sprintf("AP. DE %04d-%s", $a, $mesesInv[$m]);
+                        $m++;
+                        if ($m > 12) {
+                            $m = 1;
+                            $a++;
+                        }
+                    }
+                }
+                $ultimo = ['anio' => $anioFin, 'mes' => $mesFin];
+            }
+        }
         $cuentasAgrupadas = MoviContCinco::select('cuenta')
             ->with('cuentaContable')
             ->where('Cedula', $id)
@@ -54,12 +98,13 @@ class MoviContCincoController extends Controller
             ->orderBy('cuenta')
             ->get();
 
-        $fechas = maeTerceros::select('nom_ter','fec_minis', 'fecha_ipuc', 'fec_aport')->where('Cod_Ter', $id)->first();
+        $fechas = maeTerceros::select('nom_ter', 'fec_minis', 'fecha_ipuc', 'fec_aport')->where('Cod_Ter', $id)->first();
         $tercero = Terceros::where('cod_ter', $id)->first();
         if ($movimientos->isEmpty()) {
             return redirect()->back()->with('warning', 'No hay registros con esa cedula ingresada.');
         }
-        return view('cinco.movcontables.show', compact('movimientos', 'cuentasAgrupadas', 'id', 'fechas', 'tercero'));
+
+        return view('cinco.movcontables.show', compact('movimientos', 'cuentasAgrupadas', 'id', 'fechas', 'tercero', 'faltantes'));
     }
 
     /**
@@ -97,10 +142,10 @@ class MoviContCincoController extends Controller
             ->groupBy('cuenta')->orderBy('cuenta')->get();
 
         $image_path = public_path('assets/images/CORPENTUNIDA_LOGO PRINCIPAL  (2).png');
-        
+
         //return view('cinco.movcontables.reportepdf', compact('movimientos', 'cuentasAgrupadas', 'image_path'));
-        $pdf = Pdf::loadView('cinco.movcontables.reportepdf', compact('movimientos', 'cuentasAgrupadas', 'id' ,'image_path'))
-        ->setPaper('letter', 'landscape');
-                return $pdf->download(date('Y-m-d') . " Reporte " . $id . '.pdf');
+        $pdf = Pdf::loadView('cinco.movcontables.reportepdf', compact('movimientos', 'cuentasAgrupadas', 'id', 'image_path'))
+            ->setPaper('letter', 'landscape');
+        return $pdf->download(date('Y-m-d') . " Reporte " . $id . '.pdf');
     }
 }
