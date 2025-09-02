@@ -49,6 +49,8 @@ use App\Http\Controllers\Maestras\MaeTiposController;
 //CREDITOS
 use App\Http\Controllers\Creditos\CreditoController;
 
+//CARTERA
+use App\Http\Controllers\InteractionController;
 
 /* Route::middleware(['auth'])->group(function () {
     Route::get('/', function () {
@@ -246,7 +248,24 @@ Route::get('gdodocsempleados/download/{id}', [GdoDocsEmpleadosController::class,
      ->name('gdodocsempleados.download')
      ->middleware('auth');
 
-        
+//CARTEA
+
+    // Crear
+    Route::get('/interactions/create', [InteractionController::class, 'create'])->name('interactions.create');
+    Route::post('/interactions', [InteractionController::class, 'storeWeb'])->name('interactions.store');
+
+    // Listar
+    Route::get('/interactions', [InteractionController::class, 'index'])->name('interactions.index');
+
+    // Editar
+    Route::get('/interactions/{interaction}/edit', [InteractionController::class, 'edit'])->name('interactions.edit');
+
+    // Actualizar (solo UNA vez, con PUT/PATCH)
+    Route::put('/interactions/{interaction}', [InteractionController::class, 'updateWeb'])->name('interactions.update');
+
+    // Eliminar
+    Route::delete('/interactions/{interaction}', [InteractionController::class, 'destroyWeb'])->name('interactions.destroy');
+    
 
 
 });
