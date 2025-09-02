@@ -4,7 +4,8 @@
 /public/hot
 /public/storage
 
-/storage/app/gestion
+
+/storage/app/google
 
 /storage/*.key
 /vendor
