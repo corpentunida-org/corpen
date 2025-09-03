@@ -58,7 +58,9 @@ class SegReclamacionesController extends Controller
     private function listaReclamacionesVencidas()
     {
         Carbon::setLocale('es');
-        $reclamaciones = SegReclamaciones::where('updated_at', '<', Carbon::now()->subMonths(4))->get();
+        $reclamaciones = SegReclamaciones::where('updated_at', '<', Carbon::now()->subMonths(4))
+            ->where('estado', '!=', 4)
+            ->get();
 
         $reclamacionesFormateadas = $reclamaciones->map(function ($reclamacion) {
             $tiempoTranscurrido = Carbon::parse($reclamacion->updated_at)->diffForHumans();
