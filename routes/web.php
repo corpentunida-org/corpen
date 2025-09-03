@@ -52,7 +52,7 @@ use App\Http\Controllers\Creditos\CreditoController;
 
 /* Route::middleware(['auth'])->group(function () {
     Route::get('/', function () {
-        //return view('exequial.asociados.index');
+        //return view('');
     })->name('dashboard');
 }); */
 

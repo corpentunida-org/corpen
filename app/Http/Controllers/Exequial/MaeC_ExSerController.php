@@ -47,7 +47,6 @@ class MaeC_ExSerController extends Controller
 
     public function store(Request $request)
     {
-        dd("here I am?")
         //$this->authorize('create', auth()->user());
         $token = env('TOKEN_ADMIN');
         $fechaActual = Carbon::now();
