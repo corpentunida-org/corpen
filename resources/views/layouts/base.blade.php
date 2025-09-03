@@ -195,7 +195,7 @@
                                         </div>
                                     </div>
                                     <div class="dropdown-divider"></div>
-                                    <a href="#" class="dropdown-item">
+                                    <a href="{{ route('profile.show') }}" class="dropdown-item">
                                         <i class="feather-user"></i>
                                         <span>Profile Details</span>
                                     </a>

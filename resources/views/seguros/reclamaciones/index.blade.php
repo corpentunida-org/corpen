@@ -187,7 +187,7 @@
             </div>
             <div class="card-body custom-card-action p-0">
                 <div class="table-responsive">
-                    <table class="table table-hover">
+                    <table class="table table-hover" id="proposalList">
                         <thead>
                             <tr>
                                 <th>Titular</th>
@@ -222,10 +222,10 @@
                                         </div>
                                     </td>
                                     <td><span
-                                            class="badge bg-gray-200 text-dark">{{ $r->asegurado->parentesco }}</span>
+                                            class="badge bg-gray-200 text-dark">{{ $r->asegurado->parentesco ?? '' }}</span>
                                     </td>
                                     <td>{{ $r->cobertura->nombre }}</td>
-                                    <td>$ {{ number_format($r->valor_asegurado) }} </td>
+                                    <td>$ {{ number_format((float) ($r->valor_asegurado ?? 0)) }} </td>
                                     <td><span class="badge bg-soft-primary text-primary">{{ $r->estadoReclamacion->nombre }}</span>
                                     </td>
                                     <td>
@@ -245,7 +245,7 @@
                                             <ul class="dropdown-menu" data-popper-placement="bottom-end"
                                                 style="position: absolute; inset: 0px auto auto 0px; margin: 0px; transform: translate3d(-195px, 51px, 0px);">
                                                 <li>
-                                                    <a class="dropdown-item" href="{{ route('seguros.poliza.show', ['poliza' => 'ID']) . '?id=' . $reg->cedulaAsegurado }}">
+                                                    <a class="dropdown-item" href="{{ route('seguros.poliza.show', ['poliza' => 'ID']) . '?id=' . $r->cedulaAsegurado }}">
                                                         <i class="bi bi-person-circle"></i>
                                                         <span>Ver Poliza</span>
                                                     </a>
