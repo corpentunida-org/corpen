@@ -54,7 +54,7 @@ use App\Http\Controllers\InteractionController;
 
 /* Route::middleware(['auth'])->group(function () {
     Route::get('/', function () {
-        //return view('exequial.asociados.index');
+        //return view('');
     })->name('dashboard');
 }); */
 
