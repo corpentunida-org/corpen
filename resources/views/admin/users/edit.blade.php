@@ -149,15 +149,16 @@
                     <span class="d-block mb-2">Eliminar Rol asociado</span>
                 </h5>
             </div>
+            
             <div class="card-body p-4">                
-                <form method="POST" action="{{ route('admin.permisos.store') }}" id="formAddPermiso" novalidate>
+                <form method="POST" action="{{ route('admin.roles.destroy', $user->id) }}" id="formAddPermiso" novalidate>
                     @csrf
-                    @method('POST')                    
+                    @method('DELETE')                    
                     <div class="mb-4">
                         <label class="form-label">Seleccione el Rol<span class="text-danger">*</span></label>
                         <select class="form-control" name="rolaeliminar">
-                            @foreach ($user->actions as $rol)
-                                <option value="{{ $rol->id }}" {{ $user->actions->first()?->role?->id === $rol->id ? 'selected' : '' }}>
+                            @foreach ($user->actions as $rol)                            
+                                <option value="{{ $rol->role_id }}" {{ $user->actions->first()?->role?->id === $rol->id ? 'selected' : '' }}>
                                     {{ strtoupper($rol->role->name) }}
                                 </option>
                             @endforeach
