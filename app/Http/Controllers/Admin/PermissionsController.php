@@ -33,5 +33,6 @@ class PermissionsController extends Controller
         return redirect()->back()->with('success', 'Permiso creado correctamente');
     }
 
+    
 
 }
