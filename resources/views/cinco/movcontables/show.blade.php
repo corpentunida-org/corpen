@@ -16,7 +16,8 @@
                             </div>
                             <h3 class="fs-13 fw-semibold text-truncate-1-line">{{ $id }}</h3>
                         </div>
-                        @if ($tercero->verificado)
+                        
+                        @if ($tercero != null && $tercero->verificado)
                         <div class="d-flex gap-3 align-items-center">                            
                             <div>
                                 <div class="fw-semibold text-dark"><span class="badge bg-soft-success text-success">VERIFICADO</span> {{$tercero->verificadousuario}}</div>
