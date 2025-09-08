@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
 use App\Models\Maestras\Congregacion;
 use App\Models\Maestras\MaeTipo;
+use App\Models\Interaction;
 
 class maeTerceros extends Model
 {
@@ -219,4 +220,9 @@ class maeTerceros extends Model
         return $this->belongsTo(MaeTipo::class, 'tip_prv', 'codigo');
     }
     
+    //RELACION INTERACCION
+    public function interactions()
+    {
+        return $this->hasMany(Interaction::class, 'client_id');
+    }    
 }

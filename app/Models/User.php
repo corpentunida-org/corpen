@@ -5,7 +5,7 @@ namespace App\Models;
 use App\Models\Cartera\Acuerdo;
 use App\Models\Creditos\Observacion;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-
+use App\Models\Interaction;
 
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -89,6 +89,12 @@ class User extends Authenticatable
     public function observacionesRegistradas(): HasMany
     {
         return $this->hasMany(Observacion::class, 'user_id');
+    }
+
+    //RELACION INTERACCION
+    public function interactions()
+    {
+        return $this->hasMany(Interaction::class, 'agent_id');
     }
 
 /*
