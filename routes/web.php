@@ -224,49 +224,69 @@ Route::prefix('archivo')->middleware('auth')->group(function () {
         ->names('archivo.empleado')
         ->parameters(['empleados' => 'empleado']);
 
-Route::get('empleados/{empleado}/foto', [GdoEmpleadoController::class, 'verFoto'])
-     ->name('archivo.empleado.verFoto')
-     ->middleware('auth');
-     
-    Route::resource('gdotipodocumento', GdoTipoDocumentoController::class)
-        ->names('archivo.gdotipodocumento')
-        ->parameters(['gdotipodocumento' => 'tipoDocumento']);
+    Route::get('empleados/{empleado}/foto', [GdoEmpleadoController::class, 'verFoto'])
+        ->name('archivo.empleado.verFoto')
+        ->middleware('auth');
+        
+        Route::resource('gdotipodocumento', GdoTipoDocumentoController::class)
+            ->names('archivo.gdotipodocumento')
+            ->parameters(['gdotipodocumento' => 'tipoDocumento']);
 
-    Route::resource('categorias', GdoCategoriaDocumentoController::class)
-        ->names('archivo.categorias')
-        ->parameters(['categorias' => 'categoria']);
+        Route::resource('categorias', GdoCategoriaDocumentoController::class)
+            ->names('archivo.categorias')
+            ->parameters(['categorias' => 'categoria']);
 
-    Route::resource('gdodocsempleados', GdoDocsEmpleadosController::class)
-        ->names('archivo.gdodocsempleados')
-        ->parameters(['gdodocsempleados' => 'gdodocsempleado']);
+        Route::resource('gdodocsempleados', GdoDocsEmpleadosController::class)
+            ->names('archivo.gdodocsempleados')
+            ->parameters(['gdodocsempleados' => 'gdodocsempleado']);
 
-Route::get('gdodocsempleados/ver/{id}', [GdoDocsEmpleadosController::class, 'verArchivo'])
-     ->name('gdodocsempleados.ver')
-     ->middleware('auth');
+    Route::get('gdodocsempleados/ver/{id}', [GdoDocsEmpleadosController::class, 'verArchivo'])
+        ->name('gdodocsempleados.ver')
+        ->middleware('auth');
 
-Route::get('gdodocsempleados/download/{id}', [GdoDocsEmpleadosController::class, 'download'])
-     ->name('gdodocsempleados.download')
-     ->middleware('auth');
+    Route::get('gdodocsempleados/download/{id}', [GdoDocsEmpleadosController::class, 'download'])
+        ->name('gdodocsempleados.download')
+        ->middleware('auth');
 
-//CARTEA
 
-    // Crear
-    Route::get('/interactions/create', [InteractionController::class, 'create'])->name('interactions.create');
-    Route::post('/interactions', [InteractionController::class, 'storeWeb'])->name('interactions.store');
 
-    // Listar
+
+    // --- GRUPO DE RUTAS PARA INTERACCIONES ---
+
+    // Listar todas las interacciones (Página principal)
     Route::get('/interactions', [InteractionController::class, 'index'])->name('interactions.index');
 
-    // Editar
+    // Mostrar el formulario para crear una nueva interacción
+    Route::get('/interactions/create', [InteractionController::class, 'create'])->name('interactions.create');
+
+    // Guardar la nueva interacción en la base de datos
+    Route::post('/interactions', [InteractionController::class, 'store'])->name('interactions.store');
+
+    // Mostrar detalle de una interacción
+    Route::get('/interactions/{interaction}', [InteractionController::class, 'show'])->name('interactions.show');
+
+    // Mostrar el formulario para editar una interacción existente
     Route::get('/interactions/{interaction}/edit', [InteractionController::class, 'edit'])->name('interactions.edit');
 
-    // Actualizar (solo UNA vez, con PUT/PATCH)
-    Route::put('/interactions/{interaction}', [InteractionController::class, 'updateWeb'])->name('interactions.update');
+    // Actualizar la interacción en la base de datos
+    Route::put('/interactions/{interaction}', [InteractionController::class, 'update'])->name('interactions.update');
 
-    // Eliminar
-    Route::delete('/interactions/{interaction}', [InteractionController::class, 'destroyWeb'])->name('interactions.destroy');
-    
+    // Eliminar una interacción de la base de datos
+    Route::delete('/interactions/{interaction}', [InteractionController::class, 'destroy'])->name('interactions.destroy');
+
+    // Ruta protegida para descargar archivos adjuntos
+    Route::middleware(['auth'])->group(function () {
+        Route::get('/interactions/download/{file}', [InteractionController::class, 'downloadAttachment'])
+            ->name('interactions.download');
+
+Route::get('/interactions/view/{fileName}', [InteractionController::class, 'viewAttachment'])
+    ->name('interactions.view');
+
+
+    });
+
+
+
 
 
 });
-//
