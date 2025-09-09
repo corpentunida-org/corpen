@@ -52,6 +52,17 @@ use App\Http\Controllers\Creditos\CreditoController;
 //CARTERA
 use App\Http\Controllers\InteractionController;
 
+// FLUJO
+use App\Http\Controllers\Flujo\WorkflowController;
+use App\Http\Controllers\Flujo\TaskController;
+use App\Http\Controllers\Flujo\TaskHistoryController;
+use App\Http\Controllers\Flujo\TaskCommentController;
+use App\Http\Controllers\Flujo\TableroController;
+use App\Models\Flujo\Workflow;
+use App\Models\Flujo\Task;
+
+
+
 /* Route::middleware(['auth'])->group(function () {
     Route::get('/', function () {
         //return view('');
@@ -279,14 +290,43 @@ Route::prefix('archivo')->middleware('auth')->group(function () {
         Route::get('/interactions/download/{file}', [InteractionController::class, 'downloadAttachment'])
             ->name('interactions.download');
 
-Route::get('/interactions/view/{fileName}', [InteractionController::class, 'viewAttachment'])
-    ->name('interactions.view');
+    Route::get('/interactions/view/{fileName}', [InteractionController::class, 'viewAttachment'])
+        ->name('interactions.view');
+
+    });
+
+    // FLUJO DE TRABAJO
+    Route::middleware('auth')->prefix('flujo')->name('flujo.')->group(function () {
+        // Workflows
+        Route::resource('workflows', WorkflowController::class)
+            ->names('workflows')
+            ->parameters(['workflows' => 'workflow']);
+
+        // Tasks
+        Route::resource('tasks', TaskController::class)
+            ->names('tasks')
+            ->parameters(['tasks' => 'task']);
+
+        // Histories (index, show, store, destroy)
+        Route::resource('histories', TaskHistoryController::class)
+            ->only(['index', 'show', 'store', 'destroy'])
+            ->names('histories')
+            ->parameters(['histories' => 'taskHistory']);
+
+        // Comments
+        Route::resource('comments', TaskCommentController::class)
+            ->names('comments')
+            ->parameters(['comments' => 'comment']);
+
+        // Nuevo tablero principal
+        Route::get('/tablero', [TableroController::class, 'index'])
+            ->name('tablero');
+
 
 
     });
 
-
-
+    
 
 
 });
