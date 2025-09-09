@@ -1,5 +1,24 @@
 <x-base-layout>
     <div class="container">
+        <div class="top-section">
+            <form method="GET" action="{{ route('interactions.index') }}" class="search-form">
+                <div class="search-group">
+                    <input type="text" name="q" value="{{ request('q') }}" class="search-input" placeholder="Buscar en todo...">
+                    <button type="submit" class="btn-search">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    @if(request('q'))
+                        <a href="{{ route('interactions.index') }}" class="btn-clear" title="Limpiar búsqueda">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    @endif
+                </div>
+            </form>
+            <a href="{{ route('interactions.create') }}" class="btn-create btn-create-action">
+                <i class="fas fa-plus"></i> Registrar Nueva Interacción
+            </a>
+        </div>
+
         <h1 class="title">Gestión de Interacciones con Asociados</h1>
 
         @if (session('success'))
@@ -12,26 +31,6 @@
                 <i class="fas fa-times-circle"></i> {{ session('error') }}
             </div>
         @endif
-
-        <div class="header-actions">
-            <a href="{{ route('interactions.create') }}" class="btn-create btn-create-action">
-                <i class="fas fa-plus"></i> Registrar Nueva Interacción
-            </a>
-        </div>
-
-        <form method="GET" action="{{ route('interactions.index') }}" class="search-form">
-            <div class="search-group">
-                <input type="text" name="q" value="{{ request('q') }}" class="search-input" placeholder="Buscar en todo...">
-                <button type="submit" class="btn-search">
-                    <i class="fas fa-search"></i>
-                </button>
-                @if(request('q'))
-                    <a href="{{ route('interactions.index') }}" class="btn-clear" title="Limpiar búsqueda">
-                        <i class="fas fa-times"></i>
-                    </a>
-                @endif
-            </div>
-        </form>
 
         @if ($interactions->isEmpty())
             <div class="empty-state">
@@ -229,10 +228,37 @@
         }
 
         body { font-family: 'Roboto', sans-serif; margin: 0; background-color: var(--bg-page); color: var(--text-medium); line-height: 1.6; }
-        .container { max-width: 1100px; margin: 50px auto; background-color: var(--bg-card); padding: 40px; border-radius: 8px; box-shadow: 0 4px 15px var(--shadow-corporate); transition: all 0.3s ease; }
+        .container { 
+            max-width: 95%; /* Ajustado para ser más ancho y ocupar el espacio marcado */
+            margin: 50px auto; 
+            background-color: var(--bg-card); 
+            padding: 40px; 
+            border-radius: 8px; 
+            box-shadow: 0 4px 15px var(--shadow-corporate); 
+            transition: all 0.3s ease; 
+        }
         .container:hover { box-shadow: 0 6px 20px var(--shadow-hover); }
 
-        .title { font-family: 'Montserrat', sans-serif; color: var(--text-dark); text-align: center; margin-bottom: 50px; font-size: 2.2rem; font-weight: 700; letter-spacing: 0.5px; position: relative; text-transform: uppercase; }
+        .top-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap; /* Permite que los elementos se envuelvan en pantallas pequeñas */
+            gap: 20px; /* Espacio entre los elementos */
+        }
+        
+        .title { 
+            font-family: 'Montserrat', sans-serif; 
+            color: var(--text-dark); 
+            text-align: center; 
+            margin-bottom: 50px; 
+            font-size: 2.2rem; 
+            font-weight: 700; 
+            letter-spacing: 0.5px; 
+            position: relative; 
+            text-transform: uppercase; 
+        }
         .title::after { content: ''; position: absolute; bottom: -15px; left: 50%; transform: translateX(-50%); width: 70px; height: 3px; background-color: var(--primary-corporate); border-radius: 2px; opacity: 0.8; }
 
         .alert { padding: 15px 20px; margin-bottom: 25px; border-radius: 6px; display: flex; align-items: center; font-weight: 500; font-size: 0.95rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border: 1px solid; }
@@ -240,7 +266,9 @@
         .alert-success { background-color: #e9f7ef; color: #28a745; border-color: #c3e6cb; }
         .alert-error { background-color: #fcebeb; color: #dc3545; border-color: #f5c6cb; }
 
-        .header-actions { display: flex; justify-content: flex-end; margin-bottom: 30px; }
+        /* Eliminamos header-actions ya que ahora se integra en top-section */
+        /* .header-actions { display: flex; justify-content: flex-end; margin-bottom: 30px; } */ 
+        
         .btn-create { background-color: var(--primary-corporate); color: white; padding: 12px 25px; border-radius: 5px; text-decoration: none; display: inline-flex; align-items: center; font-weight: 500; font-size: 0.95rem; letter-spacing: 0.5px; transition: background-color 0.3s ease, transform 0.2s ease; box-shadow: 0 3px 10px rgba(0, 86, 179, 0.3); }
         .btn-create i { margin-right: 10px; font-size: 0.9rem; }
         .btn-create:hover { background-color: #004494; transform: translateY(-1px); box-shadow: 0 5px 15px rgba(0, 86, 179, 0.4); }
@@ -251,14 +279,28 @@
 
         .table-responsive { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; margin-top: 25px; background-color: var(--bg-card); border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px var(--shadow-corporate); }
-        th, td { padding: 15px 20px; text-align: left; border-bottom: 1px solid var(--border-subtle); }
+        th, td { 
+            padding: 15px 20px; 
+            text-align: left; 
+            border-bottom: 1px solid var(--border-subtle); 
+            white-space: nowrap; /* Evita que el texto se envuelva */
+            overflow: hidden; /* Oculta el contenido que excede el ancho */
+            text-overflow: ellipsis; /* Añade puntos suspensivos si el texto es muy largo */
+            max-width: 200px; /* Limita el ancho de la celda si es necesario, ajusta este valor */
+        }
         th { background-color: #e9ecef; color: var(--text-dark); font-weight: 600; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.7px; }
         tr:last-child td { border-bottom: none; }
         tbody tr:hover { background-color: #f5f5f5; }
 
+        .client-info { 
+            white-space: nowrap; /* Asegura que la información del cliente no se envuelva */
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: block; /* Necesario para que overflow y text-overflow funcionen */
+        }
         .client-info strong { color: var(--text-dark); }
-        .agent-name { font-weight: 500; color: var(--text-dark); }
-        .text-placeholder { color: var(--text-light); font-style: italic; }
+        .agent-name { font-weight: 500; color: var(--text-dark); white-space: nowrap; }
+        .text-placeholder { color: var(--text-light); font-style: italic; white-space: nowrap; }
 
         .status-tag { 
             display: inline-block; 
@@ -267,7 +309,7 @@
             font-size: 0.85rem; 
             font-weight: 500; 
             text-transform: uppercase; 
-            white-space: nowrap; 
+            white-space: nowrap; /* Asegura que la etiqueta de estado no se envuelva */
             letter-spacing: 0.3px; 
         }
 
@@ -299,12 +341,36 @@
         .pagination-links nav a, .pagination-links nav span { display: inline-flex; align-items: center; justify-content: center; min-width: 38px; height: 38px; padding: 0 8px; border-radius: 4px; text-decoration: none; color: var(--text-medium); background-color: var(--bg-card); border: 1px solid var(--border-subtle); transition: all 0.2s ease; font-weight: 400; }
         .pagination-links nav a:hover { background-color: #e9ecef; border-color: var(--secondary-corporate); color: var(--primary-corporate); box-shadow: 0 1px 5px rgba(0,0,0,0.08); transform: translateY(-1px); }
 
-        .search-form { margin-bottom: 25px; display: flex; justify-content: flex-start; }
+        .search-form { margin-bottom: 0; display: flex; justify-content: flex-start; } /* Ajustado para el nuevo layout */
         .search-group { display: flex; gap: 8px; align-items: center; }
         .search-input { padding: 10px 12px; border: 1px solid var(--border-subtle); border-radius: 4px; font-size: 0.95rem; outline: none; width: 280px; }
         .btn-search { background-color: var(--secondary-corporate); color: white; padding: 10px 14px; border: none; border-radius: 4px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: background-color 0.3s ease; }
         .btn-search:hover { background-color: #0069d9; }
         .btn-clear { background-color: #e0e0e0; color: #555; padding: 10px 14px; border-radius: 4px; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
         .btn-clear:hover { background-color: #d6d6d6; }
+
+        /* Media queries para responsividad si es necesario */
+        @media (max-width: 768px) {
+            .container {
+                max-width: 98%;
+                margin: 20px auto;
+                padding: 20px;
+            }
+            .top-section {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .search-form {
+                width: 100%;
+                margin-bottom: 20px;
+            }
+            .search-input {
+                width: calc(100% - 100px); /* Ajusta el ancho para los botones de búsqueda y limpiar */
+            }
+            .btn-create {
+                width: 100%;
+                justify-content: center;
+            }
+        }
     </style>
 </x-base-layout>
