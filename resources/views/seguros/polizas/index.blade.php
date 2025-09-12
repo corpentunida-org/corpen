@@ -97,6 +97,6 @@
         </div>
     </div>
 
-    @include('seguros.novedades.index')
+    {{-- @include('seguros.novedades.index') --}}
 
 </x-base-layout>

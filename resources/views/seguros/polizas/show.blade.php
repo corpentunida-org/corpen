@@ -177,7 +177,6 @@
                                                     $valortotalbene = floatval($familiar->polizas->first()->valor_prima) - floatval($familiar->polizas->first()->primapagar);
                                                 }
                                             @endphp
-
                                             @if (!is_null($valortotalbene))
                                                 <span class="{{ $valortotalbene != 0 ? 'badge bg-soft-success text-success' : '' }}">
                                                     $ {{ number_format($valortotalbene) }}
@@ -245,8 +244,7 @@
                                                             $colorspan = 'success';
                                                         }
                                                     @endphp
-                                                    <td><span
-                                                            class="badge bg-soft-{{ $colorspan }} text-{{ $colorspan }}">{{strtoupper(substr($modelo, 3))}}</span>
+                                                    <td><span class="badge bg-soft-{{ $colorspan }} text-{{ $colorspan }}">{{strtoupper(substr($modelo, 3))}}</span>
                                                     </td>
                                                     <td>
                                                         {{ strtoupper($i->observaciones ?? $i->cambiosEstado->last()->observacion) }}

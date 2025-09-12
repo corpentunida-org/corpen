@@ -17,7 +17,7 @@ class IndexController extends Controller
                 ->where('actions.user_id', '=', Auth::id())
                 ->select('roles.*')
                 ->get();
-
+        
         if ($roles->first()->name===('admin')) {
             return redirect()->route('admin.users.index');
         } elseif ($roles->first()->name===('exequial')) {
