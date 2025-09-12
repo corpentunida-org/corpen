@@ -9,12 +9,12 @@ use App\Models\Seguros\SegNovedades;
 use App\Models\Seguros\SegAsegurado;
 use App\Models\Seguros\SegPlan;
 use App\Models\Seguros\SegPoliza;
-use App\Models\Seguros\SegReclamaciones;
+use App\Models\Seguros\SegCambioEstadoNovedad;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Http\Controllers\AuditoriaController;
 use Illuminate\Support\Facades\DB;
-use PHPUnit\Event\Test\PrintedUnexpectedOutputSubscriber;
+
 
 class SegNovedadesController extends Controller
 {
@@ -25,16 +25,21 @@ class SegNovedadesController extends Controller
     }
     public function index()
     {
-        $update = SegAsegurado::where('parentesco', 'AF')
+        /* $update = SegAsegurado::where('parentesco', 'AF')
             ->whereHas('polizas', function ($query) {
                 $query->whereNull('valorpagaraseguradora')
                     ->orWhere('valorpagaraseguradora', ' ');
             })->get();
         $novedades = SegNovedades::with(['tercero', 'asegurado.terceroAF', 'plan'])->get();
-        return view('seguros.novedades.index', compact('novedades', 'update'));
+        return view('seguros.novedades.index', compact('novedades', 'update')); */
+
+        $solicitud = SegNovedades::where('estado', 1)->with(['tercero', 'cambiosEstado'])->get();
+        $radicado = SegNovedades::where('estado', 2)->with('estadoNovedad')->get();
+        $negado = SegNovedades::where('estado', 4)->with('estadoNovedad')->get();
+        return view('seguros.novedades.index', compact('solicitud', 'radicado', 'negado'));
     }
 
-    public function create(Request $request)
+    /* public function create(Request $request)
     {
         $id = $request->query('a');
         $isactive = SegPoliza::where('seg_asegurado_id', $id)->where('seg_convenio_id', '23055455')->first();
@@ -42,13 +47,13 @@ class SegNovedadesController extends Controller
             abort(403, 'La póliza está inactiva.');
         }
         $asegurado = SegAsegurado::where('cedula', $id)->with(['tercero', 'terceroAF', 'polizas.plan'])->first();
-        
+
         $edad = date_diff(date_create($asegurado->tercero_preferido->fec_nac), date_create('today'))->y;
         $idcondicion = app(SegPlanController::class)->getCondicion($edad);
 
         $planes = SegPlan::where('condicion_corpen', $idcondicion)
             ->where('vigente', true)->with(['convenio'])->get();
-        
+
         $condicion = SegCondicion::where('id', $idcondicion)->first(['descripcion']);
 
         $grupoFamiliar = SegAsegurado::where('Titular', $asegurado->titular)->with('tercero', 'polizas.plan.coberturas')->get();
@@ -59,60 +64,80 @@ class SegNovedadesController extends Controller
         $reclamaciones = SegReclamaciones::where('cedulaAsegurado', $asegurado->cedula)->with(['cobertura', 'diagnostico'])->get();
 
         return view('seguros.novedades.create', compact('asegurado', 'planes', 'condicion', 'grupoFamiliar', 'totalPrima', 'reclamaciones'));
+    } */
+
+    public function create()
+    {
+        return view('seguros.novedades.create');
+    }
+
+    public function show(Request $request)
+    {
+        $id = $request->query('a');
+        $isactive = SegPoliza::where('seg_asegurado_id', $id)->where('seg_convenio_id', '23055455')->first();
+        if (!$isactive || !$isactive->active) {
+            return back()->with('error', 'La póliza no existe o está inactiva.');
+        }
+        $asegurado = SegAsegurado::where('cedula', $id)->with(['tercero', 'terceroAF', 'polizas.plan'])->first();
+        $edad = date_diff(date_create($asegurado->tercero_preferido->fec_nac), date_create('today'))->y;
+        $idcondicion = app(SegPlanController::class)->getCondicion($edad);
+
+        $planes = SegPlan::where('condicion_corpen', $idcondicion)
+            ->where('vigente', true)->with(['convenio'])->get();
+
+        $condicion = SegCondicion::where('id', $idcondicion)->first(['descripcion']);
+
+        $grupoFamiliar = SegAsegurado::where('Titular', $asegurado->titular)->with('tercero', 'polizas.plan.coberturas')->get();
+        $totalPrima = DB::table('SEG_polizas')
+            ->whereIn('seg_asegurado_id', $grupoFamiliar->pluck('cedula'))
+            ->sum('valor_prima');
+        $totalPrimaCorpen = DB::table('SEG_polizas')
+            ->whereIn('seg_asegurado_id', $grupoFamiliar->pluck('cedula'))
+            ->sum('primapagar');
+        //$reclamaciones = SegReclamaciones::where('cedulaAsegurado', $asegurado->cedula)->with(['cobertura', 'diagnostico'])->get();
+
+        return view('seguros.novedades.create', compact('asegurado', 'planes', 'condicion', 'grupoFamiliar', 'totalPrima', 'totalPrimaCorpen'));
     }
 
     public function store(Request $request)
     {
-        $poliza = SegPoliza::findOrFail($request->id_poliza);
-        $plan = SegPlan::findOrFail($request->planid);
-        $asegurado = SegAsegurado::where('cedula', $request->asegurado)->first();
-        $now = Carbon::now();
-        $data = [
-            'fecha_novedad' => $now->toDateString(),
-            'extra_prima' => $request->extra_prima,
+        $plan = SegPlan::findOrFail($request->planid);        
+        $novedad = SegNovedades::create([
+            'id_poliza' => $request->id_poliza,
+            'id_asegurado' => $request->asegurado,
+            'tipo' => $request->tipoNovedad,
+            'estado' => $request->estado,
+            'valorAsegurado' => $plan->valor,
+            'primaAseguradora' => $plan->prima_aseguradora,
+            'primaCorpen' => $request->primacorpen,
+            'extraprima' => $request->extra_prima,
+        ]);
+        SegCambioEstadoNovedad::create([
+            'novedad' => $novedad->id,
+            'estado' => $request->estado,
+            'observaciones' => strtoupper($request->observaciones),
+            'fechaIncio' => Carbon::now()->toDateString(),
+        ]);
+        $accion = "novedad en poliza  " . $request->id_poliza . " Asegurado " . $request->asegurado;
+        $this->auditoria($accion);
+        return redirect()->route('seguros.novedades.index')->with('success', 'Novedad registrada correctamente');
+    }
+
+    public function edit($id)
+    {
+        return view('seguros.novedades.edit');
+    }
+    public function update($id)
+    {
+        /* $poliza->update([
+            'valor_prima' => $plan->prima_aseguradora,
             'seg_plan_id' => $request->planid,
-            'descuento' => $request->valordescuento,
-            'descuentopor' => $request->descuento,
-            'valor_asegurado' => $plan->valor,
+            'extra_prima' => $request->extra_prima,
+            'primapagar' => $request->primacorpen,
             'valorpagaraseguradora' => $request->valorpagaraseguradora,
-        ];
-        $valorprima = $plan->prima_aseguradora;
-        if (blank($request->extra_prima)) {
-            $data['valor_prima'] = $valorprima;
-        } else {
-            $valorprima = $plan->prima_aseguradora * (1 + $request->extra_prima / 100);
-            $data['valor_prima'] = intval($valorprima);
-        }
-        $poliza->update($data);
+        ]);
         $asegurado->update([
             'valorpAseguradora' => $request->valorpagaraseguradora,
-        ]);
-        if (!empty($valordescuento) || !empty($descuento)) {
-            SegBeneficios::create([
-                'cedulaAsegurado' => $request->asegurado,
-                'poliza' => $request->id_poliza,
-                'porcentajeDescuento' => $request->descuento,
-                'valorDescuento' => $request->valordescuento,
-                'observaciones' => strtoupper($request->observaciones),
-            ]);
-        }
-        if ($poliza && $asegurado) {
-            SegNovedades::create([
-                'id_poliza' => $request->id_poliza,
-                'id_asegurado' => $request->asegurado,
-                'valorpagar' => $request->valorpagaraseguradora ?? null,
-                'valorPrimaPlan' => $valorprima,
-                'plan' => $request->planid,
-                'fechaNovedad' => $now->toDateString(),
-                'valorAsegurado' => $plan->valor,
-                'observaciones' => $request->observaciones,
-            ]);
-            $accion = "novedad en poliza  " . $request->id_poliza . " Asegurado " . $request->asegurado;
-            $this->auditoria($accion);
-            $url = route('seguros.poliza.show', ['poliza' => 'ID']) . '?id=' . $request->asegurado;
-            return redirect()->to($url)
-                ->with('success', 'Novedad registrada correctamente');
-        }
-        return redirect()->back()->with('error', 'No se pudo registrar la novedad.');
+        ]);  */ 
     }
 }

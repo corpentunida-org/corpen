@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 class SegNovedades extends Model
 {
     use HasFactory;
-    protected $table = 'Seg_novedadaes';
+    /* protected $table = 'Seg_novedadaes';
     protected $fillable = [
         'id_poliza',
         'id_asegurado',
@@ -20,6 +20,18 @@ class SegNovedades extends Model
         'fechaNovedad',
         'observaciones',
         'valorPrimaPlan'
+    ]; */
+
+    protected $table = 'Seg_novedadaes02';
+    protected $fillable = [
+        'id_poliza',
+        'id_asegurado',
+        'tipo',
+        'estado',
+        'valorAsegurado',
+        'primaAseguradora',
+        'primaCorpen',
+        'extraprima',
     ];
 
     /* public function tercero()
@@ -39,4 +51,15 @@ class SegNovedades extends Model
     {
         return $this->belongsTo(SegPlan::class, 'planNuevo', 'id');
     }
+    public function poliza()
+    {
+        return $this->belongsTo(SegPoliza::class, 'id_poliza', 'id');
+    }
+    public function estadoNovedad()
+    {
+        return $this->belongsTo(SegEstadosNovedad::class, 'estado', 'id');
+    }
+    public function cambiosEstado(){
+        return $this->hasMany(SegCambioEstadoNovedad::class, 'novedad', 'id');
+    } 
 }
