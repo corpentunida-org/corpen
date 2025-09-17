@@ -39,12 +39,12 @@
                             <i class="fas fa-chevron-right workspace-chevron"></i>
                         </label>
                         <div class="board-list">
-                            <a href="#">- Proyecto Phoenix</a>
-                            <a href="#">- Roadmap Q4</a>
+                            <a href="#">Proyecto Phoenix</a>
+                            <a href="#">Roadmap Q4</a>
                         </div>
                     </div>
                     <div class="workspace-item">
-                        <a href="#"><i class="fas fa-folder"></i> Marketing</a>
+                        <a href="#"><i class="fas fa-folder"></i>Marketing</a>
                     </div>
                 </div>
             </div>
@@ -55,7 +55,7 @@
             <!-- ... tu main content actual ... -->
             <header class="board-header">
                 <div class="board-title">
-                    <h1>Proyecto Phoenix</h1>
+                    <h1>Panel</h1>
                     <i class="far fa-star"></i>
                 </div>
                 <div class="board-actions">

@@ -43,7 +43,7 @@ class InteractionController extends Controller
             });
         }
 
-        $interactions = $query->paginate(2);
+        $interactions = $query->paginate(10);
 
         return view('interactions.index', compact('interactions'));
     }
