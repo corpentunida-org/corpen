@@ -28,6 +28,7 @@ class SegNovedades extends Model
         'id_asegurado',
         'tipo',
         'estado',
+        'id_plan',
         'valorAsegurado',
         'primaAseguradora',
         'primaCorpen',
@@ -41,6 +42,21 @@ class SegNovedades extends Model
     public function tercero()
     {
         return $this->belongsTo(maeTerceros::class, 'id_asegurado', 'cod_ter');
+    }
+    public function terceroAlt()
+    {
+        return $this->belongsTo(SegTercero::class, 'seg_asegurado_id', 'cedula');
+    }
+    public function getNombreTerceroAttribute()
+    {
+        if ($this->tercero) {
+            return $this->tercero->nom_ter;
+        }
+
+        else if ($this->terceroAlt) {
+            return $this->terceroAlt->nombre;
+        }
+        return '';
     }
 
     public function asegurado()

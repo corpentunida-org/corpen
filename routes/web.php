@@ -1,5 +1,5 @@
 <?php
-
+use App\Http\Middleware\CanDirect;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\PermissionsController;
@@ -32,6 +32,7 @@ use App\Http\Controllers\Cinco\RetirosListadoController;
 use App\Http\Controllers\Cinco\CondicionesRetirosController;
 
 use App\Http\Controllers\ResReservaController;
+
 
 //ARCHIVO
 use App\Http\Controllers\Archivo\GdoCargoController;
@@ -72,6 +73,9 @@ Route::get('/apto-santamarta', function () {
     return view('reserva.index');
 })->name('apto-santamarta');
 
+Route::get('/probar-middleware-alias', function () {
+    return 'Middleware con alias ejecutado ✅';
+})->middleware('candirect:seguros.reclamacion.index');
 
 
 //ADMIN
@@ -99,8 +103,8 @@ Route::get('/polizaname/{name}', [SegPolizaController::class, 'namesearch'])->na
 Route::resource('plan', SegPlanController::class)->names('seguros.planes')->middleware('auth');
 Route::resource('cobertura', SegCoberturaController::class)->names('seguros.cobertura')->middleware('auth');
 Route::resource('beneficiario', SegBeneficiarioController::class)->names('seguros.beneficiario')->middleware('auth');
-Route::resource('convenio', SegConvenioController::class)->names('seguros.convenio')->middleware(['auth', 'can:seguros.convenio.index']);
-Route::resource('reclamacion', SegReclamacionesController::class)->names('seguros.reclamacion')->middleware(['auth', 'can:seguros.reclamacion.index']);
+Route::resource('convenio', SegConvenioController::class)->names('seguros.convenio')->middleware(['auth', 'candirect:seguros.convenio.index']);
+Route::resource('reclamacion', SegReclamacionesController::class)->names('seguros.reclamacion')->middleware(['auth', 'candirect:seguros.reclamacion.index']);
 Route::resource('novedades', SegNovedadesController::class)->names('seguros.novedades')->middleware(['auth',]);
 Route::post('/reclamacion/generarpdf', [SegReclamacionesController::class, 'generarpdf'])->middleware('auth')->name('seguros.reclamacion.generarpdf');
 Route::get('/reclamacion/informe/excel', [SegReclamacionesController::class, 'exportexcel'])->middleware('auth')->name('seguros.reclamacion.download');
@@ -110,7 +114,7 @@ Route::get('/poliza/create/upload', function () {return view('seguros.polizas.up
 Route::get('/seguros/cxc', [SegPolizaController::class, 'exportcxc'])->name('seguros.poliza.download');
 Route::prefix('seguros')->get('/dashboard/reclamaciones', [SegReclamacionesController::class, 'dashboard'])->name('seguros.reclamaciones.dashboard');
 Route::get('/planes/{edad}', [SegPlanController::class, 'getPlanes'])->name('seguros.planes.getplanes');
-Route::resource('beneficios', SegBeneficiosController::class)->names('seguros.beneficios')->middleware(['auth',]);
+Route::resource('beneficios', SegBeneficiosController::class)->names('seguros.beneficios')->middleware(['auth','candirect:seguros.beneficios.index']);
 Route::post('beneficios/list', [SegBeneficiosController::class, 'listFilter'])->name('seguros.beneficios.list');
 Route::post('/seguros/filtopolizas', [SegBeneficiosController::class, 'exportFiltroPdf'])->name('seguros.poliza.filtros');
 Route::post('/seguros/filtopolizas/excel', [SegBeneficiosController::class, 'exportexcel'])->middleware('auth')->name('seguros.poliza.filtroexcel');
