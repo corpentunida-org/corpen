@@ -8,7 +8,6 @@ use App\Models\Seguros\SegCondicion;
 use App\Models\Seguros\SegPlan;
 use App\Models\Seguros\SegPoliza;
 use App\Models\Seguros\SegPlan_cobertura;
-use App\Models\Seguros\SegNovedades;
 use App\Http\Controllers\AuditoriaController;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -111,15 +110,7 @@ class SegConvenioController extends Controller
         $polizas = SegPoliza::where('seg_convenio_id', $convenioid)
             ->where('active', true)->where('reclamacion', 0)->get();
         foreach ($polizas as $poliza) {
-            SegNovedades::create([
-                'id_asegurado' => $poliza->seg_asegurado_id,
-                'id_poliza' => $poliza->id,
-                'plan' => $poliza->seg_plan_id,
-                'valorpAseguradora' => $poliza->valorpagaraseguradora,
-                'valorAsegurado' => $poliza->valor_asegurado,
-                'fechaNovedad' => Carbon::now()->toDateString(),
-                'observaciones' => 'cambio de convenio',
-            ]);
+            
             $planOriginal = SegPlan::find($poliza->seg_plan_id);
             $plan = SegPlan::where('name', $planOriginal->name)
                 ->where('condicion_id', $planOriginal->condicion_id)
