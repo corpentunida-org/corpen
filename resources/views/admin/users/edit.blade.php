@@ -156,7 +156,7 @@
                     @method('DELETE')                    
                     <div class="mb-4">
                         <label class="form-label">Seleccione el Rol<span class="text-danger">*</span></label>
-                        <select class="form-control" name="rolaeliminar">
+                        <select class="form-control" name="rol">
                             @foreach ($user->actions as $rol)                            
                                 <option value="{{ $rol->role_id }}" {{ $user->actions->first()?->role?->id === $rol->id ? 'selected' : '' }}>
                                     {{ strtoupper($rol->role->name) }}

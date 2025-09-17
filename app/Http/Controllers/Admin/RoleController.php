@@ -29,7 +29,7 @@ class RoleController extends Controller
     }
 
     public function destroy(Request $request, $idUser){
-        dd($request->all());
+        
     }
 
     public function update(Request $request, Role $role){

@@ -39,7 +39,6 @@ class SegPoliza extends Model
         else if ($this->terceroAlt) {
             return $this->terceroAlt->nombre;
         }
-
         return 'No se encuentra registrado.';
     }
 
