@@ -11,12 +11,5 @@
                 Interacciones
             </a>
         </li>
-
-        {{-- Enlace a Flujo de Trabajo --}}
-        <li class="nxl-item">
-            <a class="nxl-link" href="{{ route('flujo.tablero') }}">
-                Flujo de Trabajo
-            </a>
-        </li>
     </ul>
 </li>
