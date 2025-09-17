@@ -1,228 +1,249 @@
 <x-base-layout>
-    <div class="container">
-        <h1 class="titulo-principal">Panel de Control de Operaciones</h1>
-<hr>
-        <div class="card-grid">
-            
-            {{-- ================= Workflows Card ================= --}}
-            <div class="card">
-                <h2 class="card-title"><i class="fas fa-sitemap card-icon"></i> Gestión de Procesos</h2>
-                <div class="card-content">
-                    <div class="toolbar">
-                        <form action="{{ route('flujo.workflows.index') }}" method="GET" class="buscador">
-                            <input type="text" name="search" placeholder="Buscar proceso..." value="{{ request('search') }}">
-                            <button type="submit" class="btn btn-buscar"><i class="fas fa-search"></i></button>
-                        </form>
-                        <a href="{{ route('flujo.workflows.create') }}" class="btn btn-crear"><i class="fas fa-plus-circle"></i> Nuevo Proceso</a>
+    <div class="dashboard-container">
+        {{-- Checkbox oculto para controlar el sidebar --}}
+        <input type="checkbox" id="sidebar-toggle" class="sidebar-toggle-checkbox" hidden>
+
+        {{-- ================= SIDEBAR MEJORADO ================= --}}
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-project-diagram"></i>
+                    <span>FlujoCorp</span>
+                </div>
+                {{-- Botón para colapsar/expandir (usando un label para el checkbox) --}}
+                <label for="sidebar-toggle" class="collapse-btn">
+                    <i class="fas fa-angle-left"></i>
+                </label>
+            </div>
+            <div class="sidebar-content">
+                <nav class="menu">
+                    <a href="{{ route('flujo.tablero') }}" class="active"><i class="fas fa-home"></i> Inicio</a>
+                    <a href="#"><i class="fas fa-check-circle"></i> Mis Tareas</a>
+                    <a href="#"><i class="fas fa-inbox"></i> Notificaciones</a>
+                </nav>
+
+                <div class="workspaces">
+                    <div class="workspace-header">
+                        <span>Espacios de Trabajo</span>
+                        <button class="add-workspace">+</button>
                     </div>
-                    <div class="table-responsive">
-                        <table class="tabla-elementos">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Nombre del Proceso</th>
-                                    <th>Creador</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($workflows as $workflow)
-                                <tr>
-                                    <td>{{ $workflow->id }}</td>
-                                    <td>{{ $workflow->nombre }}</td>
-                                    <td>{{ $workflow->creator->name ?? 'N/A' }}</td>
-                                    <td class="acciones">
-                                        <a href="{{ route('flujo.workflows.show', $workflow->id) }}" class="accion ver"><i class="fas fa-eye"></i></a>
-                                        <a href="{{ route('flujo.workflows.edit', $workflow->id) }}" class="accion editar"><i class="fas fa-pencil-alt"></i></a>
-                                        <form action="{{ route('flujo.workflows.destroy', $workflow->id) }}" method="POST" class="inline-form" onsubmit="return confirm('¿Confirmas la eliminación?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="accion eliminar"><i class="fas fa-trash-alt"></i></button>
-                                        </form>
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                        <div class="paginacion">{{ $workflows->links() }}</div>
+                    <div class="workspace-item">
+                        <a href="#"><i class="fas fa-folder"></i> Proyectos Cliente A</a>
+                    </div>
+                    {{-- Un ejemplo con sub-elementos expandibles con CSS --}}
+                    <div class="workspace-item">
+                        {{-- Otro checkbox oculto para este elemento específico --}}
+                        <input type="checkbox" id="workspace-dev-toggle" class="workspace-toggle-checkbox" hidden>
+                        <label for="workspace-dev-toggle" class="workspace-item-label">
+                            <a href="#" onclick="return false;"><i class="fas fa-folder"></i> Desarrollo Interno</a>
+                            <i class="fas fa-chevron-right workspace-chevron"></i>
+                        </label>
+                        <div class="board-list">
+                            <a href="#">- Proyecto Phoenix</a>
+                            <a href="#">- Roadmap Q4</a>
+                        </div>
+                    </div>
+                    <div class="workspace-item">
+                        <a href="#"><i class="fas fa-folder"></i> Marketing</a>
                     </div>
                 </div>
             </div>
-<hr>
-            {{-- ================= Tasks Card ================= --}}
-            <div class="card">
-                <h2 class="card-title"><i class="fas fa-clipboard-list card-icon"></i> Tareas Pendientes</h2>
-                <div class="card-content">
-                    <div class="toolbar">
-                        <form action="{{ route('flujo.tasks.index') }}" method="GET" class="buscador">
-                            <input type="text" name="search" placeholder="Buscar tarea..." value="{{ request('search') }}">
-                            <button type="submit" class="btn btn-buscar"><i class="fas fa-search"></i></button>
-                        </form>
-                        <a href="{{ route('flujo.tasks.create') }}" class="btn btn-crear"><i class="fas fa-plus-circle"></i> Nueva Tarea</a>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="tabla-elementos">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Título</th>
-                                    <th>Estado</th>
-                                    <th>Responsable</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($tasks as $task)
-                                <tr>
-                                    <td>{{ $task->id }}</td>
-                                    <td>{{ $task->titulo }}</td>
-                                    <td><span class="estado estado-{{ $task->estado }}">{{ ucfirst($task->estado) }}</span></td>
-                                    <td>{{ $task->user->name ?? 'N/A' }}</td>
-                                    <td class="acciones">
-                                        <a href="{{ route('flujo.tasks.show', $task->id) }}" class="accion ver"><i class="fas fa-eye"></i></a>
-                                        <a href="{{ route('flujo.tasks.edit', $task->id) }}" class="accion editar"><i class="fas fa-pencil-alt"></i></a>
-                                        <form action="{{ route('flujo.tasks.destroy', $task->id) }}" method="POST" class="inline-form" onsubmit="return confirm('¿Confirmas la eliminación?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="accion eliminar"><i class="fas fa-trash-alt"></i></button>
-                                        </form>
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                        <div class="paginacion">{{ $tasks->links() }}</div>
-                    </div>
+        </aside>
+
+        {{-- Contenido principal --}}
+        <main class="main-content">
+            <!-- ... tu main content actual ... -->
+            <header class="board-header">
+                <div class="board-title">
+                    <h1>Proyecto Phoenix</h1>
+                    <i class="far fa-star"></i>
                 </div>
-            </div>
-<hr>
-            {{-- ================= Comments Card ================= --}}
-            <div class="card">
-                <h2 class="card-title"><i class="fas fa-comments card-icon"></i> Novedades y Comentarios</h2>
-                <div class="card-content">
-                    <div class="table-responsive">
-                        <table class="tabla-elementos">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>ID T</th>
-                                    <th>Tarea</th>
-                                    <th>Comentario</th>
-                                    <th>Usuario</th>
-                                    <th>Fecha</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($comments as $comment)
-                                <tr>
-                                    <td>{{ $comment->id }}</td>
-                                    <td>{{ $comment->task_id }}</td>
-                                    <td>{{ $comment->task->titulo ?? 'N/A' }}</td>
-                                    <td>{{ $comment->comentario }}</td>
-                                    <td>{{ $comment->user->name ?? 'N/A' }}</td>
-                                    <td>{{ $comment->created_at ? $comment->created_at->format('d/m/Y H:i') : '-' }}</td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                        <div class="paginacion">{{ $comments->links() }}</div>
+                <div class="board-actions">
+                    <div class="view-switcher">
+                        {{-- Para las vistas, necesitarías enlaces que carguen diferentes partes o un JS muy básico --}}
+                        <a href="?view=table" class="active"><i class="fas fa-table"></i> Tabla Principal</a>
+                        <a href="?view=kanban"><i class="fas fa-columns"></i> Kanban</a>
+                        <a href="?view=gantt"><i class="fas fa-chart-gantt"></i> Gantt</a>
                     </div>
+                    <input type="text" placeholder="Buscar en tablero..." class="search-board">
+                    <a href="#" class="btn-monday"><i class="fas fa-plus"></i> Nuevo Elemento</a>
+                    <div class="user-avatar">BC</div>
                 </div>
-            </div>
-<hr>
-            {{-- ================= Histories Card ================= --}}
-            <div class="card">
-                <h2 class="card-title"><i class="fas fa-history card-icon"></i> Auditoría de Tareas</h2>
-                <div class="card-content">
-                    <div class="table-responsive">
-                        <table class="tabla-elementos">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Tarea</th>
-                                    <th>Nuevo Estado</th>
-                                    <th>Registrado Por</th>
-                                    <th>Fecha y Hora</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($histories as $history)
-                                <tr>
-                                    <td>{{ $history->id }}</td>
-                                    <td>{{ $history->task->titulo ?? 'N/A' }}</td>
-                                    <td><span class="estado estado-{{ $history->estado_nuevo }}">{{ $history->estado_nuevo ?? '-' }}</span></td>
-                                    <td>{{ $history->user->name ?? 'N/A' }}</td>
-                                    <td>{{ $history->fecha_cambio ? \Carbon\Carbon::parse($history->fecha_cambio)->format('d/m/Y H:i') : '-' }}</td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                        <div class="paginacion">{{ $histories->links() }}</div>
+            </header>
+
+            <div class="board-view">
+                {{-- Esto requeriría lógica PHP en el backend para mostrar el componente correcto según ?view --}}
+                @php
+                    $currentView = request('view', 'table'); // Default a 'table'
+                @endphp
+
+                @if ($currentView == 'table')
+                    <div class="cards-grid">
+                         @include('flujo.componentes.workflows-card')
+                         @include('flujo.componentes.tasks-card')
+                         @include('flujo.componentes.comments-card')
+                         @include('flujo.componentes.histories-card')
                     </div>
-                </div>
+                @elseif ($currentView == 'kanban')
+                    <div>Contenido de la vista Kanban...</div>
+                @elseif ($currentView == 'gantt')
+                    <div>Contenido de la vista Gantt...</div>
+                @endif
             </div>
-        </div>
+
+        </main>
     </div>
 
+    {{-- ================= ESTILOS MONDAY MEJORADOS ================= --}}
     <style>
-        /* ===================== GRID 2x2 ===================== */
-        .card-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 30px;
+        /* ====== VARIABLES DE COLOR Y ESTILO ====== */
+        :root {
+            --primary-color: #5D5FEF;
+            --primary-hover: #3F40C4;
+            --sidebar-bg: #1B1F3B;
+            --sidebar-text: #C7CADB;
+            --body-bg: #F5F6F8;
+            --card-bg: #FFFFFF;
+            --text-dark: #1B1F3B;
+            --border-color: #E0E0E0;
+            --border-radius-md: 12px;
+            --border-radius-lg: 16px;
+            --shadow-soft: 0 4px 14px 0 rgba(0, 0, 0, 0.05);
         }
 
-        @media (max-width: 1000px) {
-            .card-grid { grid-template-columns: 1fr; }
-        }
+        /* ====== RESET ====== */
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Poppins', sans-serif; }
+        a { text-decoration:none; color:inherit; }
+        button { background:none; border:none; cursor:pointer; font-family:'Poppins', sans-serif; }
 
-        /* ===================== TARJETAS ===================== */
-        .card {
-            background-color: #ffffff;
-            border-radius: 20px;
-            padding: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08), 0 0 0 1px #cddbe7;
-            transition: all 0.3s ease;
-            display: flex;
-            flex-direction: column;
+        /* ====== DASHBOARD LAYOUT ====== */
+        .dashboard-container { display:flex; min-height:100vh; background: var(--body-bg); }
+
+        /* ====== SIDEBAR ====== */
+        .sidebar { 
+            width:250px; 
+            background:var(--sidebar-bg); 
+            display:flex; 
+            flex-direction:column; 
+            border-right: 1px solid #2a2e4c; 
+            transition: width 0.3s ease; 
+            position: relative; /* Necesario para el botón de colapsar */
+            flex-shrink: 0; /* Evita que el sidebar se encoja antes de tiempo */
+        }
+        .sidebar-header { padding: 20px; border-bottom: 1px solid #2a2e4c; display: flex; justify-content: space-between; align-items: center;}
+        .sidebar-header .logo { font-size:20px; font-weight:700; color:#fff; display:flex; align-items:center; gap:10px; }
+        .sidebar-header .logo span { transition: opacity 0.3s ease; } /* Animación para el texto */
+        .sidebar-content { padding: 15px; overflow-y: auto; transition: opacity 0.3s ease; }
+        .menu a { display:flex; align-items:center; gap:12px; padding:10px 14px; border-radius:var(--border-radius-md); color:var(--sidebar-text); margin-bottom:5px; transition:0.2s ease-in-out; font-weight: 500;}
+        .menu a.active, .menu a:hover { background:var(--primary-color); color:#fff; }
+        .menu a i { width:20px; text-align:center; font-size: 16px; }
+
+        /* WORKSPACES */
+        .workspaces { margin-top: 25px; }
+        .workspace-header { display:flex; justify-content:space-between; align-items:center; padding:0 10px; margin-bottom:10px; color: var(--sidebar-text); font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; }
+        .add-workspace { color: var(--sidebar-text); font-size: 18px; }
+        .workspace-item { margin-bottom: 5px; }
+        .workspace-item > a, .workspace-item-label { /* Aplica estilos tanto al <a> directo como al <label> */
+            font-weight: 600; color: #fff; display:flex; align-items: center; gap:10px; padding:10px; border-radius:8px; font-size: 14px;
+            cursor: pointer;
+        }
+        .workspace-item > a:hover, .workspace-item-label:hover { background: #2a2e4c; }
+        .board-list { 
+            padding-left: 25px; margin-top: 5px; 
+            max-height: 0; /* Oculto por defecto */
             overflow: hidden;
+            transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+            opacity: 0;
+        }
+        .board-list a { display:block; color: var(--sidebar-text); padding: 6px 0; font-size: 13px; opacity: 0.8; }
+        .board-list a:hover { color: #fff; opacity: 1; }
+
+        /* ======= ESTILOS PARA EL SIDEBAR COLAPSADO (CSS PUREO) ======= */
+        .sidebar-toggle-checkbox:checked ~ .sidebar {
+            width: 80px; /* Ancho cuando está colapsado */
         }
 
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 40px rgba(0,0,0,0.15), 0 0 0 1px #cddbe7;
+        .sidebar-toggle-checkbox:checked ~ .sidebar .sidebar-header .logo span,
+        .sidebar-toggle-checkbox:checked ~ .sidebar .sidebar-content {
+            opacity: 0; /* Oculta el texto y contenido con opacidad */
+            pointer-events: none; /* Deshabilita clics en elementos ocultos */
+        }
+        .sidebar-toggle-checkbox:checked ~ .sidebar .collapse-btn i {
+             transform: rotate(180deg); /* Gira la flecha */
         }
 
-        .card-title { font-size: 1.6em; color: #005691; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #cddbe7; display: flex; align-items: center; font-weight: 600; }
-        .card-icon { font-size: 1.2em; margin-right: 12px; color: #007bff; }
+        .collapse-btn {
+            color: white;
+            font-size: 18px;
+            display: flex; /* Asegura que el icono no se salga */
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s ease;
+        }
 
-        /* ===================== TABLAS ===================== */
-        .table-responsive { overflow-x: auto; overflow-y: hidden; border: 1px solid #cddbe7; border-radius: 15px; background-color: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .tabla-elementos { width: 100%; border-collapse: collapse; font-size: 0.9em; table-layout: auto; min-width: 700px; }
-        .tabla-elementos th, .tabla-elementos td { padding: 12px 15px; border-bottom: 1px solid #cddbe7; text-align: left; white-space: nowrap; }
-        .tabla-elementos thead th { background-color: #f0f5fa; color: #005691; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; }
-        .tabla-elementos tbody tr:hover { background-color: #f7fbff; }
+        /* ======= ESTILOS PARA WORKSPACE EXPANDIBLE (CSS PURO) ======= */
+        .workspace-item-label {
+            position: relative; /* Para posicionar el chevron */
+        }
+        .workspace-chevron {
+            margin-left: auto; /* Empuja el chevron a la derecha */
+            transition: transform 0.3s ease;
+            font-size: 12px;
+        }
+        .workspace-toggle-checkbox:checked + .workspace-item-label .workspace-chevron {
+            transform: rotate(90deg); /* Gira el chevron cuando está expandido */
+        }
+        .workspace-toggle-checkbox:checked + .workspace-item-label + .board-list {
+            max-height: 200px; /* Suficiente alto para mostrar los elementos */
+            opacity: 1;
+        }
 
-        /* ===================== ACCIONES ===================== */
-        .acciones { display: flex; gap: 6px; justify-content: flex-start; }
-        .acciones .accion { display: flex; align-items: center; justify-content: center; border-radius: 50%; width: 34px; height: 34px; font-size: 1.05em; transition: all 0.2s; color: #6c757d; border: 1px solid transparent; text-decoration: none; }
-        .acciones .accion:hover { transform: translateY(-2px) scale(1.05); background-color: #f0f5fa; border-color: #cddbe7; }
-        .acciones .ver:hover { color: #005691; }
-        .acciones .editar:hover { color: #ffc107; }
-        .acciones .eliminar { background: none; border: none; color: #dc3545; cursor: pointer; }
-        .acciones .eliminar:hover { background-color: #f8d7da; color: #c82333; }
 
-        /* ===================== ESTADOS ===================== */
-        .estado { display: inline-block; padding: 5px 10px; border-radius: 12px; font-weight: 500; font-size: 0.85em; text-transform: capitalize; border: 1px solid; white-space: nowrap; }
-        .estado-pendiente { background-color: #fff3cd; color: #856404; border-color: #ffeeba; }
-        .estado-en_progreso { background-color: #d1ecf1; color: #0c5460; border-color: #bee5eb; }
-        .estado-completado { background-color: #d4edda; color: #155724; border-color: #c3e6cb; }
-        .estado-cancelado { background-color: #f8d7da; color: #721c24; border-color: #f5c6cb; }
+        /* ====== MAIN CONTENT ====== */
+        .main-content { flex:1; padding:25px 30px; }
 
-        /* ===================== PAGINACION ===================== */
-        .paginacion { margin-top: 15px; display: flex; justify-content: center; flex-wrap: wrap; gap: 5px; }
-        .paginacion .page-link { padding: 6px 12px; margin: 0 3px; border-radius: 5px; border: 1px solid #cddbe7; color: #005691; text-decoration: none; }
-        .paginacion .page-link:hover { background-color: #e6f0f7; }
-        .paginacion .active .page-link { background-color: #005691; color: #fff; border-color: #005691; }
+        /* ====== BOARD HEADER ====== */
+        .board-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:25px; }
+        .board-title { display:flex; align-items:center; gap:10px; }
+        .board-title h1 { font-size:24px; font-weight:700; color:var(--text-dark); }
+        .board-title i { color: #888; cursor: pointer; transition: 0.2s; }
+        .board-title i:hover { color: #FDAB3D; transform: scale(1.2); }
+        .board-actions { display:flex; align-items:center; gap:15px; }
+        .search-board { padding:8px 12px; border-radius:var(--border-radius-md); border:1px solid var(--border-color); width:200px; transition:0.3s; }
+        .search-board:focus { border-color:var(--primary-color); outline:none; box-shadow:0 0 6px rgba(93,95,239,0.3); }
+        .btn-monday { background:var(--primary-color); color:#fff; border-radius:var(--border-radius-md); padding:8px 16px; display:flex; align-items:center; gap:6px; font-weight:600; transition:0.3s; }
+        .btn-monday:hover { background:var(--primary-hover); }
+        .user-avatar { width:36px; height:36px; border-radius:50%; background:var(--primary-color); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:600; cursor:pointer; }
+        
+        /* VIEW SWITCHER */
+        .view-switcher { display:flex; background: #E9E9F0; padding: 4px; border-radius: 10px; }
+        .view-switcher a { /* Ahora son enlaces, no botones */
+            padding: 6px 12px; border-radius: 8px; font-weight: 500; display:flex; align-items:center; gap:6px; color: #555; 
+            transition: background 0.2s, color 0.2s;
+        }
+        .view-switcher a.active { background: var(--card-bg); color: var(--primary-color); box-shadow: 0 2px 4px rgba(0,0,0,0.08); }
+
+
+        /* ====== GRID DE CARDS ====== */
+        .cards-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(400px, 1fr)); gap:25px; }
+
+        /* ====== CARD MONDAY (CON SOMBRA MÁS SUTIL) ====== */
+        .card-monday {
+            background:var(--card-bg); border-radius:var(--border-radius-lg); padding:20px;
+            box-shadow: var(--shadow-soft);
+            transition:0.3s ease; border-left:6px solid var(--primary-color);
+        }
+        .card-monday:hover { transform:translateY(-4px); box-shadow: 0 8px 25px rgba(0,0,0,0.08); }
+        .card-title{ font-size:18px; font-weight:600; color:var(--primary-color); margin-bottom:15px; display:flex; align-items:center; }
+        .card-title i{ margin-right:8px; }
+
+        /* ====== TABLAS Y BADGES (SIN CAMBIOS, YA ESTÁN BIEN) ====== */
+        .table-monday { width:100%; border-collapse:collapse; font-size:0.9em; }
+        .table-monday th, .table-monday td { padding:12px; text-align:left; border-bottom:1px solid var(--border-color); }
+        .table-monday th { background:#F3F4FB; font-weight:600; color:var(--primary-color); }
+        .table-monday tbody tr:hover { background:#F9F9FE; }
+
+        .badge { display:inline-block; padding:5px 10px; border-radius:12px; color:#fff; font-size:12px; text-transform:capitalize; font-weight:500; }
+        .badge.blue{background:#5D5FEF;} .badge.green{background:#00C875;} .badge.red{background:#E2445C;} .badge.orange{background:#FDAB3D;} .badge.purple{background:#A259FF;}
     </style>
 </x-base-layout>
