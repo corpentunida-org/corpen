@@ -101,7 +101,7 @@
                                 <th scope="col">Parentesco</th>
                                 <th scope="col">Valor Asegurado</th>
                                 <th scope="col">Valor Prima</th>
-                                <th scope="col">Valor Prima Pagar</th>                                
+                                @can('seguros.poliza.valorpagar')<th scope="col">Valor Prima Pagar</th>@endcan                       
                                 <th scope="col" class="text-end">Acción</th>
                             </tr>
                         </thead>
@@ -124,7 +124,9 @@
                                     </td>
                                     <td>$ {{ number_format(floatval($a->polizas->first()->valor_asegurado ?? 0)) }}</td>
                                     <td>$ {{ number_format($a->polizas->first()->valor_prima) ?? '' }}</td>
+                                    @can('seguros.poliza.valorpagar')
                                     <td>$ {{ number_format($a->polizas->first()->primapagar) ?? '' }}</td>
+                                    @endcan
                                     <td>
                                         <form action="{{ route('seguros.poliza.show',['poliza' => 'ID']) }}" class="avatar-text avatar-md ms-auto" method="GET">
                                             <input type="hidden" name="id" value="{{ $a->cedula }}">

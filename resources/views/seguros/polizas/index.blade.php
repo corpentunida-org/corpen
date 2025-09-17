@@ -53,6 +53,7 @@
         </div>
     </div>
 
+    @can('seguros.reportes.download')
     <div class="col-lg-12">
         <div class="card stretch stretch-full" data-select2-id="select2-data-38-lija">
             <div class="card-body">
@@ -65,11 +66,11 @@
                     <div class="d-flex align-items-center justify-content-between">
                         <div class="d-flex align-items-center justify-content-center">
                             @can('seguros.poliza.update')
-                            <a href="{{ route('seguros.poliza.edit', ['poliza' => 'excel']) }}"
-                                class="d-flex me-1 btn btn-light-brand">
-                                <i class="feather feather-edit-3 me-2"></i>
-                                <span>Actualizar Valor a Pagar</span>
-                            </a>
+                                <a href="{{ route('seguros.poliza.edit', ['poliza' => 'excel']) }}"
+                                    class="d-flex me-1 btn btn-light-brand">
+                                    <i class="feather feather-edit-3 me-2"></i>
+                                    <span>Actualizar Valor a Pagar</span>
+                                </a>
                             @endcan
                             <a href="{{ route('seguros.poliza.download') }}"
                                 class="d-flex me-1 px-3 bg-soft-indigo text-indigo border border-soft-indigo"
@@ -80,10 +81,10 @@
                         </div>
                         <div class="d-flex align-items-center justify-content-center">
                             @can('seguros.poliza.store')
-                                <a href="{{route('seguros.poliza.create')}}" class="d-flex me-1 btn btn-primary">
+                                {{-- <a href="{{route('seguros.poliza.create')}}" class="d-flex me-1 btn btn-primary">
                                     <i class="feather-plus me-2"></i>
                                     <span>Crear Póliza Individual</span>
-                                </a>                            
+                                </a> --}}                         
                                 <a href="{{ route('seguros.poliza.viewupload') }}"
                                     class="d-flex me-1 btn btn-light-brand ml-1">
                                     <i class="feather-upload me-2"></i>
@@ -96,7 +97,8 @@
             </div>
         </div>
     </div>
+    @endcan
 
-    @include('seguros.novedades.index')
+    {{-- @include('seguros.novedades.index') --}}
 
 </x-base-layout>
