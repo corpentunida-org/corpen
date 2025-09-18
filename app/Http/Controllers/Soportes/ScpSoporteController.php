@@ -29,7 +29,7 @@ class ScpSoporteController extends Controller
     {
         $tipos = ScpTipo::all();
         $prioridades = ScpPrioridad::all();
-        $terceros = MaeTerceros::select('cod_ter','nom_ter')->get();
+        $terceros = maeTerceros::select('cod_ter','nom_ter')->get();
         $usuarios = User::select('id','name')->get();
         $cargos = GdoCargo::select('id','nombre_cargo')->get();
         $lineas = LineaCredito::select('id','nombre')->get();
@@ -91,7 +91,7 @@ class ScpSoporteController extends Controller
     {
         $tipos = ScpTipo::all();
         $prioridades = ScpPrioridad::all();
-        $terceros = MaeTerceros::select('cod_ter','nom_ter')->get();
+        $terceros = maeTerceros::select('cod_ter','nom_ter')->get();
         $usuarios = User::select('id','name')->get();
         $cargos = GdoCargo::select('id', 'nombre_cargo')->get();
         $lineas = LineaCredito::select('id','nombre')->get();
