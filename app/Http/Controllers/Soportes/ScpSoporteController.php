@@ -9,7 +9,7 @@ use App\Models\Soportes\ScpPrioridad;
 use App\Models\Soportes\ScpEstado;
 use App\Models\Soportes\ScpTipoObservacion;
 use App\Models\Soportes\ScpObservacion;
-use App\Models\Maestras\MaeTerceros;
+use App\Models\Maestras\maeTerceros;
 use App\Models\User;
 use App\Models\Archivo\GdoCargo;
 use App\Models\Creditos\LineaCredito;
