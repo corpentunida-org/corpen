@@ -62,6 +62,14 @@ use App\Http\Controllers\Flujo\TableroController;
 use App\Models\Flujo\Workflow;
 use App\Models\Flujo\Task;
 
+// SOPORTE
+use App\Http\Controllers\Soportes\ScpEstadoController;
+use App\Http\Controllers\Soportes\ScpPrioridadController;
+use App\Http\Controllers\Soportes\ScpTipoController;
+use App\Http\Controllers\Soportes\ScpTipoObservacionController;
+use App\Http\Controllers\Soportes\ScpTableroParametroController;
+use App\Http\Controllers\Soportes\ScpSoporteController; 
+use App\Http\Controllers\Soportes\ScpObservacionController; 
 
 
 /* Route::middleware(['auth'])->group(function () {
@@ -331,6 +339,86 @@ Route::prefix('archivo')->middleware('auth')->group(function () {
     });
 
     
+    // SOPORTES
+    Route::middleware('auth')->prefix('soportes')->name('soportes.')->group(function () {
+
+        // Tablero general
+        Route::get('tablero', [ScpTableroParametroController::class, 'index'])
+            ->name('tablero');
+
+        // Estados
+        Route::resource('estados', ScpEstadoController::class)
+            ->names([
+                'index'   => 'estados.index',
+                'create'  => 'estados.create',
+                'store'   => 'estados.store',
+                'show'    => 'estados.show',
+                'edit'    => 'estados.edit',
+                'update'  => 'estados.update',
+                'destroy' => 'estados.destroy',
+            ])
+            ->parameters(['estados' => 'scpEstado']);
+
+        // Prioridades
+        Route::resource('prioridades', ScpPrioridadController::class)
+            ->names([
+                'index'   => 'prioridades.index',
+                'create'  => 'prioridades.create',
+                'store'   => 'prioridades.store',
+                'show'    => 'prioridades.show',
+                'edit'    => 'prioridades.edit',
+                'update'  => 'prioridades.update',
+                'destroy' => 'prioridades.destroy',
+            ])
+            ->parameters(['prioridades' => 'scpPrioridad']);
+
+        // Tipos
+        Route::resource('tipos', ScpTipoController::class)
+            ->names([
+                'index'   => 'tipos.index',
+                'create'  => 'tipos.create',
+                'store'   => 'tipos.store',
+                'show'    => 'tipos.show',
+                'edit'    => 'tipos.edit',
+                'update'  => 'tipos.update',
+                'destroy' => 'tipos.destroy',
+            ])
+            ->parameters(['tipos' => 'scpTipo']);
+
+        // Tipos de Observaciones
+        Route::resource('tipo-observaciones', ScpTipoObservacionController::class)
+            ->names([
+                'index'   => 'tipoObservaciones.index',
+                'create'  => 'tipoObservaciones.create',
+                'store'   => 'tipoObservaciones.store',
+                'show'    => 'tipoObservaciones.show',
+                'edit'    => 'tipoObservaciones.edit',
+                'update'  => 'tipoObservaciones.update',
+                'destroy' => 'tipoObservaciones.destroy',
+            ])
+            ->parameters(['tipo-observaciones' => 'scpTipoObservacion']);
+
+        // Soportes (mantener Resource)
+        Route::resource('soportes', ScpSoporteController::class)
+            ->names([
+                'index'   => 'soportes.index',
+                'create'  => 'soportes.create',
+                'store'   => 'soportes.store',
+                'show'    => 'soportes.show',
+                'edit'    => 'soportes.edit',
+                'update'  => 'soportes.update',
+                'destroy' => 'soportes.destroy',
+            ])
+            ->parameters(['soportes' => 'scpSoporte']);
+
+        // Rutas para Observaciones Anidadas bajo Soportes
+        Route::post('soportes/{scpSoporte}/observaciones', [ScpSoporteController::class, 'storeObservacion'])
+            ->name('soportes.observaciones.store');
+        Route::delete('soportes/{scpSoporte}/observaciones/{scpObservacion}', [ScpSoporteController::class, 'destroyObservacion'])
+            ->name('soportes.observaciones.destroy');
+    });
+
+
 
 
 });
