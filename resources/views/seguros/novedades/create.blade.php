@@ -4,6 +4,9 @@
     @php
         $activeTab = $activeTab ?? 'generalTab';
     @endphp
+    @php
+        $activeTab = $activeTab ?? 'generalTab';
+    @endphp
     <div class="col-xxl-12 col-xl-12">
         <div class="card border-top-0">
             <div class="card-header p-0">
