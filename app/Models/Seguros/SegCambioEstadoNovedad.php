@@ -11,17 +11,13 @@ class SegCambioEstadoNovedad extends Model
     protected $table = 'SEG_CambioEstadoNovedad';
     public $timestamps = false;
 
-    protected $fillable = [
-        'novedad',
-        'estado',
-        'fechaIncio',
-        'fechaCierre',
-        'observaciones',
+    protected $fillable = ['novedad', 'estado', 'fechaInicio', 'fechaCierre', 'observaciones'];
+    protected $casts = [
+        'fechaInicio' => 'date',
     ];
 
     public function estado()
     {
         return $this->belongsTo(SegEstadoReclamacion::class, 'estado_id', 'id');
     }
-
 }
