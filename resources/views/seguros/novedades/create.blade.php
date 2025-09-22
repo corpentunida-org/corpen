@@ -4,26 +4,30 @@
     @php
         $activeTab = $activeTab ?? 'generalTab';
     @endphp
+    @php
+        $activeTab = $activeTab ?? 'generalTab';
+    @endphp
     <div class="col-xxl-12 col-xl-12">
         <div class="card border-top-0">
             <div class="card-header p-0">
                 <ul class="nav nav-tabs flex-wrap w-100 text-center customers-nav-tabs" id="myTab" role="tablist">
                     <li class="nav-item flex-fill border-top" role="presentation">
-                        <a class="nav-link {{ $activeTab == 'generalTab' ? 'active' : '' }}" data-bs-toggle="tab" data-bs-target="#securityTab"
-                            aria-selected="true">MODIFICACIÓN</a>
+                        <a class="nav-link {{ $activeTab == 'generalTab' ? 'active' : '' }}" data-bs-toggle="tab"
+                            data-bs-target="#securityTab" aria-selected="true">MODIFICACIÓN</a>
                     </li>
                     <li class="nav-item flex-fill border-top" role="presentation">
                         <a class="nav-link" data-bs-toggle="tab" data-bs-target="#TaskTab"
                             aria-selected="true">INGRESO</a>
                     </li>
                     <li class="nav-item flex-fill border-top" role="presentation">
-                        <a class="nav-link {{ $activeTab == 'projectTab' ? 'active' : '' }}" data-bs-toggle="tab" data-bs-target="#projectTab"
-                            aria-selected="true">RETIRO</a>
+                        <a class="nav-link {{ $activeTab == 'projectTab' ? 'active' : '' }}" data-bs-toggle="tab"
+                            data-bs-target="#projectTab" aria-selected="true">RETIRO</a>
                     </li>
                 </ul>
             </div>
             <div class="tab-content">
-                <div class="tab-pane fade p-4 {{ $activeTab == 'generalTab' ? 'show active' : '' }}" id="securityTab" role="tabpanel">
+                <div class="tab-pane fade p-4 {{ $activeTab == 'generalTab' ? 'show active' : '' }}" id="securityTab"
+                    role="tabpanel">
                     <div class="col-lg-12 p-4">
                         <div class="row">
                             <form action="{{ route('seguros.novedades.show', ['novedade' => 'ID']) }}"
@@ -200,6 +204,15 @@
                                             value="{{ $asegurado->polizas->first()->id }}">
                                     </div>
                                 </div>
+                                <div class="col-md-8">
+                                    <label for="ubicacion_foto" class="form-label">Formulario</label>
+                                    <input class="form-control @error('ubicacion_foto') is-invalid @enderror"
+                                        type="file" id="ubicacion_foto" name="ubicacion_foto" accept="image/*">
+                                    @error('ubicacion_foto')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                    <small class="form-text text-muted">Formato permitidos: PDF</small>
+                                </div>
                                 <div class="d-flex flex-row-reverse gap-2 mt-2">
                                     <button class="btn btn-success mt-4" data-bs-toggle="tooltip" title="Timesheets"
                                         type="submit">
@@ -212,7 +225,7 @@
                     </div>
                 </div>
                 <div class="tab-pane fade p-4 " id="TaskTab" role="tabpanel">
-                    <form action={{ route('seguros.poliza.store') }} method="POST" id="formAddPoliza" novalidate>
+                    <form action={{ route('seguros.novedades.store') }} method="POST" id="formAddPoliza" novalidate>
                         @csrf
                         @method('POST')
                         <div class="mb-3 d-flex align-items-center justify-content-between">
@@ -223,7 +236,8 @@
                         <div class="row">
                             <div class="col-lg-4 mb-4">
                                 <label class="form-label">Cédula<span class="text-danger">*</span></label>
-                                <input type="number" class="form-control" name="tercedula" required>
+                                <input type="number" class="form-control" name="asegurado" required>
+                                <input type="hidden" name="tipoNovedad" value="2">
                             </div>
                             <div class="col-lg-8 mb-4">
                                 <label class="form-label">Nombre<span class="text-danger">*</span></label>
@@ -264,7 +278,7 @@
                             </div>
                             <div class="col-lg-8 mb-4">
                                 <label class="form-label">Plan<span class="text-danger">*</span></label>
-                                <select name="selectPlanes" class="form-control" id="selectPlanes" required>
+                                <select name="planid" class="form-control" id="selectPlanes" required>
                                 </select>
                             </div>
                             <div class="col-lg-2 mb-4">
@@ -303,8 +317,8 @@
                                     class="text-danger">*</span></label>
                             <div class="input-group">
                                 <div class="input-group-text">$</div>
-                                <input class="form-control" type="number" name="valorindividual"
-                                    id="valorindividual" required>
+                                <input class="form-control" type="number" name="primacorpen" id="valorindividual"
+                                    required>
                                 <input type="hidden" id="primaaseguradora">
                             </div>
                         </div>
@@ -322,6 +336,10 @@
                                 </select>
                             </div>
                         </div>
+                        <div class="col-lg-12 mb-4">
+                            <label class="form-label">Observación<span class="text-danger">*</span></label>
+                            <input type="text" class="form-control text-uppercase" name="observaciones" required>
+                        </div>
                         <div class="d-flex flex-row-reverse gap-2 mt-2">
                             <button type="submit" class="btn btn-success mt-4">
                                 <i class="feather-plus me-2"></i>
@@ -330,10 +348,10 @@
                         </div>
                     </form>
                 </div>
-                <div class="tab-pane fade p-4 {{ $activeTab == 'projectTab' ? 'show active' : '' }}" id="projectTab" role="tabpanel">
+                <div class="tab-pane fade p-4 {{ $activeTab == 'projectTab' ? 'show active' : '' }}" id="projectTab"
+                    role="tabpanel">
                     <div class="row p-4">
-                        <form action="{{ route('seguros.novedades.show', ['novedade' => 'ID']) }}"
-                            class="col-lg-2">
+                        <form action="{{ route('seguros.novedades.show', ['novedade' => 'ID']) }}" class="col-lg-2">
                             <label class="form-label">Cédula Buscar</label>
                             <input type="text" class="form-control" name="a">
                             <input type="hidden" name="activeTab" value="projectTab">
@@ -351,17 +369,26 @@
                     </div>
                     @if (isset($asegurado))
                         <form method="POST" class="px-4"
-                            action="{{ route('seguros.poliza.destroy', ['poliza' => $asegurado->cedula]) }}">
+                            action="{{ route('seguros.novedades.destroy', ['novedade' => $asegurado->cedula]) }}">
                             @csrf
                             @method('DELETE')
+                            <input type="hidden" name="tipoNovedad" value="3">
+                            <input type="hidden" name="id_poliza" value="{{ $asegurado->polizas->first()->id }}">
                             <div class="mb-4">
-                                <label class="form-label">Plan </span></label>
-                                <input class="form-control" name="planid" value="{{ $plan->convenio->nombre ?? '' }} - {{ $plan->name }} - ${{ number_format($plan->valor) }} - ${{ number_format($plan->prima_aseguradora) }}" disabled>
-                                <span class="fs-12 fw-normal text-muted text-truncate-1-line pt-1">{{ $condicion->descripcion }}</span>
+                                <label class="form-label">Plan</label>
+                                <select class="form-control" name="planid" readonly>
+                                    <option value="{{ $plan->id }}">
+                                        {{ $plan->convenio->nombre ?? '' }} - {{ $plan->name }} -
+                                        ${{ number_format($plan->valor) }} -
+                                        ${{ number_format($plan->prima_aseguradora) }}
+                                    </option>
+                                </select>                                
+                                <span
+                                    class="fs-12 fw-normal text-muted text-truncate-1-line pt-1">{{ $condicion->descripcion }}</span>
                             </div>
                             <div class="mb-4">
                                 <label class="form-label">Observación<span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" name="observacionretiro" required>
+                                <input type="text" class="form-control uppercase-input" name="observacionretiro" required>
                             </div>
                             <div class="d-flex flex-row-reverse gap-2 mt-2">
                                 <button class="btn btn-danger mt-4" data-bs-toggle="tooltip" title="Timesheets"

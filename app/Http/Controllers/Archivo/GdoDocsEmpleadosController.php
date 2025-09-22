@@ -101,6 +101,7 @@ class GdoDocsEmpleadosController extends Controller
 
     public function update(Request $request, GdoDocsEmpleados $gdodocsempleado)
     {
+        dd($request->all());
         $request->validate([
             'empleado_id'        => 'nullable|exists:gdo_empleados,cedula',
             'tipo_documento_id'  => 'nullable|exists:gdo_tipo_documento,id',
