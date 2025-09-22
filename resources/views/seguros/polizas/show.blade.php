@@ -54,7 +54,7 @@
                         class="btn btn-sm bg-soft-danger text-danger">Activo en una reclamación</a>
                 @elseif ($poliza->active)
                     @can('seguros.poliza.update')
-                        <a href="{{ route('seguros.novedades.create', ['a' => $poliza->seg_asegurado_id]) }}"
+                        <a href="{{ route('seguros.novedades.show', 'ID') }}?a={{ $poliza->seg_asegurado_id }}"
                             class="btn btn-light-brand">
                             <i class="feather-check-circle me-2"></i>
                             <span>Generar Novedad</span>
