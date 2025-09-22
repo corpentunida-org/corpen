@@ -105,6 +105,7 @@ class GdoEmpleadoController extends Controller
      */
     public function update(Request $request, GdoEmpleado $empleado)
     {
+        
         $validatedData = $request->validate([
             'cedula' => 'required|string|max:20|unique:gdo_empleados,cedula,' . $empleado->id,
             'apellido1' => 'required|string|max:50',

@@ -28,7 +28,6 @@ class SegBeneficiarioController extends Controller
      * Show the form for creating a new resource.
      */
     public function create(Request $request){
-        //cedula nombre de titular
         $id = $request->input('a');
         $asegurado = SegAsegurado::with('tercero')->where('cedula', $id)->first();
         $parentescos = Parentescos::all();
@@ -41,7 +40,7 @@ class SegBeneficiarioController extends Controller
      */
     public function store(Request $request)
     {
-        //dd($request);
+        dd($request->all());
         $beneficiario = SegBeneficiario::create([
             'tipo_documento_id' => $request->tipoDocumento,
             'cedula' => $request->cedula,
