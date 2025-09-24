@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Maestras\claseCongregacion;
 use App\Models\Maestras\maeDistritos;
 use App\Models\Maestras\maeTerceros;
-use App\Models\Maestras\maeMunicipios;
+use App\Models\Maestras\MaeMunicipios;
 
 
 class Congregacion extends Model
@@ -75,9 +75,9 @@ class Congregacion extends Model
         return $this->belongsTo(maeTerceros::class, 'pastorAnterior', 'cod_ter');
     }
 
-    public function maeMunicipios()
+     public function maeMunicipios()
     {
-        return $this->belongsTo(maeMunicipios::class, 'municipio', 'id'); //listo
+        return $this->belongsTo(MaeMunicipios::class, 'municipio', 'id'); 
     }
 
 }
