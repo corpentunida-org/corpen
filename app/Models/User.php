@@ -7,6 +7,8 @@ use App\Models\Creditos\Observacion;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\Interaction;
 
+use App\Models\Archivo\GdoCargo;
+
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -96,6 +98,22 @@ class User extends Authenticatable
     {
         return $this->hasMany(Interaction::class, 'agent_id');
     }
+
+public function cargoRelation()
+{
+    return $this->hasOne(\App\Models\Archivo\GdoCargo::class, 'correo_corporativo', 'email');
+}
+
+// Un "getter" que trae el cargo por email directamente
+public function getCargoAttribute()
+{
+    return \App\Models\Archivo\GdoCargo::where('correo_corporativo', $this->email)->first();
+}
+
+
+
+
+
 
 /*
 
