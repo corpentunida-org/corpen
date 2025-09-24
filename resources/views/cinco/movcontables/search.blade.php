@@ -13,13 +13,12 @@
                                         <div class="hstack">
                                             <a href="" class="search-form-open-toggle">
                                                 <div class="avatar-text avatar-md" data-bs-toggle="tooltip"
-                                                    data-bs-trigger="hover" title=""
-                                                    data-bs-original-title="Search">
+                                                    data-bs-trigger="hover" title="" data-bs-original-title="Search">
                                                     <i class="feather-search"></i>
                                                 </div>
                                             </a>
-                                            <form action="{{ route('poliza.search', ['name' => 'ID']) }}" method="GET"
-                                                class="search-form" style="display: none">
+                                            <form action="{{ route('cinco.retiros.search', ['name' => 'ID']) }}"
+                                                method="GET" class="search-form" style="display: none">
                                                 <div class="search-form-inner pt-4">
                                                     <a href="" class="search-form-close-toggle">
                                                         <div class="avatar-text avatar-md" data-bs-toggle="tooltip"
@@ -28,8 +27,7 @@
                                                             <i class="feather-arrow-left"></i>
                                                         </div>
                                                     </a>
-                                                    <input type="search" name="id"
-                                                        class="px-0 border-0 w-100"
+                                                    <input type="search" name="id" class="px-0 border-0 w-100"
                                                         placeholder="Buscar por nombre..." autocomplete="off">
                                                     <button type="submit" class="btn btn-primary">Buscar</button>
                                                 </div>
@@ -48,7 +46,6 @@
             </div>
         </div>
     </div>
-    
     <div class="col-xxl-12">
         <div class="card stratch">
             <div class="card-header">
@@ -97,40 +94,30 @@
                     <table class="table table-hover" id="customerList">
                         <thead>
                             <tr>
-                                <th scope="col">Asegurado</th>
-                                <th scope="col">Parentesco</th>
-                                <th scope="col">Valor Asegurado</th>
-                                <th scope="col">Valor Prima</th>
-                                @can('seguros.poliza.valorpagar')<th scope="col">Valor Prima Pagar</th>@endcan                       
-                                <th scope="col" class="text-end">Acción</th>
+                                <th>Cédula</th>
+                                <th>Nombre</th>
+                                <th>Fec_Ing</th>
+                                <th>Fec_Minis</th>
+                                <th>Fec_Aport</th>
+                                <th class="text-end">Acción</th>
                             </tr>
                         </thead>
-                        <tbody>                        
-                            @foreach ($asegurados as $a)
+                        <tbody>
+                            @foreach ($terceros as $a)
                                 <tr>
+                                    <td>{{$a->Cod_Ter}}</td>
                                     <td>
-                                        <div class="hstack gap-4">
-                                            <i class="bi bi-person-circle"></i>
-                                            <div>
-                                                <div class="fw-bold text-dark">{{ $a->tercero->nom_ter ?? ' ' }}</div>
-                                                <div class="fs-12 text-muted">Cédula:
-                                                    <a class="badge bg-soft-primary text-primary">{{ $a->cedula }}</a>
-                                                </div>
-                                            </div>
-                                        </div>
+                                        <span class="badge bg-gray-200 text-dark">{{ $a->Nom_Ter }}</span>
                                     </td>
-                                    <td>
-                                        <span class="badge bg-gray-200 text-dark">{{ $a->parentesco }}</span>
-                                    </td>
-                                    <td>$ {{ number_format(floatval($a->polizas->first()->valor_asegurado ?? 0)) }}</td>
-                                    <td>$ {{ number_format($a->polizas->first()->valor_prima) ?? '' }}</td>
-                                    @can('seguros.poliza.valorpagar')
-                                    <td>$ {{ number_format($a->polizas->first()->primapagar) ?? '' }}</td>
-                                    @endcan
-                                    <td>
-                                        <form action="{{ route('seguros.poliza.show',['poliza' => 'ID']) }}" class="avatar-text avatar-md ms-auto" method="GET">
-                                            <input type="hidden" name="id" value="{{ $a->cedula }}">
-                                            <button type="submit" class="avatar-text avatar-md ms-auto"><i class="feather-arrow-right"></i></button>
+                                    <td>{{$a->Fec_Ing}}</td>
+                                    <td>{{$a->Fec_Minis}}</td>
+                                    <td>{{$a->Fec_Aport}}</td>
+                                    <td>                                        
+                                        <form action="{{ route('cinco.movcontables.show', ['cinco' => 'ID']) }}"
+                                            method="GET">
+                                            <input type="hidden" name="id" value="{{ $a->Cod_Ter }}">
+                                            <button type="submit" class="avatar-text avatar-md ms-auto"><i
+                                                    class="feather-arrow-right"></i></button>
                                         </form>
                                     </td>
                                 </tr>

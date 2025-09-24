@@ -195,9 +195,9 @@
                                         </div>
                                     </div>
                                     <div class="dropdown-divider"></div>
-                                    <a href="#" class="dropdown-item">
+                                    <a href="{{ route('profile.show') }}" class="dropdown-item">
                                         <i class="feather-user"></i>
-                                        <span>Profile Details</span>
+                                        <span>Detalle Perfil</span>
                                     </a>
 
                                     <div class="dropdown-divider"></div>
@@ -205,7 +205,7 @@
                                     <form method="POST" action="{{ route('logout') }}" class="inline">
                                         @csrf
                                         <button type="submit" class="dropdown-item">
-                                            <i class="feather-log-out"></i>{{ __('Log Out') }}
+                                            <i class="feather-log-out"></i>{{ __('Cerrar Sesión') }}
                                         </button>
                                     </form>
 

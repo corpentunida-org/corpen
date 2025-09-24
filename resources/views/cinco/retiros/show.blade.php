@@ -149,7 +149,7 @@
                                         $totalAcomulado += $valor[0] + $valor[1];
                                     } else {
                                         $totalAcomulado += $valor;
-                                    }
+                                    }                                    
                                 @endphp
                             @endforeach
                         </tbody>

@@ -58,7 +58,9 @@ class SegReclamacionesController extends Controller
     private function listaReclamacionesVencidas()
     {
         Carbon::setLocale('es');
-        $reclamaciones = SegReclamaciones::where('updated_at', '<', Carbon::now()->subMonths(4))->get();
+        $reclamaciones = SegReclamaciones::where('updated_at', '<', Carbon::now()->subMonths(4))
+            ->where('estado', '!=', 4)
+            ->get();
 
         $reclamacionesFormateadas = $reclamaciones->map(function ($reclamacion) {
             $tiempoTranscurrido = Carbon::parse($reclamacion->updated_at)->diffForHumans();
@@ -82,7 +84,7 @@ class SegReclamacionesController extends Controller
         $estados = SegEstadoReclamacion::all();
         $parentescos = $controllerparen = app()->make(ParentescosController::class);
         $parentescos = $parentescos->index();
-        $diagnosticos = SegDiagnosticos::all();
+        $diagnosticos = SegDiagnosticos::orderBy('diagnostico', 'asc')->get();
         $reclamaciones = SegReclamaciones::where('cedulaAsegurado', $asegurado->cedula)
             ->with(['cobertura', 'diagnostico'])
             ->get();
@@ -172,7 +174,7 @@ class SegReclamacionesController extends Controller
         $hisreclamacion = SegCambioEstadoReclamacion::where('reclamacion_id', $reclamacion->id)
             ->with(['estado'])
             ->get();
-        $diagnosticos = SegDiagnosticos::all();
+        $diagnosticos = SegDiagnosticos::orderBy('diagnostico', 'asc')->get();
 
         return view('seguros.reclamaciones.edit', compact('reclamacion', 'asegurado', 'poliza', 'estados', 'hisreclamacion', 'diagnosticos'));
     }
@@ -259,13 +261,14 @@ class SegReclamacionesController extends Controller
         $datos = SegReclamaciones::with(['asegurado.terceroAF', 'asegurado.tercero', 'cobertura', 'diagnostico'])->get();
         $headings = ['N°', 'ASEGURADO CÉDULA', 'ASEGURADO', 'EDAD', 'TITULAR CEDULA', 'TITULAR', 'PARENTESCO', 'COBERTURA', 'VALOR ASEGURADO', 'DIAGNOSTICO', 'FECHA ACTUALIZACIÓN', 'ESTADO'];
         $datosFormateados = $datos->map(function ($item, $index) {
+            $fechaNacimiento = Carbon::parse($item->fecha_nacimiento);            
             return [
                 'N°' => $index + 1,
                 'ASEGURADO CÉDULA' => $item->cedulaAsegurado ?? '',
-                'ASEGURADO' => $item->asegurado->tercero->nom_ter ?? '',
-                'EDAD' => $item->tercero->edad ?? ' ',
+                'ASEGURADO' => $item->nombre_tercero ?? '',
+                'EDAD' => $fechaNacimiento ?? ' ',
                 'TITULAR CEDULA' => $item->asegurado->terceroAF->cod_ter ?? '',
-                'TITULAR' => $item->asegurado->terceroAF->nom_ter ?? '',
+                'TITULAR' => $item->asegurado->nombre_titular ?? '',
                 'PARENTESCO' => $item->asegurado->parentesco ?? '',
                 'COBERTURA' => $item->cobertura->nombre,
                 'VALOR ASEGURADO' => $item->valor_asegurado ?? '',

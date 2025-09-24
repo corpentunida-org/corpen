@@ -9,7 +9,7 @@
                     <li class="nav-item flex-fill border-top" role="presentation">
                         <a class="nav-link active" data-bs-toggle="tab" data-bs-target="#securityTab"
                             aria-selected="true">Crear Usuario</a>
-                    </li>                    
+                    </li>
                 </ul>
             </div>
             <div class="tab-content">
@@ -30,7 +30,7 @@
 
                             <div class="mb-4">
                                 <label class="form-label">Contraseña<span class="text-danger">*</span></label>
-                                <input type="password" class="form-control" name="pass"required>
+                                <input type="password" class="form-control" name="pass" required>
                             </div>
 
                             <div id="contenedor-roles">
@@ -66,8 +66,8 @@
         </div>
     </div>
     <script>
-        $(document).ready(function() {
-            $('#add-rol').click(function() {
+        $(document).ready(function () {
+            /*$('#add-rol').click(function() {
                 const container = document.getElementById('contenedor-roles');
                 const coberturaRow = document.querySelector('.rol-row');
 
@@ -77,8 +77,35 @@
                 inputs.forEach(input => input.value = '');
 
                 container.appendChild(clonedRow);
+            });*/
+
+            $('#add-rol').click(function () {
+                const container = document.getElementById('contenedor-roles');
+                const coberturaRow = document.querySelector('.rol-row');
+
+                const clonedRow = coberturaRow.cloneNode(true);
+
+                // Vaciar los inputs del clon
+                const inputs = clonedRow.querySelectorAll('input');
+                inputs.forEach(input => input.value = '');
+
+                // Crear botón eliminar
+                const deleteBtn = document.createElement('button');
+                deleteBtn.type = 'button';
+                deleteBtn.classList.add('btn', 'btn-danger', 'btn-sm');
+                deleteBtn.textContent = 'Eliminar Rol';
+
+                deleteBtn.addEventListener('click', function () {
+                    clonedRow.remove();
+                });
+
+                clonedRow.appendChild(deleteBtn);
+
+                container.appendChild(clonedRow);
             });
-            $('#formAddUser').submit(function(event) {
+
+
+            $('#formAddUser').submit(function (event) {
                 var form = this;
                 if (!form.checkValidity()) {
                     $(form).addClass('was-validated');

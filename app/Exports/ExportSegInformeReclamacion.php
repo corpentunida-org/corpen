@@ -55,8 +55,6 @@ class ExportSegInformeReclamacion implements FromArray, WithStyles, WithEvents
                 }
             }
             
-
-            
             $output[] = ['', '', '', '', '', ''];
         }
 

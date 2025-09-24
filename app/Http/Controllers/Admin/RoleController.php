@@ -28,6 +28,10 @@ class RoleController extends Controller
         return redirect()->back()->with('success', 'Rol creado con éxito');
     }
 
+    public function destroy(Request $request, $idUser){
+        
+    }
+
     public function update(Request $request, Role $role){
         //$role = Role::find($request->input('roleid'));
         $currentPermissions = $role->permissions()->pluck('id')->toArray();

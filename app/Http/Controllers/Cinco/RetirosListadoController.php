@@ -23,10 +23,8 @@ class RetirosListadoController extends Controller
     public function namesearch(Request $request)
     {
         $name = str_replace(' ', '%', $request->input('id'));
-        $terceros = Terceros::whereHas('tercero', function ($query) use ($name) {
-            $query->where('Nom_Ter', 'like', '%' . $name . '%');
-        })->get();
-        return view('seguros.polizas.search', compact('asegurados'));
+        $terceros = Terceros::where('Nom_Ter', 'like', '%' . $name . '%')->get();
+        return view('cinco.movcontables.search', compact('terceros'));
     }
 
     /**
@@ -53,6 +51,9 @@ class RetirosListadoController extends Controller
     {
         $id = $request->input('id');
         $tercero = Terceros::where('Cod_Ter', $id)->first();
+        if (!$tercero) {
+            return redirect()->route('cinco.retiros.index')->with('error', 'No hay registros con esa cedula ingresada.');
+        }
         $arrayliquidacion = $this->liquidaciones($tercero->Fec_Minis);
         return view('cinco.retiros.show', compact('tercero', 'arrayliquidacion'));
     }
@@ -67,7 +68,7 @@ class RetirosListadoController extends Controller
         } else {
             $anioInicio = $fecha->year;
         }
-        for ($i = $anioInicio; $i <= $anioActual; $i++) {
+        for ($i = $anioInicio; $i <= $anioActual; $i++) {             
             if ($i < 2017) {
                 $arrayliquidacion[$i] = $this->antes2017($fecha, $i);
             } else {
@@ -81,23 +82,27 @@ class RetirosListadoController extends Controller
     }
 
     private function antes2017($fecha, $i)
-    {
+    {               
         $valorFijo = DB::table('CIN_condicionesRetiros')->where('anio', $i)->first();
-        if ($fecha->year === $i) {
+        if ($fecha->year === $i) {            
             $difMes = 12 - $fecha->month;
             $difDia = 31 - $fecha->day;
             $calculo = (($difMes * $valorFijo->valor) / 12) + ((($difDia * $valorFijo->valor) / 12) / 30);
             return round($calculo);
-        }else if ($fecha->year < 2006) {
-            $difAnio = 2006 - $fecha->year;
-            $difMes = 12 - $fecha->month;
-            $difDia = 31 - $fecha->day;
-            $calculo = ($difAnio * $valorFijo->valor) + (($difMes * $valorFijo->valor) / 12) + ((($difDia * $valorFijo->valor) / 12) / 30);
-            return round($calculo);
+        }else if ($fecha->year < 2006) {    
+            if ($i == 2006){                 
+                $difAnio = 2006 - $fecha->year;
+                $difMes = 12 - $fecha->month;
+                $difDia = 31 - $fecha->day;
+                $calculo = ($difAnio * $valorFijo->valor) + (($difMes * $valorFijo->valor) / 12) + ((($difDia * $valorFijo->valor) / 12) / 30);
+                return round($calculo);
+            }  
+            else{
+                return $valorFijo->valor;
+            } 
         } 
         else {
-            $calculo = $valorFijo->valor;
-            return $calculo;
+            return $valorFijo->valor;
         }
     }
     private function calculoPlus($fecha, $i, $plusVal)
