@@ -1,31 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="utf-8">
-    <meta http-equiv="x-ua-compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!--! The above 6 meta tags *must* come first in the head; any other head content must come *after* these tags !-->
-    <!--! BEGIN: Apps Title-->
-    <title>Reportes</title>
-    <!--! END:  Apps Title-->
-    <!--! BEGIN: Favicon-->
-    <link rel="shortcut icon" type="image/x-icon" href="assets/images/favicon.ico">
-    <!--! END: Favicon-->
-    <!--! BEGIN: Bootstrap CSS-->
-    <link rel="stylesheet" type="text/css" href="assets/css/bootstrap.min.css">
-    <!--! END: Bootstrap CSS-->
-    <!--! BEGIN: Vendors CSS-->
-    <link rel="stylesheet" type="text/css" href="assets/vendors/css/vendors.min.css">
-    <!--! END: Vendors CSS-->
-    <!--! BEGIN: Custom CSS-->
-    <link rel="stylesheet" type="text/css" href="assets/css/theme.min.css">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
-        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-</head>
-
-<body>
+<x-base-layout>
     @if (session('success'))
         <div class="alert alert-success">
             {{ session('success') }}
@@ -38,21 +11,49 @@
         </div>
     @endif
 
-    <div class="col-md-12">
+    <div class="col-lg-12">
         <div class="card stretch stretch-full">
-            <div class="card-body">
-                <form action="{{ route('cartera.morosos.store') }}" method="post" enctype="multipart/form-data" class="input-group dropdown mb-4">
+            <div class="card-body lead-status">
+                <div class="mb-3 d-flex align-items-center justify-content-between">
+                    <h5 class="fw-bold mb-0 me-4">
+                        <span class="d-block mb-2">Cargar Archivo</span>
+                        <span class="fs-12 fw-normal text-muted text-truncate-1-line">El archivo debe tener el siguiente formato:</span>
+                    </h5>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="" class="btn btn-primary p-2 mb-2">
+                        <i class="feather-download me-2"></i>
+                        <span>Descargar Archivo</span>
+                    </a>
+                </div>
+                <ul class="list-unstyled text-muted mb-0">
+                    <li class="d-flex align-items-start mb-1">
+                        <span class="text-danger">
+                            <i class="feather-check fs-10"></i>
+                        </span>
+                        <span class="fs-12 fw-normal text-truncate-1-line">"LINEA DE CRÉDITO": </span>
+                    </li>
+                </ul>
+                <form class="row" action="{{ route('cartera.morosos.store') }}" method="POST"
+                    enctype="multipart/form-data" novalidate>
                     @csrf
-                    <span class="input-group-text text-primary">
-                        <i class="feather-tag"></i>
-                    </span>                    
-                    <input type="file" name="documento" class="form-control">
-                    <button type="submit" class="btn btn-primary">Importar</button>
+                    <div class="my-3">
+                        <label for="observacion" class="form-label">Importar Excel <span
+                                class="text-danger">*</span></label>
+                        <input type="file" class="form-control" name="documento" required>
+                        @if ($errors->has('file'))
+                            <div class="invalid-feedback">
+                                Solo se permiten archivos de tipo: .xls, .xlsx
+                            </div>
+                        @endif
+                    </div>
+                    <div class="d-flex justify-content-end gap-2">
+                        <button type="submit" class="btn btn-primary">Importar</button>
+                    </div>
                 </form>
             </div>
         </div>
-    </div>
-
+    </div>    
     <div class="p-2" style="font-size: 11px;">
         @if (isset($data) && count($data) > 0)
             <table class="table table-striped">
@@ -100,6 +101,4 @@
             window.open(url, '_blank');
         }
     </script>
-</body>
-
-</html>
+</x-base-layout>
