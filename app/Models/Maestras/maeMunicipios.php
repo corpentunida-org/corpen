@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 
 use App\Models\Maestras\Congregacion;
 
-class maeMunicipios extends Model
+class MaeMunicipios extends Model
 {
 use HasFactory;
 
