@@ -4,6 +4,7 @@ namespace App\Models\Archivo;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\User;
 
 class GdoCargo extends Model
 {
@@ -43,6 +44,13 @@ class GdoCargo extends Model
         // belongsTo(ClaseRelacionada, campo_foraneo_en_gdo_cargo, campo_local_en_gdo_empleados)
         return $this->belongsTo(GdoEmpleado::class, 'GDO_empleados_cedula', 'cedula');
     }
+
+public function user()
+{
+    return $this->belongsTo(\App\Models\User::class, 'correo_corporativo', 'email');
+}
+
+
 
 
 }

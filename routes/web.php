@@ -70,6 +70,7 @@ use App\Http\Controllers\Soportes\ScpTipoObservacionController;
 use App\Http\Controllers\Soportes\ScpTableroParametroController;
 use App\Http\Controllers\Soportes\ScpSoporteController; 
 use App\Http\Controllers\Soportes\ScpObservacionController; 
+use App\Http\Controllers\Soportes\ScpSubTipoController;
 
 
 /* Route::middleware(['auth'])->group(function () {
@@ -416,6 +417,9 @@ Route::prefix('archivo')->middleware('auth')->group(function () {
             ->name('soportes.observaciones.store');
         Route::delete('soportes/{scpSoporte}/observaciones/{scpObservacion}', [ScpSoporteController::class, 'destroyObservacion'])
             ->name('soportes.observaciones.destroy');
+        // Nueva ruta para traer Sub-Tipos por Tipo
+        Route::get('sub-tipos/{tipo}', [ScpSubTipoController::class, 'getByTipo'])
+            ->name('soportes.subTipos');
     });
 
 
