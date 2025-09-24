@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Maestras\Congregacion;
 
 class MaeMunicipios extends Model
+
 {
 use HasFactory;
 
@@ -29,7 +30,7 @@ use HasFactory;
      */
     public function congregaciones()
     {
-        return $this->hasMany(Congregacion::class, 'id', 'municipio');
+        return $this->hasMany(Congregacion::class, 'municipio', 'id');
     }
 
 }
