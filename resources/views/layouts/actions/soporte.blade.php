@@ -5,14 +5,29 @@
         <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
     </a>
     <ul class="nxl-submenu">
-        {{-- Enlace al Tablero de Soporte --}}
+        {{-- Crear Soporte --}}
         <li class="nxl-item">
-            <a class="nxl-link" href="{{ route('soportes.soportes.index') }}">
-                Tablero de Soportes
+            <a class="nxl-link" href="{{ route('soportes.soportes.create') }}">
+                Crear Soporte
             </a>
         </li>
 
-        {{-- Enlace a Parámetros de Soporte --}}
+        {{-- Lista de Mis Soportes --}}
+        <li class="nxl-item nxl-hasmenu">
+            <a class="nxl-link" href="javascript:void(0)">
+                Mis Soportes
+                <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
+            </a>
+            <ul class="nxl-submenu">
+                <li class="nxl-item">
+                    <a class="nxl-link" href="{{ route('soportes.soportes.index', ['estado' => 'resuelto']) }}">
+                        Lista
+                    </a>
+                </li>
+            </ul>
+        </li>
+
+        {{-- Parámetros de Soportes --}}
         <li class="nxl-item">
             <a class="nxl-link" href="{{ route('soportes.tablero') }}">
                 Parámetros de Soportes

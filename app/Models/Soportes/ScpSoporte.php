@@ -8,6 +8,7 @@ use App\Models\Maestras\maeTerceros;
 use App\Models\User;        
 use App\Models\Archivo\GdoCargo;
 use App\Models\Creditos\LineaCredito;
+use App\Models\Soportes\ScpUsuario;
 
 class ScpSoporte extends Model
 {
@@ -24,6 +25,11 @@ class ScpSoporte extends Model
         'id_scp_tipo',
         'id_scp_prioridad',
         'id_users',
+        'id_scp_sub_tipo', 
+        'estado', 
+        'soporte', 
+        'usuario_escalado', 
+          
     ];
 
     /*
@@ -71,4 +77,20 @@ class ScpSoporte extends Model
     {
         return $this->belongsTo(LineaCredito::class, 'id_cre_lineas_creditos');
     }
+
+    public function subTipo()
+    {
+        return $this->belongsTo(ScpSubTipo::class, 'id_scp_sub_tipo');
+    }
+
+    public function usuarioAsignado()
+    {
+        return $this->belongsTo(User::class, 'id_users_asignado');
+    }
+    public function scpUsuarioAsignado()
+    {
+        return $this->belongsTo(ScpUsuario::class, 'id_scp_usuario_asignado'); 
+        // Ajusta el segundo parámetro según tu columna FK en la tabla 'scp_soportes'
+    }
+
 }
