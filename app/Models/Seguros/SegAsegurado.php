@@ -42,22 +42,22 @@ class SegAsegurado extends Model
 
     public function terceroAF()
     {
-        return $this->belongsTo(maeTerceros::class, 'cedula', 'cod_ter');
+        return $this->belongsTo(maeTerceros::class, 'titular', 'cod_ter');
     }
 
     public function terceroAfAlt()
     {
-        return $this->belongsTo(SegTercero::class, 'cedula', 'cedula');
+        return $this->belongsTo(SegTercero::class, 'titular', 'cedula');
     }
 
     public function getNombreTitularAttribute()
     {
-        if ($this->tercero) {
-            return $this->tercero->nom_ter;
+        if ($this->terceroAF) {
+            return $this->terceroAF->nom_ter;
         }
 
-        if ($this->terceroAlt) {
-            return $this->terceroAlt->nombre;
+        if ($this->terceroAfAlt) {
+            return $this->terceroAfAlt->nombre;
         }
 
         return 'No se encuentra registrado.';

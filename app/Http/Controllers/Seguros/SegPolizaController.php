@@ -147,7 +147,7 @@ class SegPolizaController extends Controller
             }
         }
 
-        $beneficiarios = SegBeneficiario::where('id_asegurado', $id)->get();
+        $beneficiarios = SegBeneficiario::where('id_asegurado', $id)->where('activo', 1)->with('parentescos')->get();
 
         $novedades = SegNovedades::where('id_asegurado', $id)->where('id_poliza', $poliza->id)->get();
         $reclamacion = SegReclamaciones::where('cedulaAsegurado', $id)->with('cambiosEstado')->get();

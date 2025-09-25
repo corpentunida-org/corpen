@@ -11,5 +11,10 @@
                 Interacciones
             </a>
         </li>
+        <li class="nxl-item">
+            <a class="nxl-link" href="{{ route('cartera.morosos.index') }}">
+                Cartas
+            </a>
+        </li>
     </ul>
 </li>
