@@ -72,7 +72,6 @@ use App\Http\Controllers\Soportes\ScpSoporteController;
 use App\Http\Controllers\Soportes\ScpObservacionController; 
 use App\Http\Controllers\Soportes\ScpSubTipoController;
 
-
 /* Route::middleware(['auth'])->group(function () {
     Route::get('/', function () {
         //return view('');
@@ -334,9 +333,6 @@ Route::prefix('archivo')->middleware('auth')->group(function () {
         // Nuevo tablero principal
         Route::get('/tablero', [TableroController::class, 'index'])
             ->name('tablero');
-
-
-
     });
 
     
@@ -415,11 +411,29 @@ Route::prefix('archivo')->middleware('auth')->group(function () {
         // Rutas para Observaciones Anidadas bajo Soportes
         Route::post('soportes/{scpSoporte}/observaciones', [ScpSoporteController::class, 'storeObservacion'])
             ->name('soportes.observaciones.store');
+
         Route::delete('soportes/{scpSoporte}/observaciones/{scpObservacion}', [ScpSoporteController::class, 'destroyObservacion'])
             ->name('soportes.observaciones.destroy');
+
         // Nueva ruta para traer Sub-Tipos por Tipo
         Route::get('sub-tipos/{tipo}', [ScpSubTipoController::class, 'getByTipo'])
             ->name('soportes.subTipos');
+
+        // Sub-Tipos
+        Route::resource('subtipos', ScpSubTipoController::class)
+            ->names([
+                'index'   => 'subtipos.index',
+                'create'  => 'subtipos.create',
+                'store'   => 'subtipos.store',
+                'show'    => 'subtipos.show',
+                'edit'    => 'subtipos.edit',
+                'update'  => 'subtipos.update',
+                'destroy' => 'subtipos.destroy',
+            ]);
+
+
+
+
     });
 
 

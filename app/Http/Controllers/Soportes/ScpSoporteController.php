@@ -21,23 +21,36 @@ use App\Models\Soportes\ScpUsuario;
 
 class ScpSoporteController extends Controller
 {
-    public function index()
-    {
-        $soportes = ScpSoporte::with([
-            'tipo',
-            'subTipo',
-            'prioridad',
-            'maeTercero',
-            'usuario',
-            'observaciones' => function($q) {
-                $q->with(['estado', 'scpUsuarioAsignado'])
-                ->latest()
-                ->limit(1); // solo la última observación
-            }
-        ])->paginate(10);
 
-        return view('soportes.soportes.index', compact('soportes'));
-    }
+
+public function index()
+{
+    // Traemos todos los soportes con sus relaciones
+    $soportes = ScpSoporte::with([
+        'tipo',
+        'subTipo',
+        'prioridad',
+        'maeTercero', 
+        'usuario',
+        'cargo.gdoArea',   
+        'lineaCredito',
+        'scpUsuarioAsignado.maeTercero',
+        'estadoSoporte',
+    ])
+    ->orderBy('created_at', 'desc')
+    ->get(); // No paginamos todavía porque vamos a agrupar
+
+    // Agrupamos por estado (puedes cambiar a cualquier campo que quieras como categoría)
+    $categorias = $soportes->groupBy(function($soporte) {
+        return $soporte->estadoSoporte->nombre ?? 'Pendiente';
+    });
+
+    return view('soportes.soportes.index', compact('categorias'));
+}
+
+
+
+
 
 
     public function create()
@@ -96,14 +109,19 @@ class ScpSoporteController extends Controller
             'tipo',
             'subTipo',
             'prioridad',
-            'MaeTercero',
+            'maeTercero',   // relación en minúscula como la definiste en el modelo
             'usuario',
             'cargo',
             'lineaCredito',
             'observaciones' => function ($query) {
-                $query->with(['estado', 'usuario', 'tipoObservacion', 'scpUsuarioAsignado'])->orderBy('timestam','desc');
+                $query->with([
+                    'estado',
+                    'usuario',
+                    'tipoObservacion',
+                    'usuarioAsignado' // <-- corregido
+                ])->orderBy('timestam', 'desc');
             },
-            'scpUsuarioAsignado'
+            'scpUsuarioAsignado' // este es el escalado guardado en el soporte
         ]);
 
         $estados = ScpEstado::all();
@@ -117,6 +135,7 @@ class ScpSoporteController extends Controller
             'usuariosEscalamiento' => $usuariosEscalamiento,
         ]);
     }
+
 
     public function edit(ScpSoporte $scpSoporte)
     {
@@ -182,6 +201,11 @@ class ScpSoporteController extends Controller
         return redirect()->route('soportes.soportes.index')->with('success','Soporte eliminado exitosamente.');
     }
 
+///////////////////////////////////////////////////////////////////////////////
+
+
+
+
     public function storeObservacion(Request $request, ScpSoporte $scpSoporte)
     {
         $request->validate([
@@ -191,6 +215,7 @@ class ScpSoporteController extends Controller
             'id_scp_usuario_asignado' => ['nullable','integer','exists:scp_usuarios,id'],
         ]);
 
+        // Guardar la observación
         $observacionData = [
             'observacion' => $request->observacion,
             'timestam' => now(),
@@ -203,15 +228,22 @@ class ScpSoporteController extends Controller
 
         $scpSoporte->observaciones()->create($observacionData);
 
+        // Siempre actualizamos el estado
+        $updateData = [
+            'estado' => $request->id_scp_estados,
+        ];
+
+        // Solo actualizamos el usuario escalado si viene en la request
         if ($request->filled('id_scp_usuario_asignado')) {
-            $scpSoporte->update([
-                'id_scp_usuario_asignado' => $request->id_scp_usuario_asignado
-            ]);
+            $updateData['usuario_escalado'] = $request->id_scp_usuario_asignado;
         }
 
+        $scpSoporte->update($updateData);
+
         return redirect()->route('soportes.soportes.show', $scpSoporte)
-            ->with('success', 'Observación añadida exitosamente.');
+            ->with('success', 'Observación añadida y soporte actualizado exitosamente.');
     }
+
 
     public function destroyObservacion(ScpSoporte $scpSoporte, ScpObservacion $scpObservacion)
     {
@@ -223,6 +255,11 @@ class ScpSoporteController extends Controller
         return redirect()->route('soportes.soportes.show',$scpSoporte)->with('success','Observación eliminada exitosamente.');
     }
 
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////
     public function getSubTipos($tipoId)
     {
         $subTipos = ScpSubTipo::where('scp_tipo_id', $tipoId)
