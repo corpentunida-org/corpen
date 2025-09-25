@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ScpUsuario;
+use App\Models\Soportes\ScpUsuario;
 use App\Models\Maestras\maeTerceros;
 use Illuminate\Http\Request;
+
 
 class ScpUsuarioController extends Controller
 {
