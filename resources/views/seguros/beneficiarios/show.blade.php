@@ -9,6 +9,7 @@
                     <th>Nombre</th>
                     <th>Parentesco</th>
                     <th>Porcentaje</th>
+                    <th>Fecha Actualización</th>
                     <th class="text-end">Acciones</th>
                 </tr>
             </thead>
@@ -16,8 +17,9 @@
                 @foreach ($beneficiarios as $b)
                     <tr>                        
                         <td>{{ $b->nombre ?? ' ' }}</td>
-                        <td>{{ $b->parentesco }}</td>
+                        <td>{{ $b->parentescos->name ?? ' ' }}</td>
                         <td><span class="badge bg-soft-warning text-warning">{{ $b->porcentaje }}%</span></td>
+                        <td>{{ $b->updated_at->format('d/m/Y') }}</td>
                         <td class="hstack justify-content-end gap-4 text-end">
                             <div class="dropdown open">
                                 <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown"

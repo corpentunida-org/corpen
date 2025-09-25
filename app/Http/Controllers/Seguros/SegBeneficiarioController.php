@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Seguros\SegAsegurado;
 use App\Models\Seguros\SegBeneficiario;
 use App\Models\Seguros\Parentescos;
+use App\Models\Seguros\SegCambioEstadoNovedad;
+use App\Models\Seguros\SegNovedades;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Http\Controllers\AuditoriaController;
@@ -40,7 +42,6 @@ class SegBeneficiarioController extends Controller
      */
     public function store(Request $request)
     {
-        dd($request->all());
         $beneficiario = SegBeneficiario::create([
             'tipo_documento_id' => $request->tipoDocumento,
             'cedula' => $request->cedula,
@@ -53,12 +54,29 @@ class SegBeneficiarioController extends Controller
             'id_asegurado' => $request->asegurado,
             'telefono' => $request->telefono,
             'correo' => $request->correo,
+            'activo' => 0
         ]);
+        $novedad = SegNovedades::create([
+            'id_poliza' => $request->poliza,
+            'id_asegurado' => $request->asegurado,
+            'tipo' => '4',
+            'estado' => 1,
+            'beneficiario' => $beneficiario->id,
+        ]);
+        SegCambioEstadoNovedad::create([
+            'novedad' => $novedad->id,
+            'estado' => 1,
+            'observaciones' => strtoupper($request->observaciones) 
+                   . " - PARENTESCO: " . $request->nameparentesco 
+                   . " - PORCENTAJE: " . $request->porcentaje . "%",
+            'fechaIncio' => Carbon::now()->toDateString(),
+        ]);
+
         $url = route('seguros.poliza.show', ['poliza' => 'ID']) . '?id=' . $request->asegurado;
         if ($beneficiario) {
             $accion = "add beneficiario  " . $request->cedula;
-            $this->auditoria($accion);    
-            return redirect()->to($url)->with('success', 'Beneficiario agregado correctamente.');
+            $this->auditoria($accion);
+            return redirect()->to($url)->with('success', 'Debe aprobar el ingreso del beneficiario en el módulo de novedades.');
         }else{
             return redirect()->to($url)->with('error', 'No se pudo agregar el beneficiario, intente mas tarde.');
         }
@@ -108,7 +126,7 @@ class SegBeneficiarioController extends Controller
      */
     public function destroy(SegBeneficiario $beneficiario)
     {
-        SegBeneficiario::findOrFail($beneficiario->id)->delete();
+        SegBeneficiario::where('id', $beneficiario->id)->update(['activo' => 0]);
         $this->auditoria("BENEFICIARIO ELIMINADO CEDULA" . $beneficiario->cedula);
         return redirect()->back()->with('success', 'Beneficiario eliminado correctamente.');
     }
