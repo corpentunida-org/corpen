@@ -26,14 +26,14 @@
                         <span>Descargar Archivo</span>
                     </a>
                 </div>
-                <ul class="list-unstyled text-muted mb-0">
+                {{-- <ul class="list-unstyled text-muted mb-0">
                     <li class="d-flex align-items-start mb-1">
                         <span class="text-danger">
                             <i class="feather-check fs-10"></i>
                         </span>
                         <span class="fs-12 fw-normal text-truncate-1-line">"LINEA DE CRÉDITO": </span>
                     </li>
-                </ul>
+                </ul> --}}
                 <form class="row" action="{{ route('cartera.morosos.store') }}" method="POST"
                     enctype="multipart/form-data" novalidate>
                     @csrf

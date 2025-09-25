@@ -1,8 +1,5 @@
 <x-base-layout>
     @section('titlepage', 'Crear Beneficiario')
-
-
-    
     <div class="col-lg-12">
         <div class="card stretch stretch-full">
             <div class="card-body task-header d-lg-flex align-items-center justify-content-between">
@@ -45,13 +42,12 @@
                             <div class="mb-4">
                                 <div class="row">
                                     <div class="col-lg-2">
-                                        <label class="form-label">Estado Novedad<span
-                                                class="text-danger">*</span></label>
-                                        <select class="form-control" name="estado">
+                                        <label class="form-label">Estado Novedad<span class="text-danger">*</span></label>
+                                        <select class="form-control" name="estado" readonly>
                                             <option value="1">SOLICITUD</option>
-                                            <option value="2">RADICADO</option>
+                                            {{-- <option value="2">RADICADO</option>
                                             <option value="3">APROBADO</option>
-                                            <option value="4">NEGADO</option>
+                                            <option value="4">NEGADO</option> --}}
                                         </select>
                                     </div>
                                     <div class="col-lg-2">
@@ -76,9 +72,9 @@
                             </div>
                             <div class="mb-4">
                                 <label class="form-label">Parentescos <span class="text-danger">*</span></label>
-                                <select class="form-control" name="parentesco">
+                                <select class="form-control" name="parentesco" id="parentesco">
                                     @foreach ($parentescos as $parentesco)
-                                        <option value="{{ $parentesco->code }}">
+                                        <option value="{{ $parentesco->code }}" data-name="{{ $parentesco->name }}">
                                             {{ $parentesco->name }}
                                         </option>
                                     @endforeach
@@ -106,11 +102,13 @@
                             <div class="mb-4">
                                 <div class="row">
                                     <div class="col-lg-2">
-                                        <label class="form-label">Beneficiario Contingente <span class="text-danger">*</span></label>
+                                        <label class="form-label">Beneficiario Contingente <span
+                                                class="text-danger">*</span></label>
                                         <div class="form-check form-switch form-switch-sm ps-5 mt-2">
                                             <input class="form-check-input c-pointer" type="checkbox" value="false"
                                                 name="contigente">
-                                            <label class="form-check-label fw-500 text-dark c-pointer" for="commentSwitch">Si</label>
+                                            <label class="form-check-label fw-500 text-dark c-pointer"
+                                                for="commentSwitch">Si</label>
                                         </div>
                                     </div>
                                     <div class="col-lg-3">
@@ -119,12 +117,17 @@
                                     </div>
                                     <div class="col-lg-7">
                                         <label class="form-label">Nombre Contingente</label>
-                                        <input type="text" class="form-control" name="nombreContingente">
+                                        <input type="text" class="form-control uppercase-input" name="nombreContingente">
                                     </div>
                                 </div>
                                 <input type="hidden" value="{{ $poliza }}" name="poliza">
                                 <input type="hidden" value="{{ $asegurado->cedula }}" name="asegurado">
+                                <input type="hidden" name="nameparentesco" id="parentesco_name">
                                 <input type="hidden" value="" name="">
+                                <div class="col-lg-12">
+                                    <label class="form-label">Observaciones <span class="text-danger">*</span></label>
+                                    <input class="form-control uppercase-input" type="text" name="observaciones">
+                                </div>
                                 <div class="d-flex flex-row-reverse gap-2 mt-2">
                                     <button class="btn btn-success mt-4" data-bs-toggle="tooltip" title="Timesheets"
                                         type="submit">
@@ -135,6 +138,11 @@
                             </div>
                         </form>
                         <script>
+                            $('#parentesco').on('change', function() {
+                                let name = $(this).find(':selected').data('name');
+                                $('#parentesco_name').val(name);
+                            });
+
                             $('#formAddBeneficiario').submit(function(event) {
                                 var form = this;
                                 if (!form.checkValidity()) {

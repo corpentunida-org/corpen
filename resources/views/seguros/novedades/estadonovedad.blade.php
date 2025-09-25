@@ -1,15 +1,15 @@
-
 @php
     $tipos = [
         1 => ['color' => 'warning', 'label' => 'MODIFICACION'],
         2 => ['color' => 'success', 'label' => 'INGRESO'],
         3 => ['color' => 'danger', 'label' => 'RETIRO'],
+        4 => ['color' => 'info', 'label' => 'INGRESO BENEFICIARIO'],
     ];
 @endphp
 
 <div class="content-sidebar content-sidebar-md" data-scrollbar-target="#psScrollbarInit">
     <div class="content-sidebar-header bg-white sticky-top hstack justify-content-between">
-        <a href="{{route('seguros.novedades.create')}}" class="btn btn-primary w-100">
+        <a href="{{ route('seguros.novedades.create') }}" class="btn btn-primary w-100">
             <i class="feather-plus me-2"></i>
             <span>Crear Solicitud</span>
         </a>
@@ -344,39 +344,43 @@
         </div>
     </div>
     <div class="content-area-body p-0">
-        @foreach ($data as $reg)
+        @foreach ($data as $index => $reg)
             <div class="single-items">
                 <!--! [item-meta] !-->
                 <div class="d-flex wd-80 gap-4 ms-1 item-meta">
                     <div class="item-checkbox">
                         <div class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input checkbox" id="checkBox_1"
-                                data-checked-action="show-options">
-                            <label class="custom-control-label" for="checkBox_1"></label>
+                            <input type="checkbox" class="custom-control-input checkbox"
+                                id="checkBox_{{ $index }}" data-checked-action="show-options">
+                            <label class="custom-control-label" for="checkBox_{{ $index }}"></label>
                         </div>
                     </div>
                 </div>
                 <!--! [item-info] !-->
                 <div class="d-flex align-items-start gap-4 w-100 item-info" data-view-toggle="details">
                     <a href="{{ route('seguros.poliza.show', ['poliza' => 'ID']) . '?id=' . $reg->id_asegurado }}"
-                        class="hstack gap-3" style="width: 35%;">
+                        class="hstack gap-3" style="width: 30%;">
                         <i class="bi bi-person-circle"></i>
                         <div>
                             <span class="text-truncate-1-line">{{ $reg->id_asegurado }}</span>
-                            <small class="fs-12 fw-normal text-muted">{{ $reg->tercero->nom_ter ?? '' }}</small>
+                            <small class="fs-12 fw-normal text-muted">{{ $reg->nombre_tercero ?? '' }}</small>
                         </div>
                     </a>
                     @php
                         $tipo = $tipos[$reg->tipo] ?? ['color' => 'secondary', 'label' => 'SIN DEFINIR'];
                     @endphp
                     <span class="badge bg-soft-{{ $tipo['color'] }} text-{{ $tipo['color'] }}"
-                        style="width: 10%;">{{ $tipo['label'] }}</span>
+                        style="width: 15%;">{{ $tipo['label'] }}</span>
                     <div style="width: 10%;">
-                        <div class="fw-semibold text-dark">$
-                            {{ number_format($reg->valorAsegurado) }}</div>
-                        <div class="fs-12 text-muted">$
-                            {{ number_format($reg->primaAseguradora) }}
-                        </div>
+                        @if ($reg->beneficiario)
+                            {{ $reg->beneficiario->nombre ?? '' }}
+                        @else
+                            <div class="fw-semibold text-dark">$
+                                {{ number_format($reg->valorAsegurado) }}</div>
+                            <div class="fs-12 text-muted">$
+                                {{ number_format($reg->primaAseguradora) }}
+                            </div>
+                        @endif
                     </div>
                     <a class="d-none d-md-block" style="width: 45%;">
                         <div class="w-100 text-truncate-1-line item-desc">
@@ -386,8 +390,7 @@
                 </div>
                 <!--! [item-date] !-->
                 <div class="d-flex align-items-center justify-content-end wd-150 gap-3 item-data">
-                    <div class="fs-11 fw-medium text-muted text-uppercase d-none d-sm-block item-time">26 May, 2023
-                    </div>
+                    <div class="fs-11 fw-medium text-muted text-uppercase d-none d-sm-block item-time">{{ $reg->created_at->translatedFormat('d M Y') }}</div>
                     <div class="item-action">
                         <div class="dropdown">
                             <a href="javascript:void(0)" data-bs-toggle="dropdown" data-bs-offset="0, 28">

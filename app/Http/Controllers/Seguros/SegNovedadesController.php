@@ -37,19 +37,12 @@ class SegNovedadesController extends Controller
         $estado = $request->query('estado', 'solicitud');
 
         $colecciones = [
-            'solicitud' => SegNovedades::where('estado', 1)
-                ->with(['tercero', 'cambiosEstado'])
-                ->get(),
-            'radicado' => SegNovedades::where('estado', 2)
-                ->with(['tercero', 'cambiosEstado'])
-                ->get(),
-            'aprobado' => SegNovedades::where('estado', 3)
-                ->with(['tercero', 'cambiosEstado'])
-                ->get(),
-            'rechazado' => SegNovedades::where('estado', 4)
-                ->with(['tercero', 'cambiosEstado'])
-                ->get(),
+            'solicitud' => SegNovedades::where('estado', 1)->with(['tercero', 'cambiosEstado', 'beneficiario'])->get(),
+            'radicado' => SegNovedades::where('estado', 2)->with(['tercero', 'cambiosEstado'])->get(),
+            'aprobado' => SegNovedades::where('estado', 3)->with(['tercero', 'cambiosEstado'])->get(),
+            'rechazado' => SegNovedades::where('estado', 4)->with(['tercero', 'cambiosEstado'])->get(),
         ];
+        
         $data = $colecciones[$estado] ?? $colecciones['solicitud'];
         return view('seguros.novedades.index', compact('data', 'estado'));
     }
