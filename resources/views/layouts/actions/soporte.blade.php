@@ -14,17 +14,9 @@
 
         {{-- Lista de Mis Soportes --}}
         <li class="nxl-item nxl-hasmenu">
-            <a class="nxl-link" href="javascript:void(0)">
-                Mis Soportes
-                <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
+            <a class="nxl-link" href="{{ route('soportes.soportes.index', ['estado' => 'resuelto']) }}">
+                Lista Soportes
             </a>
-            <ul class="nxl-submenu">
-                <li class="nxl-item">
-                    <a class="nxl-link" href="{{ route('soportes.soportes.index', ['estado' => 'resuelto']) }}">
-                        Lista
-                    </a>
-                </li>
-            </ul>
         </li>
 
         {{-- Parámetros de Soportes --}}
