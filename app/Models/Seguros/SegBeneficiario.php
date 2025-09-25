@@ -21,6 +21,7 @@ class SegBeneficiario extends Model
         'correo', 
         'id_asegurado', 
         'id_poliza', 
+        'activo'
     ];
     
     public function poliza()

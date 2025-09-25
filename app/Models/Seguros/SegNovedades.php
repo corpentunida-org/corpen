@@ -5,6 +5,13 @@ namespace App\Models\Seguros;
 use App\Models\Maestras\maeTerceros;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Seguros\SegAsegurado;
+use App\Models\Seguros\SegCambioEstadoNovedad;
+use App\Models\Seguros\SegEstadosNovedad;
+use App\Models\Seguros\SegPlan;
+use App\Models\Seguros\SegPoliza;
+use App\Models\Seguros\SegTercero;
+use App\Models\Seguros\SegBeneficiario;
 
 class SegNovedades extends Model
 {
@@ -45,7 +52,7 @@ class SegNovedades extends Model
     }
     public function terceroAlt()
     {
-        return $this->belongsTo(SegTercero::class, 'seg_asegurado_id', 'cedula');
+        return $this->belongsTo(SegTercero::class, 'id_asegurado', 'cedula');
     }
     public function getNombreTerceroAttribute()
     {
@@ -78,4 +85,9 @@ class SegNovedades extends Model
     public function cambiosEstado(){
         return $this->hasMany(SegCambioEstadoNovedad::class, 'novedad', 'id');
     } 
+
+    public function beneficiario(){
+        return $this->belongsTo(SegBeneficiario::class, 'beneficiario_id', 'id');
+    }
+
 }
