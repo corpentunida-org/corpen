@@ -5,6 +5,7 @@
         </div>
     @endif
 
+    
     {{-- ================= ESTADOS ================= --}}
     <div class="card mb-4">
         <div class="card-body">
@@ -64,6 +65,7 @@
         </div>
     </div>
 
+
     {{-- ================= PRIORIDADES ================= --}}
     <div class="card mb-4">
         <div class="card-body">
@@ -119,60 +121,6 @@
         </div>
     </div>
 
-    {{-- ================= TIPOS ================= --}}
-    <div class="card mb-4">
-        <div class="card-body">
-            <div class="mb-4 px-4 d-flex align-items-center justify-content-between">
-                <h5 class="fw-bold mb-0">Tipos</h5>
-                <a href="{{ route('soportes.tipos.create') }}" class="btn btn-success btnCrear">
-                    <i class="feather-plus me-2"></i>
-                    <span>Crear Nuevo</span>
-                </a>
-            </div>
-            <div class="table-responsive">
-                <table class="table table-hover mb-0 align-middle small">
-                    <thead>
-                        <tr>
-                            <th>Nombre</th>
-                            <th class="text-end">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($tipos as $tipo)
-                            <tr>
-                                <td>{{ $tipo->nombre }}</td>
-                                <td class="hstack justify-content-end gap-4 text-end">
-                                    <div class="dropdown open">
-                                        <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown">
-                                            <i class="feather feather-more-horizontal"></i>
-                                        </a>
-                                        <ul class="dropdown-menu">
-                                            <li>
-                                                <a class="dropdown-item btnEditar" href="{{ route('soportes.tipos.edit', $tipo) }}">
-                                                    <i class="feather-edit-3 me-3"></i> Editar
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <form action="{{ route('soportes.tipos.destroy', $tipo) }}" method="POST" class="formEliminar">
-                                                    @csrf @method('DELETE')
-                                                    <button type="submit" class="dropdown-item btnEliminar">
-                                                        <i class="feather-trash-2 me-3"></i> Eliminar
-                                                    </button>
-                                                </form>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-                <div class="mt-2">
-                    {{ $tipos->links() }}
-                </div>
-            </div>
-        </div>
-    </div>
 
     {{-- ================= TIPOS OBSERVACIÓN ================= --}}
     <div class="card mb-4">
@@ -228,6 +176,126 @@
             </div>
         </div>
     </div>
+
+
+    {{-- ================= TIPOS DE SOPORTE ================= --}}
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="mb-4 px-4 d-flex align-items-center justify-content-between">
+                <h5 class="fw-bold mb-0">Tipos de Soporte</h5>
+                <a href="{{ route('soportes.tipos.create') }}" class="btn btn-success btnCrear">
+                    <i class="feather-plus me-2"></i>
+                    <span>Crear Nuevo</span>
+                </a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle small">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Descripción</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($tipos as $tipo)
+                            <tr>
+                                <td>{{ $tipo->nombre }}</td>
+                                <td>{{ $tipo->descripcion ?? '-' }}</td>
+                                <td class="hstack justify-content-end gap-4 text-end">
+                                    <div class="dropdown open">
+                                        <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown">
+                                            <i class="feather feather-more-horizontal"></i>
+                                        </a>
+                                        <ul class="dropdown-menu">
+                                            <li>
+                                                <a class="dropdown-item btnEditar" href="{{ route('soportes.tipos.edit', $tipo) }}">
+                                                    <i class="feather-edit-3 me-3"></i> Editar
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <form action="{{ route('soportes.tipos.destroy', $tipo) }}" method="POST" class="formEliminar">
+                                                    @csrf @method('DELETE')
+                                                    <button type="submit" class="dropdown-item btnEliminar">
+                                                        <i class="feather-trash-2 me-3"></i> Eliminar
+                                                    </button>
+                                                </form>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+                <div class="mt-2">
+                    {{ $tipos->links() }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    {{-- ================= SUB TIPOS DE SOPORTE ================= --}}
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="mb-4 px-4 d-flex align-items-center justify-content-between">
+                <h5 class="fw-bold mb-0">Sub Tipos de Soporte</h5>
+                    <a href="{{ route('soportes.subtipos.create') }}" class="btn btn-success btnCrear">
+                    <i class="feather-plus me-2"></i>
+                    <span>Crear Nuevo</span>
+                </a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle small">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Descripción</th>
+                            <th>Tipo Padre</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($subTipos as $sub)
+                            <tr>
+                                <td>{{ $sub->nombre }}</td>
+                                <td>{{ $sub->descripcion ?? '-' }}</td>
+                                <td>{{ $sub->tipo->nombre ?? '-' }}</td>
+                                <td class="hstack justify-content-end gap-4 text-end">
+                                    <div class="dropdown open">
+                                        <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown">
+                                            <i class="feather feather-more-horizontal"></i>
+                                        </a>
+                                        <ul class="dropdown-menu">
+                                            <li>
+                                                <a class="dropdown-item btnEditar" href="{{ route('soportes.subtipos.edit', $sub) }}">
+                                                    <i class="feather-edit-3 me-3"></i> Editar
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <form action="{{ route('soportes.subtipos.destroy', $sub) }}" method="POST" class="formEliminar">
+                                                    @csrf @method('DELETE')
+                                                    <button type="submit" class="dropdown-item btnEliminar">
+                                                        <i class="feather-trash-2 me-3"></i> Eliminar
+                                                    </button>
+                                                </form>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+                <div class="mt-2">
+                    {{ $subTipos->links() }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+
 
     {{-- Scripts de confirmación con SweetAlert2 --}}
     @push('scripts')
