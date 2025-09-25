@@ -4,18 +4,17 @@ namespace App\Models\Soportes;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Maestras\maeTerceros;   
+use App\Models\Maestras\MaeTerceros;
 
 class ScpUsuario extends Model
 {
     use HasFactory;
 
-    // Nombre de la tabla
     protected $table = 'scp_usuarios';
 
     protected $fillable = [
-        'cod_ter',
-        'rol',
+        'cod_ter', // referencia al tercero
+        'rol',     // rol dentro del sistema
     ];
 
     /**
@@ -23,6 +22,6 @@ class ScpUsuario extends Model
      */
     public function maeTercero()
     {
-        return $this->belongsTo(maeTerceros::class, 'cod_ter', 'cod_ter');
+        return $this->belongsTo(MaeTerceros::class, 'cod_ter', 'cod_ter');
     }
 }
