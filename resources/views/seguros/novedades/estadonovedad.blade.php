@@ -244,6 +244,7 @@
                         <option value="3">Aprobada</option>
                         <option value="4">Rechazada</option>
                     </select>
+                    <input type="text" name="observaciones" class="form-control form-control-sm" placeholder="Observaciones" required>
                     <button type="submit" class="btn btn-warning">Actualizar Estado</button>
                 </form>
             </div>
@@ -309,9 +310,9 @@
                     <div class="item-checkbox">
                         <div class="custom-control custom-checkbox">
                             <input type="checkbox" class="custom-control-input checkbox"
-                                id="checkBox_{{ $index }}" data-checked-action="show-options" name="ids[]"
+                                id="{{ $index }}bcb" data-checked-action="show-options" name="ids[]"
                                 value="{{ $reg->id }}" form="novedadesForm">
-                            <label class="custom-control-label" for="checkBox_{{ $index }}"></label>
+                            <label class="custom-control-label" for="{{ $index }}bcb"></label>
                         </div>
                     </div>
                 </div>
