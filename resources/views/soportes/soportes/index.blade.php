@@ -15,7 +15,6 @@
                     <span>Crear Nuevo Soporte</span>
                 </a>
             </div>
-
             {{-- Tabs por categoría --}}
             <ul class="nav nav-tabs mb-3" id="soporteTabs" role="tablist">
                 @foreach ($categorias as $nombreCategoria => $soportesCategoria)
@@ -40,7 +39,6 @@
                     </li>
                 @endforeach
             </ul>
-
             <div class="tab-content" id="soporteTabsContent">
                 @foreach ($categorias as $nombreCategoria => $soportesCategoria)
                 @php 
