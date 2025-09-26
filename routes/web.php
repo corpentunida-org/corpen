@@ -72,6 +72,10 @@ use App\Http\Controllers\Soportes\ScpSoporteController;
 use App\Http\Controllers\Soportes\ScpObservacionController; 
 use App\Http\Controllers\Soportes\ScpSubTipoController;
 
+//VISITAS
+use App\Http\Controllers\Vistas\VisitaCorpenController;
+
+
 /* Route::middleware(['auth'])->group(function () {
     Route::get('/', function () {
         //return view('');
@@ -436,7 +440,31 @@ Route::prefix('archivo')->middleware('auth')->group(function () {
 
     });
 
+    //VISITAS
+    Route::middleware('auth')->prefix('visitas')->name('visitas.')->group(function () {
 
+        // Buscar cliente para autocompletado
+        Route::get('/cliente/buscar', [VisitaCorpenController::class, 'buscarCliente'])
+            ->name('cliente.buscar');
+
+        // Tablero general de visitas
+        Route::get('tablero', [VisitaCorpenController::class, 'index'])
+            ->name('tablero');
+
+        // Visitas Corpen (Resource)
+        Route::resource('corpen', VisitaCorpenController::class)
+            ->names([
+                'index'   => 'corpen.index',
+                'create'  => 'corpen.create',
+                'store'   => 'corpen.store',
+                'show'    => 'corpen.show',
+                'edit'    => 'corpen.edit',
+                'update'  => 'corpen.update',
+                'destroy' => 'corpen.destroy',
+            ])
+            ->parameters(['corpen' => 'visitaCorpen']);
+
+    });
 
 
 });
