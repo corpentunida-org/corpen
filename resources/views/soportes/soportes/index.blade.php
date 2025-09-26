@@ -18,8 +18,15 @@
 
             {{-- Tabs por categoría --}}
             <ul class="nav nav-tabs mb-3" id="soporteTabs" role="tablist">
-                @foreach ($categorias as $nombreCategoria => $soportesCategoria)
+                @foreach ($categorias as $nombreCategoria => <<<<<<< HEAD
                     <li class="nav-item" role="presentation">
+=======
+                    @php 
+                        $permiso = str_replace(' ', '', strtolower($nombreCategoria));     
+                    @endphp
+                    @can('soporte.lista.' . $permiso)
+                    <li class="nav-item" role="presentation">                    
+>>>>>>> origin/vanessa
                         <button class="nav-link @if($loop->first) active @endif"
                                 id="tab-{{ $loop->index }}-tab"
                                 data-bs-toggle="tab"
@@ -31,12 +38,17 @@
                             {{ $nombreCategoria }}
                             <span class="badge bg-secondary">{{ $soportesCategoria->count() }}</span>
                         </button>
-                    </li>
-                @endforeach
+                    </li> 
+                    @endcan                   
+foreach
             </ul>
 
             <div class="tab-content" id="soporteTabsContent">
                 @foreach ($categorias as $nombreCategoria => $soportesCategoria)
+                @php 
+                    $permiso = str_replace(' ', '', strtolower($nombreCategoria));     
+                @endphp
+                    @can('soporte.lista.' . $permiso)
                     <div class="tab-pane fade @if($loop->first) show active @endif" id="tab-{{ $loop->index }}" role="tabpanel" aria-labelledby="tab-{{ $loop->index }}-tab">
                         <div class="table-responsive">
                             <table class="table table-hover mb-0 align-middle small" style="font-size: 0.875rem;">
@@ -125,6 +137,15 @@
                                         </tr>
                                     @endforelse
                                 </tbody>
+                            </table>
+                        </div>
+                    </div>
+                @endcan
+                      </tbody>
+                            </table>
+                        </div>
+                    </div>
+  </tbody>
                             </table>
                         </div>
                     </div>

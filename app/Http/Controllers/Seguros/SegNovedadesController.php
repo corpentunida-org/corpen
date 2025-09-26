@@ -37,42 +37,23 @@ class SegNovedadesController extends Controller
         $estado = $request->query('estado', 'solicitud');
 
         $colecciones = [
-            'solicitud' => SegNovedades::where('estado', 1)->with(['tercero', 'cambiosEstado', 'beneficiario'])->get(),
-            'radicado' => SegNovedades::where('estado', 2)->with(['tercero', 'cambiosEstado'])->get(),
-            'aprobado' => SegNovedades::where('estado', 3)->with(['tercero', 'cambiosEstado'])->get(),
-            'rechazado' => SegNovedades::where('estado', 4)->with(['tercero', 'cambiosEstado'])->get(),
+            'solicitud' => SegNovedades::where('estado', 1)
+                ->with(['tercero', 'cambiosEstado', 'beneficiario'])
+                ->get(),
+            'radicado' => SegNovedades::where('estado', 2)
+                ->with(['tercero', 'cambiosEstado'])
+                ->get(),
+            'aprobado' => SegNovedades::where('estado', 3)
+                ->with(['tercero', 'cambiosEstado'])
+                ->get(),
+            'rechazado' => SegNovedades::where('estado', 4)
+                ->with(['tercero', 'cambiosEstado'])
+                ->get(),
         ];
-        
+
         $data = $colecciones[$estado] ?? $colecciones['solicitud'];
         return view('seguros.novedades.index', compact('data', 'estado'));
     }
-
-    /* public function create(Request $request)
-    {
-        $id = $request->query('a');
-        $isactive = SegPoliza::where('seg_asegurado_id', $id)->where('seg_convenio_id', '23055455')->first();
-        if (!$isactive->active) {
-            abort(403, 'La póliza está inactiva.');
-        }
-        $asegurado = SegAsegurado::where('cedula', $id)->with(['tercero', 'terceroAF', 'polizas.plan'])->first();
-
-        $edad = date_diff(date_create($asegurado->tercero_preferido->fec_nac), date_create('today'))->y;
-        $idcondicion = app(SegPlanController::class)->getCondicion($edad);
-
-        $planes = SegPlan::where('condicion_corpen', $idcondicion)
-            ->where('vigente', true)->with(['convenio'])->get();
-
-        $condicion = SegCondicion::where('id', $idcondicion)->first(['descripcion']);
-
-        $grupoFamiliar = SegAsegurado::where('Titular', $asegurado->titular)->with('tercero', 'polizas.plan.coberturas')->get();
-        $totalPrima = DB::table('SEG_polizas')
-            ->whereIn('seg_asegurado_id', $grupoFamiliar->pluck('cedula'))
-            ->sum('valor_prima');
-
-        $reclamaciones = SegReclamaciones::where('cedulaAsegurado', $asegurado->cedula)->with(['cobertura', 'diagnostico'])->get();
-
-        return view('seguros.novedades.create', compact('asegurado', 'planes', 'condicion', 'grupoFamiliar', 'totalPrima', 'reclamaciones'));
-    } */
 
     public function create()
     {
@@ -145,8 +126,7 @@ class SegNovedadesController extends Controller
                     'sexo' => $request->tergenero,
                     'cod_dist' => $request->terdistrito,
                 ]);
-            }
-            else {                
+            } else {
                 $terceroontable = maeTerceros::where('cod_ter', $request->asegurado)->first();
                 if ($request->estitular === '1') {
                     $asegurado = SegAsegurado::create([
@@ -180,6 +160,10 @@ class SegNovedadesController extends Controller
 
     public function update(Request $request, $id)
     {
+        foreach ($request->ids as $id) {
+            $novedad = SegNovedades::findOrFail($id);
+            dd($novedad->tipo);
+        }
         if ($request->estado == 3) {
             if ($request->tipo === 'INGRESO') {
                 dd('es ingreso', $request->all());
@@ -204,7 +188,8 @@ class SegNovedadesController extends Controller
             }
         }
     }
-    public function destroy(Request $request, $id){
+    public function destroy(Request $request, $id)
+    {
         $novedad = SegNovedades::create([
             'id_poliza' => $request->id_poliza ?? null,
             'id_asegurado' => $id,
