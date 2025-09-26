@@ -51,5 +51,10 @@
                 </li>
             </ul>
         </li>
+
+<li class="nxl-item {{ request()->routeIs('visitas.corpen.*') ? 'active' : '' }}">
+    <a class="nxl-link" href="{{ route('visitas.corpen.index') }}">Registro de Visitas</a>
+</li>
+
     </ul>
 </li>
