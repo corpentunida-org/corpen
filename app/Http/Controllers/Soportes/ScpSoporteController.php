@@ -22,6 +22,19 @@ use App\Models\Soportes\ScpUsuario;
 class ScpSoporteController extends Controller
 {
 
+    public function index()
+    {
+        $soportes = ScpSoporte::with(['tipo', 'subTipo', 'prioridad', 'maeTercero', 'usuario', 'cargo.gdoArea', 'lineaCredito', 'scpUsuarioAsignado.maeTercero', 'estadoSoporte'])
+            ->orderBy('created_at', 'desc')
+            ->get(); 
+        
+        $categorias = $soportes->groupBy(function ($soporte) {
+            return $soporte->estadoSoporte->nombre ?? 'Pendiente';
+        });
+
+        return view('soportes.soportes.index', compact('categorias'));
+    }
+
 
 public function index()
 {
@@ -57,16 +70,14 @@ public function index()
     {
         $tipos = ScpTipo::all();
         $prioridades = ScpPrioridad::all();
-        $terceros = maeTerceros::select('cod_ter','nom_ter')->get();
-        $usuarios = User::select('id','name')->get();
-        $cargos = GdoCargo::select('id','nombre_cargo')->get();
-        $lineas = LineaCredito::select('id','nombre')->get();
+        $terceros = maeTerceros::select('cod_ter', 'nom_ter')->get();
+        $usuarios = User::select('id', 'name')->get();
+        $cargos = GdoCargo::select('id', 'nombre_cargo')->get();
+        $lineas = LineaCredito::select('id', 'nombre')->get();
 
         $usuario = User::find(Auth::id());
 
-        return view('soportes.soportes.create', compact(
-            'tipos', 'prioridades', 'terceros', 'usuarios', 'cargos', 'lineas', 'usuario'
-        ));
+        return view('soportes.soportes.create', compact('tipos', 'prioridades', 'terceros', 'usuarios', 'cargos', 'lineas', 'usuario'));
     }
 
     public function store(Request $request)
@@ -75,11 +86,11 @@ public function index()
             'detalles_soporte' => 'required|string|max:255',
             'id_gdo_cargo' => 'nullable|integer|exists:gdo_cargo,id',
             'id_cre_lineas_creditos' => 'nullable|integer|exists:cre_lineas_creditos,id',
-            'cod_ter_maeTercero' => ['nullable', 'string', 'max:20', Rule::exists('MaeTerceros','cod_ter')],
+            'cod_ter_maeTercero' => ['nullable', 'string', 'max:20', Rule::exists('MaeTerceros', 'cod_ter')],
             'id_scp_tipo' => 'required|exists:scp_tipos,id',
             'id_scp_prioridad' => 'required|exists:scp_prioridads,id',
             'id_users' => 'required|exists:users,id',
-            'id_scp_sub_tipo' => 'required|exists:scp_sub_tipos,id', 
+            'id_scp_sub_tipo' => 'required|exists:scp_sub_tipos,id',
             'estado' => 'nullable|string|max:50',
             'soporte' => 'nullable|string|max:255',
             'usuario_escalado' => 'nullable|string|max:100',
@@ -109,11 +120,22 @@ public function index()
             'tipo',
             'subTipo',
             'prioridad',
-            'maeTercero',   // relación en minúscula como la definiste en el modelo
+            'maeTercero'
             'usuario',
             'cargo',
             'lineaCredito',
             'observaciones' => function ($query) {
+                $query
+                    ->with([
+                        'estado',
+                        'usuario',
+                        'tipoObservacion',
+                        'usuarioAsignado', // <-- corregido
+                    ])
+                    ->orderBy('timestam', 'desc');
+            },
+            'scpUsuarioAsignado', // este es el escalado guardado en el soporte
+
                 $query->with([
                     'estado',
                     'usuario',
@@ -122,6 +144,7 @@ public function index()
                 ])->orderBy('timestam', 'desc');
             },
             'scpUsuarioAsignado' // este es el escalado guardado en el soporte
+
         ]);
 
         $estados = ScpEstado::all();
@@ -141,15 +164,15 @@ public function index()
     {
         $tipos = ScpTipo::all();
         $prioridades = ScpPrioridad::all();
-        $terceros = maeTerceros::select('cod_ter','nom_ter')->get();
-        $usuarios = User::select('id','name')->get();
+        $terceros = maeTerceros::select('cod_ter', 'nom_ter')->get();
+        $usuarios = User::select('id', 'name')->get();
         $cargos = GdoCargo::select('id', 'nombre_cargo')->get();
-        $lineas = LineaCredito::select('id','nombre')->get();
+        $lineas = LineaCredito::select('id', 'nombre')->get();
 
         $scpSoporte->load([
             'observaciones' => function ($query) {
-                $query->with(['estado','usuario','tipoObservacion'])->orderBy('timestam','desc');
-            }
+                $query->with(['estado', 'usuario', 'tipoObservacion'])->orderBy('timestam', 'desc');
+            },
         ]);
 
         $estados = ScpEstado::all();
@@ -157,9 +180,7 @@ public function index()
 
         $usuario = User::find(Auth::id());
 
-        return view('soportes.soportes.edit', compact(
-            'scpSoporte','tipos','prioridades','terceros','usuarios','cargos','lineas','estados','tiposObservacion','usuario'
-        ));
+        return view('soportes.soportes.edit', compact('scpSoporte', 'tipos', 'prioridades', 'terceros', 'usuarios', 'cargos', 'lineas', 'estados', 'tiposObservacion', 'usuario'));
     }
 
     public function update(Request $request, ScpSoporte $scpSoporte)
@@ -168,7 +189,7 @@ public function index()
             'detalles_soporte' => 'required|string|max:255',
             'id_gdo_cargo' => 'nullable|integer|exists:gdo_cargo,id',
             'id_cre_lineas_creditos' => 'nullable|integer|exists:cre_lineas_creditos,id',
-            'cod_ter_maeTercero' => ['nullable','string','max:20', Rule::exists('MaeTerceros','cod_ter')],
+            'cod_ter_maeTercero' => ['nullable', 'string', 'max:20', Rule::exists('MaeTerceros', 'cod_ter')],
             'id_scp_tipo' => 'required|exists:scp_tipos,id',
             'id_scp_prioridad' => 'required|exists:scp_prioridads,id',
             'id_users' => 'required|exists:users,id',
@@ -192,18 +213,14 @@ public function index()
             'usuario_escalado' => $request->usuario_escalado,
         ]);
 
-        return redirect()->route('soportes.soportes.show',$scpSoporte)->with('success','Soporte actualizado exitosamente.');
+        return redirect()->route('soportes.soportes.show', $scpSoporte)->with('success', 'Soporte actualizado exitosamente.');
     }
 
     public function destroy(ScpSoporte $scpSoporte)
     {
         $scpSoporte->delete();
-        return redirect()->route('soportes.soportes.index')->with('success','Soporte eliminado exitosamente.');
+        return redirect()->route('soportes.soportes.index')->with('success', 'Soporte eliminado exitosamente.');
     }
-
-///////////////////////////////////////////////////////////////////////////////
-
-
 
 
     public function storeObservacion(Request $request, ScpSoporte $scpSoporte)
@@ -212,7 +229,7 @@ public function index()
             'observacion' => 'required|string|max:255',
             'id_scp_estados' => 'required|exists:scp_estados,id',
             'id_tipo_observacion' => 'required|exists:scp_tipo_observacions,id',
-            'id_scp_usuario_asignado' => ['nullable','integer','exists:scp_usuarios,id'],
+            'id_scp_usuario_asignado' => ['nullable', 'integer', 'exists:scp_usuarios,id'],
         ]);
 
         // Guardar la observación
@@ -240,26 +257,26 @@ public function index()
 
         $scpSoporte->update($updateData);
 
+
+        
         return redirect()->route('soportes.soportes.show', $scpSoporte)
             ->with('success', 'Observación añadida y soporte actualizado exitosamente.');
+
     }
 
 
     public function destroyObservacion(ScpSoporte $scpSoporte, ScpObservacion $scpObservacion)
     {
-        if($scpObservacion->id_scp_soporte !== $scpSoporte->id){
-            return redirect()->back()->with('error','La observación no pertenece a este soporte.');
+        if ($scpObservacion->id_scp_soporte !== $scpSoporte->id) {
+            return redirect()->back()->with('error', 'La observación no pertenece a este soporte.');
         }
 
         $scpObservacion->delete();
-        return redirect()->route('soportes.soportes.show',$scpSoporte)->with('success','Observación eliminada exitosamente.');
+        return redirect()->route('soportes.soportes.show', $scpSoporte)->with('success', 'Observación eliminada exitosamente.');
     }
 
 
 
-
-
-///////////////////////////////////////////////////////////////////////////////
     public function getSubTipos($tipoId)
     {
         $subTipos = ScpSubTipo::where('scp_tipo_id', $tipoId)
@@ -268,5 +285,4 @@ public function index()
 
         return response()->json($subTipos);
     }
-
 }
