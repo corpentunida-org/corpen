@@ -37,6 +37,7 @@
                         </button>
                     </li> 
                     @endcan                   
+                    </li>
                 @endforeach
             </ul>
 
