@@ -52,9 +52,11 @@ class ScpObservacion extends Model
         return $this->belongsTo(User::class, 'id_users');
     }
 
-    // Usuario asignado (si aplica)
-    public function usuarioAsignado()
-    {
-        return $this->belongsTo(User::class, 'id_users_asignado');
-    }
+    // Usuario asignado/escalado (si aplica)
+// Usuario asignado (relacionado con ScpUsuario, que a su vez tiene MaeTercero)
+public function scpUsuarioAsignado()
+{
+    return $this->belongsTo(ScpUsuario::class, 'id_users_asignado');
+}
+
 }
