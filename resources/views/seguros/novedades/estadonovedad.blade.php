@@ -234,8 +234,9 @@
                                 <span>Manages Label</span>
                             </a>
                         </div>
-                    </div> --}}                
-                <form id="novedadesForm" action="{{ route('seguros.novedades.update', 1) }}" method="POST" class="d-flex align-items-center gap-2 me-3">
+                    </div> --}}
+                <form id="novedadesForm" action="{{ route('seguros.novedades.update', 1) }}" method="POST"
+                    class="d-flex align-items-center gap-2 me-3">
                     @csrf
                     @method('PUT')
                     <select name="estado" class="form-select form-select-sm me-2" required>
@@ -244,7 +245,8 @@
                         <option value="3">Aprobada</option>
                         <option value="4">Rechazada</option>
                     </select>
-                    <input type="text" name="observaciones" class="form-control form-control-sm" placeholder="Observaciones" required>
+                    <input type="text" name="observaciones" class="form-control form-control-sm"
+                        placeholder="Observaciones" required>
                     <button type="submit" class="btn btn-warning">Actualizar Estado</button>
                 </form>
             </div>
@@ -277,11 +279,6 @@
                         data-bs-toggle="dropdown" data-bs-offset="0,23" aria-expanded="false">1-15 of 762 </a>
                     <ul class="dropdown-menu">
                         <li><a class="dropdown-item" href="javascript:void(0)">Oldest</a></li>
-                        {{-- <li><a class="dropdown-item" href="javascript:void(0)">Newest</a></li>
-                            <li><a class="dropdown-item" href="javascript:void(0)">Replied</a></li>
-                            <li class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="javascript:void(0)">Ascending</a></li>
-                            <li><a class="dropdown-item" href="javascript:void(0)">Descending</a></li> --}}
                     </ul>
                 </div>
                 <div class="hstack d-none d-sm-flex">
@@ -300,7 +297,6 @@
                 </div>
             </div>
         </div>
-        </form>
     </div>
     <div class="content-area-body p-0">
         @foreach ($data as $index => $reg)
@@ -309,9 +305,9 @@
                 <div class="d-flex wd-80 gap-4 ms-1 item-meta">
                     <div class="item-checkbox">
                         <div class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input checkbox"
-                                id="{{ $index }}bcb" data-checked-action="show-options" name="ids[]"
-                                value="{{ $reg->id }}" form="novedadesForm">
+                            <input type="checkbox" class="custom-control-input checkbox" id="{{ $index }}bcb"
+                                data-checked-action="show-options" name="ids[]" value="{{ $reg->id }}"
+                                form="novedadesForm">
                             <label class="custom-control-label" for="{{ $index }}bcb"></label>
                         </div>
                     </div>
@@ -356,32 +352,15 @@
                         <div class="dropdown">
                             <a href="javascript:void(0)" data-bs-toggle="dropdown" data-bs-offset="0, 28">
                                 <div class="avatar-text avatar-sm" data-bs-toggle="tooltip" data-bs-trigger="hover"
-                                    title="More Options">
+                                    title="Más Opciones">
                                     <i class="feather-more-vertical"></i>
                                 </div>
                             </a>
                             <div class="dropdown-menu dropdown-menu-end">
-                                <a href="javascript:void(0);" class="dropdown-item" data-view-toggle="details">
+                                <a href="{{ route('seguros.novedades.edit', $reg->id) }}" class="dropdown-item"
+                                    data-view-toggle="details">
                                     <i class="feather-eye me-3"></i>
-                                    <span>View</span>
-                                </a>
-                                <a href="javascript:void(0);" class="dropdown-item">
-                                    <i class="feather-corner-up-right me-3"></i>
-                                    <span>Reply</span>
-                                </a>
-                                <a href="javascript:void(0);" class="dropdown-item">
-                                    <i class="feather-fast-forward me-3"></i>
-                                    <span>Forward</span>
-                                </a>
-                                <a href="javascript:void(0);" class="dropdown-item">
-                                    <i class="feather-repeat me-3"></i>
-                                    <span>Reply All</span>
-                                </a>
-                                <div class="dropdown-divider"></div>
-                                <a href="javascript:void(0)" class="dropdown-item"
-                                    data-action-target="#mailDeleteMessage">
-                                    <i class="feather-x me-3"></i>
-                                    <span>Delete</span>
+                                    <span>Editar</span>
                                 </a>
                             </div>
                         </div>
@@ -389,8 +368,6 @@
                 </div>
             </div>
         @endforeach
-
-
         {{-- <div class="p-4 bg-white d-flex align-items-center justify-content-center justify-content-md-between">
             <div class="content-sidebar-footer wd-300 d-none d-md-block">
                 <div class="d-flex justify-content-between align-items-center mb-1">
@@ -411,4 +388,20 @@
             </div>
         </div> --}}
     </div>
+    <script>
+        $('#novedadesForm').on('submit', function(event) {
+            event.preventDefault();
+            let observaciones = $('input[name="observaciones"]').val();
+            let estado = $('select[name="estado"]').val();
+            if (observaciones.trim() === "" || estado.trim() === "") {
+                alert("Todos los campos son obligatorios");
+                return;
+            }
+            this.submit();
+        });
+        $(document).on('click', '.item-info', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+        });
+    </script>
 </div>

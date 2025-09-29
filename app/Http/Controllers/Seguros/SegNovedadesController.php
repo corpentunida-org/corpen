@@ -159,50 +159,63 @@ class SegNovedadesController extends Controller
 
     public function update(Request $request, $id)
     {
-        foreach ($request->ids as $id) {
+        if ($request->has('individual') || $request->individual) {            
             $novedad = SegNovedades::findOrFail($id);
-            if ($request->estado == 3) {
-                if ($novedad->tipo == 1) {                    
-                    $poliza = SegPoliza::findOrFail($novedad->id_poliza);
-                    $poliza->update([
-                        'valor_prima' => $plan->primaAseguradora,
-                        'seg_plan_id' => $request->planid,
-                        'extra_prima' => $request->extraprima,
-                        'primapagar' => $request->primaPagar,
-                    ]);
-                } elseif ($novedad->tipo == 2) {                    
-                    SegPoliza::create([
-                        'seg_convenio_id' => '23055455',
-                        'seg_asegurado_id' => $novedad->id_asegurado,
-                        'seg_plan_id' => $novedad->id_plan,
-                        'valor_prima' => $novedad->primaAseguradora,
-                        'extra_prima' => $novedad->extraprima,
-                        'primapagar' => $novedad->primaCorpen,                        
-                        'active' => true,
-                        'fecha_inicio' => Carbon::now()->toDateString(),
-                    ]);
-                }elseif ($novedad->tipo == 3) {
-                    $poliza = SegPoliza::findOrFail($novedad->id_poliza);
-                    $poliza->update([
-                        'active' => false,
-                        'fecha_fin' => Carbon::now()->toDateString(),
-                    ]);
-                }elseif ($novedad->tipo == 4) {                   
-                    $beneficiario = SegBeneficiario::findOrFail($novedad->beneficiario_id);
-                    $beneficiario->update(['activo' => 1]);
-                }
-            }
             $novedad->update([
-                'estado' => $request->estado,
+                'primaCorpen' => $request->primaPagar,
+                'extraprima' => $request->extraprima,
             ]);
             SegCambioEstadoNovedad::create([
                 'novedad' => $id,
                 'estado' => $request->estado,
                 'observaciones' => $request->observaciones,
-                'fechaCierre' => Carbon::now()->toDateString(),
             ]);
-            return redirect()->route('seguros.novedades.index')->with('success', 'Se actualizó correctamente el cambio de estado.');
-            
+             return redirect()->route('seguros.novedades.index')->with('success', 'Se actualizó correctamente la novedad.');
+        } else {           
+            foreach ($request->ids as $id) {
+                $novedad = SegNovedades::findOrFail($id);
+                if ($request->estado == 3) {
+                    if ($novedad->tipo == 1) {
+                        $poliza = SegPoliza::findOrFail($novedad->id_poliza);
+                        $poliza->update([
+                            'valor_prima' => $plan->primaAseguradora,
+                            'seg_plan_id' => $request->planid,
+                            'extra_prima' => $request->extraprima,
+                            'primapagar' => $request->primaPagar,
+                        ]);
+                    } elseif ($novedad->tipo == 2) {
+                        SegPoliza::create([
+                            'seg_convenio_id' => '23055455',
+                            'seg_asegurado_id' => $novedad->id_asegurado,
+                            'seg_plan_id' => $novedad->id_plan,
+                            'valor_prima' => $novedad->primaAseguradora,
+                            'extra_prima' => $novedad->extraprima,
+                            'primapagar' => $novedad->primaCorpen,
+                            'active' => true,
+                            'fecha_inicio' => Carbon::now()->toDateString(),
+                        ]);
+                    } elseif ($novedad->tipo == 3) {
+                        $poliza = SegPoliza::findOrFail($novedad->id_poliza);
+                        $poliza->update([
+                            'active' => false,
+                            'fecha_fin' => Carbon::now()->toDateString(),
+                        ]);
+                    } elseif ($novedad->tipo == 4) {
+                        $beneficiario = SegBeneficiario::findOrFail($novedad->beneficiario_id);
+                        $beneficiario->update(['activo' => 1]);
+                    }
+                }
+                $novedad->update([
+                    'estado' => $request->estado,
+                ]);
+                SegCambioEstadoNovedad::create([
+                    'novedad' => $id,
+                    'estado' => $request->estado,
+                    'observaciones' => $request->observaciones,
+                    'fechaCierre' => Carbon::now()->toDateString(),
+                ]);
+                return redirect()->route('seguros.novedades.index')->with('success', 'Se actualizó correctamente el cambio de estado.');
+            }
         }
     }
     public function destroy(Request $request, $id)
