@@ -35,53 +35,68 @@
                         value="$ {{ number_format($novedad->poliza->primapagar) }}" disabled>
                 </div>
             </div>
-            <form method="POST" action="{{ route('seguros.novedades.update', $novedad->id) }}" id="formUpdateNovedad" novalidate>
+            <form method="POST" action="{{ route('seguros.novedades.update', $novedad->id) }}" id="formUpdateNovedad"
+                novalidate>
                 @csrf
                 @method('PUT')
                 <div class="row">
                     <div class="col-lg-2 mb-4">
                         <label class="form-label">Tipo</label>
-                        <input class="form-control" name="tipo" value="{{ $novedad->tipo == '1' ? 'MODIFICACIÓN' : 'INGRESO' }}" readonly>
+                        <input class="form-control" name="tipo"
+                            value="{{ $novedad->tipo == '1' ? 'MODIFICACIÓN' : 'INGRESO' }}" readonly>
                     </div>
-                    <div class="col-lg-2 mb-4">
-                        <label class="form-label">Estado de la Novedad<span class="text-danger">*</span></label>
-                        <select class="form-control" name="estado">
-                            <option value="1">SOLICITUD</option>
-                            <option value="2">RADICADO</option>
-                            <option value="3">APROBADO</option>
-                            <option value="4">NEGADO</option>
-                        </select>
-                    </div>
-                    <div class="col-lg-2 mb-4">
+                    <div class="col-lg-3 mb-4">
                         <label class="form-label">Valor Asegurado<span class="text-danger">*</span></label>
-                        <input type="number" class="form-control" name="valAsegurado" value="{{ $novedad->valorAsegurado }}">
+                        <input type="number" class="form-control" name="valAsegurado"
+                            value="{{ $novedad->valorAsegurado }}">
                         <input type="hidden" class="form-control" name="planid" value="{{ $novedad->id_plan }}">
                     </div>
                     <div class="col-lg-2 mb-4">
                         <label class="form-label">Prima Aseguradora</label>
-                        <input type="number" class="form-control" name="primaAseguradora" value="{{ $novedad->primaAseguradora }}">
+                        <input type="number" class="form-control" name="primaAseguradora" id="primaaseguradora"
+                            value="{{ $novedad->primaAseguradora }}">
                     </div>
                     <div class="col-lg-2 mb-4">
                         <label class="form-label">Prima Pagar</label>
                         <input type="number" class="form-control" name="primaPagar"
-                            value="{{ $novedad->primaCorpen }}">
+                            value="{{ $novedad->primaCorpen }}" id="valorapagarcorpen">
                     </div>
-                    <div class="col-lg-2 mb-4">
+                    <div class="col-lg-3 mb-4">
                         <label class="form-label">Extraprima</label>
-                        <input type="number" class="form-control" name="extraprima"
-                            value="{{ $novedad->extraprima }}">
+                        <input type="number" class="form-control" name="extraprima" value="{{ $novedad->extraprima }}"
+                            id="inputextraprima">
+                        <input type="hidden" id="valorprimaaumentar" name="valorprimaaumentar">
+                        <div class="fs-12 fw-normal text-muted text-truncate-1-line text-wrap pt-1">
+                            <div class="custom-control custom-checkbox" id="checkextraprimaval" style="display: none;">
+                                <input type="checkbox" class="form-check-input ml-3" id="checkbox2"
+                                    name="checkconfirmarextra" value=true>
+                                <label class="form-check-label text-wrap" for="checkbox2" id="labeltextextra"
+                                    style="white-space: normal; word-wrap: break-word; max-width: 100%;"></label>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-lg-2 mb-4">
                         <label class="form-label">Fecha de Inicio<span class="text-danger">*</span></label>
                         <input type="date" class="form-control" name="fecha_inicio"
-                            value="{{ optional($novedad->cambiosEstado->last())->fechaInicio?->format('Y-m-d') }}" readonly>
+                            value="{{ optional($novedad->cambiosEstado->last())->fechaInicio?->format('Y-m-d') }}"
+                            readonly>
                     </div>
-                    <div class="col-lg-10 mb-4">
+                    <div class="col-lg-2 mb-4">
+                        <label class="form-label">Estado de la Novedad<span class="text-danger">*</span></label>
+                        <select class="form-control" name="estado" readonly>
+                            <option value="1">SOLICITUD</option>
+                            <option value="2">RADICADO</option>
+                            <option value="3">APROBADO</option>
+                            <option value="4">NEGADO</option>
+                        </select>
+                    </div>
+                    <div class="col-lg-8 mb-4">
                         <label class="form-label">Observación<span class="text-danger">*</span></label>
                         <input type="text" class="form-control text-uppercase" name="observaciones"
                             value="{{ $novedad->cambiosEstado->last()->observaciones }}" required>
+                        <input type="hidden" class="form-control" name="individual" value=true>
                     </div>
                 </div>
                 <div class="d-flex flex-row-reverse gap-2 mt-2">
@@ -91,4 +106,33 @@
                 </div>
             </form>
         </div>
+        <script>
+            $(document).ready(function() {
+                $('#inputextraprima').on('input', function() {
+                    var valor = parseFloat($(this).val().trim());
+                    var valorOriginal = parseFloat({{ floatval($novedad->primaAseguradora) }});
+                    console.log(valorOriginal);
+                    if (!isNaN(valor) && valor > 0) {
+                        $('#checkextraprimaval').slideDown();
+                    } else {
+                        $('#checkextraprimaval').slideUp();
+                        $('#checkbox2').prop('checked', false);
+                    }
+                    var valorprima = Math.round(valorOriginal * (isNaN(valor) ? 0 : valor / 100));
+                    $('#labeltextextra').text('Confirmar valor prima + $' + valorprima);
+                    $('#valorprimaaumentar').val(valorprima);
+                });
+                $("#checkbox2").on("change", function() {
+                    valor = parseFloat($("#valorprimaaumentar").val()) || 0;
+                    console.log(valor);
+                    valorpagar = parseFloat($("#valorapagarcorpen").val()) || 0;
+                    if ($(this).is(":checked")) {
+                        valorFinal = valor + valorpagar;
+                    } else {
+                        valorFinal = valorpagar - valor;
+                    }
+                    $("#valorapagarcorpen").val(valorFinal);
+                });
+            });
+        </script>
 </x-base-layout>

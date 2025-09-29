@@ -86,8 +86,7 @@
                                                 </option>
                                             @endforeach
                                         </select>
-                                        <span
-                                            class="fs-12 fw-normal text-muted text-truncate-1-line pt-1">{{ $condicion->descripcion }}</span>
+                                        <span class="fs-12 fw-normal text-muted text-truncate-1-line pt-1">{{ $condicion->descripcion }}</span>
                                     </div>
                                     <div class="col-lg-2 mb-4">
                                         <label class="form-label">Porcentaje Extra Prima<span
