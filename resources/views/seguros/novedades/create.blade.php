@@ -66,7 +66,7 @@
                             </div>
                         </div>
                         @if (isset($asegurado))
-                            <form method="POST" action="{{ route('seguros.novedades.store') }}" id="formAddNovedad"
+                            <form method="POST" action="{{ route('seguros.novedades.store') }}" id="formAddNovedad" enctype="multipart/form-data" 
                                 novalidate>
                                 @csrf
                                 @method('POST')
@@ -205,11 +205,7 @@
                                 </div>
                                 <div class="col-md-8">
                                     <label for="ubicacion_foto" class="form-label">Formulario</label>
-                                    <input class="form-control @error('ubicacion_foto') is-invalid @enderror"
-                                        type="file" id="ubicacion_foto" name="ubicacion_foto" accept="image/*">
-                                    @error('ubicacion_foto')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
+                                    <input class="form-control" type="file" id="formulario_nov" name="formulario_nov" required>                                
                                     <small class="form-text text-muted">Formato permitidos: PDF</small>
                                 </div>
                                 <div class="d-flex flex-row-reverse gap-2 mt-2">
