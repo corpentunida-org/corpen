@@ -17,7 +17,6 @@
                     </a>
                 </div>
             </div>
-
             {{-- Tabs por categoría --}}
             <ul class="nav nav-tabs mb-3" id="soporteTabs" role="tablist">
                 @foreach ($categorias as $nombreCategoria => $soportesCategoria)
@@ -36,7 +35,6 @@
                     </li> 
                 @endforeach
             </ul>
-
             <div class="tab-content" id="soporteTabsContent">
                 @foreach ($categorias as $nombreCategoria => $soportesCategoria)
                     <div class="tab-pane fade @if($loop->first) show active @endif" 
