@@ -40,6 +40,7 @@ class SegNovedades extends Model
         'primaAseguradora',
         'primaCorpen',
         'extraprima',
+        'formulario'
     ];
 
     /* public function tercero()

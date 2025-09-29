@@ -98,6 +98,11 @@
                             value="{{ $novedad->cambiosEstado->last()->observaciones }}" required>
                         <input type="hidden" class="form-control" name="individual" value=true>
                     </div>
+                    @if ($novedad->formulario)
+                        <a href="{{ route('seguros.novedades.formulario', $novedad->id) }}" target="_blank">
+                            Ver Formulario PDF
+                        </a>
+                    @endif
                 </div>
                 <div class="d-flex flex-row-reverse gap-2 mt-2">
                     <button class="btn btn-warning mt-4" type="submit">

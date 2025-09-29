@@ -16,6 +16,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Http\Controllers\AuditoriaController;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class SegNovedadesController extends Controller
 {
@@ -88,6 +89,10 @@ class SegNovedadesController extends Controller
 
     public function store(Request $request)
     {
+        $request->validate([
+            'formulario_nov' => 'required|mimes:pdf|max:2048',
+        ]);
+        $formulario = $request->file('formulario_nov')->store('seguros/novedades');
         $plan = SegPlan::findOrFail($request->planid);
         $novedad = SegNovedades::create([
             'id_poliza' => $request->id_poliza ?? null,
@@ -99,6 +104,7 @@ class SegNovedadesController extends Controller
             'primaAseguradora' => $plan->prima_aseguradora,
             'primaCorpen' => $request->primacorpen,
             'extraprima' => $request->extra_prima,
+            'formulario' => $formulario,
         ]);
         SegCambioEstadoNovedad::create([
             'novedad' => $novedad->id,
@@ -148,18 +154,31 @@ class SegNovedadesController extends Controller
         return redirect()->route('seguros.novedades.index')->with('success', 'Novedad registrada correctamente');
     }
 
+    public function verArchivo($id)
+    {
+        $novedad = SegNovedades::findOrFail($id);
+
+        if (!$novedad->formulario || !Storage::exists($novedad->formulario)) {
+            abort(404);
+        }
+        return response()->file(storage_path('app/' . $novedad->formulario));
+    }
+
     public function edit($id)
     {
         $novedad = SegNovedades::with(['poliza', 'estadoNovedad', 'cambiosEstado'])->findOrFail($id);
         if ($novedad->estado != 1) {
             return back()->with('error', 'La novedad no esta en estado solicitud. No se puede editar.');
         }
+        if ($novedad->tipo == 4) {
+            return redirect()->route('seguros.novedades.index')->with('error', 'La novedad de ingresar beneficiario no se puede editar.');
+        }
         return view('seguros.novedades.edit', compact('novedad'));
     }
 
     public function update(Request $request, $id)
     {
-        if ($request->has('individual') || $request->individual) {            
+        if ($request->has('individual') || $request->individual) {
             $novedad = SegNovedades::findOrFail($id);
             $novedad->update([
                 'primaCorpen' => $request->primaPagar,
@@ -170,8 +189,8 @@ class SegNovedadesController extends Controller
                 'estado' => $request->estado,
                 'observaciones' => $request->observaciones,
             ]);
-             return redirect()->route('seguros.novedades.index')->with('success', 'Se actualizó correctamente la novedad.');
-        } else {           
+            return redirect()->route('seguros.novedades.index')->with('success', 'Se actualizó correctamente la novedad.');
+        } else {
             foreach ($request->ids as $id) {
                 $novedad = SegNovedades::findOrFail($id);
                 if ($request->estado == 3) {
