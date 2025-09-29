@@ -55,8 +55,8 @@
                                         <th>Prioridad</th>
                                         <th>Descripción</th>
                                         <th>Fecha Update</th>
-                                        <th>Asignado</th>
-                                        <th>Escalado</th>
+                                        <th>JEFE TI</th> {{-- Asignado Inicialmente siempre Jefe --}}
+                                        <th>Escalado</th> {{--  --}}
                                         <th>Estado</th>
                                         <th class="text-end">Acciones</th>
                                     </tr>
@@ -187,7 +187,7 @@
                         <dd class="col-sm-9" id="modal-detalles"></dd>
                         <dt class="col-sm-3">Fecha Update</dt>
                         <dd class="col-sm-9" id="modal-fecha-update"></dd>
-                        <dt class="col-sm-3">Asignado</dt>
+                        <dt class="col-sm-3">Jefe TI</dt>
                         <dd class="col-sm-9" id="modal-asignado"></dd>
                         <dt class="col-sm-3">Escalado</dt>
                         <dd class="col-sm-9" id="modal-escalado"></dd>
