@@ -19,20 +19,44 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Soportes\ScpSubTipo;
 use App\Models\Soportes\ScpUsuario;
 
+
 class ScpSoporteController extends Controller
 {
-    public function index()
+ public function index()
     {
-        $soportes = ScpSoporte::with(['tipo', 'subTipo', 'prioridad', 'maeTercero', 'usuario', 'cargo.gdoArea', 'lineaCredito', 'scpUsuarioAsignado.maeTercero', 'estadoSoporte'])
+        // -------------------------------------------------------------------------
+        // 1. AQUÍ DEFINES EL NOMBRE EXACTO DE LA PESTAÑA QUE QUIERES ACTIVA
+        // -------------------------------------------------------------------------
+        $categoriaActivaPorDefecto = 'En Proceso'; // Puedes cambiar esto a 'Pendiente', 'Cerrado', etc.
+
+        // 2. Obtenemos TODOS los soportes, como en tu código original
+        $soportes = ScpSoporte::with([
+                'tipo', 'subTipo', 'prioridad', 'maeTercero', 'usuario', 
+                'cargo.gdoArea', 'lineaCredito', 'scpUsuarioAsignado.maeTercero', 'estadoSoporte'
+            ])
             ->orderBy('created_at', 'desc')
             ->get(); 
         
+        // 3. Agrupamos los soportes por el nombre de su estado (categoría)
         $categorias = $soportes->groupBy(function ($soporte) {
-            return $soporte->estadoSoporte->nombre ?? 'Pendiente';
+            return $soporte->estadoSoporte->nombre ?? 'Sin Categoría';
         });
 
-        return view('soportes.soportes.index', compact('categorias'));
+        // 4. (Opcional, pero recomendado) Verificamos si la categoría por defecto existe.
+        // Si no existe (p. ej., no hay soportes "En Proceso"), activamos la primera que encontremos.
+        if (!$categorias->has($categoriaActivaPorDefecto)) {
+            $categoriaActivaPorDefecto = $categorias->keys()->first();
+        }
+
+
+
+        
+        // 5. Pasamos ambas variables a la vista
+        return view('soportes.soportes.index', compact('categorias', 'categoriaActivaPorDefecto'));
     }
+
+
+
 
     public function create()
     {

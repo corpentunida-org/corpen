@@ -8,25 +8,20 @@
 
     <div class="card mb-4">
         <div class="card-body">
-            <div class="mb-4 px-4 d-flex align-items-center justify-content-between">
+            <div class="mb-4 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
                 <h5 class="fw-bold mb-0">Listado de Soportes</h5>
-                <a href="{{ route('soportes.soportes.create') }}" class="btn btn-success btnCrear">
-                    <i class="feather-plus me-2"></i>
-                    <span>Crear Nuevo Soporte</span>
-                </a>
+                <div class="d-flex gap-2">
+                    <a href="{{ route('soportes.soportes.create') }}" class="btn btn-success btnCrear">
+                        <i class="feather-plus me-2"></i>
+                        <span>Crear Nuevo Soporte</span>
+                    </a>
+                </div>
             </div>
 
             {{-- Tabs por categoría --}}
             <ul class="nav nav-tabs mb-3" id="soporteTabs" role="tablist">
-                @foreach ($categorias as $nombreCategoria => <<<<<<< HEAD
-                    <li class="nav-item" role="presentation">
-=======
-                    @php 
-                        $permiso = str_replace(' ', '', strtolower($nombreCategoria));     
-                    @endphp
-                    @can('soporte.lista.' . $permiso)
-                    <li class="nav-item" role="presentation">                    
->>>>>>> origin/vanessa
+                @foreach ($categorias as $nombreCategoria => $soportesCategoria)
+                    <li class="nav-item" role="presentation">                  
                         <button class="nav-link @if($loop->first) active @endif"
                                 id="tab-{{ $loop->index }}-tab"
                                 data-bs-toggle="tab"
@@ -39,20 +34,20 @@
                             <span class="badge bg-secondary">{{ $soportesCategoria->count() }}</span>
                         </button>
                     </li> 
-                    @endcan                   
-foreach
+                @endforeach
             </ul>
 
             <div class="tab-content" id="soporteTabsContent">
                 @foreach ($categorias as $nombreCategoria => $soportesCategoria)
-                @php 
-                    $permiso = str_replace(' ', '', strtolower($nombreCategoria));     
-                @endphp
-                    @can('soporte.lista.' . $permiso)
-                    <div class="tab-pane fade @if($loop->first) show active @endif" id="tab-{{ $loop->index }}" role="tabpanel" aria-labelledby="tab-{{ $loop->index }}-tab">
+                    <div class="tab-pane fade @if($loop->first) show active @endif" 
+                         id="tab-{{ $loop->index }}" 
+                         role="tabpanel" 
+                         aria-labelledby="tab-{{ $loop->index }}-tab">
+
                         <div class="table-responsive">
-                            <table class="table table-hover mb-0 align-middle small" style="font-size: 0.875rem;">
-                                <thead>
+                            <table class="table table-hover table-bordered align-middle small soporteTable" 
+                                   style="font-size: 0.875rem; width:100%">
+                                <thead class="table-light">
                                     <tr>
                                         <th>ID</th>
                                         <th>Fecha Creado</th>
@@ -72,6 +67,18 @@ foreach
                                     @forelse ($soportesCategoria as $soporte)
                                         @php
                                             $areaModal = $soporte->cargo->gdoArea->nombre ?? 'Soporte';
+                                            $prioridadColor = match($soporte->prioridad->nombre ?? '') {
+                                                'Alta' => 'danger',
+                                                'Media' => 'warning',
+                                                'Baja' => 'success',
+                                                default => 'secondary'
+                                            };
+                                            $estadoColor = match($soporte->estadoSoporte->nombre ?? '') {
+                                                'Pendiente' => 'warning',
+                                                'En Proceso' => 'info',
+                                                'Cerrado' => 'success',
+                                                default => 'secondary'
+                                            };
                                         @endphp
                                         <tr>
                                             <td>
@@ -95,14 +102,25 @@ foreach
                                             <td>{{ $soporte->usuario->name ?? 'N/A' }}</td>
                                             <td>{{ $soporte->cargo->gdoArea->nombre ?? 'Soporte' }}</td>
                                             <td>{{ $soporte->subTipo->nombre ?? '' }}</td>
-                                            <td>{{ $soporte->prioridad->nombre ?? 'N/A' }}</td>
-                                            <td title="{{ $soporte->detalles_soporte }}" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-custom-class="custom-tooltip">
+                                            <td>
+                                                <span class="badge bg-{{ $prioridadColor }}">
+                                                    {{ $soporte->prioridad->nombre ?? 'N/A' }}
+                                                </span>
+                                            </td>
+                                            <td title="{{ $soporte->detalles_soporte }}" 
+                                                data-bs-toggle="tooltip" 
+                                                data-bs-placement="top" 
+                                                data-bs-custom-class="custom-tooltip">
                                                 {{ Str::limit($soporte->detalles_soporte, 50) }}
                                             </td>
                                             <td>{{ $soporte->updated_at->format('d/m/Y H:i') }}</td>
                                             <td>{{ $soporte->maeTercero->nom_ter ?? 'Sin asignar' }}</td>
                                             <td>{{ $soporte->scpUsuarioAsignado->maeTercero->nom_ter ?? 'Sin escalar' }}</td>
-                                            <td>{{ $soporte->estadoSoporte->nombre ?? 'Pendiente' }}</td>
+                                            <td>
+                                                <span class="badge bg-{{ $estadoColor }}">
+                                                    {{ $soporte->estadoSoporte->nombre ?? 'Pendiente' }}
+                                                </span>
+                                            </td>
                                             <td class="hstack justify-content-end gap-4 text-end">
                                                 <div class="dropdown open">
                                                     <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown">
@@ -137,15 +155,6 @@ foreach
                                         </tr>
                                     @endforelse
                                 </tbody>
-                            </table>
-                        </div>
-                    </div>
-                @endcan
-                      </tbody>
-                            </table>
-                        </div>
-                    </div>
-  </tbody>
                             </table>
                         </div>
                     </div>
@@ -196,6 +205,8 @@ foreach
     </div>
 
     @push('styles')
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css"/>
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css"/>
     <style>
         .custom-tooltip .tooltip-inner {
             background-color: rgba(108, 117, 125, 0.7);
@@ -211,8 +222,31 @@ foreach
 
     @push('scripts')
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+        <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+        <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+        <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+        <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+        <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
+
         <script>
             document.addEventListener('DOMContentLoaded', function () {
+                // Inicializar DataTables en todas las tablas de soportes
+                $('.soporteTable').DataTable({
+                    dom: 'Bfrtip',
+                    buttons: [
+                        { extend: 'excelHtml5', className: 'btn btn-sm btn-success', text: 'Excel' },
+                        { extend: 'pdfHtml5', className: 'btn btn-sm btn-danger', text: 'PDF' },
+                        { extend: 'print', className: 'btn btn-sm btn-secondary', text: 'Imprimir' }
+                    ],
+                    language: {
+                        url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+                    }
+                });
+
                 // Tooltips
                 var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
                 tooltipTriggerList.map(function (el) { return new bootstrap.Tooltip(el); });
@@ -279,3 +313,7 @@ foreach
         </script>
     @endpush
 </x-base-layout>
+
+
+
+
