@@ -122,11 +122,11 @@ class ScpSoporteController extends Controller
                         'estado',
                         'usuario',
                         'tipoObservacion',
-                        'usuarioAsignado', // <-- corregido
+                        'scpUsuarioAsignado.maeTercero', // <- carga anidada
                     ])
                     ->orderBy('timestam', 'desc');
             },
-            'scpUsuarioAsignado', // este es el escalado guardado en el soporte
+            //'scpUsuarioAsignado', // este es el escalado guardado en el soporte
         ]);
 
         $estados = ScpEstado::all();

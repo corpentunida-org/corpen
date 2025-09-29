@@ -37,51 +37,62 @@
                 </div>
             </div>
 
-            {{-- Historial de observaciones --}}
-            <div class="card shadow-sm">
-                <div class="card-header bg-white border-0">
-                    <h5 class="card-title text-dark fw-bold mb-0">
-                        <i class="feather-message-square me-2 text-primary"></i> Historial y Seguimiento
-                    </h5>
+{{-- Historial de observaciones --}}
+<div class="card shadow-sm">
+    <div class="card-header bg-white border-0">
+        <h5 class="card-title text-dark fw-bold mb-0">
+            <i class="feather-message-square me-2 text-primary"></i> Historial y Seguimiento
+        </h5>
+    </div>
+    <div class="card-body">
+        @forelse($soporte->observaciones as $obs)
+            <div class="d-flex mb-4">
+                <div class="me-3 text-center">
+                    <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                        <i class="feather-git-commit"></i>
+                    </div>
+                    @if(!$loop->last)
+                        <div class="border-start" style="height: 100%; margin-left: 19px;"></div>
+                    @endif
                 </div>
-                <div class="card-body">
-                    @forelse($soporte->observaciones as $obs)
-                        <div class="d-flex mb-4">
-                            <div class="me-3 text-center">
-                                <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                    <i class="feather-git-commit"></i>
-                                </div>
-                                @if(!$loop->last)
-                                    <div class="border-start" style="height: 100%; margin-left: 19px;"></div>
-                                @endif
-                            </div>
-                            <div class="flex-grow-1">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <p class="fw-bold text-dark mb-0">
-                                        {{ $obs->tipoObservacion->nombre ?? 'Actualización' }}
-                                    </p>
-                                    <small class="text-muted">{{ \Carbon\Carbon::parse($obs->timestam)->diffForHumans() }}</small> {{-- Usar 'timestam' --}}
-                                </div>
-                                <p class="text-gray-700 mt-1 mb-2">{{ $obs->observacion }}</p>
-                                <div class="d-flex align-items-center text-muted fs-7">
-                                    <span><i class="feather-user me-1"></i>{{ $obs->usuario->name ?? 'N/A' }}</span>
-                                    {{-- ✅ CAMBIO AQUÍ: Usar scpUsuarioAsignado y maeTercero --}}
-                                    @if($obs->scpUsuarioAsignado && $obs->scpUsuarioAsignado->maeTercero)
-                                        <span class="mx-2">|</span>
-                                        <span><i class="feather-user-plus me-1"></i>Asignado a: <strong>{{ $obs->scpUsuarioAsignado->maeTercero->nom_ter }}</strong></span>
-                                    @endif
-                                    <span class="mx-2">|</span>
-                                    <span><i class="feather-activity me-1"></i>Cambió estado a: <strong class="text-dark">{{ $obs->estado->nombre ?? 'N/A' }}</strong></span>
-                                </div>
-                            </div>
-                        </div>
-                    @empty
-                        <div class="alert alert-light text-center">
-                            <i class="feather-info me-1"></i> Aún no hay seguimientos registrados.
-                        </div>
-                    @endforelse
+                <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <p class="fw-bold text-dark mb-0">
+                            {{ $obs->tipoObservacion->nombre ?? 'Actualización' }}
+                        </p>
+                        <small class="text-muted">{{ \Carbon\Carbon::parse($obs->timestam)->diffForHumans() }}</small>
+                    </div>
+                    <p class="text-gray-700 mt-1 mb-2">{{ $obs->observacion }}</p>
+                    <div class="d-flex align-items-center text-muted fs-7">
+                        {{-- Usuario que creó la observación --}}
+                        <span><i class="feather-user me-1"></i>{{ $obs->usuario->name ?? 'N/A' }}</span>
+
+                        {{-- Usuario asignado/escalado de esta observación --}}
+                        @if($obs->scpUsuarioAsignado && $obs->scpUsuarioAsignado->maeTercero)
+                            <span class="mx-2">|</span>
+                            <span>
+                                <i class="feather-user-plus me-1"></i>
+                                Asignado a: <strong>{{ $obs->scpUsuarioAsignado->maeTercero->nom_ter }}</strong>
+                            </span>
+                        @endif
+
+                        {{-- Estado de la observación --}}
+                        <span class="mx-2">|</span>
+                        <span>
+                            <i class="feather-activity me-1"></i>
+                            Cambió estado a: <strong class="text-dark">{{ $obs->estado->nombre ?? 'N/A' }}</strong>
+                        </span>
+                    </div>
                 </div>
             </div>
+        @empty
+            <div class="alert alert-light text-center">
+                <i class="feather-info me-1"></i> Aún no hay seguimientos registrados.
+            </div>
+        @endforelse
+    </div>
+</div>
+
 
             {{-- Formulario de observación --}}
             <div class="accordion mt-4" id="accordionForm">
