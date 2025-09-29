@@ -434,9 +434,8 @@ Route::prefix('archivo')->middleware('auth')->group(function () {
                 'update'  => 'subtipos.update',
                 'destroy' => 'subtipos.destroy',
             ]);
-
-
-
+        // 
+        
 
     });
 
