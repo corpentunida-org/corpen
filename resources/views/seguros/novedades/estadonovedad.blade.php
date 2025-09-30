@@ -5,8 +5,13 @@
         3 => ['color' => 'danger', 'label' => 'RETIRO'],
         4 => ['color' => 'info', 'label' => 'INGRESO BENEFICIARIO'],
     ];
+    $opcionesestados = [
+        1 => 'solicitud',
+        2 => 'radicado',
+        3 => 'aprobado',
+        4 => 'rechazado',
+    ];
 @endphp
-
 <div class="content-sidebar content-sidebar-md" data-scrollbar-target="#psScrollbarInit">
     <div class="content-sidebar-header bg-white sticky-top hstack justify-content-between">
         <a href="{{ route('seguros.novedades.create') }}" class="btn btn-primary w-100">
@@ -64,192 +69,28 @@
                 <label class="custom-control-label" for="checkAll"></label>
             </div>
             <div class="action-list-items">
-                {{-- <div class="dropdown">
-                        <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown"
-                            data-bs-offset="0,22">
-                            <i class="feather-chevron-down"></i>
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li>
-                                <a class="dropdown-item" href="javascript:void(0)">
-                                    <i class="feather-eye me-3"></i>
-                                    <span>Read</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="javascript:void(0)">
-                                    <i class="feather-eye-off me-3"></i>
-                                    <span>Unread</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="javascript:void(0)">
-                                    <i class="feather-star me-3"></i>
-                                    <span>Starred</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="javascript:void(0)">
-                                    <i class="feather-shield-off me-3"></i>
-                                    <span>Unstarred</span>
-                                </a>
-                            </li>
-                            <li class="dropdown-divider"></li>
-                            <li>
-                                <a class="dropdown-item" href="javascript:void(0)">
-                                    <i class="feather-clock me-3"></i>
-                                    <span>Snooze</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="javascript:void(0)">
-                                    <i class="feather-check-circle me-3"></i>
-                                    <span>Add Tasks</span>
-                                </a>
-                            </li>
-                            <li class="dropdown-divider"></li>
-                            <li>
-                                <a class="dropdown-item" href="javascript:void(0)">
-                                    <i class="feather-archive me-3"></i>
-                                    <span>Archive</span>
-                                </a>
-                            </li>
-                            <li>
-                                <a class="dropdown-item" href="javascript:void(0)">
-                                    <i class="feather-alert-octagon me-3"></i>
-                                    <span>Report Spam</span>
-                                </a>
-                            </li>
-                            <li class="dropdown-divider"></li>
-                            <li>
-                                <a class="dropdown-item" href="javascript:void(0)">
-                                    <i class="feather-trash-2 me-3"></i>
-                                    <span>Delete</span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                    <div class="dropdown">
-                        <a href="javascript:void(0)" class="d-flex" data-bs-toggle="dropdown" data-bs-offset="0,22"
-                            data-bs-auto-close="outside" aria-expanded="false">
-                            <div class="avatar-text avatar-md" data-bs-toggle="tooltip" data-bs-trigger="hover"
-                                title="Tags">
-                                <i class="feather-tag"></i>
-                            </div>
-                        </a>
-                        <div class="dropdown-menu">
-                            <div class="dropdown-item">
-                                <div class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input" id="Office" checked="checked">
-                                    <label class="custom-control-label c-pointer" for="Office">Office</label>
-                                </div>
-                            </div>
-                            <div class="dropdown-item">
-                                <div class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input" id="Family">
-                                    <label class="custom-control-label c-pointer" for="Family">Family</label>
-                                </div>
-                            </div>
-                            <div class="dropdown-item">
-                                <div class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input" id="Friend"
-                                        checked="checked">
-                                    <label class="custom-control-label c-pointer" for="Friend">Friend</label>
-                                </div>
-                            </div>
-                            <div class="dropdown-item">
-                                <div class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input" id="Marketplace">
-                                    <label class="custom-control-label c-pointer" for="Marketplace"> Marketplace
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="dropdown-item">
-                                <div class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input" id="Development">
-                                    <label class="custom-control-label c-pointer" for="Development"> Development
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="dropdown-divider"></div>
-                            <a href="javascript:void(0);" class="dropdown-item">
-                                <i class="feather-plus me-3"></i>
-                                <span>Create Tag</span>
-                            </a>
-                            <a href="javascript:void(0);" class="dropdown-item">
-                                <i class="feather-tag me-3"></i>
-                                <span>Manages Tag</span>
-                            </a>
-                        </div>
-                    </div>
-                    <div class="dropdown">
-                        <a href="javascript:void(0)" class="d-flex" data-bs-toggle="dropdown" data-bs-offset="0,22"
-                            data-bs-auto-close="outside" aria-expanded="false">
-                            <div class="avatar-text avatar-md" data-bs-toggle="tooltip" data-bs-trigger="hover"
-                                title="Labels">
-                                <i class="feather-folder-plus"></i>
-                            </div>
-                        </a>
-                        <div class="dropdown-menu">
-                            <div class="dropdown-item">
-                                <div class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input" id="Updates">
-                                    <label class="custom-control-label c-pointer" for="Updates">Updates</label>
-                                </div>
-                            </div>
-                            <div class="dropdown-item">
-                                <div class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input" id="Socials">
-                                    <label class="custom-control-label c-pointer" for="Socials">Socials</label>
-                                </div>
-                            </div>
-                            <div class="dropdown-item">
-                                <div class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input" id="Primary"
-                                        checked="checked">
-                                    <label class="custom-control-label c-pointer" for="Primary">Primary</label>
-                                </div>
-                            </div>
-                            <div class="dropdown-item">
-                                <div class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input" id="Forums">
-                                    <label class="custom-control-label c-pointer" for="Forums">Forums</label>
-                                </div>
-                            </div>
-                            <div class="dropdown-item">
-                                <div class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input" id="Promotions"
-                                        checked="checked">
-                                    <label class="custom-control-label c-pointer" for="Promotions"> Promotions
-                                    </label>
-                                </div>
-                            </div>
-                            <div class="dropdown-divider"></div>
-                            <a href="javascript:void(0);" class="dropdown-item">
-                                <i class="feather-plus me-3"></i>
-                                <span>Create Label</span>
-                            </a>
-                            <a href="javascript:void(0);" class="dropdown-item">
-                                <i class="feather-folder-plus me-3"></i>
-                                <span>Manages Label</span>
-                            </a>
-                        </div>
-                    </div> --}}
-                <form id="novedadesForm" action="{{ route('seguros.novedades.update', 1) }}" method="POST"
-                    class="d-flex align-items-center gap-2 me-3">
-                    @csrf
-                    @method('PUT')
-                    <select name="estado" class="form-select form-select-sm me-2" required>
-                        <option value="1">Solicitada</option>
-                        <option value="2">Radicada</option>
-                        <option value="3">Aprobada</option>
-                        <option value="4">Rechazada</option>
-                    </select>
-                    <input type="text" name="observaciones" class="form-control form-control-sm"
-                        placeholder="Observaciones" required>
-                    <button type="submit" class="btn btn-warning">Actualizar Estado</button>
-                </form>
+                @if ($estado != 'aprobado' && $estado != 'rechazado')
+                    <form id="novedadesForm" action="{{ route('seguros.novedades.update', 1) }}" method="POST"
+                        class="d-flex align-items-center gap-2 me-3">
+                        @csrf
+                        @method('PUT')
+                        <select name="estado" class="form-select form-select-sm me-2" required>                            
+                            @foreach ($opcionesestados as $valor => $texto)
+                                @if ($texto !== $estado)                                
+                                    <option value="{{ $valor }}">{{ strtoupper($texto) }}</option>
+                                @endif
+                            @endforeach
+                        </select>
+                        <input type="text" name="observaciones" class="form-control form-control-sm uppercase-input"
+                            placeholder="Observaciones" required>
+                        <button type="submit" class="btn btn-warning">Actualizar Estado</button>
+                    </form>
+                @endif
             </div>
+            <a href="{{ route('seguros.novedades.download') }}" class="btn btn-light-brand">
+                <i class="feather-folder-plus me-2"></i>
+                <span>Descargar Excel</span>
+            </a>
             <h4 class="fw-bolder mb-0">{{ ucfirst($estado) }}</h4>
         </div>
         <div class="page-header-right ms-auto">
@@ -305,10 +146,10 @@
                 <div class="d-flex wd-80 gap-4 ms-1 item-meta">
                     <div class="item-checkbox">
                         <div class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input checkbox" id="{{ $index }}bcb"
+                            <input type="checkbox" class="custom-control-input checkbox" id="{{ $index + 1 }}bcb"
                                 data-checked-action="show-options" name="ids[]" value="{{ $reg->id }}"
                                 form="novedadesForm">
-                            <label class="custom-control-label" for="{{ $index }}bcb"></label>
+                            <label class="custom-control-label" for="{{ $index + 1 }}bcb"></label>
                         </div>
                     </div>
                 </div>
@@ -347,7 +188,8 @@
                 <!--! [item-date] !-->
                 <div class="d-flex align-items-center justify-content-end wd-150 gap-3 item-data">
                     <div class="fs-11 fw-medium text-muted text-uppercase d-none d-sm-block item-time">
-                        {{ $reg->created_at->translatedFormat('d M Y') }}</div>
+                        {{ optional($reg->cambiosEstado->last()->fechaCierre)->translatedFormat('d M Y') ?? $reg->created_at->translatedFormat('d M Y') }}
+                    </div>
                     <div class="item-action">
                         <div class="dropdown">
                             <a href="javascript:void(0)" data-bs-toggle="dropdown" data-bs-offset="0, 28">

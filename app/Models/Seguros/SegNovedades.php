@@ -12,6 +12,7 @@ use App\Models\Seguros\SegPlan;
 use App\Models\Seguros\SegPoliza;
 use App\Models\Seguros\SegTercero;
 use App\Models\Seguros\SegBeneficiario;
+use App\Models\Seguros\SegTipoNovedad;
 
 class SegNovedades extends Model
 {
@@ -30,18 +31,8 @@ class SegNovedades extends Model
     ]; */
 
     protected $table = 'Seg_novedadaes02';
-    protected $fillable = [
-        'id_poliza',
-        'id_asegurado',
-        'tipo',
-        'estado',
-        'id_plan',
-        'valorAsegurado',
-        'primaAseguradora',
-        'primaCorpen',
-        'extraprima',
-        'formulario'
-    ];
+    protected $fillable = ['id_poliza', 'id_asegurado', 'tipo', 'estado', 'id_plan', 'valorAsegurado', 'primaAseguradora', 'primaCorpen', 'extraprima', 'formulario'];
+    
 
     /* public function tercero()
     {
@@ -59,9 +50,7 @@ class SegNovedades extends Model
     {
         if ($this->tercero) {
             return $this->tercero->nom_ter;
-        }
-
-        else if ($this->terceroAlt) {
+        } elseif ($this->terceroAlt) {
             return $this->terceroAlt->nombre;
         }
         return '';
@@ -83,12 +72,16 @@ class SegNovedades extends Model
     {
         return $this->belongsTo(SegEstadosNovedad::class, 'estado', 'id');
     }
-    public function cambiosEstado(){
+    public function cambiosEstado()
+    {
         return $this->hasMany(SegCambioEstadoNovedad::class, 'novedad', 'id');
-    } 
-
-    public function beneficiario(){
+    }
+    public function tipoNovedad()
+    {
+        return $this->belongsTo(SegTipoNovedad::class, 'tipo', 'id');
+    }
+    public function beneficiario()
+    {
         return $this->belongsTo(SegBeneficiario::class, 'beneficiario_id', 'id');
     }
-
 }

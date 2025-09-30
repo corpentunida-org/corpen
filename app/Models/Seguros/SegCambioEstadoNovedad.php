@@ -13,7 +13,8 @@ class SegCambioEstadoNovedad extends Model
 
     protected $fillable = ['novedad', 'estado', 'fechaInicio', 'fechaCierre', 'observaciones'];
     protected $casts = [
-        'fechaInicio' => 'date',
+        'fechaCierre' => 'datetime',
+        'fechaInicio' => 'datetime',
     ];
 
     public function estado()
