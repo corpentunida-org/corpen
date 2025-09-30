@@ -20,12 +20,12 @@
         <div class="col-lg-12 p-4 card">
             <div class="row">
                 <div class="col-lg-4 mb-4">
-                    <label class="form-label">Valor Asegurado</label>
+                    <label class="form-label">Valor Asegurado Actual</label>
                     <input type="text" id="valoraseguradoplan" name="valorAsegurado" class="form-control"
                         value="$ {{ number_format($novedad->poliza->valor_asegurado) }}" disabled>
                 </div>
                 <div class="col-lg-4 mb-4">
-                    <label class="form-label">Prima Plan</label>
+                    <label class="form-label">Prima Plan Actual</label>
                     <input type="text" id="valoraseguradoplan" name="valorAsegurado" class="form-control"
                         value="$ {{ number_format($novedad->poliza->valor_prima) }}" disabled>
                 </div>
@@ -46,13 +46,13 @@
                             value="{{ $novedad->tipo == '1' ? 'MODIFICACIÓN' : 'INGRESO' }}" readonly>
                     </div>
                     <div class="col-lg-3 mb-4">
-                        <label class="form-label">Valor Asegurado<span class="text-danger">*</span></label>
+                        <label class="form-label">Valor Asegurado Solicitado<span class="text-danger">*</span></label>
                         <input type="number" class="form-control" name="valAsegurado"
                             value="{{ $novedad->valorAsegurado }}">
                         <input type="hidden" class="form-control" name="planid" value="{{ $novedad->id_plan }}">
                     </div>
                     <div class="col-lg-2 mb-4">
-                        <label class="form-label">Prima Aseguradora</label>
+                        <label class="form-label">Prima Aseguradora Solicitado</label>
                         <input type="number" class="form-control" name="primaAseguradora" id="primaaseguradora"
                             value="{{ $novedad->primaAseguradora }}">
                     </div>
