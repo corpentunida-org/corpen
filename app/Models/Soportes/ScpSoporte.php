@@ -29,6 +29,7 @@ class ScpSoporte extends Model
         'id_gdo_cargo',
         'id_cre_lineas_creditos',
         'cod_ter_maeTercero', //USUARIO ASIGNADO INICIALMENTE
+        'id_categoria',
         'id_scp_tipo',
         'id_scp_prioridad',
         'id_users', //USUARIO QUE CREA EL SOPORTE
@@ -111,6 +112,10 @@ class ScpSoporte extends Model
         return $this->belongsTo(ScpUsuario::class, 'usuario_escalado', 'id');
     }
 
+    public function categoria()
+    {
+        return $this->belongsTo(ScpCategoria::class, 'id_categoria');
+    }
 
 
 

@@ -1,79 +1,58 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Soportes;
 
+use App\Http\Controllers\Controller;
 use App\Models\Soportes\ScpUsuario;
-use App\Models\Maestras\maeTerceros;
+use App\Models\Maestras\MaeTerceros;
 use Illuminate\Http\Request;
-
 
 class ScpUsuarioController extends Controller
 {
-    /**
-     * Mostrar listado de usuarios
-     */
     public function index()
     {
-        // Traer usuarios con su maeTercero relacionado
-        $usuarios = ScpUsuario::with('maeTercero')->get();
-        return response()->json($usuarios);
+        return app(ScpTableroParametroController::class)->index();
     }
 
-    /**
-     * Guardar un nuevo usuario
-     */
+    public function create()
+    {
+        $terceros = MaeTerceros::all();
+        return view('soportes.usuarios.create', compact('terceros'));
+    }
+
     public function store(Request $request)
     {
         $request->validate([
-            'cod_ter' => 'required|exists:MaeTerceros,cod_ter',
+            'cod_ter' => 'required|exists:mae_terceros,cod_ter',
             'rol'     => 'nullable|string|max:255',
         ]);
 
-        $usuario = ScpUsuario::create($request->all());
+        ScpUsuario::create($request->all());
 
-        return response()->json([
-            'message' => 'Usuario creado correctamente',
-            'data' => $usuario
-        ], 201);
+        return redirect()->route('soportes.usuarios.index')->with('success', 'Usuario creado correctamente');
     }
 
-    /**
-     * Mostrar un usuario en específico
-     */
-    public function show($id)
+    public function edit(ScpUsuario $usuario)
     {
-        $usuario = ScpUsuario::with('maeTercero')->findOrFail($id);
-        return response()->json($usuario);
+        $terceros = MaeTerceros::all();
+        return view('soportes.usuarios.edit', compact('usuario', 'terceros'));
     }
 
-    /**
-     * Actualizar un usuario
-     */
-    public function update(Request $request, $id)
+    public function update(Request $request, ScpUsuario $usuario)
     {
-        $usuario = ScpUsuario::findOrFail($id);
-
         $request->validate([
-            'cod_ter' => 'sometimes|exists:MaeTerceros,cod_ter',
+            'cod_ter' => 'required|exists:mae_terceros,cod_ter',
             'rol'     => 'nullable|string|max:255',
         ]);
 
         $usuario->update($request->all());
 
-        return response()->json([
-            'message' => 'Usuario actualizado correctamente',
-            'data' => $usuario
-        ]);
+        return redirect()->route('soportes.usuarios.index')->with('success', 'Usuario actualizado correctamente');
     }
 
-    /**
-     * Eliminar un usuario
-     */
-    public function destroy($id)
+    public function destroy(ScpUsuario $usuario)
     {
-        $usuario = ScpUsuario::findOrFail($id);
         $usuario->delete();
-
-        return response()->json(['message' => 'Usuario eliminado correctamente']);
+        return redirect()->route('soportes.usuarios.index')->with('success', 'Usuario eliminado correctamente');
     }
 }

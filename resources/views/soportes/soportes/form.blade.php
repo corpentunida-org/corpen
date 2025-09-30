@@ -5,6 +5,26 @@
         <i class="bi bi-headset me-2"></i> {{ isset($soporte) ? '' : '' }}
     </h4>
 
+    <!-- Categoría de Soporte -->
+    <div class="mb-3">
+        <label for="id_categoria" class="form-label fw-semibold">
+            <i class="bi bi-folder me-1"></i> Categoría de Soporte
+        </label>
+        <select class="form-select select2 @error('id_categoria') is-invalid @enderror" 
+                id="id_categoria" name="id_categoria" required>
+            <option value="">Selecciona una categoría</option>
+            @foreach ($categorias as $categoria)
+                <option value="{{ $categoria->id }}" 
+                    {{ old('id_categoria', $soporte->tipo->id_categoria ?? '') == $categoria->id ? 'selected' : '' }}>
+                    {{ $categoria->nombre }}
+                </option>
+            @endforeach
+        </select>
+        @error('id_categoria')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
+    </div>
+
     <!-- Tipo de Soporte -->
     <div class="mb-3">
         <label for="id_scp_tipo" class="form-label fw-semibold">
@@ -13,12 +33,6 @@
         <select class="form-select select2 @error('id_scp_tipo') is-invalid @enderror" 
                 id="id_scp_tipo" name="id_scp_tipo" required>
             <option value="">Selecciona un tipo</option>
-            @foreach ($tipos as $tipo)
-                <option value="{{ $tipo->id }}" 
-                    {{ old('id_scp_tipo', $soporte->id_scp_tipo ?? '') == $tipo->id ? 'selected' : '' }}>
-                    {{ $tipo->nombre }}
-                </option>
-            @endforeach
         </select>
         @error('id_scp_tipo')
             <div class="invalid-feedback">{{ $message }}</div>
@@ -124,24 +138,24 @@
     </div>
 
     <!-- Archivo de Soporte -->
-<div class="mb-3">
-    <label for="soporte" class="form-label fw-semibold">
-        <i class="bi bi-paperclip me-1"></i> Soporte (PDF o Imagen)
-    </label>
-    <input type="file" class="form-control @error('soporte') is-invalid @enderror" 
-           id="soporte" name="soporte" accept=".pdf,image/*">
-    @error('soporte')
-        <div class="invalid-feedback">{{ $message }}</div>
-    @enderror
+    <div class="mb-3">
+        <label for="soporte" class="form-label fw-semibold">
+            <i class="bi bi-paperclip me-1"></i> Soporte (PDF o Imagen)
+        </label>
+        <input type="file" class="form-control @error('soporte') is-invalid @enderror" 
+               id="soporte" name="soporte" accept=".pdf,image/*">
+        @error('soporte')
+            <div class="invalid-feedback">{{ $message }}</div>
+        @enderror
 
-    @if(isset($soporte) && $soporte->soporte)
-        <div class="mt-2">
-            <a href="{{ asset('storage/soportes/'.$soporte->soporte) }}" target="_blank" class="btn btn-sm btn-outline-primary">
-                Ver soporte actual
-            </a>
-        </div>
-    @endif
-</div>
+        @if(isset($soporte) && $soporte->soporte)
+            <div class="mt-2">
+                <a href="{{ asset('storage/soportes/'.$soporte->soporte) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                    Ver soporte actual
+                </a>
+            </div>
+        @endif
+    </div>
 
     <!-- Botón -->
     <div class="text-end mt-4">
@@ -157,8 +171,43 @@ $(document).ready(function() {
     // Inicializar Select2
     $('.select2').select2({ theme: 'bootstrap-5' });
 
-    // Valor del sub-tipo guardado (para edición) o old()
+    const initialSelectedTipoId = "{{ old('id_scp_tipo', $soporte->id_scp_tipo ?? '') }}";
     const initialSelectedSubTipoId = "{{ old('id_scp_sub_tipo', $soporte->id_scp_sub_tipo ?? '') }}";
+
+    function cargarTipos(categoriaId) {
+        let tipoSelect = $('#id_scp_tipo');
+        tipoSelect.prop('disabled', true).empty().append('<option value="">Cargando...</option>');
+        if (categoriaId) {          
+            let url = "{{ route('soportes.tipos.byCategoria', ':categoria') }}";
+            url = url.replace(':categoria', categoriaId);
+
+        console.log("Llamando a URL:", url); // 🔍 depuración  
+            $.ajax({
+                url: url,
+                type: 'GET',
+                dataType: 'json',
+                success: function(data) {
+                    tipoSelect.prop('disabled', false).empty().append('<option value="">Selecciona un tipo</option>');
+                    $.each(data, function(key, value) {
+                        let selected = (value.id == initialSelectedTipoId) ? 'selected' : '';
+                        tipoSelect.append(`<option value="${value.id}" ${selected}>${value.nombre}</option>`);
+                    });
+                    tipoSelect.trigger('change');
+
+                    // si había un tipo seleccionado en edición, cargar sub-tipos
+                    if(initialSelectedTipoId){
+                        cargarSubTipos(initialSelectedTipoId);
+                    }
+                },
+                error: function (xhr, status, error) {
+                console.error("Error al cargar tipos:", xhr.responseText); // 🔍 depuración completa
+                tipoSelect.prop('disabled', false).empty().append('<option value="">Error al cargar tipos</option>');
+            }
+            });
+        } else {
+            tipoSelect.prop('disabled', false).empty().append('<option value="">Selecciona un tipo</option>');
+        }
+    }
 
     function cargarSubTipos(tipoId) {
         let subTipoSelect = $('#id_scp_sub_tipo');
@@ -166,8 +215,7 @@ $(document).ready(function() {
 
         if (tipoId) {
             $.ajax({
-                // URL absoluta considerando tu prefijo "archivo/soportes"
-                url: '/archivo/soportes/sub-tipos/' + tipoId,
+                url: "{{ route('soportes.subtipos.byTipo', ':tipo') }}".replace(':tipo', tipoId),
                 type: 'GET',
                 dataType: 'json',
                 success: function(data) {
@@ -180,40 +228,40 @@ $(document).ready(function() {
                 },
                 error: function(xhr, status, error) {
                     console.error("Error al cargar sub-tipos:", error);
-                    alert('Error al cargar sub-tipos. Detalles: ' + (xhr.responseJSON ? xhr.responseJSON.message : error));
                     subTipoSelect.prop('disabled', false).empty().append('<option value="">Error al cargar sub-tipos</option>');
-                    subTipoSelect.trigger('change');
                 }
             });
         } else {
             subTipoSelect.prop('disabled', false).empty().append('<option value="">Selecciona un sub-tipo</option>');
-            subTipoSelect.trigger('change');
         }
     }
 
-    // Mostrar/Ocultar Línea de Crédito según sub-tipo
     function toggleLineaCredito(subTipoId) {
         if (subTipoId == "4") {
             $('#linea_credito_wrapper').show();
         } else {
             $('#linea_credito_wrapper').hide();
-            $('#id_cre_lineas_creditos').val('').trigger('change'); // limpiar selección
+            $('#id_cre_lineas_creditos').val('').trigger('change');
         }
     }
 
-    // Evento change para Tipo de Soporte
+    // Eventos
+    $('#id_categoria').on('change', function() {
+        cargarTipos($(this).val());
+        $('#id_scp_sub_tipo').empty().append('<option value="">Selecciona un sub-tipo</option>');
+    });
+
     $('#id_scp_tipo').on('change', function() {
         cargarSubTipos($(this).val());
     });
 
-    // Evento change para Sub-Tipo de Soporte
     $('#id_scp_sub_tipo').on('change', function() {
         toggleLineaCredito($(this).val());
     });
 
-    // Cargar sub-tipos si ya hay tipo seleccionado (edición)
-    if ($('#id_scp_tipo').val()) {
-        cargarSubTipos($('#id_scp_tipo').val());
+    // Cargar tipos si ya hay categoría seleccionada (edición)
+    if ($('#id_categoria').val()) {
+        cargarTipos($('#id_categoria').val());
     }
 
     // Si estamos editando, mostrar línea de crédito si corresponde
@@ -223,4 +271,3 @@ $(document).ready(function() {
 });
 </script>
 @endpush
-
