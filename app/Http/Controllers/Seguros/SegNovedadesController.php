@@ -17,6 +17,8 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\AuditoriaController;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\ExcelExport;
 
 class SegNovedadesController extends Controller
 {
@@ -27,14 +29,6 @@ class SegNovedadesController extends Controller
     }
     public function index(Request $request)
     {
-        /* $update = SegAsegurado::where('parentesco', 'AF')
-            ->whereHas('polizas', function ($query) {
-                $query->whereNull('valorpagaraseguradora')
-                    ->orWhere('valorpagaraseguradora', ' ');
-            })->get();
-        $novedades = SegNovedades::with(['tercero', 'asegurado.terceroAF', 'plan'])->get();
-        return view('seguros.novedades.index', compact('novedades', 'update')); */
-
         $estado = $request->query('estado', 'solicitud');
         $colecciones = [
             'solicitud' => SegNovedades::where('estado', 1)
@@ -113,8 +107,8 @@ class SegNovedadesController extends Controller
             'fechaIncio' => Carbon::now()->toDateString(),
         ]);
         if ($request->tipoNovedad === '1') {
-            $accion = 'novedad en poliza  ' . $request->id_poliza . ' Asegurado ' . $request->asegurado;
-            $this->auditoria($accion);
+            $accion = 'modificacion en poliza  ' . $request->id_poliza . ' Asegurado ' . $request->asegurado;
+            
         } elseif ($request->tipoNovedad === '2') {
             $controllerapi = new ComaeTerController();
             $terapi = $controllerapi->show($request->asegurado);
@@ -150,7 +144,7 @@ class SegNovedadesController extends Controller
                 $this->auditoria('TERCERO CREAD0 ID ' . $terceroontable->cod_ter);
                 $this->auditoria('ASEGURADO CREADO ID ' . $asegurado->cedula);
             }
-        }
+        }        
         return redirect()->route('seguros.novedades.index')->with('success', 'Novedad registrada correctamente');
     }
 
@@ -239,12 +233,17 @@ class SegNovedadesController extends Controller
     }
     public function destroy(Request $request, $id)
     {
+        $request->validate([
+            'formulario_nov' => 'required|mimes:pdf|max:2048',
+        ]);
+        $formulario = $request->file('formulario_nov')->store('seguros/novedades');
         $novedad = SegNovedades::create([
             'id_poliza' => $request->id_poliza ?? null,
             'id_asegurado' => $id,
             'tipo' => $request->tipoNovedad,
             'estado' => 1,
             'id_plan' => $request->planid,
+            'formulario' => $formulario,
         ]);
         SegCambioEstadoNovedad::create([
             'novedad' => $novedad->id,
@@ -253,5 +252,30 @@ class SegNovedadesController extends Controller
             'fechaIncio' => Carbon::now()->toDateString(),
         ]);
         return redirect()->route('seguros.novedades.index')->with('success', 'Novedad registrada correctamente');
+    }
+
+    public function descargarexcel()
+    {
+        $datos = SegNovedades::where('estado', '!=', 3)
+            ->with(['tercero', 'cambiosEstado', 'asegurado'])
+            ->get();
+        //dd($datos);
+        $headings = ['CEDULA', 'NOMBRE','FECHA NACIMIENTO', 'EDAD', 'FECHA SOLICITUD', 'TIPO NOVEDAD','VALOR ASEGURADO SOLICITADO', 'GENERO', 'PARENTESCO','OBSERVACIONES'];
+        $datosFormateados = $datos->map(function ($item) {
+            $fechaNacimiento = Carbon::parse($item->fecha_nacimiento);
+            return [
+                'cedula' => $item->id_asegurado,            
+                'nombre' => $item->nombre_tercero ?? '',
+                'fecha_nacimiento' => $fechaNacimiento->format('d/m/Y'),
+                'edad' => $item->edad,
+                'fecha_solicitud' => $item->created_at ? $item->created_at->format('d/m/Y') : '',
+                'tipo_novedad' => $item->tipoNovedad->nombre ?? '',
+                'valor_asegurado' => $item->valorAsegurado ?? 0,
+                'genero' => $item->tercero->sexo ?? '',
+                'parentesco' => $item->asegurado->parentesco ?? '',
+                'observaciones' => $item->cambiosEstado->last()->observaciones ?? '',
+            ];
+        });
+        return Excel::download(new ExcelExport($datosFormateados, $headings), date('Y-m-d') . ' NOVEDADES.xlsx');
     }
 }
