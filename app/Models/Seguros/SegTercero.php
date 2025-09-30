@@ -25,6 +25,17 @@ class SegTercero extends Model
         }
         return null;
     }
+    public function getFechaNacimientoAttribute()
+    {
+        if ($this->tercero) {
+            return $this->tercero->fec_nac;
+        }
+
+        else if ($this->terceroAlt) {
+            return $this->terceroAlt->fechaNacimiento;
+        }
+        return ;
+    }
     public function asegurados()
     {
         return $this->hasMany(SegAsegurado::class, 'cedula', 'cedula');
