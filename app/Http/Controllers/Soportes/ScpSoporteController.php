@@ -18,11 +18,13 @@ use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Soportes\ScpSubTipo;
 use App\Models\Soportes\ScpUsuario;
+use App\Models\Soportes\ScpCategoria;
+use Illuminate\Support\Facades\Log;
 
 
 class ScpSoporteController extends Controller
 {
- public function index()
+    public function index()
     {
         // -------------------------------------------------------------------------
         // 1. AQUÍ DEFINES EL NOMBRE EXACTO DE LA PESTAÑA QUE QUIERES ACTIVA
@@ -43,23 +45,18 @@ class ScpSoporteController extends Controller
         });
 
         // 4. (Opcional, pero recomendado) Verificamos si la categoría por defecto existe.
-        // Si no existe (p. ej., no hay soportes "En Proceso"), activamos la primera que encontremos.
         if (!$categorias->has($categoriaActivaPorDefecto)) {
             $categoriaActivaPorDefecto = $categorias->keys()->first();
         }
-
-
-
-        
+       
         // 5. Pasamos ambas variables a la vista
         return view('soportes.soportes.index', compact('categorias', 'categoriaActivaPorDefecto'));
     }
 
 
-
-
     public function create()
     {
+        $categorias = ScpCategoria::all();
         $tipos = ScpTipo::all();
         $prioridades = ScpPrioridad::all();
         $terceros = maeTerceros::select('cod_ter', 'nom_ter')->get();
@@ -69,7 +66,7 @@ class ScpSoporteController extends Controller
 
         $usuario = User::find(Auth::id());
 
-        return view('soportes.soportes.create', compact('tipos', 'prioridades', 'terceros', 'usuarios', 'cargos', 'lineas', 'usuario'));
+        return view('soportes.soportes.create', compact('categorias', 'tipos', 'prioridades', 'terceros', 'usuarios', 'cargos', 'lineas', 'usuario'));
     }
 
     public function store(Request $request)
@@ -79,6 +76,7 @@ class ScpSoporteController extends Controller
             'id_gdo_cargo' => 'nullable|integer|exists:gdo_cargo,id',
             'id_cre_lineas_creditos' => 'nullable|integer|exists:cre_lineas_creditos,id',
             'cod_ter_maeTercero' => ['nullable', 'string', 'max:20', Rule::exists('MaeTerceros', 'cod_ter')],
+            'id_categoria' => 'required|exists:scp_categorias,id',
             'id_scp_tipo' => 'required|exists:scp_tipos,id',
             'id_scp_prioridad' => 'required|exists:scp_prioridads,id',
             'id_users' => 'required|exists:users,id',
@@ -94,6 +92,7 @@ class ScpSoporteController extends Controller
             'id_gdo_cargo' => $request->id_gdo_cargo,
             'id_cre_lineas_creditos' => $request->id_cre_lineas_creditos,
             'cod_ter_maeTercero' => $request->cod_ter_maeTercero,
+            'id_categoria' => $request->id_categoria,
             'id_scp_tipo' => $request->id_scp_tipo,
             'id_scp_prioridad' => $request->id_scp_prioridad,
             'id_users' => $request->id_users,
@@ -112,7 +111,7 @@ class ScpSoporteController extends Controller
             'tipo',
             'subTipo',
             'prioridad',
-            'maeTercero', // relación en minúscula como la definiste en el modelo
+            'maeTercero',
             'usuario',
             'cargo',
             'lineaCredito',
@@ -122,11 +121,10 @@ class ScpSoporteController extends Controller
                         'estado',
                         'usuario',
                         'tipoObservacion',
-                        'scpUsuarioAsignado.maeTercero', // <- carga anidada
+                        'scpUsuarioAsignado.maeTercero',
                     ])
                     ->orderBy('timestam', 'desc');
             },
-            //'scpUsuarioAsignado', // este es el escalado guardado en el soporte
         ]);
 
         $estados = ScpEstado::all();
@@ -172,6 +170,7 @@ class ScpSoporteController extends Controller
             'id_gdo_cargo' => 'nullable|integer|exists:gdo_cargo,id',
             'id_cre_lineas_creditos' => 'nullable|integer|exists:cre_lineas_creditos,id',
             'cod_ter_maeTercero' => ['nullable', 'string', 'max:20', Rule::exists('MaeTerceros', 'cod_ter')],
+            'id_categoria' => 'required|exists:scp_categorias,id',
             'id_scp_tipo' => 'required|exists:scp_tipos,id',
             'id_scp_prioridad' => 'required|exists:scp_prioridads,id',
             'id_users' => 'required|exists:users,id',
@@ -186,6 +185,7 @@ class ScpSoporteController extends Controller
             'id_gdo_cargo' => $request->id_gdo_cargo,
             'id_cre_lineas_creditos' => $request->id_cre_lineas_creditos,
             'cod_ter_maeTercero' => $request->cod_ter_maeTercero,
+            'id_categoria' => $request->id_categoria,
             'id_scp_tipo' => $request->id_scp_tipo,
             'id_scp_prioridad' => $request->id_scp_prioridad,
             'id_users' => $request->id_users,
@@ -204,8 +204,6 @@ class ScpSoporteController extends Controller
         return redirect()->route('soportes.soportes.index')->with('success', 'Soporte eliminado exitosamente.');
     }
 
-    ///////////////////////////////////////////////////////////////////////////////
-
     public function storeObservacion(Request $request, ScpSoporte $scpSoporte)
     {
         $request->validate([
@@ -215,7 +213,6 @@ class ScpSoporteController extends Controller
             'id_scp_usuario_asignado' => ['nullable', 'integer', 'exists:scp_usuarios,id'],
         ]);
 
-        // Guardar la observación
         $observacionData = [
             'observacion' => $request->observacion,
             'timestam' => now(),
@@ -228,12 +225,10 @@ class ScpSoporteController extends Controller
 
         $scpSoporte->observaciones()->create($observacionData);
 
-        // Siempre actualizamos el estado
         $updateData = [
             'estado' => $request->id_scp_estados,
         ];
 
-        // Solo actualizamos el usuario escalado si viene en la request
         if ($request->filled('id_scp_usuario_asignado')) {
             $updateData['usuario_escalado'] = $request->id_scp_usuario_asignado;
         }
@@ -242,7 +237,6 @@ class ScpSoporteController extends Controller
 
         return redirect()->route('soportes.soportes.show', $scpSoporte)->with('success', 'Observación añadida y soporte actualizado exitosamente.');
     }
-
 
     public function destroyObservacion(ScpSoporte $scpSoporte, ScpObservacion $scpObservacion)
     {
@@ -254,7 +248,6 @@ class ScpSoporteController extends Controller
         return redirect()->route('soportes.soportes.show', $scpSoporte)->with('success', 'Observación eliminada exitosamente.');
     }
 
-    ///////////////////////////////////////////////////////////////////////////////
     public function getSubTipos($tipoId)
     {
         $subTipos = ScpSubTipo::where('scp_tipo_id', $tipoId)
@@ -262,5 +255,19 @@ class ScpSoporteController extends Controller
             ->get(['id', 'nombre']);
 
         return response()->json($subTipos);
+    }
+
+    public function getTiposByCategoria($categoriaId)
+    {
+        try {
+        $tipos = ScpTipo::where('id_categoria', $categoriaId)
+            ->orderBy('nombre')
+            ->get(['id', 'nombre']); 
+
+        return response()->json($tipos);
+        } catch (\Exception $e) {
+            Log::error('Error en getTiposByCategoria: '.$e->getMessage());
+            return response()->json(['error' => 'Error interno del servidor'], 500);
+        }
     }
 }
