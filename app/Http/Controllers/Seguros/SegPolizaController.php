@@ -173,15 +173,14 @@ class SegPolizaController extends Controller
     }
 
     public function uploadCreate(Request $request)
-    {        
+    {
         $request->validate([
             'file' => 'required|mimes:xlsx,xls,csv',
         ]);
         $rows = Excel::toArray(new ExcelImport(), $request->file('file'))[0];
         $updatedCount = 0;
         $failedRows = [];
-        foreach ($rows as $index => $row) {
-            //validar campos
+        foreach ($rows as $index => $row) {            
             if (!in_array(strtoupper($row['genero']), ['V', 'H'])) {
                 $failedRows[] = [
                     'cedula' => $row['num_doc'],
@@ -250,7 +249,8 @@ class SegPolizaController extends Controller
             $poliza = SegPoliza::where('seg_asegurado_id', $asegurado->cedula)->first();
             $condicion_id = app(SegPlanController::class)->getCondicion($tercero->edad);
             $plan_id = SegPlan::select('id')->where('vigente', true)->where('condicion_corpen', $condicion_id)->where('valor', $row['valor_asegurado'])->first();
-            $plan_id_value = $plan_id ? $plan_id->id : 77;            
+            $plan_id_value = $plan_id ? $plan_id->id : 77;
+            $extraPrima = isset($row['extra_prim']) ? intval($row['extra_prim'] * 100) : null;
             if (!$poliza) {
                 $poliza = SegPoliza::create([
                     'seg_asegurado_id' => $asegurado->cedula,
@@ -261,7 +261,7 @@ class SegPolizaController extends Controller
                     'valor_asegurado' => $row['valor_asegurado'],
                     'valor_prima' => $row['prima'],
                     'primapagar' => $row['prima_corpen'],
-                    'extra_prima' => $row['extra_prim'] ?? 0,
+                    'extra_prima' => $extraPrima ?? 0,
                     'valorpagaraseguradora' => $row['valor_titular'] ?? null,
                 ]);
                 $updatedCount++;
@@ -273,7 +273,7 @@ class SegPolizaController extends Controller
                     'valor_asegurado' => $row['valor_asegurado'],
                     'valor_prima' => $row['prima'],
                     'primapagar' => $row['prima_corpen'],
-                    'extra_prima' => $row['extra_prim'] ?? 0,
+                    'extra_prima' => $extraPrima ?? 0,
                     'valorpagaraseguradora' => $row['valor_titular'] ?? null,
                 ]);
                 $updatedCount++;
@@ -290,7 +290,7 @@ class SegPolizaController extends Controller
     }
 
     public function upload(Request $request)
-    {        
+    {
         $request->validate([
             'file' => 'required|mimes:xlsx,xls,csv',
         ]);
@@ -303,11 +303,11 @@ class SegPolizaController extends Controller
         $failedRows = [];
         foreach ($rows as $index => $row) {
             $modeloData = SegPoliza::where('seg_asegurado_id', $row['cod_ter'])->first();
-            if ($modeloData) {       
+            if ($modeloData) {
                 $modeloData::update([
                     'primapagar' => $row['deb_mov'],
                     'valorpagaraseguradora' => $row['pagar_aco'],
-                ]);               
+                ]);
                 $updatedCount++;
             } else {
                 $failedRows[] = $row;
