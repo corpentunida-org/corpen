@@ -173,7 +173,7 @@ class SegPolizaController extends Controller
     }
 
     public function uploadCreate(Request $request)
-    {
+    {        
         $request->validate([
             'file' => 'required|mimes:xlsx,xls,csv',
         ]);
@@ -250,14 +250,7 @@ class SegPolizaController extends Controller
             $poliza = SegPoliza::where('seg_asegurado_id', $asegurado->cedula)->first();
             $condicion_id = app(SegPlanController::class)->getCondicion($tercero->edad);
             $plan_id = SegPlan::select('id')->where('vigente', true)->where('condicion_corpen', $condicion_id)->where('valor', $row['valor_asegurado'])->first();
-            $plan_id_value = $plan_id ? $plan_id->id : 77;
-            /*if (!$plan_id) {
-                $failedRows[] = [
-                    'cedula' => $row['num_doc'],
-                    'obser' => 'No se encontró un plan con el valor asegurado de ' . $row['valor_asegurado'],
-                ];
-                continue;
-            }*/
+            $plan_id_value = $plan_id ? $plan_id->id : 77;            
             if (!$poliza) {
                 $poliza = SegPoliza::create([
                     'seg_asegurado_id' => $asegurado->cedula,
@@ -297,7 +290,7 @@ class SegPolizaController extends Controller
     }
 
     public function upload(Request $request)
-    {
+    {        
         $request->validate([
             'file' => 'required|mimes:xlsx,xls,csv',
         ]);
@@ -310,19 +303,11 @@ class SegPolizaController extends Controller
         $failedRows = [];
         foreach ($rows as $index => $row) {
             $modeloData = SegPoliza::where('seg_asegurado_id', $row['cod_ter'])->first();
-            if ($modeloData) {
-                SegNovedades::create([
-                    'id_asegurado' => $modeloData->seg_asegurado_id,
-                    'id_poliza' => $modeloData->id,
-                    'valorpagar' => $row['deb_mov'],
-                    'valorPrimaPlan' => $modeloData->valor_prima,
-                    'plan' => $modeloData->seg_plan_id,
-                    'fechaNovedad' => Carbon::now()->toDateString(),
-                    'valorAsegurado' => $modeloData->valor_asegurado,
-                    'observaciones' => $request->observacion,
-                ]);
-                $modeloData->valorpagaraseguradora = $row['deb_mov'];
-                $modeloData->save();
+            if ($modeloData) {       
+                $modeloData::update([
+                    'primapagar' => $row['deb_mov'],
+                    'valorpagaraseguradora' => $row['pagar_aco'],
+                ]);               
                 $updatedCount++;
             } else {
                 $failedRows[] = $row;
