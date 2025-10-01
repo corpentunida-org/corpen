@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Soportes;
 
 use App\Http\Controllers\Controller;
 use App\Models\Soportes\ScpUsuario;
-use App\Models\Maestras\MaeTerceros;
+use App\Models\Maestras\maeTerceros;
 use Illuminate\Http\Request;
 
 class ScpUsuarioController extends Controller
@@ -16,7 +16,7 @@ class ScpUsuarioController extends Controller
 
     public function create()
     {
-        $terceros = MaeTerceros::all();
+        $terceros = maeTerceros::all();
         return view('soportes.usuarios.create', compact('terceros'));
     }
 
@@ -34,7 +34,7 @@ class ScpUsuarioController extends Controller
 
     public function edit(ScpUsuario $usuario)
     {
-        $terceros = MaeTerceros::all();
+        $terceros = maeTerceros::all();
         return view('soportes.usuarios.edit', compact('usuario', 'terceros'));
     }
 
