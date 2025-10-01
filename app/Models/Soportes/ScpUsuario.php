@@ -4,7 +4,7 @@ namespace App\Models\Soportes;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Maestras\MaeTerceros;
+use App\Models\Maestras\maeTerceros;
 
 class ScpUsuario extends Model
 {
@@ -22,6 +22,6 @@ class ScpUsuario extends Model
      */
     public function maeTercero()
     {
-        return $this->belongsTo(MaeTerceros::class, 'cod_ter', 'cod_ter');
+        return $this->belongsTo(maeTerceros::class, 'cod_ter', 'cod_ter');
     }
 }
