@@ -2,8 +2,6 @@
 
 namespace App\Models\Soportes;
 
-namespace App\Models\Soportes;
-
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -16,6 +14,7 @@ class ScpTipo extends Model
     protected $fillable = [
         'nombre',
         'descripcion',
+        'id_categoria',
     ];
 
     // Relación con sub-tipos
@@ -23,4 +22,10 @@ class ScpTipo extends Model
     {
         return $this->hasMany(ScpSubTipo::class, 'scp_tipo_id');
     }
+
+    public function categoria()
+    {
+        return $this->belongsTo(ScpCategoria::class, 'id_categoria','id');
+    }
+
 }
