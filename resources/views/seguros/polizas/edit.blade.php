@@ -13,12 +13,30 @@
                 <div class="mb-3 d-flex align-items-center justify-content-between">
                     <h5 class="fw-bold mb-0 me-4">
                         <span class="d-block mb-2">Cargar Archivo</span>
-                        <span class="fs-12 fw-normal text-muted text-truncate-1-line">El archivo debe contener la cédula
-                            en la columna 'COD_TER' y el valor a pagar en la columna 'DEB_MOV'.</span>
+                        <span class="fs-12 fw-normal text-muted text-truncate-1-line">Debe subir un documento en formato Excel.</span>
                     </h5>
                 </div>
-                <form class="row" action="{{ route('seguros.poliza.upload') }}" method="POST"
-                    enctype="multipart/form-data" novalidate>
+                <ul class="list-unstyled text-muted mb-0">
+                    <li class="d-flex align-items-start mb-1">
+                        <span class="text-danger">
+                            <i class="feather-check fs-10"></i>
+                        </span>
+                        <span class="fs-12 fw-normal text-truncate-1-line">"COD_TER": Cédula del asegurado de la póliza.</span>
+                    </li>
+                    <li class="d-flex align-items-start mb-1">
+                        <span class="text-danger">
+                            <i class="feather-check fs-10"></i>
+                        </span>
+                        <span class="fs-12 fw-normal text-truncate-1-line">"DEB_MOV": Valor a pagar del asegurado por el plan.</span>
+                    </li>
+                    <li class="d-flex align-items-start mb-1">
+                        <span class="text-danger">
+                            <i class="feather-check fs-10"></i>
+                        </span>
+                        <span class="fs-12 fw-normal text-truncate-1-line">"PAGAR_ACO": Valor acumulado a pagar por el titular y su grupo familiar.</span>
+                    </li>
+                </ul>
+                <form class="row mt-4" action="{{ route('seguros.poliza.upload') }}" method="POST" enctype="multipart/form-data" novalidate>
                     @csrf
                     <div class="mb-3">
                         <input type="file" class="form-control" name="file" required>
@@ -27,12 +45,7 @@
                                 Solo se permiten archivos de tipo: .xls, .xlsx
                             </div>
                         @endif
-                    </div>
-                    <div class="mb-3">
-                        <label for="observacion" class="form-label">Observación <span
-                                class="text-danger">*</span></label>
-                        <input type="text" class="form-control uppercase-input" name="observacion" required>
-                    </div>
+                    </div>                    
                     <div class="d-flex justify-content-end gap-2">
                         <button type="submit" class="btn btn-primary">Agregar</button>
                     </div>

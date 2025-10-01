@@ -88,7 +88,7 @@
                                 <a href="{{ route('seguros.poliza.viewupload') }}"
                                     class="d-flex me-1 btn btn-light-brand ml-1">
                                     <i class="feather-upload me-2"></i>
-                                    <span>Subir Excel Crear Póliza</span>
+                                    <span>Subir Excel Crear/Actualizar Póliza</span>
                                 </a>
                             @endcan
                         </div>
