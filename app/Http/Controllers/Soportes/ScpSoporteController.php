@@ -25,32 +25,35 @@ use Illuminate\Support\Facades\Log;
 class ScpSoporteController extends Controller
 {
     public function index()
-    {
-        // -------------------------------------------------------------------------
-        // 1. AQUÍ DEFINES EL NOMBRE EXACTO DE LA PESTAÑA QUE QUIERES ACTIVA
-        // -------------------------------------------------------------------------
+    {       
         $categoriaActivaPorDefecto = 'En Proceso'; // Puedes cambiar esto a 'Pendiente', 'Cerrado', etc.
 
-        // 2. Obtenemos TODOS los soportes, como en tu código original
         $soportes = ScpSoporte::with([
-                'tipo', 'subTipo', 'prioridad', 'maeTercero', 'usuario', 
-                'cargo.gdoArea', 'lineaCredito', 'scpUsuarioAsignado.maeTercero', 'estadoSoporte'
-            ])
+            'tipo',
+            'subTipo',
+            'prioridad',
+            'maeTercero',
+            'usuario',
+            'cargo.gdoArea',
+            'lineaCredito',
+            'scpUsuarioAsignado.maeTercero',
+            'estadoSoporte'
+        ])
             ->orderBy('created_at', 'desc')
-            ->get(); 
-        
-        // 3. Agrupamos los soportes por el nombre de su estado (categoría)
-        $categorias = $soportes->groupBy(function ($soporte) {
-            return $soporte->estadoSoporte->nombre ?? 'Sin Categoría';
-        });
+            ->get();
 
-        // 4. (Opcional, pero recomendado) Verificamos si la categoría por defecto existe.
-        if (!$categorias->has($categoriaActivaPorDefecto)) {
+        $categorias = $soportes
+            ->sortBy('id')
+            ->groupBy(function ($soporte) {
+                return $soporte->estadoSoporte->nombre ?? 'Sin Categoría';
+            });
+            
+            //dd($soporteejemplo);
+            if (!$categorias->has($categoriaActivaPorDefecto)) {
             $categoriaActivaPorDefecto = $categorias->keys()->first();
         }
-       
-        // 5. Pasamos ambas variables a la vista
-        return view('soportes.soportes.index', compact('categorias', 'categoriaActivaPorDefecto'));
+        
+        return view('soportes.soportes.index', compact('categorias', 'categoriaActivaPorDefecto', 'soportes'));
     }
 
 
@@ -97,7 +100,7 @@ class ScpSoporteController extends Controller
             'id_scp_prioridad' => $request->id_scp_prioridad,
             'id_users' => $request->id_users,
             'id_scp_sub_tipo' => $request->id_scp_sub_tipo,
-            'estado' => $request->estado,
+            'estado' => 1,
             'soporte' => $request->soporte,
             'usuario_escalado' => $request->usuario_escalado,
         ]);
@@ -260,14 +263,59 @@ class ScpSoporteController extends Controller
     public function getTiposByCategoria($categoriaId)
     {
         try {
-        $tipos = ScpTipo::where('id_categoria', $categoriaId)
-            ->orderBy('nombre')
-            ->get(['id', 'nombre']); 
+            $tipos = ScpTipo::where('id_categoria', $categoriaId)
+                ->orderBy('nombre')
+                ->get(['id', 'nombre']);
 
-        return response()->json($tipos);
+            return response()->json($tipos);
         } catch (\Exception $e) {
-            Log::error('Error en getTiposByCategoria: '.$e->getMessage());
+            Log::error('Error en getTiposByCategoria: ' . $e->getMessage());
             return response()->json(['error' => 'Error interno del servidor'], 500);
         }
+    }
+
+
+    public function pendientes()
+    {
+        $soportesPendientes = ScpSoporte::with([
+            'tipo',
+            'subTipo',
+            'prioridad',
+            'maeTercero',
+            'usuario',
+            'cargo.gdoArea',
+            'lineaCredito',
+            'scpUsuarioAsignado.maeTercero',
+            'estadoSoporte'
+        ])
+            ->whereHas('estadoSoporte', function ($q) {
+                $q->where('nombre', 'Pendiente');
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('soportes.soportes.categorias.pendientes', compact('soportesPendientes'));
+    }
+    public function sinAsignar()
+    {
+        $soportesSinAsignar = ScpSoporte::with([
+            'tipo',
+            'subTipo',
+            'prioridad',
+            'maeTercero',
+            'usuario',
+            'cargo.gdoArea',
+            'lineaCredito',
+            'scpUsuarioAsignado.maeTercero',
+            'estadoSoporte',
+            'categoria'
+        ])
+            ->whereHas('categoria', function ($q) {
+                $q->where('nombre', 'SinAsignar');
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('soportes.soportes.categorias.sinAsignar', compact('soportesSinAsignar'));
     }
 }
