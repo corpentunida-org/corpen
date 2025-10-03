@@ -80,7 +80,7 @@
                             </a>
                         </div>
                         <div class="d-flex align-items-center justify-content-center">
-                            @can('seguros.poliza.store')
+                            @candirect('seguros.poliza.store')
                                 {{-- <a href="{{route('seguros.poliza.create')}}" class="d-flex me-1 btn btn-primary">
                                     <i class="feather-plus me-2"></i>
                                     <span>Crear Póliza Individual</span>
@@ -90,7 +90,7 @@
                                     <i class="feather-upload me-2"></i>
                                     <span>Subir Excel Crear/Actualizar Póliza</span>
                                 </a>
-                            @endcan
+                            @endcandirect
                         </div>
                     </div>
                 </div>
