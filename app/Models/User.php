@@ -78,6 +78,11 @@ class User extends Authenticatable
         return $this->permissions()->where('name', $permiso)->exists();
     }
 
+    public function hasDirectPermission($permiso)
+    {
+        return $this->getDirectPermissions()->pluck('name')->contains($permiso);
+    }
+
 
     public function acuerdosRegistrados(): HasMany
     {
@@ -100,23 +105,23 @@ class User extends Authenticatable
         return $this->hasMany(Interaction::class, 'agent_id');
     }
 
-public function cargoRelation()
-{
-    return $this->hasOne(\App\Models\Archivo\GdoCargo::class, 'correo_corporativo', 'email');
-}
+    public function cargoRelation()
+    {
+        return $this->hasOne(\App\Models\Archivo\GdoCargo::class, 'correo_corporativo', 'email');
+    }
 
-// Un "getter" que trae el cargo por email directamente
-public function getCargoAttribute()
-{
-    return \App\Models\Archivo\GdoCargo::where('correo_corporativo', $this->email)->first();
-}
-
-
+    // Un "getter" que trae el cargo por email directamente
+    public function getCargoAttribute()
+    {
+        return \App\Models\Archivo\GdoCargo::where('correo_corporativo', $this->email)->first();
+    }
 
 
 
 
-/*
+
+
+    /*
 
     protected $appends = [
         'profile_photo_url',
@@ -131,5 +136,4 @@ public function getCargoAttribute()
             'password' => 'hashed',
         ];
     } */
-
 }
