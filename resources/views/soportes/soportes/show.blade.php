@@ -11,6 +11,7 @@
             <a href="{{ route('soportes.soportes.index') }}" class="btn btn-sm btn-outline-secondary">
                 <i class="feather-arrow-left me-1"></i> Volver
             </a>
+            {{--             
             <a href="{{ route('soportes.soportes.edit', $soporte->id) }}" class="btn btn-sm btn-primary">
                 <i class="feather-edit-2 me-1"></i> Editar
             </a>
@@ -20,7 +21,8 @@
                 <button type="submit" class="btn btn-sm btn-danger">
                     <i class="feather-trash-2 me-1"></i> Eliminar
                 </button>
-            </form>
+            </form> 
+            --}}
         </div>
     </div>
 
@@ -49,8 +51,9 @@
             </div>
 
             {{-- Historial de observaciones --}}
-            <div class="card shadow-sm">
-                <div class="card-header bg-white border-0">
+                <div class="card shadow-sm history-tracking-card">
+                    <div class="card-header border-0">
+
                     <h5 class="card-title text-dark fw-bold mb-0">
                         <i class="feather-message-square me-2 text-primary"></i> Historial y Seguimiento
                     </h5>
@@ -316,6 +319,26 @@
     {{-- CSS ADICIONAL PARA LOS EFECTOS VISUALES --}}
     {{-- Coloca este estilo en tu archivo CSS principal o en la sección <head> de tu layout si aplica globalmente --}}
     <style>
+
+        /* ===== DESCRIPCIÓN DEL SOPORTE (Rojo pastel sutil) ===== */
+        .support-description-card {
+            background-color: #fdecef !important; /* Fondo pastel rojo muy suave */
+            border: 1px solid #f5c2c7 !important; /* Borde pastel rojo */
+        }
+        .support-description-text {
+            background-color: #fff !important; /* Texto siempre en blanco */
+            border: 1px solid #f5c2c7 !important;
+        }
+
+        /* ===== HISTORIAL Y SEGUIMIENTO (Azul pastel sutil) ===== */
+        .history-tracking-card {
+            background-color: #eaf4ff !important; /* Fondo pastel azul muy suave */
+            border: 1px solid #b6daff !important; /* Borde pastel azul */
+        }
+        .history-tracking-card .card-header {
+            background-color: #d1e7ff !important; /* Azul pastel un poco más fuerte para el encabezado */
+            border-bottom: 1px solid #b6daff !important;
+        }
         .support-description-card {
             border-radius: 12px; /* Más redondeado */
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); /* Sombra más pronunciada pero suave */
