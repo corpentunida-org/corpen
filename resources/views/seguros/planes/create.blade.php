@@ -9,12 +9,12 @@
                         <a class="nav-link active" data-bs-toggle="tab" data-bs-target="#securityTab"
                             aria-selected="true">Crear Plan</a>
                     </li>
-                    @can('seguros.cobertura.store')
+                    @candirect('seguros.cobertura.store')
                         <li class="nav-item flex-fill border-top" role="presentation">
                             <a class="nav-link" data-bs-toggle="tab" data-bs-target="#taskTab" aria-selected="false">Crear
                                 Cobertura</a>
                         </li>
-                    @endcan
+                    @endcandirect
                 </ul>
             </div>
             <div class="tab-content">
