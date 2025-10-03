@@ -53,7 +53,7 @@
         </div>
     </div>
 
-    @can('seguros.reportes.download')
+    @candirect('seguros.reportes.download')
     <div class="col-lg-12">
         <div class="card stretch stretch-full" data-select2-id="select2-data-38-lija">
             <div class="card-body">
@@ -65,13 +65,13 @@
                 <div class="row">
                     <div class="d-flex align-items-center justify-content-between">
                         <div class="d-flex align-items-center justify-content-center">
-                            @can('seguros.poliza.update')
+                            @candirect('seguros.poliza.update')
                                 <a href="{{ route('seguros.poliza.edit', ['poliza' => 'excel']) }}"
                                     class="d-flex me-1 btn btn-light-brand">
                                     <i class="feather feather-edit-3 me-2"></i>
                                     <span>Actualizar Valor a Pagar</span>
                                 </a>
-                            @endcan
+                            @endcandirect
                             <a href="{{ route('seguros.poliza.download') }}"
                                 class="d-flex me-1 px-3 bg-soft-indigo text-indigo border border-soft-indigo"
                                 style="padding: 12px 0 12px 0;">
@@ -97,7 +97,7 @@
             </div>
         </div>
     </div>
-    @endcan
+    @endcandirect
 
     {{-- @include('seguros.novedades.index') --}}
 
