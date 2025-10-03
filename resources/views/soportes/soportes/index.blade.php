@@ -6,6 +6,51 @@
         <div class="alert alert-danger" role="alert">{{ session('error') }}</div>
     @endif
     
+
+    <!-- Filtros -->
+    <div class="card p-3 bg-light mb-4">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Área</label>
+                <select id="filterArea" class="form-select form-select-sm">
+                    <option value="">Todas</option>
+                    @foreach($soportes->pluck('cargo.gdoArea.nombre')->unique() as $area)
+                        @if($area)
+                            <option value="{{ $area }}">{{ $area }}</option>
+                        @endif
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Prioridad</label>
+                <select id="filterPrioridad" class="form-select form-select-sm">
+                    <option value="">Todas</option>
+                    @foreach($soportes->pluck('prioridad.nombre')->unique() as $p)
+                        @if($p)
+                            <option value="{{ $p }}">{{ $p }}</option>
+                        @endif
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Usuario</label>
+                <select id="filterUsuario" class="form-select form-select-sm">
+                    <option value="">Todos</option>
+                    @foreach($soportes->pluck('usuario.name')->unique() as $u)
+                        @if($u)
+                            <option value="{{ $u }}">{{ $u }}</option>
+                        @endif
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">Fecha Creación</label>
+                <input type="date" id="filterFecha" class="form-control form-control-sm" />
+            </div>
+        </div>
+    </div>
+
+    {{-- Tabla --}}
     <div class="card mb-4">
         <div class="card-body">
             <div class="mb-4 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
@@ -30,7 +75,12 @@
                                 aria-controls="tab-1"
                                 aria-selected="false">
                             TODOS
-                            <span class="badge bg-secondary">{{ $soportes->count() }}</span>
+                            <span class="badge bg-secondary">
+                                {{ $soportes->filter(function($soporte) {
+                                    return auth()->user()->id == $soporte->usuario->id 
+                                        || auth()->user()->hasDirectPermission('soporte.lista.administrador');
+                                })->count() }}
+                            </span>                        
                         </button>
                     </li>  
                     @endcandirect
@@ -50,23 +100,22 @@
                                 aria-controls="tab-{{ $indice }}"
                                 aria-selected="{{ $loop->first ? 'true' : 'false' }}">
                             {{ $nombreCategoria }}
-                            <span class="badge bg-secondary">{{ $soportesCategoria->count() }}</span>
+                            <span class="badge bg-secondary">
+                                {{ $soportesCategoria->filter(function($soporte) {
+                                    return auth()->user()->id == $soporte->usuario->id || auth()->user()->hasDirectPermission('soporte.lista.administrador');
+                                })->count() }}
+                            </span>
                         </button>
                     </li> 
                     @endcandirect
                 @endforeach
 
             </ul>
+            {{-- Contenido --}}
             <div class="tab-content" id="soporteTabsContent">
-                <div class="tab-pane fade"
-                         id="tab-1" 
-                         role="tabpanel" 
-                         aria-labelledby="tab-1-tab">
-                         {{-- 
-                         ---
-                         --}}
-                         <table class="table table-hover table-bordered align-middle small soporteTable" 
-                                   style="font-size: 0.875rem; width:100%">
+                {{-- TAB todos --}}
+                <div class="tab-pane fade" id="tab-1" role="tabpanel" aria-labelledby="tab-1-tab">
+                         <table class="table table-hover table-bordered align-middle small soporteTable" style="font-size: 0.875rem; width:100%">
                                 <thead class="table-light">
                                     <tr>
                                         <th>ID</th>
@@ -75,12 +124,11 @@
                                         <th>Área</th>
                                         <th>Categoria</th>
                                         <th>Tipo</th>
-                                        <th>Modulo</th> {{-- SubTipo --}}
+                                        <th>Módulo</th>
                                         <th>Prioridad</th>
                                         <th>Descripción</th>
-                                        <th>Fecha Update</th>
-                                        {{--<th>JEFE TI</th>  Asignado Inicialmente siempre Jefe --}}
-                                        <th>Asignado</th> {{--  --}}
+                                        <th>Fecha Update</th>                                       
+                                        <th>Asignado</th>
                                         <th>Estado</th>
                                         <th class="text-end">Acciones</th>
                                     </tr>
@@ -106,21 +154,7 @@
                                         <tr>
                                             {{-- ID --}}
                                             <td>
-                                                <a href="javascript:void(0)"
-                                                class="soporte-id fw-bold text-decoration-underline"
-                                                data-id="{{ $soporte->id }}"
-                                                data-fecha="{{ $soporte->created_at->format('d/m/Y H:i') }}"
-                                                data-creado="{{ $soporte->usuario->name ?? 'N/A' }}"
-                                                data-area="{{ $areaModal }}"
-                                                data-categoria="{{ $soporte->categoria->nombre ?? 'N/A' }}"
-                                                data-tipo="{{ $soporte->tipo->nombre ?? 'N/A' }}"
-                                                data-subtipo="{{ $soporte->subTipo->nombre ?? 'N/A' }}"
-                                                data-modulo="{{ $soporte->subTipo->nombre ?? 'N/A' }}"
-                                                data-prioridad="{{ $soporte->prioridad->nombre ?? 'N/A' }}"
-                                                data-detalles="{{ $soporte->detalles_soporte }}"
-                                                data-updated="{{ $soporte->updated_at->format('d/m/Y H:i') }}"
-                                                data-escalado="{{ $soporte->usuario_escalado ?? 'Sin escalar' }}"
-                                                data-estado="{{ $soporte->estado ?? 'Pendiente' }}">
+                                                <a href="#">
                                                     {{ $soporte->id }}
                                                 </a>
                                             </td>
@@ -210,6 +244,7 @@
 
                             </table>
                 </div>
+                {{-- fin tab Todos --}}
                 @foreach ($categorias as $nombreCategoria => $soportesCategoria)
                 @php 
                     $permiso = 'soporte.lista.' . strtolower($nombreCategoria);
@@ -240,7 +275,8 @@
                                         <th class="text-end">Acciones</th>
                                     </tr>
                                 </thead>
-                                <tbody>                                    
+                                <tbody>   
+                                    {{-- tabs por categoria  --}}                                 
                                     @forelse ($soportesCategoria as $soporte)
                                         @php
                                             $areaModal = $soporte->cargo->gdoArea->nombre ?? 'Soporte';
@@ -270,12 +306,12 @@
                                                 data-categoria="{{ $soporte->categoria->nombre ?? 'N/A' }}"
                                                 data-tipo="{{ $soporte->tipo->nombre ?? 'N/A' }}"
                                                 data-subtipo="{{ $soporte->subTipo->nombre ?? 'N/A' }}"
-                                                data-modulo="{{ $soporte->subTipo->nombre ?? 'N/A' }}"
                                                 data-prioridad="{{ $soporte->prioridad->nombre ?? 'N/A' }}"
                                                 data-detalles="{{ $soporte->detalles_soporte }}"
                                                 data-updated="{{ $soporte->updated_at->format('d/m/Y H:i') }}"
-                                                data-escalado="{{ $soporte->usuario_escalado ?? 'Sin escalar' }}"
-                                                data-estado="{{ $soporte->estado ?? 'Pendiente' }}">
+                                                data-maetercero="{{ $soporte->maeTercero->nom_ter ?? 'N/A' }}"   {{-- 👈 Solo aquí --}}
+                                                data-escalado="{{ $soporte->scpUsuarioAsignado->maeTercero->nom_ter ?? 'Sin escalar' }}"
+                                                data-estado="{{ $soporte->estadoSoporte->nombre ?? 'Pendiente' }}">
                                                     {{ $soporte->id }}
                                                 </a>
                                             </td>
@@ -290,7 +326,7 @@
                                             <td>{{ $areaModal }}</td>
 
                                             {{-- Categoría --}}
-                                            <td>{{ $soporte->categoria->name ?? 'N/A' }}</td>
+                                            <td>{{ $soporte->categoria->nombre ?? 'N/A'}}</td>
 
                                             {{-- Tipo --}}
                                             <td>{{ $soporte->tipo->nombre ?? 'N/A' }}</td>
@@ -369,6 +405,7 @@
                     @endcandirect
                 @endforeach
             </div>
+            {{-- Fin del Tabs --}}
         </div>
     </div>
 
@@ -398,8 +435,8 @@
                         <dd class="col-sm-9" id="modal-detalles"></dd>
                         <dt class="col-sm-3">Fecha Update</dt>
                         <dd class="col-sm-9" id="modal-fecha-update"></dd>
-                        <dt class="col-sm-3">Jefe TI</dt>
-                        {{--<dd class="col-sm-9" id="modal-asignado"></dd>--}}
+                        <dt class="col-sm-3">Jefe de Area</dt>
+                        <dd class="col-sm-9" id="modal-maeTercero"></dd>
                         <dt class="col-sm-3">Asignado</dt>
                         <dd class="col-sm-9" id="modal-escalado"></dd>
                         <dt class="col-sm-3">Estado</dt>
@@ -414,23 +451,24 @@
     </div>
 
     @push('styles')
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css"/>
-    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css"/>
-    <style>
-        .custom-tooltip .tooltip-inner {
-            background-color: rgba(108, 117, 125, 0.7);
-            color: #fff;
-            padding: 8px 12px;
-            border-radius: 5px;
-            font-size: 0.85rem;
-            max-width: 300px;
-            word-wrap: break-word;
-        }
-    </style>
+        <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css"/>
+        <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css"/>
+        <style>
+            .custom-tooltip .tooltip-inner {
+                background-color: rgba(108, 117, 125, 0.7);
+                color: #fff;
+                padding: 8px 12px;
+                border-radius: 5px;
+                font-size: 0.85rem;
+                max-width: 300px;
+                word-wrap: break-word;
+            }
+        </style>
     @endpush
 
     @push('scripts')
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
         <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
         <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
         <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
@@ -443,42 +481,82 @@
 
         <script>
             document.addEventListener('DOMContentLoaded', function () {
-                // Inicializar DataTables en todas las tablas de soportes
-                $('.soporteTable').DataTable({
-                    dom: 'Bfrtip',
-                    buttons: [
-                        { extend: 'excelHtml5', className: 'btn btn-sm btn-success', text: 'Excel' },
-                        { extend: 'pdfHtml5', className: 'btn btn-sm btn-danger', text: 'PDF' },
-                        { extend: 'print', className: 'btn btn-sm btn-secondary', text: 'Imprimir' }
-                    ],
-                    language: {
-                        url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+                let tables = [];
+
+                // ✅ Inicializar todas las tablas soporteTable con botones
+                $('.soporteTable').each(function () {
+                    if (!$.fn.dataTable.isDataTable(this)) {
+                        let t = $(this).DataTable({
+                            dom: 'Bfrtip',
+                            buttons: [
+                                { extend: 'excelHtml5', className: 'btn btn-sm btn-success', text: 'Excel' },
+                                { extend: 'pdfHtml5', className: 'btn btn-sm btn-danger', text: 'PDF' },
+                                { extend: 'print', className: 'btn btn-sm btn-secondary', text: 'Imprimir' }
+                            ],
+                            pageLength: 10,
+                            order: [[0, 'desc']],
+                            language: {
+                                url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
+                            }
+                        });
+                        tables.push(t);
+                    } else {
+                        tables.push($(this).DataTable());
                     }
                 });
 
-                // Tooltips
-                var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-                tooltipTriggerList.map(function (el) { return new bootstrap.Tooltip(el); });
+                // ✅ Función auxiliar para aplicar filtros en todas las tablas
+                function aplicarFiltro(colIndex, value) {
+                    tables.forEach(function (t) {
+                        t.column(colIndex).search(value).draw();
+                    });
+                }
 
-                // Modal dinámico
-                document.querySelectorAll('.soporte-id').forEach(el => {
+                // Filtros
+                $('#filterArea').on('change', function () {
+                    aplicarFiltro(3, this.value);
+                });
+
+                $('#filterPrioridad').on('change', function () {
+                    aplicarFiltro(7, this.value);
+                });
+
+                $('#filterUsuario').on('change', function () {
+                    aplicarFiltro(2, this.value);
+                });
+
+                $('#filterFecha').on('change', function () {
+                    let val = this.value;
+                    if (val) {
+                        let partes = val.split("-");
+                        let fechaFormateada = partes[2] + "/" + partes[1] + "/" + partes[0];
+                        aplicarFiltro(1, fechaFormateada);
+                    } else {
+                        aplicarFiltro(1, "");
+                    }
+                });
+
+                // ✅ Modal dinámico
+                document.querySelectorAll('.soporte-id').forEach(function (el) {
                     el.addEventListener('click', function () {
                         document.getElementById('modal-id').textContent = this.dataset.id;
                         document.getElementById('modal-fecha').textContent = this.dataset.fecha;
                         document.getElementById('modal-creado').textContent = this.dataset.creado;
                         document.getElementById('modal-area').textContent = this.dataset.area ?? 'Soporte';
-                        document.getElementById('modal-tipo-subtipo').textContent = this.dataset.subtipo ?? 'N/A';
+                        document.getElementById('modal-tipo-subtipo').textContent =
+                            (this.dataset.tipo ?? 'N/A') + ' / ' + (this.dataset.subtipo ?? 'N/A');
                         document.getElementById('modal-prioridad').textContent = this.dataset.prioridad;
                         document.getElementById('modal-detalles').textContent = this.dataset.detalles;
                         document.getElementById('modal-fecha-update').textContent = this.dataset.updated ?? this.dataset.fecha;
-                        document.getElementById('modal-asignado').textContent = this.dataset.asignado ?? 'Sin asignar';
-                        document.getElementById('modal-escalado').textContent = this.dataset.escalado ?? 'Sin escalar';
+                        document.getElementById('modal-maeTercero').textContent = this.dataset.maetercero ?? 'N/A';
+                        document.getElementById('modal-escalado').textContent = this.dataset.escalado ?? 'Sin asignar';
                         document.getElementById('modal-estado').textContent = this.dataset.estado;
+
                         new bootstrap.Modal(document.getElementById('detalleSoporteModal')).show();
                     });
                 });
 
-                // SweetAlert confirmaciones
+                // ✅ SweetAlert confirmaciones
                 function confirmarAccion(titulo, texto, icono, callback) {
                     Swal.fire({
                         title: titulo,
@@ -518,9 +596,15 @@
                         });
                     });
                 });
+
+                // ✅ Tooltips Bootstrap
+                var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                tooltipTriggerList.map(function (el) { return new bootstrap.Tooltip(el); });
             });
         </script>
     @endpush
+
+
 </x-base-layout>
 
 
