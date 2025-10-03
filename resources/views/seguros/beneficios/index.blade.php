@@ -259,7 +259,7 @@
                                                                 <span>Detalle póliza</span>
                                                             </a>
                                                         </li>
-                                                        @can('seguros.beneficios.update')
+                                                        @candirect('seguros.beneficios.update')
                                                         <li>
                                                             <a href="{{ route('seguros.beneficios.edit', $b->id) }}"
                                                                 class="dropdown-item">
@@ -267,8 +267,8 @@
                                                                 <span>Editar</span>
                                                             </a>
                                                         </li>
-                                                        @endcan
-                                                        @can('seguros.beneficios.destroy')
+                                                        @endcandirect
+                                                        @candirect('seguros.beneficios.destroy')
                                                         <li>
                                                             <form action="{{ route('seguros.beneficios.destroy', $b->id) }}"
                                                                 method="POST">
@@ -283,6 +283,7 @@
                                                                 </button>
                                                             </form>
                                                         </li>
+                                                        @endcandirect
                                                         <li>
                                                             <form action="{{ route('seguros.beneficios.destroy', $b->id) }}"
                                                                 method="POST">
