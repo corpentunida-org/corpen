@@ -17,9 +17,9 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\AuditoriaController;
 use Carbon\Carbon;
 use App\Imports\ExcelImport;
-use App\Imports\ExcelExport;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Http\Controllers\Exequial\ComaeTerController;
+use App\Imports\PolizasImport;
 
 class SegPolizaController extends Controller
 {
@@ -152,7 +152,7 @@ class SegPolizaController extends Controller
         $novedades = SegNovedades::where('id_asegurado', $id)->where('id_poliza', $poliza->id)->get();
         $reclamacion = SegReclamaciones::where('cedulaAsegurado', $id)->with('cambiosEstado')->get();
 
-        if (auth()->user()->can('seguros.poliza.valorpagar')) {
+        if (auth()->user()->hasDirectPermission('seguros.poliza.valorpagar')) {
             $beneficios = SegBeneficios::where('cedulaAsegurado', $id)->where('poliza', $poliza->id)->where('active', true)->get();
         } else {
             $beneficios = collect();
@@ -291,13 +291,21 @@ class SegPolizaController extends Controller
             'file' => 'required|mimes:xlsx,xls,csv',
         ]);
 
-        $import = new \App\Imports\PolizasImport();
-        \Maatwebsite\Excel\Facades\Excel::import($import, $request->file('file'));
+        // Variables que se van a llenar en el import
+        $failedRows = [];
+        $updatedCount = 0;
 
+        // Instancia del import con referencias
+        $import = new PolizasImport($failedRows, $updatedCount);
+
+        // Procesar el archivo
+        Excel::import($import, $request->file('file'));
+
+        // Redirigir con resultados
         return redirect()
             ->route('seguros.poliza.viewupload')
-            ->with('success', 'Se actualizaron exitosamente ' . $import->updatedCount . ' registros')
-            ->with('failedRows', $import->failedRows);
+            ->with('success', "Se actualizaron exitosamente {$updatedCount} registros")
+            ->with('failedRows', $failedRows);
     }
 
     public function upload(Request $request)

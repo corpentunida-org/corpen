@@ -2,21 +2,23 @@
     <x-success />
     <x-error />
     @if ($vencidas->count() != 0)
-    <div class="col-lg-12">
-        <div class="alert alert-dismissible d-flex alert-soft-teal-message" role="alert">
-            <div class="me-4 d-none d-md-block">
-                <i class="feather feather-alert-octagon fs-1"></i>
-            </div>
-            <div>
-                <p class="fw-bold mb-1 text-truncate-1-line">Reclamaciones próximas a vencer!</p>
-                <p class="fs-12 fw-medium text-truncate-1-line">Procesos de reclamación que llevan mas de 4 meses desde su ultima modificación. <strong>Click en el botón para ver listado</strong></p>
-                <a href="#reclamacionesvencer" class="btn btn-sm bg-soft-teal text-teal d-inline-block">Ver listado</a>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        <div class="col-lg-12">
+            <div class="alert alert-dismissible d-flex alert-soft-teal-message" role="alert">
+                <div class="me-4 d-none d-md-block">
+                    <i class="feather feather-alert-octagon fs-1"></i>
+                </div>
+                <div>
+                    <p class="fw-bold mb-1 text-truncate-1-line">Reclamaciones próximas a vencer!</p>
+                    <p class="fs-12 fw-medium text-truncate-1-line">Procesos de reclamación que llevan mas de 4 meses
+                        desde su ultima modificación. <strong>Click en el botón para ver listado</strong></p>
+                    <a href="#reclamacionesvencer" class="btn btn-sm bg-soft-teal text-teal d-inline-block">Ver
+                        listado</a>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
             </div>
         </div>
-    </div>
     @endif
-    
+
     <div class="row">
         <div class="col-xxl-3 col-md-6">
             <div class="card card-body">
@@ -75,7 +77,7 @@
     <div class="col-xxl-12">
         <div class="card stratch">
             <div class="card-header">
-                <h5 class="card-title">Lista total de reclamaciones</h5>      
+                <h5 class="card-title">Lista total de reclamaciones</h5>
                 <a href="{{ route('seguros.reclamaciones.dashboard') }}" class="d-flex me-1 btn btn-primary">
                     <i class="feather-plus me-2"></i>
                     <span>Abrir dashboard informe</span>
@@ -102,33 +104,37 @@
                                     <td>
                                         <div class="d-flex align-items-center gap-3">
                                             <a href="javascript:void(0);">
-                                                <span class="d-block">{{ $r->asegurado->terceroAF->cod_ter ?? ''}}</span>
                                                 <span
-                                                    class="fs-12 d-block fw-normal text-muted text-wrap">{{ $r->asegurado->terceroAF->nom_ter ?? ''}}</span>
+                                                    class="d-block">{{ $r->asegurado->terceroAF->cod_ter ?? '' }}</span>
+                                                <span
+                                                    class="fs-12 d-block fw-normal text-muted text-wrap">{{ $r->asegurado->terceroAF->nom_ter ?? '' }}</span>
                                             </a>
                                         </div>
                                     </td>
                                     <td>
                                         <div class="d-flex align-items-center gap-3">
                                             <a href="javascript:void(0);">
-                                                <span class="d-block">{{ $r->cedulaAsegurado ?? ''}}</span>
+                                                <span class="d-block">{{ $r->cedulaAsegurado ?? '' }}</span>
                                                 <span
                                                     class="fs-12 d-block fw-normal text-muted text-wrap">{{ $r->tercero->nom_ter ?? '' }}</span>
                                             </a>
                                         </div>
                                     </td>
                                     <td><span
-                                            class="badge bg-gray-200 text-dark">{{ $r->asegurado->parentesco ?? ''}}</span>
+                                            class="badge bg-gray-200 text-dark">{{ $r->asegurado->parentesco ?? '' }}</span>
                                     </td>
                                     <td class="text-wrap">{{ $r->cobertura->nombre }}</td>
-                                    <td>$ {{ number_format((float)$r->valor_asegurado) }} </td>
-                                    <td><span class="badge bg-soft-primary text-primary text-wrap">{{ $r->estadoReclamacion->nombre }}</span>
+                                    <td>$ {{ number_format((float) $r->valor_asegurado) }} </td>
+                                    <td><span
+                                            class="badge bg-soft-primary text-primary text-wrap">{{ $r->estadoReclamacion->nombre }}</span>
                                     </td>
                                     <td>
                                         <div class="d-flex align-items-center gap-3">
                                             <a>
-                                                <span class="fs-12 d-block fw-normal">Inicio: {{date('Y-m-d', strtotime($r->created_at))}}
-                                                <span class="fs-12 d-block fw-normal text-danger text-wrap">Ultimo cambio {{ $r->tiempo_transcurrido }}</span>
+                                                <span class="fs-12 d-block fw-normal">Inicio:
+                                                    {{ date('Y-m-d', strtotime($r->created_at)) }}
+                                                    <span class="fs-12 d-block fw-normal text-danger text-wrap">Ultimo
+                                                        cambio {{ $r->tiempo_transcurrido }}</span>
                                             </a>
                                         </div>
                                     </td>
@@ -141,49 +147,50 @@
                                             <ul class="dropdown-menu" data-popper-placement="bottom-end"
                                                 style="position: absolute; inset: 0px auto auto 0px; margin: 0px; transform: translate3d(-195px, 51px, 0px);">
                                                 <li>
-                                                    <a class="dropdown-item" href="{{ route('seguros.poliza.show', ['poliza' => 'ID']) . '?id=' . $r->cedulaAsegurado }}">
+                                                    <a class="dropdown-item"
+                                                        href="{{ route('seguros.poliza.show', ['poliza' => 'ID']) . '?id=' . $r->cedulaAsegurado }}">
                                                         <i class="bi bi-person-circle"></i>
                                                         <span>Ver Poliza</span>
                                                     </a>
                                                 </li>
-                                                @can('seguros.reclamacion.update')
-                                                    <li>
-                                                        <a href="{{ route('seguros.reclamacion.edit', ['reclamacion' => $r->id]) }}"
-                                                            class="dropdown-item">
-                                                            <i class="feather feather-edit-3 me-3"></i>
-                                                            <span>Editar</span>
-                                                        </a>
-                                                    </li>
-                                                @endcan
+                                                @candirect('seguros.reclamacion.update')
                                                 <li>
-                                                    <a class="dropdown-item" href="">
-                                                        <i class="feather feather-printer me-3"></i>
-                                                        <span>Imprimir</span>
+                                                    <a href="{{ route('seguros.reclamacion.edit', ['reclamacion' => $r->id]) }}"
+                                                        class="dropdown-item">
+                                                        <i class="feather feather-edit-3 me-3"></i>
+                                                        <span>Editar</span>
                                                     </a>
                                                 </li>
-                                                <li>
-                                                    <a class="dropdown-item" href="javascript:void(0)">
-                                                        <i class="feather feather-trash-2 me-3"></i>
-                                                        <span>Eliminar</span>
-                                                    </a>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
+                                            @endcan
+                                            <li>
+                                                <a class="dropdown-item" href="">
+                                                    <i class="feather feather-printer me-3"></i>
+                                                    <span>Imprimir</span>
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" href="javascript:void(0)">
+                                                    <i class="feather feather-trash-2 me-3"></i>
+                                                    <span>Eliminar</span>
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
+</div>
 
-    @if ($vencidas->count() != 0)
+@if ($vencidas->count() != 0)
     <div class="col-xxl-12">
         <div class="card stratch" id="reclamacionesvencer">
             <div class="card-header">
-                <h5 class="card-title">Reclamaciones de más de 4 meses</h5>                
+                <h5 class="card-title">Reclamaciones de más de 4 meses</h5>
             </div>
             <div class="card-body custom-card-action p-0">
                 <div class="table-responsive">
@@ -206,18 +213,19 @@
                                     <td>
                                         <div class="d-flex align-items-center gap-3">
                                             <a href="javascript:void(0);">
-                                                <span class="d-block">{{ $r->asegurado->terceroAF->cod_ter ?? ''}}</span>
                                                 <span
-                                                    class="fs-12 d-block fw-normal text-muted text-wrap">{{ $r->asegurado->terceroAF->nom_ter ?? ''}}</span>
+                                                    class="d-block">{{ $r->asegurado->terceroAF->cod_ter ?? '' }}</span>
+                                                <span
+                                                    class="fs-12 d-block fw-normal text-muted text-wrap">{{ $r->asegurado->terceroAF->nom_ter ?? '' }}</span>
                                             </a>
                                         </div>
                                     </td>
                                     <td>
                                         <div class="d-flex align-items-center gap-3">
                                             <a href="javascript:void(0);">
-                                                <span class="d-block">{{ $r->cedulaAsegurado ?? ''}}</span>
+                                                <span class="d-block">{{ $r->cedulaAsegurado ?? '' }}</span>
                                                 <span
-                                                    class="fs-12 d-block fw-normal text-muted text-wrap">{{ $r->asegurado->tercero->nom_ter ?? ''}}</span>
+                                                    class="fs-12 d-block fw-normal text-muted text-wrap">{{ $r->asegurado->tercero->nom_ter ?? '' }}</span>
                                             </a>
                                         </div>
                                     </td>
@@ -226,17 +234,20 @@
                                     </td>
                                     <td>{{ $r->cobertura->nombre }}</td>
                                     <td>$ {{ number_format((float) ($r->valor_asegurado ?? 0)) }} </td>
-                                    <td><span class="badge bg-soft-primary text-primary">{{ $r->estadoReclamacion->nombre }}</span>
+                                    <td><span
+                                            class="badge bg-soft-primary text-primary">{{ $r->estadoReclamacion->nombre }}</span>
                                     </td>
                                     <td>
                                         <div class="d-flex align-items-center gap-3">
                                             <a>
-                                                <span class="fs-12 d-block fw-normal">Inicio: {{date('Y-m-d', strtotime($r->created_at))}}
-                                                <span class="fs-12 d-block fw-normal text-danger">Ultimo cambio {{ $r->tiempo_transcurrido }}</span>
+                                                <span class="fs-12 d-block fw-normal">Inicio:
+                                                    {{ date('Y-m-d', strtotime($r->created_at)) }}
+                                                    <span class="fs-12 d-block fw-normal text-danger">Ultimo cambio
+                                                        {{ $r->tiempo_transcurrido }}</span>
                                             </a>
                                         </div>
                                     </td>
-                                    <td>                                        
+                                    <td>
                                         <div class="dropdown">
                                             <a href="javascript:void(0)" class="avatar-text avatar-md "
                                                 data-bs-toggle="dropdown" data-bs-offset="0,21">
@@ -245,42 +256,43 @@
                                             <ul class="dropdown-menu" data-popper-placement="bottom-end"
                                                 style="position: absolute; inset: 0px auto auto 0px; margin: 0px; transform: translate3d(-195px, 51px, 0px);">
                                                 <li>
-                                                    <a class="dropdown-item" href="{{ route('seguros.poliza.show', ['poliza' => 'ID']) . '?id=' . $r->cedulaAsegurado }}">
+                                                    <a class="dropdown-item"
+                                                        href="{{ route('seguros.poliza.show', ['poliza' => 'ID']) . '?id=' . $r->cedulaAsegurado }}">
                                                         <i class="bi bi-person-circle"></i>
                                                         <span>Ver Poliza</span>
                                                     </a>
                                                 </li>
-                                                @can('seguros.reclamacion.update')
-                                                    <li>
-                                                        <a href="{{ route('seguros.reclamacion.edit', ['reclamacion' => $r->id]) }}"
-                                                            class="dropdown-item">
-                                                            <i class="feather feather-edit-3 me-3"></i>
-                                                            <span>Editar</span>
-                                                        </a>
-                                                    </li>
-                                                @endcan
+                                                @candirect('seguros.reclamacion.update')
                                                 <li>
-                                                    <a class="dropdown-item" href="">
-                                                        <i class="feather feather-printer me-3"></i>
-                                                        <span>Imprimir</span>
+                                                    <a href="{{ route('seguros.reclamacion.edit', ['reclamacion' => $r->id]) }}"
+                                                        class="dropdown-item">
+                                                        <i class="feather feather-edit-3 me-3"></i>
+                                                        <span>Editar</span>
                                                     </a>
                                                 </li>
-                                                {{-- <li>
+                                            @endcan
+                                            <li>
+                                                <a class="dropdown-item" href="">
+                                                    <i class="feather feather-printer me-3"></i>
+                                                    <span>Imprimir</span>
+                                                </a>
+                                            </li>
+                                            {{-- <li>
                                                     <a class="dropdown-item" href="javascript:void(0)">
                                                         <i class="feather feather-trash-2 me-3"></i>
                                                         <span>Eliminar</span>
                                                     </a>
                                                 </li> --}}
-                                            </ul>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
-    @endif
+</div>
+@endif
 </x-base-layout>
