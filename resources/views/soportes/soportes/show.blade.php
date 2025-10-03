@@ -27,72 +27,82 @@
     <div class="row">
         {{-- COLUMNA PRINCIPAL --}}
         <div class="col-lg-8">
-            {{-- Descripción del soporte --}}
-            <div class="card shadow-sm mb-4">
+            {{-- Descripción del soporte (Actualizado) --}}
+            <div class="card shadow-sm mb-4 support-description-card"> {{-- Clase para estilos específicos --}}
                 <div class="card-body">
-                    <h5 class="card-title text-dark fw-bold mb-3">Descripción del Soporte</h5>
-                    <p class="text-gray-700 bg-light-subtle p-3 rounded border" style="white-space: pre-wrap;">
-                        {{ $soporte->detalles_soporte }}
-                    </p>
-                </div>
-            </div>
-
-{{-- Historial de observaciones --}}
-<div class="card shadow-sm">
-    <div class="card-header bg-white border-0">
-        <h5 class="card-title text-dark fw-bold mb-0">
-            <i class="feather-message-square me-2 text-primary"></i> Historial y Seguimiento
-        </h5>
-    </div>
-    <div class="card-body">
-        @forelse($soporte->observaciones as $obs)
-            <div class="d-flex mb-4">
-                <div class="me-3 text-center">
-                    <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                        <i class="feather-git-commit"></i>
-                    </div>
-                    @if(!$loop->last)
-                        <div class="border-start" style="height: 100%; margin-left: 19px;"></div>
-                    @endif
-                </div>
-                <div class="flex-grow-1">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <p class="fw-bold text-dark mb-0">
-                            {{ $obs->tipoObservacion->nombre ?? 'Actualización' }}
+                    <h5 class="card-title text-dark fw-bold mb-3 d-flex align-items-center">
+                        <i class="feather-book-open text-primary me-2"></i> {{-- Ícono para realzar el título --}}
+                        Descripción del Soporte
+                        {{-- Botón de expandir/colapsar para textos largos --}}
+                        <button class="btn btn-sm btn-outline-primary ms-auto d-none" id="toggleDescription" type="button" aria-expanded="false" aria-controls="descriptionContent">
+                            <i class="feather-maximize-2 me-1 icon-expand"></i>
+                            <i class="feather-minimize-2 me-1 icon-collapse d-none"></i>
+                            <span class="text-button">Expandir</span>
+                        </button>
+                    </h5>
+                    <div id="descriptionContent" class="description-content-wrapper"> {{-- Nuevo contenedor para el contenido --}}
+                        <p class="text-gray-700 bg-light-subtle p-3 rounded border support-description-text" style="white-space: pre-wrap;">
+                            {{ $soporte->detalles_soporte }}
                         </p>
-                        <small class="text-muted">{{ \Carbon\Carbon::parse($obs->timestam)->diffForHumans() }}</small>
-                    </div>
-                    <p class="text-gray-700 mt-1 mb-2">{{ $obs->observacion }}</p>
-                    <div class="d-flex align-items-center text-muted fs-7">
-                        {{-- Usuario que creó la observación --}}
-                        <span><i class="feather-user me-1"></i>{{ $obs->usuario->name ?? 'N/A' }}</span>
-
-                        {{-- Usuario asignado/escalado de esta observación --}}
-                        @if($obs->scpUsuarioAsignado && $obs->scpUsuarioAsignado->maeTercero)
-                            <span class="mx-2">|</span>
-                            <span>
-                                <i class="feather-user-plus me-1"></i>
-                                Asignado a: <strong>{{ $obs->scpUsuarioAsignado->maeTercero->nom_ter }}</strong>
-                            </span>
-                        @endif
-
-                        {{-- Estado de la observación --}}
-                        <span class="mx-2">|</span>
-                        <span>
-                            <i class="feather-activity me-1"></i>
-                            Cambió estado a: <strong class="text-dark">{{ $obs->estado->nombre ?? 'N/A' }}</strong>
-                        </span>
                     </div>
                 </div>
             </div>
-        @empty
-            <div class="alert alert-light text-center">
-                <i class="feather-info me-1"></i> Aún no hay seguimientos registrados.
-            </div>
-        @endforelse
-    </div>
-</div>
 
+            {{-- Historial de observaciones --}}
+            <div class="card shadow-sm">
+                <div class="card-header bg-white border-0">
+                    <h5 class="card-title text-dark fw-bold mb-0">
+                        <i class="feather-message-square me-2 text-primary"></i> Historial y Seguimiento
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @forelse($soporte->observaciones as $obs)
+                        <div class="d-flex mb-4">
+                            <div class="me-3 text-center">
+                                <div class="bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                    <i class="feather-git-commit"></i>
+                                </div>
+                                @if(!$loop->last)
+                                    <div class="border-start" style="height: 100%; margin-left: 19px;"></div>
+                                @endif
+                            </div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <p class="fw-bold text-dark mb-0">
+                                        {{ $obs->tipoObservacion->nombre ?? 'Actualización' }}
+                                    </p>
+                                    <small class="text-muted">{{ \Carbon\Carbon::parse($obs->timestam)->diffForHumans() }}</small>
+                                </div>
+                                <p class="text-gray-700 mt-1 mb-2">{{ $obs->observacion }}</p>
+                                <div class="d-flex align-items-center text-muted fs-7">
+                                    {{-- Usuario que creó la observación --}}
+                                    <span><i class="feather-user me-1"></i>{{ $obs->usuario->name ?? 'N/A' }}</span>
+
+                                    {{-- Usuario asignado/escalado de esta observación --}}
+                                    @if($obs->scpUsuarioAsignado && $obs->scpUsuarioAsignado->maeTercero)
+                                        <span class="mx-2">|</span>
+                                        <span>
+                                            <i class="feather-user-plus me-1"></i>
+                                            Asignado a: <strong>{{ $obs->scpUsuarioAsignado->maeTercero->nom_ter }}</strong>
+                                        </span>
+                                    @endif
+
+                                    {{-- Estado de la observación --}}
+                                    <span class="mx-2">|</span>
+                                    <span>
+                                        <i class="feather-activity me-1"></i>
+                                        Cambió estado a: <strong class="text-dark">{{ $obs->estado->nombre ?? 'N/A' }}</strong>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    @empty
+                        <div class="alert alert-light text-center">
+                            <i class="feather-info me-1"></i> Aún no hay seguimientos registrados.
+                        </div>
+                    @endforelse
+                </div>
+            </div>
 
             {{-- Formulario de observación --}}
             <div class="accordion mt-4" id="accordionForm">
@@ -135,7 +145,6 @@
 
                                 <div class="mb-3 d-none" id="usuarioEscalamiento">
                                     <label for="terceroAsignado" class="form-label fw-semibold text-danger">Asignar a Usuario (Escalamiento):</label>
-                                    {{-- ✅ CAMBIO DE NAME Y CÓMO SE MUESTRA EL NOMBRE --}}
                                     <select id="terceroAsignado" name="id_scp_usuario_asignado" class="form-select">
                                         <option value="">Seleccione un usuario...</option>
                                         @foreach($usuariosEscalamiento as $usuarioEsc)
@@ -144,7 +153,6 @@
                                             </option>
                                         @endforeach
                                     </select>
-
                                 </div>
 
                                 <button type="submit" class="btn btn-success">
@@ -183,8 +191,6 @@
 
                     {{-- Estado actual --}}
                     @php
-                        // Asegúrate de que las observaciones estén ordenadas por timestam descendentemente
-                        // Esto se hace en el controlador con orderBy('timestam','desc')
                         $ultimoEstado = $soporte->observaciones->first()?->estado ?? null;
                         $estadoClass = match(strtolower($ultimoEstado?->nombre ?? '')) {
                             'resuelto', 'cerrado', 'finalizado' => 'text-bg-success',
@@ -214,7 +220,6 @@
                     <h6 class="text-muted fw-bold mb-3">Asignación</h6>
                     <div class="mb-3">
                         <span class="text-muted fw-semibold d-block"><i class="feather-user me-1"></i> Responsable:</span>
-                        {{-- ✅ CAMBIO AQUÍ: Usar scpUsuarioAsignado y maeTercero para el responsable del soporte --}}
                         <p class="text-dark mb-0">
                             {{ $soporte->observaciones()->latest('id')->first()?->scpUsuarioAsignado?->maeTercero->nom_ter ?? 'No disponible' }}
                         </p>
@@ -250,24 +255,113 @@
     @push('scripts')
     <script>
         document.addEventListener("DOMContentLoaded", function () {
+            // Script para el campo de escalamiento en el formulario de observación
             const tipoObservacionSelect = document.getElementById("tipoObservacion");
             const usuarioEscalamientoDiv = document.getElementById("usuarioEscalamiento");
 
-            tipoObservacionSelect?.addEventListener("change", function () {
-                // El div de escalamiento se muestra si el tipo de observación contiene "escalamiento"
-                // Esto es case-insensitive
-                const isEscalamiento = tipoObservacionSelect.selectedOptions[0].text.toLowerCase().includes("escalamiento");
-                usuarioEscalamientoDiv.classList.toggle("d-none", !isEscalamiento);
+            if (tipoObservacionSelect && usuarioEscalamientoDiv) {
+                tipoObservacionSelect.addEventListener("change", function () {
+                    const isEscalamiento = tipoObservacionSelect.selectedOptions[0].text.toLowerCase().includes("escalamiento");
+                    usuarioEscalamientoDiv.classList.toggle("d-none", !isEscalamiento);
 
-                // Si no es escalamiento, limpia la selección del usuario asignado
-                if (!isEscalamiento) {
-                    const terceroAsignadoSelect = document.getElementById("terceroAsignado");
-                    if (terceroAsignadoSelect) {
-                        terceroAsignadoSelect.value = "";
+                    if (!isEscalamiento) {
+                        const terceroAsignadoSelect = document.getElementById("terceroAsignado");
+                        if (terceroAsignadoSelect) {
+                            terceroAsignadoSelect.value = "";
+                        }
                     }
+                });
+                // Ejecutar al cargar la página por si ya hay una opción seleccionada
+                tipoObservacionSelect.dispatchEvent(new Event('change'));
+            }
+
+            // Script para el efecto de expandir/colapsar la descripción del soporte
+            const descriptionContent = document.getElementById('descriptionContent');
+            const descriptionText = descriptionContent ? descriptionContent.querySelector('.support-description-text') : null;
+            const toggleButton = document.getElementById('toggleDescription');
+            const textButton = toggleButton ? toggleButton.querySelector('.text-button') : null;
+            const iconExpand = toggleButton ? toggleButton.querySelector('.icon-expand') : null;
+            const iconCollapse = toggleButton ? toggleButton.querySelector('.icon-collapse') : null;
+
+            // Solo activar si el texto y los elementos existen
+            if (descriptionText && descriptionContent && toggleButton) {
+                const maxHeight = 150; // Altura máxima deseada antes de mostrar el botón
+
+                if (descriptionText.scrollHeight > maxHeight) {
+                    toggleButton.classList.remove('d-none');
+                    descriptionContent.style.maxHeight = `${maxHeight}px`; // Limita la altura inicial
+                    descriptionContent.style.overflow = 'hidden';
+                    descriptionContent.style.transition = 'max-height 0.3s ease-out'; // Animación suave
+
+                    toggleButton.addEventListener('click', function() {
+                        const isExpanded = descriptionContent.classList.toggle('expanded');
+                        if (isExpanded) {
+                            descriptionContent.style.maxHeight = `${descriptionText.scrollHeight}px`; // Expande a la altura real
+                            if (textButton) textButton.textContent = 'Colapsar';
+                            if (iconExpand) iconExpand.classList.add('d-none');
+                            if (iconCollapse) iconCollapse.classList.remove('d-none');
+                        } else {
+                            descriptionContent.style.maxHeight = `${maxHeight}px`; // Colapsa
+                            if (textButton) textButton.textContent = 'Expandir';
+                            if (iconExpand) iconExpand.classList.remove('d-none');
+                            if (iconCollapse) iconCollapse.classList.add('d-none');
+                        }
+                    });
                 }
-            });
+            }
         });
     </script>
     @endpush
+
+    {{-- CSS ADICIONAL PARA LOS EFECTOS VISUALES --}}
+    {{-- Coloca este estilo en tu archivo CSS principal o en la sección <head> de tu layout si aplica globalmente --}}
+    <style>
+        .support-description-card {
+            border-radius: 12px; /* Más redondeado */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); /* Sombra más pronunciada pero suave */
+            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+        }
+        .support-description-card:hover {
+            transform: translateY(-3px); /* Pequeño levantamiento al pasar el ratón */
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+        }
+
+        .support-description-text {
+            border-radius: 8px !important; /* Asegura bordes redondeados en el p */
+            background-color: var(--bs-light-bg-subtle, #f8f9fa) !important; /* Color de fondo consistente */
+            border-color: var(--bs-border-color-translucent, rgba(0, 0, 0, 0.175)) !important; /* Borde consistente */
+        }
+
+        /* Estilos para el efecto de expandir/colapsar */
+        .description-content-wrapper {
+            position: relative;
+            /* Estos estilos serán controlados por JS, pero definimos la transición aquí */
+            transition: max-height 0.3s ease-out;
+        }
+
+        .description-content-wrapper::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 50px; /* Altura del gradiente */
+            background: linear-gradient(to top, rgba(255,255,255,1), rgba(255,255,255,0)); /* Gradiente blanco que cubre el texto */
+            pointer-events: none; /* Permite hacer clic en el texto debajo */
+            opacity: 1;
+            transition: opacity 0.3s ease-out;
+        }
+
+        .description-content-wrapper.expanded::after {
+            opacity: 0; /* Oculta el gradiente cuando se expande */
+        }
+
+        /* Estilos para el timeline de observaciones (opcional, para un toque extra) */
+        .card .card-body > .d-flex .me-3 .border-start {
+            border-left: 2px dashed var(--bs-primary-subtle, #b4d4f8) !important; /* Hace la línea punteada */
+        }
+        .card .card-body > .d-flex:last-child .me-3 .border-start {
+            display: none; /* Oculta la línea del último elemento */
+        }
+    </style>
 </x-base-layout>
