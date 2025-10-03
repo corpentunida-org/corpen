@@ -172,7 +172,7 @@ class SegPolizaController extends Controller
         return view('seguros.polizas.edit');
     }
 
-    public function uploadCreate(Request $request)
+    /*public function uploadCreate(Request $request)
     {
         $request->validate([
             'file' => 'required|mimes:xlsx,xls,csv',
@@ -180,7 +180,7 @@ class SegPolizaController extends Controller
         $rows = Excel::toArray(new ExcelImport(), $request->file('file'))[0];
         $updatedCount = 0;
         $failedRows = [];
-        foreach ($rows as $index => $row) {            
+        foreach ($rows as $index => $row) {
             if (!in_array(strtoupper($row['genero']), ['V', 'H'])) {
                 $failedRows[] = [
                     'cedula' => $row['num_doc'],
@@ -277,16 +277,27 @@ class SegPolizaController extends Controller
                     'valorpagaraseguradora' => $row['valor_titular'] ?? null,
                 ]);
                 $updatedCount++;
-                /*$failedRows[] = [
-                    'cedula' => $row['num_doc'],
-                    'obser' => 'Ya existe una póliza para este asegurado.',
-                ];*/
             }
         }
         return redirect()
             ->route('seguros.poliza.viewupload')
             ->with('success', 'Se actualizaron exitosamente ' . $updatedCount . ' registros')
             ->with('failedRows', $failedRows);
+    }*/
+
+    public function uploadCreate(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv',
+        ]);
+
+        $import = new \App\Imports\PolizasImport();
+        \Maatwebsite\Excel\Facades\Excel::import($import, $request->file('file'));
+
+        return redirect()
+            ->route('seguros.poliza.viewupload')
+            ->with('success', 'Se actualizaron exitosamente ' . $import->updatedCount . ' registros')
+            ->with('failedRows', $import->failedRows);
     }
 
     public function upload(Request $request)
