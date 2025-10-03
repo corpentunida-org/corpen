@@ -103,7 +103,7 @@
                                                 default => 'secondary'
                                             };
                                         @endphp
-                                        @if(auth()->user()->id == $soporte->usuario->id) 
+                                        @if(auth()->user()->id == $soporte->usuario->id || auth()->user()->hasDirectPermission('soporte.lista.administrador')) 
                                         <tr>
                                             {{-- ID --}}
                                             <td>
@@ -258,7 +258,7 @@
                                                 default => 'secondary'
                                             };
                                         @endphp
-                                        @if(auth()->user()->id == $soporte->usuario->id)                                        
+                                        @if(auth()->user()->id == $soporte->usuario->id || auth()->user()->hasDirectPermission('soporte.lista.administrador'))                                        
                                         <tr>
                                             {{-- ID --}}
                                             <td>
