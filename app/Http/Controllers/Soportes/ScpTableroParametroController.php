@@ -15,13 +15,13 @@ class ScpTableroParametroController extends Controller
 {
     public function index()
     {
-        $usuarios = ScpUsuario::with('maeTercero')->paginate(5); // 👈 usuarios que asignan soporte
-        $categorias = ScpCategoria::paginate(5);
-        $tipos = ScpTipo::paginate(4);
-        $subTipos = ScpSubTipo::paginate(4);
-        $estados = ScpEstado::paginate(5);
-        $prioridades = ScpPrioridad::paginate(3);
-        $tiposObservacion = ScpTipoObservacion::paginate(3);
+        $usuarios = ScpUsuario::with('maeTercero')->paginate(); // 👈 usuarios que asignan soporte
+        $categorias = ScpCategoria::paginate();
+        $tipos = ScpTipo::paginate();
+        $subTipos = ScpSubTipo::paginate();
+        $estados = ScpEstado::paginate();
+        $prioridades = ScpPrioridad::paginate();
+        $tiposObservacion = ScpTipoObservacion::paginate();
 
         return view('soportes.tablero-parametros', compact(
             'usuarios',
