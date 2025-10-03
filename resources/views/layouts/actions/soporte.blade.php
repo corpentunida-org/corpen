@@ -24,8 +24,8 @@
             <a class="nxl-link" href="{{ route('soportes.pendientes', ['estado' => 'resuelto']) }}">
                 Lista Soportes
             </a>
-        </li> --}}
-
+        </li>
+ --}}
         {{-- Parámetros de Soportes --}}
         <li class="nxl-item">
             <a class="nxl-link" href="{{ route('soportes.tablero') }}">

@@ -369,8 +369,9 @@ Route::middleware('auth')->prefix('soportes')->name('soportes.')->group(function
         ->parameters(['tipos' => 'scpTipo']);
 
     // Tipos de Observaciones
-    Route::resource('tipo-observaciones', ScpTipoObservacionController::class)
-        ->parameters(['tipo-observaciones' => 'scpTipoObservacion']);
+Route::resource('tipoObservaciones', ScpTipoObservacionController::class)
+    ->parameters(['tipoObservaciones' => 'scpTipoObservacion']);
+
 
     // Soportes (mantener Resource)
     Route::resource('soportes', ScpSoporteController::class)
