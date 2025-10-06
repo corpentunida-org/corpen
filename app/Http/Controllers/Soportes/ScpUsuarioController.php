@@ -16,7 +16,7 @@ class ScpUsuarioController extends Controller
 
     public function create()
     {
-        $terceros = maeTerceros::all();
+        $terceros = maeTerceros::where("tip_prv","8")->get();
         return view('soportes.usuarios.create', compact('terceros'));
     }
 

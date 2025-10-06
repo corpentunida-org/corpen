@@ -27,10 +27,12 @@
         </li>
  --}}
         {{-- Parámetros de Soportes --}}
+@candirect('soporte.lista.administrador')
         <li class="nxl-item">
             <a class="nxl-link" href="{{ route('soportes.tablero') }}">
                 Parámetros de Soportes
             </a>
         </li>
+@endcandirect
     </ul>
 </li>

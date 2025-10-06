@@ -155,9 +155,6 @@ public function verArchivo($id)
     return response()->file(storage_path('app/' . $ruta));
 }
 
-
-
-
 public function download($id)
 {
     $gdodocsempleado = GdoDocsEmpleados::findOrFail($id);
@@ -168,8 +165,5 @@ public function download($id)
 
     return response()->download(storage_path('app/' . $gdodocsempleado->ruta_archivo));
 }
-
-
-
 
 }
