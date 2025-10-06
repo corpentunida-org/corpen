@@ -9,7 +9,8 @@
                 </a>
             </div>
 
-            <form action="{{ route('soportes.soportes.store') }}" method="POST">
+            <form action="{{ route('soportes.soportes.store') }}" method="POST" enctype="multipart/form-data" novalidate>
+                @csrf
                 @include('soportes.soportes.form')
             </form>
         </div>

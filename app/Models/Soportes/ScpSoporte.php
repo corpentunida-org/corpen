@@ -35,7 +35,7 @@ class ScpSoporte extends Model
         'id_users', //USUARIO QUE CREA EL SOPORTE
         'id_scp_sub_tipo', 
         'estado', 
-        'soporte', 
+        'soporte', //ARCHIVO
         'usuario_escalado',  //USUARIO ESCALADO
           
     ];
