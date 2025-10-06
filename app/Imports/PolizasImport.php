@@ -63,16 +63,6 @@ class PolizasImport implements ToCollection, WithHeadingRow, WithChunkReading
                 continue;
             }
 
-            // Guardar o actualizar SegTercero
-            $tercero = SegTercero::updateOrCreate(
-                ['cedula' => $row['num_doc']],
-                [
-                    'nombre'          => $row['nombre'],
-                    'fechaNacimiento' => $fechaNacimiento,
-                    'genero'          => strtoupper($row['genero']),
-                ]
-            );
-
             // Guardar o actualizar maeTerceros
             maeTerceros::updateOrCreate(
                 ['cod_ter' => $row['num_doc']],
@@ -127,6 +117,6 @@ class PolizasImport implements ToCollection, WithHeadingRow, WithChunkReading
 
     public function chunkSize(): int
     {
-        return 1000;
+        return 500;
     }
 }
