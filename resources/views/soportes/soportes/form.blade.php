@@ -125,7 +125,7 @@
     </div>
 
     <!-- Asignación Inicial -->
-    <div class="mb-3">
+{{--     <div class="mb-3">
         <label class="form-label fw-semibold">
             <i class="bi bi-person-badge me-1"></i> Asignación Inicial
         </label>
@@ -133,7 +133,7 @@
             value="{{ $terceros->where('cod_ter', '79893305')->first()->nom_ter ?? 'Usuario 79893305' }}" 
             readonly disabled>
         <input type="hidden" name="cod_ter_maeTercero" value="79893305">
-    </div>
+    </div> --}}
 
     <!-- Línea de Crédito -->
     <div class="mb-3" id="linea_credito_wrapper" style="display:none;">
