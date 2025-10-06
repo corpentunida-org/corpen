@@ -37,6 +37,9 @@ class SegNovedadesController extends Controller
             'radicado' => SegNovedades::where('estado', 2)
                 ->with(['tercero', 'cambiosEstado'])
                 ->get(),
+            'complementos' => SegNovedades::where('estado', 5)
+                ->with(['tercero', 'cambiosEstado'])
+                ->get(),
             'aprobado' => SegNovedades::where('estado', 3)
                 ->with(['tercero', 'cambiosEstado'])
                 ->get(),
