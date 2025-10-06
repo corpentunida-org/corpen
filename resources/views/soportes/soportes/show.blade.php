@@ -11,10 +11,19 @@
             <a href="{{ route('soportes.soportes.index') }}" class="btn btn-sm btn-outline-secondary">
                 <i class="feather-arrow-left me-1"></i> Volver
             </a>
-            {{--             
+                       
             <a href="{{ route('soportes.soportes.edit', $soporte->id) }}" class="btn btn-sm btn-primary">
                 <i class="feather-edit-2 me-1"></i> Editar
             </a>
+            @if(isset($soporte) && $soporte->soporte)
+                <a href="{{ route('soportes.ver', $soporte->id) }}" 
+                    target="_blank" 
+                    class="btn btn-sm btn-teal">
+                    <i class="bi bi-file-earmark-image me-1"></i> Ver Soporte
+                </a>
+            @endif
+            
+            {{-- 
             <form action="{{ route('soportes.soportes.destroy', $soporte->id) }}" method="POST" onsubmit="return confirm('¿Seguro que deseas eliminar este soporte?');" class="mb-0">
                 @csrf
                 @method('DELETE')
@@ -43,7 +52,7 @@
                         </button>
                     </h5>
                     <div id="descriptionContent" class="description-content-wrapper"> {{-- Nuevo contenedor para el contenido --}}
-                        <p class="text-gray-700 bg-light-subtle p-3 rounded border support-description-text" style="white-space: pre-wrap;">
+                        <p class="rounded border support-description-text" style="white-space: pre-wrap;">
                             {{ $soporte->detalles_soporte }}
                         </p>
                     </div>
@@ -117,7 +126,7 @@
                     </h2>
                     <div id="collapseForm" class="accordion-collapse collapse" aria-labelledby="headingOne" data-bs-parent="#accordionForm">
                         <div class="accordion-body">
-                            <form action="{{ route('soportes.soportes.observaciones.store', $soporte->id) }}" method="POST">
+                            <form action="{{ route('soportes.observaciones.store', $soporte->id) }}" method="POST">
                                 @csrf
                                 <div class="mb-3">
                                     <label for="observacion" class="form-label fw-semibold">Nueva Observación:</label>
@@ -329,6 +338,69 @@
             background-color: #fff !important; /* Texto siempre en blanco */
             border: 1px solid #f5c2c7 !important;
         }
+
+
+        /* ================================
+        ESTILO PROFESIONAL BLANCO PREMIUM
+        ================================ */
+        .support-description-text {
+            text-align: left;
+            padding: 14px 18px;
+            margin: 0;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            color: #1a1a1a !important;
+            font-weight: 600;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+            transition: all 0.35s ease;
+
+            /* 🔹 Animación al cargar */
+            opacity: 0;
+            transform: translateY(10px);
+            animation: fadeSlideIn 0.6s ease forwards;
+        }
+
+        /* 🔹 Efecto al pasar el mouse */
+        .support-description-text:hover {
+            background: linear-gradient(135deg, #ffffff 0%, #f1f3f5 100%);
+            border-color: #bfbfbf;
+            box-shadow:
+                0 4px 16px rgba(0, 0, 0, 0.08),
+                inset 0 1px 2px rgba(255, 255, 255, 0.6);
+            transform: translateY(-2px);
+        }
+
+        /* 🔹 Efecto al enfocarse (interacción accesible y elegante) */
+        .support-description-text:focus-within {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+        }
+
+        /* 🔹 Animación de entrada */
+        @keyframes fadeSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 🔹 Adaptación responsiva */
+        @media (max-width: 768px) {
+            .support-description-text {
+                padding: 10px 14px;
+                font-size: 0.95rem;
+            }
+        }
+
+
 
         /* ===== HISTORIAL Y SEGUIMIENTO (Azul pastel sutil) ===== */
         .history-tracking-card {

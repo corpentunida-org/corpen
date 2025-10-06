@@ -1,4 +1,5 @@
 <?php
+
 use App\Http\Middleware\CanDirect;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\RoleController;
@@ -68,8 +69,8 @@ use App\Http\Controllers\Soportes\ScpPrioridadController;
 use App\Http\Controllers\Soportes\ScpTipoController;
 use App\Http\Controllers\Soportes\ScpTipoObservacionController;
 use App\Http\Controllers\Soportes\ScpTableroParametroController;
-use App\Http\Controllers\Soportes\ScpSoporteController; 
-use App\Http\Controllers\Soportes\ScpObservacionController; 
+use App\Http\Controllers\Soportes\ScpSoporteController;
+use App\Http\Controllers\Soportes\ScpObservacionController;
 use App\Http\Controllers\Soportes\ScpSubTipoController;
 use App\Http\Controllers\Soportes\ScpCategoriaController;
 use App\Http\Controllers\Soportes\ScpUsuarioController;
@@ -137,11 +138,13 @@ Route::post('/reclamacion/generarpdf', [SegReclamacionesController::class, 'gene
 Route::get('/reclamacion/informe/excel', [SegReclamacionesController::class, 'exportexcel'])->middleware('auth')->name('seguros.reclamacion.download');
 Route::post('poliza/upload', [SegPolizaController::class, 'upload'])->name('seguros.poliza.upload');
 Route::post('poliza/create/upload', [SegPolizaController::class, 'uploadCreate'])->name('seguros.poliza.createupload');
-Route::get('/poliza/create/upload', function () {return view('seguros.polizas.upload');})->name('seguros.poliza.viewupload');
+Route::get('/poliza/create/upload', function () {
+    return view('seguros.polizas.upload');
+})->name('seguros.poliza.viewupload');
 Route::get('/seguros/cxc', [SegPolizaController::class, 'exportcxc'])->name('seguros.poliza.download');
 Route::prefix('seguros')->get('/dashboard/reclamaciones', [SegReclamacionesController::class, 'dashboard'])->name('seguros.reclamaciones.dashboard');
 Route::get('/planes/{edad}', [SegPlanController::class, 'getPlanes'])->name('seguros.planes.getplanes');
-Route::resource('beneficios', SegBeneficiosController::class)->names('seguros.beneficios')->middleware(['auth','candirect:seguros.beneficios.index']);
+Route::resource('beneficios', SegBeneficiosController::class)->names('seguros.beneficios')->middleware(['auth', 'candirect:seguros.beneficios.index']);
 Route::post('beneficios/list', [SegBeneficiosController::class, 'listFilter'])->name('seguros.beneficios.list');
 Route::post('/seguros/filtopolizas', [SegBeneficiosController::class, 'exportFiltroPdf'])->name('seguros.poliza.filtros');
 Route::post('/seguros/filtopolizas/excel', [SegBeneficiosController::class, 'exportexcel'])->middleware('auth')->name('seguros.poliza.filtroexcel');
@@ -191,30 +194,30 @@ Route::get('reservaI/historico', [ResReservaController::class, 'indexHistorico']
 
 
 //TERCEROS
-    // ARCHIVO DE RUTAS UNIFICADO
-    Route::prefix('maestras')->middleware('auth')->name('maestras.')->group(function () {
+// ARCHIVO DE RUTAS UNIFICADO
+Route::prefix('maestras')->middleware('auth')->name('maestras.')->group(function () {
 
-        // TERCEROS
-        Route::resource('terceros', MaeTercerosController::class)
-            ->names('terceros')
-            ->parameters(['terceros' => 'tercero']);
+    // TERCEROS
+    Route::resource('terceros', MaeTercerosController::class)
+        ->names('terceros')
+        ->parameters(['terceros' => 'tercero']);
 
-        Route::get('terceros/{tercero}/pdf', [MaeTercerosController::class, 'generarPdf'])
-            ->name('terceros.generarPdf');
+    Route::get('terceros/{tercero}/pdf', [MaeTercerosController::class, 'generarPdf'])
+        ->name('terceros.generarPdf');
 
-        // TIPO
-        Route::resource('tipos', MaeTiposController::class)
-            ->names('tipos')
-            ->parameters(['tipos' => 'tipo']);
+    // TIPO
+    Route::resource('tipos', MaeTiposController::class)
+        ->names('tipos')
+        ->parameters(['tipos' => 'tipo']);
 
-        // CONGREGACION (CORREGIDO)
-        Route::resource('congregaciones', CongregacionController::class)
-            ->names('congregacion')
-            ->parameters(['congregaciones' => 'congregacion']);
+    // CONGREGACION (CORREGIDO)
+    Route::resource('congregaciones', CongregacionController::class)
+        ->names('congregacion')
+        ->parameters(['congregaciones' => 'congregacion']);
 
-        Route::get('buscar-pastor', [CongregacionController::class, 'buscarPastor'])
-            ->name('buscar.pastor');
-    });
+    Route::get('buscar-pastor', [CongregacionController::class, 'buscarPastor'])
+        ->name('buscar.pastor');
+});
 //
 
 //CREDITOS 
@@ -230,9 +233,8 @@ Route::prefix('creditos')->middleware('auth')->group(function () {
      * que te gusta.
      */
     Route::resource('credito', CreditoController::class)
-         ->names('creditos.credito')
-         ->parameters(['credito' => 'credito']);
-
+        ->names('creditos.credito')
+        ->parameters(['credito' => 'credito']);
 });
 
 
@@ -259,18 +261,18 @@ Route::prefix('archivo')->middleware('auth')->group(function () {
     Route::get('empleados/{empleado}/foto', [GdoEmpleadoController::class, 'verFoto'])
         ->name('archivo.empleado.verFoto')
         ->middleware('auth');
-        
-        Route::resource('gdotipodocumento', GdoTipoDocumentoController::class)
-            ->names('archivo.gdotipodocumento')
-            ->parameters(['gdotipodocumento' => 'tipoDocumento']);
 
-        Route::resource('categorias', GdoCategoriaDocumentoController::class)
-            ->names('archivo.categorias')
-            ->parameters(['categorias' => 'categoria']);
+    Route::resource('gdotipodocumento', GdoTipoDocumentoController::class)
+        ->names('archivo.gdotipodocumento')
+        ->parameters(['gdotipodocumento' => 'tipoDocumento']);
 
-        Route::resource('gdodocsempleados', GdoDocsEmpleadosController::class)
-            ->names('archivo.gdodocsempleados')
-            ->parameters(['gdodocsempleados' => 'gdodocsempleado']);
+    Route::resource('categorias', GdoCategoriaDocumentoController::class)
+        ->names('archivo.categorias')
+        ->parameters(['categorias' => 'categoria']);
+
+    Route::resource('gdodocsempleados', GdoDocsEmpleadosController::class)
+        ->names('archivo.gdodocsempleados')
+        ->parameters(['gdodocsempleados' => 'gdodocsempleado']);
 
     Route::get('gdodocsempleados/ver/{id}', [GdoDocsEmpleadosController::class, 'verArchivo'])
         ->name('gdodocsempleados.ver')
@@ -279,118 +281,121 @@ Route::prefix('archivo')->middleware('auth')->group(function () {
     Route::get('gdodocsempleados/download/{id}', [GdoDocsEmpleadosController::class, 'download'])
         ->name('gdodocsempleados.download')
         ->middleware('auth');
+});
 
 
+//
+// --- GRUPO DE RUTAS PARA INTERACCIONES ---
 
+// Listar todas las interacciones (Página principal)
+Route::get('/interactions', [InteractionController::class, 'index'])->name('interactions.index');
 
-    // --- GRUPO DE RUTAS PARA INTERACCIONES ---
+// Mostrar el formulario para crear una nueva interacción
+Route::get('/interactions/create', [InteractionController::class, 'create'])->name('interactions.create');
 
-    // Listar todas las interacciones (Página principal)
-    Route::get('/interactions', [InteractionController::class, 'index'])->name('interactions.index');
+// Guardar la nueva interacción en la base de datos
+Route::post('/interactions', [InteractionController::class, 'store'])->name('interactions.store');
 
-    // Mostrar el formulario para crear una nueva interacción
-    Route::get('/interactions/create', [InteractionController::class, 'create'])->name('interactions.create');
+// Mostrar detalle de una interacción
+Route::get('/interactions/{interaction}', [InteractionController::class, 'show'])->name('interactions.show');
 
-    // Guardar la nueva interacción en la base de datos
-    Route::post('/interactions', [InteractionController::class, 'store'])->name('interactions.store');
+// Mostrar el formulario para editar una interacción existente
+Route::get('/interactions/{interaction}/edit', [InteractionController::class, 'edit'])->name('interactions.edit');
 
-    // Mostrar detalle de una interacción
-    Route::get('/interactions/{interaction}', [InteractionController::class, 'show'])->name('interactions.show');
+// Actualizar la interacción en la base de datos
+Route::put('/interactions/{interaction}', [InteractionController::class, 'update'])->name('interactions.update');
 
-    // Mostrar el formulario para editar una interacción existente
-    Route::get('/interactions/{interaction}/edit', [InteractionController::class, 'edit'])->name('interactions.edit');
+// Eliminar una interacción de la base de datos
+Route::delete('/interactions/{interaction}', [InteractionController::class, 'destroy'])->name('interactions.destroy');
 
-    // Actualizar la interacción en la base de datos
-    Route::put('/interactions/{interaction}', [InteractionController::class, 'update'])->name('interactions.update');
-
-    // Eliminar una interacción de la base de datos
-    Route::delete('/interactions/{interaction}', [InteractionController::class, 'destroy'])->name('interactions.destroy');
-
-    // Ruta protegida para descargar archivos adjuntos
-    Route::middleware(['auth'])->group(function () {
-        Route::get('/interactions/download/{file}', [InteractionController::class, 'downloadAttachment'])
-            ->name('interactions.download');
+// Ruta protegida para descargar archivos adjuntos
+Route::middleware(['auth'])->group(function () {
+    Route::get('/interactions/download/{file}', [InteractionController::class, 'downloadAttachment'])
+        ->name('interactions.download');
 
     Route::get('/interactions/view/{fileName}', [InteractionController::class, 'viewAttachment'])
         ->name('interactions.view');
-
-    });
 });
-    // FLUJO DE TRABAJO
+
+// FLUJO DE TRABAJO
 Route::middleware('auth')->prefix('flujo')->name('flujo.')->group(function () {
-        // Workflows
+    // Workflows
     Route::resource('workflows', WorkflowController::class)
-            ->names('workflows')
-            ->parameters(['workflows' => 'workflow']);
+        ->names('workflows')
+        ->parameters(['workflows' => 'workflow']);
 
-        // Tasks
+    // Tasks
     Route::resource('tasks', TaskController::class)
-            ->names('tasks')
-            ->parameters(['tasks' => 'task']);
+        ->names('tasks')
+        ->parameters(['tasks' => 'task']);
 
-        // Histories (index, show, store, destroy)
+    // Histories (index, show, store, destroy)
     Route::resource('histories', TaskHistoryController::class)
-            ->only(['index', 'show', 'store', 'destroy'])
-            ->names('histories')
-            ->parameters(['histories' => 'taskHistory']);
+        ->only(['index', 'show', 'store', 'destroy'])
+        ->names('histories')
+        ->parameters(['histories' => 'taskHistory']);
 
-        // Comments
+    // Comments
     Route::resource('comments', TaskCommentController::class)
-            ->names('comments')
-            ->parameters(['comments' => 'comment']);
+        ->names('comments')
+        ->parameters(['comments' => 'comment']);
 
-        // Nuevo tablero principal
+    // Nuevo tablero principal
     Route::get('/tablero', [TableroController::class, 'index'])
-            ->name('tablero');
+        ->name('tablero');
 });
 
-    
-// SOPORTES
-Route::middleware('auth')->prefix('soportes')->name('soportes.')->group(function () {
-    // Tablero general
-    Route::get('tablero', [ScpTableroParametroController::class, 'index'])
-        ->name('tablero');
 
-    // Categorías
+// =============================
+//   MÓDULO DE SOPORTES
+// =============================
+Route::middleware('auth')->prefix('soportes')->name('soportes.')->group(function () {
+
+    // Tablero principal
+    Route::get('tablero', [ScpTableroParametroController::class, 'index'])
+        ->name('tablero')->middleware('candirect:soporte.lista.administrador');
+
+    // Recursos base
     Route::resource('categorias', ScpCategoriaController::class)
         ->parameters(['categorias' => 'scpCategoria']);
 
-    // Usuarios
     Route::resource('usuarios', ScpUsuarioController::class)
         ->parameters(['usuarios' => 'scpUsuario']);
 
-    // Estados
     Route::resource('estados', ScpEstadoController::class)
         ->parameters(['estados' => 'scpEstado']);
 
-    // Prioridades
     Route::resource('prioridades', ScpPrioridadController::class)
         ->parameters(['prioridades' => 'scpPrioridad']);
 
-    // Tipos
     Route::resource('tipos', ScpTipoController::class)
         ->parameters(['tipos' => 'scpTipo']);
 
-    // Tipos de Observaciones
-Route::resource('tipoObservaciones', ScpTipoObservacionController::class)
-    ->parameters(['tipoObservaciones' => 'scpTipoObservacion']);
+    Route::resource('tipoObservaciones', ScpTipoObservacionController::class)
+        ->parameters(['tipoObservaciones' => 'scpTipoObservacion']);
 
-
-    // Soportes (mantener Resource)
+    // --- CONTROLADOR DE SOPORTES PRINCIPAL ---
     Route::resource('soportes', ScpSoporteController::class)
         ->parameters(['soportes' => 'scpSoporte']);
 
-    // Rutas para Observaciones Anidadas bajo Soportes
+    // ✅ Rutas seguras para ver y descargar archivos de soporte
+    Route::get('soportes/ver/{id}', [ScpSoporteController::class, 'verSoporte'])
+        ->name('ver');
+
+    Route::get('soportes/descargar/{id}', [ScpSoporteController::class, 'descargarSoporte'])
+        ->name('descargar');
+
+    // Rutas de Observaciones Anidadas
     Route::post('soportes/{scpSoporte}/observaciones', [ScpSoporteController::class, 'storeObservacion'])
-        ->name('soportes.observaciones.store');
+        ->name('observaciones.store');
 
     Route::delete('soportes/{scpSoporte}/observaciones/{scpObservacion}', [ScpSoporteController::class, 'destroyObservacion'])
-        ->name('soportes.observaciones.destroy');
+        ->name('observaciones.destroy');
 
-    // Sub-Tipos
+    // Subtipos
     Route::resource('subtipos', ScpSubTipoController::class);
 
-    // Filtros JSON
+    // Filtros dinámicos
     Route::get('tipos/filtro/{categoria}', [ScpSoporteController::class, 'getTiposByCategoria'])
         ->name('tipos.byCategoria');
 
@@ -402,10 +407,12 @@ Route::resource('tipoObservaciones', ScpTipoObservacionController::class)
         ->name('pendientes');
 
     // Vista solo SinAsignar
-/*     Route::get('sin-asignar', [ScpSoporteController::class, 'sinAsignar'])
-    ->name('soportes.sinAsignar'); */
-
+    /*     Route::get('sin-asignar', [ScpSoporteController::class, 'sinAsignar'])
+        ->name('soportes.sinAsignar'); */
 });
+
+
+
 
 
 
@@ -432,5 +439,4 @@ Route::middleware('auth')->prefix('visitas')->name('visitas.')->group(function (
             'destroy' => 'corpen.destroy',
         ])
         ->parameters(['corpen' => 'visitaCorpen']);
-
 });
