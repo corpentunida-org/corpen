@@ -64,7 +64,7 @@ class PolizasImport implements ToCollection, WithHeadingRow, WithChunkReading
             }
 
             // Guardar o actualizar maeTerceros
-            maeTerceros::updateOrCreate(
+            $tercero = maeTerceros::updateOrCreate(
                 ['cod_ter' => $row['num_doc']],
                 [
                     'nom_ter' => $row['nombre'],
@@ -75,10 +75,10 @@ class PolizasImport implements ToCollection, WithHeadingRow, WithChunkReading
 
             // Guardar o actualizar asegurado
             $asegurado = SegAsegurado::updateOrCreate(
-                ['cedula' => $tercero->cedula],
+                ['cedula' => $tercero->cod_ter],
                 [
                     'parentesco'      => strtoupper($row['parentesco']),
-                    'titular'         => $row['titular'] ?? $tercero->cedula,
+                    'titular'         => $row['titular'] ?? $tercero->cod_ter,
                     'valorpAseguradora' => $row['valor_titular'] ?? null,
                 ]
             );
