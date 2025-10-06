@@ -30,7 +30,7 @@ class SegNovedades extends Model
         'valorPrimaPlan'
     ]; */
 
-    protected $table = 'Seg_novedadaes02';
+    protected $table = 'Seg_novedadaes';
     protected $fillable = ['id_poliza', 'id_asegurado', 'tipo', 'estado', 'id_plan', 'valorAsegurado', 'primaAseguradora', 'primaCorpen', 'extraprima', 'formulario'];
     
 
