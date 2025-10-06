@@ -20,6 +20,7 @@ use App\Imports\ExcelImport;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Http\Controllers\Exequial\ComaeTerController;
 use App\Imports\PolizasImport;
+use App\Imports\ExcelExport;
 
 class SegPolizaController extends Controller
 {
