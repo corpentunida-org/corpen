@@ -10,6 +10,7 @@
         2 => 'radicado',
         3 => 'aprobado',
         4 => 'rechazado',
+        5 => 'complementos',
     ];
 @endphp
 <div class="content-sidebar content-sidebar-md" data-scrollbar-target="#psScrollbarInit">
@@ -33,6 +34,13 @@
                     href="{{ route('seguros.novedades.index', ['estado' => 'radicado']) }}">
                     <i class="feather-folder"></i>
                     <span>Radicadas</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{ request('estado') === 'complementos' ? 'active' : '' }}"
+                    href="{{ route('seguros.novedades.index', ['estado' => 'complementos']) }}">
+                    <i class="bi bi-file-earmark-diff"></i>
+                    <span>Pendiente cargue documentos</span>
                 </a>
             </li>
             <li class="nav-item">
