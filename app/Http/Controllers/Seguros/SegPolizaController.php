@@ -353,14 +353,6 @@ class SegPolizaController extends Controller
 
     public function destroy($poliza, Request $request)
     {
-        /*SegNovedades::create([
-            'id_asegurado' => $request->input('aseguradoid'),
-            'id_poliza' => $poliza,
-            'fechaNovedad' => $now->toDateString(),
-            'retiro' => true,
-            'observaciones' => $request->input('observacionretiro'),
-        ]);*/
-
         SegNovedades::create([
             'id_asegurado' => $request->input('aseguradoid'),
             'id_poliza' => $poliza,
@@ -391,7 +383,7 @@ class SegPolizaController extends Controller
         $datos = SegPoliza::where('active', true)
             ->with(['tercero', 'asegurado'])
             ->get();
-        $headings = ['POLIZA', 'ID', 'NOMBRE', 'NUM DOC', 'FECHA NAC', 'GENERO', 'EDAD', 'DOC AF', 'PARENTESCO', 'FEC NOVEDAD', 'VALOR ASEGURADO', 'EXTRA PRIMA', 'PRIMA'];
+        $headings = ['POLIZA', 'ID', 'NOMBRE', 'NUM DOC', 'FECHA NAC', 'GENERO', 'EDAD', 'DOC AF', 'PARENTESCO', 'FEC NOVEDAD', 'VALOR ASEGURADO', 'EXTRA PRIMA', 'PRIMA PLAN', 'PRIMA CORPEN'];
         $datosFormateados = $datos->map(function ($item) {
             $fechaNacimiento = Carbon::parse($item->fecha_nacimiento);
             return [
@@ -407,9 +399,11 @@ class SegPolizaController extends Controller
                 'fec_novedad' => $item->fecha_novedad,
                 'valor_asegurado' => $item->valor_asegurado,
                 'extra_prima' => $item->extra_prima,
-                'prima' => $item->valor_prima,
+                'prima_plan' => $item->valor_prima ?? '0',
+                'prima_corpen' => $item->primapagar ?? '0',
+                'valor_titular' => $item->valorpagaraseguradora ?? '',
             ];
         });
-        return Excel::download(new ExcelExport($datosFormateados, $headings), 'DATOS SEGUROS VIDA.xlsx');
+        return Excel::download(new ExcelExport($datosFormateados, $headings), 'DATOS_SEGUROS_VIDA_' . now()->format('Y-m-d') . '.xlsx');
     }
 }
