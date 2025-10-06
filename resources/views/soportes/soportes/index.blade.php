@@ -89,6 +89,7 @@
                     @php
                         $indice = $loop->index + 2; // aquí forzamos que empiece desde 2
                         $permiso = 'soporte.lista.' . strtolower($nombreCategoria);
+                        //dump($nombreCategoria);
                     @endphp
                     @candirect($permiso)   
                     <li class="nav-item" role="presentation">                  
