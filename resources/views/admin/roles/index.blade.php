@@ -10,10 +10,18 @@
                     <span class="d-block mb-2">Lista de Roles </span>
                     <span class="fs-12 fw-normal text-muted d-block">Con sus permisos asignados </span>
                 </h5>
-                <a href="#cardAddRole" class="btn btn-success" data-bs-toggle="tooltip">
-                    <i class="feather-plus me-2"></i>
-                    <span>Agregar Rol</span>
-                </a>
+                <div class="d-flex align-items-end gap-2">
+                    <a href="#cardAddRole" class="btn bg-soft-success text-success border border-soft-success"
+                        data-bs-toggle="tooltip" id="mostrarCardRole">
+                        <i class="bi bi-clipboard-check me-2"></i>
+                        <span>Crear Rol</span>
+                    </a>
+                    <a href="#cardAddPermisos" class="btn bg-soft-indigo text-indigo border border-soft-indigo"
+                        data-bs-toggle="tooltip" id="mostrarCardPermisos">
+                        <i class="bi bi-person-fill-gear me-2"></i>
+                        <span>Crear Permiso</span>
+                    </a>
+                </div>
             </div>
             <div class="card-body">
                 <div class="accordion proposal-faq-accordion">
@@ -75,7 +83,7 @@
     </div>
 
     <div class="col-lg-12">
-        <div class="card stretch stretch-full" id="cardAddRole">
+        <div class="card stretch stretch-full" id="cardAddRole" style="display: none;">
             <div class="card-header">
                 <h5 class="fw-bold mb-0">
                     <span class="d-block mb-2">Agregar Rol </span>
@@ -112,7 +120,7 @@
         </div>
     </div>
     <div class="col-lg-12">
-        <div class="card stretch stretch-full" id="cardAddPermisos">
+        <div class="card stretch stretch-full" id="cardAddPermisos" style="display: none;">
             <div class="card-header">
                 <h5 class="fw-bold mb-0">
                     <span class="d-block mb-2">Crear un permiso </span>
@@ -163,4 +171,21 @@
             </div>
         </div>
     </div>
+
+    <script>
+        $('#mostrarCardRole').on('click', function(e) {
+            e.preventDefault();
+            $('#cardAddRole').fadeIn(400);
+            $('html, body').animate({
+                scrollTop: $('#cardAddRole').offset().top
+            }, 400);
+        });
+        $('#mostrarCardPermisos').on('click', function(e) {
+            e.preventDefault();
+            $('#cardAddPermisos').fadeIn(400);
+            $('html, body').animate({
+                scrollTop: $('#cardAddPermisos').offset().top
+            }, 400);
+        });
+    </script>
 </x-base-layout>
