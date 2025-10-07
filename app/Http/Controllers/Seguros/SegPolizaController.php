@@ -383,7 +383,7 @@ class SegPolizaController extends Controller
         $datos = SegPoliza::where('active', true)
             ->with(['tercero', 'asegurado'])
             ->get();
-        $headings = ['POLIZA', 'ID', 'NOMBRE', 'NUM DOC', 'FECHA NAC', 'GENERO', 'EDAD', 'DOC AF', 'PARENTESCO', 'FEC NOVEDAD', 'VALOR ASEGURADO', 'EXTRA PRIMA', 'PRIMA PLAN', 'PRIMA CORPEN'];
+        $headings = ['POLIZA', 'ID', 'NOMBRE', 'NUM DOC', 'FECHA NAC', 'GENERO', 'EDAD', 'DOC AF', 'PARENTESCO', 'FEC NOVEDAD', 'VALOR ASEGURADO', 'EXTRA PRIMA', 'PRIMA PLAN', 'PRIMA CORPEN', 'VALOR TITULAR'];
         $datosFormateados = $datos->map(function ($item) {
             $fechaNacimiento = Carbon::parse($item->fecha_nacimiento);
             return [
@@ -400,7 +400,7 @@ class SegPolizaController extends Controller
                 'valor_asegurado' => $item->valor_asegurado,
                 'extra_prima' => $item->extra_prima,
                 'prima_plan' => $item->valor_prima ?? '0',
-                'prima_corpen' => $item->primapagar ?? '0',
+                'prima_corpen' => (int) ($item->primapagar ?: 0),
                 'valor_titular' => $item->valorpagaraseguradora ?? '',
             ];
         });
