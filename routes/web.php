@@ -281,37 +281,36 @@ Route::prefix('archivo')->middleware('auth')->group(function () {
 });
 
 
-//
 // --- GRUPO DE RUTAS PARA INTERACCIONES ---
 
-// Listar todas las interacciones (Página principal)
-Route::get('/interactions', [InteractionController::class, 'index'])->name('interactions.index');
+Route::prefix('interactions')->middleware(['auth'])->name('interactions.')->group(function () {
 
-// Mostrar el formulario para crear una nueva interacción
-Route::get('/interactions/create', [InteractionController::class, 'create'])->name('interactions.create');
+    // Página principal (lista)
+    Route::get('/', [InteractionController::class, 'index'])->name('index');
 
-// Guardar la nueva interacción en la base de datos
-Route::post('/interactions', [InteractionController::class, 'store'])->name('interactions.store');
+    // DataTables (server-side)
+    Route::get('/data', [InteractionController::class, 'data'])->name('data');
 
-// Mostrar detalle de una interacción
-Route::get('/interactions/{interaction}', [InteractionController::class, 'show'])->name('interactions.show');
+    // Dashboard de estadísticas
+    Route::get('/stats', [InteractionController::class, 'stats'])->name('stats');
 
-// Mostrar el formulario para editar una interacción existente
-Route::get('/interactions/{interaction}/edit', [InteractionController::class, 'edit'])->name('interactions.edit');
+    // Crear nueva interacción
+    Route::get('/create', [InteractionController::class, 'create'])->name('create');
+    Route::post('/', [InteractionController::class, 'store'])->name('store');
 
-// Actualizar la interacción en la base de datos
-Route::put('/interactions/{interaction}', [InteractionController::class, 'update'])->name('interactions.update');
+    // Mostrar detalle (vista completa)
+    Route::get('/{interaction}/show', [InteractionController::class, 'show'])->name('show');
 
-// Eliminar una interacción de la base de datos
-Route::delete('/interactions/{interaction}', [InteractionController::class, 'destroy'])->name('interactions.destroy');
+    // Editar / actualizar
+    Route::get('/{interaction}/edit', [InteractionController::class, 'edit'])->name('edit');
+    Route::put('/{interaction}', [InteractionController::class, 'update'])->name('update');
 
-// Ruta protegida para descargar archivos adjuntos
-Route::middleware(['auth'])->group(function () {
-    Route::get('/interactions/download/{file}', [InteractionController::class, 'downloadAttachment'])
-        ->name('interactions.download');
+    // Eliminar
+    Route::delete('/{interaction}', [InteractionController::class, 'destroy'])->name('destroy');
 
-    Route::get('/interactions/view/{fileName}', [InteractionController::class, 'viewAttachment'])
-        ->name('interactions.view');
+    // Archivos adjuntos
+    Route::get('/attachment/download/{file}', [InteractionController::class, 'downloadAttachment'])->name('download');
+    Route::get('/attachment/view/{fileName}', [InteractionController::class, 'viewAttachment'])->name('view');
 });
 
 // FLUJO DE TRABAJO
