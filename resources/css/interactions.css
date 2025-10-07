@@ -1,0 +1,204 @@
+/* =========================================
+   🌸 ESTILOS GLOBALES PASTELES Y MINIMALISTAS
+========================================= */
+:root {
+    --primary-color: #8A2BE2;
+    --primary-light: #E9D8FD;
+    --accent-color: #C4A1E0;
+    --bg-light: #FAF8FF;
+    --text-color: #3E3E3E;
+    --border-color: #E0D7F3;
+    --transition-base: all 0.25s ease-in-out;
+    --shadow-soft: 0 4px 12px rgba(138, 43, 226, 0.08);
+    --shadow-hover: 0 6px 16px rgba(138, 43, 226, 0.15);
+}
+
+/* Fondo de carga */
+.loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(250, 248, 255, 0.95);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+}
+
+/* =========================================
+   💬 TARJETAS DE INTERACCIÓN
+========================================= */
+.interaction-card {
+    transition: var(--transition-base);
+    border-left: 4px solid transparent;
+    border-radius: 0.75rem;
+    background-color: #fff;
+    color: var(--text-color);
+    box-shadow: var(--shadow-soft);
+    padding: 0.75rem 1rem;
+}
+
+.interaction-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+}
+
+.interaction-card.selected {
+    border-left-color: var(--primary-color);
+    background-color: var(--primary-light);
+}
+
+/* =========================================
+   📊 TABLAS Y COLUMNAS
+========================================= */
+.table-responsive {
+    border-radius: 0.75rem;
+    overflow: hidden;
+    background-color: var(--bg-light);
+    border: 1px solid var(--border-color);
+}
+
+.sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.2s ease;
+}
+
+.sortable:hover {
+    background-color: var(--primary-light);
+}
+
+/* Encabezado fijo */
+.sticky-top {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: #fff;
+    box-shadow: 0 2px 6px rgba(138, 43, 226, 0.08);
+}
+
+/* =========================================
+   👤 AVATARES
+========================================= */
+.avatar {
+    width: 2rem;
+    height: 2rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--primary-light);
+    color: var(--primary-color);
+}
+
+.avatar-sm { width: 2.5rem; height: 2.5rem; font-size: 0.875rem; }
+.avatar-xs { width: 1.5rem; height: 1.5rem; font-size: 0.6rem; }
+
+.empty-state-icon {
+    opacity: 0.4;
+}
+
+/* =========================================
+   🔍 FILTROS Y BOTONES
+========================================= */
+.active-filters .filter-tag {
+    background: var(--primary-color);
+    color: #fff;
+    padding: 0.25rem 0.6rem;
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    margin-right: 0.25rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    box-shadow: var(--shadow-soft);
+}
+
+/* Botones */
+.btn {
+    transition: var(--transition-base);
+    border-radius: 0.5rem;
+    background-color: var(--primary-light);
+    color: var(--primary-color);
+    border: 1px solid transparent;
+    font-weight: 500;
+}
+
+.btn:hover {
+    background-color: var(--primary-color);
+    color: #fff;
+    box-shadow: var(--shadow-hover);
+}
+
+/* Auto-refresh activo */
+#auto-refresh-btn.active {
+    background-color: #B9E6C9;
+    border-color: #B9E6C9;
+    color: #2F855A;
+}
+
+#auto-refresh-btn.active .bi-arrow-repeat {
+    animation: spin 2s linear infinite;
+}
+
+/* =========================================
+   📅 FILTROS RÁPIDOS
+========================================= */
+.quick-date-filter.active {
+    background-color: var(--primary-color);
+    color: #fff;
+    border-color: var(--primary-color);
+}
+
+/* =========================================
+   🌀 ANIMACIONES Y EFECTOS
+========================================= */
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.interaction-card,
+.interaction-row {
+    animation: fadeInUp 0.3s ease-out;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* =========================================
+   🧭 ICONOS Y DETALLES
+========================================= */
+.toggle-icon {
+    transition: transform 0.3s ease;
+}
+.collapsed .toggle-icon {
+    transform: rotate(-90deg);
+}
+
+.bg-gradient-light {
+    background: linear-gradient(135deg, #FAF8FF 0%, #F1EBFF 100%);
+}
+
+/* =========================================
+   📱 RESPONSIVE DESIGN
+========================================= */
+@media (max-width: 991.98px) {
+    .d-lg-none { display: block !important; }
+    .d-none.d-lg-block { display: none !important; }
+}
+
+@media (max-width: 768px) {
+    .container-fluid {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    .btn-group {
+        flex-wrap: wrap;
+    }
+}
