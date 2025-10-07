@@ -134,6 +134,7 @@
             readonly disabled>
         <input type="hidden" name="cod_ter_maeTercero" value="79893305">
     </div> --}}
+    <input type="hidden" name="cod_ter_maeTercero" value="79893305">
 
     <!-- Línea de Crédito -->
     <div class="mb-3" id="linea_credito_wrapper" style="display:none;">
