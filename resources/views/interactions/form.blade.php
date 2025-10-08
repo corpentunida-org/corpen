@@ -90,6 +90,14 @@
         </div>
     </div>
 
+    {{-- NOTAS --}}
+    <h3 class="form-section-title"><i class="fas fa-clipboard-list section-icon"></i> Notas de la Interacción</h3>
+    <div class="form-group">
+        <label for="notes" class="form-label">Notas <span class="required-asterisk">*</span></label>
+        <textarea name="notes" id="notes" class="form-control" rows="6" required
+            placeholder="Detalles, acciones tomadas, seguimiento, observaciones importantes...">{{ old('notes', $interaction->notes) }}</textarea>
+    </div>
+
     {{-- RESULTADO --}}
     <h3 class="form-section-title"><i class="fas fa-check-circle section-icon"></i> Resultado de la Interacción</h3>
     <div class="form-group">
@@ -104,14 +112,6 @@
                 </option>
             @endforeach
         </select>
-    </div>
-
-    {{-- NOTAS --}}
-    <h3 class="form-section-title"><i class="fas fa-clipboard-list section-icon"></i> Notas de la Interacción</h3>
-    <div class="form-group">
-        <label for="notes" class="form-label">Notas <span class="required-asterisk">*</span></label>
-        <textarea name="notes" id="notes" class="form-control" rows="6" required
-            placeholder="Detalles, acciones tomadas, seguimiento, observaciones importantes...">{{ old('notes', $interaction->notes) }}</textarea>
     </div>
 
     {{-- PRÓXIMA ACCIÓN --}}
