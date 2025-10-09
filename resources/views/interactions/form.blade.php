@@ -200,11 +200,29 @@
 
             {{-- Tarjeta informativa --}}
             <div id="client-info">
+                <p><i class="fas fa-id-card"></i> <strong>NIT / Cédula:</strong> <span id="info-cod"></span></p>
+                <p><i class="fas fa-user"></i> <strong>Nombre:</strong> <span id="info-nombre"></span></p>
+                <p><i class="fas fa-user-tag"></i> <strong>Tipo de Cliente:</strong> <span id="info-tipo"></span></p>
                 <p><i class="fas fa-map-marker-alt"></i> <strong>Dirección:</strong> <span id="info-dir"></span></p>
                 <p><i class="fas fa-phone"></i> <strong>Teléfono:</strong> <span id="info-tel"></span></p>
+                <p><i class="fas fa-mobile-alt"></i> <strong>Celular:</strong> <span id="info-cel"></span></p>
                 <p><i class="fas fa-envelope"></i> <strong>Email:</strong> <span id="info-email"></span></p>
                 <p><i class="fas fa-city"></i> <strong>Ciudad:</strong> <span id="info-ciudad"></span></p>
+                <p><i class="fas fa-map"></i> <strong>Departamento:</strong> <span id="info-departamento"></span></p>
+                <p><i class="fas fa-globe-americas"></i> <strong>País:</strong> <span id="info-pais"></span></p>
+                <p><i class="fas fa-landmark"></i> <strong>Distrito:</strong> <span id="info-distrito"></span></p>
+                <p><i class="fas fa-church"></i> <strong>Congregación:</strong> <span id="info-congregacion"></span></p>
+                <p><i class="fas fa-hashtag"></i> <strong>Código Congregación:</strong> <span id="info-codcong"></span></p>
+
+                <div style="margin-top: 1rem; text-align: right;">
+                    <a id="btn-editar-cliente" href="#" class="btn btn-primary" target="_blank" style="padding: 0.5rem 1.2rem; font-size: 0.9rem;">
+                        <i class="feather-edit-3 me-1"></i> Editar Cliente
+                    </a>
+                </div>
             </div>
+
+
+
         </div>
 
         {{-- AGENTE Y FECHA --}}
@@ -320,12 +338,30 @@
                     url: `/interactions/cliente/${cod_ter}`,
                     type: 'GET',
                     success: function (data) {
+                        console.log(data);
+                        
+                        $('#info-cod').text(data.cod_ter ?? 'No disponible');
+                        $('#info-nombre').text(data.nom_ter ?? 'No disponible');
+                        $('#info-tipo').text(data.tipo ?? 'No disponible');
                         $('#info-dir').text(data.dir ?? 'No disponible');
                         $('#info-tel').text(data.tel1 ?? 'No disponible');
+                        $('#info-cel').text(data.cel1 ?? 'No disponible');
                         $('#info-email').text(data.email ?? 'No disponible');
                         $('#info-ciudad').text(data.ciudad ?? 'No disponible');
+                        $('#info-departamento').text(data.departamento ?? 'No disponible');
+                        $('#info-pais').text(data.pais ?? 'No disponible');
+                        $('#info-distrito').text(data.cod_dis ?? 'No disponible');
+                        $('#info-congregacion').text(data.barrio ?? 'No disponible');
+                        $('#info-codcong').text(data.cod_est ?? 'No disponible');
+
+                        // 👉 Actualizamos el botón de edición
+
+                        $('#btn-editar-cliente').attr('href', `/maestras/terceros/${data.cod_ter}/edit`);
+
                         $('#client-info').show();
-                    },
+                    }
+
+,
                     error: function () {
                         $('#client-info').hide();
                     }
