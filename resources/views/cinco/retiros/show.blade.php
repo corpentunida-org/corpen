@@ -14,9 +14,9 @@
                                         </div>
                                         <div>
                                             <div class="fs-4 fw-bold text-dark"><span
-                                                    class="counter">{{ $tercero->Nom_Ter }}</span></div>
+                                                    class="counter">{{ $tercero->nom_ter }}</span></div>
                                             <h3 class="fs-13 fw-semibold text-truncate-1-line">
-                                                {{ $tercero->Cod_Ter }}
+                                                {{ $tercero->cod_ter }}
                                             </h3>
                                         </div>
                                     </div>
@@ -48,14 +48,14 @@
             <div class="card stretch stretch-full">
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between">
-                        <a href="{{ url('terceros/ID') }}?id={{ $tercero->Cod_Ter }}"
+                        <a href="{{ url('terceros/ID') }}?id={{ $tercero->cod_ter }}"
                             class="avatar-text avatar-lg bg-soft-primary text-primary border-soft-primary rounded"
                             data-bs-toggle="tooltip" title="" data-bs-original-title="Actualizar Fecha">
                             <i class="feather-briefcase"></i>
                         </a>
                         <div class="text-end">
                             <p class="fs-11 fw-medium text-uppercase text-muted mb-1">Fecha Ingreso al Ministerio</p>
-                            <h5 class="bg-soft-primary text-primary">{{$tercero->Fec_Minis}}</h5>
+                            <h5 class="bg-soft-primary text-primary">{{ $tercero->fec_minis }}</h5>
                         </div>
                     </div>
                 </div>
@@ -65,14 +65,14 @@
             <div class="card stretch stretch-full">
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between">
-                        <a href="{{ url('terceros/ID') }}?id={{ $tercero->Cod_Ter }}"
+                        <a href="{{ url('terceros/ID') }}?id={{ $tercero->cod_ter }}"
                             class="avatar-text avatar-lg bg-soft-primary text-primary border-soft-primary rounded"
                             data-bs-toggle="tooltip" title="" data-bs-original-title="Actualizar Fecha">
                             <i class="feather-bar-chart-2"></i>
                         </a>
                         <div class="text-end">
                             <p class="fs-11 fw-medium text-uppercase text-muted mb-1">Fecha Primer Aporte</p>
-                            <h5>{{$tercero->Fec_Aport ?? 'sin fecha'}}</h5>
+                            <h5>{{ $tercero->fec_Aport ?? 'sin fecha' }}</h5>
                         </div>
                     </div>
                 </div>
@@ -82,14 +82,14 @@
             <div class="card stretch stretch-full">
                 <div class="card-body">
                     <div class="d-flex align-items-center justify-content-between">
-                        <a href="{{ url('terceros/ID') }}?id={{ $tercero->Cod_Ter }}"
+                        <a href="{{ url('terceros/ID') }}?id={{ $tercero->cod_ter }}"
                             class="avatar-text avatar-lg bg-soft-primary text-primary border-soft-primary rounded"
                             data-bs-toggle="tooltip" title="" data-bs-original-title="Actualizar Fecha">
                             <i class="feather-user-plus"></i>
                         </a>
                         <div class="text-end">
                             <p class="fs-11 fw-medium text-uppercase text-muted mb-1">Fecha Ingreso a Corpentunida</p>
-                            <h5>{{$tercero->Fecha_Ipuc ?? 'sin fecha'}}</h5>
+                            <h5>{{ $tercero->fec_ing ?? 'sin fecha' }}</h5>
                         </div>
                     </div>
                 </div>
@@ -99,7 +99,11 @@
     <div class="col-lg-7">
         <div class="card stretch stretch-full">
             <div class="card-header">
-                <h5 class="card-title">Cálculo Liquidación</h5>                
+                <h5 class="card-title">Cálculo Liquidación</h5>
+                <a href="#cardGenerarRetiro" class="btn btn-danger">
+                    <i class="bi bi-people me-2"></i>
+                    <span>Retirar Pastor</span>
+                </a>
             </div>
             <div class="card-body custom-card-action p-3">
                 <div class="table-responsive">
@@ -117,56 +121,101 @@
                                 $totalAcomulado = 0;
                             @endphp
                             @foreach ($arrayliquidacion as $a => $valor)
-                                        <tr>
-                                            <td>
-                                                <a href="#">Liquidación {{$a}}</a>
-                                            </td>
-                                            <td>
-                                                @if (is_array($valor))
-                                                    ${{number_format($valor[0])}}
-                                                @else
-                                                    ${{number_format($valor)}}
-                                                @endif
-                                            </td>
-                                            <td>
-                                                @if (is_array($valor))
-                                                    ${{number_format($valor[1])}}
-                                                @endif
-                                            </td>
-                                            <td>
-                                                @if (is_array($valor))
-                                                    <span class="badge bg-gray-200 text-dark">
-                                                        @php 
-                                                            $total = $valor[0] + $valor[1];
-                                                        @endphp
-                                                                ${{number_format($total)}}                                    
-                                                        </span>
-                                                @endif
-                                            </td>
-                                    </tr>
+                                <tr>
+                                    <td>
+                                        <a href="#">Liquidación {{ $a }}</a>
+                                    </td>
+                                    <td>
+                                        @if (is_array($valor))
+                                            ${{ number_format($valor[0]) }}
+                                        @else
+                                            ${{ number_format($valor) }}
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if (is_array($valor))
+                                            ${{ number_format($valor[1]) }}
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if (is_array($valor))
+                                            <span class="badge bg-gray-200 text-dark">
+                                                @php
+                                                    $total = $valor[0] + $valor[1];
+                                                @endphp
+                                                ${{ number_format($total) }}
+                                            </span>
+                                        @endif
+                                    </td>
+                                </tr>
                                 @php
                                     if (is_array($valor)) {
                                         $totalAcomulado += $valor[0] + $valor[1];
                                     } else {
                                         $totalAcomulado += $valor;
-                                    }                                    
+                                    }
                                 @endphp
                             @endforeach
                         </tbody>
                     </table>
                 </div>
                 <div class="d-flex justify-content-end gap-2 mt-3">
-                                            <p class="mt-3" >Suma Total: </p>
-                    <h3 class="badge bg-soft-primary text-primary pt-3 px-3 fs-6">${{ number_format(ceil($totalAcomulado)) }}</h3>
+                    <p class="mt-3">Suma Total: </p>
+                    <h3 class="badge bg-soft-primary text-primary pt-3 px-3 fs-6">
+                        ${{ number_format(ceil($totalAcomulado)) }}</h3>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-lg-12">
+    <div class="col-lg-5">
         <div class="card stretch stretch-full">
             <div class="card-header">
-            <a href="{{ route('cinco.liquidacionretiro', $tercero->Cod_Ter) }}"
-                    class="btn btn-md bg-soft-teal text-teal border-soft-teal">Generar PDF</a></div>
+                <h5 class="card-title">Perfil del Tercero</h5>
+                <a href="#" class="btn btn-warning">
+                    <i class="feather-plus me-2"></i>
+                    <span>Actualizar Tercero</span>
+                </a>
+            </div>
+            <div class="card-body custom-card-action p-4">
+                <div class="profile-details mb-5">
+                    <div class="row g-0 mb-4">
+                        <div class="col-sm-6 text-muted">Nombre Completo:</div>
+                        <div class="col-sm-6 fw-semibold">{{$tercero->nom_ter}}</div>
+                    </div>
+                    <div class="row g-0 mb-4">
+                        <div class="col-sm-6 text-muted">Distrito:</div>
+                        <div class="col-sm-6 fw-semibold">{{ $tercero->cod_dist ? substr($tercero->cod_dist, 2) : '' }}</div>
+                    </div>
+                    <div class="row g-0 mb-4">
+                        <div class="col-sm-6 text-muted">Ingreso al Ministerio:</div>
+                        <div class="col-sm-6 fw-semibold">{{ $tercero->fec_minis ?? 'sin fecha'}}</div>
+                    </div>
+                    <div class="row g-0 mb-4">
+                        <div class="col-sm-6 text-muted">Primer Aporte:</div>
+                        <div class="col-sm-6 fw-semibold">{{ $tercero->fec_aport ?? 'sin fecha'}}</div>
+                    </div>
+                    <div class="row g-0 mb-4">
+                        <div class="col-sm-6 text-muted">Ingreso a Corpentunida:</div>
+                        <div class="col-sm-6 fw-semibold">{{ $tercero->fec_ing ?? 'sin fecha'}}</div>
+                    </div>
+                    <div class="row g-0 mb-4">
+                        <div class="col-sm-6 text-muted">Fecha de Nacimiento</div>
+                        <div class="col-sm-6 fw-semibold">{{ $tercero->fec_nac ?? 'sin fecha'}}</div>
+                    </div>                    
+                    <div class="row g-0 mb-4">
+                        <div class="col-sm-6 text-muted">Declara renta</div>
+                        <div class="col-sm-6 fw-semibold"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-12" id="cardGenerarRetiro">
+        <div class="card stretch stretch-full">
+            <div class="card-header">
+                <a href="{{ route('cinco.liquidacionretiro', ['id' => $tercero->cod_ter]) }}"
+                    class="btn btn-md bg-soft-teal text-teal border-soft-teal">Generar PDF</a>
+            </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-6">
@@ -178,11 +227,13 @@
                         <input type="date" class="form-control" name="FechaUltimoAporte" required>
                     </div>
                     <div class="col-3">
-                        <a href="javascript:void(0)" class="d-flex me-1" data-alert-target="invoicSendMessage" data-modal-message="Confirmar los datos exactos para realizar la liquidacion">
-                                        <div class="avatar-text avatar-md" data-bs-toggle="tooltip" data-bs-trigger="hover" title="Send Invoice">
-                                            <i class="feather feather-send"></i>
-                                        </div>
-                                    </a>
+                        <a href="javascript:void(0)" class="d-flex me-1" data-alert-target="invoicSendMessage"
+                            data-modal-message="Confirmar los datos exactos para realizar la liquidacion">
+                            <div class="avatar-text avatar-md" data-bs-toggle="tooltip" data-bs-trigger="hover"
+                                title="Send Invoice">
+                                <i class="feather feather-send"></i>
+                            </div>
+                        </a>
                     </div>
                 </div>
             </div>

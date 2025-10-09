@@ -6,6 +6,7 @@ use App\Models\Cinco\RetirosListado;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\Cinco\Terceros;
+use App\Models\Maestras\maeTerceros;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
@@ -50,11 +51,12 @@ class RetirosListadoController extends Controller
     public function show(Request $request)
     {
         $id = $request->input('id');
-        $tercero = Terceros::where('Cod_Ter', $id)->first();
+        $tercero = maeTerceros::where('Cod_Ter', $id)->first();
         if (!$tercero) {
             return redirect()->route('cinco.retiros.index')->with('error', 'No hay registros con esa cedula ingresada.');
         }
-        $arrayliquidacion = $this->liquidaciones($tercero->Fec_Minis);
+        //dd($tercero);
+        $arrayliquidacion = $this->liquidaciones($tercero->fec_minis);
         return view('cinco.retiros.show', compact('tercero', 'arrayliquidacion'));
     }
 

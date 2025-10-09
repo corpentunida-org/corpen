@@ -139,7 +139,7 @@ public function store(Request $request)
                         'tipoObservacion',
                         'scpUsuarioAsignado.maeTercero',
                     ])
-                    ->orderBy('timestam', 'desc');
+                    ->orderBy('timestam', 'desc'); // 👈 asegúrate que el campo exista
             },
         ]);
 
@@ -154,7 +154,6 @@ public function store(Request $request)
             'usuariosEscalamiento' => $usuariosEscalamiento,
         ]);
     }
-
 
     public function edit(ScpSoporte $scpSoporte)
     {
