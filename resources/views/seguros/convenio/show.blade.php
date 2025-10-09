@@ -19,16 +19,16 @@
                         data-bs-original-title="Statistics">
                         <i class="feather-bar-chart-2"></i>
                     </a>
-                    @can('seguros.convenio.store')
+                    @candirect('seguros.convenio.store')
                     <a href="{{ route('seguros.convenio.create', ['id' => $convenio->id]) }}" class="btn btn-light-brand">Copiar Convenio</a>
-                    @endcan
-                    @can('seguros.planes.store')
+                    @endcandirect
+                    @candirect('seguros.planes.store')
                     <a href="{{ route('seguros.planes.create') }}" class="btn btn-success" data-bs-toggle="tooltip"
                         title="" data-bs-original-title="{{ $convenio->nombre }}">
                         <i class="feather-plus me-2"></i>
                         <span>Agregar Plan</span>
                     </a>
-                    @endcan
+                    @endcandirect
                 </div>
             </div>
         </div>
@@ -60,10 +60,10 @@
                                                 <i class="feather-more-vertical"></i>
                                             </a>
                                             <div class="dropdown-menu dropdown-menu-end" style="">
-                                            @can('seguros.planes.update')
+                                            @candirect('seguros.planes.update')
                                                 <a class="dropdown-item" href="{{ route('seguros.planes.edit', ['plan' => $plan->id]) }}">Editar</a>
-                                            @endcan
-                                            @can('seguros.planes.destroy')
+                                            @endcandirect
+                                            @candirect('seguros.planes.destroy')
                                                 <form
                                                     action="{{ route('seguros.planes.destroy', ['plan' => $plan->id]) }}"
                                                     method="POST">
@@ -72,7 +72,7 @@
                                                     <button type="submit"
                                                         class="dropdown-item btnAbrirModalDestroy" data-text="plan ">Eliminar</button>
                                                 </form>
-                                            @endcan
+                                            @endcandirect
                                             </div>
                                         </div>
                                         <div class="text-center">

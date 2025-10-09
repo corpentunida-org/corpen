@@ -1,0 +1,122 @@
+<?php
+
+namespace App\Imports;
+
+use App\Models\Maestras\maeTerceros;
+use App\Models\Seguros\SegAsegurado;
+use App\Models\Seguros\SegPoliza;
+use App\Models\Seguros\SegTercero;
+use App\Models\Seguros\SegPlan;
+use Illuminate\Support\Collection;
+use Maatwebsite\Excel\Concerns\ToCollection;
+use Maatwebsite\Excel\Concerns\WithHeadingRow;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
+use Carbon\Carbon;
+
+class PolizasImport implements ToCollection, WithHeadingRow, WithChunkReading
+{
+    private $failedRows;
+    private $updatedCount;
+
+    public function __construct(&$failedRows, &$updatedCount)
+    {
+        $this->failedRows   = &$failedRows;
+        $this->updatedCount = &$updatedCount;
+    }
+
+    public function collection(Collection $rows)
+    {
+        foreach ($rows as $row) {
+            // Validación de género
+            if (!in_array(strtoupper($row['genero'] ?? ''), ['V', 'H'])) {
+                $this->failedRows[] = [
+                    'cedula' => $row['num_doc'] ?? null,
+                    'obser'  => 'Género inválido. Debe ser V o H',
+                ];
+                continue;
+            }
+
+            // Validación de parentesco
+            if (!in_array(strtoupper($row['parentesco'] ?? ''), ['AF', 'CO', 'HI', 'HE'])) {
+                $this->failedRows[] = [
+                    'cedula' => $row['num_doc'] ?? null,
+                    'obser'  => 'Parentesco inválido. Debe ser AF, CO, HI o HE',
+                ];
+                continue;
+            }
+
+            // Conversión de fecha Excel
+            try {
+                $fechaNacimiento = Carbon::create(1899, 12, 30)
+                    ->addDays(intval($row['fecha_nac']))
+                    ->toDateString();
+
+                $edad = Carbon::parse($fechaNacimiento)->age;
+                if ($edad < 0 || $edad > 120) {
+                    throw new \Exception("Edad inválida: $edad años");
+                }
+            } catch (\Exception $e) {
+                $this->failedRows[] = [
+                    'cedula' => $row['num_doc'] ?? null,
+                    'obser'  => 'Fecha de nacimiento inválida',
+                ];
+                continue;
+            }
+
+            // Guardar o actualizar maeTerceros
+            $tercero = maeTerceros::updateOrCreate(
+                ['cod_ter' => $row['num_doc']],
+                [
+                    'nom_ter' => $row['nombre'],
+                    'fec_nac' => $fechaNacimiento,
+                    'sexo'    => strtoupper($row['genero']),
+                ]
+            );
+
+            // Guardar o actualizar asegurado
+            $asegurado = SegAsegurado::updateOrCreate(
+                ['cedula' => $tercero->cod_ter],
+                [
+                    'parentesco'      => strtoupper($row['parentesco']),
+                    'titular'         => $row['titular'] ?? $tercero->cod_ter,
+                    'valorpAseguradora' => $row['valor_titular'] ?? null,
+                ]
+            );
+
+            // Buscar plan por condición
+            $plan = SegPlan::where('vigente', true)
+                ->where('valor', $row['valor_asegurado'])
+                ->first();
+
+            $plan_id = $plan ? $plan->id : 77;
+
+            // Extra prima
+            $extraPrima = isset($row['extra_prim'])
+                ? intval($row['extra_prim'] * 100)
+                : 0;
+
+            // Guardar o actualizar póliza
+            SegPoliza::updateOrCreate(
+                ['seg_asegurado_id' => $asegurado->cedula],
+                [
+                    'seg_convenio_id'     => $row['poliza'],
+                    'active'              => true,
+                    'fecha_inicio'        => Carbon::now()->toDateString(),
+                    'seg_plan_id'         => $plan_id,
+                    'valor_asegurado'     => $row['valor_asegurado'],
+                    'valor_prima'         => $row['prima'],
+                    'primapagar'          => $row['prima_corpen'],
+                    'extra_prima'         => $extraPrima,
+                    'valorpagaraseguradora' => $row['valor_titular'] ?? null,
+                ]
+            );
+
+            $this->updatedCount++;
+        }
+    }
+
+    public function chunkSize(): int
+    {
+        return 500;
+    }
+}
