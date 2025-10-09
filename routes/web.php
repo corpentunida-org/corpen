@@ -350,94 +350,33 @@ Route::middleware('auth')->prefix('soportes')->name('soportes.')->group(function
     // Tablero general
     Route::get('tablero', [ScpTableroParametroController::class, 'index'])
         ->name('tablero');
+
     // Categorías
     Route::resource('categorias', ScpCategoriaController::class)
-        ->names([
-            'index'   => 'categorias.index',
-            'create'  => 'categorias.create',
-            'store'   => 'categorias.store',
-            'show'    => 'categorias.show',
-            'edit'    => 'categorias.edit',
-            'update'  => 'categorias.update',
-            'destroy' => 'categorias.destroy',
-        ])
         ->parameters(['categorias' => 'scpCategoria']);
+
     // Usuarios
     Route::resource('usuarios', ScpUsuarioController::class)
-    ->names([
-        'index'   => 'usuarios.index',
-        'create'  => 'usuarios.create',
-        'store'   => 'usuarios.store',
-        'show'    => 'usuarios.show',
-        'edit'    => 'usuarios.edit',
-        'update'  => 'usuarios.update',
-        'destroy' => 'usuarios.destroy',
-    ])
-    ->parameters(['usuarios' => 'scpUsuario']);
+        ->parameters(['usuarios' => 'scpUsuario']);
 
     // Estados
     Route::resource('estados', ScpEstadoController::class)
-        ->names([
-            'index'   => 'estados.index',
-            'create'  => 'estados.create',
-            'store'   => 'estados.store',
-            'show'    => 'estados.show',
-            'edit'    => 'estados.edit',
-            'update'  => 'estados.update',
-            'destroy' => 'estados.destroy',
-        ])
         ->parameters(['estados' => 'scpEstado']);
 
     // Prioridades
     Route::resource('prioridades', ScpPrioridadController::class)
-        ->names([
-            'index'   => 'prioridades.index',
-            'create'  => 'prioridades.create',
-            'store'   => 'prioridades.store',
-            'show'    => 'prioridades.show',
-            'edit'    => 'prioridades.edit',
-            'update'  => 'prioridades.update',
-            'destroy' => 'prioridades.destroy',
-        ])
         ->parameters(['prioridades' => 'scpPrioridad']);
 
     // Tipos
     Route::resource('tipos', ScpTipoController::class)
-        ->names([
-            'index'   => 'tipos.index',
-            'create'  => 'tipos.create',
-            'store'   => 'tipos.store',
-            'show'    => 'tipos.show',
-            'edit'    => 'tipos.edit',
-            'update'  => 'tipos.update',
-            'destroy' => 'tipos.destroy',
-        ])
         ->parameters(['tipos' => 'scpTipo']);
 
     // Tipos de Observaciones
     Route::resource('tipo-observaciones', ScpTipoObservacionController::class)
-        ->names([
-            'index'   => 'tipoObservaciones.index',
-            'create'  => 'tipoObservaciones.create',
-            'store'   => 'tipoObservaciones.store',
-            'show'    => 'tipoObservaciones.show',
-            'edit'    => 'tipoObservaciones.edit',
-            'update'  => 'tipoObservaciones.update',
-            'destroy' => 'tipoObservaciones.destroy',
-        ])
         ->parameters(['tipo-observaciones' => 'scpTipoObservacion']);
 
     // Soportes (mantener Resource)
     Route::resource('soportes', ScpSoporteController::class)
-        ->names([
-            'index'   => 'soportes.index',
-            'create'  => 'soportes.create',
-            'store'   => 'soportes.store',
-            'show'    => 'soportes.show',
-            'edit'    => 'soportes.edit',
-            'update'  => 'soportes.update',
-            'destroy' => 'soportes.destroy',
-        ])
         ->parameters(['soportes' => 'scpSoporte']);
 
     // Rutas para Observaciones Anidadas bajo Soportes
@@ -448,16 +387,7 @@ Route::middleware('auth')->prefix('soportes')->name('soportes.')->group(function
         ->name('soportes.observaciones.destroy');
 
     // Sub-Tipos
-    Route::resource('subtipos', ScpSubTipoController::class)
-        ->names([
-            'index'   => 'subtipos.index',
-            'create'  => 'subtipos.create',
-            'store'   => 'subtipos.store',
-            'show'    => 'subtipos.show',
-            'edit'    => 'subtipos.edit',
-            'update'  => 'subtipos.update',
-            'destroy' => 'subtipos.destroy',
-        ]);
+    Route::resource('subtipos', ScpSubTipoController::class);
 
     // Filtros JSON
     Route::get('tipos/filtro/{categoria}', [ScpSoporteController::class, 'getTiposByCategoria'])
@@ -465,7 +395,17 @@ Route::middleware('auth')->prefix('soportes')->name('soportes.')->group(function
 
     Route::get('subtipos/filtro/{tipo}', [ScpSoporteController::class, 'getSubTipos'])
         ->name('subtipos.byTipo');
+
+    // Vista solo de Pendientes
+    Route::get('pendientes', [ScpSoporteController::class, 'pendientes'])
+        ->name('pendientes');
+
+    // Vista solo SinAsignar
+/*     Route::get('sin-asignar', [ScpSoporteController::class, 'sinAsignar'])
+    ->name('soportes.sinAsignar'); */
+
 });
+
 
 
 //VISITAS
