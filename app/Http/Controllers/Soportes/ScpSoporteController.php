@@ -22,6 +22,7 @@ use App\Models\Soportes\ScpCategoria;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
+
 class ScpSoporteController extends Controller
 {
     public function index()
@@ -57,6 +58,7 @@ class ScpSoporteController extends Controller
         
         return view('soportes.soportes.index', compact('categorias', 'categoriaActivaPorDefecto', 'soportes'));
     }
+
 
     public function create()
     {
