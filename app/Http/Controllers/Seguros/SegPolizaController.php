@@ -17,9 +17,10 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\AuditoriaController;
 use Carbon\Carbon;
 use App\Imports\ExcelImport;
-use App\Imports\ExcelExport;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Http\Controllers\Exequial\ComaeTerController;
+use App\Imports\PolizasImport;
+use App\Imports\ExcelExport;
 
 class SegPolizaController extends Controller
 {
@@ -152,7 +153,7 @@ class SegPolizaController extends Controller
         $novedades = SegNovedades::where('id_asegurado', $id)->where('id_poliza', $poliza->id)->get();
         $reclamacion = SegReclamaciones::where('cedulaAsegurado', $id)->with('cambiosEstado')->get();
 
-        if (auth()->user()->can('seguros.poliza.valorpagar')) {
+        if (auth()->user()->hasDirectPermission('seguros.poliza.valorpagar')) {
             $beneficios = SegBeneficios::where('cedulaAsegurado', $id)->where('poliza', $poliza->id)->where('active', true)->get();
         } else {
             $beneficios = collect();
@@ -172,7 +173,7 @@ class SegPolizaController extends Controller
         return view('seguros.polizas.edit');
     }
 
-    public function uploadCreate(Request $request)
+    /*public function uploadCreate(Request $request)
     {
         $request->validate([
             'file' => 'required|mimes:xlsx,xls,csv',
@@ -181,7 +182,6 @@ class SegPolizaController extends Controller
         $updatedCount = 0;
         $failedRows = [];
         foreach ($rows as $index => $row) {
-            //validar campos
             if (!in_array(strtoupper($row['genero']), ['V', 'H'])) {
                 $failedRows[] = [
                     'cedula' => $row['num_doc'],
@@ -251,13 +251,7 @@ class SegPolizaController extends Controller
             $condicion_id = app(SegPlanController::class)->getCondicion($tercero->edad);
             $plan_id = SegPlan::select('id')->where('vigente', true)->where('condicion_corpen', $condicion_id)->where('valor', $row['valor_asegurado'])->first();
             $plan_id_value = $plan_id ? $plan_id->id : 77;
-            /*if (!$plan_id) {
-                $failedRows[] = [
-                    'cedula' => $row['num_doc'],
-                    'obser' => 'No se encontró un plan con el valor asegurado de ' . $row['valor_asegurado'],
-                ];
-                continue;
-            }*/
+            $extraPrima = isset($row['extra_prim']) ? intval($row['extra_prim'] * 100) : null;
             if (!$poliza) {
                 $poliza = SegPoliza::create([
                     'seg_asegurado_id' => $asegurado->cedula,
@@ -268,7 +262,7 @@ class SegPolizaController extends Controller
                     'valor_asegurado' => $row['valor_asegurado'],
                     'valor_prima' => $row['prima'],
                     'primapagar' => $row['prima_corpen'],
-                    'extra_prima' => $row['extra_prim'] ?? 0,
+                    'extra_prima' => $extraPrima ?? 0,
                     'valorpagaraseguradora' => $row['valor_titular'] ?? null,
                 ]);
                 $updatedCount++;
@@ -280,19 +274,38 @@ class SegPolizaController extends Controller
                     'valor_asegurado' => $row['valor_asegurado'],
                     'valor_prima' => $row['prima'],
                     'primapagar' => $row['prima_corpen'],
-                    'extra_prima' => $row['extra_prim'] ?? 0,
+                    'extra_prima' => $extraPrima ?? 0,
                     'valorpagaraseguradora' => $row['valor_titular'] ?? null,
                 ]);
                 $updatedCount++;
-                /*$failedRows[] = [
-                    'cedula' => $row['num_doc'],
-                    'obser' => 'Ya existe una póliza para este asegurado.',
-                ];*/
             }
         }
         return redirect()
             ->route('seguros.poliza.viewupload')
             ->with('success', 'Se actualizaron exitosamente ' . $updatedCount . ' registros')
+            ->with('failedRows', $failedRows);
+    }*/
+
+    public function uploadCreate(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv',
+        ]);
+
+        // Variables que se van a llenar en el import
+        $failedRows = [];
+        $updatedCount = 0;
+
+        // Instancia del import con referencias
+        $import = new PolizasImport($failedRows, $updatedCount);
+
+        // Procesar el archivo
+        Excel::import($import, $request->file('file'));
+
+        // Redirigir con resultados
+        return redirect()
+            ->route('seguros.poliza.viewupload')
+            ->with('success', "Se actualizaron exitosamente {$updatedCount} registros")
             ->with('failedRows', $failedRows);
     }
 
@@ -311,18 +324,10 @@ class SegPolizaController extends Controller
         foreach ($rows as $index => $row) {
             $modeloData = SegPoliza::where('seg_asegurado_id', $row['cod_ter'])->first();
             if ($modeloData) {
-                SegNovedades::create([
-                    'id_asegurado' => $modeloData->seg_asegurado_id,
-                    'id_poliza' => $modeloData->id,
-                    'valorpagar' => $row['deb_mov'],
-                    'valorPrimaPlan' => $modeloData->valor_prima,
-                    'plan' => $modeloData->seg_plan_id,
-                    'fechaNovedad' => Carbon::now()->toDateString(),
-                    'valorAsegurado' => $modeloData->valor_asegurado,
-                    'observaciones' => $request->observacion,
+                $modeloData::update([
+                    'primapagar' => $row['deb_mov'],
+                    'valorpagaraseguradora' => $row['pagar_aco'],
                 ]);
-                $modeloData->valorpagaraseguradora = $row['deb_mov'];
-                $modeloData->save();
                 $updatedCount++;
             } else {
                 $failedRows[] = $row;
@@ -348,14 +353,6 @@ class SegPolizaController extends Controller
 
     public function destroy($poliza, Request $request)
     {
-        /*SegNovedades::create([
-            'id_asegurado' => $request->input('aseguradoid'),
-            'id_poliza' => $poliza,
-            'fechaNovedad' => $now->toDateString(),
-            'retiro' => true,
-            'observaciones' => $request->input('observacionretiro'),
-        ]);*/
-
         SegNovedades::create([
             'id_asegurado' => $request->input('aseguradoid'),
             'id_poliza' => $poliza,
@@ -386,7 +383,7 @@ class SegPolizaController extends Controller
         $datos = SegPoliza::where('active', true)
             ->with(['tercero', 'asegurado'])
             ->get();
-        $headings = ['POLIZA', 'ID', 'NOMBRE', 'NUM DOC', 'FECHA NAC', 'GENERO', 'EDAD', 'DOC AF', 'PARENTESCO', 'FEC NOVEDAD', 'VALOR ASEGURADO', 'EXTRA PRIMA', 'PRIMA'];
+        $headings = ['POLIZA', 'ID', 'NOMBRE', 'NUM DOC', 'FECHA NAC', 'GENERO', 'EDAD', 'DOC AF', 'PARENTESCO', 'FEC NOVEDAD', 'VALOR ASEGURADO', 'EXTRA PRIMA', 'PRIMA PLAN', 'PRIMA CORPEN', 'VALOR TITULAR'];
         $datosFormateados = $datos->map(function ($item) {
             $fechaNacimiento = Carbon::parse($item->fecha_nacimiento);
             return [
@@ -402,9 +399,11 @@ class SegPolizaController extends Controller
                 'fec_novedad' => $item->fecha_novedad,
                 'valor_asegurado' => $item->valor_asegurado,
                 'extra_prima' => $item->extra_prima,
-                'prima' => $item->valor_prima,
+                'prima_plan' => $item->valor_prima ?? '0',
+                'prima_corpen' => (int) ($item->primapagar ?: 0),
+                'valor_titular' => $item->valorpagaraseguradora ?? '',
             ];
         });
-        return Excel::download(new ExcelExport($datosFormateados, $headings), 'DATOS SEGUROS VIDA.xlsx');
+        return Excel::download(new ExcelExport($datosFormateados, $headings), 'DATOS_SEGUROS_VIDA_' . now()->format('Y-m-d') . '.xlsx');
     }
 }

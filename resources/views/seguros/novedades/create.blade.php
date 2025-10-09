@@ -3,10 +3,7 @@
     <x-error />
     @php
         $activeTab = $activeTab ?? 'generalTab';
-    @endphp
-    @php
-        $activeTab = $activeTab ?? 'generalTab';
-    @endphp
+    @endphp    
     <div class="col-xxl-12 col-xl-12">
         <div class="card border-top-0">
             <div class="card-header p-0">
@@ -46,32 +43,60 @@
                                     value="{{ $asegurado->nombre_titular ?? ' ' }}" disabled>
                             </div>
                         </div>
-                        <div class="row">
-                            <div class="col-lg-4 mb-4">
-                                <label class="form-label">Plan</label>
-                                <input type="text" class="form-control uppercase-input"
-                                    value="{{ @$asegurado?->polizas?->first()?->plan?->name ?? '' }}" disabled>
-                            </div>
-                            <div class="col-lg-4 mb-4">
-                                <label class="form-label">Valor Asegurado</label>
-                                <input type="text" id="valoraseguradoplan" name="valorAsegurado" class="form-control"
-                                    value="$ {{ number_format(@$asegurado?->polizas?->first()?->valor_asegurado ?? 0) }}"
-                                    disabled>
-                            </div>
-                            <div class="col-lg-4 mb-4">
-                                <label class="form-label">Valor a Pagar Mensualidad</label>
-                                <input type="text" id="primaplan" class="form-control" name="valorPrima"
-                                    value="$ {{ number_format(@$asegurado?->polizas?->first()?->primapagar ?? 0) }}"
-                                    disabled>
-                            </div>
-                        </div>
                         @if (isset($asegurado))
+                            <div class="table-responsive mt-4">
+                                <label class="form-label">Grupo Familiar</span></label>
+                                <table class="table mb-0">
+                                    <thead>
+                                        <tr class="border-top">
+                                            <th>Cedula</th>
+                                            <th>Nombre</th>
+                                            <th>Parentesco</th>
+                                            <th>Plan</th>
+                                            <th class="text-center">Valor Asegurado</th>
+                                            <th class="text-end">Prima Plan</th>
+                                            <th class="text-end">Valor a Pagar</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($grupoFamiliar as $gf)
+                                            <tr>
+                                                <td><a
+                                                        href="{{ route('seguros.poliza.show', ['poliza' => 'ID']) . '?id=' . $gf->cedula }}">{{ $gf->cedula }}</a>
+                                                </td>
+                                                <td>{{ $gf->nombre_tercero ?? ' ' }}</td>
+                                                <td>{{ $gf->parentesco }}</td>
+                                                <td><span
+                                                        class="badge bg-soft-warning text-warning">{{ $gf->polizas->first()->plan->name }}</span>
+                                                </td>
+                                                <td class="text-center">$
+                                                    {{ number_format($gf->polizas->first()->valor_asegurado) }}
+                                                </td>
+                                                <td class="text-end">$
+                                                    {{ number_format($gf->polizas->first()->valor_prima) }}</td>
+                                                <td class="text-end">$
+                                                    {{ number_format($gf->polizas->first()->primapagar) }}</td>
+                                            </tr>
+                                        @endforeach
+                                        <tr>
+                                            <td colspan="6" class="text-end">Total
+                                                <span class="badge bg-gray-200 text-dark" style="font-size: 15px;">$
+                                                    {{ number_format($totalPrima) }} </span>
+                                            </td>
+                                            <td class="text-end">Total
+                                                <span class="badge bg-gray-200 text-dark" style="font-size: 15px;">$
+                                                    {{ number_format($totalPrimaCorpen) }} </span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                             <form method="POST" action="{{ route('seguros.novedades.store') }}" id="formAddNovedad"
-                                novalidate>
+                                enctype="multipart/form-data" novalidate>
                                 @csrf
                                 @method('POST')
                                 <div class="row">
-                                    <div class="col-lg-6 mb-4">
+                                    <div class="col-lg-5 mb-4">
                                         <input type="hidden" name="asegurado" value="{{ $asegurado->cedula }}">
                                         <input type="hidden" name="tipoNovedad" value="1">
                                         <label class="form-label">Asignar Plan<span class="text-danger">*</span></label>
@@ -118,63 +143,10 @@
                                             value="{{ $asegurado->polizas->first()->primapagar ?? 0 }}"
                                             id="valorapagarcorpen">
                                     </div>
-                                </div>
-                                <div class="table-responsive mt-4">
-                                    <label class="form-label">Grupo Familiar</span></label>
-                                    <table class="table mb-0">
-                                        <thead>
-                                            <tr class="border-top">
-                                                <th>Cedula</th>
-                                                <th>Nombre</th>
-                                                <th>Parentesco</th>
-                                                <th>Plan</th>
-                                                <th class="text-center">Valor Asegurado</th>
-                                                <th class="text-end">Prima Plan</th>
-                                                <th class="text-end">Valor a Pagar</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            @foreach ($grupoFamiliar as $gf)
-                                                <tr>
-                                                    <td><a
-                                                            href="{{ route('seguros.poliza.show', ['poliza' => 'ID']) . '?id=' . $gf->cedula }}">{{ $gf->cedula }}</a>
-                                                    </td>
-                                                    <td>{{ $gf->nombre_tercero ?? ' ' }}</td>
-                                                    <td>{{ $gf->parentesco }}</td>
-                                                    <td><span
-                                                            class="badge bg-soft-warning text-warning">{{ $gf->polizas->first()->plan->name }}</span>
-                                                    </td>
-                                                    <td class="text-center">$
-                                                        {{ number_format($gf->polizas->first()->valor_asegurado) }}
-                                                    </td>
-                                                    <td class="text-end">$
-                                                        {{ number_format($gf->polizas->first()->valor_prima) }}</td>
-                                                    <td class="text-end">$
-                                                        {{ number_format($gf->polizas->first()->primapagar) }}</td>
-                                                </tr>
-                                            @endforeach
-                                            <tr>
-                                                <td colspan="6" class="text-end">Total
-                                                    <span class="badge bg-gray-200 text-dark"
-                                                        style="font-size: 15px;">$
-                                                        {{ number_format($totalPrima) }} </span>
-                                                </td>
-                                                <td class="text-end">Total
-                                                    <span class="badge bg-gray-200 text-dark"
-                                                        style="font-size: 15px;">$
-                                                        {{ number_format($totalPrimaCorpen) }} </span>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                                @if ($asegurado->parentesco == 'AF' || $asegurado->viuda)
-                                    <div class="row align-items-center justify-content-end">
-                                        <div class="col-lg-9 text-end mt-4">
-                                            <label class="form-label">Total Valor a Pagar Titular <span
+                                    @if ($asegurado->parentesco == 'AF' || $asegurado->viuda)
+                                        <div class="col-lg-3 mb-4">
+                                            <label class="form-label">Total a Pagar Titular<span
                                                     class="text-danger">*</span></label>
-                                        </div>
-                                        <div class="col-lg-3 mt-4">
                                             <div class="input-group">
                                                 <div class="input-group-text">$</div>
                                                 <input class="form-control"
@@ -182,17 +154,14 @@
                                                     type="text" name="valorpagaraseguradora">
                                             </div>
                                         </div>
-                                    </div>
-                                @endif
+                                    @endif
+                                </div>
                                 <div class="row">
                                     <div class="col-lg-2 mb-4">
                                         <label class="form-label">Estado de la Novedad<span
                                                 class="text-danger">*</span></label>
-                                        <select class="form-control" name="estado">
+                                        <select class="form-control" name="estado" readonly>
                                             <option value="1">SOLICITUD</option>
-                                            <option value="2">RADICADO</option>
-                                            <option value="3">APROBADO</option>
-                                            <option value="4">NEGADO</option>
                                         </select>
                                     </div>
                                     <div class="col-lg-10 mb-4">
@@ -204,13 +173,10 @@
                                             value="{{ $asegurado->polizas->first()->id }}">
                                     </div>
                                 </div>
-                                <div class="col-md-8">
+                                <div class="col-md-12">
                                     <label for="ubicacion_foto" class="form-label">Formulario</label>
-                                    <input class="form-control @error('ubicacion_foto') is-invalid @enderror"
-                                        type="file" id="ubicacion_foto" name="ubicacion_foto" accept="image/*">
-                                    @error('ubicacion_foto')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
+                                    <input class="form-control" type="file" id="formulario_nov"
+                                        name="formulario_nov" required>
                                     <small class="form-text text-muted">Formato permitidos: PDF</small>
                                 </div>
                                 <div class="d-flex flex-row-reverse gap-2 mt-2">
@@ -336,9 +302,18 @@
                                 </select>
                             </div>
                         </div>
-                        <div class="col-lg-12 mb-4">
-                            <label class="form-label">Observación<span class="text-danger">*</span></label>
-                            <input type="text" class="form-control text-uppercase" name="observaciones" required>
+                        <div class="row">
+                            <div class="col-lg-9 mb-4">
+                                <label class="form-label">Observación<span class="text-danger">*</span></label>
+                                <input type="text" class="form-control text-uppercase" name="observaciones"
+                                    required>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="ubicacion_foto" class="form-label">Formulario</label>
+                                <input class="form-control" type="file" id="formulario_nov" name="formulario_nov"
+                                    required>
+                                <small class="form-text text-muted">Formato permitidos: PDF</small>
+                            </div>
                         </div>
                         <div class="d-flex flex-row-reverse gap-2 mt-2">
                             <button type="submit" class="btn btn-success mt-4">
@@ -382,13 +357,20 @@
                                         ${{ number_format($plan->valor) }} -
                                         ${{ number_format($plan->prima_aseguradora) }}
                                     </option>
-                                </select>                                
+                                </select>
                                 <span
                                     class="fs-12 fw-normal text-muted text-truncate-1-line pt-1">{{ $condicion->descripcion }}</span>
                             </div>
                             <div class="mb-4">
                                 <label class="form-label">Observación<span class="text-danger">*</span></label>
-                                <input type="text" class="form-control uppercase-input" name="observacionretiro" required>
+                                <input type="text" class="form-control uppercase-input" name="observacionretiro"
+                                    required>
+                            </div>
+                            <div class="col-md-12">
+                                <label for="ubicacion_foto" class="form-label">Formulario</label>
+                                <input class="form-control" type="file" id="formulario_nov" name="formulario_nov"
+                                    required>
+                                <small class="form-text text-muted">Formato permitidos: PDF</small>
                             </div>
                             <div class="d-flex flex-row-reverse gap-2 mt-2">
                                 <button class="btn btn-danger mt-4" data-bs-toggle="tooltip" title="Timesheets"

@@ -62,6 +62,7 @@
                     </a>
                 </div>
             </div>
+
             {{-- Tabs por categoría --}}
             <ul class="nav nav-tabs mb-3" id="soporteTabs" role="tablist">
                 @candirect('soporte.lista.todo')    

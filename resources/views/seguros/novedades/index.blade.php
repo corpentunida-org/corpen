@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zxx">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -22,6 +23,7 @@
     <!--! END: Vendors CSS-->
     <!--! BEGIN: Custom CSS-->
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/css/theme.min.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!--! END: Custom CSS-->
     <!--! HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries !-->
     <!--! WARNING: Respond.js doesn"t work if you view the page via file: !-->
@@ -32,6 +34,11 @@
 </head>
 
 <body>
+    <style>
+        .uppercase-input {
+            text-transform: uppercase;
+        }
+    </style>
     <!--! ================================================================ !-->
     <!--! [Start] Navigation Manu !-->
     <!--! ================================================================ !-->
@@ -478,7 +485,7 @@
     <!--! ================================================================ !-->
     <!--! END: Compose Mail Modal !-->
     <!--! ================================================================ !-->
-   
+
 
     <!--! ================================================================ !-->
     <!--! [End] Theme Customizer !-->
