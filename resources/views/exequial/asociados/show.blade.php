@@ -54,7 +54,7 @@
                             </a> -->
 
                                 @if ($asociado['stade'])
-                                    @can('exequial.prestarServicio.store')
+                                    @candirect('exequial.prestarServicio.store')
                                     <a href="javascript:void(0);" class="border" data-bs-toggle="offcanvas"
                                         data-bs-target="#proposalSent2">
                                         <div class="wd-60 d-flex align-items-center justify-content-center"
@@ -64,14 +64,14 @@
                                             <i class="fa-regular fa-bell"></i>
                                         </div>
                                     </a>
-                                    @endcan
-                                    @can('exequial.asociados.update')
+                                    @endcandirect
+                                    @candirect('exequial.asociados.update')
                                     <a href="{{ route('exequial.asociados.edit', $asociado['documentId']) }}"
                                         class="btn btn-warning" data-bs-toggle="tooltip">
                                         <i class="feather-clock me-2"></i>
                                         <span>Actualizar Titular</span>
                                     </a>
-                                    @endcan
+                                    @endcandirect
                                 @else
                                     <a class="btn btn-danger" data-bs-toggle="tooltip">
                                         <span>Titular Inactivo</span>
