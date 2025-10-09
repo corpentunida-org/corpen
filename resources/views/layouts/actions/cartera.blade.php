@@ -5,12 +5,42 @@
         <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
     </a>
     <ul class="nxl-submenu">
-        {{-- Enlace a Interacciones --}}
-        <li class="nxl-item">
-            <a class="nxl-link" href="{{ route('interactions.index') }}">
+        {{-- Menú de Interacciones con submenú --}}
+        <li class="nxl-item nxl-hasmenu">
+            <a class="nxl-link">
                 Interacciones
+                <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
             </a>
+            <ul class="nxl-submenu">
+                <li class="nxl-item">
+                    <a class="nxl-link" href="{{ route('interactions.create') }}">
+                        2.1. Crear
+                    </a>
+                </li>
+                <li class="nxl-item">
+                    <a class="nxl-link" href="{{ route('interactions.store') }}">
+                        2.2. Mis Interacción
+                    </a>
+                </li>
+                <li class="nxl-item">
+                    <a class="nxl-link" href="{{ route('interactions.store') }}">
+                        2.3. Informe
+                    </a>
+                </li>
+                <li class="nxl-item">
+                    <a class="nxl-link" href="#">
+                        2.4. Consultas
+                    </a>
+                </li>
+                <li class="nxl-item">
+                    <a class="nxl-link" href="#">
+                        2.5. Administrador
+                    </a>
+                </li>
+            </ul>
         </li>
+
+        {{-- Cartas --}}
         <li class="nxl-item">
             <a class="nxl-link" href="{{ route('cartera.morosos.index') }}">
                 Cartas
