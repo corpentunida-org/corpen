@@ -5,8 +5,8 @@
     </a>
     <ul class="nxl-submenu">
         <li class="nxl-item"><a class="nxl-link" href="{{ route('exequial.asociados.index')}}">Titulares</a></li>
-        @can('exequial.prestarServicio.index')
+        @candirect('exequial.prestarServicio.index')
         <li class="nxl-item"><a class="nxl-link" href="{{ route('exequial.prestarServicio.index')}}" >Prestar Servicio</a></li>
-        @endcan
+        @endcandirect
     </ul>
 </li>

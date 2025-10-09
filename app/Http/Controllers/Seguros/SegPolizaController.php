@@ -170,8 +170,7 @@ class SegPolizaController extends Controller
 
     public function edit(SegPoliza $segPoliza)
     {
-        return view('create');
-        //return view('seguros.polizas.edit');
+        return view('seguros.polizas.edit');
     }
 
     /*public function uploadCreate(Request $request)
