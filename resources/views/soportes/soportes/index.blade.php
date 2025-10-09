@@ -52,12 +52,14 @@
                                         <th>Fecha Creado</th>
                                         <th>Creado Por</th>
                                         <th>Área</th>
-                                        <th>Módulo</th>
+                                        <th>Categoria</th>
+                                        <th>Tipo</th>
+                                        <th>Modulo</th> {{-- SubTipo --}}
                                         <th>Prioridad</th>
                                         <th>Descripción</th>
                                         <th>Fecha Update</th>
-                                        <th>JEFE TI</th> {{-- Asignado Inicialmente siempre Jefe --}}
-                                        <th>Escalado</th> {{--  --}}
+                                        {{--<th>JEFE TI</th>  Asignado Inicialmente siempre Jefe --}}
+                                        <th>Asignado</th> {{--  --}}
                                         <th>Estado</th>
                                         <th class="text-end">Acciones</th>
                                     </tr>
@@ -80,46 +82,74 @@
                                             };
                                         @endphp
                                         <tr>
+                                            {{-- ID --}}
                                             <td>
                                                 <a href="javascript:void(0)"
-                                                   class="soporte-id fw-bold text-decoration-underline"
-                                                   data-id="{{ $soporte->id }}"
-                                                   data-fecha="{{ $soporte->created_at->format('d/m/Y H:i') }}"
-                                                   data-creado="{{ $soporte->usuario->name ?? 'N/A' }}"
-                                                   data-area="{{ $areaModal }}"
-                                                   data-subtipo="{{ $soporte->subTipo->nombre ?? '' }}"
-                                                   data-prioridad="{{ $soporte->prioridad->nombre ?? 'N/A' }}"
-                                                   data-detalles="{{ $soporte->detalles_soporte }}"
-                                                   data-updated="{{ $soporte->updated_at->format('d/m/Y H:i') }}"
-                                                   data-asignado="{{ $soporte->maeTercero->nom_ter ?? 'Sin asignar' }}"
-                                                   data-escalado="{{ $soporte->usuario_escalado ?? 'Sin escalar' }}"
-                                                   data-estado="{{ $soporte->estado ?? 'Pendiente' }}">
+                                                class="soporte-id fw-bold text-decoration-underline"
+                                                data-id="{{ $soporte->id }}"
+                                                data-fecha="{{ $soporte->created_at->format('d/m/Y H:i') }}"
+                                                data-creado="{{ $soporte->usuario->name ?? 'N/A' }}"
+                                                data-area="{{ $areaModal }}"
+                                                data-categoria="{{ $soporte->categoria->nombre ?? 'N/A' }}"
+                                                data-tipo="{{ $soporte->tipo->nombre ?? 'N/A' }}"
+                                                data-subtipo="{{ $soporte->subTipo->nombre ?? 'N/A' }}"
+                                                data-modulo="{{ $soporte->subTipo->nombre ?? 'N/A' }}"
+                                                data-prioridad="{{ $soporte->prioridad->nombre ?? 'N/A' }}"
+                                                data-detalles="{{ $soporte->detalles_soporte }}"
+                                                data-updated="{{ $soporte->updated_at->format('d/m/Y H:i') }}"
+                                                data-escalado="{{ $soporte->usuario_escalado ?? 'Sin escalar' }}"
+                                                data-estado="{{ $soporte->estado ?? 'Pendiente' }}">
                                                     {{ $soporte->id }}
                                                 </a>
                                             </td>
+
+                                            {{-- Fecha Creado --}}
                                             <td>{{ $soporte->created_at->format('d/m/Y H:i') }}</td>
+
+                                            {{-- Creado Por --}}
                                             <td>{{ $soporte->usuario->name ?? 'N/A' }}</td>
-                                            <td>{{ $soporte->cargo->gdoArea->nombre ?? 'Soporte' }}</td>
-                                            <td>{{ $soporte->subTipo->nombre ?? '' }}</td>
+
+                                            {{-- Área --}}
+                                            <td>{{ $areaModal }}</td>
+
+                                            {{-- Categoría --}}
+                                            <td>{{ $soporte->categoria->nombre ?? 'N/A' }}</td>
+
+                                            {{-- Tipo --}}
+                                            <td>{{ $soporte->tipo->nombre ?? 'N/A' }}</td>
+
+                                            {{-- SubTipo --}}
+                                            <td>{{ $soporte->subTipo->nombre ?? 'N/A' }}</td>
+
+                                            {{-- Prioridad --}}
                                             <td>
                                                 <span class="badge bg-{{ $prioridadColor }}">
                                                     {{ $soporte->prioridad->nombre ?? 'N/A' }}
                                                 </span>
                                             </td>
+
+                                            {{-- Descripción --}}
                                             <td title="{{ $soporte->detalles_soporte }}" 
                                                 data-bs-toggle="tooltip" 
                                                 data-bs-placement="top" 
                                                 data-bs-custom-class="custom-tooltip">
                                                 {{ Str::limit($soporte->detalles_soporte, 50) }}
                                             </td>
+
+                                            {{-- Fecha Update --}}
                                             <td>{{ $soporte->updated_at->format('d/m/Y H:i') }}</td>
-                                            <td>{{ $soporte->maeTercero->nom_ter ?? 'Sin asignar' }}</td>
+
+                                            {{-- Asignado --}}
                                             <td>{{ $soporte->scpUsuarioAsignado->maeTercero->nom_ter ?? 'Sin escalar' }}</td>
+
+                                            {{-- Estado --}}
                                             <td>
                                                 <span class="badge bg-{{ $estadoColor }}">
                                                     {{ $soporte->estadoSoporte->nombre ?? 'Pendiente' }}
                                                 </span>
                                             </td>
+
+                                            {{-- Acciones --}}
                                             <td class="hstack justify-content-end gap-4 text-end">
                                                 <div class="dropdown open">
                                                     <a href="javascript:void(0)" class="avatar-text avatar-md" data-bs-toggle="dropdown">
@@ -150,10 +180,11 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="12" class="text-center">No hay soportes en esta categoría.</td>
+                                            <td colspan="14" class="text-center">No hay soportes en esta categoría.</td>
                                         </tr>
                                     @endforelse
                                 </tbody>
+
                             </table>
                         </div>
                     </div>
@@ -189,8 +220,8 @@
                         <dt class="col-sm-3">Fecha Update</dt>
                         <dd class="col-sm-9" id="modal-fecha-update"></dd>
                         <dt class="col-sm-3">Jefe TI</dt>
-                        <dd class="col-sm-9" id="modal-asignado"></dd>
-                        <dt class="col-sm-3">Escalado</dt>
+                        {{--<dd class="col-sm-9" id="modal-asignado"></dd>--}}
+                        <dt class="col-sm-3">Asignado</dt>
                         <dd class="col-sm-9" id="modal-escalado"></dd>
                         <dt class="col-sm-3">Estado</dt>
                         <dd class="col-sm-9" id="modal-estado"></dd>
