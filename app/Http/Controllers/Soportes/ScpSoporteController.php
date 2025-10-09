@@ -21,50 +21,32 @@ use App\Models\Soportes\ScpUsuario;
 
 class ScpSoporteController extends Controller
 {
-
     public function index()
     {
+        // -------------------------------------------------------------------------
+        // 1. AQUÍ DEFINES EL NOMBRE EXACTO DE LA PESTAÑA QUE QUIERES ACTIVA
+        // -------------------------------------------------------------------------
+        $categoriaActivaPorDefecto = 'En Proceso'; // Puedes cambiar esto a 'Pendiente', 'Cerrado', etc.
+
+        // 2. Obtenemos TODOS los soportes, como en tu código original
         $soportes = ScpSoporte::with(['tipo', 'subTipo', 'prioridad', 'maeTercero', 'usuario', 'cargo.gdoArea', 'lineaCredito', 'scpUsuarioAsignado.maeTercero', 'estadoSoporte'])
             ->orderBy('created_at', 'desc')
-            ->get(); 
-        
+            ->get();
+
+        // 3. Agrupamos los soportes por el nombre de su estado (categoría)
         $categorias = $soportes->groupBy(function ($soporte) {
-            return $soporte->estadoSoporte->nombre ?? 'Pendiente';
+            return $soporte->estadoSoporte->nombre ?? 'Sin Categoría';
         });
 
-        return view('soportes.soportes.index', compact('categorias'));
+        // 4. (Opcional, pero recomendado) Verificamos si la categoría por defecto existe.
+        // Si no existe (p. ej., no hay soportes "En Proceso"), activamos la primera que encontremos.
+        if (!$categorias->has($categoriaActivaPorDefecto)) {
+            $categoriaActivaPorDefecto = $categorias->keys()->first();
+        }
+
+        // 5. Pasamos ambas variables a la vista
+        return view('soportes.soportes.index', compact('categorias', 'categoriaActivaPorDefecto'));
     }
-
-
-public function index()
-{
-    // Traemos todos los soportes con sus relaciones
-    $soportes = ScpSoporte::with([
-        'tipo',
-        'subTipo',
-        'prioridad',
-        'maeTercero', 
-        'usuario',
-        'cargo.gdoArea',   
-        'lineaCredito',
-        'scpUsuarioAsignado.maeTercero',
-        'estadoSoporte',
-    ])
-    ->orderBy('created_at', 'desc')
-    ->get(); // No paginamos todavía porque vamos a agrupar
-
-    // Agrupamos por estado (puedes cambiar a cualquier campo que quieras como categoría)
-    $categorias = $soportes->groupBy(function($soporte) {
-        return $soporte->estadoSoporte->nombre ?? 'Pendiente';
-    });
-
-    return view('soportes.soportes.index', compact('categorias'));
-}
-
-
-
-
-
 
     public function create()
     {
@@ -120,7 +102,7 @@ public function index()
             'tipo',
             'subTipo',
             'prioridad',
-            'maeTercero'
+            'maeTercero',
             'usuario',
             'cargo',
             'lineaCredito',
@@ -132,19 +114,9 @@ public function index()
                         'tipoObservacion',
                         'usuarioAsignado', // <-- corregido
                     ])
-                    ->orderBy('timestam', 'desc');
+                    ->orderBy('timestam', 'desc'); // 👈 asegúrate que el campo exista
             },
             'scpUsuarioAsignado', // este es el escalado guardado en el soporte
-
-                $query->with([
-                    'estado',
-                    'usuario',
-                    'tipoObservacion',
-                    'usuarioAsignado' // <-- corregido
-                ])->orderBy('timestam', 'desc');
-            },
-            'scpUsuarioAsignado' // este es el escalado guardado en el soporte
-
         ]);
 
         $estados = ScpEstado::all();
@@ -158,7 +130,6 @@ public function index()
             'usuariosEscalamiento' => $usuariosEscalamiento,
         ]);
     }
-
 
     public function edit(ScpSoporte $scpSoporte)
     {
@@ -222,7 +193,6 @@ public function index()
         return redirect()->route('soportes.soportes.index')->with('success', 'Soporte eliminado exitosamente.');
     }
 
-
     public function storeObservacion(Request $request, ScpSoporte $scpSoporte)
     {
         $request->validate([
@@ -257,13 +227,8 @@ public function index()
 
         $scpSoporte->update($updateData);
 
-
-        
-        return redirect()->route('soportes.soportes.show', $scpSoporte)
-            ->with('success', 'Observación añadida y soporte actualizado exitosamente.');
-
+        return redirect()->route('soportes.soportes.show', $scpSoporte)->with('success', 'Observación añadida y soporte actualizado exitosamente.');
     }
-
 
     public function destroyObservacion(ScpSoporte $scpSoporte, ScpObservacion $scpObservacion)
     {
@@ -274,8 +239,6 @@ public function index()
         $scpObservacion->delete();
         return redirect()->route('soportes.soportes.show', $scpSoporte)->with('success', 'Observación eliminada exitosamente.');
     }
-
-
 
     public function getSubTipos($tipoId)
     {
