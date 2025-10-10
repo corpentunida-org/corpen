@@ -363,9 +363,9 @@ $(document).ready(function () {
           $('#info-ciudad').text(data.ciudad ?? 'N/A');
           $('#info-departamento').text(data.departamento ?? 'N/A');
           $('#info-pais').text(data.pais ?? 'N/A');
-          $('#info-distrito').text(data.distrito ?? 'N/A');
-          $('#info-congregacion').text(data.congregacion ?? 'N/A');
-          $('#info-codcong').text(data.cod_cong ?? 'N/A');
+          $('#info-distrito').text(data.cod_dist ?? 'N/A');
+          $('#info-congregacion').text(data.congrega ?? 'N/A');
+          $('#info-codcong').text(data.congrega ?? 'N/A');
 
           $('#btn-editar-cliente').attr('href', `/maestras/terceros/${data.cod_ter}/edit`);
           $('#client-info').fadeIn();

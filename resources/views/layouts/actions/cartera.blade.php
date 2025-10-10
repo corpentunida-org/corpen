@@ -14,15 +14,15 @@
             <ul class="nxl-submenu">
                 <li class="nxl-item">
                     <a class="nxl-link" href="{{ route('interactions.create') }}">
-                        2.1. Crear
+                        Crear
                     </a>
                 </li>
                 <li class="nxl-item">
                     <a class="nxl-link" href="{{ route('interactions.store') }}">
-                        2.2. Mis Interacción
+                        Interacción
                     </a>
                 </li>
-                <li class="nxl-item">
+{{--                 <li class="nxl-item">
                     <a class="nxl-link" href="{{ route('interactions.store') }}">
                         2.3. Informe
                     </a>
@@ -36,7 +36,7 @@
                     <a class="nxl-link" href="#">
                         2.5. Administrador
                     </a>
-                </li>
+                </li> --}}
             </ul>
         </li>
 
