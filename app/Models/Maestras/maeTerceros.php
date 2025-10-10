@@ -31,169 +31,177 @@ class maeTerceros extends Model
         'fec_aport'  => 'datetime',
     ];
     protected $fillable = [
-        'id',
-        'cod_ter', 
-        'nom_ter', 
-        'estado', 
-        'apl1', 
-        'apl2', 
-        'nom1', 
-        'nom2', 
-        'dir', 
-        'dir1', 
-        'dir2',
-        'tel1', 
-        'email', 
-        'fax1', 
-        'fec_ing', 
-        'ciudad', 
-        'tip_prv', 
-        'cod_act', 
-        'cod_cla',
-        'int_mora', 
-        'dia_plaz', 
-        'por_des', 
-        'observ', 
-        'aut_ret', 
-        'por_ica', 
-        'repres',
-        'cta_ban', 
-        'clasific', 
-        'cod_can', 
-        'cod_ven', 
-        'por_com', 
-        'ind_suc', 
-        'ind_cred',
-        'cupo_cred', 
-        'ind_rete', 
-        'raz', 
-        'dpto', 
-        'mun', 
-        'tip_pers', 
-        'dv', 
-        'tdoc', 
-        'cod_ciu',
-        'cont_cxc', 
-        'ind_ret', 
-        'i_cupocc', 
-        'cupo_cxc', 
-        'i_cupocp', 
-        'cod_zona', 
-        'bloqueo',
-        'exten', 
-        'depa', 
-        'conta', 
-        'cargo', 
-        'cel',
-        'rtiva', 
-        'rtica', 
-        'pais', 
-        'prec_rem',
-        'lista_prec', 
-        'ind_iva', 
-        'cupo_cxp', 
-        'id_ter', 
-        'cod_bod', 
-        'ind_mayor', 
-        'fec_cump',
-        'tel2', 
-        'por_cred', 
-        'pla_com', 
-        'r_semana', 
-        'pago', 
-        'pago1', 
-        'tipo_ter', 
-        'razon_soc',
-        'apell1', 
-        'apell2', 
-        'digito_v', 
-        'dir_comer', 
-        'ret_iva', 
-        'ret_ica', 
-        'bloq_aut',
-        'bloq_tmk', 
-        'bloq_ate', 
-        'cod_ban', 
-        'cta', 
-        'cod_depa', 
-        'cod_pais', 
-        'uni_fra',
-        'ind_requ', 
-        'XXX', 
-        'ind_items', 
-        'fec_act', 
-        'icrecon', 
-        'ind_doc', 
-        'dia_com',
-        'esp_gab', 
-        'ret_prv', 
-        'inf_ter', 
-        'indpcom', 
-        'dp1', 
-        'dp2', 
-        'dp3', 
-        'pc1', 
-        'pc2',
-        'pc3', 
-        'por_comi', 
-        'ind_tmk', 
-        'fec_dat', 
-        'email_fe', 
-        'dto_det', 
-        'ciu_comer',
-        'exo_bloq', 
-        'tip_cli', 
-        'dia_adp', 
-        'clas_cli', 
-        'fec_nac', 
-        'contacto', 
-        'cont_tel',
-        'i_puntos', 
-        'ind_cree', 
-        'cod_activ', 
-        'cod_ven1', 
-        'cod_ven2', 
-        'cod_ven3', 
-        'cod_ven4',
-        'email_fact', 
-        'cod_suc', 
-        'fecha_aded', 
-        'suc_cli', 
-        'cod_respfiscal', 
-        'cod_tributo',
-        'cod_postal', 
-        'Cod_acteco', 
-        'fec_minis', 
-        'cod_dist', 
-        'cod_est', 
-        'tel',
-        'mail_conyu', 
-        'num_hijos', 
-        'parentesco', 
-        'nom_conyug', 
-        'id_conyuge', 
-        'est_civil',
-        'barrio', 
-        'fec_falle', 
-        'fecha_lice', 
-        'fecha_ipuc', 
-        'sexo', 
-        'lugar_naci',
-        'cod_lice', 
-        'cod_clase', 
-        'congrega', 
-        'fec_aport', 
-        'fec_expcc', 
-        'lugar_expcc',
-        'respon', 
-        'regimen', 
-        'matricula', 
-        'codimpuesto', 
-        'codpostal', 
-        'cta_icap',
-        'cta_icac', 
-        'email_fac',
+
+        // ----------------------
+        // IDENTIFICACIÓN TERCERO
+        // ----------------------
+        'id',               // ID interno (PK)
+        'id_ter',           // ID tercero externo
+        'cod_ter',          // CÉDULA O NIT
+        'dv',               // DÍGITO DE VERIFICACIÓN
+        'digito_v',         // DÍGITO VERIFICACIÓN alternativo
+        'tdoc',             // TIPO DOCUMENTO
+        'tip_pers',         // TIPO DE PERSONA (natural o jurídica)
+        'tipo_ter',         // TIPO DE TERCERO
+        'tip_cli',          // TIPO DE CLIENTE
+
+        // ----------------------
+        // ACTIVIDAD / CLASIFICACIÓN
+        // ----------------------
+        'cod_activ',        // CÓDIGO ACTIVIDAD
+        'Cod_acteco',       // CÓDIGO ACTIVIDAD ECONÓMICA
+        'cod_cla',          // CÓDIGO CLASIFICACIÓN
+        'clasific',         // CLASIFICACIÓN
+        'clas_cli',         // CLASIFICACIÓN CLIENTE
+
+        // ----------------------
+        // UBICACIÓN / CÓDIGOS
+        // ----------------------
+        'cod_ciu',          // CÓDIGO CIUDAD
+        'ciudad',           // CIUDAD
+        'mun',              // MUNICIPIO
+        'dpto',             // DEPARTAMENTO
+        'depa',             // DEPARTAMENTO alternativo
+        'pais',             // PAÍS
+        'cod_depa',         // CÓDIGO DEPARTAMENTO
+        'cod_pais',         // CÓDIGO PAÍS
+        'cod_dist',         // CÓDIGO DISTRITO
+        'cod_postal',       // CÓDIGO POSTAL
+        'codpostal',        // CÓDIGO POSTAL alternativo
+        'cod_suc',          // CÓDIGO SUCURSAL
+        'cod_bod',          // CÓDIGO BODEGA
+        'cod_ban',          // CÓDIGO BANCO
+        'cod_zona',         // CÓDIGO ZONA
+        'cod_ven',          // CÓDIGO VENDEDOR
+        'cod_ven1',         // CÓDIGO VENDEDOR 1
+        'cod_ven2',         // CÓDIGO VENDEDOR 2
+        'cod_ven3',         // CÓDIGO VENDEDOR 3
+        'cod_ven4',         // CÓDIGO VENDEDOR 4
+        'cod_lice',         // CÓDIGO LICENCIA
+        'cod_clase',        // CÓDIGO CLASE
+        'cod_est',          // CÓDIGO ESTADO
+        'cod_respfiscal',   // CÓDIGO RESPONSABLE FISCAL
+        'cod_tributo',      // CÓDIGO TRIBUTO
+
+        // ----------------------
+        // DATOS PERSONALES
+        // ----------------------
+        'nom_ter',          // NOMBRE DEL TERCERO
+        'apl1', 'apl2',     // APELLIDOS
+        'nom1', 'nom2',     // NOMBRES
+        'raz',              // RAZÓN SOCIAL
+        'razon_soc',        // RAZÓN SOCIAL alternativo
+        'repres',           // REPRESENTANTE
+        'sexo',             // SEXO
+        'lugar_naci',       // LUGAR DE NACIMIENTO
+        'fec_nac',          // FECHA DE NACIMIENTO
+        'est_civil',        // ESTADO CIVIL
+
+        // ----------------------
+        // CONYUGE / FAMILIA
+        // ----------------------
+        'id_conyuge',       // ID CÓNYUGE
+        'nom_conyug',       // NOMBRE CÓNYUGE
+        'mail_conyu',       // EMAIL CÓNYUGE
+        'num_hijos',        // NÚMERO DE HIJOS
+        'parentesco',       // PARENTESCO
+
+        // ----------------------
+        // CONTACTO
+        // ----------------------
+        'tel',              // TELÉFONO
+        'tel1',             // TELÉFONO 1
+        'tel2',             // TELÉFONO 2
+        'cel',              // CELULAR
+        'fax1',             // FAX
+        'email',            // CORREO
+        'email_fac',        // EMAIL FACTURACIÓN
+        'email_fact',       // EMAIL FACTURA
+        'email_fe',         // EMAIL FACTURACIÓN ELECTRÓNICA
+        'contacto',         // CONTACTO
+        'cont_cxc',         // CONTACTO CXC
+        'cont_tel',         // TELÉFONO CONTACTO
+
+        // ----------------------
+        // DOMICILIO
+        // ----------------------
+        'dir', 'dir1', 'dir2', // DIRECCIONES
+        'dir_comer',           // DIRECCIÓN COMERCIAL
+        'ciu_comer',           // CIUDAD COMERCIAL
+        'barrio',              // BARRIO
+        'exten',               // EXTENSIÓN
+
+        // ----------------------
+        // INFORMACIÓN COMERCIAL / CLIENTE
+        // ----------------------
+        'tip_prv',             // TIPO TERCERO
+        'ind_cred',            // INDICADOR CRÉDITO
+        'cupo_cred',           // CUPO CRÉDITO
+        'ind_rete',            // INDICADOR RETENCIÓN
+        'aut_ret',             // AUTORIZACIÓN RETENCIÓN
+        'ind_iva',             // INDICADOR IVA
+        'ind_cree',            // INDICADOR CREE
+        'ind_requ',            // INDICADOR REQUISITOS
+        'ind_items',           // INDICADOR ITEMS
+        'ind_doc',             // INDICADOR DOCUMENTO
+        'ind_tmk',             // INDICADOR TMK
+        'indpcom',             // INDICADOR PAGO COMISIÓN
+        'por_com', 'por_comi', // PORCENTAJE COMISIÓN
+        'pc1', 'pc2', 'pc3',   // PORCENTAJE COMISIÓN DETALLADO
+        'dp1', 'dp2', 'dp3',   // DESCUENTOS DETALLADOS
+        'dto_det',             // DESCUENTO DETALLADO
+        'por_des',             // PORCENTAJE DESCUENTO
+        'prec_rem',            // PRECIO REMISIÓN
+        'lista_prec',          // LISTA DE PRECIO
+        'pla_com',             // PLAZO COMERCIAL
+        'dia_plaz', 'dia_com', 'dia_adp', // DÍAS
+        'ind_suc',             // INDICADOR SUCURSAL
+        'suc_cli',             // SUCURSAL CLIENTE
+        'cod_can',             // CÓDIGO CANAL
+        'esp_gab',             // ESPECIAL GABINETE
+        'uni_fra',             // UNIDAD FRACCIÓN
+        'ind_mayor',           // INDICADOR MAYORISTA
+        'r_semana',            // RANGO SEMANAL
+        'pago', 'pago1',       // FORMA DE PAGO
+
+        // ----------------------
+        // INFORMACIÓN FINANCIERA
+        // ----------------------
+        'cupo_cxc',            // CUPO CXC
+        'i_cupocc',            // ÍNDICE CUPO CXC
+        'cupo_cxp',            // CUPO CXP
+        'i_cupocp',            // ÍNDICE CUPO CXP
+        'cta',                 // CUENTA
+        'cta_ban',             // CUENTA BANCARIA
+        'cta_icap',            // CUENTA ICAP
+        'cta_icac',            // CUENTA ICAC
+        'por_cred',            // PORCENTAJE CRÉDITO
+        'int_mora',            // INTERÉS MORATORIO
+        'icrecon',             // ÍNDICE RECONOCIMIENTO
+
+        // ----------------------
+        // FECHAS IMPORTANTES
+        // ----------------------
+        'fec_ing', 'fec_cump', 'fec_act', 'fec_dat',
+        'fec_falle', 'fecha_lice', 'fecha_ipuc',
+        'fec_aport', 'fec_expcc', 'fecha_aded', 'fec_minis',
+
+        // ----------------------
+        // IMPUESTOS / RETENCIONES
+        // ----------------------
+        'regimen', 'codimpuesto', 'ret_prv', 'bloqueo', 
+        'bloq_aut', 'bloq_tmk', 'bloq_ate', 'exo_bloq', 
+        'ret_iva', 'rtiva', 'ret_ica', 'rtica',
+
+        // ----------------------
+        // OTROS
+        // ----------------------
+        'cargo', 'congrega', 'conta', 'inf_ter', 
+        'matricula', 'observ', 'lugar_expcc', 'respon', 'por_ica',
     ];
+
+
+
 
     public function getEdadAttribute()
     {
