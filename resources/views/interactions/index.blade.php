@@ -33,7 +33,7 @@
                 </form>
             </div>
 
-            {{-- 📊 Tabla Super Simplificada --}}
+            {{-- 📊 Tabla Actualizada --}}
             <div class="table-responsive excel-grid-wrapper">
                 <table class="table excel-grid table-hover mb-0 align-middle small">
                     <thead class="table-light sticky-top shadow-sm">
@@ -42,6 +42,8 @@
                             <th>Cliente</th>
                             <th>Cédula</th>
                             <th>Teléfono</th>
+                            <th>Fecha Interacción</th> {{-- 🆕 --}}
+                            <th>Próxima Acción</th> {{-- 🆕 --}}
                             <th>Resultado</th>
                             <th class="text-center">Acciones</th>
                         </tr>
@@ -51,15 +53,19 @@
                             @php
                                 $attachments = $interaction->attachment_urls ?? [];
                                 $outcome = $interaction->outcome ?? '';
-                                $badgeClass = ['Exitoso' => 'success', 'Pendiente' => 'warning', 'Fallido' => 'danger', 'Seguimiento' => 'info'][$outcome] ?? 'secondary';
+                                $badgeClass = [
+                                    'Exitoso' => 'success',
+                                    'Pendiente' => 'warning',
+                                    'Fallido' => 'danger',
+                                    'Seguimiento' => 'info'
+                                ][$outcome] ?? 'secondary';
                             @endphp
                             <tr>
                                 <td>
-                                    {{-- El ID sigue siendo el enlace que abre el modal con TODOS los datos --}}
-                                    <a href="#" class="fw-bold" 
-                                       data-bs-toggle="modal" 
+                                    <a href="#"
+                                       class="fw-bold"
+                                       data-bs-toggle="modal"
                                        data-bs-target="#interactionDetailModal"
-                                       {{-- Datos básicos --}}
                                        data-id="{{ $interaction->id }}"
                                        data-client-name="{{ $interaction->client->nom_ter ?? $interaction->client->nombre ?? 'N/A' }}"
                                        data-agent="{{ $interaction->agent->name ?? 'Sin asignar' }}"
@@ -68,17 +74,14 @@
                                        data-duration="{{ $interaction->duration ? $interaction->duration . (is_numeric($interaction->duration) ? ' min' : '') : '—' }}"
                                        data-date="{{ optional($interaction->interaction_date)->format('d/m/Y h:i A') ?? '—' }}"
                                        data-notes="{{ $interaction->notes ?? 'Sin notas.' }}"
-                                       {{-- Campos que estaban en la tabla y ahora solo están en el modal --}}
                                        data-outcome="{{ $outcome ?: '—' }}"
                                        data-outcome-badge="{{ $badgeClass }}"
                                        data-url="{{ $interaction->interaction_url }}"
                                        data-related-id="{{ $interaction->parent_interaction_id }}"
                                        data-related-url="{{ $interaction->parent_interaction_id ? route('interactions.show', $interaction->parent_interaction_id) : '' }}"
                                        data-attachments='{{ json_encode($attachments) }}'
-                                       {{-- Datos para Próx. Acción --}}
                                        data-next-action-date="{{ optional($interaction->next_action_date)->format('d/m/Y h:i A') }}"
                                        data-next-action-type="{{ $interaction->next_action_type }}"
-                                       {{-- URLs para botones del modal --}}
                                        data-edit-url="{{ route('interactions.edit', $interaction->id) }}"
                                        data-show-url="{{ route('interactions.show', $interaction->id) }}"
                                     >
@@ -88,6 +91,15 @@
                                 <td>{{ $interaction->client->nom_ter ?? $interaction->client->nombre ?? '—' }}</td>
                                 <td>{{ $interaction->client->cod_ter ?? $interaction->client_id ?? '—' }}</td>
                                 <td>{{ $interaction->client->cel ?? '—' }}</td>
+                                {{-- 🆕 Fechas visibles --}}
+                                <td>{{ optional($interaction->interaction_date)->format('d/m/Y h:i A') ?? '—' }}</td>
+                                <td>
+                                    @if ($interaction->next_action_date)
+                                        {{ optional($interaction->next_action_date)->format('d/m/Y h:i A') }}
+                                    @else
+                                        <span class="text-muted">—</span>
+                                    @endif
+                                </td>
                                 <td>
                                     <span class="badge bg-{{ $badgeClass }} rounded-pill">{{ $outcome ?: '—' }}</span>
                                 </td>
@@ -104,8 +116,9 @@
                             </tr>
                         @empty
                             <tr>
-                                {{-- Se ajusta el colspan a 6 columnas --}}
-                                <td colspan="6" class="text-center text-muted py-4"><i class="feather-info me-1"></i> No hay registros disponibles</td>
+                                <td colspan="8" class="text-center text-muted py-4">
+                                    <i class="feather-info me-1"></i> No hay registros disponibles
+                                </td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -113,16 +126,22 @@
             </div>
 
             @if ($interactions->hasPages())
-                <div class="d-flex justify-content-center mt-4">{{ $interactions->appends(request()->except('page'))->links() }}</div>
+                <div class="d-flex justify-content-center mt-4">
+                    {{ $interactions->appends(request()->except('page'))->links() }}
+                </div>
             @endif
         </div>
     </div>
 
+    {{-- 📦 Modal SIN CAMBIOS --}}
     <div class="modal fade" id="interactionDetailModal" tabindex="-1" aria-labelledby="modalTitle" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="modalTitle"><i class="feather-file-text me-2"></i> Detalles de la Interacción: <span class="text-primary"></span></h5>
+                    <h5 class="modal-title" id="modalTitle">
+                        <i class="feather-file-text me-2"></i> Detalles de la Interacción:
+                        <span class="text-primary"></span>
+                    </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
@@ -151,7 +170,7 @@
                     <hr>
                     <h6><i class="feather-edit me-2 text-primary"></i>Notas</h6>
                     <p class="small bg-light p-3 rounded" id="modalNotes" style="white-space: pre-wrap;"></p>
-                    
+
                     <hr>
                     <h6><i class="feather-paperclip me-2 text-primary"></i>Archivos Adjuntos</h6>
                     <div id="modalAttachmentsList" class="small"></div>
@@ -164,7 +183,8 @@
             </div>
         </div>
     </div>
-    {{-- Estilos (Sin cambios) --}}
+
+    {{-- 📘 Estilos --}}
     <style>
         .excel-grid-wrapper { max-height: 70vh; overflow: auto; }
         .excel-grid { border-collapse: collapse; white-space: nowrap; width: 100%; table-layout: auto; }
@@ -172,6 +192,7 @@
         .excel-grid thead th { background: #f8f9fa; font-weight: 600; text-align: left; position: sticky; top: 0; z-index: 2; }
     </style>
 
+    {{-- 📜 Script (sin cambios) --}}
     @push('scripts')
         <script>
             document.addEventListener('DOMContentLoaded', function () {
@@ -182,21 +203,24 @@
                     form.addEventListener('submit', function (e) {
                         e.preventDefault();
                         Swal.fire({
-                            title: '¿Estás seguro?', text: "¡Esta acción no se puede deshacer!", icon: 'warning',
-                            showCancelButton: true, confirmButtonColor: '#d33', cancelButtonColor: '#6c757d',
-                            confirmButtonText: 'Sí, ¡eliminar!', cancelButtonText: 'Cancelar'
+                            title: '¿Estás seguro?',
+                            text: "¡Esta acción no se puede deshacer!",
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: '#d33',
+                            cancelButtonColor: '#6c757d',
+                            confirmButtonText: 'Sí, ¡eliminar!',
+                            cancelButtonText: 'Cancelar'
                         }).then((result) => { if (result.isConfirmed) { this.submit(); } });
                     });
                 });
 
-                // SCRIPT PARA POBLAR EL MODAL (SIN CAMBIOS)
                 const interactionDetailModal = document.getElementById('interactionDetailModal');
                 interactionDetailModal.addEventListener('show.bs.modal', function (event) {
                     const button = event.relatedTarget;
                     const modal = interactionDetailModal;
-
                     const getData = (attr) => button.getAttribute(`data-${attr}`);
-                    
+
                     modal.querySelector('#modalTitle span').textContent = `#${getData('id')} (${getData('client-name')})`;
                     modal.querySelector('#modalAgent').textContent = getData('agent');
                     modal.querySelector('#modalDate').textContent = getData('date');
@@ -206,9 +230,8 @@
                     modal.querySelector('#modalNotes').textContent = getData('notes');
                     modal.querySelector('#modalEditUrl').href = getData('edit-url');
                     modal.querySelector('#modalShowUrl').href = getData('show-url');
-
                     modal.querySelector('#modalOutcome').innerHTML = `<span class="badge bg-${getData('outcome-badge')} rounded-pill">${getData('outcome')}</span>`;
-                    
+
                     const url = getData('url');
                     modal.querySelector('#modalUrl').innerHTML = url ? `<a href="${url}" target="_blank">Abrir enlace <i class="feather-external-link small"></i></a>` : '—';
 
