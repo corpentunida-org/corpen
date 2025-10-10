@@ -90,7 +90,7 @@ class InteractionController extends Controller
     public function create()
     {
         $interaction = new Interaction();
-        $clientes = maeTerceros::select('cod_ter', 'nom_ter', 'apl1', 'apl2', 'nom1', 'nom2')
+        $clientes = maeTerceros::select('cod_ter', 'nom_ter', 'apl1', 'apl2', 'nom1', 'nom2', 'cod_dist', 'congrega' )
             ->where('estado', 1)
             ->orderBy('nom_ter')
             ->get();
