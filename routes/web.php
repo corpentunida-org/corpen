@@ -317,11 +317,30 @@ Route::prefix('interactions')
         // 📌 NUEVA RUTA: Obtener datos del cliente por cod_ter (AJAX)
         Route::get('/cliente/{cod_ter}', function ($cod_ter) {
             $cliente = maeTerceros::where('cod_ter', $cod_ter)->first();
+
             if ($cliente) {
-                return response()->json($cliente->only(['dir', 'tel1', 'email', 'ciudad']));
+                return response()->json(
+                    $cliente->only([
+                        'cod_ter',
+                        'nom_ter',
+                        'tip_prv',
+                        'dir',
+                        'tel1',
+                        'cel1',
+                        'email',
+                        'ciudad',
+                        'departamento',
+                        'pais',
+                        'cod_dist',
+                        'barrio',
+                        'cod_est'
+                    ])
+                );
             }
+
             return response()->json(null, 404);
         })->name('cliente.show');
+
     });
 
 
