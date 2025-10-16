@@ -17,7 +17,7 @@ class RetirosListadoController extends Controller
      */
     public function index()
     {
-        $tabla = DB::table('CIN_condicionesRetiros')->get();
+        $tabla = DB::table('RET_condicionesRetiros')->get();
         return view('cinco.retiros.index', compact('tabla'));
     }
 
@@ -33,7 +33,7 @@ class RetirosListadoController extends Controller
      */
     public function create()
     {
-        $tabla = DB::table('CIN_condicionesRetiros')->get();
+        $tabla = DB::table('RET_condicionesRetiros')->get();
         return view('cinco.retiros.create', compact('tabla'));
     }
 
@@ -57,7 +57,8 @@ class RetirosListadoController extends Controller
         }
         //dd($tercero);
         $arrayliquidacion = $this->liquidaciones($tercero->fec_minis);
-        return view('cinco.retiros.show', compact('tercero', 'arrayliquidacion'));
+        $tiposselect = DB::table('RET_TiposRetiros')->where('activo', 1)->get();
+        return view('cinco.retiros.show', compact('tercero', 'arrayliquidacion', 'tiposselect'));
     }
 
     private function liquidaciones(string $fechaminis)
@@ -85,7 +86,7 @@ class RetirosListadoController extends Controller
 
     private function antes2017($fecha, $i)
     {               
-        $valorFijo = DB::table('CIN_condicionesRetiros')->where('anio', $i)->first();
+        $valorFijo = DB::table('RET_condicionesRetiros')->where('anio', $i)->first();
         if ($fecha->year === $i) {            
             $difMes = 12 - $fecha->month;
             $difDia = 31 - $fecha->day;
@@ -119,7 +120,7 @@ class RetirosListadoController extends Controller
     }
     private function despues2017($fecha, $i)
     {
-        $valorFijo = DB::table('CIN_condicionesRetiros')->where('anio', $i)->first();
+        $valorFijo = DB::table('RET_condicionesRetiros')->where('anio', $i)->first();
         if ($valorFijo) {
             $plus = $this->calculoPlus($fecha, $i . '-12-31', $valorFijo->plus) ?? 0;
             if ($fecha->year === $i) {

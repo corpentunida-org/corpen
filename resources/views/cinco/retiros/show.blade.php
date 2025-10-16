@@ -55,7 +55,7 @@
                         </a>
                         <div class="text-end">
                             <p class="fs-11 fw-medium text-uppercase text-muted mb-1">Fecha Ingreso al Ministerio</p>
-                            <h5 class="bg-soft-primary text-primary">{{ $tercero->fec_minis }}</h5>
+                            <h5 class="bg-soft-primary text-primary">{{ optional($tercero->fec_minis)->format('Y-m-d')?? 'sin fecha' }}</h5>
                         </div>
                     </div>
                 </div>
@@ -72,7 +72,7 @@
                         </a>
                         <div class="text-end">
                             <p class="fs-11 fw-medium text-uppercase text-muted mb-1">Fecha Primer Aporte</p>
-                            <h5>{{ $tercero->fec_Aport ?? 'sin fecha' }}</h5>
+                            <h5>{{ optional($tercero->fec_aport)->format('Y-m-d') ?? 'sin fecha' }}</h5>
                         </div>
                     </div>
                 </div>
@@ -89,7 +89,7 @@
                         </a>
                         <div class="text-end">
                             <p class="fs-11 fw-medium text-uppercase text-muted mb-1">Fecha Ingreso a Corpentunida</p>
-                            <h5>{{ $tercero->fec_ing ?? 'sin fecha' }}</h5>
+                            <h5>{{ optional($tercero->fecha_ipuc)->format('Y-m-d') ?? 'sin fecha' }}</h5>
                         </div>
                     </div>
                 </div>
@@ -171,7 +171,7 @@
         <div class="card stretch stretch-full">
             <div class="card-header">
                 <h5 class="card-title">Perfil del Tercero</h5>
-                <a href="#" class="btn btn-warning">
+                <a href="{{ route('maestras.terceros.edit', $tercero->cod_ter) }}" class="btn btn-warning">
                     <i class="feather-plus me-2"></i>
                     <span>Actualizar Tercero</span>
                 </a>
@@ -188,19 +188,23 @@
                     </div>
                     <div class="row g-0 mb-4">
                         <div class="col-sm-6 text-muted">Ingreso al Ministerio:</div>
-                        <div class="col-sm-6 fw-semibold">{{ $tercero->fec_minis ?? 'sin fecha'}}</div>
+                        <div class="col-sm-6 fw-semibold">{{ optional($tercero->fec_minis)->format('Y-m-d') ?? 'sin fecha'}}</div>
                     </div>
                     <div class="row g-0 mb-4">
                         <div class="col-sm-6 text-muted">Primer Aporte:</div>
-                        <div class="col-sm-6 fw-semibold">{{ $tercero->fec_aport ?? 'sin fecha'}}</div>
+                        <div class="col-sm-6 fw-semibold">{{ optional($tercero->fec_aport)->format('Y-m-d') ?? 'sin fecha'}}</div>
                     </div>
                     <div class="row g-0 mb-4">
                         <div class="col-sm-6 text-muted">Ingreso a Corpentunida:</div>
-                        <div class="col-sm-6 fw-semibold">{{ $tercero->fec_ing ?? 'sin fecha'}}</div>
+                        <div class="col-sm-6 fw-semibold">{{ optional($tercero->fec_ing)->format('Y-m-d') ?? 'sin fecha'}}</div>
                     </div>
                     <div class="row g-0 mb-4">
                         <div class="col-sm-6 text-muted">Fecha de Nacimiento</div>
-                        <div class="col-sm-6 fw-semibold">{{ $tercero->fec_nac ?? 'sin fecha'}}</div>
+                        <div class="col-sm-6 fw-semibold">{{ optional($tercero->fec_nac)->format('Y-m-d') ?? 'sin fecha'}}</div>
+                    </div>                    
+                    <div class="row g-0 mb-4">
+                        <div class="col-sm-6 text-muted">Edad</div>
+                        <div class="col-sm-6 fw-semibold">{{ $tercero->edad ?? ' '}}</div>
                     </div>                    
                     <div class="row g-0 mb-4">
                         <div class="col-sm-6 text-muted">Declara renta</div>
@@ -220,20 +224,32 @@
                 <div class="row">
                     <div class="col-6">
                         <label class="form-label">Tipo de Retiro<span class="text-danger">*</span></label>
-                        <input type="text" class="form-control text-uppercase" name="tipoRetiro" required>
+                        <select class="form-select" name="TipoRetiro" required>                            
+                            @foreach ($tiposselect as $tipo)
+                                <option value="{{ $tipo->id }}">{{ $tipo->nombre }}</option>
+                            @endforeach
+                        </select>
                     </div>
-                    <div class="col-3">
+                    <div class="col-6">
+                        <label class="form-label">Observación<span class="text-danger">*</span></label>
+                        <input type="text" class="form-control text-uppercase" name="observación" required>
+                    </div>                    
+                </div>
+                <div class="row">
+                    <div class="col-3 mt-4">
                         <label class="form-label">Fecha ultimo aporte<span class="text-danger">*</span></label>
                         <input type="date" class="form-control" name="FechaUltimoAporte" required>
                     </div>
-                    <div class="col-3">
-                        <a href="javascript:void(0)" class="d-flex me-1" data-alert-target="invoicSendMessage"
-                            data-modal-message="Confirmar los datos exactos para realizar la liquidacion">
-                            <div class="avatar-text avatar-md" data-bs-toggle="tooltip" data-bs-trigger="hover"
-                                title="Send Invoice">
-                                <i class="feather feather-send"></i>
-                            </div>
-                        </a>
+                    <div class="col-3 mt-4">
+                        <label class="form-label">Fecha Incial Liquidación<span class="text-danger">*</span></label>
+                        <select class="form-select" name="TipoRetiro" required>
+                            <option value="">Ingreso al ministerio {{ optional($tercero->fec_minis)->format('Y-m-d') }}</option>
+                            <option value="">Primer Aporte {{ optional($tercero->fec_aport)->format('Y-m-d') }}</option>
+                        </select>
+                    </div>
+                    <div class="col-3 mt-4">
+                        <label class="form-label">Fecha Retiro<span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" name="FechaRetiro" required>
                     </div>
                 </div>
             </div>
