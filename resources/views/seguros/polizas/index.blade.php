@@ -98,7 +98,4 @@
         </div>
     </div>
     @endcandirect
-
-    {{-- @include('seguros.novedades.index') --}}
-
 </x-base-layout>
