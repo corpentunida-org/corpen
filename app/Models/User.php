@@ -5,7 +5,7 @@ namespace App\Models;
 use App\Models\Cartera\Acuerdo;
 use App\Models\Creditos\Observacion;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use App\Models\Interaction;
+use App\Models\Interacciones\Interaction;
 
 
 use App\Models\Archivo\GdoCargo;

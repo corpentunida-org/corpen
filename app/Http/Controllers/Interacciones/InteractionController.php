@@ -1,13 +1,17 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Interacciones;
+use App\Http\Controllers\Controller;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+
 use App\Models\Maestras\maeTerceros;
-use App\Models\Interaction;
+use App\Models\Interacciones\Interaction;
+use App\Models\Interacciones\IntChannel;
+
 use Carbon\Carbon;
 use Exception;
 
@@ -95,7 +99,9 @@ class InteractionController extends Controller
             ->orderBy('nom_ter')
             ->get();
 
-        return view('interactions.create', compact('interaction', 'clientes'));
+        $channels = IntChannel::all();  // obtiene todos los canales disponibles
+
+            return view('interactions.create', compact('interaction', 'clientes', 'channels'));
     }
 
     /**
@@ -107,7 +113,7 @@ class InteractionController extends Controller
             'client_id' => 'required|exists:MaeTerceros,cod_ter',
             'agent_id' => 'required|exists:users,id',
             'interaction_date' => 'required|date',
-            'interaction_channel' => 'required|string|max:255',
+            'interaction_channel' => 'required|exists:int_channels,id', // 👈 validación actualizada
             'interaction_type' => 'required|string|max:255',
             'outcome' => 'required|string|max:255',
             'notes' => 'nullable|string',
@@ -118,8 +124,10 @@ class InteractionController extends Controller
             'attachments.*' => 'file|mimes:jpeg,png,pdf,jpg,doc,docx|max:10240',
         ]);
 
+        // Asigna automáticamente el agente autenticado
         $validatedData['agent_id'] = Auth::id();
 
+        // Guarda archivos adjuntos si hay
         if ($request->hasFile('attachments')) {
             $storedFiles = [];
             foreach ($request->file('attachments') as $file) {
@@ -128,8 +136,10 @@ class InteractionController extends Controller
             $validatedData['attachment_urls'] = $storedFiles;
         }
 
+        // Crea la interacción
         $interaction = Interaction::create($validatedData);
 
+        // Calcula duración
         $inicio = Carbon::parse($interaction->interaction_date);
         $fin = Carbon::parse($interaction->created_at);
         $interaction->duration = $fin->diffInMinutes($inicio);
@@ -148,8 +158,10 @@ class InteractionController extends Controller
             ->where('estado', 1)
             ->orderBy('nom_ter')
             ->get();
-
-        return view('interactions.edit', compact('interaction', 'clientes'));
+        
+        $channels = IntChannel::all(); 
+            
+        return view('interactions.edit', compact('interaction', 'clientes', 'channels'));
     }
 
     /**

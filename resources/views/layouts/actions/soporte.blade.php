@@ -14,7 +14,7 @@
 
         {{-- Lista de Mis Soportes --}}
         <li class="nxl-item nxl-hasmenu">
-            <a class="nxl-link" href="{{ route('soportes.soportes.index', ['estado' => 'resuelto']) }}">
+            <a class="nxl-link" href="{{ route('soportes.soportes.index') }}">
                 Mi Lista
             </a>
         </li>
