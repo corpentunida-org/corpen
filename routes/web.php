@@ -52,7 +52,9 @@ use App\Http\Controllers\Maestras\MaeTiposController;
 use App\Http\Controllers\Creditos\CreditoController;
 
 //CARTERA
-use App\Http\Controllers\InteractionController;
+use App\Http\Controllers\Interacciones\InteractionController;
+use App\Models\Maestras\maeTerceros;
+use App\Http\Controllers\Interacciones\IntChannelController;
 
 // FLUJO
 use App\Http\Controllers\Flujo\WorkflowController;
@@ -285,64 +287,79 @@ Route::prefix('archivo')->middleware('auth')->group(function () {
 
 
 // --- GRUPO DE RUTAS PARA INTERACCIONES ---
-
-use App\Models\Maestras\maeTerceros;
-
 Route::prefix('interactions')
     ->middleware(['auth'])
     ->name('interactions.')
     ->group(function () {
 
-        // Página principal (lista)
-        Route::get('/', [InteractionController::class, 'index'])->name('index');
+    // 📄 Página principal (lista de interacciones)
+    Route::get('/', [InteractionController::class, 'index'])->name('index');
 
-        // Crear nueva interacción
-        Route::get('/create', [InteractionController::class, 'create'])->name('create');
-        Route::post('/', [InteractionController::class, 'store'])->name('store');
+    // ➕ Crear nueva interacción
+    Route::get('/create', [InteractionController::class, 'create'])->name('create');
+    Route::post('/', [InteractionController::class, 'store'])->name('store');
+
+    // 👁️ Mostrar detalle
+    Route::get('/{interaction}/show', [InteractionController::class, 'show'])->name('show');
+
+    // ✏️ Editar / actualizar
+    Route::get('/{interaction}/edit', [InteractionController::class, 'edit'])->name('edit');
+    Route::put('/{interaction}', [InteractionController::class, 'update'])->name('update');
+
+    // 🗑️ Eliminar
+    Route::delete('/{interaction}', [InteractionController::class, 'destroy'])->name('destroy');
+
+    // 📎 Archivos adjuntos
+    Route::get('/attachment/download/{fileName}', [InteractionController::class, 'downloadAttachment'])->name('download');
+    Route::get('/attachment/view/{fileName}', [InteractionController::class, 'viewAttachment'])->name('view');
+
+    // 📌 AJAX: Obtener datos del cliente por cod_ter
+    Route::get('/cliente/{cod_ter}', function ($cod_ter) {
+        $cliente = maeTerceros::where('cod_ter', $cod_ter)->first();
+
+        if ($cliente) {
+            return response()->json(
+                $cliente->only([
+                    'cod_ter',
+                    'nom_ter',
+                    'tip_prv',
+                    'dir',
+                    'tel1',
+                    'cel1',
+                    'email',
+                    'ciudad',
+                    'departamento',
+                    'pais',
+                    'cod_dist',
+                    'barrio',
+                    'cod_est'
+                ])
+            );
+        }
+
+        return response()->json(null, 404);
+    })->name('cliente.show');
+
+    // --- 📡 GRUPO DE RUTAS PARA CANALES DE INTERACCIÓN ---
+    Route::prefix('channels')->name('channels.')->group(function () {
+        // Página principal
+        Route::get('/', [IntChannelController::class, 'index'])->name('index');
+
+        // Crear nuevo canal
+        Route::get('/create', [IntChannelController::class, 'create'])->name('create');
+        Route::post('/', [IntChannelController::class, 'store'])->name('store');
 
         // Mostrar detalle
-        Route::get('/{interaction}/show', [InteractionController::class, 'show'])->name('show');
+        Route::get('/{channel}', [IntChannelController::class, 'show'])->name('show');
 
-        // Editar / actualizar
-        Route::get('/{interaction}/edit', [InteractionController::class, 'edit'])->name('edit');
-        Route::put('/{interaction}', [InteractionController::class, 'update'])->name('update');
+        // Editar canal
+        Route::get('/{channel}/edit', [IntChannelController::class, 'edit'])->name('edit');
+        Route::put('/{channel}', [IntChannelController::class, 'update'])->name('update');
 
-        // Eliminar
-        Route::delete('/{interaction}', [InteractionController::class, 'destroy'])->name('destroy');
-
-        // Archivos adjuntos
-        Route::get('/attachment/download/{fileName}', [InteractionController::class, 'downloadAttachment'])->name('download');
-        Route::get('/attachment/view/{fileName}', [InteractionController::class, 'viewAttachment'])->name('view');
-
-        // 📌 NUEVA RUTA: Obtener datos del cliente por cod_ter (AJAX)
-        Route::get('/cliente/{cod_ter}', function ($cod_ter) {
-            $cliente = maeTerceros::where('cod_ter', $cod_ter)->first();
-
-            if ($cliente) {
-                return response()->json(
-                    $cliente->only([
-                        'cod_ter',
-                        'nom_ter',
-                        'tip_prv',
-                        'dir',
-                        'tel1',
-                        'cel1',
-                        'email',
-                        'ciudad',
-                        'departamento',
-                        'pais',
-                        'cod_dist',
-                        'barrio',
-                        'cod_est'
-                    ])
-                );
-            }
-
-            return response()->json(null, 404);
-        })->name('cliente.show');
-
+        // Eliminar canal
+        Route::delete('/{channel}', [IntChannelController::class, 'destroy'])->name('destroy');
     });
-
+});
 
 // FLUJO DE TRABAJO
 Route::middleware('auth')->prefix('flujo')->name('flujo.')->group(function () {

@@ -1,10 +1,12 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\Interacciones;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+
 use App\Models\Maestras\maeTerceros;
+use App\Models\User;        
 
 class Interaction extends Model
 {
@@ -33,17 +35,18 @@ class Interaction extends Model
         'interaction_date'  => 'datetime',
         'next_action_date'  => 'datetime',
     ];
-
     // Relación con el agente (usuario)
     public function agent()
     {
         return $this->belongsTo(User::class, 'agent_id');
     }
-
     public function client()
     {
         return $this->belongsTo(maeTerceros::class, 'client_id', 'cod_ter');
     }
-
+    public function channel()
+    {
+        return $this->belongsTo(IntChannel::class, 'interaction_channel');
+    }
 
 }
