@@ -13,20 +13,26 @@ class Interaction extends Model
     use HasFactory;
 
     protected $fillable = [
-        'client_id',                // ID del cliente asociado a la interacción
-        'agent_id',                 // ID del agente o usuario que realizó la interacción
-        'interaction_date',         // Fecha y hora en que ocurrió la interacción
-        'interaction_channel',      // Canal de comunicación (ej: teléfono, email, chat, presencial)
-        'interaction_type',         // Tipo de interacción (ej: contacto inicial, seguimiento, reclamo)
-        'duration',                 // Duración de la interacción (en minutos, segundos u otro formato)
-        'outcome',                  // Resultado de la interacción (ej: exitoso, pendiente, sin respuesta)
-        'notes',                    // Notas o detalles adicionales sobre la interacción
-        'parent_interaction_id',    // ID de la interacción relacionada o anterior (en caso de seguimiento)
-        'next_action_date',         // Fecha programada para la próxima acción o seguimiento
-        'next_action_type',         // Tipo de próxima acción (ej: llamada, reunión, envío de correo)
-        'next_action_notes',        // Notas o detalles sobre la próxima acción
-        'attachment_urls',          // URLs de archivos adjuntos relacionados a la interacción
-        'interaction_url',          // URL del registro o recurso externo vinculado a la interacción
+        'client_id',                // 1) ID del cliente asociado a la interacción
+        'agent_id',                 // 2) ID del agente o usuario que realizó la interacción
+        'interaction_date',         // 3) Fecha y hora en que ocurrió la interacción
+        'interaction_channel',      // 4)* Canal de comunicación (ej: teléfono, email, chat, presencial)
+        'interaction_type',         // 5)* Tipo de interacción (ej: contacto inicial, seguimiento, reclamo)
+        'duration',                 // 6)) Duración de la interacción (en minutos, segundos u otro formato)
+        'outcome',                  // 7)* Resultado de la interacción (ej: exitoso, pendiente, sin respuesta)
+        'notes',                    // 8) Notas o detalles adicionales sobre la interacción
+
+
+        'parent_interaction_id',    // *** ID de la interacción relacionada o anterior (en caso de seguimiento)
+                                    // Area asignada de la interaccion.
+                                    // Si el area es Cartera - Relacion con las lineas de creditos.
+
+        'next_action_date',         // 9) Fecha programada para la próxima acción o seguimiento
+        'next_action_type',         // 10)* Tipo de próxima acción (ej: llamada, reunión, envío de correo)
+        'next_action_notes',        // 11) Notas o detalles sobre la próxima acción
+
+        'attachment_urls',          // 12) URLs de archivos adjuntos relacionados a la interacción
+        'interaction_url',          // 13) URL del registro o recurso externo vinculado a la interacción
     ];
 
 
@@ -47,6 +53,19 @@ class Interaction extends Model
     public function channel()
     {
         return $this->belongsTo(IntChannel::class, 'interaction_channel');
+    }
+//
+    public function type()
+    {
+        return $this->belongsTo(IntType::class, 'interaction_type');
+    }
+    public function outcomeRelation()
+    {
+        return $this->belongsTo(IntOutcome::class, 'outcome');
+    }
+    public function nextAction()
+    {
+        return $this->belongsTo(IntNextAction::class, 'next_action_type');
     }
 
 }
