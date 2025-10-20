@@ -52,9 +52,14 @@ use App\Http\Controllers\Maestras\MaeTiposController;
 use App\Http\Controllers\Creditos\CreditoController;
 
 //CARTERA
-use App\Http\Controllers\Interacciones\InteractionController;
 use App\Models\Maestras\maeTerceros;
+use App\Http\Controllers\Interacciones\InteractionController;
 use App\Http\Controllers\Interacciones\IntChannelController;
+use App\Http\Controllers\Interacciones\IntTypeController;
+use App\Http\Controllers\Interacciones\IntOutcomeController;
+use App\Http\Controllers\Interacciones\IntNextActionController;
+
+
 
 // FLUJO
 use App\Http\Controllers\Flujo\WorkflowController;
@@ -342,22 +347,46 @@ Route::prefix('interactions')
 
     // --- 📡 GRUPO DE RUTAS PARA CANALES DE INTERACCIÓN ---
     Route::prefix('channels')->name('channels.')->group(function () {
-        // Página principal
         Route::get('/', [IntChannelController::class, 'index'])->name('index');
-
-        // Crear nuevo canal
         Route::get('/create', [IntChannelController::class, 'create'])->name('create');
         Route::post('/', [IntChannelController::class, 'store'])->name('store');
-
-        // Mostrar detalle
         Route::get('/{channel}', [IntChannelController::class, 'show'])->name('show');
-
-        // Editar canal
         Route::get('/{channel}/edit', [IntChannelController::class, 'edit'])->name('edit');
         Route::put('/{channel}', [IntChannelController::class, 'update'])->name('update');
-
-        // Eliminar canal
         Route::delete('/{channel}', [IntChannelController::class, 'destroy'])->name('destroy');
+    });
+
+    // --- 📡 GRUPO DE RUTAS PARA TIPOS DE INTERACCIÓN ---
+    Route::prefix('types')->name('types.')->group(function () {
+        Route::get('/', [IntTypeController::class, 'index'])->name('index');
+        Route::get('/create', [IntTypeController::class, 'create'])->name('create');
+        Route::post('/', [IntTypeController::class, 'store'])->name('store');
+        Route::get('/{type}', [IntTypeController::class, 'show'])->name('show');
+        Route::get('/{type}/edit', [IntTypeController::class, 'edit'])->name('edit');
+        Route::put('/{type}', [IntTypeController::class, 'update'])->name('update');
+        Route::delete('/{type}', [IntTypeController::class, 'destroy'])->name('destroy');
+    });
+
+    // --- 📡 GRUPO DE RUTAS PARA RESULTADOS DE INTERACCIÓN ---
+    Route::prefix('outcomes')->name('outcomes.')->group(function () {
+        Route::get('/', [IntOutcomeController::class, 'index'])->name('index');
+        Route::get('/create', [IntOutcomeController::class, 'create'])->name('create');
+        Route::post('/', [IntOutcomeController::class, 'store'])->name('store');
+        Route::get('/{outcome}', [IntOutcomeController::class, 'show'])->name('show');
+        Route::get('/{outcome}/edit', [IntOutcomeController::class, 'edit'])->name('edit');
+        Route::put('/{outcome}', [IntOutcomeController::class, 'update'])->name('update');
+        Route::delete('/{outcome}', [IntOutcomeController::class, 'destroy'])->name('destroy');
+    });
+
+    // --- 📡 GRUPO DE RUTAS PARA PRÓXIMAS ACCIONES ---
+    Route::prefix('next_actions')->name('next_actions.')->group(function () {
+        Route::get('/', [IntNextActionController::class, 'index'])->name('index');
+        Route::get('/create', [IntNextActionController::class, 'create'])->name('create');
+        Route::post('/', [IntNextActionController::class, 'store'])->name('store');
+        Route::get('/{action}', [IntNextActionController::class, 'show'])->name('show');
+        Route::get('/{action}/edit', [IntNextActionController::class, 'edit'])->name('edit');
+        Route::put('/{action}', [IntNextActionController::class, 'update'])->name('update');
+        Route::delete('/{action}', [IntNextActionController::class, 'destroy'])->name('destroy');
     });
 });
 
