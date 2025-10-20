@@ -1,19 +1,21 @@
 <?php
 
 namespace App\Http\Controllers\Interacciones;
-use App\Http\Controllers\Controller;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
+use Exception;
 
 use App\Models\Maestras\maeTerceros;
 use App\Models\Interacciones\Interaction;
 use App\Models\Interacciones\IntChannel;
-
-use Carbon\Carbon;
-use Exception;
+use App\Models\Interacciones\IntType;
+use App\Models\Interacciones\IntOutcome;
+use App\Models\Interacciones\IntNextAction;
 
 class InteractionController extends Controller
 {
@@ -22,7 +24,14 @@ class InteractionController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Interaction::with(['client', 'agent']);
+        $query = Interaction::with([
+            'client',
+            'agent',
+            'channel',
+            'type',
+            'outcomeRelation',
+            'nextAction'
+        ]);
 
         if ($request->filled('q')) {
             $q = $request->q;
@@ -77,7 +86,7 @@ class InteractionController extends Controller
 
         $clientHistory = collect();
         if ($interaction->client_id) {
-            $clientHistory = Interaction::with('agent')
+            $clientHistory = Interaction::with(['agent', 'channel', 'type', 'outcomeRelation', 'nextAction'])
                 ->where('client_id', $interaction->client_id)
                 ->orderBy('interaction_date', 'desc')
                 ->get();
@@ -99,9 +108,14 @@ class InteractionController extends Controller
             ->orderBy('nom_ter')
             ->get();
 
-        $channels = IntChannel::all();  // obtiene todos los canales disponibles
+        $channels = IntChannel::all();
+        $types = IntType::all();
+        $outcomes = IntOutcome::all();
+        $nextActions = IntNextAction::all();
 
-            return view('interactions.create', compact('interaction', 'clientes', 'channels'));
+        return view('interactions.create', compact(
+            'interaction', 'clientes', 'channels', 'types', 'outcomes', 'nextActions'
+        ));
     }
 
     /**
@@ -113,21 +127,19 @@ class InteractionController extends Controller
             'client_id' => 'required|exists:MaeTerceros,cod_ter',
             'agent_id' => 'required|exists:users,id',
             'interaction_date' => 'required|date',
-            'interaction_channel' => 'required|exists:int_channels,id', // 👈 validación actualizada
-            'interaction_type' => 'required|string|max:255',
-            'outcome' => 'required|string|max:255',
+            'interaction_channel' => 'required|exists:int_channels,id',
+            'interaction_type' => 'required|exists:int_types,id',
+            'outcome' => 'required|exists:int_outcomes,id',
             'notes' => 'nullable|string',
             'next_action_date' => 'nullable|date',
-            'next_action_type' => 'nullable|string|max:255',
+            'next_action_type' => 'nullable|exists:int_next_actions,id',
             'next_action_notes' => 'nullable|string',
             'interaction_url' => 'nullable|url',
             'attachments.*' => 'file|mimes:jpeg,png,pdf,jpg,doc,docx|max:10240',
         ]);
 
-        // Asigna automáticamente el agente autenticado
         $validatedData['agent_id'] = Auth::id();
 
-        // Guarda archivos adjuntos si hay
         if ($request->hasFile('attachments')) {
             $storedFiles = [];
             foreach ($request->file('attachments') as $file) {
@@ -136,10 +148,8 @@ class InteractionController extends Controller
             $validatedData['attachment_urls'] = $storedFiles;
         }
 
-        // Crea la interacción
         $interaction = Interaction::create($validatedData);
 
-        // Calcula duración
         $inicio = Carbon::parse($interaction->interaction_date);
         $fin = Carbon::parse($interaction->created_at);
         $interaction->duration = $fin->diffInMinutes($inicio);
@@ -160,8 +170,13 @@ class InteractionController extends Controller
             ->get();
         
         $channels = IntChannel::all(); 
-            
-        return view('interactions.edit', compact('interaction', 'clientes', 'channels'));
+        $types = IntType::all();
+        $outcomes = IntOutcome::all();
+        $nextActions = IntNextAction::all();
+
+        return view('interactions.edit', compact(
+            'interaction', 'clientes', 'channels', 'types', 'outcomes', 'nextActions'
+        ));
     }
 
     /**
@@ -173,12 +188,12 @@ class InteractionController extends Controller
             'client_id' => 'required|exists:MaeTerceros,cod_ter',
             'agent_id' => 'required|exists:users,id',
             'interaction_date' => 'required|date',
-            'interaction_channel' => 'required|string|max:255',
-            'interaction_type' => 'required|string|max:255',
-            'outcome' => 'required|string|max:255',
+            'interaction_channel' => 'required|exists:int_channels,id', //1
+            'interaction_type' => 'required|exists:int_types,id', //2
+            'outcome' => 'required|exists:int_outcomes,id', //3
             'notes' => 'nullable|string',
             'next_action_date' => 'nullable|date',
-            'next_action_type' => 'nullable|string|max:255',
+            'next_action_type' => 'nullable|exists:int_next_actions,id', //4
             'next_action_notes' => 'nullable|string',
             'interaction_url' => 'nullable|url',
             'attachments.*' => 'file|mimes:jpeg,png,pdf,jpg,doc,docx|max:10240',
