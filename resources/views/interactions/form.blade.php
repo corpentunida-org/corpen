@@ -208,7 +208,7 @@
             <select name="client_id" id="client_id" class="form-control" required>
               <option value=""></option>
               @foreach ($clientes as $cliente)
-                <option value="{{ $cliente->cod_ter }}">{{ $cliente->cod_ter }} - {{ $cliente->apl1 }} {{ $cliente->nom1 }}</option>
+                <option value="{{ $cliente->cod_ter }}">{{ $cliente->cod_ter }} - {{ $cliente->apl1 }} {{ $cliente->apl2 }} {{ $cliente->nom1 }} {{ $cliente->nom2 }}</option>
               @endforeach
             </select>
           </div>
@@ -250,7 +250,7 @@
           </div>
         </div>
         
-        <!-- Campo de Etiquetas (Tags) -->
+        <!-- Campo de Etiquetas (Tags) ESTE SE CORRIGUE PUEDE SER EL AREA DE ASIGNACION Y DEPENDIENDO LA LINEA DE CREDITO -->
         <div class="form-section">
             <h3 class="form-section-title"><i class="fas fa-tags"></i>Etiquetas de Interacción</h3>
             <div class="form-group">
@@ -270,11 +270,12 @@
           <h3 class="form-section-title"><i class="fas fa-check-circle"></i>Resultado de la Gestión</h3>
            <div class="form-group">
               <select name="outcome" class="form-control" required>
-                <option value="">Selecciona un resultado...</option>
-                <option>Concretada</option>
-                <option>No contesta</option>
-                <option>Pendiente</option>
+                  <option value="">Selecciona un resultado...</option>
+                  @foreach ($outcomes as $outcome)
+                      <option value="{{ $outcome->name }}">{{ $outcome->name }}</option>
+                  @endforeach
               </select>
+
               <i class="fas fa-check-circle valid-icon"></i>
             </div>
         </div>
@@ -305,21 +306,52 @@
                   <span id="info-id" class="client-id-badge"></span>
               </div>
               <div class="card-body">
+
+                  <div class="info-item">
+                      <i class="fas fa-tags"></i>
+                      <span id="info-categoria">Cargando...</span>
+                  </div>
+
                   <div class="info-item">
                       <i class="fas fa-envelope"></i>
                       <span id="info-email">Cargando...</span>
                   </div>
+
                   <div class="info-item">
                       <i class="fas fa-phone"></i>
                       <span id="info-telefono">Cargando...</span>
                   </div>
+
+                  <div class="info-item">
+                      <i class="fas fa-map-marker-alt"></i>
+                      <span id="info-direccion">Cargando...</span>
+                  </div>
+
+                  <div class="info-item">
+                      <i class="fas fa-map"></i>
+                      <span id="info-distrito">Cargando...</span>
+                  </div>
+
+                  <div class="info-item">
+                      <i class="fas fa-church"></i>
+                      <span id="info-cod-congregacion">Cargando...</span>
+                  </div>
+
+                  <div class="info-item">
+                      <i class="fas fa-place-of-worship"></i>
+                      <span id="info-nom-congregacion">Cargando...</span>
+                  </div>
+ 
+                  <hr>
+
                   <div class="info-item">
                       <i class="fas fa-clock"></i>
                       <span>Última Inter.: <span id="info-ultima-interaccion">Cargando...</span></span>
                   </div>
+
               </div>
               <div class="btn-edit-wrapper">
-                  <a id="btn-editar-cliente" href="#" class="btn btn-secondary btn-sm">Ver Ficha Completa</a>
+                  <a id="btn-editar-cliente" href="#" class="btn btn-secondary btn-sm">Ver o actualizar ficha completa</a>
               </div>
           </div>
         </div>
@@ -352,12 +384,11 @@
                     <label class="form-label">Tipo de acción</label>
                     <select name="next_action_type" class="form-control">
                         <option value="">Selecciona...</option>
-                        <option>Volver a llamar</option>
-                        <option>Enviar WhatsApp</option>
-                        <option>Reunión</option>
-                        <option>Envío de email</option>
-                        <option>Cita presencial</option>
+                        @foreach ($nextActions as $action)
+                            <option value="{{ $action->name }}">{{ $action->name }}</option>
+                        @endforeach
                     </select>
+
                 </div>
            </div>
         </div>
@@ -450,10 +481,22 @@ $(document).ready(function () {
           const initials = (data.nom1 ? data.nom1[0] : '') + (data.apl1 ? data.apl1[0] : '');
           $('#info-avatar').text(initials.toUpperCase());
           
-          $('#info-nombre').text(`${data.nom1 ?? ''} ${data.apl1 ?? ''}`);
+          $('#info-nombre').text(data.nom_ter ?? 'No registrado');
+
           $('#info-id').text(`ID: ${data.cod_ter ?? 'N/A'}`);
+
+          $('#info-categoria').text(data.tip_prv ?? 'No registrado');
+
           $('#info-email').text(data.email ?? 'No registrado');
-          $('#info-telefono').text(data.telefono ?? 'No registrado');
+          $('#info-telefono').text(data.tel1 ?? 'No registrado');
+
+          $('#info-direccion').text(data.dir ?? 'No registrado');
+          $('#info-distrito').text(data.cod_dist ?? 'No registrado');
+
+          $('#info-cod-congregacion').text(data.congrega ?? 'No registrado');
+          $('#info-nom-congregacion').text(data.congrega ?? 'No registrado');
+
+
           $('#info-ultima-interaccion').text(data.last_interaction_date ?? 'Ninguna'); // Necesitarías este dato desde el backend
 
           $('#btn-editar-cliente').attr('href', `/maestras/terceros/${data.cod_ter}/edit`); // Ruta de ejemplo
