@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers\Cinco;
 
-use App\Models\Cinco\RetirosListado;
+use App\Models\Cinco\Retiros;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\Cinco\Terceros;
@@ -42,7 +42,35 @@ class RetirosListadoController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $añoActual = Carbon::now()->year;
+        $ultimo = Retiros::where('consecutivoDocumento', 'like', "BPA-{$añoActual}%")->orderBy('consecutivoDocumento', 'desc')->first();
+        if ($ultimo) {
+            $numeroAnterior = (int) substr($ultimo->consecutivoDocumento, -3);
+            $nuevoConsecutivo = str_pad($numeroAnterior + 1, 3, '0', STR_PAD_LEFT);
+        } else {
+            $nuevoConsecutivo = '001';
+        }
+        $totalbeneficios = floatval($request->beneficiovalor) - floatval($request->retencionvalor) + floatval($request->saldosvalor);
+        $retiro = Retiros::create([
+            'cod_ter' => $request->cod_ter,
+            'tipoRetiro' => $request->TipoRetiro,
+            'observación' => $request->observación,
+            'fecInicialLiquidacion' => $request->fechaInicialLiquidacion,
+            'consecutivoDocumento' => "BPA-{$añoActual}{$nuevoConsecutivo}",
+            'beneficioAntiguedad' => $totalbeneficios,
+        ]);
+
+        foreach ($request->opcion as $opcionId => $valor) {
+            if (!empty($valor) && floatval($valor) != 0) {
+                DB::table('RET_retiros_opciones')->insert([
+                    'cod_ter' => $request->cod_ter,
+                    'documento' => $retiro->consecutivoDocumento,
+                    'id_opcion' => $opcionId,
+                    'valor' => $valor
+                ]);
+            }
+        }
+        return redirect()->route('cinco.retiros.show', ['calculoretiro' => 'ID','id' => $retiro->cod_ter,])->with('success', 'Retiro registrado correctamente.');
     }
 
     /**
@@ -55,10 +83,11 @@ class RetirosListadoController extends Controller
         if (!$tercero) {
             return redirect()->route('cinco.retiros.index')->with('error', 'No hay registros con esa cedula ingresada.');
         }
-        //dd($tercero);
+        $opciones = DB::table('Ret_opciones')->where('activo', true)->get()->groupBy('tipo');
         $arrayliquidacion = $this->liquidaciones($tercero->fec_minis);
         $tiposselect = DB::table('RET_TiposRetiros')->where('activo', 1)->get();
-        return view('cinco.retiros.show', compact('tercero', 'arrayliquidacion', 'tiposselect'));
+        $retiro = Retiros::where('cod_ter', $id)->get();
+        return view('cinco.retiros.show', compact('tercero', 'arrayliquidacion', 'tiposselect', 'opciones', 'retiro'));
     }
 
     private function liquidaciones(string $fechaminis)
@@ -71,7 +100,7 @@ class RetirosListadoController extends Controller
         } else {
             $anioInicio = $fecha->year;
         }
-        for ($i = $anioInicio; $i <= $anioActual; $i++) {             
+        for ($i = $anioInicio; $i <= $anioActual; $i++) {
             if ($i < 2017) {
                 $arrayliquidacion[$i] = $this->antes2017($fecha, $i);
             } else {
@@ -85,26 +114,24 @@ class RetirosListadoController extends Controller
     }
 
     private function antes2017($fecha, $i)
-    {               
+    {
         $valorFijo = DB::table('RET_condicionesRetiros')->where('anio', $i)->first();
-        if ($fecha->year === $i) {            
+        if ($fecha->year === $i) {
             $difMes = 12 - $fecha->month;
             $difDia = 31 - $fecha->day;
-            $calculo = (($difMes * $valorFijo->valor) / 12) + ((($difDia * $valorFijo->valor) / 12) / 30);
+            $calculo = ($difMes * $valorFijo->valor) / 12 + ($difDia * $valorFijo->valor) / 12 / 30;
             return round($calculo);
-        }else if ($fecha->year < 2006) {    
-            if ($i == 2006){                 
+        } elseif ($fecha->year < 2006) {
+            if ($i == 2006) {
                 $difAnio = 2006 - $fecha->year;
                 $difMes = 12 - $fecha->month;
                 $difDia = 31 - $fecha->day;
-                $calculo = ($difAnio * $valorFijo->valor) + (($difMes * $valorFijo->valor) / 12) + ((($difDia * $valorFijo->valor) / 12) / 30);
+                $calculo = $difAnio * $valorFijo->valor + ($difMes * $valorFijo->valor) / 12 + ($difDia * $valorFijo->valor) / 12 / 30;
                 return round($calculo);
-            }  
-            else{
+            } else {
                 return $valorFijo->valor;
-            } 
-        } 
-        else {
+            }
+        } else {
             return $valorFijo->valor;
         }
     }
@@ -126,7 +153,7 @@ class RetirosListadoController extends Controller
             if ($fecha->year === $i) {
                 $difMes = 12 - $fecha->month;
                 $difDia = 31 - $fecha->day;
-                $liquidacion = (($difMes * $valorFijo->valor) / 12) + ((($difDia * $valorFijo->valor) / 12) / 30);
+                $liquidacion = ($difMes * $valorFijo->valor) / 12 + ($difDia * $valorFijo->valor) / 12 / 30;
                 return [$liquidacion, $plus];
             } else {
                 return [$valorFijo->valor, $plus];
@@ -134,7 +161,7 @@ class RetirosListadoController extends Controller
         }
     }
 
-    public function edit(RetirosListado $retirosListado)
+    public function edit(RetirosListado $retiros)
     {
         //
     }
@@ -142,7 +169,7 @@ class RetirosListadoController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, RetirosListado $retirosListado)
+    public function update(Request $request, Retiros $retiros)
     {
         //
     }
@@ -150,7 +177,7 @@ class RetirosListadoController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(RetirosListado $retirosListado)
+    public function destroy(Retiros $retiros)
     {
         //
     }

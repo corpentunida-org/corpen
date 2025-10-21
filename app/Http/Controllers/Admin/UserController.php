@@ -15,8 +15,6 @@ use App\Http\Controllers\AuditoriaController;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
-
-
 class UserController extends Controller
 {
     private function auditoria($accion)
@@ -28,7 +26,7 @@ class UserController extends Controller
     public function index()
     {
         //$users = User::latest()->take(5)->get();
-        $users = User::where('type', null)->paginate(4);
+        $users = User::where('type', null)->paginate(5);
         return view('admin.users.index', compact('users'));
     }
     
@@ -155,12 +153,13 @@ class UserController extends Controller
     public function show(Request $request)
     {
         $query = $request->input('query');
-
-        $usuariosfiltrados = User::whereNull('type')
-            ->where('name', 'like', '%' . $query . '%')
-            ->get();
-
-        return view('admin.users.index', compact('usuariosfiltrados'));
+        $users = User::whereNull('type')
+            ->where(function ($q) use ($query) {
+                $q->where('name', 'like', '%' . $query . '%')
+                  ->orWhere('email', 'like', '%' . $query . '%');
+            })
+            ->paginate(5);
+        return view('admin.users.index', compact('users'));
     }
 
     public function inventario($id)

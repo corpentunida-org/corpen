@@ -51,7 +51,6 @@
                                 <label class="form-label fw-semibold text-capitalize">
                                     <i class="feather-{{ $icon }} me-1 text-primary"></i> {{ str_replace('_', ' ', $field) }}
                                 </label>
-
                                 @if($field === 'cod_ter')
                                     @if(isset($tercero->cod_ter) && $tercero->cod_ter)
                                         <input type="text" class="form-control bg-light-subtle" value="{{ $tercero->cod_ter }}" disabled>
@@ -62,8 +61,7 @@
                                         @enderror
                                     @endif
                                 @elseif($field === 'tip_prv')
-                                    <select name="tip_prv" class="form-select @error('tip_prv') is-invalid @enderror">
-                                        <option value="">-- Seleccione un tipo --</option>
+                                    <select name="tip_prv" class="form-select @error('tip_prv') is-invalid @enderror">                                        
                                         @foreach($tipos as $tipo)
                                             <option value="{{ $tipo->codigo }}" @selected($value == $tipo->codigo)>{{ $tipo->nombre }}</option>
                                         @endforeach
