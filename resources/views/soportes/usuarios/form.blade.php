@@ -17,7 +17,7 @@
     </div>
 
     <div class="col-md-6 mb-3">
-        <label for="rol" class="form-label text-capitalize">Rol</label>
+        <label for="rol" class="form-label text-capitalize">Area de Soporte</label>
         <input type="text" class="form-control @error('rol') is-invalid @enderror"
                id="rol" name="rol" value="{{ old('rol', $usuario->rol ?? '') }}">
         @error('rol')
