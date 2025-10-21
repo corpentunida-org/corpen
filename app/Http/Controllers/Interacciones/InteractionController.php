@@ -124,22 +124,27 @@ class InteractionController extends Controller
     public function store(Request $request)
     {
         $validatedData = $request->validate([
-            'client_id' => 'required|exists:MaeTerceros,cod_ter',
-            'agent_id' => 'required|exists:users,id',
-            'interaction_date' => 'required|date',
-            'interaction_channel' => 'required|exists:int_channels,id',
-            'interaction_type' => 'required|exists:int_types,id',
-            'outcome' => 'required|exists:int_outcomes,id',
-            'notes' => 'nullable|string',
-            'next_action_date' => 'nullable|date',
-            'next_action_type' => 'nullable|exists:int_next_actions,id',
-            'next_action_notes' => 'nullable|string',
-            'interaction_url' => 'nullable|url',
-            'attachments.*' => 'file|mimes:jpeg,png,pdf,jpg,doc,docx|max:10240',
+            'client_id'          => 'required|exists:MaeTerceros,cod_ter',
+            'agent_id'           => 'required|exists:users,id',
+            'interaction_date'   => 'required|date',
+            'interaction_channel'=> 'required|exists:int_channels,id',
+            'interaction_type'   => 'required|exists:int_types,id',
+            'outcome'            => 'required|exists:int_outcomes,id',
+            'notes'              => 'nullable|string',
+            'next_action_date'   => 'nullable|date',
+            'next_action_type'   => 'nullable|exists:int_next_actions,id',
+            'next_action_notes'  => 'nullable|string',
+            'interaction_url'    => 'nullable|url',
+            'attachments.*'      => 'file|mimes:jpeg,png,pdf,jpg,doc,docx|max:10240',
         ]);
 
+        // 👇 Forzar el agente autenticado (independiente del formulario)
         $validatedData['agent_id'] = Auth::id();
 
+        // 👇 Asignar un valor por defecto a next_action_type si viene vacío o null
+        $validatedData['next_action_type'] = $request->input('next_action_type') ?? 1;
+
+        // 👇 Manejo de archivos adjuntos
         if ($request->hasFile('attachments')) {
             $storedFiles = [];
             foreach ($request->file('attachments') as $file) {
@@ -148,16 +153,18 @@ class InteractionController extends Controller
             $validatedData['attachment_urls'] = $storedFiles;
         }
 
+        // 👇 Crear la interacción
         $interaction = Interaction::create($validatedData);
 
+        // 👇 Calcular duración de la interacción
         $inicio = Carbon::parse($interaction->interaction_date);
         $fin = Carbon::parse($interaction->created_at);
         $interaction->duration = $fin->diffInMinutes($inicio);
         $interaction->save();
 
-        return redirect()->route('interactions.index')
-            ->with('success', 'Interacción creada exitosamente.');
+        return redirect()->route('interactions.index')->with('success', 'Interacción creada exitosamente.');
     }
+
 
     /**
      * Formulario para editar una interacción existente.
@@ -185,20 +192,24 @@ class InteractionController extends Controller
     public function update(Request $request, Interaction $interaction)
     {
         $validatedData = $request->validate([
-            'client_id' => 'required|exists:MaeTerceros,cod_ter',
-            'agent_id' => 'required|exists:users,id',
-            'interaction_date' => 'required|date',
-            'interaction_channel' => 'required|exists:int_channels,id', //1
-            'interaction_type' => 'required|exists:int_types,id', //2
-            'outcome' => 'required|exists:int_outcomes,id', //3
-            'notes' => 'nullable|string',
-            'next_action_date' => 'nullable|date',
-            'next_action_type' => 'nullable|exists:int_next_actions,id', //4
-            'next_action_notes' => 'nullable|string',
-            'interaction_url' => 'nullable|url',
-            'attachments.*' => 'file|mimes:jpeg,png,pdf,jpg,doc,docx|max:10240',
+            'client_id'          => 'required|exists:MaeTerceros,cod_ter',
+            'agent_id'           => 'required|exists:users,id',
+            'interaction_date'   => 'required|date',
+            'interaction_channel'=> 'required|exists:int_channels,id',
+            'interaction_type'   => 'required|exists:int_types,id',
+            'outcome'            => 'required|exists:int_outcomes,id',
+            'notes'              => 'nullable|string',
+            'next_action_date'   => 'nullable|date',
+            'next_action_type'   => 'nullable|exists:int_next_actions,id',
+            'next_action_notes'  => 'nullable|string',
+            'interaction_url'    => 'nullable|url',
+            'attachments.*'      => 'file|mimes:jpeg,png,pdf,jpg,doc,docx|max:10240',
         ]);
 
+        // 👇 Asignar valor por defecto si el campo viene vacío o null
+        $validatedData['next_action_type'] = $request->input('next_action_type') ?? 1;
+
+        // 👇 Mantener archivos existentes y agregar nuevos si los hay
         $storedFiles = $interaction->attachment_urls ?? [];
         if ($request->hasFile('attachments')) {
             foreach ($request->file('attachments') as $file) {
@@ -207,8 +218,10 @@ class InteractionController extends Controller
         }
         $validatedData['attachment_urls'] = $storedFiles;
 
+        // 👇 Actualizar la interacción
         $interaction->update($validatedData);
 
+        // 👇 Recalcular duración
         $inicio = Carbon::parse($interaction->interaction_date);
         $fin = Carbon::parse($interaction->created_at);
         $interaction->duration = $fin->diffInMinutes($inicio);
@@ -217,6 +230,7 @@ class InteractionController extends Controller
         return redirect()->route('interactions.index')
             ->with('success', 'Interacción actualizada exitosamente.');
     }
+
 
     /**
      * Elimina una interacción y sus archivos adjuntos.

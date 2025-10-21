@@ -52,7 +52,11 @@
                         @forelse ($interactions as $interaction)
                             @php
                                 $attachments = $interaction->attachment_urls ?? [];
-                                $outcome = $interaction->outcome ?? '';
+
+                                // ✅ Traemos el nombre desde la relación
+                                $outcome = $interaction->outcomeRelation?->name ?? '—';
+
+                                // ✅ Asignamos el color del badge según el nombre
                                 $badgeClass = [
                                     'Exitoso' => 'success',
                                     'Pendiente' => 'warning',
@@ -60,6 +64,7 @@
                                     'Seguimiento' => 'info'
                                 ][$outcome] ?? 'secondary';
                             @endphp
+
                             <tr>
                                 <td>
                                     <a href="#"
@@ -69,12 +74,12 @@
                                        data-id="{{ $interaction->id }}"
                                        data-client-name="{{ $interaction->client->nom_ter ?? $interaction->client->nombre ?? 'N/A' }}"
                                        data-agent="{{ $interaction->agent->name ?? 'Sin asignar' }}"
-                                       data-channel="{{ $interaction->interaction_channel ?? '—' }}"
-                                       data-type="{{ $interaction->interaction_type ?? '—' }}"
+                                       data-channel="{{ $interaction->channel?->name ?? '—' }}"
+                                       data-type="{{ $interaction->type?->name ?? '—' }}"
                                        data-duration="{{ $interaction->duration ? $interaction->duration . (is_numeric($interaction->duration) ? ' min' : '') : '—' }}"
                                        data-date="{{ optional($interaction->interaction_date)->format('d/m/Y h:i A') ?? '—' }}"
                                        data-notes="{{ $interaction->notes ?? 'Sin notas.' }}"
-                                       data-outcome="{{ $outcome ?: '—' }}"
+                                       data-outcome="{{ $interaction->outcomeRelation?->name ?? '—' }}"
                                        data-outcome-badge="{{ $badgeClass }}"
                                        data-url="{{ $interaction->interaction_url }}"
                                        data-related-id="{{ $interaction->parent_interaction_id }}"
@@ -101,7 +106,9 @@
                                     @endif
                                 </td>
                                 <td>
-                                    <span class="badge bg-{{ $badgeClass }} rounded-pill">{{ $outcome ?: '—' }}</span>
+                                    <span class="badge bg-{{ $badgeClass }} rounded-pill">
+                                        {{ $outcome ?: '—' }}
+                                    </span>
                                 </td>
                                 <td class="text-center">
                                     <div class="d-flex justify-content-center align-items-center gap-1">
