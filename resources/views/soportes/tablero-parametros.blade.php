@@ -1,4 +1,5 @@
 <x-base-layout>
+
     {{-- Mensaje de éxito --}}
     @if (session('success'))
         <div class="alert alert-success" role="alert">
@@ -54,74 +55,71 @@
         <div class="card-body">
             <div class="tab-content" id="soporteConfigTabContent">
 
-    {{-- ================= PESTAÑA USUARIOS QUE ASIGNAN SOPORTE ================= --}}
-    <div class="tab-pane fade" id="usuarios-tab" role="tabpanel" aria-labelledby="usuarios-tab-link">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h5 class="fw-bold mb-0">Gestión de Usuarios que Asignan Soporte</h5>
-            <a href="{{ route('soportes.usuarios.create') }}" class="btn btn-success btn-sm btnCrear">
-                <i class="feather-plus me-1"></i> Crear Nuevo
-            </a>
-        </div>
+                {{-- ================= PESTAÑA USUARIOS QUE ASIGNAN SOPORTE ================= --}}
+                <div class="tab-pane fade" id="usuarios-tab" role="tabpanel" aria-labelledby="usuarios-tab-link">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="fw-bold mb-0">Gestión de Usuarios que Asignan Soporte</h5>
+                        <a href="{{ route('soportes.usuarios.create') }}" class="btn btn-success btn-sm btnCrear">
+                            <i class="feather-plus me-1"></i> Crear Nuevo
+                        </a>
+                    </div>
 
-        <div class="table-responsive">
-            <table class="table table-hover align-middle">
-                <thead>
-                    <tr>
-                        <th>Nombre</th>
-                        <th>Email</th>
-                        <th>Rol</th>
-                        <th>Estado</th>
-                        <th class="text-end">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse ($usuarios as $usuario)
-                        <tr>
-                            <td>{{ $usuario->maeTercero->nom_ter ?? '—' }}</td>
-                            <td>{{ $usuario->maeTercero->correo ?? '—' }}</td>
-                            <td>{{ $usuario->rol ?? '—' }}</td>
-                            <td>
-                                <span class="badge bg-success">Activo</span>
-                            </td>
-                            <td class="text-end">
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <i class="feather-more-vertical"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end">
-                                        <li>
-                                            <a class="dropdown-item btnEditar" href="{{ route('soportes.usuarios.edit', $usuario) }}">
-                                                <i class="feather-edit-3 me-2"></i> Editar
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <form action="{{ route('soportes.usuarios.destroy', $usuario) }}" method="POST" class="formEliminar d-inline">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="dropdown-item text-danger">
-                                                    <i class="feather-trash-2 me-2"></i> Eliminar
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Email</th>
+                                    <th>Area de Soporte</th>
+                                    <th>Estado</th>
+                                    <th class="text-end">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse ($usuarios as $usuario)
+                                    <tr>
+                                        <td>{{ $usuario->maeTercero->nom_ter ?? '—' }}</td>
+                                        <td>{{ $usuario->maeTercero->correo ?? '—' }}</td>
+                                        <td>{{ $usuario->rol ?? '—' }}</td>
+                                        <td>
+                                            <span class="badge bg-success">Activo</span>
+                                        </td>
+                                        <td class="text-end">
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                    <i class="feather-more-vertical"></i>
                                                 </button>
-                                            </form>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="5" class="text-center text-muted">No hay usuarios registrados.</td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
+                                                <ul class="dropdown-menu dropdown-menu-end">
+                                                    <li>
+                                                        <a class="dropdown-item btnEditar" href="{{ route('soportes.usuarios.edit', $usuario) }}">
+                                                            <i class="feather-edit-3 me-2"></i> Editar
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <form action="{{ route('soportes.usuarios.destroy', $usuario) }}" method="POST" class="formEliminar d-inline">
+                                                            @csrf
+                                                            @method('DELETE')
+                                                            <button type="submit" class="dropdown-item text-danger">
+                                                                <i class="feather-trash-2 me-2"></i> Eliminar
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted">No hay usuarios registrados.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
 
-            {{-- Paginación --}}
-            <div class="mt-3">{{ $usuarios->links() }}</div>
-        </div>
-    </div>
-
-
-
+                        {{-- Paginación --}}
+                        <div class="mt-3">{{ $usuarios->links() }}</div>
+                    </div>
+                </div>
 
                 {{-- ================= PESTAÑA CATEGORÍAS ================= --}}
                 <div class="tab-pane fade" id="categorias-tab" role="tabpanel" aria-labelledby="categorias-tab-link">
@@ -478,6 +476,7 @@
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <script>
             document.addEventListener('DOMContentLoaded', function() {
+                // ----------------------- SweetAlert2 -----------------------
                 function confirmarAccion(config, callback) {
                     Swal.fire({
                         title: config.title,
@@ -520,7 +519,7 @@
                         });
                     }
                 });
-                
+
                 document.querySelectorAll('.formEliminar').forEach(form => {
                     form.addEventListener('submit', function(e) {
                         e.preventDefault();
@@ -533,6 +532,22 @@
                         });
                     });
                 });
+
+                // ----------------------- Mantener pestaña activa -----------------------
+                const activeTab = localStorage.getItem('activeTab');
+                if (activeTab) {
+                    const tabTriggerEl = document.querySelector(`[data-bs-target="${activeTab}"]`);
+                    if (tabTriggerEl) {
+                        new bootstrap.Tab(tabTriggerEl).show();
+                    }
+                }
+
+                document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(tab => {
+                    tab.addEventListener('shown.bs.tab', function (event) {
+                        localStorage.setItem('activeTab', event.target.getAttribute('data-bs-target'));
+                    });
+                });
+
             });
         </script>
     @endpush

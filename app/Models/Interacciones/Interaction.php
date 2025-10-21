@@ -24,7 +24,7 @@ class Interaction extends Model
 
 
         'parent_interaction_id',    // *** ID de la interacción relacionada o anterior (en caso de seguimiento)
-                                    // Area asignada de la interaccion.
+                                    // Area asignada de la interaccion
                                     // Si el area es Cartera - Relacion con las lineas de creditos.
 
         'next_action_date',         // 9) Fecha programada para la próxima acción o seguimiento

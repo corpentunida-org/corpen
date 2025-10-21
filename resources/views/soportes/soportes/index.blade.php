@@ -68,7 +68,7 @@
                 @candirect('soporte.lista.todo')    
                 <li class="nav-item" role="presentation">                  
                         <button class="nav-link"
-                                id="tab--tab"
+                                id="tab-1-tab"
                                 data-bs-toggle="tab"
                                 data-bs-target="#tab-1"
                                 type="button"
@@ -468,10 +468,11 @@
     @endpush
 
     @push('scripts')
+        <!-- Librerías necesarias -->
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-        {{-- <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-        <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script> --}}
+        <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+        <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
         <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
         <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -484,7 +485,7 @@
             document.addEventListener('DOMContentLoaded', function () {
                 let tables = [];
 
-                // ✅ Inicializar todas las tablas soporteTable con botones
+                // ✅ Inicializar todas las tablas con clase .soporteTable con botones de exportación
                 $('.soporteTable').each(function () {
                     if (!$.fn.dataTable.isDataTable(this)) {
                         let t = $(this).DataTable({
@@ -513,7 +514,7 @@
                     });
                 }
 
-                // Filtros
+                // ✅ Filtros (área, prioridad, usuario, fecha)
                 $('#filterArea').on('change', function () {
                     aplicarFiltro(3, this.value);
                 });
@@ -537,27 +538,28 @@
                     }
                 });
 
-                // ✅ Modal dinámico
-                document.querySelectorAll('.soporte-id').forEach(function (el) {
-                    el.addEventListener('click', function () {
-                        document.getElementById('modal-id').textContent = this.dataset.id;
-                        document.getElementById('modal-fecha').textContent = this.dataset.fecha;
-                        document.getElementById('modal-creado').textContent = this.dataset.creado;
-                        document.getElementById('modal-area').textContent = this.dataset.area ?? 'Soporte';
+                // ✅ Modal dinámico al hacer clic en .soporte-id
+                document.addEventListener('click', function (e) {
+                    if (e.target.classList.contains('soporte-id')) {
+                        const el = e.target;
+                        document.getElementById('modal-id').textContent = el.dataset.id;
+                        document.getElementById('modal-fecha').textContent = el.dataset.fecha;
+                        document.getElementById('modal-creado').textContent = el.dataset.creado;
+                        document.getElementById('modal-area').textContent = el.dataset.area ?? 'Soporte';
                         document.getElementById('modal-tipo-subtipo').textContent =
-                            (this.dataset.tipo ?? 'N/A') + ' / ' + (this.dataset.subtipo ?? 'N/A');
-                        document.getElementById('modal-prioridad').textContent = this.dataset.prioridad;
-                        document.getElementById('modal-detalles').textContent = this.dataset.detalles;
-                        document.getElementById('modal-fecha-update').textContent = this.dataset.updated ?? this.dataset.fecha;
-                        document.getElementById('modal-maeTercero').textContent = this.dataset.maetercero ?? 'N/A';
-                        document.getElementById('modal-escalado').textContent = this.dataset.escalado ?? 'Sin asignar';
-                        document.getElementById('modal-estado').textContent = this.dataset.estado;
+                            (el.dataset.tipo ?? 'N/A') + ' / ' + (el.dataset.subtipo ?? 'N/A');
+                        document.getElementById('modal-prioridad').textContent = el.dataset.prioridad;
+                        document.getElementById('modal-detalles').textContent = el.dataset.detalles;
+                        document.getElementById('modal-fecha-update').textContent = el.dataset.updated ?? el.dataset.fecha;
+                        document.getElementById('modal-maeTercero').textContent = el.dataset.maetercero ?? 'N/A';
+                        document.getElementById('modal-escalado').textContent = el.dataset.escalado ?? 'Sin asignar';
+                        document.getElementById('modal-estado').textContent = el.dataset.estado;
 
                         new bootstrap.Modal(document.getElementById('detalleSoporteModal')).show();
-                    });
+                    }
                 });
 
-                // ✅ SweetAlert confirmaciones
+                // ✅ SweetAlert — confirmaciones
                 function confirmarAccion(titulo, texto, icono, callback) {
                     Swal.fire({
                         title: titulo,
@@ -568,9 +570,10 @@
                         cancelButtonColor: '#6c757d',
                         confirmButtonText: 'Sí',
                         cancelButtonText: 'Cancelar',
-                    }).then((result) => { if(result.isConfirmed) callback(); });
+                    }).then((result) => { if (result.isConfirmed) callback(); });
                 }
 
+                // Botón crear
                 document.querySelectorAll('.btnCrear').forEach(btn => {
                     btn.addEventListener('click', function (e) {
                         e.preventDefault();
@@ -580,6 +583,7 @@
                     });
                 });
 
+                // Botón editar
                 document.querySelectorAll('.btnEditar').forEach(btn => {
                     btn.addEventListener('click', function (e) {
                         e.preventDefault();
@@ -589,16 +593,20 @@
                     });
                 });
 
+                // Formulario eliminar
                 document.querySelectorAll('.formEliminar').forEach(form => {
                     form.addEventListener('submit', function (e) {
                         e.preventDefault();
-                        confirmarAccion('¿Eliminar este Soporte?', 'Esta acción eliminará el soporte y todas sus observaciones relacionadas. Esta acción no se puede deshacer.', 'warning', () => {
-                            form.submit();
-                        });
+                        confirmarAccion(
+                            '¿Eliminar este Soporte?',
+                            'Esta acción eliminará el soporte y todas sus observaciones relacionadas. Esta acción no se puede deshacer.',
+                            'warning',
+                            () => { form.submit(); }
+                        );
                     });
                 });
 
-                // ✅ Tooltips Bootstrap
+                // ✅ Activar tooltips de Bootstrap
                 var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
                 tooltipTriggerList.map(function (el) { return new bootstrap.Tooltip(el); });
             });
