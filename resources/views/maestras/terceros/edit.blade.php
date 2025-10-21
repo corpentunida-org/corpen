@@ -18,7 +18,6 @@
             </div>
         </div>
     </div>
-
     @include('maestras.terceros.form', [
         'action' => route('maestras.terceros.update', $tercero->cod_ter),
         'method' => 'PUT',
