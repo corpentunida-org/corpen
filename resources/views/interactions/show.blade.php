@@ -267,18 +267,19 @@
                         <span>{{ $interaction->interaction_date->format('d/m/Y H:i A') }}</span>
                     </div>
                 </div>
-                <div class="detail-item"><i class="fas fa-tag"></i>
-                    <div class="content">
-                        <strong>Tipo</strong>
-                        <span>{{ $interaction->interaction_type }}</span>
-                    </div>
+            <div class="detail-item"><i class="fas fa-tag"></i>
+                <div class="content">
+                    <strong>Tipo</strong>
+                    <span>{{ $interaction->type?->name ?? '—' }}</span>
                 </div>
-                <div class="detail-item"><i class="fas fa-clipboard-check"></i>
-                    <div class="content">
-                        <strong>Resultado</strong>
-                        <span>{{ $interaction->outcome }}</span>
-                    </div>
+            </div>
+            <div class="detail-item"><i class="fas fa-clipboard-check"></i>
+                <div class="content">
+                    <strong>Resultado</strong>
+                    <span>{{ $interaction->outcomeRelation?->name ?? '—' }}</span>
                 </div>
+            </div>
+
             </div>
             <hr>
             <div class="detail-item">
