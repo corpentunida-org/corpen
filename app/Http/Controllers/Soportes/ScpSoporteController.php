@@ -205,6 +205,7 @@ public function store(Request $request)
 
     public function storeObservacion(Request $request, ScpSoporte $scpSoporte)
     {
+
         $request->validate([
             'observacion' => 'required|string|max:255',
             'id_scp_estados' => 'required|exists:scp_estados,id',
