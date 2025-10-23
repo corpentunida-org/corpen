@@ -1,5 +1,12 @@
 <x-base-layout>
     @section('titlepage', 'Titular y Beneficiarios')
+    @if(!$maeter)
+        <div class="col-lg-12 alert alert-danger alert-dismissible fade show" role="alert">
+            <strong>El usuario no se encuentra registrado en la maestra de terceros</strong> Debe crearlo en el siguiente enlace
+            <a href="{{ route('maestras.terceros.create') }}" class="alert-link"> Aquí</a>.
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
     <div class="col-lg-12">
         <div class="card stretch stretch-full">
             <div class="card-body task-header d-lg-flex align-items-center justify-content-between">
@@ -9,7 +16,8 @@
                             <i class="bi bi-person-fill"></i>
                         </div>
                         <div>
-                            <div class="fs-4 fw-bold text-dark"><span class="counter">{{ $asociado['name'] }}</span></div>
+                            <div class="fs-4 fw-bold text-dark"><span class="counter">{{ $asociado['name'] }}</span>
+                            </div>
                             <h3 class="fs-13 fw-semibold text-truncate-1-line">{{ $asociado['documentId'] }}</h3>
                         </div>
                     </div>
@@ -130,7 +138,8 @@
                                             <a href="javascript:void(0);">Contrato</a>
                                         </td>
                                         <td>
-                                            <span class="fs-12 fw-normal text-muted">{{ $asociado['agreement'] }}</span>
+                                            <span
+                                                class="fs-12 fw-normal text-muted">{{ $asociado['agreement'] }}</span>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -161,7 +170,8 @@
             <h2 class="fs-16 fw-bold pt-2">PRESTAR SERVICIO</h2>
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
-        <form method="POST" action="{{ route('exequial.prestarServicio.store') }}"id="FormularioPrestarServicioTitular" novalidate>
+        <form method="POST"
+            action="{{ route('exequial.prestarServicio.store') }}"id="FormularioPrestarServicioTitular" novalidate>
             @csrf
             <div
                 class="py-3 px-4 d-flex justify-content-between align-items-center border-bottom border-bottom-dashed border-gray-5 bg-gray-100">
