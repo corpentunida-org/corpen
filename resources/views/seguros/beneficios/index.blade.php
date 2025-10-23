@@ -10,8 +10,7 @@
                         <span class="fs-12 fw-normal text-muted text-truncate-1-line">Lista de filtros </span>
                     </h5>
                 </div>
-                <form class="row" method="post" action="{{ route('seguros.beneficios.list') }}"
-                    id="formFiltroBeneficios" novalidate>
+                <form class="row" method="post" action="{{ route('seguros.beneficios.list') }}"id="formFiltroBeneficios" novalidate>
                     @method('POST')
                     @csrf
                     <div class="row">
@@ -260,45 +259,42 @@
                                                             </a>
                                                         </li>
                                                         @candirect('seguros.beneficios.update')
-                                                        <li>
-                                                            <a href="{{ route('seguros.beneficios.edit', $b->id) }}"
-                                                                class="dropdown-item">
-                                                                <i class="feather feather-edit-3 me-3"></i>
-                                                                <span>Editar</span>
-                                                            </a>
-                                                        </li>
+                                                            <li>
+                                                                <a href="{{ route('seguros.beneficios.edit', $b->id) }}"
+                                                                    class="dropdown-item">
+                                                                    <i class="feather feather-edit-3 me-3"></i>
+                                                                    <span>Editar</span>
+                                                                </a>
+                                                            </li>
                                                         @endcandirect
                                                         @candirect('seguros.beneficios.destroy')
-                                                        <li>
-                                                            <form action="{{ route('seguros.beneficios.destroy', $b->id) }}"
-                                                                method="POST">
-                                                                @csrf
-                                                                @method('DELETE')
-                                                                <input type="hidden" name="opcdestroy" value="individual"
-                                                                    id="InputDestroy">
-                                                                <button type="submit" class="dropdown-item btnAbrirModalDestroy"
-                                                                    data-text="(individual)">
-                                                                    <i class="bi bi-person-x-fill"></i>
-                                                                    <span>Eliminar Individual</span>
-                                                                </button>
-                                                            </form>
-                                                        </li>
+                                                            <li>
+                                                                <form action="{{ route('seguros.beneficios.destroy', $b->id) }}" method="POST">
+                                                                    @csrf
+                                                                    @method('DELETE')
+                                                                    <input type="hidden" name="opcdestroy" value="individual"
+                                                                        id="InputDestroy">
+                                                                    <button type="submit" class="dropdown-item btnAbrirModalDestroy"
+                                                                        data-text="(individual)">
+                                                                        <i class="bi bi-person-x-fill"></i>
+                                                                        <span>Eliminar Individual</span>
+                                                                    </button>
+                                                                </form>
+                                                            </li>
                                                         @endcandirect
-                                                        <li>
-                                                            <form action="{{ route('seguros.beneficios.destroy', $b->id) }}"
-                                                                method="POST">
-                                                                @csrf
-                                                                @method('DELETE')
-                                                                <input type="hidden" name="opcdestroy" value="grupo"
-                                                                    id="InputDestroy">
-                                                                <button type="submit" class="dropdown-item btnAbrirModalDestroy"
-                                                                    data-text="(grupal)">
-                                                                    <i class="feather feather-trash-2 me-3"></i>
-                                                                    <span>Eliminar Grupo</span>
-                                                                </button>
-                                                            </form>
-                                                        </li>
-                                                        @endcan
+                                                        @candirect('seguros.beneficios.destroy')
+                                                            <li>
+                                                                <form action="{{ route('seguros.beneficios.destroy', $b->id) }}" method="POST">
+                                                                    @csrf
+                                                                    @method('DELETE')
+                                                                    <input type="hidden" name="opcdestroy" value="grupo"id="InputDestroy">
+                                                                    <button type="submit" class="dropdown-item btnAbrirModalDestroy"data-text="(grupal)">
+                                                                        <i class="feather feather-trash-2 me-3"></i>
+                                                                        <span>Eliminar Grupo</span>
+                                                                    </button>
+                                                                </form>
+                                                            </li> 
+                                                        @endcandirect
                                                     </ul>
                                                 </div>
                                             </td>
@@ -393,4 +389,5 @@
                 });
             });
         </script>
+    </div>
 </x-base-layout>

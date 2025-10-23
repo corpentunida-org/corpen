@@ -1,5 +1,8 @@
 <x-base-layout>
     @section('titlepage', 'Calculo de Liquidación')
+    <x-warning />
+    <x-success />
+    <x-error />
     <div class="col-12">
         <div class="card stretch stretch-full">
             <div class="card-body">
@@ -55,7 +58,8 @@
                         </a>
                         <div class="text-end">
                             <p class="fs-11 fw-medium text-uppercase text-muted mb-1">Fecha Ingreso al Ministerio</p>
-                            <h5 class="bg-soft-primary text-primary">{{ optional($tercero->fec_minis)->format('Y-m-d')?? 'sin fecha' }}</h5>
+                            <h5 class="bg-soft-primary text-primary">
+                                {{ optional($tercero->fec_minis)->format('Y-m-d') ?? 'sin fecha' }}</h5>
                         </div>
                     </div>
                 </div>
@@ -100,10 +104,12 @@
         <div class="card stretch stretch-full">
             <div class="card-header">
                 <h5 class="card-title">Cálculo Liquidación</h5>
-                <a href="#cardGenerarRetiro" class="btn btn-danger">
-                    <i class="bi bi-people me-2"></i>
-                    <span>Retirar Pastor</span>
-                </a>
+                @if ($tercero->estado)                    
+                    <a href="#cardGenerarRetiro" class="btn btn-danger" id="btnCardRetiros">
+                        <i class="bi bi-people me-2"></i>
+                        <span>Generar Retiro</span>
+                    </a>
+                @endif
             </div>
             <div class="card-body custom-card-action p-3">
                 <div class="table-responsive">
@@ -180,32 +186,37 @@
                 <div class="profile-details mb-5">
                     <div class="row g-0 mb-4">
                         <div class="col-sm-6 text-muted">Nombre Completo:</div>
-                        <div class="col-sm-6 fw-semibold">{{$tercero->nom_ter}}</div>
+                        <div class="col-sm-6 fw-semibold">{{ $tercero->nom_ter }}</div>
                     </div>
                     <div class="row g-0 mb-4">
                         <div class="col-sm-6 text-muted">Distrito:</div>
-                        <div class="col-sm-6 fw-semibold">{{ $tercero->cod_dist ? substr($tercero->cod_dist, 2) : '' }}</div>
+                        <div class="col-sm-6 fw-semibold">
+                            {{ $tercero->cod_dist ? substr($tercero->cod_dist, 2) : '' }}</div>
                     </div>
                     <div class="row g-0 mb-4">
                         <div class="col-sm-6 text-muted">Ingreso al Ministerio:</div>
-                        <div class="col-sm-6 fw-semibold">{{ optional($tercero->fec_minis)->format('Y-m-d') ?? 'sin fecha'}}</div>
+                        <div class="col-sm-6 fw-semibold">
+                            {{ optional($tercero->fec_minis)->format('Y-m-d') ?? 'sin fecha' }}</div>
                     </div>
                     <div class="row g-0 mb-4">
                         <div class="col-sm-6 text-muted">Primer Aporte:</div>
-                        <div class="col-sm-6 fw-semibold">{{ optional($tercero->fec_aport)->format('Y-m-d') ?? 'sin fecha'}}</div>
+                        <div class="col-sm-6 fw-semibold">
+                            {{ optional($tercero->fec_aport)->format('Y-m-d') ?? 'sin fecha' }}</div>
                     </div>
                     <div class="row g-0 mb-4">
                         <div class="col-sm-6 text-muted">Ingreso a Corpentunida:</div>
-                        <div class="col-sm-6 fw-semibold">{{ optional($tercero->fec_ing)->format('Y-m-d') ?? 'sin fecha'}}</div>
+                        <div class="col-sm-6 fw-semibold">
+                            {{ optional($tercero->fec_ing)->format('Y-m-d') ?? 'sin fecha' }}</div>
                     </div>
                     <div class="row g-0 mb-4">
                         <div class="col-sm-6 text-muted">Fecha de Nacimiento</div>
-                        <div class="col-sm-6 fw-semibold">{{ optional($tercero->fec_nac)->format('Y-m-d') ?? 'sin fecha'}}</div>
-                    </div>                    
+                        <div class="col-sm-6 fw-semibold">
+                            {{ optional($tercero->fec_nac)->format('Y-m-d') ?? 'sin fecha' }}</div>
+                    </div>
                     <div class="row g-0 mb-4">
                         <div class="col-sm-6 text-muted">Edad</div>
-                        <div class="col-sm-6 fw-semibold">{{ $tercero->edad ?? ' '}}</div>
-                    </div>                    
+                        <div class="col-sm-6 fw-semibold">{{ $tercero->edad ?? ' ' }}</div>
+                    </div>
                     <div class="row g-0 mb-4">
                         <div class="col-sm-6 text-muted">Declara renta</div>
                         <div class="col-sm-6 fw-semibold"></div>
@@ -214,45 +225,168 @@
             </div>
         </div>
     </div>
-    <div class="col-lg-12" id="cardGenerarRetiro">
+    @if ($retiro->isEmpty())
+    <div class="col-lg-12" id="cardGenerarRetiro" style="display: none;">
         <div class="card stretch stretch-full">
             <div class="card-header">
-                <a href="{{ route('cinco.liquidacionretiro', ['id' => $tercero->cod_ter]) }}"
-                    class="btn btn-md bg-soft-teal text-teal border-soft-teal">Generar PDF</a>
+                <h5 class="card-title">Generar Retiro</h5>                
             </div>
             <div class="card-body">
-                <div class="row">
-                    <div class="col-6">
-                        <label class="form-label">Tipo de Retiro<span class="text-danger">*</span></label>
-                        <select class="form-select" name="TipoRetiro" required>                            
-                            @foreach ($tiposselect as $tipo)
-                                <option value="{{ $tipo->id }}">{{ $tipo->nombre }}</option>
+                <form action="{{ route('cinco.retiros.store') }}" id="formAddRetiro" method="POST" novalidate>
+                    @csrf
+                    <div class="row">
+                        <div class="col-6">
+                            <input type="hidden" name="cod_ter" value="{{ $tercero->cod_ter }}">
+                            <label class="form-label">Tipo de Retiro<span class="text-danger">*</span></label>
+                            <select class="form-select" name="TipoRetiro" required>
+                                @foreach ($tiposselect as $tipo)
+                                    <option value="{{ $tipo->id }}">{{ $tipo->nombre }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Observación<span class="text-danger">*</span></label>
+                            <input type="text" class="form-control text-uppercase" name="observación" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-3 mt-4">
+                            <label class="form-label">Fecha último aporte<span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" name="FechaUltimoAporte" required>
+                        </div>
+                        <div class="col-3 mt-4">
+                            <label class="form-label">Fecha Incial Liquidación<span
+                                    class="text-danger">*</span></label>
+                            <select class="form-select" name="fechaInicialLiquidacion" required>
+                                <option value="{{ $tercero->fec_minis }}">Ingreso al ministerio
+                                    {{ optional($tercero->fec_minis)->format('Y-m-d') }}</option>
+                                <option value="{{ $tercero->fec_aport }}">Primer Aporte
+                                    {{ optional($tercero->fec_aport)->format('Y-m-d') }}</option>
+                            </select>
+                        </div>
+                        <div class="col-3 mt-4">
+                            <label class="form-label">Fecha Retiro IPUC<span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" name="FechaRetiro" required>
+                        </div>
+                        <div class="col-3 mt-4">
+                            <label class="form-label">Inactivar Tercero en:<span class="text-danger">*</span></label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="maeterdesactivar">
+                                <label class="form-check-label" for="maeterdesactivar">Maestra Terceros</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="segurosdesactivar">
+                                <label class="form-check-label" for="segurosdesactivar">Seguros</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="exequialdesactivar">
+                                <label class="form-check-label" for="exequialdesactivar">Exequiales</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-4 mt-4">
+                            <label class="form-label">Beneficios</label>
+                            @foreach ($opciones[1] as $o)
+                                <div class="row mb-4 align-items-center">
+                                    <div class="col-lg-4"><label>{{ $o->nombre }}</label></div>
+                                    <div class="col-lg-7">
+                                        <input type="number" class="form-control input-beneficio"
+                                            name="opcion[{{ $o->id }}]"
+                                            @if ($o->id == 1) value="{{ number_format($totalAcomulado, 0, '', '') }}" @endif
+                                            required>
+                                    </div>
+                                </div>
                             @endforeach
-                        </select>
+                            <p class="text-end" style="padding-right: 50px">Total
+                                <span class="badge bg-gray-200 text-dark" style="font-size: 15px;"
+                                    id="total-beneficios"></span>
+                            </p>
+                        </div>
+                        <div class="col-4 mt-4">
+                            <label class="form-label">Base Retención</label>
+                            @foreach ($opciones[2] as $o)
+                                <div class="row mb-4 align-items-center">
+                                    <div class="col-lg-4"><label>{{ $o->nombre }}</label></div>
+                                    <div class="col-lg-7">
+                                        <input type="number" class="form-control input-retencion"
+                                            name="opcion[{{ $o->id }}]" required>
+                                    </div>
+                                </div>
+                            @endforeach
+                            <p class="text-end" style="padding-right: 50px">Total
+                                <span class="badge bg-gray-200 text-dark" style="font-size: 15px;"
+                                    id="total-retencion"></span>
+                            </p>
+                        </div>
+                        <div class="col-4 mt-4">
+                            <label class="form-label">Saldos a favor</label>
+                            @foreach ($opciones[3] as $o)
+                                <div class="row mb-4 align-items-center">
+                                    <div class="col-lg-4"><label>{{ $o->nombre }}</label></div>
+                                    <div class="col-lg-7">
+                                        <input type="number" class="form-control input-saldos"
+                                            name="opcion[{{ $o->id }}]" required>
+                                    </div>
+                                </div>
+                            @endforeach
+                            <p class="text-end" style="padding-right: 50px">Total
+                                <span class="badge bg-gray-200 text-dark" style="font-size: 15px;"
+                                    id="total-saldos"></span>
+                            </p>
+                            <input type="hidden" name="beneficiovalor" id="beneficiovalor">
+                            <input type="hidden" name="retencionvalor" id="retencionvalor">
+                            <input type="hidden" name="saldosvalor" id="saldosvalor">
+                        </div>
                     </div>
-                    <div class="col-6">
-                        <label class="form-label">Observación<span class="text-danger">*</span></label>
-                        <input type="text" class="form-control text-uppercase" name="observación" required>
-                    </div>                    
-                </div>
-                <div class="row">
-                    <div class="col-3 mt-4">
-                        <label class="form-label">Fecha ultimo aporte<span class="text-danger">*</span></label>
-                        <input type="date" class="form-control" name="FechaUltimoAporte" required>
+                    <div class="col-12 mt-4 d-flex justify-content-end">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-plus me-2"></i>
+                            <span>Generar Retiro</span>
+                        </button>
                     </div>
-                    <div class="col-3 mt-4">
-                        <label class="form-label">Fecha Incial Liquidación<span class="text-danger">*</span></label>
-                        <select class="form-select" name="TipoRetiro" required>
-                            <option value="">Ingreso al ministerio {{ optional($tercero->fec_minis)->format('Y-m-d') }}</option>
-                            <option value="">Primer Aporte {{ optional($tercero->fec_aport)->format('Y-m-d') }}</option>
-                        </select>
-                    </div>
-                    <div class="col-3 mt-4">
-                        <label class="form-label">Fecha Retiro<span class="text-danger">*</span></label>
-                        <input type="date" class="form-control" name="FechaRetiro" required>
-                    </div>
-                </div>
+                </form>
             </div>
         </div>
     </div>
+    @endif
+    <script>
+        $(document).ready(function() {
+            $('#formAddRetiro').submit(function(event) {
+                var form = this;
+                if (!form.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    $(form).addClass('was-validated');
+                }
+            });
+            $('#btnCardRetiros').on('click', function() {
+                $('#cardGenerarRetiro').show();
+                $('#cardGenerarRetiro').slideDown('fast', function() {
+                    $('html, body').animate({
+                        scrollTop: $('#cardGenerarRetiro').offset().top
+                    }, 500);
+                });
+            });
+
+            function calcularTotal(selectorInputs, selectorTotal, inputHidden) {
+                let total = 0;
+                $(selectorInputs).each(function() {
+                    total += parseFloat($(this).val()) || 0;
+                });
+                $(selectorTotal).text('$ ' + total.toLocaleString('es-CO'));
+                $(inputHidden).val(total);
+            }
+
+            $(document).on('input', '.input-beneficio, .input-retencion, .input-saldos', function() {
+                calcularTotal('.input-beneficio', '#total-beneficios', '#beneficiovalor');
+                calcularTotal('.input-retencion', '#total-retencion', '#retencionvalor');
+                calcularTotal('.input-saldos', '#total-saldos', '#saldosvalor');
+            });
+
+            calcularTotal('.input-beneficio', '#total-beneficios', '#beneficiovalor');
+            calcularTotal('.input-retencion', '#total-retencion', '#retencionvalor');
+            calcularTotal('.input-saldos', '#total-saldos', '#saldosvalor');
+        });
+    </script>
 </x-base-layout>
