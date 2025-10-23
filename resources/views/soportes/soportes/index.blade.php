@@ -76,11 +76,10 @@
                                 aria-controls="tab-1"
                                 aria-selected="false">
                             TODOS
-                            <span class="badge bg-secondary">
+                            <span class="badge bg-secondary">                                
                                 {{ $soportes->filter(function($soporte) {
-                                    return auth()->user()->id == $soporte->usuario->id 
-                                        || auth()->user()->hasDirectPermission('soporte.lista.administrador');
-                                })->count() }}
+                                    return auth()->user()->id == $soporte->usuario->id || auth()->user()->id === ($soporte->scpUsuarioAsignado?->usuario) || auth()->user()->hasDirectPermission('soporte.lista.agente');
+                                })->count() }}   
                             </span>                        
                         </button>
                     </li>  
@@ -104,8 +103,8 @@
                             {{ $nombreCategoria }}
                             <span class="badge bg-secondary">
                                 {{ $soportesCategoria->filter(function($soporte) {
-                                    return auth()->user()->id == $soporte->usuario->id || auth()->user()->hasDirectPermission('soporte.lista.administrador');
-                                })->count() }}
+                                    return auth()->user()->id == $soporte->usuario->id || auth()->user()->id === ($soporte->scpUsuarioAsignado?->usuario) || auth()->user()->hasDirectPermission('soporte.lista.agente');
+                                })->count() }}                                
                             </span>
                         </button>
                     </li> 
@@ -152,7 +151,7 @@
                                                 default => 'secondary'
                                             };
                                         @endphp
-                                        @if(auth()->user()->id == $soporte->usuario->id || auth()->user()->hasDirectPermission('soporte.lista.administrador')) 
+                                        @if(auth()->user()->id == $soporte->usuario->id || auth()->user()->id === ($soporte->scpUsuarioAsignado?->usuario) || auth()->user()->hasDirectPermission('soporte.lista.agente'))
                                         <tr>
                                             {{-- ID --}}
                                             <td>
@@ -295,7 +294,7 @@
                                                 default => 'secondary'
                                             };                                            
                                         @endphp
-                                        @if(auth()->user()->id == $soporte->usuario->id || auth()->user()->id === ($soporte->scpUsuarioAsignado?->usuario) || auth()->user()->hasDirectPermission('soporte.lista.administrador'))                                        
+                                        @if(auth()->user()->id == $soporte->usuario->id || auth()->user()->id === ($soporte->scpUsuarioAsignado?->usuario) || auth()->user()->hasDirectPermission('soporte.lista.agente'))                                        
                                         <tr>
                                             {{-- ID --}}
                                             <td>

@@ -136,12 +136,21 @@
                                 <div class="row">
                                     <div class="col-md-6 mb-3">
                                         <label for="estado" class="form-label fw-semibold">Actualizar Estado:</label>
-                                        <select id="estado" name="id_scp_estados" class="form-select" required>
-                                            <option value="" disabled selected>Seleccione un estado...</option>
-                                            @foreach($estados as $estado)
-                                                <option value="{{ $estado->id }}">{{ $estado->nombre }}</option>
-                                            @endforeach
-                                        </select>
+                                            <select id="estado" name="id_scp_estados" class="form-select" required>
+                                                <option value="" disabled selected>Seleccione un estado...</option>
+                                                @foreach($estados as $estado)
+                                                    @if($estado->nombre === 'Cerrado')
+                                                        {{-- Mostrar "Cerrado" solo si el usuario autenticado es el dueño del soporte --}}
+                                                        @if(auth()->user()->id == $soporte->usuario->id)
+                                                            <option value="{{ $estado->id }}">{{ $estado->nombre }}</option>
+                                                        @endif
+                                                    @else
+                                                        {{-- Mostrar todos los demás estados a todos los usuarios --}}
+                                                        <option value="{{ $estado->id }}">{{ $estado->nombre }}</option>
+                                                    @endif
+                                                @endforeach
+                                            </select>
+
                                     </div>
 
                                     <div class="col-md-6 mb-3">
