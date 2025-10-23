@@ -7,32 +7,42 @@
             </h4>
             <div class="fs-6 text-muted">ID de Ticket: #{{ $soporte->id }}</div>
         </div>
-        <div class="d-flex align-items-center gap-2">
-            <a href="{{ route('soportes.soportes.index') }}" class="btn btn-sm btn-outline-secondary">
-                <i class="feather-arrow-left me-1"></i> Volver
-            </a>
-                       
-            <a href="{{ route('soportes.soportes.edit', $soporte->id) }}" class="btn btn-sm btn-primary">
-                <i class="feather-edit-2 me-1"></i> Editar
-            </a>
-            @if(isset($soporte) && $soporte->soporte)
-                <a href="{{ route('soportes.ver', $soporte->id) }}" 
-                    target="_blank" 
-                    class="btn btn-sm btn-teal">
-                    <i class="bi bi-file-earmark-image me-1"></i> Ver Soporte
-                </a>
-            @endif
-            
-            {{-- 
-            <form action="{{ route('soportes.soportes.destroy', $soporte->id) }}" method="POST" onsubmit="return confirm('¿Seguro que deseas eliminar este soporte?');" class="mb-0">
-                @csrf
-                @method('DELETE')
-                <button type="submit" class="btn btn-sm btn-danger">
-                    <i class="feather-trash-2 me-1"></i> Eliminar
-                </button>
-            </form> 
-            --}}
-        </div>
+<div class="d-flex align-items-center gap-2">
+    {{-- Volver al listado --}}
+    <a href="{{ route('soportes.soportes.index') }}" class="btn btn-sm btn-outline-secondary">
+        <i class="feather-arrow-left me-1"></i> Volver
+    </a>
+
+    {{-- Editar soporte --}}
+    <a href="{{ route('soportes.soportes.edit', $soporte->id) }}" class="btn btn-sm btn-primary">
+        <i class="feather-edit-2 me-1"></i> Editar
+    </a>
+
+    {{-- Ver soporte (archivo adjunto) --}}
+    @if(isset($soporte) && $soporte->id)
+        {{-- Descargar soporte --}}
+
+<button type="button" class="btn btn-sm btn-petroleo" id="btnDescargarPDF">
+    <i class="bi bi-file-earmark-arrow-down me-1"></i> Descargar PDF
+</button>
+
+
+
+
+    @endif
+
+    {{-- 
+    <form action="{{ route('soportes.soportes.destroy', $soporte->id) }}" method="POST" 
+          onsubmit="return confirm('¿Seguro que deseas eliminar este soporte?');" class="mb-0">
+        @csrf
+        @method('DELETE')
+        <button type="submit" class="btn btn-sm btn-danger">
+            <i class="feather-trash-2 me-1"></i> Eliminar
+        </button>
+    </form> 
+    --}}
+</div>
+
     </div>
 
     <div class="row">
@@ -272,6 +282,11 @@
         </div>
     </div>
 
+    {{-- //libreria --}}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+
     {{-- SCRIPT ESCALAMIENTO --}}
     @push('scripts')
     <script>
@@ -333,6 +348,92 @@
         });
     </script>
     @endpush
+{{-- //scripr descar pdf --}}
+@push('scripts')
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script>
+document.getElementById('btnDescargarPDF').addEventListener('click', async () => {
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF('p', 'pt', 'a4');
+    const contenedor = document.querySelector('.main-content, .content, .card-body, .container') || document.body;
+
+    // Overlay de carga tipo “impresora digital”
+    const overlay = document.createElement('div');
+    overlay.innerHTML = `
+        <div class="capture-overlay">
+            <div class="printer">
+                <div class="paper"></div>
+            </div>
+            <p>Generando documento, por favor espera...</p>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    // Efecto “impresión” lenta
+    await new Promise(r => setTimeout(r, 1500));
+
+    // Captura visual
+    const canvas = await html2canvas(contenedor, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#fdfdfd',
+        scrollY: -window.scrollY
+    });
+
+    const imgData = canvas.toDataURL('image/png');
+    const imgWidth = 595.28;
+    const pageHeight = 841.89;
+    const imgHeight = canvas.height * imgWidth / canvas.width;
+    let position = 110;
+
+    // Cabecera profesional
+    pdf.setFillColor(0, 123, 131);
+    pdf.rect(0, 0, 595.28, 90, 'F');
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(20);
+    pdf.text("SOPORTE DOCUMENTAL", 40, 55);
+    pdf.setFontSize(11);
+    pdf.text("Emitido el {{ now()->format('d/m/Y H:i') }}", 40, 70);
+
+    // Fondo sutil tipo papel
+    pdf.setFillColor(245, 245, 245);
+    pdf.rect(0, 90, 595.28, pageHeight - 90, 'F');
+
+    // Contenido central
+    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+
+    // Firma digital “animada”
+    pdf.setDrawColor(0, 123, 131);
+    pdf.setFontSize(13);
+    pdf.setFont('helvetica', 'italic');
+    pdf.text("_________________________", 350, pageHeight - 80);
+    pdf.setTextColor(0, 123, 131);
+    pdf.text("Firmado electrónicamente por:", 355, pageHeight - 65);
+    pdf.setTextColor(50, 50, 50);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text("Departamento de Soporte y Control", 360, pageHeight - 50);
+    pdf.setFontSize(9);
+    pdf.text("Verificado con hash interno SCP-{{ $soporte->id }}-{{ date('YmdHis') }}", 350, pageHeight - 35);
+
+    // Guardar PDF
+    pdf.save('Soporte_{{ $soporte->id }}.pdf');
+
+    overlay.remove();
+
+    // Notificación flotante de éxito
+    const msg = document.createElement('div');
+    msg.className = 'pdf-success';
+    msg.innerHTML = '✅ PDF listo para descargar';
+    document.body.appendChild(msg);
+    setTimeout(() => msg.remove(), 2500);
+});
+</script>
+@endpush
+
+
 
     {{-- CSS ADICIONAL PARA LOS EFECTOS VISUALES --}}
     {{-- Coloca este estilo en tu archivo CSS principal o en la sección <head> de tu layout si aplica globalmente --}}
@@ -467,5 +568,83 @@
         .card .card-body > .d-flex:last-child .me-3 .border-start {
             display: none; /* Oculta la línea del último elemento */
         }
+/* Estilos Descargar PDF */
+/* Botón petróleo pro */
+.btn-petroleo {
+    background-color: #007b83 !important;
+    border: none !important;
+    color: white !important;
+    box-shadow: 0 4px 10px rgba(0, 123, 131, 0.3);
+    transition: all 0.3s ease;
+}
+.btn-petroleo:hover {
+    background-color: #005f66 !important;
+    transform: translateY(-2px) scale(1.05);
+}
+
+/* Overlay con efecto impresora */
+.capture-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.capture-overlay p {
+    font-family: 'Poppins', sans-serif;
+    font-size: 16px;
+    color: #007b83;
+    margin-top: 12px;
+    animation: pulseText 1.5s infinite;
+}
+
+/* Impresora animada */
+.printer {
+    width: 80px;
+    height: 60px;
+    background: #007b83;
+    border-radius: 6px;
+    position: relative;
+    overflow: hidden;
+}
+.paper {
+    width: 60px;
+    height: 70px;
+    background: #f8f8f8;
+    position: absolute;
+    top: -70px;
+    left: 10px;
+    animation: printPaper 2s linear infinite;
+}
+@keyframes printPaper {
+    0% { top: -70px; }
+    70% { top: 15px; }
+    100% { top: 15px; }
+}
+
+/* Notificación flotante */
+.pdf-success {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    background: #007b83;
+    color: #fff;
+    padding: 10px 18px;
+    border-radius: 10px;
+    font-family: 'Poppins', sans-serif;
+    box-shadow: 0 4px 10px rgba(0, 123, 131, 0.3);
+    animation: fadeIn 0.3s ease, fadeOut 0.5s ease 2.2s forwards;
+    z-index: 99999;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+@keyframes pulseText { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
     </style>
 </x-base-layout>
