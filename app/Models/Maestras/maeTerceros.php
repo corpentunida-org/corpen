@@ -9,9 +9,8 @@ use App\Models\Maestras\Congregacion;
 use App\Models\Vistas\VisitaCorpen;
 use App\Models\Maestras\MaeTipo;
 use App\Models\Soportes\ScpUsuario;
+use App\Models\Interacciones\Interaction;
 
-
-use App\Models\Interaction;
 
 class maeTerceros extends Model
 {
@@ -224,12 +223,14 @@ class maeTerceros extends Model
      */
     public function congregaciones()
     {
-        return $this->hasMany(Congregacion::class, 'cod_ter', 'pastor');
+        return $this->hasOne(Congregacion::class, 'codigo', 'congrega');
     }
+
+
 
     public function maeTipos()
     {
-        return $this->belongsTo(MaeTipo::class, 'tip_prv', 'codigo');
+        return $this->belongsTo(MaeTipo::class, 'tip_prv', 'id');
     }
     
     //RELACION INTERACCION
@@ -237,17 +238,26 @@ class maeTerceros extends Model
     {
         return $this->hasMany(Interaction::class, 'client_id');
     }    
-//RELACION VISITAS
-public function visitasCorpen()
-{
-    return $this->hasMany(VisitaCorpen::class, 'cliente_id', 'cod_ter');
-}
+  
+    //RELACION VISITAS
+    public function visitasCorpen()
+    {
+        return $this->hasMany(VisitaCorpen::class, 'cliente_id', 'cod_ter');
+    }
 
-public function scpUsuarios()
-{
-    return $this->hasMany(ScpUsuario::class, 'cod_ter', 'cod_ter');
-}
+    public function scpUsuarios()
+    {
+        return $this->hasMany(ScpUsuario::class, 'cod_ter', 'cod_ter');
+    }
 
+    /**
+     * Relación con maeDistritos
+     * Un tercero pertenece a un distrito
+     */
+    public function distrito()
+    {
+        return $this->belongsTo(maeDistritos::class, 'cod_dist', 'COD_DIST');
+    }
 
 
 }

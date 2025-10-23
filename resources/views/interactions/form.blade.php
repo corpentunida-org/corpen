@@ -345,11 +345,13 @@
                 <span id="info-id" class="client-id-badge" style="display:block;text-align:center;margin-top:.25rem;color:var(--text-muted)"></span>
               </div>
               <div class="card-body">
+                <div class="info-item"><i class="fas fa-map"></i><span id="info-distrito">Cargando...</span></div>
+
                 <div class="info-item"><i class="fas fa-tags"></i><span id="info-categoria">Cargando...</span></div>
                 <div class="info-item"><i class="fas fa-envelope"></i><span id="info-email">Cargando...</span></div>
                 <div class="info-item"><i class="fas fa-phone"></i><span id="info-telefono">Cargando...</span></div>
                 <div class="info-item"><i class="fas fa-map-marker-alt"></i><span id="info-direccion">Cargando...</span></div>
-                <div class="info-item"><i class="fas fa-map"></i><span id="info-distrito">Cargando...</span></div>
+                
                 <div class="info-item"><i class="fas fa-church"></i><span id="info-cod-congregacion">Cargando...</span></div>
                 <div class="info-item"><i class="fas fa-place-of-worship"></i><span id="info-nom-congregacion">Cargando...</span></div>
                 <hr style="border-color:var(--border-color);margin:0.75rem 0">
@@ -707,13 +709,18 @@
       $('#info-avatar').text(initials || '—');
       $('#info-nombre').text(data.nom_ter ?? 'No registrado');
       $('#info-id').text(`ID: ${data.cod_ter ?? 'N/A'}`);
-      $('#info-categoria').text(data.tip_prv ?? 'No registrado');
+      
+      $('#info-distrito').text(data.distrito.NOM_DIST ?? 'No registrado');
+
+      $('#info-categoria').text(data.maeTipos.nombre ?? 'No registrado');
       $('#info-email').text(data.email ?? 'No registrado');
       $('#info-telefono').text(data.tel1 ?? 'No registrado');
       $('#info-direccion').text(data.dir ?? 'No registrado');
-      $('#info-distrito').text(data.cod_dist ?? 'No registrado');
-      $('#info-cod-congregacion').text(data.congrega ?? 'No registrado');
-      $('#info-nom-congregacion').text(data.congrega ?? 'No registrado');
+
+      $('#info-cod-congregacion').text(data.congrega ? data.congrega : 'No registrado'); //CODIGO
+      $('#info-nom-congregacion').text(data.congregaciones?.nombre ?? 'No registrado'); //NOMBRE
+
+            
       $('#info-ultima-interaccion').text(data.last_interaction_date ?? 'Ninguna');
       $('#btn-editar-cliente').attr('href', `/maestras/terceros/${data.cod_ter}/edit`);
 
