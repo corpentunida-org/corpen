@@ -293,9 +293,9 @@
                                                 'En Proceso' => 'info',
                                                 'Cerrado' => 'success',
                                                 default => 'secondary'
-                                            };
+                                            };                                            
                                         @endphp
-                                        @if(auth()->user()->id == $soporte->usuario->id || auth()->user()->hasDirectPermission('soporte.lista.administrador'))                                        
+                                        @if(auth()->user()->id == $soporte->usuario->id || auth()->user()->id === ($soporte->scpUsuarioAsignado?->usuario) || auth()->user()->hasDirectPermission('soporte.lista.administrador'))                                        
                                         <tr>
                                             {{-- ID --}}
                                             <td>

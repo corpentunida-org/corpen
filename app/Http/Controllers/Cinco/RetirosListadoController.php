@@ -87,6 +87,7 @@ class RetirosListadoController extends Controller
         $arrayliquidacion = $this->liquidaciones($tercero->fec_minis);
         $tiposselect = DB::table('RET_TiposRetiros')->where('activo', 1)->get();
         $retiro = Retiros::where('cod_ter', $id)->get();
+        //dd($retiro);
         return view('cinco.retiros.show', compact('tercero', 'arrayliquidacion', 'tiposselect', 'opciones', 'retiro'));
     }
 

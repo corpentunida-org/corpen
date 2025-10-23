@@ -225,21 +225,13 @@
             </div>
         </div>
     </div>
+    @if ($retiro->isEmpty())
     <div class="col-lg-12" id="cardGenerarRetiro" style="display: none;">
         <div class="card stretch stretch-full">
             <div class="card-header">
-                <h5 class="card-title">Generar Retiro</h5>
-                <a href="{{ route('cinco.liquidacionretiro', ['id' => $tercero->cod_ter]) }}"
-                    class="btn btn-md bg-soft-danger text-danger" target="_blank">Estado de cuenta Liquidación PDF</a>
+                <h5 class="card-title">Generar Retiro</h5>                
             </div>
             <div class="card-body">
-                @if ($retiro->count() > 0)
-                    <div class="alert alert-warning" role="alert">
-                        <h4 class="alert-heading">¡Atención!</h4>
-                        <p>Este tercero ya tiene un retiro registrado. Por favor, verifique la información antes de
-                            proceder.</p>
-                    </div>                    
-                @else
                 <form action="{{ route('cinco.retiros.store') }}" id="formAddRetiro" method="POST" novalidate>
                     @csrf
                     <div class="row">
@@ -259,7 +251,7 @@
                     </div>
                     <div class="row">
                         <div class="col-3 mt-4">
-                            <label class="form-label">Fecha ultimo aporte<span class="text-danger">*</span></label>
+                            <label class="form-label">Fecha último aporte<span class="text-danger">*</span></label>
                             <input type="date" class="form-control" name="FechaUltimoAporte" required>
                         </div>
                         <div class="col-3 mt-4">
@@ -354,10 +346,10 @@
                         </button>
                     </div>
                 </form>
-                @endif
             </div>
         </div>
     </div>
+    @endif
     <script>
         $(document).ready(function() {
             $('#formAddRetiro').submit(function(event) {
