@@ -31,5 +31,14 @@ use HasFactory;
     {
         return $this->hasMany(Congregacion::class, 'COD_DIST', 'distrito');
     }
+    /**
+     * Relación con maeTerceros
+     * Un distrito puede tener muchos terceros
+     */
+    public function terceros()
+    {
+        return $this->hasMany(maeTerceros::class, 'cod_dist', 'COD_DIST');
+    }
+
 
 }

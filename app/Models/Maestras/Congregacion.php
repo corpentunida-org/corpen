@@ -67,7 +67,7 @@ class Congregacion extends Model
 
     public function maeTerceros()
     {
-        return $this->belongsTo(maeTerceros::class, 'pastor', 'cod_ter');
+        return $this->belongsTo(maeTerceros::class, 'codigo', 'congrega');
     }
 
     public function pastorAnteriorObj()

@@ -10,8 +10,8 @@ use App\Models\Vistas\VisitaCorpen;
 use App\Models\Maestras\MaeTipo;
 use App\Models\Maestras\maeDistritos;
 use App\Models\Soportes\ScpUsuario;
+use App\Models\Interacciones\Interaction;
 
-use App\Models\Interaction;
 
 class maeTerceros extends Model
 {
@@ -227,12 +227,14 @@ class maeTerceros extends Model
      */
     public function congregaciones()
     {
-        return $this->hasMany(Congregacion::class, 'cod_ter', 'pastor');
+        return $this->hasOne(Congregacion::class, 'codigo', 'congrega');
     }
+
+
 
     public function maeTipos()
     {
-        return $this->belongsTo(MaeTipo::class, 'tip_prv', 'codigo');
+        return $this->belongsTo(MaeTipo::class, 'tip_prv', 'id');
     }
 
     //RELACION INTERACCION
