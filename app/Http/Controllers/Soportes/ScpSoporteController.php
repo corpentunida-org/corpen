@@ -49,7 +49,7 @@ class ScpSoporteController extends Controller
                 return $soporte->estadoSoporte->nombre ?? 'Sin Categoría';
             });
         
-        
+        dd($categorias);
             
             //dd($categorias);
             if (!$categorias->has($categoriaActivaPorDefecto)) {
@@ -142,6 +142,7 @@ public function store(Request $request)
                     ->orderBy('timestam', 'desc'); // 👈 asegúrate que el campo exista
             },
         ]);
+        
 
         $estados = ScpEstado::all();
         $tiposObservacion = ScpTipoObservacion::all();

@@ -28,8 +28,7 @@
                                                             <i class="feather-arrow-left"></i>
                                                         </div>
                                                     </a>
-                                                    <input type="search" name="id"
-                                                        class="px-0 border-0 w-100"
+                                                    <input type="search" name="id" class="px-0 border-0 w-100"
                                                         placeholder="Buscar por nombre..." autocomplete="off">
                                                     <button type="submit" class="btn btn-primary">Buscar</button>
                                                 </div>
@@ -48,7 +47,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="col-xxl-12">
         <div class="card stratch">
             <div class="card-header">
@@ -101,11 +100,12 @@
                                 <th scope="col">Parentesco</th>
                                 <th scope="col">Valor Asegurado</th>
                                 <th scope="col">Valor Prima</th>
-                                @candirect('seguros.poliza.valorpagar')<th scope="col">Valor Prima Pagar</th>@endcandirect                      
+                                @candirect('seguros.poliza.valorpagar')<th scope="col">Valor Prima Pagar</th>
+                                @endcandirect
                                 <th scope="col" class="text-end">Acción</th>
                             </tr>
                         </thead>
-                        <tbody>                        
+                        <tbody>
                             @foreach ($asegurados as $a)
                                 <tr>
                                     <td>
@@ -114,7 +114,8 @@
                                             <div>
                                                 <div class="fw-bold text-dark">{{ $a->tercero->nom_ter ?? ' ' }}</div>
                                                 <div class="fs-12 text-muted">Cédula:
-                                                    <a class="badge bg-soft-primary text-primary">{{ $a->cedula }}</a>
+                                                    <a
+                                                        class="badge bg-soft-primary text-primary">{{ $a->cedula }}</a>
                                                 </div>
                                             </div>
                                         </div>
@@ -123,14 +124,21 @@
                                         <span class="badge bg-gray-200 text-dark">{{ $a->parentesco }}</span>
                                     </td>
                                     <td>$ {{ number_format(floatval($a->polizas->first()->valor_asegurado ?? 0)) }}</td>
-                                    <td>$ {{ number_format($a->polizas->first()->valor_prima) ?? '' }}</td>
+                                    <td>{{ $a->polizas->first()?->valor_prima
+                                        ? '$ ' . number_format($a->polizas->first()->valor_prima, 0, '', '.')
+                                        : '' }}</td>
                                     @candirect('seguros.poliza.valorpagar')
-                                    <td>$ {{ number_format($a->polizas->first()->primapagar) ?? '' }}</td>
+                                    <td>{{ $a->polizas->first()?->primapagar
+                                        ? '$ ' . number_format($a->polizas->first()->primapagar, 0, '', '.')
+                                        : '' }}
+                                    </td>
                                     @endcandirect
                                     <td>
-                                        <form action="{{ route('seguros.poliza.show',['poliza' => 'ID']) }}" class="avatar-text avatar-md ms-auto" method="GET">
+                                        <form action="{{ route('seguros.poliza.show', ['poliza' => 'ID']) }}"
+                                            class="avatar-text avatar-md ms-auto" method="GET">
                                             <input type="hidden" name="id" value="{{ $a->cedula }}">
-                                            <button type="submit" class="avatar-text avatar-md ms-auto"><i class="feather-arrow-right"></i></button>
+                                            <button type="submit" class="avatar-text avatar-md ms-auto"><i
+                                                    class="feather-arrow-right"></i></button>
                                         </form>
                                     </td>
                                 </tr>

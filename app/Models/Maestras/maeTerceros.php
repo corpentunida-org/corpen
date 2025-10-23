@@ -8,6 +8,7 @@ use Carbon\Carbon;
 use App\Models\Maestras\Congregacion;
 use App\Models\Vistas\VisitaCorpen;
 use App\Models\Maestras\MaeTipo;
+use App\Models\Maestras\maeDistritos;
 use App\Models\Soportes\ScpUsuario;
 use App\Models\Interacciones\Interaction;
 
@@ -15,20 +16,22 @@ use App\Models\Interacciones\Interaction;
 class maeTerceros extends Model
 {
     use HasFactory;
-    
+
     protected $table = 'MaeTerceros';
 
     protected $primaryKey = 'cod_ter';
     public $incrementing = false;
     protected $keyType = 'string';
 
-    public $timestamps = false; // <- esto evita el error con updated_at
+    public $timestamps = false;
 
     protected $casts = [
         'fec_minis' => 'datetime',
         'fecha_ipuc' => 'datetime',
-        'fec_aport'  => 'datetime',
+        'fec_aport' => 'datetime',
+        'fec_nac' => 'datetime',
     ];
+
     protected $fillable = [
 
         // ----------------------
@@ -210,7 +213,8 @@ class maeTerceros extends Model
         return null;
     }
 
-    public function getGeneroAttribute(){
+    public function getGeneroAttribute()
+    {
         if ($this->sexo) {
             return $this->sexo === 'V' ? 'Masculino' : 'Femenino';
         }
@@ -232,13 +236,12 @@ class maeTerceros extends Model
     {
         return $this->belongsTo(MaeTipo::class, 'tip_prv', 'id');
     }
-    
+
     //RELACION INTERACCION
     public function interactions()
     {
         return $this->hasMany(Interaction::class, 'client_id');
-    }    
-  
+    }
     //RELACION VISITAS
     public function visitasCorpen()
     {
@@ -250,15 +253,8 @@ class maeTerceros extends Model
         return $this->hasMany(ScpUsuario::class, 'cod_ter', 'cod_ter');
     }
 
-    /**
-     * Relación con maeDistritos
-     * Un tercero pertenece a un distrito
-     */
     public function distrito()
     {
         return $this->belongsTo(maeDistritos::class, 'cod_dist', 'COD_DIST');
     }
-
-
 }
-

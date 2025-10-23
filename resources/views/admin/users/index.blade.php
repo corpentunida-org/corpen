@@ -46,49 +46,7 @@
                         <button type="submit" class="btn btn-primary ms-2">Buscar</button>
                     </div>
                 </form>
-                <div id="userList">
-                    @if (isset($usuariosfiltrados))
-                        <div id="userList">
-                            @forelse ($usuariosfiltrados as $user)
-                                <div class="user-item w-100 d-flex align-items-center justify-content-between">
-                                    <div class="d-flex align-items-center">
-                                        <div class="avatar-image me-3">
-                                            <i class="bi bi-person-circle fs-3"></i>
-                                        </div>
-                                        <div>
-                                            <a href="#"
-                                                class="d-flex align-items-center mb-1 user-name">{{ $user->name }}</a>
-                                            <div class="fs-12 fw-normal text-muted user-email">{{ $user->email }}</div>
-                                        </div>
-                                    </div>
-                                    <div class="dropdown hstack text-end justify-content-end">
-                                        <a href="javascript:void(0)" class="avatar-text avatar-md"
-                                            data-bs-toggle="dropdown" aria-expanded="false">
-                                            <i class="feather feather-more-vertical"></i>
-                                        </a>
-                                        <ul class="dropdown-menu dropdown-menu-end">
-                                            <li>
-                                                <a href="{{ route('admin.users.edit', $user->id) }}"
-                                                    class="dropdown-item">
-                                                    <i class="feather feather-eye me-3"></i>
-                                                    <span>Ver detalle</span>
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <a href="javascript:void(0)" class="dropdown-item">
-                                                    <i class="feather feather-share-2 me-3"></i>
-                                                    <span>Compartir</span>
-                                                </a>
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </div>
-                                <hr class="border-dashed my-3">
-                            @empty
-                                <p>No se encontraron usuarios.</p>
-                            @endforelse
-                        </div>
-                    @endif
+                <div id="userList">                    
                     @if (isset($users))
                         @foreach ($users as $user)
                             <div class="user-item w-100 d-flex align-items-center justify-content-between">
@@ -97,7 +55,7 @@
                                         <i class="bi bi-person-circle fs-3"></i>
                                     </div>
                                     <div>
-                                        <a href="#"
+                                        <a href="{{ route('admin.users.edit', $user->id) }}"
                                             class="d-flex align-items-center mb-1 user-name">{{ $user->name }}</a>
                                         <div class="fs-12 fw-normal text-muted user-email">{{ $user->email }}</div>
                                     </div>
