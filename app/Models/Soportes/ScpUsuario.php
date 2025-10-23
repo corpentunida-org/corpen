@@ -15,6 +15,7 @@ class ScpUsuario extends Model
     protected $fillable = [
         'cod_ter', // referencia al tercero
         'rol',     // rol dentro del sistema
+        'usuario',
     ];
 
     /**
