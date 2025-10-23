@@ -83,8 +83,8 @@
             <td>{{ preg_replace('/\D/', '', $tercero->distrito?->NOM_DIST) ?? '' }}</td>
         </tr>
         <tr>
-            <td colspan="2">FECHA ELABORACION</td>
-            <td>{{ \Carbon\Carbon::now()->format('d/m/Y') }}</td>
+            <td colspan="2">FECHA ELABORACIÓN</td>
+            <td>{{ \Carbon\Carbon::now()->format('d/m/Y H:i:s') }}</td>
             <td colspan="3" rowspan="2" style="text-align:center;">FECHA ULTIMO APORTE</td>
             <td colspan="2">CONSECUTIVO DOCUMENTO</td>
             <td colspan="3" class="codigo">BPA-2025063</td>

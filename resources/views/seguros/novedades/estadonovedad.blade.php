@@ -15,10 +15,12 @@
 @endphp
 <div class="content-sidebar content-sidebar-md" data-scrollbar-target="#psScrollbarInit">
     <div class="content-sidebar-header bg-white sticky-top hstack justify-content-between">
+    @candirect('seguros.poliza.update')
         <a href="{{ route('seguros.novedades.create') }}" class="btn btn-primary w-100">
             <i class="feather-plus me-2"></i>
             <span>Crear Solicitud</span>
         </a>
+    @endcandirect
     </div>
     <div class="content-sidebar-body">
         <ul class="nav flex-column nxl-content-sidebar-item">
