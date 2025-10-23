@@ -482,9 +482,7 @@ Route::middleware('auth')->prefix('soportes')->name('soportes.')->group(function
     Route::resource('soportes', ScpSoporteController::class)
         ->parameters(['soportes' => 'scpSoporte']);
 
-    // ✅ Rutas seguras para ver y descargar archivos de soporte
-    Route::get('soportes/ver/{id}', [ScpSoporteController::class, 'verSoporte'])
-        ->name('ver');
+    // ✅ Rutas seguras para descargar archivos de soporte
 
     Route::get('soportes/descargar/{id}', [ScpSoporteController::class, 'descargarSoporte'])
         ->name('descargar');
