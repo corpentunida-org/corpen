@@ -1,4 +1,5 @@
 <x-base-layout>
+    @candirect('seguros.poliza.update')
     @section('titlepage', 'Novedad')
     <x-error />
     @php
@@ -545,4 +546,5 @@
             $('#valorindividual').val(Math.floor(valormasextra));
         });
     </script>
+    @endcandirect
 </x-base-layout>

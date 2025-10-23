@@ -19,7 +19,7 @@ class RoleController extends Controller
 
     public function store(Request $request){
         $role = Role::create([
-            'name' => $request->input('namerole'),
+            'name' => strtolower($request->input('namerole')),
             'guard_name' => 'web'
         ]);
         if (!$role) {
