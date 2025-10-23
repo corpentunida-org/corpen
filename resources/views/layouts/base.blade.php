@@ -158,7 +158,15 @@
                     <!--! [Start] Header Right !-->
                     <div class="header-right ms-auto">
                         <div class="d-flex align-items-center">
-
+                            <div class="nxl-h-item dropdown">
+                                <a href="javascript:void(0);" class="nxl-head-link position-relative" data-bs-toggle="dropdown"
+                                    role="button" aria-expanded="false">
+                                    <i class="bi bi-bell fs-5"></i>
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                        0
+                                    </span>
+                                </a>
+                            </div>
                             <div class="nxl-h-item d-none d-sm-flex">
                                 <div class="full-screen-switcher">
                                     <a href="javascript:void(0);" class="nxl-head-link me-0"
