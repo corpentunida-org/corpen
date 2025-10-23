@@ -318,32 +318,63 @@ Route::prefix('interactions')
     Route::get('/attachment/download/{fileName}', [InteractionController::class, 'downloadAttachment'])->name('download');
     Route::get('/attachment/view/{fileName}', [InteractionController::class, 'viewAttachment'])->name('view');
 
-    // 📌 AJAX: Obtener datos del cliente por cod_ter
-    Route::get('/cliente/{cod_ter}', function ($cod_ter) {
-        $cliente = maeTerceros::where('cod_ter', $cod_ter)->first();
+// 📌 AJAX: Obtener datos del cliente por cod_ter
+Route::get('/cliente/{cod_ter}', function ($cod_ter) {
+    $cliente = maeTerceros::where('cod_ter', $cod_ter)
+        ->with(['maeTipos', 'distrito', 'congregaciones'])
+        ->first();
 
-        if ($cliente) {
-            return response()->json(
-                $cliente->only([
-                    'cod_ter',
-                    'nom_ter',
-                    'tip_prv',
-                    'dir',
-                    'tel1',
-                    'cel1',
-                    'email',
-                    'ciudad',
-                    'departamento',
-                    'pais',
-                    'cod_dist',
-                    'barrio',
-                    'cod_est'
-                ])
-            );
-        }
+    if ($cliente) {
+        return response()->json([
+            'cod_ter' => $cliente->cod_ter,
+            'nom_ter' => $cliente->nom_ter,
+            'email' => $cliente->email,
+            'dir' => $cliente->dir,
+            'tel1' => $cliente->tel1,
+            'cel1' => $cliente->cel1,
+            'ciudad' => $cliente->ciudad,
+            'departamento' => $cliente->departamento,
+            'pais' => $cliente->pais,
+            'cod_dist' => $cliente->cod_dist,
+            'barrio' => $cliente->barrio,
+            'cod_est' => $cliente->cod_est,
+            'congrega' => $cliente->congrega,
 
-        return response()->json(null, 404);
-    })->name('cliente.show');
+            // Tipo de cliente
+            'maeTipos' => $cliente->maeTipos ? [
+                'id' => $cliente->maeTipos->id,
+                'nombre' => $cliente->maeTipos->nombre,
+            ] : null,
+
+            // Distrito (relación nueva)
+            'distrito' => $cliente->distrito ? [
+                'COD_DIST' => $cliente->distrito->COD_DIST,
+                'NOM_DIST' => $cliente->distrito->NOM_DIST,
+                'DETALLE' => $cliente->distrito->DETALLE,
+                'COMPUEST' => $cliente->distrito->COMPUEST,
+            ] : null,
+
+            // Congregacion (relación nueva)
+            'congregaciones' => $cliente->congregaciones ? [
+                'codigo' => $cliente->congregaciones->codigo,
+                'nombre' => $cliente->congregaciones->nombre,
+/*              'pastor' => $cliente->congregaciones->pastor,
+                'pastorAnterior' => $cliente->congregaciones->pastorAnterior,
+                'clase' => $cliente->congregaciones->clase,
+                'estado' => $cliente->congregaciones->estado,
+                'distrito' => $cliente->congregaciones->distrito,
+                'apertura' => $cliente->congregaciones->apertura, */
+                
+            ] : null,
+
+
+
+        ]);
+    }
+
+    return response()->json(['error' => 'Cliente no encontrado'], 404);
+})->name('cliente.show');
+
 
     // --- 📡 GRUPO DE RUTAS PARA CANALES DE INTERACCIÓN ---
     Route::prefix('channels')->name('channels.')->group(function () {
