@@ -49,7 +49,7 @@ class ScpSoporteController extends Controller
                 return $soporte->estadoSoporte->nombre ?? 'Sin Categoría';
             });
         
-        dd($categorias);
+        //dd($categorias);
             
             //dd($categorias);
             if (!$categorias->has($categoriaActivaPorDefecto)) {
