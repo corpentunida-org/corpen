@@ -463,8 +463,20 @@ Route::middleware('auth')->prefix('soportes')->name('soportes.')->group(function
     Route::resource('categorias', ScpCategoriaController::class)
         ->parameters(['categorias' => 'scpCategoria']);
 
+    // Ruta edit con hash
+    Route::get('usuarios/{hash}/edit', [ScpUsuarioController::class, 'edit'])
+        ->name('usuarios.edit');
+
+    // Ruta update con hash
+    Route::put('usuarios/{hash}', [ScpUsuarioController::class, 'update'])
+        ->name('usuarios.update');
+
+    // Rutas REST de usuarios (index, show, create, store, destroy)
+    // Excluimos edit y update para no chocar con las rutas hash
     Route::resource('usuarios', ScpUsuarioController::class)
-        ->parameters(['usuarios' => 'scpUsuario']);
+        ->parameters(['usuarios' => 'scpUsuario'])
+        ->except(['edit', 'update']);
+
 
     Route::resource('estados', ScpEstadoController::class)
         ->parameters(['estados' => 'scpEstado']);
