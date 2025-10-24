@@ -374,7 +374,7 @@
                                                                 <i class="feather-eye me-3"></i> Ver
                                                             </a>
                                                         </li>
-                                                        <li>
+{{--                                                         <li>
                                                             <a class="dropdown-item btnEditar" href="{{ route('soportes.soportes.edit', $soporte) }}">
                                                                 <i class="feather-edit-3 me-3"></i> Editar
                                                             </a>
@@ -386,7 +386,7 @@
                                                                     <i class="feather-trash-2 me-3"></i> Eliminar
                                                                 </button>
                                                             </form>
-                                                        </li>
+                                                        </li> --}}
                                                     </ul>
                                                 </div>
                                             </td>
