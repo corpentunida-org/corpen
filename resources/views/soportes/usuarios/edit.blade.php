@@ -4,12 +4,16 @@
     <div class="col-12 mt-3">
         <div class="card">
             <div class="card-body">
-                <form method="POST" action="{{ route('soportes.usuarios.update', $usuario->id) }}">
+                <form method="POST" action="{{ route('soportes.usuarios.update', ['hash' => md5($usuario->id . 'clave-secreta')]) }}">
                     @csrf
                     @method('PUT')
+
                     @include('soportes.usuarios.form')
+
                     <div class="d-flex flex-row-reverse gap-2 mt-4">
-                        <button class="btn btn-warning" type="submit"><i class="feather-save me-2"></i> Guardar Cambios</button>
+                        <button class="btn btn-warning" type="submit">
+                            <i class="feather-save me-2"></i> Guardar Cambios
+                        </button>
                         <a href="{{ route('soportes.usuarios.index') }}" class="btn btn-light">Cancelar</a>
                     </div>
                 </form>
