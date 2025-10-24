@@ -13,11 +13,15 @@ class ScpUsuario extends Model
     protected $table = 'scp_usuarios';
 
     protected $fillable = [
+        'id',
         'cod_ter', // referencia al tercero
-        'rol',     // rol dentro del sistema
         'usuario',
+        'estado',
+        'created_at',
+        'updated_at',
     ];
 
+    public $timestamps = true; 
     /**
      * Relación: un ScpUsuario pertenece a un MaeTercero
      */

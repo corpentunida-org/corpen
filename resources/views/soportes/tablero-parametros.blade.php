@@ -68,22 +68,33 @@
                         <table class="table table-hover align-middle">
                             <thead>
                                 <tr>
-                                    <th>Nombre</th>
-                                    <th>Email</th>
-                                    <th>Area de Soporte</th>
+                                    <th>ID</th>
+                                    <th>Tercero</th>
+                                    <th>Código Tercero</th>
+                                    <th>Usuario</th>
                                     <th>Estado</th>
+                                    <th>Creado el</th>
+                                    <th>Actualizado el</th>
                                     <th class="text-end">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @forelse ($usuarios as $usuario)
                                     <tr>
+                                        <td>{{ substr(md5($usuario->id . 'clave-secreta'), 0, 6) }}</td>
                                         <td>{{ $usuario->maeTercero->nom_ter ?? '—' }}</td>
-                                        <td>{{ $usuario->maeTercero->correo ?? '—' }}</td>
-                                        <td>{{ $usuario->rol ?? '—' }}</td>
+                                        <td>{{ $usuario->cod_ter ?? '—' }}</td>
+                                        <td>{{ $usuario->usuario ?? '—' }}</td>
                                         <td>
-                                            <span class="badge bg-success">Activo</span>
+                                            @if($usuario->estado === 'Activo')
+                                                <span class="badge bg-success">Activo</span>
+                                            @else
+                                                <span class="badge bg-secondary">Inactivo</span>
+                                            @endif
                                         </td>
+                                        <td>{{ $usuario->created_at ? $usuario->created_at->format('Y-m-d H:i') : '—' }}</td>
+                                        <td>{{ $usuario->updated_at ? $usuario->updated_at->format('Y-m-d H:i') : '—' }}</td>
+
                                         <td class="text-end">
                                             <div class="dropdown">
                                                 <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -91,18 +102,18 @@
                                                 </button>
                                                 <ul class="dropdown-menu dropdown-menu-end">
                                                     <li>
-                                                        <a class="dropdown-item btnEditar" href="{{ route('soportes.usuarios.edit', $usuario) }}">
-                                                            <i class="feather-edit-3 me-2"></i> Editar
+                                                        <a href="{{ route('soportes.usuarios.edit', ['hash' => md5($usuario->id . 'clave-secreta')]) }}">
+                                                            Verd
                                                         </a>
                                                     </li>
                                                     <li>
-                                                        <form action="{{ route('soportes.usuarios.destroy', $usuario) }}" method="POST" class="formEliminar d-inline">
+                                                        {{-- <form action="{{ route('soportes.usuarios.destroy', $usuario) }}" method="POST" class="formEliminar d-inline">
                                                             @csrf
                                                             @method('DELETE')
                                                             <button type="submit" class="dropdown-item text-danger">
                                                                 <i class="feather-trash-2 me-2"></i> Eliminar
                                                             </button>
-                                                        </form>
+                                                        </form> --}}
                                                     </li>
                                                 </ul>
                                             </div>
@@ -110,7 +121,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="text-center text-muted">No hay usuarios registrados.</td>
+                                        <td colspan="9" class="text-center text-muted">No hay usuarios registrados.</td>
                                     </tr>
                                 @endforelse
                             </tbody>
