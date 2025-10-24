@@ -159,10 +159,13 @@
                     <div class="header-right ms-auto">
                         <div class="d-flex align-items-center">
                             <div class="nxl-h-item dropdown">
-                                <a href="javascript:void(0);" class="nxl-head-link position-relative" data-bs-toggle="dropdown"
-                                    role="button" aria-expanded="false">
+                                <a href="javascript:void(0);" 
+                                class="nxl-head-link position-relative" 
+                                role="button" aria-expanded="false"
+                                id="notificacionesBtn">
                                     <i class="bi bi-bell fs-5"></i>
-                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                    <span id="contadorNotificaciones" 
+                                        class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
                                         0
                                     </span>
                                 </a>
@@ -339,5 +342,25 @@
         @endif
     @endauth
 </body>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    actualizarNotificaciones();
+
+    // Opcional: refresca cada 60 segundos
+    setInterval(actualizarNotificaciones, 60000);
+});
+
+function actualizarNotificaciones() {
+    fetch('{{ route('soportes.notificaciones') }}')
+        .then(res => res.json())
+        .then(data => {
+            let contador = document.getElementById('contadorNotificaciones');
+            contador.textContent = data.total ?? 0;
+        })
+        .catch(err => console.error('Error al obtener notificaciones:', err));
+}
+</script>
+
 
 </html>
