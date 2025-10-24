@@ -74,7 +74,7 @@ class SegNovedadesController extends Controller
             ->where('vigente', true)
             ->with(['convenio'])
             ->get();
-
+        
         $condicion = SegCondicion::where('id', $idcondicion)->first(['descripcion']);
         $tab = $request->activeTab ?? 'generalTab';
         $grupoFamiliar = SegAsegurado::where('Titular', $asegurado->titular)->with('tercero', 'polizas.plan.coberturas')->get();
