@@ -44,16 +44,25 @@
                             </div>
                             <div class="mb-4">
                                 <div class="row">
-                                    <div class="col-lg-5">
-                                        <label class="form-label">Valor Plan<span class="text-danger">*</span></label>
+                                    <div class="col-lg-4">
+                                        <label class="form-label">Valor Asegurado Plan<span class="text-danger">*</span></label>
                                         <div class="input-group">
                                             <span class="input-group-text">$</span>
                                             <input type="number" class="form-control" name="valorPlanAsegurado"
                                                 value="{{ $segPlan->valor }}" required>
                                         </div>
                                     </div>
-                                    <div class="col-lg-3">
-                                        <label class="form-label">Prima Aseguradora<span
+                                    <div class="col-lg-2">
+                                        <label class="form-label">Prima Aseguradora General<span
+                                                class="text-danger">*</span></label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" class="form-control" name="primabase" id="prima"
+                                                value="{{ $segPlan->prima_aseguradora }}" required>
+                                        </div>                                        
+                                    </div>
+                                    <div class="col-lg-2">
+                                        <label class="form-label">Prima Aseguradora Pastor<span
                                                 class="text-danger">*</span></label>
                                         <div class="input-group">
                                             <span class="input-group-text">$</span>
@@ -65,7 +74,7 @@
                                         </div>
                                     </div>
                                     <div class="col-lg-2">
-                                        <label class="form-label">Prima Pastor<span class="text-danger">*</span></label>
+                                        <label class="form-label">Prima Corpen Pastor<span class="text-danger">*</span></label>
                                         <div class="input-group">
                                             <span class="input-group-text">$</span>
                                             <input type="number" class="form-control" name="primapastor" id="prima"
@@ -73,7 +82,7 @@
                                         </div>
                                     </div>
                                     <div class="col-lg-2">
-                                        <label class="form-label">Prima Asegurado<span
+                                        <label class="form-label">Prima Corpen General<span
                                                 class="text-danger">*</span></label>
                                         <div class="input-group">
                                             <span class="input-group-text">$</span>
@@ -83,6 +92,7 @@
                                     </div>
                                 </div>
                             </div>
+                            <hr class="my-5">
                             <div class="coberturas-container">
                                 @foreach ($segPlan->coberturas as $cobertura)
                                     <div class="mb-4 cobertura-row">
