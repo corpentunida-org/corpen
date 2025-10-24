@@ -318,107 +318,107 @@ Route::prefix('interactions')
     Route::get('/attachment/download/{fileName}', [InteractionController::class, 'downloadAttachment'])->name('download');
     Route::get('/attachment/view/{fileName}', [InteractionController::class, 'viewAttachment'])->name('view');
 
-// 📌 AJAX: Obtener datos del cliente por cod_ter
-Route::get('/cliente/{cod_ter}', function ($cod_ter) {
-    $cliente = maeTerceros::where('cod_ter', $cod_ter)
-        ->with(['maeTipos', 'distrito', 'congregaciones'])
-        ->first();
+    // 📌 AJAX: Obtener datos del cliente por cod_ter
+    Route::get('/cliente/{cod_ter}', function ($cod_ter) {
+        $cliente = maeTerceros::where('cod_ter', $cod_ter)
+            ->with(['maeTipos', 'distrito', 'congregaciones'])
+            ->first();
 
-    if ($cliente) {
-        return response()->json([
-            'cod_ter' => $cliente->cod_ter,
-            'nom_ter' => $cliente->nom_ter,
-            'email' => $cliente->email,
-            'dir' => $cliente->dir,
-            'tel1' => $cliente->tel1,
-            'cel1' => $cliente->cel1,
-            'ciudad' => $cliente->ciudad,
-            'departamento' => $cliente->departamento,
-            'pais' => $cliente->pais,
-            'cod_dist' => $cliente->cod_dist,
-            'barrio' => $cliente->barrio,
-            'cod_est' => $cliente->cod_est,
-            'congrega' => $cliente->congrega,
+        if ($cliente) {
+            return response()->json([
+                'cod_ter' => $cliente->cod_ter,
+                'nom_ter' => $cliente->nom_ter,
+                'email' => $cliente->email,
+                'dir' => $cliente->dir,
+                'tel1' => $cliente->tel1,
+                'cel1' => $cliente->cel1,
+                'ciudad' => $cliente->ciudad,
+                'departamento' => $cliente->departamento,
+                'pais' => $cliente->pais,
+                'cod_dist' => $cliente->cod_dist,
+                'barrio' => $cliente->barrio,
+                'cod_est' => $cliente->cod_est,
+                'congrega' => $cliente->congrega,
 
-            // Tipo de cliente
-            'maeTipos' => $cliente->maeTipos ? [
-                'id' => $cliente->maeTipos->id,
-                'nombre' => $cliente->maeTipos->nombre,
-            ] : null,
+                // Tipo de cliente
+                'maeTipos' => $cliente->maeTipos ? [
+                    'id' => $cliente->maeTipos->id,
+                    'nombre' => $cliente->maeTipos->nombre,
+                ] : null,
 
-            // Distrito (relación nueva)
-            'distrito' => $cliente->distrito ? [
-                'COD_DIST' => $cliente->distrito->COD_DIST,
-                'NOM_DIST' => $cliente->distrito->NOM_DIST,
-                'DETALLE' => $cliente->distrito->DETALLE,
-                'COMPUEST' => $cliente->distrito->COMPUEST,
-            ] : null,
+                // Distrito (relación nueva)
+                'distrito' => $cliente->distrito ? [
+                    'COD_DIST' => $cliente->distrito->COD_DIST,
+                    'NOM_DIST' => $cliente->distrito->NOM_DIST,
+                    'DETALLE' => $cliente->distrito->DETALLE,
+                    'COMPUEST' => $cliente->distrito->COMPUEST,
+                ] : null,
 
-            // Congregacion (relación nueva)
-            'congregaciones' => $cliente->congregaciones ? [
-                'codigo' => $cliente->congregaciones->codigo,
-                'nombre' => $cliente->congregaciones->nombre,
-/*              'pastor' => $cliente->congregaciones->pastor,
-                'pastorAnterior' => $cliente->congregaciones->pastorAnterior,
-                'clase' => $cliente->congregaciones->clase,
-                'estado' => $cliente->congregaciones->estado,
-                'distrito' => $cliente->congregaciones->distrito,
-                'apertura' => $cliente->congregaciones->apertura, */
-                
-            ] : null,
-
-
-
-        ]);
-    }
-
-    return response()->json(['error' => 'Cliente no encontrado'], 404);
-})->name('cliente.show');
+                // Congregacion (relación nueva)
+                'congregaciones' => $cliente->congregaciones ? [
+                    'codigo' => $cliente->congregaciones->codigo,
+                    'nombre' => $cliente->congregaciones->nombre,
+                  /*'pastor' => $cliente->congregaciones->pastor,
+                    'pastorAnterior' => $cliente->congregaciones->pastorAnterior,
+                    'clase' => $cliente->congregaciones->clase,
+                    'estado' => $cliente->congregaciones->estado,
+                    'distrito' => $cliente->congregaciones->distrito,
+                    'apertura' => $cliente->congregaciones->apertura, */
+                    
+                ] : null,
 
 
-    // --- 📡 GRUPO DE RUTAS PARA CANALES DE INTERACCIÓN ---
-    Route::prefix('channels')->name('channels.')->group(function () {
-        Route::get('/', [IntChannelController::class, 'index'])->name('index');
-        Route::get('/create', [IntChannelController::class, 'create'])->name('create');
-        Route::post('/', [IntChannelController::class, 'store'])->name('store');
-        Route::get('/{channel}', [IntChannelController::class, 'show'])->name('show');
-        Route::get('/{channel}/edit', [IntChannelController::class, 'edit'])->name('edit');
-        Route::put('/{channel}', [IntChannelController::class, 'update'])->name('update');
-        Route::delete('/{channel}', [IntChannelController::class, 'destroy'])->name('destroy');
-    });
 
-    // --- 📡 GRUPO DE RUTAS PARA TIPOS DE INTERACCIÓN ---
-    Route::prefix('types')->name('types.')->group(function () {
-        Route::get('/', [IntTypeController::class, 'index'])->name('index');
-        Route::get('/create', [IntTypeController::class, 'create'])->name('create');
-        Route::post('/', [IntTypeController::class, 'store'])->name('store');
-        Route::get('/{type}', [IntTypeController::class, 'show'])->name('show');
-        Route::get('/{type}/edit', [IntTypeController::class, 'edit'])->name('edit');
-        Route::put('/{type}', [IntTypeController::class, 'update'])->name('update');
-        Route::delete('/{type}', [IntTypeController::class, 'destroy'])->name('destroy');
-    });
+            ]);
+        }
 
-    // --- 📡 GRUPO DE RUTAS PARA RESULTADOS DE INTERACCIÓN ---
-    Route::prefix('outcomes')->name('outcomes.')->group(function () {
-        Route::get('/', [IntOutcomeController::class, 'index'])->name('index');
-        Route::get('/create', [IntOutcomeController::class, 'create'])->name('create');
-        Route::post('/', [IntOutcomeController::class, 'store'])->name('store');
-        Route::get('/{outcome}', [IntOutcomeController::class, 'show'])->name('show');
-        Route::get('/{outcome}/edit', [IntOutcomeController::class, 'edit'])->name('edit');
-        Route::put('/{outcome}', [IntOutcomeController::class, 'update'])->name('update');
-        Route::delete('/{outcome}', [IntOutcomeController::class, 'destroy'])->name('destroy');
-    });
+        return response()->json(['error' => 'Cliente no encontrado'], 404);
+        })->name('cliente.show');
 
-    // --- 📡 GRUPO DE RUTAS PARA PRÓXIMAS ACCIONES ---
-    Route::prefix('next_actions')->name('next_actions.')->group(function () {
-        Route::get('/', [IntNextActionController::class, 'index'])->name('index');
-        Route::get('/create', [IntNextActionController::class, 'create'])->name('create');
-        Route::post('/', [IntNextActionController::class, 'store'])->name('store');
-        Route::get('/{action}', [IntNextActionController::class, 'show'])->name('show');
-        Route::get('/{action}/edit', [IntNextActionController::class, 'edit'])->name('edit');
-        Route::put('/{action}', [IntNextActionController::class, 'update'])->name('update');
-        Route::delete('/{action}', [IntNextActionController::class, 'destroy'])->name('destroy');
-    });
+
+        // --- 📡 GRUPO DE RUTAS PARA CANALES DE INTERACCIÓN ---
+        Route::prefix('channels')->name('channels.')->group(function () {
+            Route::get('/', [IntChannelController::class, 'index'])->name('index');
+            Route::get('/create', [IntChannelController::class, 'create'])->name('create');
+            Route::post('/', [IntChannelController::class, 'store'])->name('store');
+            Route::get('/{channel}', [IntChannelController::class, 'show'])->name('show');
+            Route::get('/{channel}/edit', [IntChannelController::class, 'edit'])->name('edit');
+            Route::put('/{channel}', [IntChannelController::class, 'update'])->name('update');
+            Route::delete('/{channel}', [IntChannelController::class, 'destroy'])->name('destroy');
+        });
+
+        // --- 📡 GRUPO DE RUTAS PARA TIPOS DE INTERACCIÓN ---
+        Route::prefix('types')->name('types.')->group(function () {
+            Route::get('/', [IntTypeController::class, 'index'])->name('index');
+            Route::get('/create', [IntTypeController::class, 'create'])->name('create');
+            Route::post('/', [IntTypeController::class, 'store'])->name('store');
+            Route::get('/{type}', [IntTypeController::class, 'show'])->name('show');
+            Route::get('/{type}/edit', [IntTypeController::class, 'edit'])->name('edit');
+            Route::put('/{type}', [IntTypeController::class, 'update'])->name('update');
+            Route::delete('/{type}', [IntTypeController::class, 'destroy'])->name('destroy');
+        });
+
+        // --- 📡 GRUPO DE RUTAS PARA RESULTADOS DE INTERACCIÓN ---
+        Route::prefix('outcomes')->name('outcomes.')->group(function () {
+            Route::get('/', [IntOutcomeController::class, 'index'])->name('index');
+            Route::get('/create', [IntOutcomeController::class, 'create'])->name('create');
+            Route::post('/', [IntOutcomeController::class, 'store'])->name('store');
+            Route::get('/{outcome}', [IntOutcomeController::class, 'show'])->name('show');
+            Route::get('/{outcome}/edit', [IntOutcomeController::class, 'edit'])->name('edit');
+            Route::put('/{outcome}', [IntOutcomeController::class, 'update'])->name('update');
+            Route::delete('/{outcome}', [IntOutcomeController::class, 'destroy'])->name('destroy');
+        });
+
+        // --- 📡 GRUPO DE RUTAS PARA PRÓXIMAS ACCIONES ---
+        Route::prefix('next_actions')->name('next_actions.')->group(function () {
+            Route::get('/', [IntNextActionController::class, 'index'])->name('index');
+            Route::get('/create', [IntNextActionController::class, 'create'])->name('create');
+            Route::post('/', [IntNextActionController::class, 'store'])->name('store');
+            Route::get('/{action}', [IntNextActionController::class, 'show'])->name('show');
+            Route::get('/{action}/edit', [IntNextActionController::class, 'edit'])->name('edit');
+            Route::put('/{action}', [IntNextActionController::class, 'update'])->name('update');
+            Route::delete('/{action}', [IntNextActionController::class, 'destroy'])->name('destroy');
+        });
 });
 
 // FLUJO DE TRABAJO
@@ -511,6 +511,12 @@ Route::middleware('auth')->prefix('soportes')->name('soportes.')->group(function
     // Vista solo SinAsignar
     /*     Route::get('sin-asignar', [ScpSoporteController::class, 'sinAsignar'])
         ->name('soportes.sinAsignar'); */
+
+    // 🔔 Notificaciones según usuario logueado
+Route::get('notificaciones', [ScpSoporteController::class, 'getNotificaciones'])
+    ->name('notificaciones');
+
+
 });
 
 
