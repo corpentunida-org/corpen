@@ -17,8 +17,13 @@ class ScpUsuarioController extends Controller
     public function create()
     {
         $terceros = maeTerceros::where("tip_prv","9")->get();
-        return view('soportes.usuarios.create', compact('terceros'));
+
+        // PASAR una instancia vacía para que $usuario exista en la vista
+        $usuario = new ScpUsuario();
+
+        return view('soportes.usuarios.create', compact('terceros', 'usuario'));
     }
+
 
     public function store(Request $request)
     {
@@ -32,23 +37,47 @@ class ScpUsuarioController extends Controller
         return redirect()->route('soportes.usuarios.index')->with('success', 'Usuario creado correctamente');
     }
 
-    public function edit(ScpUsuario $usuario)
+    public function edit($hash)
     {
         $terceros = maeTerceros::all();
-        return view('soportes.usuarios.edit', compact('usuario', 'terceros'));
+
+        // Buscamos el usuario por hash
+        $usuario = ScpUsuario::all()->first(fn($u) => md5($u->id . 'clave-secreta') === $hash);
+
+        if (!$usuario) {
+            abort(404); // si no se encuentra, lanzamos error
+        }
+
+        return view('soportes.usuarios.edit', [
+            'usuario' => $usuario,
+            'terceros' => $terceros
+        ]);
     }
 
-    public function update(Request $request, ScpUsuario $usuario)
+    public function update(Request $request, $hash)
     {
+        // Buscamos el usuario por hash
+        $scpUsuario = ScpUsuario::all()->first(fn($u) => md5($u->id . 'clave-secreta') === $hash);
+
+        if (!$scpUsuario) {
+            abort(404);
+        }
+
         $request->validate([
             'cod_ter' => 'required|exists:mae_terceros,cod_ter',
-            'rol'     => 'nullable|string|max:255',
+            'usuario' => 'required|string|max:255',
+            'estado'  => 'required|in:Activo,Inactivo',
         ]);
 
-        $usuario->update($request->all());
+        $scpUsuario->fill($request->only(['cod_ter', 'usuario', 'estado']));
+        $scpUsuario->updated_at = now();
+        $scpUsuario->save();
 
-        return redirect()->route('soportes.usuarios.index')->with('success', 'Usuario actualizado correctamente');
+        return redirect()->route('soportes.usuarios.index')
+                        ->with('success', 'Usuario actualizado correctamente');
     }
+
+
 
     public function destroy(ScpUsuario $usuario)
     {
