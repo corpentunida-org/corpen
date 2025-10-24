@@ -75,51 +75,50 @@ class ScpSoporteController extends Controller
         return view('soportes.soportes.create', compact('categorias', 'tipos', 'prioridades', 'terceros', 'usuarios', 'cargos', 'lineas', 'usuario'));
     }
 
-public function store(Request $request)
-{
-    $request->validate([
-        'detalles_soporte'       => 'required|string|max:255',
-        'id_gdo_cargo'           => 'nullable|integer|exists:gdo_cargo,id',
-        'id_cre_lineas_creditos' => 'nullable|integer|exists:cre_lineas_creditos,id',
-        'cod_ter_maeTercero'     => ['nullable', 'string', 'max:20', Rule::exists('MaeTerceros', 'cod_ter')],
-        'id_categoria'           => 'required|exists:scp_categorias,id',
-        'id_scp_tipo'            => 'required|exists:scp_tipos,id',
-        'id_scp_prioridad'       => 'required|exists:scp_prioridads,id',
-        'id_users'               => 'required|exists:users,id',
-        'id_scp_sub_tipo'        => 'required|exists:scp_sub_tipos,id',
-        'estado'                 => 'nullable|string|max:50',
-        'soporte'                => 'nullable|file|mimes:pdf,jpeg,jpg,png|max:10240', // <── Aquí validamos el archivo
-        'usuario_escalado'       => 'nullable|string|max:100',
-    ]);
+    public function store(Request $request)
+    {
+        $request->validate([
+            'detalles_soporte'       => 'required|string|max:255',
+            'id_gdo_cargo'           => 'nullable|integer|exists:gdo_cargo,id',
+            'id_cre_lineas_creditos' => 'nullable|integer|exists:cre_lineas_creditos,id',
+            'cod_ter_maeTercero'     => ['nullable', 'string', 'max:20', Rule::exists('MaeTerceros', 'cod_ter')],
+            'id_categoria'           => 'required|exists:scp_categorias,id',
+            'id_scp_tipo'            => 'required|exists:scp_tipos,id',
+            'id_scp_prioridad'       => 'required|exists:scp_prioridads,id',
+            'id_users'               => 'required|exists:users,id',
+            'id_scp_sub_tipo'        => 'required|exists:scp_sub_tipos,id',
+            'estado'                 => 'nullable|string|max:50',
+            'soporte'                => 'nullable|file|mimes:pdf,jpeg,jpg,png|max:10240', // <── Aquí validamos el archivo
+            'usuario_escalado'       => 'nullable|string|max:100',
+        ]);
 
-    $data = [
-        'detalles_soporte'       => $request->detalles_soporte,
-        'timestam'               => now(),
-        'id_gdo_cargo'           => $request->id_gdo_cargo,
-        'id_cre_lineas_creditos' => $request->id_cre_lineas_creditos,
-        'cod_ter_maeTercero'     => $request->cod_ter_maeTercero,
-        'id_categoria'           => $request->id_categoria,
-        'id_scp_tipo'            => $request->id_scp_tipo,
-        'id_scp_prioridad'       => $request->id_scp_prioridad,
-        'id_users'               => $request->id_users,
-        'id_scp_sub_tipo'        => $request->id_scp_sub_tipo,
-        'estado'                 => 1,
-        'usuario_escalado'       => $request->usuario_escalado,
-    ];
+        $data = [
+            'detalles_soporte'       => $request->detalles_soporte,
+            'timestam'               => now(),
+            'id_gdo_cargo'           => $request->id_gdo_cargo,
+            'id_cre_lineas_creditos' => $request->id_cre_lineas_creditos,
+            'cod_ter_maeTercero'     => $request->cod_ter_maeTercero,
+            'id_categoria'           => $request->id_categoria,
+            'id_scp_tipo'            => $request->id_scp_tipo,
+            'id_scp_prioridad'       => $request->id_scp_prioridad,
+            'id_users'               => $request->id_users,
+            'id_scp_sub_tipo'        => $request->id_scp_sub_tipo,
+            'estado'                 => 1,
+            'usuario_escalado'       => $request->usuario_escalado,
+        ];
 
-    // ✅ GUARDAR ARCHIVO EN storage/app/soportes
-    if ($request->hasFile('soporte')) {
-        $file = $request->file('soporte');
-        $filename = time() . '_' . $file->getClientOriginalName();
-        $path = $file->storeAs('soportes', $filename); // guarda en storage/app/soportes
-        $data['soporte'] = basename($path); // guarda solo el nombre del archivo en la BD
+        // ✅ GUARDAR ARCHIVO EN storage/app/soportes
+        if ($request->hasFile('soporte')) {
+            $file = $request->file('soporte');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $path = $file->storeAs('soportes', $filename); // guarda en storage/app/soportes
+            $data['soporte'] = basename($path); // guarda solo el nombre del archivo en la BD
+        }
+
+        ScpSoporte::create($data);
+
+        return redirect()->route('soportes.soportes.index')->with('success', 'Soporte creado exitosamente.');
     }
-
-    ScpSoporte::create($data);
-
-    return redirect()->route('soportes.soportes.index')->with('success', 'Soporte creado exitosamente.');
-}
-
 
     public function show(ScpSoporte $scpSoporte)
     {
@@ -271,32 +270,50 @@ public function store(Request $request)
         }
     }
 
+    public function verSoporte($id)
+    {
+        $soporte = ScpSoporte::findOrFail($id);
 
-public function verSoporte($id)
-{
-    $soporte = ScpSoporte::findOrFail($id);
+        $ruta = 'soportes/' . $soporte->soporte;
 
-    $ruta = 'soportes/' . $soporte->soporte;
+        if (!$soporte->soporte || !Storage::exists($ruta)) {
+            abort(404, 'Archivo no encontrado.');
+        }
 
-    if (!$soporte->soporte || !Storage::exists($ruta)) {
-        abort(404, 'Archivo no encontrado.');
+        return response()->file(storage_path('app/' . $ruta));
     }
 
-    return response()->file(storage_path('app/' . $ruta));
-}
+    public function descargarSoporte($id)
+    {
+        $soporte = ScpSoporte::findOrFail($id);
 
-public function descargarSoporte($id)
-{
-    $soporte = ScpSoporte::findOrFail($id);
+        $ruta = 'soportes/' . $soporte->soporte;
 
-    $ruta = 'soportes/' . $soporte->soporte;
+        if (!$soporte->soporte || !Storage::exists($ruta)) {
+            abort(404, 'Archivo no encontrado.');
+        }
 
-    if (!$soporte->soporte || !Storage::exists($ruta)) {
-        abort(404, 'Archivo no encontrado.');
+        return response()->download(storage_path('app/' . $ruta));
     }
 
-    return response()->download(storage_path('app/' . $ruta));
-}
+    /* Campana de Notificaciones */
+    public function getNotificaciones()
+    {
+        $userId = Auth::id();
+
+        $notificaciones = ScpSoporte::with('estadoSoporte')
+            ->where(function ($query) use ($userId) {
+                $query->where('id_users', $userId)
+                    ->orWhere('usuario_escalado', $userId);
+            })
+            ->whereHas('estadoSoporte', function ($q) {
+                $q->where('nombre', '!=', 'Cerrado'); // Solo las no cerradas
+            })
+            ->count();
+
+        // Solo devolver el número
+        return response()->json(['total' => $notificaciones]);
+    }
 
 
 
