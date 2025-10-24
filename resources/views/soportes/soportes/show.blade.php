@@ -277,7 +277,22 @@
                         <span class="text-muted fw-semibold d-block"><i class="feather-tag me-1"></i> Sub-Tipo:</span>
                         <p class="text-dark mb-0">{{ $soporte->subTipo->nombre ?? 'No disponible' }}</p>
                     </div>
-                </div>
+
+<h6 class="text-muted fw-bold mb-3">Archivos</h6>
+
+<div class="mb-3">
+    <span class="text-muted fw-semibold d-block"><i class="feather-layers me-1"></i> Archivo:</span>
+    <p class="text-dark mb-0">{{ $soporte->soporte ?? 'No disponible' }}</p>
+
+    @if($soporte->soporte && Storage::exists('soportes/' . $soporte->soporte))
+        <a href="{{ route('soportes.descargar', $soporte->id) }}" class="btn btn-sm btn-primary mt-2">
+            <i class="feather-download me-1"></i> Descargar
+        </a>
+    @else
+        <span class="text-danger">Archivo no disponible</span>
+    @endif
+</div>
+
             </div>
         </div>
     </div>
