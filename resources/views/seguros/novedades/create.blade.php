@@ -4,7 +4,7 @@
     <x-error />
     @php
         $activeTab = $activeTab ?? 'generalTab';
-    @endphp    
+    @endphp
     <div class="col-xxl-12 col-xl-12">
         <div class="card border-top-0">
             <div class="card-header p-0">
@@ -24,6 +24,7 @@
                 </ul>
             </div>
             <div class="tab-content">
+                {{-- MODIFICACION --}}
                 <div class="tab-pane fade p-4 {{ $activeTab == 'generalTab' ? 'show active' : '' }}" id="securityTab"
                     role="tabpanel">
                     <div class="col-lg-12 p-4">
@@ -97,18 +98,32 @@
                                 @csrf
                                 @method('POST')
                                 <div class="row">
-                                    <div class="col-lg-5 mb-4">
+                                    <div class="col-lg-6 mb-4">
                                         <input type="hidden" name="asegurado" value="{{ $asegurado->cedula }}">
                                         <input type="hidden" name="tipoNovedad" value="1">
-                                        <label class="form-label">Asignar Plan<span class="text-danger">*</span></label>
+                                        <label class="form-label">Asignar Plan
+                                            {{ $planes->first()->convenio->nombre ?? '' }}<span
+                                                class="text-danger">*</span></label>
                                         <select class="form-control" name="planid" id="selectPlan">
                                             @foreach ($planes as $plan)
                                                 <option value="{{ $plan->id }}" data-valor="{{ $plan->valor }}"
-                                                    data-prima="{{ $plan->prima_aseguradora }}"
+                                                    @if ($asegurado->parentesco == 'AF') data-prima="{{ $plan->prima_pastor }}"
+                                                    @else
+                                                        data-prima="{{ $plan->prima_asegurado }}" @endif
                                                     {{ $asegurado->polizas->first()->plan->id == $plan->id ? 'selected' : '' }}>
-                                                    {{ $plan->convenio->nombre ?? '' }} - {{ $plan->name }} -
+                                                    {{ $plan->name }} -
                                                     ${{ number_format($plan->valor) }} -
-                                                    ${{ number_format($plan->prima_aseguradora) }}
+                                                    PRIMA:
+                                                    @if ($asegurado->parentesco == 'AF')
+                                                        {{ $plan->prima_aseguradoraAF !== null ? number_format($plan->prima_aseguradoraAF) : '' }}
+                                                        -
+                                                        PRIMA PASTOR:
+                                                        ${{ number_format($plan->prima_pastor) ?? '' }}
+                                                    @else
+                                                        ${{ number_format($plan->prima_aseguradora) ?? '' }} -
+                                                        PRIMA ASEGURADO:
+                                                        ${{ number_format($plan->prima_asegurado) ?? '' }}
+                                                    @endif
                                                 </option>
                                             @endforeach
                                         </select>
@@ -145,14 +160,14 @@
                                             id="valorapagarcorpen">
                                     </div>
                                     @if ($asegurado->parentesco == 'AF' || $asegurado->viuda)
-                                        <div class="col-lg-3 mb-4">
+                                        <div class="col-lg-2 mb-4">
                                             <label class="form-label">Total a Pagar Titular<span
                                                     class="text-danger">*</span></label>
                                             <div class="input-group">
                                                 <div class="input-group-text">$</div>
                                                 <input class="form-control"
                                                     value="{{ $asegurado->polizas->first()->valorpagaraseguradora }}"
-                                                    type="text" name="valorpagaraseguradora">
+                                                    type="text" name="valorpagaraseguradora" id="AFvalorpagaraseguradora">
                                             </div>
                                         </div>
                                     @endif
@@ -191,6 +206,8 @@
                         @endif
                     </div>
                 </div>
+
+                {{-- INGRESO --}}
                 <div class="tab-pane fade p-4 " id="TaskTab" role="tabpanel">
                     <form action={{ route('seguros.novedades.store') }} method="POST" id="formAddPoliza" novalidate>
                         @csrf
@@ -324,6 +341,8 @@
                         </div>
                     </form>
                 </div>
+
+                {{-- RETIRO --}}
                 <div class="tab-pane fade p-4 {{ $activeTab == 'projectTab' ? 'show active' : '' }}" id="projectTab"
                     role="tabpanel">
                     <div class="row p-4">
@@ -402,11 +421,18 @@
             $('#valoraseguradoplan').val("$ " + selected.data('valor'));
             $('#primaplan').val("$ " + selected.data('prima'));
             $('#valorapagarcorpen').val(selected.data('prima'));
+            
+            cambiarValorPagarGrupoFamiliar();
         });
 
+        //corregir ------------------------------------------------
         $('#inputExtraPrima').on('input', function() {
             var valor = parseFloat($(this).val().trim());
-            var valorOriginal = parseFloat("{{ @$asegurado?->polizas?->first()?->plan?->prima_aseguradora }}");
+            if ("{{ @$asegurado->parentesco }}" == 'AF'){
+                valorOriginal = parseFloat("{{ @$asegurado?->polizas?->first()?->plan?->prima_aseguradoraAF }}");
+            } else{
+                valorOriginal = parseFloat("{{ @$asegurado?->polizas?->first()?->plan?->prima_aseguradora }}");
+            }
             if (!isNaN(valor) && valor > 0) {
                 $('#checkextraprimaval').slideDown();
             } else {
@@ -417,6 +443,7 @@
             $('#labeltextextra').text('Confirmar valor prima + $' + valorprima);
             $('#valorprimaaumentar').val(valorprima);
         });
+        // ---------------------------------------------------------
 
         $("#checkbox2").on("change", function() {
             valor = parseFloat($("#valorprimaaumentar").val()) || 0;
@@ -427,7 +454,18 @@
                 valorFinal = valorpagar - valor;
             }
             $("#valorapagarcorpen").val(valorFinal);
+            cambiarValorPagarGrupoFamiliar();
         });
+
+        
+        function cambiarValorPagarGrupoFamiliar() {
+            
+            let valoracambiar = parseFloat($('#valorapagarcorpen').val());
+            valortotalactual = parseFloat("{{ @$totalPrimaCorpen }}");
+            valorapagaractual = parseFloat("{{ @$asegurado->polizas->first()->primapagar }}");
+            valornuevototal = valortotalactual - valorapagaractual + valoracambiar;
+            $('#AFvalorpagaraseguradora').val(valornuevototal);
+        }
 
         function toggleContenedor() {
             if ($('#checkbox1').is(':checked')) {
