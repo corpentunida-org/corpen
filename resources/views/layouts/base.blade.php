@@ -158,18 +158,56 @@
                     <!--! [Start] Header Right !-->
                     <div class="header-right ms-auto">
                         <div class="d-flex align-items-center">
-                            <div class="nxl-h-item dropdown">
-                                <a href="javascript:void(0);" 
-                                class="nxl-head-link position-relative" 
-                                role="button" aria-expanded="false"
-                                id="notificacionesBtn">
-                                    <i class="bi bi-bell fs-5"></i>
-                                    <span id="contadorNotificaciones" 
-                                        class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                        0
-                                    </span>
-                                </a>
-                            </div>
+<div class="nxl-h-item dropdown" style="position: relative;">
+    <a href="javascript:void(0);" 
+       class="nxl-head-link position-relative" 
+       id="notificacionesBtn">
+        <i class="bi bi-bell fs-5"></i>
+        <span id="contadorNotificaciones"
+              class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger shadow-sm">
+            0
+        </span>
+    </a>
+
+    <!-- Panel flotante de notificaciones -->
+    <div id="panelNotificaciones"
+         class="shadow-lg border rounded-3 bg-white"
+         style="
+            display: none;
+            position: absolute;
+            top: 120%; /* bajamos un poco para que no tape la campana */
+            right: 0;
+            width: 400px;
+            max-height: 550px;
+            overflow-y: auto;
+            z-index: 99999;
+            transform: translateY(10px);
+            opacity: 0;
+            transition: all 0.25s ease;
+         ">
+        <!-- Cabecera -->
+        <div class="bg-primary text-white px-3 py-2 rounded-top fw-semibold d-flex justify-content-between align-items-center">
+            <span>📋 Mis Soportes</span>
+        </div>
+
+        <!-- Contadores -->
+        <div class="px-3 py-2 border-bottom bg-light d-flex justify-content-around flex-wrap gap-2">
+            <span class="badge bg-primary" title="Creados por mí">Creados: <span id="numCreados">0</span></span>
+            <span class="badge bg-success" title="Asignados a mí">Asignados: <span id="numAsignados">0</span></span>
+            <span class="badge bg-warning text-dark" title="Pendientes por cerrar">Pendientes: <span id="numPendientes">0</span></span>
+        </div>
+
+        <!-- Lista de notificaciones -->
+        <div id="listaNotificaciones"
+             class="list-group list-group-flush small"
+             style="max-height: 450px; overflow-y: auto;">
+            <div class="text-center text-muted p-3">Cargando notificaciones...</div>
+        </div>
+    </div>
+</div>
+
+
+
                             <div class="nxl-h-item d-none d-sm-flex">
                                 <div class="full-screen-switcher">
                                     <a href="javascript:void(0);" class="nxl-head-link me-0"
@@ -344,23 +382,94 @@
 </body>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    actualizarNotificaciones();
+    document.addEventListener('DOMContentLoaded', () => {
+        const btn = document.getElementById('notificacionesBtn');
+        const panel = document.getElementById('panelNotificaciones');
+        const contador = document.getElementById('contadorNotificaciones');
 
-    // Opcional: refresca cada 60 segundos
-    setInterval(actualizarNotificaciones, 60000);
-});
+        btn.addEventListener('click', () => {
+            panel.classList.toggle('mostrar');
+        });
 
-function actualizarNotificaciones() {
-    fetch('{{ route('soportes.notificaciones') }}')
-        .then(res => res.json())
-        .then(data => {
-            let contador = document.getElementById('contadorNotificaciones');
-            contador.textContent = data.total ?? 0;
-        })
-        .catch(err => console.error('Error al obtener notificaciones:', err));
-}
+        document.addEventListener('click', (e) => {
+            if (!btn.contains(e.target) && !panel.contains(e.target)) {
+                panel.classList.remove('mostrar');
+            }
+        });
+
+        actualizarNotificacionesDetalladas();
+        setInterval(actualizarNotificacionesDetalladas, 60000);
+
+        function actualizarNotificacionesDetalladas() {
+            fetch('{{ route("soportes.notificaciones.detalladas") }}')
+                .then(res => res.json())
+                .then(data => {
+                    // --- Contadores ---
+                    document.getElementById('numCreados').textContent = data.creados ?? 0;
+                    document.getElementById('numAsignados').textContent = data.asignados ?? 0;
+                    document.getElementById('numPendientes').textContent = data.pendientes ?? 0;
+                    contador.textContent = data.total ?? 0;
+
+                    // --- Detalles ---
+                    const lista = document.getElementById('listaNotificaciones');
+                    lista.innerHTML = '';
+
+                    if (data.detalles && data.detalles.length > 0) {
+                        data.detalles.forEach(item => {
+                            lista.innerHTML += `
+                                <div class="list-group-item" onclick="window.location='/soportes/soportes/${item.id}'">
+                                    <div class="fw-semibold">${item.detalles_soporte}</div>
+                                    <small class="text-muted d-block mt-1">
+                                        Estado: <span style="color:${item.estado_color};">${item.estado}</span><br>
+                                        ${item.fecha_creacion}
+                                    </small>
+                                </div>`;
+                        });
+                    } else {
+                        lista.innerHTML = '<div class="text-center text-muted p-3">No hay notificaciones recientes.</div>';
+                    }
+                })
+                .catch(err => console.error('Error al obtener notificaciones:', err));
+        }
+    });
 </script>
+
+<style>
+    /* Estilo general del panel */
+    #panelNotificaciones.mostrar {
+        display: block !important;
+        opacity: 1 !important;
+        transform: translateY(0);
+        animation: fadeIn 0.25s ease;
+    }
+
+    /* Scroll moderno */
+    #panelNotificaciones::-webkit-scrollbar {
+        width: 6px;
+    }
+    #panelNotificaciones::-webkit-scrollbar-thumb {
+        background-color: rgba(0,0,0,0.2);
+        border-radius: 4px;
+    }
+
+    /* Animación de aparición */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-5px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .list-group-item {
+        border: none !important;
+        border-bottom: 1px solid #eee !important;
+    }
+    .list-group-item:hover {
+        background-color: #f8f9fa !important;
+        cursor: pointer;
+    }
+
+</style>
+
+
 
 
 </html>

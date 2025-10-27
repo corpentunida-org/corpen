@@ -21,7 +21,9 @@ use App\Models\Soportes\ScpUsuario;
 use App\Models\Soportes\ScpCategoria;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class ScpSoporteController extends Controller
 {
@@ -296,27 +298,75 @@ class ScpSoporteController extends Controller
         return response()->download(storage_path('app/' . $ruta));
     }
 
-    /* Campana de Notificaciones */
     public function getNotificaciones()
     {
         $userId = Auth::id();
+        $usuarioEscalado = ScpUsuario::where('usuario', $userId)->first();
 
-        $notificaciones = ScpSoporte::with('estadoSoporte')
-            ->where(function ($query) use ($userId) {
-                $query->where('id_users', $userId)
-                    ->orWhere('usuario_escalado', $userId);
-            })
-            ->whereHas('estadoSoporte', function ($q) {
-                $q->where('nombre', '!=', 'Cerrado'); // Solo las no cerradas
+        $total = ScpSoporte::query()
+            ->when($usuarioEscalado, function ($q) use ($usuarioEscalado, $userId) {
+                $q->where('id_users', $userId)
+                ->orWhere('usuario_escalado', $usuarioEscalado->id);
+            }, function ($q) use ($userId) {
+                $q->where('id_users', $userId);
             })
             ->count();
 
-        // Solo devolver el número
-        return response()->json(['total' => $notificaciones]);
+        return response()->json(['total' => $total]);
     }
 
+    public function getNotificacionesDetalladas()
+    {
+        $userId = Auth::id();
+        $usuarioEscalado = ScpUsuario::where('usuario', $userId)->first();
 
+        // --- Contadores ---
+        $creados = ScpSoporte::where('id_users', $userId)->count();
+        $asignados = $usuarioEscalado
+            ? ScpSoporte::where('usuario_escalado', $usuarioEscalado->id)->count()
+            : 0;
+        $pendientes = ScpSoporte::where('id_users', $userId)
+            ->whereHas('estadoSoporte', function ($q) {
+                $q->where('nombre', '!=', 'Cerrado');
+            })
+            ->count();
 
+        // --- Detalles de soportes ---
+        $detalles = ScpSoporte::with('estadoSoporte')
+            ->where(function ($q) use ($userId, $usuarioEscalado) {
+                $q->where('id_users', $userId);
+                if ($usuarioEscalado) {
+                    $q->orWhere('usuario_escalado', $usuarioEscalado->id);
+                }
+            })
+            ->orderByDesc('updated_at')
+            ->take(10)
+            ->get(['id', 'detalles_soporte', 'updated_at'])
+            ->map(function ($soporte) {
+                $estado = $soporte->estadoSoporte->nombre ?? 'Sin estado';
+                $color = match ($estado) {
+                    'Abierto' => '#0d6efd',
+                    'En Proceso' => '#ffc107',
+                    'Cerrado' => '#28a745',
+                    default => '#6c757d',
+                };
+                return [
+                    'id' => $soporte->id,
+                    'detalles_soporte' => Str::limit($soporte->detalles_soporte, 80),
+                    'estado' => $estado,
+                    'estado_color' => $color,
+                    'fecha_creacion' => Carbon::parse($soporte->updated_at)->diffForHumans(),
+                ];
+            });
+
+        return response()->json([
+            'creados' => $creados,
+            'asignados' => $asignados,
+            'pendientes' => $pendientes,
+            'total' => $creados + $asignados + $pendientes,
+            'detalles' => $detalles,
+        ]);
+    }
 
 
 

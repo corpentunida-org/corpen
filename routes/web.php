@@ -524,10 +524,13 @@ Route::middleware('auth')->prefix('soportes')->name('soportes.')->group(function
     /*     Route::get('sin-asignar', [ScpSoporteController::class, 'sinAsignar'])
         ->name('soportes.sinAsignar'); */
 
-    // 🔔 Notificaciones según usuario logueado
-Route::get('notificaciones', [ScpSoporteController::class, 'getNotificaciones'])
-    ->name('notificaciones');
+    // 🔔 Notificaciones simples (contador rápido)
+    Route::get('notificaciones', [ScpSoporteController::class, 'getNotificaciones'])
+        ->name('notificaciones');
 
+    // 🔔 Notificaciones detalladas (con estados y redirección)
+    Route::get('notificaciones/detalladas', [ScpSoporteController::class, 'getNotificacionesDetalladas'])
+        ->name('notificaciones.detalladas');
 
 });
 
