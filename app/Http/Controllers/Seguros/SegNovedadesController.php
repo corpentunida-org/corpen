@@ -29,9 +29,9 @@ class SegNovedadesController extends Controller
     }
     public function index(Request $request)
     {
-        $estado = $request->query('estado', 'solicitud');
+        $estado = $request->query('estado', 'nuevas');
         $colecciones = [
-            'solicitud' => SegNovedades::where('estado', 1)
+            'nuevas' => SegNovedades::where('estado', 1)
                 ->with(['tercero', 'cambiosEstado', 'beneficiario'])
                 ->get(),
             'radicado' => SegNovedades::where('estado', 2)
@@ -48,7 +48,7 @@ class SegNovedadesController extends Controller
                 ->get(),
         ];
 
-        $data = $colecciones[$estado] ?? $colecciones['solicitud'];
+        $data = $colecciones[$estado] ?? $colecciones['nuevas'];
         return view('seguros.novedades.index', compact('data', 'estado'));
     }
 
@@ -165,7 +165,7 @@ class SegNovedadesController extends Controller
     {
         $novedad = SegNovedades::with(['poliza', 'estadoNovedad', 'cambiosEstado'])->findOrFail($id);
         if ($novedad->estado != 1) {
-            return back()->with('error', 'La novedad no esta en estado solicitud. No se puede editar.');
+            return back()->with('error', 'La novedad no esta en estado nueva solicitud. No se puede editar.');
         }
         if ($novedad->tipo == 4) {
             return redirect()->route('seguros.novedades.index')->with('error', 'La novedad de ingresar beneficiario no se puede editar.');

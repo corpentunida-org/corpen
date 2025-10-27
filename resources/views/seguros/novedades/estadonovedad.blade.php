@@ -6,7 +6,7 @@
         4 => ['color' => 'info', 'label' => 'INGRESO BENEFICIARIO'],
     ];
     $opcionesestados = [
-        1 => 'solicitud',
+        1 => 'nuevas',
         2 => 'radicado',
         3 => 'aprobado',
         4 => 'rechazado',
@@ -25,10 +25,10 @@
     <div class="content-sidebar-body">
         <ul class="nav flex-column nxl-content-sidebar-item">
             <li class="nav-item">
-                <a class="nav-link {{ request('estado') === 'solicitud' ? 'active' : '' }}"
-                    href="{{ route('seguros.novedades.index', ['estado' => 'solicitud']) }}">
+                <a class="nav-link {{ request('estado') === 'nuevas' ? 'active' : '' }}"
+                    href="{{ route('seguros.novedades.index', ['estado' => 'nuevas']) }}">
                     <i class="feather-edit"></i>
-                    <span>Solicitadas</span>
+                    <span>Nuevas</span>
                 </a>
             </li>
             <li class="nav-item">
@@ -42,21 +42,21 @@
                 <a class="nav-link {{ request('estado') === 'complementos' ? 'active' : '' }}"
                     href="{{ route('seguros.novedades.index', ['estado' => 'complementos']) }}">
                     <i class="bi bi-file-earmark-diff"></i>
-                    <span>Pendiente cargue documentos</span>
+                    <span>Cargue documentos</span>
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link {{ request('estado') === 'aprobado' ? 'active' : '' }}"
                     href="{{ route('seguros.novedades.index', ['estado' => 'aprobado']) }}">
                     <i class="feather-check-circle"></i>
-                    <span>Aprobadas</span>
+                    <span>Aprobado</span>
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link {{ request('estado') === 'rechazado' ? 'active' : '' }}"
                     href="{{ route('seguros.novedades.index', ['estado' => 'rechazado']) }}">
                     <i class="bi bi-folder-x"></i>
-                    <span>Rechazadas</span>
+                    <span>Rechazado</span>
                 </a>
             </li>
         </ul>
