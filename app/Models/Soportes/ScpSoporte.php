@@ -117,6 +117,10 @@ class ScpSoporte extends Model
         return $this->belongsTo(ScpCategoria::class, 'id_categoria');
     }
 
-
+    //CORREO
+    public function usuarioEscalado()
+    {
+        return $this->belongsTo(User::class, 'usuario_escalado', 'id');
+    }
 
 }
