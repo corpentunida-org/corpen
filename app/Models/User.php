@@ -117,9 +117,6 @@ class User extends Authenticatable
     }
 
 
-
-
-
     /*
 
     protected $appends = [
