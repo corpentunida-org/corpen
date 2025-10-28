@@ -113,8 +113,7 @@
                                 </div>
                             </div>
                         </a>
-                        <!--! [Start] nxl-head-mobile-toggler !-->
-                        <!--! [Start] nxl-navigation-toggle !-->
+
                         <div class="nxl-navigation-toggle">
                             <a href="javascript:void(0);" id="menu-mini-button">
                                 <i class="feather-align-left"></i>
@@ -123,90 +122,33 @@
                                 <i class="feather-arrow-right"></i>
                             </a>
                         </div>
-                        <!--! [End] nxl-navigation-toggle !-->
-                        <!--! [Start] nxl-lavel-mega-menu-toggle !-->
-                        {{-- Responsive icono de mega menu --}}
-                        {{-- <div class="nxl-lavel-mega-menu-toggle d-flex d-lg-none">
-                    <a href="javascript:void(0);" id="nxl-lavel-mega-menu-open">
-                        <i class="feather-align-left"></i>
-                    </a>
-                </div> --}}
-                        <!--! [End] nxl-lavel-mega-menu-toggle !-->
-                        <!--! [Start] nxl-lavel-mega-menu !-->
-                        <div class="nxl-drp-link nxl-lavel-mega-menu">
-                            <div class="nxl-lavel-mega-menu-toggle d-flex d-lg-none">
-                                <a href="javascript:void(0)" id="nxl-lavel-mega-menu-hide">
-                                    <i class="feather-arrow-left me-2"></i>
-                                    <span>Back</span>
-                                </a>
-                            </div>
-                            <!--! [Start] nxl-lavel-mega-menu-wrapper !-->
-                            {{-- <div class="nxl-lavel-mega-menu-wrapper d-flex gap-3">
-                        <!--! [Start] nxl-lavel-menu !-->
 
-                        <!--! [End] nxl-lavel-menu !-->
-                        <!--! [Start] nxl-h-item nxl-mega-menu !-->
-
-                        <!--! [End] nxl-h-item nxl-mega-menu !-->
-                    </div> --}}
-                            <!--! [End] nxl-lavel-mega-menu-wrapper !-->
-                        </div>
-                        <!--! [End] nxl-lavel-mega-menu !-->
                     </div>
-                    <!--! [End] Header Left !-->
+                    <!--! [End] nxl-lavel-mega-menu-toggle !-->
+                    <!--! [Start] nxl-lavel-mega-menu !-->
+                    <div class="nxl-drp-link nxl-lavel-mega-menu">
+                        <div class="nxl-lavel-mega-menu-toggle d-flex d-lg-none">
+                            <a href="javascript:void(0)" id="nxl-lavel-mega-menu-hide">
+                                <i class="feather-arrow-left me-2"></i>
+                                <span>Back</span>
+                            </a>
+                        </div>
+                    </div>
 
-                    <!--! [Start] Header Right !-->
+                    <!--! [Start] Header RIGHT !-->
                     <div class="header-right ms-auto">
                         <div class="d-flex align-items-center">
-<div class="nxl-h-item dropdown" style="position: relative;">
-    <a href="javascript:void(0);" 
-       class="nxl-head-link position-relative" 
-       id="notificacionesBtn">
-        <i class="bi bi-bell fs-5"></i>
-        <span id="contadorNotificaciones"
-              class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger shadow-sm">
-            0
-        </span>
-    </a>
+                            <div class="nxl-head-link dark-light-theme">
+                                <a href="javascript:void(0);" class="nxl-head-link me-0 dark-button">
+                                    <i class="feather-moon"></i>
+                                </a>
+                                <a href="javascript:void(0);" class="nxl-head-link me-0 light-button"
+                                    style="display: none">
+                                    <i class="feather-sun"></i>
+                                </a>
+                            </div>
 
-    <!-- Panel flotante de notificaciones -->
-    <div id="panelNotificaciones"
-         class="shadow-lg border rounded-3 bg-white"
-         style="
-            display: none;
-            position: absolute;
-            top: 120%; /* bajamos un poco para que no tape la campana */
-            right: 0;
-            width: 400px;
-            max-height: 550px;
-            overflow-y: auto;
-            z-index: 99999;
-            transform: translateY(10px);
-            opacity: 0;
-            transition: all 0.25s ease;
-         ">
-        <!-- Cabecera -->
-        <div class="bg-primary text-white px-3 py-2 rounded-top fw-semibold d-flex justify-content-between align-items-center">
-            <span>📋 Mis Soportes</span>
-        </div>
-
-        <!-- Contadores -->
-        <div class="px-3 py-2 border-bottom bg-light d-flex justify-content-around flex-wrap gap-2">
-            <span class="badge bg-primary" title="Creados por mí">Creados: <span id="numCreados">0</span></span>
-            <span class="badge bg-success" title="Asignados a mí">Asignados: <span id="numAsignados">0</span></span>
-            <span class="badge bg-warning text-dark" title="Pendientes por cerrar">Pendientes: <span id="numPendientes">0</span></span>
-        </div>
-
-        <!-- Lista de notificaciones -->
-        <div id="listaNotificaciones"
-             class="list-group list-group-flush small"
-             style="max-height: 450px; overflow-y: auto;">
-            <div class="text-center text-muted p-3">Cargando notificaciones...</div>
-        </div>
-    </div>
-</div>
-
-
+                            <x-notifications-base />
 
                             <div class="nxl-h-item d-none d-sm-flex">
                                 <div class="full-screen-switcher">
@@ -217,15 +159,7 @@
                                     </a>
                                 </div>
                             </div>
-                            <div class="nxl-h-item dark-light-theme">
-                                <a href="javascript:void(0);" class="nxl-head-link me-0 dark-button">
-                                    <i class="feather-moon"></i>
-                                </a>
-                                <a href="javascript:void(0);" class="nxl-head-link me-0 light-button"
-                                    style="display: none">
-                                    <i class="feather-sun"></i>
-                                </a>
-                            </div>
+                            
                             <div class="dropdown nxl-h-item">
                                 <a href="javascript:void(0);" data-bs-toggle="dropdown" role="button"
                                     data-bs-auto-close="outside">
@@ -259,10 +193,9 @@
                                     </form>
 
                                 </div>
-                            </div>
+                            </div>                        
                         </div>
-                    </div>
-                    <!--! [End] Header Right !-->
+                    </div>                    
                 </div>
             </header>
             <!--! ================================================================ !-->
@@ -328,7 +261,7 @@
 
             <script src="{{ asset('assets/vendors/js/vendors.min.js') }}"></script>
             <!-- vendors.min.js {always must need to be top} -->
-            
+
             <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
             <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
@@ -381,58 +314,7 @@
     @endauth
 </body>
 
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const btn = document.getElementById('notificacionesBtn');
-        const panel = document.getElementById('panelNotificaciones');
-        const contador = document.getElementById('contadorNotificaciones');
 
-        btn.addEventListener('click', () => {
-            panel.classList.toggle('mostrar');
-        });
-
-        document.addEventListener('click', (e) => {
-            if (!btn.contains(e.target) && !panel.contains(e.target)) {
-                panel.classList.remove('mostrar');
-            }
-        });
-
-        actualizarNotificacionesDetalladas();
-        setInterval(actualizarNotificacionesDetalladas, 60000);
-
-        function actualizarNotificacionesDetalladas() {
-            fetch('{{ route("soportes.notificaciones.detalladas") }}')
-                .then(res => res.json())
-                .then(data => {
-                    // --- Contadores ---
-                    document.getElementById('numCreados').textContent = data.creados ?? 0;
-                    document.getElementById('numAsignados').textContent = data.asignados ?? 0;
-                    document.getElementById('numPendientes').textContent = data.pendientes ?? 0;
-                    contador.textContent = data.total ?? 0;
-
-                    // --- Detalles ---
-                    const lista = document.getElementById('listaNotificaciones');
-                    lista.innerHTML = '';
-
-                    if (data.detalles && data.detalles.length > 0) {
-                        data.detalles.forEach(item => {
-                            lista.innerHTML += `
-                                <div class="list-group-item" onclick="window.location='/soportes/soportes/${item.id}'">
-                                    <div class="fw-semibold">${item.detalles_soporte}</div>
-                                    <small class="text-muted d-block mt-1">
-                                        Estado: <span style="color:${item.estado_color};">${item.estado}</span><br>
-                                        ${item.fecha_creacion}
-                                    </small>
-                                </div>`;
-                        });
-                    } else {
-                        lista.innerHTML = '<div class="text-center text-muted p-3">No hay notificaciones recientes.</div>';
-                    }
-                })
-                .catch(err => console.error('Error al obtener notificaciones:', err));
-        }
-    });
-</script>
 
 <style>
     /* Estilo general del panel */
@@ -447,26 +329,34 @@
     #panelNotificaciones::-webkit-scrollbar {
         width: 6px;
     }
+
     #panelNotificaciones::-webkit-scrollbar-thumb {
-        background-color: rgba(0,0,0,0.2);
+        background-color: rgba(0, 0, 0, 0.2);
         border-radius: 4px;
     }
 
     /* Animación de aparición */
     @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(-5px); }
-        to { opacity: 1; transform: translateY(0); }
+        from {
+            opacity: 0;
+            transform: translateY(-5px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 
     .list-group-item {
         border: none !important;
         border-bottom: 1px solid #eee !important;
     }
+
     .list-group-item:hover {
         background-color: #f8f9fa !important;
         cursor: pointer;
     }
-
 </style>
 
 

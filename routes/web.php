@@ -134,7 +134,7 @@ Route::get('/plansall', [PlanController::class, 'index'])->name('exequial.plansa
 
 //RUTAS SEGUROS
 Route::get('/poliza/formato', [SegPolizaController::class, 'exportarFormato'])->name('seguros.poliza.formato');
-Route::resource('poliza', SegPolizaController::class)->names('seguros.poliza')->middleware(['auth', 'can:seguros.poliza.index']);
+Route::resource('poliza', SegPolizaController::class)->names('seguros.poliza')->middleware(['auth', 'candirect:seguros.poliza.index']);
 Route::get('/polizaname/{name}', [SegPolizaController::class, 'namesearch'])->name('poliza.search');
 Route::resource('plan', SegPlanController::class)->names('seguros.planes')->middleware('auth');
 Route::resource('cobertura', SegCoberturaController::class)->names('seguros.cobertura')->middleware('auth');

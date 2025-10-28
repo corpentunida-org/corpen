@@ -455,5 +455,42 @@
                 });
             });
         </script>
+
+        {{-- ✅ EXPORTACIÓN: Excel, PDF, Imprimir --}}
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+        <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+        <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+        <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+        <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+        <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
+        <script>
+            $(document).ready(function() {
+                if ($.fn.DataTable.isDataTable('#interactionsTable')) {
+                    $('#interactionsTable').DataTable().destroy();
+                }
+
+                $('#interactionsTable').DataTable({
+                    dom: 'Bfrtip',
+                    buttons: [
+                        { extend: 'excelHtml5', className: 'btn btn-success btn-sm me-1', text: '<i class="feather-file-text me-1"></i> Excel', title: 'Interacciones_{{ date("Y-m-d") }}' },
+                        { extend: 'pdfHtml5', className: 'btn btn-danger btn-sm me-1', text: '<i class="feather-file-text me-1"></i> PDF', title: 'Interacciones_{{ date("Y-m-d") }}' },
+                        { extend: 'print', className: 'btn btn-secondary btn-sm', text: '<i class="feather-printer me-1"></i> Imprimir' }
+                    ],
+                    paging: false,
+                    ordering: true,
+                    info: false,
+                    searching: false,
+                    autoWidth: false,
+                    language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json' }
+                });
+            });
+        </script>
     @endpush
 </x-base-layout>

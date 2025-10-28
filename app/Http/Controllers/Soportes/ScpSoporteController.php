@@ -345,37 +345,36 @@ class ScpSoporteController extends Controller
             ->count();
 
         // --- Detalles de soportes ---
-        $detalles = ScpSoporte::with('estadoSoporte')
+        $detalles = ScpSoporte::with('estadoSoporte','prioridad', 'usuario')
             ->where(function ($q) use ($userId, $usuarioEscalado) {
                 $q->where('id_users', $userId);
                 if ($usuarioEscalado) {
                     $q->orWhere('usuario_escalado', $usuarioEscalado->id);
                 }
-            })
+            })->where('estado', '!=', '4')
             ->orderByDesc('updated_at')
             ->take(10)
-            ->get(['id', 'detalles_soporte', 'updated_at'])
+            ->get(['id', 'id_users','detalles_soporte', 'estado', 'id_scp_prioridad', 'updated_at'])
             ->map(function ($soporte) {
-                $estado = $soporte->estadoSoporte->nombre ?? 'Sin estado';
-                $color = match ($estado) {
-                    'Abierto' => '#0d6efd',
-                    'En Proceso' => '#ffc107',
-                    'Cerrado' => '#28a745',
-                    default => '#6c757d',
+                $prioridad = $soporte->prioridad->nombre ?? 'Baja';
+                $color = match ($prioridad) {
+                    'Alta' => 'danger',
+                    'Media' => 'warning',
+                    'Baja' => 'primary',
+                    default => 'gray',
                 };
+                
                 return [
                     'id' => $soporte->id,
+                    'usuario_nombre' => $soporte->usuario->nombre_corto ?? '',
                     'detalles_soporte' => Str::limit($soporte->detalles_soporte, 80),
-                    'estado' => $estado,
-                    'estado_color' => $color,
+                    'prioridad' => $prioridad,
+                    'estado' => $soporte->estadoSoporte->nombre ?? 'Sin Estado',
+                    'prioridad_color' => $color,
                     'fecha_creacion' => Carbon::parse($soporte->updated_at)->diffForHumans(),
                 ];
             });
-
-        return response()->json([
-            'creados' => $creados,
-            'asignados' => $asignados,
-            'pendientes' => $pendientes,
+        return response()->json([            
             'total' => $creados + $asignados + $pendientes,
             'detalles' => $detalles,
         ]);

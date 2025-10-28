@@ -36,13 +36,12 @@
                             </form>
                             <div class="col-lg-3 mb-4">
                                 <label class="form-label">Cedula Asegurado</label>
-                                <input type="text" class="form-control" value="{{ $asegurado->cedula ?? ' ' }}"
-                                    disabled>
+                                <input type="text" class="form-control" value="{{ $asegurado->cedula ?? ' ' }}" disabled>
                             </div>
                             <div class="col-lg-7 mb-4">
                                 <label class="form-label">Nombre Asegurado</label>
                                 <input type="text" class="form-control"
-                                    value="{{ $asegurado->nombre_titular ?? ' ' }}" disabled>
+                                    value="{{ $asegurado->nombre_tercero ?? ' ' }}" disabled>
                             </div>
                         </div>
                         @if (isset($asegurado))
@@ -360,7 +359,7 @@
                         <div class="col-lg-7">
                             <label class="form-label">Nombre Asegurado</label>
                             <input type="text" class="form-control"
-                                value="{{ $asegurado->nombre_titular ?? ' ' }}" disabled>
+                                value="{{ $asegurado->nombre_tercero ?? ' ' }}" disabled>
                         </div>
                     </div>
                     @if (isset($asegurado))
@@ -466,9 +465,7 @@
             cambiarValorPagarGrupoFamiliar();
         });
 
-
         function cambiarValorPagarGrupoFamiliar() {
-
             let valoracambiar = parseFloat($('#valorapagarcorpen').val());
             valortotalactual = parseFloat("{{ @$totalPrimaCorpen }}");
             valorapagaractual = parseFloat("{{ @$asegurado?->polizas?->first()->primapagar }}");
