@@ -111,6 +111,15 @@ class User extends Authenticatable
         return \App\Models\Archivo\GdoCargo::where('correo_corporativo', $this->email)->first();
     }
 
+    public function soportesEscalados()
+    {
+        return $this->hasMany(\App\Models\Soportes\ScpSoporte::class, 'usuario_escalado', 'id');
+    }
+
+
+
+
+
     /*
 
     protected $appends = [

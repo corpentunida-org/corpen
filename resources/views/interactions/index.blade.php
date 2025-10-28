@@ -19,22 +19,59 @@
                 </a>
             </div>
 
-            {{-- 📌 Buscador y Filtros --}}
+            {{-- 📌 Buscador Principal y Filtros --}}
             <div class="px-4 pb-4">
-                <form action="{{ route('interactions.index') }}" method="GET">
-                    <div class="input-group shadow-sm rounded overflow-hidden">
+                <form id="filterForm" action="{{ route('interactions.index') }}" method="GET">
+                    <div class="input-group shadow-sm rounded overflow-hidden mb-3">
                         <span class="input-group-text bg-white border-end-0"><i class="feather-search text-muted"></i></span>
-                        <input type="text" name="search" class="form-control border-start-0"
+                        <input type="text" name="q" class="form-control border-start-0"
                                placeholder="Buscar por cliente, cédula, resultado o notas..."
-                               value="{{ request('search') }}">
+                               value="{{ request('q') }}">
                         <button class="btn btn-primary" type="submit">
                             <i class="feather-filter d-none d-sm-inline me-1"></i> Filtrar
                         </button>
-                        @if (request('search'))
+                        @if (request('q') || request('channel_filter') || request('type_filter') || request('outcome_filter') || request('interaction_date_filter'))
                             <a href="{{ route('interactions.index') }}" class="btn btn-outline-secondary">
                                 <i class="feather-x-circle me-1"></i> Limpiar
                             </a>
                         @endif
+                    </div>
+
+                    {{-- 📦 Filtros Adicionales --}}
+                    <div class="card p-3 bg-light">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">Canal</label>
+                                <select id="channel_filter" name="channel_filter" class="form-select form-select-sm">
+                                    <option value="">Todos</option>
+                                    @foreach($channels as $channel)
+                                        <option value="{{ $channel }}" {{ request('channel_filter') == $channel ? 'selected' : '' }}>{{ $channel }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">Tipo</label>
+                                <select id="type_filter" name="type_filter" class="form-select form-select-sm">
+                                    <option value="">Todos</option>
+                                    @foreach($types as $type)
+                                        <option value="{{ $type }}" {{ request('type_filter') == $type ? 'selected' : '' }}>{{ $type }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">Resultado</label>
+                                <select id="outcome_filter" name="outcome_filter" class="form-select form-select-sm">
+                                    <option value="">Todos</option>
+                                    @foreach($outcomes as $outcome)
+                                        <option value="{{ $outcome }}" {{ request('outcome_filter') == $outcome ? 'selected' : '' }}>{{ $outcome }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">Fecha Interacción</label>
+                                <input type="date" id="interaction_date_filter" name="interaction_date_filter" class="form-control form-control-sm" value="{{ request('interaction_date_filter') }}" />
+                            </div>
+                        </div>
                     </div>
                 </form>
             </div>
@@ -46,7 +83,7 @@
                         <tr>
                             <th style="width: 50px;" class="text-center"># ID</th>
                             <th style="width: 20%;">Cliente</th>
-                            <th style="width: 150px;" data-bs-toggle="tooltip" title="Número de identificación del cliente">Cédula</th> {{-- ⚡ UX Mejorada: Ajustar ancho para acomodar el nombre --}}
+                            <th style="width: 150px;" data-bs-toggle="tooltip" title="Número de identificación del cliente">Cédula</th>
                             <th style="width: 120px;">Teléfono</th>
                             <th style="width: 160px;" data-bs-toggle="tooltip" title="Fecha y hora en que ocurrió la interacción">Fecha Interacción</th>
                             <th style="width: 160px;" data-bs-toggle="tooltip" title="Fecha y tipo de la próxima acción programada">Próxima Acción</th>
@@ -66,13 +103,16 @@
                                     'Seguimiento' => 'info'
                                 ][$outcome] ?? 'secondary';
 
+                                // NOTA: El controlador carga 'nextAction' pero la vista usa columnas directas.
+                                // Esto es correcto SI 'next_action_date' y 'next_action_type' son columnas en la tabla 'interactions'.
                                 $nextActionDate = optional($interaction->next_action_date);
                                 $isPast = $nextActionDate->isPast() && !$nextActionDate->isToday();
                                 $isToday = $nextActionDate->isToday();
                                 $isFuture = $nextActionDate->isFuture();
 
+                                // Se usa 'client->nom_ter' y 'client->cod_ter' basado en la lógica de búsqueda del controlador
                                 $clientName = $interaction->client->nom_ter ?? $interaction->client->nombre ?? 'N/A';
-                                $clientId = $interaction->client->cod_ter ?? $interaction->client_id ?? 'N/A';
+                                $clientId = $interaction->client->cod_ter ?? $interaction->client->identificacion ?? 'N/A'; // Corregido a identificacion
                             @endphp
 
                             <tr>
@@ -100,17 +140,23 @@
                                        data-edit-url="{{ route('interactions.edit', $interaction->id) }}"
                                        data-show-url="{{ route('interactions.show', $interaction->id) }}"
                                     >
-                                        #{{ $interaction->id }}
+                                        #{{ $interaction->client->cod_dist }}
                                     </a>
                                 </td>
                                 <td>{{ $clientName }}</td>
                                 <td>
-                                    <strong>{{ $clientId }}</strong> {{-- ⚡ UX Mejorada: Cédula en negrita --}}
+                                    <strong>{{ $clientId }}</strong>
                                     <br>
-                                    <span class="text-muted small">{{ $clientName }}</span> {{-- ⚡ UX Mejorada: Nombre pequeño debajo de la cédula --}}
+                                    <span class="text-muted small">{{ $clientName }}</span>
                                 </td>
-                                <td>{{ $interaction->client->cel ?? '—' }}</td>
-                                <td>{{ optional($interaction->interaction_date)->format('d/m/Y h:i A') ?? '—' }}</td>
+                                <td>
+                                    <strong>{{ $interaction->client->cel ?? '—' }}</strong>
+                                    <br>
+                                    <span class="text-muted small">{{ $interaction->client->email ?? '—' }}</span>
+                                </td>
+                                <td data-order="{{ optional($interaction->interaction_date)->getTimestamp() }}">
+                                    {{ optional($interaction->interaction_date)->format('d/m/Y h:i A') ?? '—' }}
+                                </td>
                                 <td>
                                     @if ($interaction->next_action_date)
                                         <span class="d-block {{ $isPast ? 'text-danger' : ($isToday ? 'text-warning' : 'text-success') }}">
@@ -157,7 +203,8 @@
                                         ><i class="feather-info"></i></button>
 
                                         <a href="{{ route('interactions.edit', $interaction->id) }}" class="btn btn-sm btn-outline-warning border-0" title="Editar"><i class="feather-edit-3"></i></a>
-{{--                                         <form action="{{ route('interactions.destroy', $interaction->id) }}" method="POST" class="formEliminar d-inline">
+                                        {{-- El formulario de eliminación está comentado, si se necesita, descomentar y asegurarse de tener SweetAlert2 configurado --}}
+                                        {{-- <form action="{{ route('interactions.destroy', $interaction->id) }}" method="POST" class="formEliminar d-inline">
                                             @csrf @method('DELETE')
                                             <button type="submit" class="btn btn-sm btn-outline-danger border-0" title="Eliminar"><i class="feather-trash-2"></i></button>
                                         </form> --}}
@@ -179,6 +226,7 @@
 
             @if ($interactions->hasPages())
                 <div class="d-flex justify-content-center mt-4">
+                    {{-- Esto asegura que los filtros se mantengan al cambiar de página --}}
                     {{ $interactions->appends(request()->except('page'))->links() }}
                 </div>
             @endif
@@ -266,6 +314,18 @@
 
     {{-- 📜 Script --}}
     @push('scripts')
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+        <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+        <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+        <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+        <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+        <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
         <script>
             document.addEventListener('DOMContentLoaded', function () {
                 var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
@@ -366,6 +426,32 @@
                     } else {
                         attachmentsList.innerHTML = '<p class="text-muted mb-0">No hay archivos adjuntos.</p>';
                     }
+                });
+            });
+
+            $(document).ready(function() {
+                if ($.fn.DataTable.isDataTable('#interactionsTable')) {
+                    $('#interactionsTable').DataTable().destroy();
+                }
+
+                $('#interactionsTable').DataTable({
+                    dom: 'Bfrtip',
+                    buttons: [
+                        { extend: 'excelHtml5', className: 'btn btn-success btn-sm me-1', text: '<i class="feather-file-text me-1"></i> Excel', title: 'Interacciones_{{ date("Y-m-d") }}' },
+                        { extend: 'pdfHtml5', className: 'btn btn-danger btn-sm me-1', text: '<i class="feather-file-text me-1"></i> PDF', title: 'Interacciones_{{ date("Y-m-d") }}' },
+                        { extend: 'print', className: 'btn btn-secondary btn-sm', text: '<i class="feather-printer me-1"></i> Imprimir' }
+                    ],
+                    paging: false, // Deshabilitamos la paginación de DataTables para usar la de Laravel
+                    ordering: true, // Permitimos ordenar por columnas (solo datos de la página actual)
+                    info: false, // Ocultamos el "Mostrando X de Y"
+                    searching: false, // Deshabilitamos la búsqueda de DataTables, usamos la del backend.
+                    autoWidth: false,
+                    language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json' }
+                });
+
+                // Eventos para los filtros adicionales: submite el formulario al cambiar
+                $('#channel_filter, #type_filter, #outcome_filter, #interaction_date_filter').on('change', function() {
+                    $('#filterForm').submit();
                 });
             });
         </script>

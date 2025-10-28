@@ -25,6 +25,10 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 
+use Illuminate\Support\Facades\Mail;
+use App\Mail\SoporteEscaladoMail;
+
+
 class ScpSoporteController extends Controller
 {
     public function index()
@@ -235,6 +239,15 @@ class ScpSoporteController extends Controller
         }
 
         $scpSoporte->update($updateData);
+        // ✅ Enviar correo solo si se cambió el usuario escalado
+            if ($scpSoporte->wasChanged('usuario_escalado') && 
+                $scpSoporte->usuarioEscalado && 
+                $scpSoporte->usuarioEscalado->email) {
+
+                Mail::to($scpSoporte->usuarioEscalado->email)
+                    ->send(new SoporteEscaladoMail($scpSoporte));
+            }
+
 
         return redirect()->route('soportes.soportes.show', $scpSoporte)->with('success', 'Observación añadida y soporte actualizado exitosamente.');
     }

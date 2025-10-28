@@ -81,6 +81,7 @@ use App\Http\Controllers\Soportes\ScpObservacionController;
 use App\Http\Controllers\Soportes\ScpSubTipoController;
 use App\Http\Controllers\Soportes\ScpCategoriaController;
 use App\Http\Controllers\Soportes\ScpUsuarioController;
+use App\Http\Controllers\Soportes\ScpNotificacionController;
 
 //VISITAS
 use App\Http\Controllers\Vistas\VisitaCorpenController;
@@ -532,6 +533,8 @@ Route::middleware('auth')->prefix('soportes')->name('soportes.')->group(function
     Route::get('notificaciones/detalladas', [ScpSoporteController::class, 'getNotificacionesDetalladas'])
         ->name('notificaciones.detalladas');
 
+    Route::get('soportes/enviar-correo-escalado/{id}', [ScpNotificacionController::class, 'enviarCorreoEscalado'])
+        ->name('soportes.enviarCorreoEscalado');  
 });
 
 
