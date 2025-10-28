@@ -238,12 +238,16 @@
             <h3 class="form-section-title"><i class="fas fa-user-tie"></i> Cliente</h3>
             <div class="form-group">
               <label for="client_id" class="form-label">Buscar y seleccionar cliente <span style="color:var(--danger-color)">*</span></label>
-              <select name="client_id" id="client_id" class="form-control" required>
-                <option value=""></option>
-                @foreach ($clientes as $cliente)
-                  <option value="{{ $cliente->cod_ter }}">{{ $cliente->cod_ter }} - {{ $cliente->apl1 }} {{ $cliente->apl2 }} {{ $cliente->nom1 }} {{ $cliente->nom2 }}</option>
-                @endforeach
-              </select>
+                <!-- Cliente -->
+                <select name="client_id" id="client_id" class="form-control" required>
+                  <option value=""></option>
+                  @foreach ($clientes as $cliente)
+                    <option value="{{ $cliente->cod_ter }}"
+                      {{ old('client_id', $interaction->client_id ?? '') == $cliente->cod_ter ? 'selected' : '' }}>
+                      {{ $cliente->cod_ter }} - {{ $cliente->apl1 }} {{ $cliente->apl2 }} {{ $cliente->nom1 }} {{ $cliente->nom2 }}
+                    </option>
+                  @endforeach
+                </select>
               <i class="fas fa-check-circle valid-icon" aria-hidden="true"></i>
               <div class="helper-error" data-for="client_id">Selecciona un cliente.</div>
             </div>
@@ -255,24 +259,32 @@
               <div class="form-row" style="display:flex;gap:1rem;flex-wrap:wrap">
                 <div class="form-group" style="flex:1; min-width:160px;">
                   <label for="interaction_channel" class="form-label">Canal <span style="color:var(--danger-color)">*</span></label>
-                  <select name="interaction_channel" id="interaction_channel" class="form-control" required>
-                    <option value="">Selecciona...</option>
-                    @foreach($channels as $channel)
-                      <option value="{{ $channel->id }}">{{ $channel->name }}</option>
-                    @endforeach
-                  </select>
+                    <!-- Canal -->
+                    <select name="interaction_channel" id="interaction_channel" class="form-control" required>
+                      <option value="">Selecciona...</option>
+                      @foreach($channels as $channel)
+                        <option value="{{ $channel->id }}"
+                          {{ old('interaction_channel', $interaction->interaction_channel ?? '') == $channel->id ? 'selected' : '' }}>
+                          {{ $channel->name }}
+                        </option>
+                      @endforeach
+                    </select>
                   <i class="fas fa-check-circle valid-icon" aria-hidden="true"></i>
                   <div class="helper-error" data-for="interaction_channel">Selecciona un canal.</div>
                 </div>
 
                 <div class="form-group" style="flex:1; min-width:160px;">
                   <label for="interaction_type" class="form-label">Tipo <span style="color:var(--danger-color)">*</span></label>
-                  <select name="interaction_type" id="interaction_type" class="form-control" required>
-                    <option value="">Selecciona...</option>
-                    @foreach($types as $type)
-                      <option value="{{ $type->id }}">{{ $type->name }}</option>
-                    @endforeach
-                  </select>
+                    <!-- Tipo -->
+                    <select name="interaction_type" id="interaction_type" class="form-control" required>
+                      <option value="">Selecciona...</option>
+                      @foreach($types as $type)
+                        <option value="{{ $type->id }}"
+                          {{ old('interaction_type', $interaction->interaction_type ?? '') == $type->id ? 'selected' : '' }}>
+                          {{ $type->name }}
+                        </option>
+                      @endforeach
+                    </select>
                   <i class="fas fa-check-circle valid-icon" aria-hidden="true"></i>
                   <div class="helper-error" data-for="interaction_type">Selecciona un tipo.</div>
                 </div>
@@ -283,7 +295,7 @@
           <div class="form-section">
             <h3 class="form-section-title"><i class="fas fa-clipboard-list"></i> Notas de la Interacción</h3>
             <div class="form-group">
-              <textarea name="notes" id="notes" class="form-control" placeholder="Añade aquí todos los detalles relevantes..." required></textarea>
+              <textarea name="notes" id="notes" class="form-control" placeholder="Añade aquí todos los detalles relevantes..." required>{{ old('notes', $interaction->notes ?? '') }}</textarea>
               <i class="fas fa-check-circle valid-icon" aria-hidden="true"></i>
               <div class="helper-error" data-for="notes">Escribe las notas de la interacción.</div>
             </div>
@@ -293,14 +305,18 @@
             <h3 class="form-section-title"><i class="fas fa-tags"></i> Etiquetas de Interacción</h3>
             <div class="form-group">
               <label for="tags" class="form-label">Categoriza la interacción</label>
-              <select name="tags[]" id="tags" class="form-control" multiple>
-                <option value="venta">Venta Cruzada</option>
-                <option value="soporte">Soporte Técnico</option>
-                <option value="queja">Queja o Reclamo</option>
-                <option value="cotizacion">Seguimiento Cotización</option>
-                <option value="informacion">Solicitud de Información</option>
-                <option value="cobranza">Gestión de Cobranza</option>
-              </select>
+                <!-- Tags -->
+                <select name="tags[]" id="tags" class="form-control" multiple>
+                  @php
+                    $selectedTags = old('tags', $interaction->tags ?? []);
+                  @endphp
+                  <option value="venta" {{ in_array('venta', $selectedTags) ? 'selected' : '' }}>Venta Cruzada</option>
+                  <option value="soporte" {{ in_array('soporte', $selectedTags) ? 'selected' : '' }}>Soporte Técnico</option>
+                  <option value="queja" {{ in_array('queja', $selectedTags) ? 'selected' : '' }}>Queja o Reclamo</option>
+                  <option value="cotizacion" {{ in_array('cotizacion', $selectedTags) ? 'selected' : '' }}>Seguimiento Cotización</option>
+                  <option value="informacion" {{ in_array('informacion', $selectedTags) ? 'selected' : '' }}>Solicitud de Información</option>
+                  <option value="cobranza" {{ in_array('cobranza', $selectedTags) ? 'selected' : '' }}>Gestión de Cobranza</option>
+                </select>
               <div class="helper-error" data-for="tags">Selecciona al menos una etiqueta (si aplica).</div>
             </div>
           </div>
@@ -308,12 +324,16 @@
           <div class="form-section">
             <h3 class="form-section-title"><i class="fas fa-check-circle"></i> Resultado de la Gestión</h3>
             <div class="form-group">
-              <select name="outcome" id="outcome" class="form-control" required>
-                <option value="">Selecciona un resultado...</option>
-                @foreach ($outcomes as $outcome)
-                  <option value="{{ $outcome->id }}">{{ $outcome->name }}</option>
-                @endforeach
-              </select>
+                <!-- Resultado -->
+                <select name="outcome" id="outcome" class="form-control" required>
+                  <option value="">Selecciona un resultado...</option>
+                  @foreach ($outcomes as $outcome)
+                    <option value="{{ $outcome->id }}"
+                      {{ old('outcome', $interaction->outcome ?? '') == $outcome->id ? 'selected' : '' }}>
+                      {{ $outcome->name }}
+                    </option>
+                  @endforeach
+                </select>
               <i class="fas fa-check-circle valid-icon" aria-hidden="true"></i>
               <div class="helper-error" data-for="outcome">Selecciona el resultado de la gestión.</div>
             </div>
@@ -382,15 +402,19 @@
               </div>
               <div class="input-with-icon" style="position:relative;">
                 <i class="fas fa-calendar-alt" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted)"></i>
-                <input type="datetime-local" name="next_action_date" class="form-control" style="padding-left:3rem;">
-              </div>
-
+                <!-- Próxima acción -->
+                <input type="datetime-local" name="next_action_date" class="form-control"
+                  value="{{ old('next_action_date', $interaction->next_action_date ?? '') }}">              </div>
               <div class="form-group" style="margin-top:.75rem">
                 <label class="form-label">Tipo de acción</label>
+                <!-- Tipo de próxima acción -->
                 <select name="next_action_type" id="next_action_type" class="form-control">
                   <option value="">Selecciona...</option>
                   @foreach ($nextActions as $action)
-                    <option value="{{ $action->id }}">{{ $action->name }}</option>
+                    <option value="{{ $action->id }}"
+                      {{ old('next_action_type', $interaction->next_action_type ?? '') == $action->id ? 'selected' : '' }}>
+                      {{ $action->name }}
+                    </option>
                   @endforeach
                 </select>
               </div>
