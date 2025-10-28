@@ -7,9 +7,7 @@ use App\Models\Creditos\Observacion;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\Interacciones\Interaction;
 
-
 use App\Models\Archivo\GdoCargo;
-
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -36,14 +34,7 @@ class User extends Authenticatable
      *
      * @var array<int, string>
      */
-    protected $fillable = [
-        'name',
-        'email',
-        'password',
-        'nid',
-        'fecha_nacimiento',
-        'type',
-    ];
+    protected $fillable = ['name', 'email', 'password', 'nid', 'fecha_nacimiento', 'type'];
 
     public function roles()
     {
@@ -60,12 +51,7 @@ class User extends Authenticatable
      *
      * @var array<int, string>
      */
-    protected $hidden = [
-        'password',
-        'remember_token',
-        'two_factor_recovery_codes',
-        'two_factor_secret',
-    ];
+    protected $hidden = ['password', 'remember_token', 'two_factor_recovery_codes', 'two_factor_secret'];
     // En el modelo User (User.php)
 
     public function permissions()
@@ -83,12 +69,21 @@ class User extends Authenticatable
         return $this->getDirectPermissions()->pluck('name')->contains($permiso);
     }
 
+    public function getNombreCortoAttribute()
+    {
+        $nombre = $this->name;
+        if (!$nombre) {
+            return '';
+        }
+
+        $partes = explode(' ', trim($nombre));
+        return count($partes) > 2 ? "{$partes[0]} {$partes[1]}" : $nombre;
+    }
 
     public function acuerdosRegistrados(): HasMany
     {
         return $this->hasMany(Acuerdo::class, 'user_id');
     }
-
 
     /**
      * Obtiene todas las observaciones registradas por este usuario.
