@@ -19,9 +19,6 @@ use App\Models\Interacciones\IntNextAction;
 
 class InteractionController extends Controller
 {
-    /**
-     * Lista todas las interacciones con filtros de búsqueda.
-     */
     public function index(Request $request)
     {
         $query = Interaction::with([
@@ -33,11 +30,11 @@ class InteractionController extends Controller
             'nextAction'
         ]);
 
+        // Filtro principal de búsqueda 'q'
         if ($request->filled('q')) {
             $q = $request->q;
             $query->where(function ($sub) use ($q) {
-                $sub->where('interaction_type', 'like', "%$q%")
-                    ->orWhere('outcome', 'like', "%$q%")
+                $sub->where('notes', 'like', "%$q%") // Buscador de notas
                     ->orWhereHas('agent', function ($a) use ($q) {
                         $a->where('name', 'like', "%$q%");
                     })
@@ -47,12 +44,73 @@ class InteractionController extends Controller
                           ->orWhere('apl2', 'like', "%$q%")
                           ->orWhere('nom1', 'like', "%$q%")
                           ->orWhere('nom2', 'like', "%$q%");
+                    })
+                    ->orWhereHas('outcomeRelation', function ($o) use ($q) { // Búsqueda por resultado
+                        $o->where('name', 'like', "%$q%");
+                    })
+                    ->orWhereHas('channel', function ($ch) use ($q) { // Búsqueda por canal
+                        $ch->where('name', 'like', "%$q%");
+                    })
+                    ->orWhereHas('type', function ($t) use ($q) { // Búsqueda por tipo
+                        $t->where('name', 'like', "%$q%");
                     });
             });
         }
 
-        $interactions = $query->paginate();
-        return view('interactions.index', compact('interactions'));
+        // Filtros adicionales
+        if ($request->filled('channel_filter')) {
+            $query->whereHas('channel', function ($q) use ($request) {
+                $q->where('name', $request->channel_filter);
+            });
+        }
+
+        if ($request->filled('type_filter')) {
+            $query->whereHas('type', function ($q) use ($request) {
+                $q->where('name', $request->type_filter);
+            });
+        }
+
+        if ($request->filled('outcome_filter')) {
+            $query->whereHas('outcomeRelation', function ($q) use ($request) {
+                $q->where('name', $request->outcome_filter);
+            });
+        }
+
+        if ($request->filled('interaction_date_filter')) {
+            // Asegúrate de que el formato de la fecha en la base de datos coincida
+            $query->whereDate('interaction_date', $request->interaction_date_filter);
+        }
+
+        $interactions = $query->paginate(10);
+
+        // Obtener datos únicos para los filtros de la vista
+        // Se utilizan 'pluck' y 'unique' para asegurar que solo se muestren opciones existentes en las interacciones
+        $channels = Interaction::with('channel')
+                            ->get()
+                            ->pluck('channel.name')
+                            ->filter() // Eliminar nulos
+                            ->unique()
+                            ->sort()
+                            ->values();
+
+        $types = Interaction::with('type')
+                           ->get()
+                           ->pluck('type.name')
+                           ->filter()
+                           ->unique()
+                           ->sort()
+                           ->values();
+
+        $outcomes = Interaction::with('outcomeRelation')
+                              ->get()
+                              ->pluck('outcomeRelation.name')
+                              ->filter()
+                              ->unique()
+                              ->sort()
+                              ->values();
+
+
+        return view('interactions.index', compact('interactions', 'channels', 'types', 'outcomes'));
     }
 
     /**
