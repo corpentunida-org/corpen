@@ -497,8 +497,16 @@ Route::middleware('auth')->prefix('soportes')->name('soportes.')->group(function
 
     // ✅ Rutas seguras para descargar archivos de soporte
 
-    Route::get('soportes/descargar/{id}', [ScpSoporteController::class, 'descargarSoporte'])
-        ->name('descargar');
+/*     Route::get('soportes/descargar/{id}', [ScpSoporteController::class, 'descargarSoporte'])
+        ->name('descargar'); */
+// ✅ Descargar soporte
+Route::get('soportes/descargar/{id}', [ScpSoporteController::class, 'descargarSoporte'])
+    ->name('descargar');
+
+// ✅ Ver soporte (abrir temporalmente)
+Route::get('soportes/ver/{id}', [ScpSoporteController::class, 'verSoporte'])
+    ->name('ver');
+
 
     // Rutas de Observaciones Anidadas
     Route::post('soportes/{scpSoporte}/observaciones', [ScpSoporteController::class, 'storeObservacion'])

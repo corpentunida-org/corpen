@@ -22,9 +22,9 @@
     @if(isset($soporte) && $soporte->id)
         {{-- Descargar soporte --}}
 
-<button type="button" class="btn btn-sm btn-petroleo" id="btnDescargarPDF">
-    <i class="bi bi-file-earmark-arrow-down me-1"></i> Descargar PDF
-</button>
+    <button type="button" class="btn btn-sm btn-petroleo" id="btnDescargarPDF">
+        <i class="bi bi-file-earmark-arrow-down me-1"></i> Descargar PDF
+    </button>
 
 
 
@@ -284,13 +284,18 @@
     <span class="text-muted fw-semibold d-block"><i class="feather-layers me-1"></i> Archivo:</span>
     <p class="text-dark mb-0">{{ $soporte->soporte ?? 'No disponible' }}</p>
 
-    @if($soporte->soporte && Storage::exists('soportes/' . $soporte->soporte))
+    {{-- @if($soporte->soporte && Storage::exists('soportes/' . $soporte->soporte))
         <a href="{{ route('soportes.descargar', $soporte->id) }}" class="btn btn-sm btn-primary mt-2">
             <i class="feather-download me-1"></i> Descargar
         </a>
     @else
         <span class="text-danger">Archivo no disponible</span>
-    @endif
+    @endif --}}
+    @if($soporte->soporte)
+                    <a href="{{ $soporte->getFile($soporte->soporte) }}" target="_blank">Ver Soporte</a>
+                @else
+                    <span>No disponible</span>
+                @endif
 </div>
 
             </div>

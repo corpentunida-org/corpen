@@ -17,6 +17,8 @@ use App\Models\Creditos\LineaCredito;
 use App\Models\Soportes\ScpUsuario;
 use App\Models\Soportes\ScpEstado;
 
+use Illuminate\Support\Facades\Storage;
+
 class ScpSoporte extends Model
 {
     use HasFactory;
@@ -76,7 +78,18 @@ class ScpSoporte extends Model
         );
     }
 
-
+    public function getFile ($nameFile)
+    {
+        $url = '#';
+        if($nameFile) {
+            if (Storage::disk('s3')->exists($nameFile)) {
+                $url = Storage::disk('s3')->temporaryUrl(
+                    $nameFile, now()->addMinutes(5)
+                );
+            }
+        }
+        return $url;
+    }
 
 
     public function lineaCredito()
