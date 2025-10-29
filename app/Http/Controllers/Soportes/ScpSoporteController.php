@@ -3,30 +3,31 @@
 namespace App\Http\Controllers\Soportes;
 
 use App\Http\Controllers\Controller;
-use App\Models\Soportes\ScpSoporte;
-use App\Models\Soportes\ScpTipo;
-use App\Models\Soportes\ScpPrioridad;
-use App\Models\Soportes\ScpEstado;
-use App\Models\Soportes\ScpTipoObservacion;
-use App\Models\Soportes\ScpObservacion;
-use App\Models\Maestras\maeTerceros;
-use App\Models\User;
-use App\Models\Archivo\GdoCargo;
-use App\Models\Creditos\LineaCredito;
-use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
-use Illuminate\Support\Facades\Auth;
-use App\Models\Soportes\ScpSubTipo;
-use App\Models\Soportes\ScpUsuario;
-use App\Models\Soportes\ScpCategoria;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Str;
-use Carbon\Carbon;
-
-use Illuminate\Support\Facades\Mail;
 use App\Mail\SoporteEscaladoMail;
+use App\Models\Archivo\GdoCargo;
+use App\Models\Cinco\Terceros;
+use App\Models\Creditos\LineaCredito;
+use App\Models\Maestras\maeTerceros;
+use App\Models\Soportes\ScpCategoria;
+use App\Models\Soportes\ScpEstado;
+use App\Models\Soportes\ScpObservacion;
+use App\Models\Soportes\ScpPrioridad;
+use App\Models\Soportes\ScpSoporte;
+use App\Models\Soportes\ScpSubTipo;
+use App\Models\Soportes\ScpTipo;
+use App\Models\Soportes\ScpTipoObservacion;
+use App\Models\Soportes\ScpUsuario;
+use App\Models\User;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
+
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 
 class ScpSoporteController extends Controller
@@ -93,8 +94,7 @@ class ScpSoporteController extends Controller
             'id_scp_prioridad'       => 'required|exists:scp_prioridads,id',
             'id_users'               => 'required|exists:users,id',
             'id_scp_sub_tipo'        => 'required|exists:scp_sub_tipos,id',
-            'estado'                 => 'nullable|string|max:50',
-            'soporte'                => 'nullable|file|mimes:pdf,jpeg,jpg,png|max:10240', // <── Aquí validamos el archivo
+            'soporte'                => 'nullable|file|mimes:pdf,jpeg,jpg,png|max:10240',
             'usuario_escalado'       => 'nullable|string|max:100',
         ]);
 
@@ -113,17 +113,74 @@ class ScpSoporteController extends Controller
             'usuario_escalado'       => $request->usuario_escalado,
         ];
 
-        // ✅ GUARDAR ARCHIVO EN storage/app/soportes
+        // ✅ Subir archivo directamente a S3 (privado)
         if ($request->hasFile('soporte')) {
             $file = $request->file('soporte');
             $filename = time() . '_' . $file->getClientOriginalName();
-            $path = $file->storeAs('soportes', $filename); // guarda en storage/app/soportes
-            $data['soporte'] = basename($path); // guarda solo el nombre del archivo en la BD
+
+            // Guarda en la carpeta "soportes" del bucket configurado
+            $path = $file->storeAs('soportes', $filename, 's3');
+
+            // Guardamos solo el path (ej: soportes/1234_logo.png)
+            $data['soporte'] = $path;
         }
 
         ScpSoporte::create($data);
 
         return redirect()->route('soportes.soportes.index')->with('success', 'Soporte creado exitosamente.');
+    }
+
+    // ==========================
+    // 👀 VER SOPORTE (solo abrir)
+    // ==========================
+public function verSoporte($id)
+{
+    $soporte = ScpSoporte::findOrFail($id);
+
+    if (!$soporte->soporte || !Storage::disk('s3')->exists($soporte->soporte)) {
+        return back()->with('error', 'Archivo no disponible o no existe en S3.');
+    }
+
+    try {
+        /** @var \Illuminate\Filesystem\AwsS3V3Adapter|\Illuminate\Filesystem\FilesystemAdapter $disk */
+        $disk = Storage::disk('s3');
+
+        $urlTemporal = $disk->temporaryUrl(
+            $soporte->soporte,
+            now()->addMinutes(5)
+        );
+
+
+        return redirect($urlTemporal);
+    } catch (\Exception $e) {
+        // 🔴 Capturar error de permisos o región y mostrar mensaje
+        return back()->with('error', 'No se pudo acceder al archivo en S3: ' . $e->getMessage());
+    }
+}
+
+    // ============================
+    // ⬇️ DESCARGAR SOPORTE PRIVADO
+    // ============================
+    public function descargarSoporte($id)
+    {
+        $soporte = ScpSoporte::findOrFail($id);
+
+        if (!$soporte->soporte) {
+            abort(404, 'Archivo no encontrado.');
+        }
+
+        /** @var \Illuminate\Filesystem\AwsS3V3Adapter|\Illuminate\Filesystem\FilesystemAdapter $disk */
+        $disk = Storage::disk('s3');
+
+
+        if (!$disk->exists($soporte->soporte)) {
+            return back()->with('error', 'Archivo no disponible.');
+        }
+
+        // ✅ Genera URL temporal válida 2 minutos para descargar
+        $urlTemporal = $disk->temporaryUrl($soporte->soporte, now()->addMinutes(2));
+
+        return redirect($urlTemporal);
     }
 
     public function show(ScpSoporte $scpSoporte)
@@ -285,7 +342,7 @@ class ScpSoporteController extends Controller
         }
     }
 
-    public function verSoporte($id)
+/*     public function verSoporte($id)
     {
         $soporte = ScpSoporte::findOrFail($id);
 
@@ -310,6 +367,11 @@ class ScpSoporteController extends Controller
 
         return response()->download(storage_path('app/' . $ruta));
     }
+ */
+
+
+
+
 
     public function getNotificaciones()
     {
