@@ -42,6 +42,7 @@ class SegBeneficiarioController extends Controller
      */
     public function store(Request $request)
     {
+        dd($request->all());
         $beneficiario = SegBeneficiario::create([
             'tipo_documento_id' => $request->tipoDocumento,
             'cedula' => $request->cedula,

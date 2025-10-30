@@ -74,7 +74,7 @@ class SegNovedadesController extends Controller
             ->where('vigente', true)
             ->with(['convenio'])
             ->get();
-        
+
         $condicion = SegCondicion::where('id', $idcondicion)->first(['descripcion']);
         $tab = $request->activeTab ?? 'generalTab';
         $grupoFamiliar = SegAsegurado::where('Titular', $asegurado->titular)->with('tercero', 'polizas.plan.coberturas')->get();
@@ -89,7 +89,7 @@ class SegNovedadesController extends Controller
         $request->validate([
             'formulario_nov' => 'required|mimes:pdf|max:2048',
         ]);
-        $formulario = $request->file('formulario_nov')->store('seguros/novedades');
+        $formulario = $request->file('formulario_nov');
         $plan = SegPlan::findOrFail($request->planid);
         $novedad = SegNovedades::create([
             'id_poliza' => $request->id_poliza ?? null,
@@ -101,8 +101,11 @@ class SegNovedadesController extends Controller
             'primaAseguradora' => $plan->prima_aseguradora,
             'primaCorpen' => $request->primacorpen,
             'extraprima' => $request->extra_prima,
-            'formulario' => $formulario,
         ]);
+        if ($formulario) {
+            $ruta = Storage::disk('s3')->put('corpentunida/seguros_vida/' . $novedad->id, $formulario);
+            $novedad->update(['formulario' => $ruta]);
+        }
         SegCambioEstadoNovedad::create([
             'novedad' => $novedad->id,
             'estado' => $request->estado,
@@ -111,7 +114,6 @@ class SegNovedadesController extends Controller
         ]);
         if ($request->tipoNovedad === '1') {
             $accion = 'modificacion en poliza  ' . $request->id_poliza . ' Asegurado ' . $request->asegurado;
-            
         } elseif ($request->tipoNovedad === '2') {
             $controllerapi = new ComaeTerController();
             $terapi = $controllerapi->show($request->asegurado);
@@ -147,7 +149,7 @@ class SegNovedadesController extends Controller
                 $this->auditoria('TERCERO CREAD0 ID ' . $terceroontable->cod_ter);
                 $this->auditoria('ASEGURADO CREADO ID ' . $asegurado->cedula);
             }
-        }        
+        }
         return redirect()->route('seguros.novedades.index')->with('success', 'Novedad registrada correctamente');
     }
 
@@ -227,7 +229,7 @@ class SegNovedadesController extends Controller
                 SegCambioEstadoNovedad::create([
                     'novedad' => $id,
                     'estado' => $request->estado,
-                    'observaciones' => $request->observaciones,
+                    'observaciones' => strtoupper($request->observaciones),
                     'fechaCierre' => Carbon::now()->toDateString(),
                 ]);
                 return redirect()->route('seguros.novedades.index')->with('success', 'Se actualizó correctamente el cambio de estado.');
@@ -263,11 +265,11 @@ class SegNovedadesController extends Controller
             ->with(['tercero', 'cambiosEstado', 'asegurado'])
             ->get();
         //dd($datos);
-        $headings = ['CEDULA', 'NOMBRE','FECHA NACIMIENTO', 'EDAD', 'FECHA SOLICITUD', 'TIPO NOVEDAD','VALOR ASEGURADO SOLICITADO', 'GENERO', 'PARENTESCO','OBSERVACIONES'];
+        $headings = ['CEDULA', 'NOMBRE', 'FECHA NACIMIENTO', 'EDAD', 'FECHA SOLICITUD', 'TIPO NOVEDAD', 'VALOR ASEGURADO SOLICITADO', 'GENERO', 'PARENTESCO', 'OBSERVACIONES'];
         $datosFormateados = $datos->map(function ($item) {
             $fechaNacimiento = Carbon::parse($item->fecha_nacimiento);
             return [
-                'cedula' => $item->id_asegurado,            
+                'cedula' => $item->id_asegurado,
                 'nombre' => $item->nombre_tercero ?? '',
                 'fecha_nacimiento' => $fechaNacimiento->format('d/m/Y'),
                 'edad' => $item->edad,
