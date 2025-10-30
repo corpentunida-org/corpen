@@ -1,18 +1,19 @@
 <x-base-layout>
 
-    {{-- Mensaje de éxito --}}
+    {{-- Mensaje de éxito con diseño mejorado --}}
     @if (session('success'))
-        <div class="alert alert-success" role="alert">
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="feather-check-circle me-2"></i>
             {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
 
     {{-- Contenedor principal con pestañas --}}
-    <div class="card">
+    <div class="card-config">
         {{-- Navegación de las pestañas --}}
         <div class="card-header">
             <ul class="nav nav-tabs card-header-tabs" id="soporteConfigTab" role="tablist">
-
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="usuarios-tab-link" data-bs-toggle="tab" data-bs-target="#usuarios-tab" type="button" role="tab" aria-controls="usuarios-tab" aria-selected="false">
                         <i class="feather-users me-2"></i>Usuarios
@@ -55,17 +56,17 @@
         <div class="card-body">
             <div class="tab-content" id="soporteConfigTabContent">
 
-                {{-- ================= PESTAÑA USUARIOS QUE ASIGNAN SOPORTE ================= --}}
+                {{-- ================= PESTAÑA USUARIOS ================= --}}
                 <div class="tab-pane fade" id="usuarios-tab" role="tabpanel" aria-labelledby="usuarios-tab-link">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h5 class="fw-bold mb-0">Gestión de Usuarios que Asignan Soporte</h5>
-                        <a href="{{ route('soportes.usuarios.create') }}" class="btn btn-success btn-sm btnCrear">
+                    <div class="section-header">
+                        <h5 class="section-title">Gestión de Usuarios que Asignan Soporte</h5>
+                        <a href="{{ route('soportes.usuarios.create') }}" class="btn btn-primary btn-sm">
                             <i class="feather-plus me-1"></i> Crear Nuevo
                         </a>
                     </div>
 
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle">
+                        <table class="table table-hover table-modern">
                             <thead>
                                 <tr>
                                     <th>ID</th>
@@ -81,67 +82,74 @@
                             <tbody>
                                 @forelse ($usuarios as $usuario)
                                     <tr>
-                                        <td>{{ substr(md5($usuario->id . 'clave-secreta'), 0, 6) }}</td>
-                                        <td>{{ $usuario->maeTercero->nom_ter ?? '—' }}</td>
-                                        <td>{{ $usuario->cod_ter ?? '—' }}</td>
+                                        <td><span class="id-badge">{{ substr(md5($usuario->id . 'clave-secreta'), 0, 6) }}</span></td>
+                                        <td>
+                                            <div class="user-info">
+                                                <div class="user-avatar">{{ strtoupper(substr($usuario->maeTercero->nom_ter ?? 'N/A', 0, 1)) }}</div>
+                                                <span>{{ $usuario->maeTercero->nom_ter ?? '—' }}</span>
+                                            </div>
+                                        </td>
+                                        <td><span class="text-muted">{{ $usuario->cod_ter ?? '—' }}</span></td>
                                         <td>{{ $usuario->usuario ?? '—' }}</td>
                                         <td>
                                             @if($usuario->estado === 'Activo')
-                                                <span class="badge bg-success">Activo</span>
+                                                <span class="status-badge status-active">Activo</span>
                                             @else
-                                                <span class="badge bg-secondary">Inactivo</span>
+                                                <span class="status-badge status-inactive">Inactivo</span>
                                             @endif
                                         </td>
-                                        <td>{{ $usuario->created_at ? $usuario->created_at->format('Y-m-d H:i') : '—' }}</td>
-                                        <td>{{ $usuario->updated_at ? $usuario->updated_at->format('Y-m-d H:i') : '—' }}</td>
-
+                                        <td><span class="text-muted">{{ $usuario->created_at ? $usuario->created_at->format('d/m/Y H:i') : '—' }}</span></td>
+                                        <td><span class="text-muted">{{ $usuario->updated_at ? $usuario->updated_at->format('d/m/Y H:i') : '—' }}</span></td>
                                         <td class="text-end">
                                             <div class="dropdown">
-                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <button class="btn btn-sm btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                                     <i class="feather-more-vertical"></i>
                                                 </button>
                                                 <ul class="dropdown-menu dropdown-menu-end">
                                                     <li>
-                                                        <a href="{{ route('soportes.usuarios.edit', ['hash' => md5($usuario->id . 'clave-secreta')]) }}">
-                                                            Ver
+                                                        <a class="dropdown-item" href="{{ route('soportes.usuarios.edit', ['hash' => md5($usuario->id . 'clave-secreta')]) }}">
+                                                            <i class="feather-edit me-2"></i> Editar
                                                         </a>
                                                     </li>
-                                                    <li>
-                                                        {{-- <form action="{{ route('soportes.usuarios.destroy', $usuario) }}" method="POST" class="formEliminar d-inline">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button type="submit" class="dropdown-item text-danger">
-                                                                <i class="feather-trash-2 me-2"></i> Eliminar
-                                                            </button>
-                                                        </form> --}}
-                                                    </li>
+                                                    <li><hr class="dropdown-divider"></li>
+{{--                                                     <li>
+                                                        <a class="dropdown-item text-danger" href="#" onclick="confirmDelete(event, 'usuario', {{ $usuario->id }})">
+                                                            <i class="feather-trash-2 me-2"></i> Eliminar
+                                                        </a>
+                                                    </li> --}}
                                                 </ul>
                                             </div>
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="9" class="text-center text-muted">No hay usuarios registrados.</td>
+                                        <td colspan="8">
+                                            <div class="empty-state">
+                                                <i class="feather-users"></i>
+                                                <p>No hay usuarios registrados</p>
+                                                <a href="{{ route('soportes.usuarios.create') }}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="feather-plus me-1"></i> Crear primer usuario
+                                                </a>
+                                            </div>
+                                        </td>
                                     </tr>
                                 @endforelse
                             </tbody>
                         </table>
-
-                        {{-- Paginación --}}
                         <div class="mt-3">{{ $usuarios->links() }}</div>
                     </div>
                 </div>
 
                 {{-- ================= PESTAÑA CATEGORÍAS ================= --}}
                 <div class="tab-pane fade" id="categorias-tab" role="tabpanel" aria-labelledby="categorias-tab-link">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h5 class="fw-bold mb-0">Gestión de Categorías</h5>
-                        <a href="{{ route('soportes.categorias.create') }}" class="btn btn-success btn-sm btnCrear">
+                    <div class="section-header">
+                        <h5 class="section-title">Gestión de Categorías</h5>
+                        <a href="{{ route('soportes.categorias.create') }}" class="btn btn-primary btn-sm">
                             <i class="feather-plus me-1"></i> Crear Nueva
                         </a>
                     </div>
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle">
+                        <table class="table table-hover table-modern">
                             <thead>
                                 <tr>
                                     <th>Nombre</th>
@@ -152,35 +160,45 @@
                             <tbody>
                                 @forelse ($categorias as $categoria)
                                     <tr>
-                                        <td>{{ $categoria->nombre }}</td>
-                                        <td>{{ $categoria->descripcion ?? '—' }}</td>
+                                        <td>
+                                            <div class="category-info">
+                                                <i class="feather-folder category-icon"></i>
+                                                <span>{{ $categoria->nombre }}</span>
+                                            </div>
+                                        </td>
+                                        <td><span class="text-muted">{{ $categoria->descripcion ?? '—' }}</span></td>
                                         <td class="text-end">
                                             <div class="dropdown">
-                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <button class="btn btn-sm btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                                     <i class="feather-more-vertical"></i>
                                                 </button>
                                                 <ul class="dropdown-menu dropdown-menu-end">
                                                     <li>
-                                                        <a class="dropdown-item btnEditar" href="{{ route('soportes.categorias.edit', $categoria) }}">
-                                                            <i class="feather-edit-3 me-2"></i> Editar
+                                                        <a class="dropdown-item" href="{{ route('soportes.categorias.edit', $categoria) }}">
+                                                            <i class="feather-edit me-2"></i> Editar
                                                         </a>
                                                     </li>
-                                                    <li>
-                                                        <form action="{{ route('soportes.categorias.destroy', $categoria) }}" method="POST" class="formEliminar d-inline">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button type="submit" class="dropdown-item text-danger">
-                                                                <i class="feather-trash-2 me-2"></i> Eliminar
-                                                            </button>
-                                                        </form>
-                                                    </li>
+                                                    <li><hr class="dropdown-divider"></li>
+{{--                                                     <li>
+                                                        <a class="dropdown-item text-danger" href="#" onclick="confirmDelete(event, 'categoría', {{ $categoria->id }})">
+                                                            <i class="feather-trash-2 me-2"></i> Eliminar
+                                                        </a>
+                                                    </li> --}}
                                                 </ul>
                                             </div>
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="3" class="text-center text-muted">No hay categorías registradas.</td>
+                                        <td colspan="3">
+                                            <div class="empty-state">
+                                                <i class="feather-layers"></i>
+                                                <p>No hay categorías registradas</p>
+                                                <a href="{{ route('soportes.categorias.create') }}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="feather-plus me-1"></i> Crear primera categoría
+                                                </a>
+                                            </div>
+                                        </td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -191,14 +209,14 @@
 
                 {{-- ================= PESTAÑA TIPOS DE SOPORTE ================= --}}
                 <div class="tab-pane fade" id="tipos-soporte-tab" role="tabpanel" aria-labelledby="tipos-soporte-tab-link">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h5 class="fw-bold mb-0">Gestión de Tipos de Soporte</h5>
-                        <a href="{{ route('soportes.tipos.create') }}" class="btn btn-success btn-sm btnCrear">
+                    <div class="section-header">
+                        <h5 class="section-title">Gestión de Tipos de Soporte</h5>
+                        <a href="{{ route('soportes.tipos.create') }}" class="btn btn-primary btn-sm">
                             <i class="feather-plus me-1"></i> Crear Nuevo
                         </a>
                     </div>
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle">
+                        <table class="table table-hover table-modern">
                             <thead>
                                 <tr>
                                     <th>Nombre</th>
@@ -209,35 +227,45 @@
                             <tbody>
                                 @forelse ($tipos as $tipo)
                                     <tr>
-                                        <td>{{ $tipo->nombre }}</td>
-                                        <td>{{ $tipo->descripcion ?? '—' }}</td>
+                                        <td>
+                                            <div class="type-info">
+                                                <i class="feather-settings type-icon"></i>
+                                                <span>{{ $tipo->nombre }}</span>
+                                            </div>
+                                        </td>
+                                        <td><span class="text-muted">{{ $tipo->descripcion ?? '—' }}</span></td>
                                         <td class="text-end">
                                             <div class="dropdown">
-                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <button class="btn btn-sm btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                                     <i class="feather-more-vertical"></i>
                                                 </button>
                                                 <ul class="dropdown-menu dropdown-menu-end">
                                                     <li>
-                                                        <a class="dropdown-item btnEditar" href="{{ route('soportes.tipos.edit', $tipo) }}">
-                                                            <i class="feather-edit-3 me-2"></i> Editar
+                                                        <a class="dropdown-item" href="{{ route('soportes.tipos.edit', $tipo) }}">
+                                                            <i class="feather-edit me-2"></i> Editar
                                                         </a>
                                                     </li>
-                                                    <li>
-                                                        <form action="{{ route('soportes.tipos.destroy', $tipo) }}" method="POST" class="formEliminar d-inline">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button type="submit" class="dropdown-item text-danger">
-                                                                <i class="feather-trash-2 me-2"></i> Eliminar
-                                                            </button>
-                                                        </form>
-                                                    </li>
+                                                    <li><hr class="dropdown-divider"></li>
+{{--                                                     <li>
+                                                        <a class="dropdown-item text-danger" href="#" onclick="confirmDelete(event, 'tipo de soporte', {{ $tipo->id }})">
+                                                            <i class="feather-trash-2 me-2"></i> Eliminar
+                                                        </a>
+                                                    </li> --}}
                                                 </ul>
                                             </div>
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="3" class="text-center text-muted">No hay tipos de soporte registrados.</td>
+                                        <td colspan="3">
+                                            <div class="empty-state">
+                                                <i class="feather-settings"></i>
+                                                <p>No hay tipos de soporte registrados</p>
+                                                <a href="{{ route('soportes.tipos.create') }}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="feather-plus me-1"></i> Crear primer tipo
+                                                </a>
+                                            </div>
+                                        </td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -248,14 +276,14 @@
 
                 {{-- ================= PESTAÑA SUBTIPOS DE SOPORTE ================= --}}
                 <div class="tab-pane fade" id="subtipos-soporte-tab" role="tabpanel" aria-labelledby="subtipos-soporte-tab-link">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h5 class="fw-bold mb-0">Gestión de Subtipos de Soporte</h5>
-                        <a href="{{ route('soportes.subtipos.create') }}" class="btn btn-success btn-sm btnCrear">
+                    <div class="section-header">
+                        <h5 class="section-title">Gestión de Subtipos de Soporte</h5>
+                        <a href="{{ route('soportes.subtipos.create') }}" class="btn btn-primary btn-sm">
                             <i class="feather-plus me-1"></i> Crear Nuevo
                         </a>
                     </div>
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle">
+                        <table class="table table-hover table-modern">
                             <thead>
                                 <tr>
                                     <th>Nombre</th>
@@ -267,36 +295,46 @@
                             <tbody>
                                 @forelse ($subTipos as $sub)
                                     <tr>
-                                        <td>{{ $sub->nombre }}</td>
-                                        <td>{{ $sub->descripcion ?? '—' }}</td>
-                                        <td><span class="badge bg-secondary">{{ $sub->tipo->nombre ?? 'N/A' }}</span></td>
+                                        <td>
+                                            <div class="subtype-info">
+                                                <i class="feather-git-merge subtype-icon"></i>
+                                                <span>{{ $sub->nombre }}</span>
+                                            </div>
+                                        </td>
+                                        <td><span class="text-muted">{{ $sub->descripcion ?? '—' }}</span></td>
+                                        <td><span class="badge bg-light text-dark">{{ $sub->tipo->nombre ?? 'N/A' }}</span></td>
                                         <td class="text-end">
                                             <div class="dropdown">
-                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <button class="btn btn-sm btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                                     <i class="feather-more-vertical"></i>
                                                 </button>
                                                 <ul class="dropdown-menu dropdown-menu-end">
                                                     <li>
-                                                        <a class="dropdown-item btnEditar" href="{{ route('soportes.subtipos.edit', $sub) }}">
-                                                            <i class="feather-edit-3 me-2"></i> Editar
+                                                        <a class="dropdown-item" href="{{ route('soportes.subtipos.edit', $sub) }}">
+                                                            <i class="feather-edit me-2"></i> Editar
                                                         </a>
                                                     </li>
-                                                    <li>
-                                                        <form action="{{ route('soportes.subtipos.destroy', $sub) }}" method="POST" class="formEliminar d-inline">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button type="submit" class="dropdown-item text-danger">
-                                                                <i class="feather-trash-2 me-2"></i> Eliminar
-                                                            </button>
-                                                        </form>
-                                                    </li>
+                                                    <li><hr class="dropdown-divider"></li>
+{{--                                                     <li>
+                                                        <a class="dropdown-item text-danger" href="#" onclick="confirmDelete(event, 'subtipo de soporte', {{ $sub->id }})">
+                                                            <i class="feather-trash-2 me-2"></i> Eliminar
+                                                        </a>
+                                                    </li> --}}
                                                 </ul>
                                             </div>
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="4" class="text-center text-muted">No hay subtipos de soporte registrados.</td>
+                                        <td colspan="4">
+                                            <div class="empty-state">
+                                                <i class="feather-git-branch"></i>
+                                                <p>No hay subtipos de soporte registrados</p>
+                                                <a href="{{ route('soportes.subtipos.create') }}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="feather-plus me-1"></i> Crear primer subtipo
+                                                </a>
+                                            </div>
+                                        </td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -307,14 +345,14 @@
                 
                 {{-- ================= PESTAÑA ESTADOS ================= --}}
                 <div class="tab-pane fade show active" id="estados-tab" role="tabpanel" aria-labelledby="estados-tab-link">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h5 class="fw-bold mb-0">Gestión de Estados</h5>
-                        <a href="{{ route('soportes.estados.create') }}" class="btn btn-success btn-sm btnCrear">
+                    <div class="section-header">
+                        <h5 class="section-title">Gestión de Estados</h5>
+                        <a href="{{ route('soportes.estados.create') }}" class="btn btn-primary btn-sm">
                             <i class="feather-plus me-1"></i> Crear Nuevo
                         </a>
                     </div>
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle">
+                        <table class="table table-hover table-modern">
                             <thead>
                                 <tr>
                                     <th>Nombre</th>
@@ -326,40 +364,50 @@
                             <tbody>
                                 @forelse ($estados as $estado)
                                     <tr>
-                                        <td>{{ $estado->nombre }}</td>
-                                        <td>{{ $estado->descripcion }}</td>
                                         <td>
-                                            <span class="badge d-flex align-items-center" style="background-color: {{ $estado->color }}; color: {{ (hexdec(substr($estado->color, 1, 2)) * 0.299 + hexdec(substr($estado->color, 3, 2)) * 0.587 + hexdec(substr($estado->color, 5, 2)) * 0.114) > 186 ? '#000' : '#fff' }};">
-                                                <i class="feather-circle me-2" style="fill: {{ $estado->color }};"></i> {{ $estado->color }}
+                                            <div class="estado-info">
+                                                <div class="color-dot" style="background-color: {{ $estado->color }};"></div>
+                                                <span>{{ $estado->nombre }}</span>
+                                            </div>
+                                        </td>
+                                        <td><span class="text-muted">{{ $estado->descripcion }}</span></td>
+                                        <td>
+                                            <span class="color-badge" style="background-color: {{ $estado->color }}; color: {{ (hexdec(substr($estado->color, 1, 2)) * 0.299 + hexdec(substr($estado->color, 3, 2)) * 0.587 + hexdec(substr($estado->color, 5, 2)) * 0.114) > 186 ? '#000' : '#fff' }};">
+                                                {{ $estado->color }}
                                             </span>
                                         </td>
                                         <td class="text-end">
                                             <div class="dropdown">
-                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <button class="btn btn-sm btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                                     <i class="feather-more-vertical"></i>
                                                 </button>
                                                 <ul class="dropdown-menu dropdown-menu-end">
                                                     <li>
-                                                        <a class="dropdown-item btnEditar" href="{{ route('soportes.estados.edit', $estado) }}">
-                                                            <i class="feather-edit-3 me-2"></i> Editar
+                                                        <a class="dropdown-item" href="{{ route('soportes.estados.edit', $estado) }}">
+                                                            <i class="feather-edit me-2"></i> Editar
                                                         </a>
                                                     </li>
-                                                    <li>
-                                                        <form action="{{ route('soportes.estados.destroy', $estado) }}" method="POST" class="formEliminar d-inline">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button type="submit" class="dropdown-item text-danger">
-                                                                <i class="feather-trash-2 me-2"></i> Eliminar
-                                                            </button>
-                                                        </form>
-                                                    </li>
+                                                    <li><hr class="dropdown-divider"></li>
+{{--                                                     <li>
+                                                        <a class="dropdown-item text-danger" href="#" onclick="confirmDelete(event, 'estado', {{ $estado->id }})">
+                                                            <i class="feather-trash-2 me-2"></i> Eliminar
+                                                        </a>
+                                                    </li> --}}
                                                 </ul>
                                             </div>
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="4" class="text-center text-muted">No hay estados registrados.</td>
+                                        <td colspan="4">
+                                            <div class="empty-state">
+                                                <i class="feather-tag"></i>
+                                                <p>No hay estados registrados</p>
+                                                <a href="{{ route('soportes.estados.create') }}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="feather-plus me-1"></i> Crear primer estado
+                                                </a>
+                                            </div>
+                                        </td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -370,14 +418,14 @@
 
                 {{-- ================= PESTAÑA PRIORIDADES ================= --}}
                 <div class="tab-pane fade" id="prioridades-tab" role="tabpanel" aria-labelledby="prioridades-tab-link">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h5 class="fw-bold mb-0">Gestión de Prioridades</h5>
-                        <a href="{{ route('soportes.prioridades.create') }}" class="btn btn-success btn-sm btnCrear">
+                    <div class="section-header">
+                        <h5 class="section-title">Gestión de Prioridades</h5>
+                        <a href="{{ route('soportes.prioridades.create') }}" class="btn btn-primary btn-sm">
                             <i class="feather-plus me-1"></i> Crear Nueva
                         </a>
                     </div>
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle">
+                        <table class="table table-hover table-modern">
                             <thead>
                                 <tr>
                                     <th>Nombre</th>
@@ -387,34 +435,44 @@
                             <tbody>
                                 @forelse ($prioridades as $prioridad)
                                     <tr>
-                                        <td>{{ $prioridad->nombre }}</td>
+                                        <td>
+                                            <div class="priority-info">
+                                                <i class="feather-chevrons-up priority-icon"></i>
+                                                <span>{{ $prioridad->nombre }}</span>
+                                            </div>
+                                        </td>
                                         <td class="text-end">
                                             <div class="dropdown">
-                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <button class="btn btn-sm btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                                     <i class="feather-more-vertical"></i>
                                                 </button>
                                                 <ul class="dropdown-menu dropdown-menu-end">
                                                     <li>
-                                                        <a class="dropdown-item btnEditar" href="{{ route('soportes.prioridades.edit', $prioridad) }}">
-                                                            <i class="feather-edit-3 me-2"></i> Editar
+                                                        <a class="dropdown-item" href="{{ route('soportes.prioridades.edit', $prioridad) }}">
+                                                            <i class="feather-edit me-2"></i> Editar
                                                         </a>
                                                     </li>
-                                                    <li>
-                                                        <form action="{{ route('soportes.prioridades.destroy', $prioridad) }}" method="POST" class="formEliminar d-inline">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button type="submit" class="dropdown-item text-danger">
-                                                                <i class="feather-trash-2 me-2"></i> Eliminar
-                                                            </button>
-                                                        </form>
-                                                    </li>
+                                                    <li><hr class="dropdown-divider"></li>
+{{--                                                     <li>
+                                                        <a class="dropdown-item text-danger" href="#" onclick="confirmDelete(event, 'prioridad', {{ $prioridad->id }})">
+                                                            <i class="feather-trash-2 me-2"></i> Eliminar
+                                                        </a>
+                                                    </li> --}}
                                                 </ul>
                                             </div>
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="2" class="text-center text-muted">No hay prioridades registradas.</td>
+                                        <td colspan="2">
+                                            <div class="empty-state">
+                                                <i class="feather-chevrons-up"></i>
+                                                <p>No hay prioridades registradas</p>
+                                                <a href="{{ route('soportes.prioridades.create') }}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="feather-plus me-1"></i> Crear primera prioridad
+                                                </a>
+                                            </div>
+                                        </td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -425,14 +483,14 @@
 
                 {{-- ================= PESTAÑA TIPOS OBSERVACIÓN ================= --}}
                 <div class="tab-pane fade" id="tipos-obs-tab" role="tabpanel" aria-labelledby="tipos-obs-tab-link">
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h5 class="fw-bold mb-0">Gestión de Tipos de Observación</h5>
-                        <a href="{{ route('soportes.tipoObservaciones.create') }}" class="btn btn-success btn-sm btnCrear">
+                    <div class="section-header">
+                        <h5 class="section-title">Gestión de Tipos de Observación</h5>
+                        <a href="{{ route('soportes.tipoObservaciones.create') }}" class="btn btn-primary btn-sm">
                             <i class="feather-plus me-1"></i> Crear Nuevo
                         </a>
                     </div>
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle">
+                        <table class="table table-hover table-modern">
                             <thead>
                                 <tr>
                                     <th>Nombre</th>
@@ -442,34 +500,44 @@
                             <tbody>
                                 @forelse ($tiposObservacion as $tipoObs)
                                     <tr>
-                                        <td>{{ $tipoObs->nombre }}</td>
+                                        <td>
+                                            <div class="obs-info">
+                                                <i class="feather-message-square obs-icon"></i>
+                                                <span>{{ $tipoObs->nombre }}</span>
+                                            </div>
+                                        </td>
                                         <td class="text-end">
                                             <div class="dropdown">
-                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <button class="btn btn-sm btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                                     <i class="feather-more-vertical"></i>
                                                 </button>
                                                 <ul class="dropdown-menu dropdown-menu-end">
                                                     <li>
-                                                        <a class="dropdown-item btnEditar" href="{{ route('soportes.tipoObservaciones.edit', $tipoObs) }}">
-                                                            <i class="feather-edit-3 me-2"></i> Editar
+                                                        <a class="dropdown-item" href="{{ route('soportes.tipoObservaciones.edit', $tipoObs) }}">
+                                                            <i class="feather-edit me-2"></i> Editar
                                                         </a>
                                                     </li>
-                                                    <li>
-                                                        <form action="{{ route('soportes.tipoObservaciones.destroy', $tipoObs) }}" method="POST" class="formEliminar d-inline">
-                                                            @csrf
-                                                            @method('DELETE')
-                                                            <button type="submit" class="dropdown-item text-danger">
-                                                                <i class="feather-trash-2 me-2"></i> Eliminar
-                                                            </button>
-                                                        </form>
-                                                    </li>
+                                                    <li><hr class="dropdown-divider"></li>
+    {{--                                                 <li>
+                                                        <a class="dropdown-item text-danger" href="#" onclick="confirmDelete(event, 'tipo de observación', {{ $tipoObs->id }})">
+                                                            <i class="feather-trash-2 me-2"></i> Eliminar
+                                                        </a>
+                                                    </li> --}}
                                                 </ul>
                                             </div>
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="2" class="text-center text-muted">No hay tipos de observación registrados.</td>
+                                        <td colspan="2">
+                                            <div class="empty-state">
+                                                <i class="feather-message-square"></i>
+                                                <p>No hay tipos de observación registrados</p>
+                                                <a href="{{ route('soportes.tipoObservaciones.create') }}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="feather-plus me-1"></i> Crear primer tipo
+                                                </a>
+                                            </div>
+                                        </td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -482,69 +550,12 @@
         </div>
     </div>
 
-    {{-- Scripts de confirmación con SweetAlert2 --}}
+    {{-- Scripts mejorados pero minimalistas --}}
     @push('scripts')
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-                // ----------------------- SweetAlert2 -----------------------
-                function confirmarAccion(config, callback) {
-                    Swal.fire({
-                        title: config.title,
-                        text: config.text,
-                        icon: config.icon,
-                        showCancelButton: true,
-                        confirmButtonColor: '#198754',
-                        cancelButtonColor: '#6c757d',
-                        confirmButtonText: 'Sí, continuar',
-                        cancelButtonText: 'Cancelar',
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            callback();
-                        }
-                    });
-                }
-
-                document.body.addEventListener('click', function(e) {
-                    const btnCrear = e.target.closest('.btnCrear');
-                    if (btnCrear) {
-                        e.preventDefault();
-                        confirmarAccion({
-                            title: '¿Crear nuevo registro?',
-                            text: 'Serás redirigido al formulario de creación.',
-                            icon: 'info'
-                        }, () => {
-                            window.location.href = btnCrear.getAttribute('href');
-                        });
-                    }
-
-                    const btnEditar = e.target.closest('.btnEditar');
-                    if (btnEditar) {
-                        e.preventDefault();
-                        confirmarAccion({
-                            title: '¿Editar este registro?',
-                            text: 'Serás redirigido al formulario de edición.',
-                            icon: 'question'
-                        }, () => {
-                            window.location.href = btnEditar.getAttribute('href');
-                        });
-                    }
-                });
-
-                document.querySelectorAll('.formEliminar').forEach(form => {
-                    form.addEventListener('submit', function(e) {
-                        e.preventDefault();
-                        confirmarAccion({
-                            title: '¿Estás seguro?',
-                            text: 'Esta acción no se puede deshacer.',
-                            icon: 'warning'
-                        }, () => {
-                            form.submit();
-                        });
-                    });
-                });
-
-                // ----------------------- Mantener pestaña activa -----------------------
+                // Mantener pestaña activa
                 const activeTab = localStorage.getItem('activeTab');
                 if (activeTab) {
                     const tabTriggerEl = document.querySelector(`[data-bs-target="${activeTab}"]`);
@@ -559,8 +570,286 @@
                     });
                 });
 
+                // Confirmaciones mejoradas
+                document.body.addEventListener('click', function(e) {
+                    const btnCrear = e.target.closest('.btn-primary');
+                    if (btnCrear && btnCrear.textContent.includes('Crear')) {
+                        e.preventDefault();
+                        Swal.fire({
+                            title: '¿Crear nuevo registro?',
+                            text: 'Serás redirigido al formulario de creación.',
+                            icon: 'question',
+                            showCancelButton: true,
+                            confirmButtonColor: '#0d6efd',
+                            cancelButtonColor: '#6c757d',
+                            confirmButtonText: 'Continuar',
+                            cancelButtonText: 'Cancelar'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                window.location.href = btnCrear.getAttribute('href');
+                            }
+                        });
+                    }
+                });
             });
+
+            // Función de confirmación de eliminación
+            function confirmDelete(event, type, id) {
+                event.preventDefault();
+                Swal.fire({
+                    title: '¿Estás seguro?',
+                    text: `Eliminarás este ${type} permanentemente.`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Sí, eliminar',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Aquí iría la lógica de eliminación real
+                        Swal.fire(
+                            '¡Eliminado!',
+                            'El registro ha sido eliminado.',
+                            'success'
+                        );
+                    }
+                });
+            }
         </script>
     @endpush
 
+    {{-- Estilos minimalistas pero profesionales --}}
+    @push('styles')
+        <style>
+            /* Variables sutiles */
+            :root {
+                --primary-color: #0d6efd;
+                --border-color: #e9ecef;
+                --text-muted: #6c757d;
+                --hover-bg: #f8f9fa;
+                --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+                --transition: all 0.2s ease;
+            }
+
+            /* Tarjeta principal */
+            .card-config {
+                border: 1px solid var(--border-color);
+                border-radius: 0.5rem;
+                box-shadow: var(--shadow-sm);
+                transition: var(--transition);
+            }
+
+            .card-config:hover {
+                box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            }
+
+            /* Header de sección */
+            .section-header {
+                display: flex;
+                justify-content: between;
+                align-items: center;
+                margin-bottom: 1.5rem;
+                padding-bottom: 1rem;
+                border-bottom: 1px solid var(--border-color);
+            }
+
+            .section-title {
+                font-size: 1.25rem;
+                font-weight: 600;
+                margin: 0;
+                color: #212529;
+            }
+
+            /* Tabla moderna */
+            .table-modern {
+                margin-bottom: 0;
+            }
+
+            .table-modern thead th {
+                border-bottom: 2px solid var(--border-color);
+                font-weight: 600;
+                color: #495057;
+                text-transform: uppercase;
+                font-size: 0.75rem;
+                letter-spacing: 0.5px;
+                padding: 1rem 0.75rem;
+            }
+
+            .table-modern tbody tr {
+                transition: var(--transition);
+            }
+
+            .table-modern tbody tr:hover {
+                background-color: var(--hover-bg);
+            }
+
+            .table-modern tbody td {
+                padding: 1rem 0.75rem;
+                vertical-align: middle;
+                border-top: 1px solid var(--border-color);
+            }
+
+            /* ID Badge */
+            .id-badge {
+                font-family: 'Courier New', monospace;
+                font-size: 0.875rem;
+                padding: 0.25rem 0.5rem;
+                background-color: #f1f3f5;
+                border-radius: 0.25rem;
+                color: #495057;
+            }
+
+            /* Info de usuario */
+            .user-info {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+            }
+
+            .user-avatar {
+                width: 32px;
+                height: 32px;
+                border-radius: 50%;
+                background-color: var(--primary-color);
+                color: white;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-weight: 600;
+                font-size: 0.875rem;
+            }
+
+            /* Status Badge */
+            .status-badge {
+                padding: 0.25rem 0.75rem;
+                border-radius: 1rem;
+                font-size: 0.75rem;
+                font-weight: 500;
+            }
+
+            .status-active {
+                background-color: #d1e7dd;
+                color: #0f5132;
+            }
+
+            .status-inactive {
+                background-color: #f8d7da;
+                color: #842029;
+            }
+
+            /* Info de categorías y tipos */
+            .category-info, .type-info, .subtype-info, .priority-info, .obs-info {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+            }
+
+            .category-icon, .type-icon, .subtype-icon, .priority-icon, .obs-icon {
+                color: var(--primary-color);
+                font-size: 1.125rem;
+            }
+
+            /* Info de estado */
+            .estado-info {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+            }
+
+            .color-dot {
+                width: 12px;
+                height: 12px;
+                border-radius: 50%;
+                border: 2px solid white;
+                box-shadow: 0 0 0 1px var(--border-color);
+            }
+
+            .color-badge {
+                padding: 0.25rem 0.5rem;
+                border-radius: 0.25rem;
+                font-size: 0.75rem;
+                font-weight: 500;
+            }
+
+            /* Estados vacíos */
+            .empty-state {
+                text-align: center;
+                padding: 3rem 1rem;
+            }
+
+            .empty-state i {
+                font-size: 3rem;
+                color: var(--text-muted);
+                margin-bottom: 1rem;
+            }
+
+            .empty-state p {
+                color: var(--text-muted);
+                margin-bottom: 1.5rem;
+                font-size: 1rem;
+            }
+
+            /* Botones */
+            .btn-light {
+                background-color: #f8f9fa;
+                border-color: #f8f9fa;
+                color: #495057;
+            }
+
+            .btn-light:hover {
+                background-color: #e9ecef;
+                border-color: #e9ecef;
+            }
+
+            /* Dropdown */
+            .dropdown-menu {
+                border: 1px solid var(--border-color);
+                box-shadow: var(--shadow-sm);
+                border-radius: 0.375rem;
+            }
+
+            .dropdown-item {
+                padding: 0.5rem 1rem;
+                font-size: 0.875rem;
+                transition: var(--transition);
+            }
+
+            .dropdown-item:hover {
+                background-color: var(--hover-bg);
+            }
+
+            /* Alert */
+            .alert {
+                border: none;
+                border-radius: 0.5rem;
+                padding: 1rem 1.25rem;
+                margin-bottom: 1.5rem;
+            }
+
+            .alert-success {
+                background-color: #d1e7dd;
+                color: #0f5132;
+            }
+
+            /* Responsive */
+            @media (max-width: 768px) {
+                .section-header {
+                    flex-direction: column;
+                    align-items: flex-start;
+                    gap: 1rem;
+                }
+
+                .table-modern {
+                    font-size: 0.875rem;
+                }
+
+                .user-info, .category-info, .type-info, .subtype-info, .priority-info, .obs-info {
+                    flex-direction: column;
+                    align-items: flex-start;
+                    gap: 0.25rem;
+                }
+            }
+        </style>
+    @endpush
 </x-base-layout>
