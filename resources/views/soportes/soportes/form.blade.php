@@ -10,6 +10,20 @@
         <i class="bi bi-headset me-2"></i> {{ $modoEdicion ? 'Editar Soporte' : 'Nuevo Soporte' }}
     </h4>
 
+    {{-- Radicado --}}
+    @if(!$modoEdicion)
+        <div class="mb-4" style="max-width: 280px;">
+            <label class="form-label fw-semibold small text-secondary mb-1">
+                <i class="bi bi-hash me-1"></i> Radicado asignado
+            </label>
+            <div class="d-flex align-items-center gap-2 bg-light border-start border-4 border-primary rounded-2 px-3 py-2 shadow-sm">
+                <span class="fw-bold text-dark">{{ $proximoId }}</span>
+                <input type="hidden" name="proximo_id" value="{{ $proximoId }}">
+            </div>
+        </div>
+    @endif
+
+
     <!-- Categoría de Soporte -->
     <div class="mb-3">
         <label for="id_categoria" class="form-label fw-semibold">

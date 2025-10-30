@@ -82,6 +82,7 @@ class ScpSoporte extends Model
     {
         $url = '#';
         if($nameFile) {
+            /** @var \Illuminate\Filesystem\AwsS3V3Adapter|\Illuminate\Contracts\Filesystem\Filesystem $s3 */
             if (Storage::disk('s3')->exists($nameFile)) {
                 $url = Storage::disk('s3')->temporaryUrl(
                     $nameFile, now()->addMinutes(5)
