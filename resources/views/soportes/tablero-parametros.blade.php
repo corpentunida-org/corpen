@@ -103,7 +103,7 @@
                                                 <ul class="dropdown-menu dropdown-menu-end">
                                                     <li>
                                                         <a href="{{ route('soportes.usuarios.edit', ['hash' => md5($usuario->id . 'clave-secreta')]) }}">
-                                                            Verd
+                                                            Ver
                                                         </a>
                                                     </li>
                                                     <li>
