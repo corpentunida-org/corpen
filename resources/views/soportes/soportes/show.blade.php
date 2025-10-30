@@ -160,9 +160,7 @@
                                                     @endif
                                                 @endforeach
                                             </select>
-
                                     </div>
-
                                     <div class="col-md-6 mb-3">
                                         <label for="tipoObservacion" class="form-label fw-semibold">Tipo de Observación:</label>
                                         <select id="tipoObservacion" name="id_tipo_observacion" class="form-select" required>
@@ -310,6 +308,60 @@
     {{-- SCRIPT ESCALAMIENTO --}}
     @push('scripts')
     <script>
+    $(document).ready(function() {
+        // Función para actualizar tipos de observación según el estado
+        function actualizarTiposObservacion(estadoId) {
+            // Limpiar el select de tipo de observación
+            $('#tipoObservacion').empty();
+            $('#tipoObservacion').append('<option value="" disabled selected>Seleccione un tipo...</option>');
+            
+            // Agregar opciones según el estado seleccionado
+            if (estadoId == 1) { // Estado 1
+                $('#tipoObservacion').append('<option value="1">Comentario</option>');
+            } 
+            else if (estadoId == 2) { // Estado 2
+                $('#tipoObservacion').append('<option value="1">Comentario</option>');
+                $('#tipoObservacion').append('<option value="3">Escalamiento</option>');
+            }
+            else if (estadoId == 3) { // Estado 3
+                $('#tipoObservacion').append('<option value="2">Acción</option>');
+            }
+            else if (estadoId == 4) { // Estado 4
+                $('#tipoObservacion').append('<option value="1">Comentario</option>');
+            }
+            
+            // Disparar el evento change para actualizar el campo de escalamiento
+            $('#tipoObservacion').trigger('change');
+        }
+        
+        // Evento change en el select de estado
+        $('#estado').on('change', function() {
+            var estado = $(this).val();
+            console.log("Estado seleccionado:", estado);
+            actualizarTiposObservacion(estado);
+        });
+        
+        // Evento change en el select de tipo de observación
+        $('#tipoObservacion').on('change', function() {
+            var tipoSeleccionado = $(this).find('option:selected').text();
+            console.log("Tipo de observación seleccionado:", tipoSeleccionado);
+            
+            // Mostrar u ocultar el campo de escalamiento según el tipo seleccionado
+            if (tipoSeleccionado.toLowerCase().includes("escalamiento")) {
+                $('#usuarioEscalamiento').removeClass('d-none');
+            } else {
+                $('#usuarioEscalamiento').addClass('d-none');
+                $('#terceroAsignado').val(''); // Limpiar selección
+            }
+        });
+        
+        // Inicializar al cargar la página
+        var estadoInicial = $('#estado').val();
+        if (estadoInicial) {
+            actualizarTiposObservacion(estadoInicial);
+        }
+    });
+
         document.addEventListener("DOMContentLoaded", function () {
             // Script para el campo de escalamiento en el formulario de observación
             const tipoObservacionSelect = document.getElementById("tipoObservacion");

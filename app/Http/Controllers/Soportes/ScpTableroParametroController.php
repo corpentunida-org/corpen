@@ -15,7 +15,7 @@ class ScpTableroParametroController extends Controller
 {
     public function index()
     {
-        $usuarios = ScpUsuario::with('maeTercero')->paginate(10, ['*'], 'usuarios_page');
+        $usuarios = ScpUsuario::with('maeTercero')->paginate(5, ['*'], 'usuarios_page');
         $categorias = ScpCategoria::paginate(5, ['*'], 'categorias_page');
         $tipos = ScpTipo::paginate(5, ['*'], 'tipos_page');
         $subTipos = ScpSubTipo::paginate(5, ['*'], 'subtipos_page');
