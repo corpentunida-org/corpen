@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Soportes;
 use App\Http\Controllers\Controller;
 use App\Mail\SoporteEscaladoMail;
 use App\Models\Archivo\GdoCargo;
-use App\Models\Cinco\Terceros;
 use App\Models\Creditos\LineaCredito;
 use App\Models\Maestras\maeTerceros;
 use App\Models\Soportes\ScpCategoria;
@@ -21,7 +20,6 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
@@ -29,6 +27,8 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
+use App\Models\Cinco\Terceros;
+use Illuminate\Support\Facades\Cache;
 
 class ScpSoporteController extends Controller
 {
@@ -66,22 +66,40 @@ class ScpSoporteController extends Controller
         return view('soportes.soportes.index', compact('categorias', 'categoriaActivaPorDefecto', 'soportes'));
     }
 
+public function create()
+{
+    $categorias = ScpCategoria::all();
+    $tipos = ScpTipo::all();
+    $prioridades = ScpPrioridad::all();
+    $terceros = maeTerceros::select('cod_ter', 'nom_ter')->get();
+    $usuarios = User::select('id', 'name')->get();
+    $cargos = GdoCargo::select('id', 'nombre_cargo')->get();
+    $lineas = LineaCredito::select('id', 'nombre')->get();
 
-    public function create()
-    {
-        $categorias = ScpCategoria::all();
-        $tipos = ScpTipo::all();
-        $prioridades = ScpPrioridad::all();
-        $terceros = maeTerceros::select('cod_ter', 'nom_ter')->get();
-        $usuarios = User::select('id', 'name')->get();
-        $cargos = GdoCargo::select('id', 'nombre_cargo')->get();
-        $lineas = LineaCredito::select('id', 'nombre')->get();
+    $usuario = User::find(Auth::id());
 
-        $usuario = User::find(Auth::id());
+    // 🔹 Calcular el próximo ID de soporte
+    $ultimo = ScpSoporte::max('id');
+    $proximoId = $ultimo ? $ultimo + 1 : 1;
 
-        return view('soportes.soportes.create', compact('categorias', 'tipos', 'prioridades', 'terceros', 'usuarios', 'cargos', 'lineas', 'usuario'));
-    }
+    // 🔹 Enviar $proximoId a la vista
+    return view('soportes.soportes.create', compact(
+        'categorias',
+        'tipos',
+        'prioridades',
+        'terceros',
+        'usuarios',
+        'cargos',
+        'lineas',
+        'usuario',
+        'proximoId' // 👈 este es nuevo
+    ));
+}
 
+
+    // ==========================
+    // VER SOPORTE (form)
+    // ==========================
     public function store(Request $request)
     {
         $request->validate([
@@ -113,15 +131,26 @@ class ScpSoporteController extends Controller
             'usuario_escalado'       => $request->usuario_escalado,
         ];
 
-        // ✅ Subir archivo directamente a S3 (privado)
+        // ✅ Subir archivo directamente a S3 con ruta estructurada
         if ($request->hasFile('soporte')) {
             $file = $request->file('soporte');
-            $filename = time() . '_' . $file->getClientOriginalName();
 
-            // Guarda en la carpeta "soportes" del bucket configurado
-            $path = $file->storeAs('soportes', $filename, 's3');
+            // Limpiar nombre del archivo
+            $originalName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+            $extension = $file->getClientOriginalExtension();
+            $cleanName = Str::slug($originalName, '-'); // elimina espacios y caracteres raros
 
-            // Guardamos solo el path (ej: soportes/1234_logo.png)
+            // Estructura de carpeta (ejemplo: corpentunida/soportes/usuario_5/2025/10/)
+            $userId = Auth::id();
+            $year = now()->year;
+            $month = now()->format('m');
+            $filename = time() . '_' . $cleanName . '.' . $extension;
+            $folderPath = "corpentunida/soportes/usuario_{$userId}/{$year}/{$month}";
+
+            // Guardar en S3 (privado)
+            $path = Storage::disk('s3')->putFileAs($folderPath, $file, $filename);
+
+            // Guardamos solo el path en la BD
             $data['soporte'] = $path;
         }
 
@@ -133,30 +162,30 @@ class ScpSoporteController extends Controller
     // ==========================
     // 👀 VER SOPORTE (solo abrir)
     // ==========================
-public function verSoporte($id)
-{
-    $soporte = ScpSoporte::findOrFail($id);
+    public function verSoporte($id)
+    {
+        $soporte = ScpSoporte::findOrFail($id);
 
-    if (!$soporte->soporte || !Storage::disk('s3')->exists($soporte->soporte)) {
-        return back()->with('error', 'Archivo no disponible o no existe en S3.');
+        if (!$soporte->soporte || !Storage::disk('s3')->exists($soporte->soporte)) {
+            return back()->with('error', 'Archivo no disponible o no existe en S3.');
+        }
+
+        try {
+            /** @var \Illuminate\Filesystem\AwsS3V3Adapter|\Illuminate\Filesystem\FilesystemAdapter $disk */
+            $disk = Storage::disk('s3');
+
+            $urlTemporal = $disk->temporaryUrl(
+                $soporte->soporte,
+                now()->addMinutes(5)
+            );
+
+
+            return redirect($urlTemporal);
+        } catch (\Exception $e) {
+            // 🔴 Capturar error de permisos o región y mostrar mensaje
+            return back()->with('error', 'No se pudo acceder al archivo en S3: ' . $e->getMessage());
+        }
     }
-
-    try {
-        /** @var \Illuminate\Filesystem\AwsS3V3Adapter|\Illuminate\Filesystem\FilesystemAdapter $disk */
-        $disk = Storage::disk('s3');
-
-        $urlTemporal = $disk->temporaryUrl(
-            $soporte->soporte,
-            now()->addMinutes(5)
-        );
-
-
-        return redirect($urlTemporal);
-    } catch (\Exception $e) {
-        // 🔴 Capturar error de permisos o región y mostrar mensaje
-        return back()->with('error', 'No se pudo acceder al archivo en S3: ' . $e->getMessage());
-    }
-}
 
     // ============================
     // ⬇️ DESCARGAR SOPORTE PRIVADO
@@ -342,37 +371,9 @@ public function verSoporte($id)
         }
     }
 
-/*     public function verSoporte($id)
-    {
-        $soporte = ScpSoporte::findOrFail($id);
-
-        $ruta = 'soportes/' . $soporte->soporte;
-
-        if (!$soporte->soporte || !Storage::exists($ruta)) {
-            abort(404, 'Archivo no encontrado.');
-        }
-
-        return response()->file(storage_path('app/' . $ruta));
-    }
-
-    public function descargarSoporte($id)
-    {
-        $soporte = ScpSoporte::findOrFail($id);
-
-        $ruta = 'soportes/' . $soporte->soporte;
-
-        if (!$soporte->soporte || !Storage::exists($ruta)) {
-            abort(404, 'Archivo no encontrado.');
-        }
-
-        return response()->download(storage_path('app/' . $ruta));
-    }
- */
-
-
-
-
-
+    // ==========================
+    // NOTIFICACIONES
+    // ==========================    
     public function getNotificaciones()
     {
         $userId = Auth::id();
@@ -447,7 +448,9 @@ public function verSoporte($id)
 
 
 
-
+    // ==========================
+    // POR REVISAR
+    // ==========================
 
     public function pendientes()
     {
