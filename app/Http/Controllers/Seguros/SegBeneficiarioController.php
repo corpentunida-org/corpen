@@ -42,7 +42,7 @@ class SegBeneficiarioController extends Controller
      */
     public function store(Request $request)
     {
-        $beneficiario = SegBeneficiario::create([
+        $beneficiariocreate = SegBeneficiario::create([
             'tipo_documento_id' => $request->tipoDocumento,
             'cedula' => $request->cedula,
             'nombre' => strtoupper($request->names),
@@ -56,13 +56,15 @@ class SegBeneficiarioController extends Controller
             'correo' => $request->correo,
             'activo' => 0
         ]);
+        
         $novedad = SegNovedades::create([
             'id_poliza' => $request->poliza,
             'id_asegurado' => $request->asegurado,
             'tipo' => '4',
             'estado' => 1,
-            'beneficiario' => $beneficiario->id,
+            'beneficiario_id' => $beneficiariocreate->id,
         ]);
+        
         SegCambioEstadoNovedad::create([
             'novedad' => $novedad->id,
             'estado' => 1,
@@ -73,7 +75,7 @@ class SegBeneficiarioController extends Controller
         ]);
 
         $url = route('seguros.poliza.show', ['poliza' => 'ID']) . '?id=' . $request->asegurado;
-        if ($beneficiario) {
+        if ($beneficiariocreate) {
             $accion = "add beneficiario  " . $request->cedula;
             $this->auditoria($accion);
             return redirect()->to($url)->with('success', 'Debe aprobar el ingreso del beneficiario en el módulo de novedades.');

@@ -44,7 +44,7 @@
                                     <div class="col-lg-2">
                                         <label class="form-label">Estado Novedad<span class="text-danger">*</span></label>
                                         <select class="form-control" name="estado" readonly>
-                                            <option value="1">SOLICITUD</option>
+                                            <option value="1">NUEVA SOLICITUD</option>
                                             {{-- <option value="2">RADICADO</option>
                                             <option value="3">APROBADO</option>
                                             <option value="4">NEGADO</option> --}}
@@ -122,7 +122,7 @@
                                 </div>
                                 <input type="hidden" value="{{ $poliza }}" name="poliza">
                                 <input type="hidden" value="{{ $asegurado->cedula }}" name="asegurado">
-                                <input type="hidden" name="nameparentesco" id="parentesco_name">
+                                <input type="hidden" value="ESPOSO" name="nameparentesco" id="parentesco_name">
                                 <input type="hidden" value="" name="">
                                 <div class="col-lg-12">
                                     <label class="form-label">Observaciones <span class="text-danger">*</span></label>
@@ -138,6 +138,7 @@
                             </div>
                         </form>
                         <script>
+                            
                             $('#parentesco').on('change', function() {
                                 let name = $(this).find(':selected').data('name');
                                 $('#parentesco_name').val(name);
