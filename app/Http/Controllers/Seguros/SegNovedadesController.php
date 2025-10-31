@@ -86,6 +86,9 @@ class SegNovedadesController extends Controller
 
     public function store(Request $request)
     {        
+        $request->validate([
+            'formulario_nov' => 'required|mimes:pdf|max:2048',
+        ]);
         $formulario = $request->file('formulario_nov');
         $plan = SegPlan::findOrFail($request->planid);
         $novedad = SegNovedades::create([
