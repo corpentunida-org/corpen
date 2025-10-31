@@ -213,7 +213,7 @@
 
                 {{-- INGRESO --}}
                 <div class="tab-pane fade p-4 " id="TaskTab" role="tabpanel">
-                    <form action={{ route('seguros.novedades.store') }} method="POST" id="formAddPoliza" novalidate>
+                    <form action={{ route('seguros.novedades.store') }} method="POST" id="formAddPoliza" enctype="multipart/form-data" novalidate>
                         @csrf
                         @method('POST')
                         <div class="mb-3 d-flex align-items-center justify-content-between">
@@ -371,7 +371,7 @@
                     </div>
                     @if (isset($asegurado))                        
                         <form method="POST" class="px-4"
-                            action="{{ route('seguros.novedades.destroy', ['novedade' => $asegurado->cedula]) }}">
+                            action="{{ route('seguros.novedades.destroy', ['novedade' => $asegurado->cedula]) }}" enctype="multipart/form-data">
                             @csrf
                             @method('DELETE')
                             <input type="hidden" name="tipoNovedad" value="3">
@@ -409,6 +409,9 @@
                                     required>
                                 <small class="form-text text-muted">Formato permitidos: PDF</small>
                             </div>
+                            @error('formulario_nov')
+                                    <small class="text-danger">{{ $message }}</small>
+                            @enderror
                             <div class="d-flex flex-row-reverse gap-2 mt-2">
                                 <button class="btn btn-danger mt-4" data-bs-toggle="tooltip" title="Timesheets"
                                     type="submit">
@@ -432,7 +435,6 @@
                 console.log($(this).serialize());
             }
         });
-
         $('#selectPlan').on('change', function() {
             const selected = $(this).find('option:selected');
             $('#valoraseguradoplan').val("$ " + selected.data('valor'));
