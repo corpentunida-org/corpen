@@ -374,12 +374,14 @@ public function create()
     // ==========================
     // NOTIFICACIONES
     // ==========================    
-/*     public function getNotificaciones()
+    public function getNotificaciones()
     {
         $userId = Auth::id();
         $usuarioEscalado = ScpUsuario::where('usuario', $userId)->first();
 
+        // Solo contar soportes que no están cerrados para la campana
         $total = ScpSoporte::query()
+            ->where('estado', '!=', '4') // Excluir cerrados (ID=4)
             ->when($usuarioEscalado, function ($q) use ($usuarioEscalado, $userId) {
                 $q->where('id_users', $userId)
                 ->orWhere('usuario_escalado', $usuarioEscalado->id);
@@ -396,213 +398,137 @@ public function create()
         $userId = Auth::id();
         $usuarioEscalado = ScpUsuario::where('usuario', $userId)->first();
 
-        // --- Contadores ---
-        $creados = ScpSoporte::where('id_users', $userId)->count();
-        $asignados = $usuarioEscalado
-            ? ScpSoporte::where('usuario_escalado', $usuarioEscalado->id)->count()
-            : 0;
-        $pendientes = ScpSoporte::where('id_users', $userId)
-            ->whereHas('estadoSoporte', function ($q) {
-                $q->where('nombre', '!=', 'Cerrado');
-            })
-            ->count();
-
-        // --- Detalles de soportes ---
-        $detalles = ScpSoporte::with('estadoSoporte','prioridad', 'usuario')
+        // --- Contadores por categoría ---
+        $sinAsignar = ScpSoporte::where('estado', '1') // SinAsignar (ID=1)
             ->where(function ($q) use ($userId, $usuarioEscalado) {
                 $q->where('id_users', $userId);
                 if ($usuarioEscalado) {
                     $q->orWhere('usuario_escalado', $usuarioEscalado->id);
                 }
-            })->where('estado', '!=', '4')
+            })->count();
+            
+        $enProceso = ScpSoporte::where('estado', '2') // EnProceso (ID=2)
+            ->where(function ($q) use ($userId, $usuarioEscalado) {
+                $q->where('id_users', $userId);
+                if ($usuarioEscalado) {
+                    $q->orWhere('usuario_escalado', $usuarioEscalado->id);
+                }
+            })->count();
+            
+        $revision = ScpSoporte::where('estado', '3') // Revision (ID=3)
+            ->where(function ($q) use ($userId, $usuarioEscalado) {
+                $q->where('id_users', $userId);
+                if ($usuarioEscalado) {
+                    $q->orWhere('usuario_escalado', $usuarioEscalado->id);
+                }
+            })->count();
+            
+        $cerrados = ScpSoporte::where('estado', '4') // Cerrados (ID=4)
+            ->where(function ($q) use ($userId, $usuarioEscalado) {
+                $q->where('id_users', $userId);
+                if ($usuarioEscalado) {
+                    $q->orWhere('usuario_escalado', $usuarioEscalado->id);
+                }
+            })->count();
+
+        // --- Detalles de soportes por categoría ---
+        $sinAsignarDetalles = ScpSoporte::with('estadoSoporte','prioridad', 'usuario')
+            ->where(function ($q) use ($userId, $usuarioEscalado) {
+                $q->where('id_users', $userId);
+                if ($usuarioEscalado) {
+                    $q->orWhere('usuario_escalado', $usuarioEscalado->id);
+                }
+            })->where('estado', '1') // SinAsignar
             ->orderByDesc('updated_at')
-            ->take(10)
             ->get(['id', 'id_users','detalles_soporte', 'estado', 'id_scp_prioridad', 'updated_at'])
             ->map(function ($soporte) {
-                $prioridad = $soporte->prioridad->nombre ?? 'Baja';
-                $color = match ($prioridad) {
-                    'Alta' => 'danger',
-                    'Media' => 'warning',
-                    'Baja' => 'primary',
-                    default => 'gray',
-                };
-                
-                return [
-                    'id' => $soporte->id,
-                    'usuario_nombre' => $soporte->usuario->nombre_corto ?? '',
-                    'detalles_soporte' => Str::limit($soporte->detalles_soporte, 80),
-                    'prioridad' => $prioridad,
-                    'estado' => $soporte->estadoSoporte->nombre ?? 'Sin Estado',
-                    'prioridad_color' => $color,
-                    'fecha_creacion' => Carbon::parse($soporte->updated_at)->diffForHumans(),
-                ];
+                return $this->formatearSoporte($soporte);
             });
+
+        $enProcesoDetalles = ScpSoporte::with('estadoSoporte','prioridad', 'usuario')
+            ->where(function ($q) use ($userId, $usuarioEscalado) {
+                $q->where('id_users', $userId);
+                if ($usuarioEscalado) {
+                    $q->orWhere('usuario_escalado', $usuarioEscalado->id);
+                }
+            })->where('estado', '2') // EnProceso
+            ->orderByDesc('updated_at')
+            ->get(['id', 'id_users','detalles_soporte', 'estado', 'id_scp_prioridad', 'updated_at'])
+            ->map(function ($soporte) {
+                return $this->formatearSoporte($soporte);
+            });
+
+        $revisionDetalles = ScpSoporte::with('estadoSoporte','prioridad', 'usuario')
+            ->where(function ($q) use ($userId, $usuarioEscalado) {
+                $q->where('id_users', $userId);
+                if ($usuarioEscalado) {
+                    $q->orWhere('usuario_escalado', $usuarioEscalado->id);
+                }
+            })->where('estado', '3') // Revision
+            ->orderByDesc('updated_at')
+            ->get(['id', 'id_users','detalles_soporte', 'estado', 'id_scp_prioridad', 'updated_at'])
+            ->map(function ($soporte) {
+                return $this->formatearSoporte($soporte);
+            });
+
+        $cerradosDetalles = ScpSoporte::with('estadoSoporte','prioridad', 'usuario')
+            ->where(function ($q) use ($userId, $usuarioEscalado) {
+                $q->where('id_users', $userId);
+                if ($usuarioEscalado) {
+                    $q->orWhere('usuario_escalado', $usuarioEscalado->id);
+                }
+            })->where('estado', '4') // Cerrados
+            ->orderByDesc('updated_at')
+            ->get(['id', 'id_users','detalles_soporte', 'estado', 'id_scp_prioridad', 'updated_at'])
+            ->map(function ($soporte) {
+                return $this->formatearSoporte($soporte);
+            });
+
         return response()->json([            
-            'total' => $creados + $asignados + $pendientes,
-            'detalles' => $detalles,
+            'total' => $sinAsignar + $enProceso + $revision, // Solo no cerrados para la campana
+            'sinAsignar_count' => $sinAsignar,
+            'enProceso_count' => $enProceso,
+            'revision_count' => $revision,
+            'cerrados_count' => $cerrados,
+            'sinAsignar' => $sinAsignarDetalles,
+            'enProceso' => $enProcesoDetalles,
+            'revision' => $revisionDetalles,
+            'cerrados' => $cerradosDetalles,
         ]);
-    } */
+    }
 
-// ==========================
-// NOTIFICACIONES
-// ==========================    
-public function getNotificaciones()
-{
-    $userId = Auth::id();
-    $usuarioEscalado = ScpUsuario::where('usuario', $userId)->first();
-
-    // Solo contar soportes que no están cerrados para la campana
-    $total = ScpSoporte::query()
-        ->where('estado', '!=', '4') // Excluir cerrados (ID=4)
-        ->when($usuarioEscalado, function ($q) use ($usuarioEscalado, $userId) {
-            $q->where('id_users', $userId)
-            ->orWhere('usuario_escalado', $usuarioEscalado->id);
-        }, function ($q) use ($userId) {
-            $q->where('id_users', $userId);
-        })
-        ->count();
-
-    return response()->json(['total' => $total]);
-}
-
-public function getNotificacionesDetalladas()
-{
-    $userId = Auth::id();
-    $usuarioEscalado = ScpUsuario::where('usuario', $userId)->first();
-
-    // --- Contadores por categoría ---
-    $sinAsignar = ScpSoporte::where('estado', '1') // SinAsignar (ID=1)
-        ->where(function ($q) use ($userId, $usuarioEscalado) {
-            $q->where('id_users', $userId);
-            if ($usuarioEscalado) {
-                $q->orWhere('usuario_escalado', $usuarioEscalado->id);
-            }
-        })->count();
+    // Método auxiliar para formatear soportes
+    private function formatearSoporte($soporte)
+    {
+        $prioridad = $soporte->prioridad->nombre ?? 'Baja';
+        $color = match ($prioridad) {
+            'Alta' => 'danger',
+            'Media' => 'warning',
+            'Baja' => 'primary',
+            default => 'gray',
+        };
         
-    $enProceso = ScpSoporte::where('estado', '2') // EnProceso (ID=2)
-        ->where(function ($q) use ($userId, $usuarioEscalado) {
-            $q->where('id_users', $userId);
-            if ($usuarioEscalado) {
-                $q->orWhere('usuario_escalado', $usuarioEscalado->id);
-            }
-        })->count();
+        // Determinar el nombre del estado según el ID
+        $estadoNombre = match ($soporte->estado) {
+            '1' => 'Sin Asignar',
+            '2' => 'En Proceso',
+            '3' => 'En Revisión',
+            '4' => 'Cerrado',
+            default => $soporte->estadoSoporte->nombre ?? 'Sin Estado',
+        };
         
-    $revision = ScpSoporte::where('estado', '3') // Revision (ID=3)
-        ->where(function ($q) use ($userId, $usuarioEscalado) {
-            $q->where('id_users', $userId);
-            if ($usuarioEscalado) {
-                $q->orWhere('usuario_escalado', $usuarioEscalado->id);
-            }
-        })->count();
-        
-    $cerrados = ScpSoporte::where('estado', '4') // Cerrados (ID=4)
-        ->where(function ($q) use ($userId, $usuarioEscalado) {
-            $q->where('id_users', $userId);
-            if ($usuarioEscalado) {
-                $q->orWhere('usuario_escalado', $usuarioEscalado->id);
-            }
-        })->count();
-
-    // --- Detalles de soportes por categoría ---
-    $sinAsignarDetalles = ScpSoporte::with('estadoSoporte','prioridad', 'usuario')
-        ->where(function ($q) use ($userId, $usuarioEscalado) {
-            $q->where('id_users', $userId);
-            if ($usuarioEscalado) {
-                $q->orWhere('usuario_escalado', $usuarioEscalado->id);
-            }
-        })->where('estado', '1') // SinAsignar
-        ->orderByDesc('updated_at')
-        ->get(['id', 'id_users','detalles_soporte', 'estado', 'id_scp_prioridad', 'updated_at'])
-        ->map(function ($soporte) {
-            return $this->formatearSoporte($soporte);
-        });
-
-    $enProcesoDetalles = ScpSoporte::with('estadoSoporte','prioridad', 'usuario')
-        ->where(function ($q) use ($userId, $usuarioEscalado) {
-            $q->where('id_users', $userId);
-            if ($usuarioEscalado) {
-                $q->orWhere('usuario_escalado', $usuarioEscalado->id);
-            }
-        })->where('estado', '2') // EnProceso
-        ->orderByDesc('updated_at')
-        ->get(['id', 'id_users','detalles_soporte', 'estado', 'id_scp_prioridad', 'updated_at'])
-        ->map(function ($soporte) {
-            return $this->formatearSoporte($soporte);
-        });
-
-    $revisionDetalles = ScpSoporte::with('estadoSoporte','prioridad', 'usuario')
-        ->where(function ($q) use ($userId, $usuarioEscalado) {
-            $q->where('id_users', $userId);
-            if ($usuarioEscalado) {
-                $q->orWhere('usuario_escalado', $usuarioEscalado->id);
-            }
-        })->where('estado', '3') // Revision
-        ->orderByDesc('updated_at')
-        ->get(['id', 'id_users','detalles_soporte', 'estado', 'id_scp_prioridad', 'updated_at'])
-        ->map(function ($soporte) {
-            return $this->formatearSoporte($soporte);
-        });
-
-    $cerradosDetalles = ScpSoporte::with('estadoSoporte','prioridad', 'usuario')
-        ->where(function ($q) use ($userId, $usuarioEscalado) {
-            $q->where('id_users', $userId);
-            if ($usuarioEscalado) {
-                $q->orWhere('usuario_escalado', $usuarioEscalado->id);
-            }
-        })->where('estado', '4') // Cerrados
-        ->orderByDesc('updated_at')
-        ->get(['id', 'id_users','detalles_soporte', 'estado', 'id_scp_prioridad', 'updated_at'])
-        ->map(function ($soporte) {
-            return $this->formatearSoporte($soporte);
-        });
-
-    return response()->json([            
-        'total' => $sinAsignar + $enProceso + $revision, // Solo no cerrados para la campana
-        'sinAsignar_count' => $sinAsignar,
-        'enProceso_count' => $enProceso,
-        'revision_count' => $revision,
-        'cerrados_count' => $cerrados,
-        'sinAsignar' => $sinAsignarDetalles,
-        'enProceso' => $enProcesoDetalles,
-        'revision' => $revisionDetalles,
-        'cerrados' => $cerradosDetalles,
-    ]);
-}
-
-// Método auxiliar para formatear soportes
-private function formatearSoporte($soporte)
-{
-    $prioridad = $soporte->prioridad->nombre ?? 'Baja';
-    $color = match ($prioridad) {
-        'Alta' => 'danger',
-        'Media' => 'warning',
-        'Baja' => 'primary',
-        default => 'gray',
-    };
-    
-    // Determinar el nombre del estado según el ID
-    $estadoNombre = match ($soporte->estado) {
-        '1' => 'Sin Asignar',
-        '2' => 'En Proceso',
-        '3' => 'En Revisión',
-        '4' => 'Cerrado',
-        default => $soporte->estadoSoporte->nombre ?? 'Sin Estado',
-    };
-    
-    return [
-        'id' => $soporte->id,
-        'usuario_nombre' => $soporte->usuario->nombre_corto ?? '',
-        'detalles_soporte' => Str::limit($soporte->detalles_soporte, 80),
-        'prioridad' => $prioridad,
-        'estado' => $estadoNombre,
-        'estado_id' => $soporte->estado,
-        'prioridad_color' => $color,
-        'fecha_creacion' => Carbon::parse($soporte->updated_at)->diffForHumans(),
-        'cerrado' => $soporte->estado == '4',
-    ];
-}
-
-
+        return [
+            'id' => $soporte->id,
+            'usuario_nombre' => $soporte->usuario->nombre_corto ?? '',
+            'detalles_soporte' => Str::limit($soporte->detalles_soporte, 80),
+            'prioridad' => $prioridad,
+            'estado' => $estadoNombre,
+            'estado_id' => $soporte->estado,
+            'prioridad_color' => $color,
+            'fecha_creacion' => Carbon::parse($soporte->updated_at)->diffForHumans(),
+            'cerrado' => $soporte->estado == '4',
+        ];
+    }
 
 
     // ==========================
