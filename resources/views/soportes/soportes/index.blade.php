@@ -133,7 +133,7 @@
                             aria-selected="false">
                         <i class="feather-inbox me-2"></i>
                         TODOS
-                        <span class="badge pastel-badge ms-1">                                
+                        <span class="badge pastel-badge-globito ms-1" style="background-color: #F0F8FF !important; color: #4682B4 !important;">                                
                             {{ $soportes->filter(function($soporte) {
                                 return auth()->user()->id == $soporte->usuario->id || auth()->user()->id === ($soporte->scpUsuarioAsignado?->usuario) || auth()->user()->hasDirectPermission('soporte.lista.agente');
                             })->count() }}   
@@ -153,6 +153,25 @@
                             'desarrollo' => 'feather-code',
                             default => 'feather-folder'
                         };
+                        
+                        // Asignar colores pastel únicos para cada categoría
+                        $colorPastel = match(strtolower($nombreCategoria)) {
+                            'soporte' => '#F8E8FF',
+                            'sistemas' => '#E6F3FF',
+                            'infraestructura' => '#E8F5E8',
+                            'redes' => '#FFF4E6',
+                            'desarrollo' => '#FCE4EC',
+                            default => '#F3E5F5'
+                        };
+                        
+                        $colorTexto = match(strtolower($nombreCategoria)) {
+                            'soporte' => '#6B5B95',
+                            'sistemas' => '#5C7CFA',
+                            'infraestructura' => '#2E7D32',
+                            'redes' => '#FF9800',
+                            'desarrollo' => '#C2185B',
+                            default => '#9C27B0'
+                        };
                     @endphp
                     @candirect($permiso)   
                     <li class="nav-item" role="presentation">                  
@@ -166,7 +185,7 @@
                                 aria-selected="{{ $loop->first ? 'true' : 'false' }}">
                             <i class="{{ $icono }} me-2"></i>
                             {{ $nombreCategoria }}
-                            <span class="badge pastel-badge ms-1">
+                            <span class="badge pastel-badge-globito ms-1" style="background-color: {{ $colorPastel }} !important; color: {{ $colorTexto }} !important;">
                                 {{ $soportesCategoria->filter(function($soporte) {
                                     return auth()->user()->id == $soporte->usuario->id || auth()->user()->id === ($soporte->scpUsuarioAsignado?->usuario) || auth()->user()->hasDirectPermission('soporte.lista.agente');
                                 })->count() }}                                
@@ -627,7 +646,7 @@
                     <small class="text-muted">Importante</small>
                 </div>
                 <div class="d-flex align-items-center">
-                    <div style="min-width: 50px; text-align: center; transition: all 0.2s ease; position: relative; overflow: hidden; border-radius: 8px; font-weight: 500; font-size: 0.6rem; background-color: #E6F3FF !important; color: #5C7CFA !important; border: 1px solid #C5D9FF !important; padding: 2px 6px; display: flex; align-items-center center; justify-content: center; margin-right: 6px;">
+                    <div style="min-width: 50px; text-align: center; transition: all 0.2s ease; position: relative; overflow: hidden; border-radius: 8px; font-weight: 500; font-size: 0.6rem; background-color: #E6F3FF !important; color: #5C7CFA !important; border: 1px solid #C5D9FF !important; padding: 2px 6px; display: flex; align-items: center; justify-content: center; margin-right: 6px;">
                         <i class="feather-info" style="font-size: 8px; margin-right: 2px;"></i>
                         <span>Baja</span>
                     </div>
@@ -828,6 +847,29 @@
                 padding: 2px 6px;
                 font-size: 0.65rem;
                 font-weight: 600;
+            }
+            
+            /* Nuevo estilo para badges de globito en pestañas */
+            .pastel-badge-globito {
+                border-radius: 12px;
+                padding: 3px 8px;
+                font-size: 0.7rem;
+                font-weight: 700;
+                background: linear-gradient(135deg, #F8E8FF, #E6F3FF) !important;
+                color: #6B5B95 !important;
+                border: 1px solid rgba(255, 255, 255, 0.5);
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+                transition: all 0.2s ease;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 20px;
+                height: 20px;
+            }
+            
+            .pastel-badge-globito:hover {
+                transform: scale(1.1);
+                box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
             }
             
             /* Efectos especiales para filas según prioridad */
