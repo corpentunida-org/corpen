@@ -167,12 +167,17 @@ class SegNovedadesController extends Controller
     {
         $novedad = SegNovedades::with(['poliza', 'estadoNovedad', 'cambiosEstado'])->findOrFail($id);
         if ($novedad->estado != 1) {
-            return back()->with('error', 'La novedad no esta en estado nueva solicitud. No se puede editar.');
+            $editar = false;
+            return view('seguros.novedades.edit', compact('novedad', 'editar'))
+                ->with('error', 'La novedad no esta en estado nueva solicitud. No se puede editar.');
+            //return back()->with('error', 'La novedad no esta en estado nueva solicitud. No se puede editar.');
         }
         if ($novedad->tipo == 4) {
-            return redirect()->route('seguros.novedades.index')->with('error', 'La novedad de ingresar beneficiario no se puede editar.');
+            return redirect()->route('seguros.beneficiario.edit', $novedad->beneficiario_id);
+            //return redirect()->route('seguros.novedades.index')->with('error', 'La novedad de ingresar beneficiario no se puede editar.');
         }
-        return view('seguros.novedades.edit', compact('novedad'));
+        $editar = true;
+        return view('seguros.novedades.edit', compact('novedad','editar'));
     }
 
     public function update(Request $request, $id)
@@ -196,10 +201,11 @@ class SegNovedadesController extends Controller
                     if ($novedad->tipo == 1) {
                         $poliza = SegPoliza::findOrFail($novedad->id_poliza);
                         $poliza->update([
-                            'valor_prima' => $plan->primaAseguradora,
-                            'seg_plan_id' => $request->planid,
-                            'extra_prima' => $request->extraprima,
-                            'primapagar' => $request->primaPagar,
+                            'valor_prima' => $novedad->primaAseguradora,
+                            'seg_plan_id' => $novedad->id_plan,
+                            'extra_prima' => $novedad->extraprima,
+                            'primapagar' => $novedad->primaCorpen,
+                            'valor_asegurado' => $novedad->valorAsegurado,
                         ]);
                     } elseif ($novedad->tipo == 2) {
                         SegPoliza::create([
@@ -209,6 +215,7 @@ class SegNovedadesController extends Controller
                             'valor_prima' => $novedad->primaAseguradora,
                             'extra_prima' => $novedad->extraprima,
                             'primapagar' => $novedad->primaCorpen,
+                            'valor_asegurado' => $novedad->valorAsegurado,
                             'active' => true,
                             'fecha_inicio' => Carbon::now()->toDateString(),
                         ]);

@@ -32,21 +32,24 @@ class SegNovedades extends Model
     ]; */
 
     protected $table = 'Seg_novedadaes';
-    protected $fillable = ['id_poliza', 'id_asegurado', 'tipo', 'estado', 'id_plan', 'valorAsegurado', 'primaAseguradora', 'primaCorpen', 'extraprima', 'formulario'];
-    
+    protected $fillable = [
+        'id_poliza', 
+        'id_asegurado', 
+        'tipo', 
+        'estado', 'id_plan', 'valorAsegurado', 'primaAseguradora', 'primaCorpen', 'extraprima', 
+        'beneficiario_id'
+        ,'formulario'];
 
     /* public function tercero()
     {
         return $this->belongsTo(SegTercero::class, 'id_asegurado', 'cedula');
     } */
-    public function getFile ($nameFile)
+    public function getFile($nameFile)
     {
         $url = '#';
-        if($nameFile) {
+        if ($nameFile) {
             if (Storage::disk('s3')->exists($nameFile)) {
-                $url = Storage::disk('s3')->temporaryUrl(
-                    $nameFile, now()->addMinutes(5)
-                );
+                $url = Storage::disk('s3')->temporaryUrl($nameFile, now()->addMinutes(5));
             }
         }
         return $url;

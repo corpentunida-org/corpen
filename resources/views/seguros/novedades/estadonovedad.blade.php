@@ -151,9 +151,9 @@
     </div>
     <div class="content-area-body p-0">
         @foreach ($data as $index => $reg)
-            <div class="single-items">
+            <div class="single-items" style="pointer-events: none;">
                 <!--! [item-meta] !-->
-                <div class="d-flex wd-80 gap-4 ms-1 item-meta">
+                <div class="d-flex wd-80 gap-4 ms-1 item-meta" style="pointer-events: auto;">
                     <div class="item-checkbox">
                         <div class="custom-control custom-checkbox">
                             <input type="checkbox" class="custom-control-input checkbox" id="{{ $index + 1 }}bcb"
@@ -164,7 +164,7 @@
                     </div>
                 </div>
                 <!--! [item-info] !-->
-                <div class="d-flex align-items-start gap-4 w-100 item-info" data-view-toggle="details">
+                <div class="d-flex align-items-start gap-4 w-100 item-info">
                     <a href="{{ route('seguros.poliza.show', ['poliza' => 'ID']) . '?id=' . $reg->id_asegurado }}"
                         class="hstack gap-3" style="width: 30%;">
                         <i class="bi bi-person-circle"></i>
@@ -202,7 +202,7 @@
                             ? optional($reg->cambiosEstado->last()->fechaCierre)->translatedFormat('d M Y')
                             : $reg->created_at->translatedFormat('d M Y') }}
                     </div>
-                    <div class="item-action">
+                    <div class="item-action" style="pointer-events: auto;">
                         <div class="dropdown">
                             <a href="javascript:void(0)" data-bs-toggle="dropdown" data-bs-offset="0, 28">
                                 <div class="avatar-text avatar-sm" data-bs-toggle="tooltip" data-bs-trigger="hover"
