@@ -4,66 +4,66 @@ namespace App\Http\Controllers\Soportes;
 
 use App\Http\Controllers\Controller;
 use App\Models\Soportes\ScpTipo;
+use App\Models\Soportes\ScpCategoria;
 use Illuminate\Http\Request;
 
 class ScpTipoController extends Controller
 {
-    // Listar tipos (usa el tablero)
     public function index()
     {
         return app(ScpTableroParametroController::class)->index();
     }
 
-    // Formulario de creación
     public function create()
     {
-        return view('soportes.tipos.create');
+        $categorias = ScpCategoria::pluck('nombre', 'id');
+        return view('soportes.tipos.create', compact('categorias'));
     }
 
-    // Guardar un nuevo tipo
     public function store(Request $request)
     {
         $request->validate([
-            'nombre' => 'required|string|max:255',
+            'nombre' => 'required|string|max:255|unique:scp_tipos,nombre',
+            'descripcion' => 'nullable|string',
+            'id_categoria' => 'required|exists:scp_categorias,id',
         ]);
 
         ScpTipo::create($request->all());
 
-        return redirect()->route('soportes.tipos.index')
-                         ->with('success', 'Tipo creado correctamente.');
+        return redirect()->route('soportes.tablero')
+                         ->with('success', 'Tipo de soporte creado correctamente.');
     }
 
-    // Mostrar un tipo específico
     public function show(ScpTipo $scpTipo)
     {
         return view('soportes.tipos.show', compact('scpTipo'));
     }
 
-    // Formulario de edición
     public function edit(ScpTipo $scpTipo)
     {
-        return view('soportes.tipos.edit', compact('scpTipo'));
+        $categorias = ScpCategoria::pluck('nombre', 'id');
+        return view('soportes.tipos.edit', compact('scpTipo', 'categorias'));
     }
 
-    // Actualizar un tipo
     public function update(Request $request, ScpTipo $scpTipo)
     {
         $request->validate([
-            'nombre' => 'required|string|max:255',
+            'nombre' => 'required|string|max:255|unique:scp_tipos,nombre,' . $scpTipo->id,
+            'descripcion' => 'nullable|string',
+            'id_categoria' => 'required|exists:scp_categorias,id',
         ]);
 
         $scpTipo->update($request->all());
 
-        return redirect()->route('soportes.tipos.index')
-                         ->with('success', 'Tipo actualizado correctamente.');
+        return redirect()->route('soportes.tablero')
+                         ->with('success', 'Tipo de soporte actualizado correctamente.');
     }
 
-    // Eliminar un tipo
     public function destroy(ScpTipo $scpTipo)
     {
         $scpTipo->delete();
 
-        return redirect()->route('soportes.tipos.index')
-                         ->with('success', 'Tipo eliminado correctamente.');
+        return redirect()->route('soportes.tablero')
+                         ->with('success', 'Tipo de soporte eliminado correctamente.');
     }
 }
