@@ -220,6 +220,7 @@
                             <thead>
                                 <tr>
                                     <th>Nombre</th>
+                                    <th>Categoria</th>
                                     <th>Descripción</th>
                                     <th class="text-end">Acciones</th>
                                 </tr>
@@ -233,6 +234,7 @@
                                                 <span>{{ $tipo->nombre }}</span>
                                             </div>
                                         </td>
+                                        <td><span class="text-muted">{{ $tipo->categoria->nombre ?? '—' }}</span></td>
                                         <td><span class="text-muted">{{ $tipo->descripcion ?? '—' }}</span></td>
                                         <td class="text-end">
                                             <div class="dropdown">
