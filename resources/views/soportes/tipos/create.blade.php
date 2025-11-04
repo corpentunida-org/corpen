@@ -1,3 +1,5 @@
+{{-- resources/views/soportes/tipos/create.blade.php --}}
+
 <x-base-layout>
     @section('titlepage', 'Crear Nuevo Tipo de Soporte')
 
@@ -7,15 +9,11 @@
                 <div class="mb-4 mb-lg-0">
                     <div class="d-flex gap-4 align-items-center">
                         <div class="avatar-text avatar-lg bg-info text-white">
-                            <i class="bi bi-lightbulb"></i> {{-- Icono para Tipos --}}
+                            <i class="bi bi-lightbulb"></i>
                         </div>
                         <div>
-                            <div class="fs-4 fw-bold text-dark">
-                                Crear Nuevo Tipo de Soporte
-                            </div>
-                            <h3 class="fs-13 fw-semibold text-truncate-1-line">
-                                Clasifica tus soportes con nuevos tipos.
-                            </h3>
+                            <div class="fs-4 fw-bold text-dark">Crear Nuevo Tipo de Soporte</div>
+                            <h3 class="fs-13 fw-semibold text-truncate-1-line">Clasifica tus soportes con nuevos tipos.</h3>
                         </div>
                     </div>
                 </div>
@@ -28,8 +26,7 @@
             <div class="card-header p-0">
                 <ul class="nav nav-tabs flex-wrap w-100 text-center customers-nav-tabs" id="myTab" role="tablist">
                     <li class="nav-item flex-fill border-top" role="presentation">
-                        <a href="javascript:void(0);" class="nav-link active" data-bs-toggle="tab"
-                            data-bs-target="#infoTab" role="tab" aria-selected="true">
+                        <a href="javascript:void(0);" class="nav-link active" data-bs-toggle="tab" data-bs-target="#infoTab" role="tab" aria-selected="true">
                             Información del Tipo
                         </a>
                     </li>
@@ -37,29 +34,8 @@
             </div>
             <div class="tab-content">
                 <div class="tab-pane fade p-4 active show" id="infoTab" role="tabpanel">
-
-                    {{-- Formulario para crear un nuevo tipo --}}
-                    <form method="POST" action="{{ route('soportes.tipos.store') }}">
-                        @csrf
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="nombre" class="form-label text-capitalize">Nombre</label>
-                                <input type="text" class="form-control @error('nombre') is-invalid @enderror" id="nombre" name="nombre" value="{{ old('nombre') }}" required>
-                                @error('nombre')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-
-                        <div class="d-flex flex-row-reverse gap-2 mt-4">
-                            <button class="btn btn-success" type="submit">
-                                <i class="feather-plus me-2"></i> Crear Tipo
-                            </button>
-                            <a href="{{ route('soportes.tablero') }}" class="btn btn-light">Cancelar</a>
-                        </div>
-                    </form>
-
+                    {{-- Incluimos el parcial del formulario y le pasamos la acción de almacenamiento --}}
+                    @include('soportes.tipos._form', ['formAction' => route('soportes.tipos.store')])
                 </div>
             </div>
         </div>
