@@ -103,7 +103,7 @@ public function create()
     public function store(Request $request)
     {
         $request->validate([
-            'detalles_soporte'       => 'required|string|max:255',
+            'detalles_soporte'       => 'required|string',
             'id_gdo_cargo'           => 'nullable|integer|exists:gdo_cargo,id',
             'id_cre_lineas_creditos' => 'nullable|integer|exists:cre_lineas_creditos,id',
             'cod_ter_maeTercero'     => ['nullable', 'string', 'max:20', Rule::exists('MaeTerceros', 'cod_ter')],
@@ -298,7 +298,7 @@ public function create()
     {
 
         $request->validate([
-            'observacion' => 'required|string|max:255',
+            'observacion' => 'required|string',
             'id_scp_estados' => 'required|exists:scp_estados,id',
             'id_tipo_observacion' => 'required|exists:scp_tipo_observacions,id',
             'id_scp_usuario_asignado' => ['nullable', 'integer', 'exists:scp_usuarios,id'],
