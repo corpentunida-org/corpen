@@ -6,7 +6,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 use App\Models\Maestras\maeTerceros;
-use App\Models\User;        
+use App\Models\User;
+// Asumimos que existen estos modelos para las nuevas relaciones
+use App\Models\Archivo\GdoArea;
+use App\Models\Archivo\GdoCargo;
+// use App\Models\Archivo\GdoFuncione;
+use App\Models\Creditos\LineaCredito;
 
 class Interaction extends Model
 {
@@ -22,10 +27,7 @@ class Interaction extends Model
         'outcome',                  // 7)* Resultado de la interacción (ej: exitoso, pendiente, sin respuesta)
         'notes',                    // 8) Notas o detalles adicionales sobre la interacción
 
-
         'parent_interaction_id',    // *** ID de la interacción relacionada o anterior (en caso de seguimiento)
-                                    // Area asignada de la interaccion
-                                    // Si el area es Cartera - Relacion con las lineas de creditos.
 
         'next_action_date',         // 9) Fecha programada para la próxima acción o seguimiento
         'next_action_type',         // 10)* Tipo de próxima acción (ej: llamada, reunión, envío de correo)
@@ -33,18 +35,31 @@ class Interaction extends Model
 
         'attachment_urls',          // 12) URLs de archivos adjuntos relacionados a la interacción
         'interaction_url',          // 13) URL del registro o recurso externo vinculado a la interacción
-    ];
 
+        //NUEVOS CAMPOS (AGREGADOS POR TI)
+        'id_area',
+        'id_cargo',
+        'id_linea_de_obligacion',
+        'id_area_de_asignacion',
+        'id_funciones',
+    ];
 
     protected $casts = [
         'attachment_urls'   => 'array',
         'interaction_date'  => 'datetime',
         'next_action_date'  => 'datetime',
+        // --- CASTS PARA LOS NUEVOS CAMPOS ---
+        'id_area'               => 'integer',
+        'id_cargo'              => 'integer',
+        'id_linea_de_obligacion'=> 'integer',
+        'id_area_de_asignacion' => 'integer',
+        'id_funciones'          => 'integer',
     ];
-    // Relación con el agente (usuario)
+
+    // ------------------- RELACIONES EXISTENTES -------------------
     public function agent()
     {
-        return $this->belongsTo(User::class, 'agent_id');
+        return $this->belongsTo(User::class, 'agent_id', 'nit');
     }
     public function client()
     {
@@ -52,20 +67,62 @@ class Interaction extends Model
     }
     public function channel()
     {
-        return $this->belongsTo(IntChannel::class, 'interaction_channel');
+        return $this->belongsTo(IntChannel::class, 'interaction_channel','id');
     }
-//
     public function type()
     {
-        return $this->belongsTo(IntType::class, 'interaction_type');
+        return $this->belongsTo(IntType::class, 'interaction_type','id');
     }
     public function outcomeRelation()
     {
-        return $this->belongsTo(IntOutcome::class, 'outcome');
+        return $this->belongsTo(IntOutcome::class, 'outcome','id');
     }
     public function nextAction()
     {
-        return $this->belongsTo(IntNextAction::class, 'next_action_type');
+        return $this->belongsTo(IntNextAction::class, 'next_action_type','id');
     }
 
+    // ------------------- NUEVAS RELACIONES -------------------
+    /**
+     * Obtiene el área asociada a la interacción.
+     */
+    public function area()
+    {
+        return $this->belongsTo(GdoArea::class, 'id_area');
+    }
+    
+    /**
+     * Obtiene el área de asignación asociada a la interacción.
+     */
+    public function areaDeAsignacion()
+    {
+        return $this->belongsTo(GdoArea::class, 'id_area_de_asignacion');
+    }
+
+    /**
+     * Obtiene el cargo asociado a la interacción.
+     */
+    public function cargo()
+    {
+        return $this->belongsTo(GdoCargo::class, 'id_cargo');
+    }
+
+    /**
+     * Obtiene la línea de obligación asociada a la interacción.
+     */
+    public function lineaDeObligacion()
+    {
+        return $this->belongsTo(LineaCredito::class, 'id_linea_de_obligacion');
+    }
+
+
+
+    /**
+     * Obtiene la función asociada a la interacción.
+     */
+    
+/*     public function funcion()
+    {
+        return $this->belongsTo(GdoFuncione::class, 'id_funciones');
+    }  */
 }
