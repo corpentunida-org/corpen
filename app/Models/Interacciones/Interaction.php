@@ -12,8 +12,6 @@ use App\Models\Archivo\GdoArea;
 use App\Models\Archivo\GdoCargo;
 // use App\Models\Archivo\GdoFuncione;
 use App\Models\Creditos\LineaCredito;
-use App\Models\Maestras\maeDistritos;
-use Illuminate\Support\Facades\Storage;
 
 class Interaction extends Model
 {
@@ -30,7 +28,6 @@ class Interaction extends Model
         'notes',                    // 8) Notas o detalles adicionales sobre la interacción
 
         'parent_interaction_id',    // *** ID de la interacción relacionada o anterior (en caso de seguimiento)
-        'id_distrito_interaccion',
 
         'next_action_date',         // 9) Fecha programada para la próxima acción o seguimiento
         'next_action_type',         // 10)* Tipo de próxima acción (ej: llamada, reunión, envío de correo)
@@ -49,7 +46,6 @@ class Interaction extends Model
         'id_cargo',
         'id_linea_de_obligacion',
         'id_area_de_asignacion',
-        'id_cargo_de_asignacion',
         'id_funciones',
     ];
 
@@ -65,21 +61,10 @@ class Interaction extends Model
         'id_funciones'          => 'integer',
     ];
 
-    public function getFile($nameFile)
-    {
-        $url = '#';
-        if ($nameFile) {
-            if (Storage::disk('s3')->exists($nameFile)) {
-                $url = Storage::disk('s3')->temporaryUrl($nameFile, now()->addMinutes(5));
-            }
-        }
-        return $url;
-    }
-
     // ------------------- RELACIONES EXISTENTES -------------------
     public function agent()
     {
-        return $this->belongsTo(User::class, 'agent_id', 'id');
+        return $this->belongsTo(User::class, 'agent_id', 'nit');
     }
     public function client()
     {
@@ -108,7 +93,7 @@ class Interaction extends Model
      */
     public function area()
     {
-        return $this->belongsTo(GdoArea::class, 'id_area','id');
+        return $this->belongsTo(GdoArea::class, 'id_area');
     }
     
     /**
@@ -116,7 +101,7 @@ class Interaction extends Model
      */
     public function areaDeAsignacion()
     {
-        return $this->belongsTo(GdoArea::class, 'id_area_de_asignacion','id');
+        return $this->belongsTo(GdoArea::class, 'id_area_de_asignacion');
     }
 
     /**
@@ -124,7 +109,7 @@ class Interaction extends Model
      */
     public function cargo()
     {
-        return $this->belongsTo(GdoCargo::class, 'id_cargo','id');
+        return $this->belongsTo(GdoCargo::class, 'id_cargo');
     }
 
     /**
@@ -132,12 +117,9 @@ class Interaction extends Model
      */
     public function lineaDeObligacion()
     {
-        return $this->belongsTo(LineaCredito::class, 'id_linea_de_obligacion','id');
+        return $this->belongsTo(LineaCredito::class, 'id_linea_de_obligacion');
     }
-    public function DistritoDeObligacion()
-    {
-        return $this->belongsTo(maeDistritos::class, 'id_distrito_interaccion','COD_DIST');
-    }
+
 
 
     /**
