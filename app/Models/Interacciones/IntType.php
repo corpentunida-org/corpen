@@ -11,7 +11,7 @@ class IntType extends Model
 
     protected $table = 'int_types';
 
-    protected $fillable = ['name'];
+    protected $fillable = ['id','name'];
 
     public function interactions()
     {
