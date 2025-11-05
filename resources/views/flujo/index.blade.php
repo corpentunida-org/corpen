@@ -1,80 +1,87 @@
 <x-base-layout>
     <div class="dashboard-container">
-        {{-- Checkbox oculto para controlar el sidebar --}}
-        <input type="checkbox" id="sidebar-toggle" class="sidebar-toggle-checkbox" hidden>
-
-        {{-- ================= SIDEBAR MEJORADO ================= --}}
-        <aside class="sidebar">
-            <div class="sidebar-header">
+        {{-- ================= BARRA DE NAVEGACIÓN SUPERIOR ================= --}}
+        <header class="top-header">
+            <div class="header-left">
                 <div class="logo">
                     <i class="fas fa-project-diagram"></i>
-                    <span>FlujoCorp</span>
                 </div>
-                {{-- Botón para colapsar/expandir (usando un label para el checkbox) --}}
-                <label for="sidebar-toggle" class="collapse-btn">
-                    <i class="fas fa-angle-left"></i>
-                </label>
-            </div>
-            <div class="sidebar-content">
-                <nav class="menu">
-                    <a href="{{ route('flujo.tablero') }}" class="active"><i class="fas fa-home"></i> Inicio</a>
-                    <a href="#"><i class="fas fa-check-circle"></i> Mis Tareas</a>
-                    <a href="#"><i class="fas fa-inbox"></i> Notificaciones</a>
+                <nav class="main-nav">
+                    <a href="{{ route('flujo.tablero') }}" class="active">Inicio</a>
+                    <a href="#">Mis Tareas</a>
+                    <a href="#">Notificaciones</a>
                 </nav>
-
-                <div class="workspaces">
-                    <div class="workspace-header">
-                        <span>Espacios de Trabajo</span>
-                        <button class="add-workspace">+</button>
-                    </div>
-                    <div class="workspace-item">
-                        <a href="#"><i class="fas fa-folder"></i> Proyectos Cliente A</a>
-                    </div>
-                    {{-- Un ejemplo con sub-elementos expandibles con CSS --}}
-                    <div class="workspace-item">
-                        {{-- Otro checkbox oculto para este elemento específico --}}
-                        <input type="checkbox" id="workspace-dev-toggle" class="workspace-toggle-checkbox" hidden>
-                        <label for="workspace-dev-toggle" class="workspace-item-label">
-                            <a href="#" onclick="return false;"><i class="fas fa-folder"></i> Desarrollo Interno</a>
-                            <i class="fas fa-chevron-right workspace-chevron"></i>
-                        </label>
-                        <div class="board-list">
-                            <a href="#">Proyecto Phoenix</a>
-                            <a href="#">Roadmap Q4</a>
-                        </div>
-                    </div>
-                    <div class="workspace-item">
-                        <a href="#"><i class="fas fa-folder"></i>Marketing</a>
-                    </div>
-                </div>
             </div>
-        </aside>
+            <div class="header-right">
+                <div class="search-container">
+                    <input type="text" placeholder="Buscar..." class="search-board">
+                    <i class="fas fa-search"></i>
+                </div>
+                <button class="btn-primary">
+                    <i class="fas fa-plus"></i> Nuevo
+                </button>
+                <div class="user-avatar">BC</div>
+            </div>
+        </header>
 
         {{-- Contenido principal --}}
         <main class="main-content">
-            <!-- ... tu main content actual ... -->
-            <header class="board-header">
+            <div class="board-header">
                 <div class="board-title">
-                    <h1>Panel</h1>
+                    <h1>Panel de Control</h1>
                     <i class="far fa-star"></i>
                 </div>
                 <div class="board-actions">
                     <div class="view-switcher">
-                        {{-- Para las vistas, necesitarías enlaces que carguen diferentes partes o un JS muy básico --}}
-                        <a href="?view=table" class="active"><i class="fas fa-table"></i> Tabla Principal</a>
-                        <a href="?view=kanban"><i class="fas fa-columns"></i> Kanban</a>
-                        <a href="?view=gantt"><i class="fas fa-chart-gantt"></i> Gantt</a>
+                        <a href="?view=table" class="active"><i class="fas fa-table"></i></a>
+                        <a href="?view=kanban"><i class="fas fa-columns"></i></a>
+                        <a href="?view=gantt"><i class="fas fa-chart-gantt"></i></a>
                     </div>
-                    <input type="text" placeholder="Buscar en tablero..." class="search-board">
-                    <a href="#" class="btn-monday"><i class="fas fa-plus"></i> Nuevo Elemento</a>
-                    <div class="user-avatar">BC</div>
                 </div>
-            </header>
+            </div>
+
+            <div class="stats-container">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background-color: rgba(255, 182, 193, 0.3); color: #ff6b81;">
+                        <i class="fas fa-tasks"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>24</h3>
+                        <p>Tareas Activas</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background-color: rgba(173, 216, 230, 0.3); color: #4dabf7;">
+                        <i class="fas fa-project-diagram"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>5</h3>
+                        <p>Proyectos</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background-color: rgba(152, 251, 152, 0.3); color: #51cf66;">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>12</h3>
+                        <p>Completadas</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background-color: rgba(255, 218, 185, 0.3); color: #ff922b;">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3>3</h3>
+                        <p>Pendientes</p>
+                    </div>
+                </div>
+            </div>
 
             <div class="board-view">
-                {{-- Esto requeriría lógica PHP en el backend para mostrar el componente correcto según ?view --}}
                 @php
-                    $currentView = request('view', 'table'); // Default a 'table'
+                    $currentView = request('view', 'table');
                 @endphp
 
                 @if ($currentView == 'table')
@@ -85,165 +92,634 @@
                          @include('flujo.componentes.histories-card')
                     </div>
                 @elseif ($currentView == 'kanban')
-                    <div>Contenido de la vista Kanban...</div>
+                    <div class="kanban-container">
+                        <div class="kanban-column">
+                            <div class="column-header">
+                                <h3>Por Hacer</h3>
+                                <span class="task-count">4</span>
+                            </div>
+                            <div class="kanban-tasks">
+                                <div class="kanban-task">
+                                    <h4>Diseñar nueva interfaz</h4>
+                                    <div class="task-meta">
+                                        <span class="task-priority high">Alta</span>
+                                        <div class="task-assignees">
+                                            <div class="assignee-avatar">JD</div>
+                                            <div class="assignee-avatar">MS</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="kanban-task">
+                                    <h4>Revisar documentación</h4>
+                                    <div class="task-meta">
+                                        <span class="task-priority medium">Media</span>
+                                        <div class="task-assignees">
+                                            <div class="assignee-avatar">AK</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="kanban-column">
+                            <div class="column-header">
+                                <h3>En Progreso</h3>
+                                <span class="task-count">3</span>
+                            </div>
+                            <div class="kanban-tasks">
+                                <div class="kanban-task">
+                                    <h4>Implementar API</h4>
+                                    <div class="task-meta">
+                                        <span class="task-priority high">Alta</span>
+                                        <div class="task-assignees">
+                                            <div class="assignee-avatar">RT</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="kanban-column">
+                            <div class="column-header">
+                                <h3>Completado</h3>
+                                <span class="task-count">7</span>
+                            </div>
+                            <div class="kanban-tasks">
+                                <div class="kanban-task">
+                                    <h4>Configurar servidor</h4>
+                                    <div class="task-meta">
+                                        <span class="task-priority low">Baja</span>
+                                        <div class="task-assignees">
+                                            <div class="assignee-avatar">LM</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 @elseif ($currentView == 'gantt')
-                    <div>Contenido de la vista Gantt...</div>
+                    <div class="gantt-container">
+                        <div class="gantt-header">
+                            <div class="gantt-timeline">
+                                <div class="timeline-month">Enero</div>
+                                <div class="timeline-month">Febrero</div>
+                                <div class="timeline-month">Marzo</div>
+                                <div class="timeline-month">Abril</div>
+                            </div>
+                        </div>
+                        <div class="gantt-tasks">
+                            <div class="gantt-task">
+                                <div class="task-info">Diseño UI/UX</div>
+                                <div class="task-bar" style="width: 40%; left: 0%; background-color: rgba(255, 182, 193, 0.7);"></div>
+                            </div>
+                            <div class="gantt-task">
+                                <div class="task-info">Desarrollo Backend</div>
+                                <div class="task-bar" style="width: 60%; left: 20%; background-color: rgba(173, 216, 230, 0.7);"></div>
+                            </div>
+                            <div class="gantt-task">
+                                <div class="task-info">Testing</div>
+                                <div class="task-bar" style="width: 30%; left: 60%; background-color: rgba(152, 251, 152, 0.7);"></div>
+                            </div>
+                        </div>
+                    </div>
                 @endif
             </div>
-
         </main>
     </div>
 
-    {{-- ================= ESTILOS MONDAY MEJORADOS ================= --}}
+    {{-- ================= ESTILOS MINIMALISTAS CON COLORES PASTELES ================= --}}
     <style>
         /* ====== VARIABLES DE COLOR Y ESTILO ====== */
         :root {
-            --primary-color: #5D5FEF;
-            --primary-hover: #3F40C4;
-            --sidebar-bg: #1B1F3B;
-            --sidebar-text: #C7CADB;
-            --body-bg: #F5F6F8;
-            --card-bg: #FFFFFF;
-            --text-dark: #1B1F3B;
-            --border-color: #E0E0E0;
+            /* Colores pasteles */
+            --primary-color: #a6c1ee;
+            --primary-hover: #8b9fd9;
+            --secondary-color: #fbc2eb;
+            --accent-color: #a6e3e9;
+            --success-color: #c8e6c9;
+            --warning-color: #ffe0b2;
+            --danger-color: #ffcdd2;
+            
+            /* Tonos neutros */
+            --body-bg: #fafbfc;
+            --card-bg: #ffffff;
+            --text-dark: #495057;
+            --text-light: #6c757d;
+            --border-color: #e9ecef;
+            
+            /* Espaciado y bordes */
+            --border-radius-sm: 8px;
             --border-radius-md: 12px;
             --border-radius-lg: 16px;
-            --shadow-soft: 0 4px 14px 0 rgba(0, 0, 0, 0.05);
+            --shadow-soft: 0 4px 6px rgba(0, 0, 0, 0.05);
+            --shadow-medium: 0 8px 15px rgba(0, 0, 0, 0.08);
+            
+            /* Transiciones */
+            --transition-fast: 0.2s ease;
+            --transition-medium: 0.3s ease;
         }
 
         /* ====== RESET ====== */
-        * { margin:0; padding:0; box-sizing:border-box; font-family:'Poppins', sans-serif; }
-        a { text-decoration:none; color:inherit; }
-        button { background:none; border:none; cursor:pointer; font-family:'Poppins', sans-serif; }
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+        }
+        
+        a { 
+            text-decoration: none; 
+            color: inherit; 
+            transition: var(--transition-fast);
+        }
+        
+        button { 
+            background: none; 
+            border: none; 
+            cursor: pointer; 
+            font-family: inherit;
+            transition: var(--transition-fast);
+        }
 
         /* ====== DASHBOARD LAYOUT ====== */
-        .dashboard-container { display:flex; min-height:100vh; background: var(--body-bg); }
-
-        /* ====== SIDEBAR ====== */
-        .sidebar { 
-            width:250px; 
-            background:var(--sidebar-bg); 
-            display:flex; 
-            flex-direction:column; 
-            border-right: 1px solid #2a2e4c; 
-            transition: width 0.3s ease; 
-            position: relative; /* Necesario para el botón de colapsar */
-            flex-shrink: 0; /* Evita que el sidebar se encoja antes de tiempo */
-        }
-        .sidebar-header { padding: 20px; border-bottom: 1px solid #2a2e4c; display: flex; justify-content: space-between; align-items: center;}
-        .sidebar-header .logo { font-size:20px; font-weight:700; color:#fff; display:flex; align-items:center; gap:10px; }
-        .sidebar-header .logo span { transition: opacity 0.3s ease; } /* Animación para el texto */
-        .sidebar-content { padding: 15px; overflow-y: auto; transition: opacity 0.3s ease; }
-        .menu a { display:flex; align-items:center; gap:12px; padding:10px 14px; border-radius:var(--border-radius-md); color:var(--sidebar-text); margin-bottom:5px; transition:0.2s ease-in-out; font-weight: 500;}
-        .menu a.active, .menu a:hover { background:var(--primary-color); color:#fff; }
-        .menu a i { width:20px; text-align:center; font-size: 16px; }
-
-        /* WORKSPACES */
-        .workspaces { margin-top: 25px; }
-        .workspace-header { display:flex; justify-content:space-between; align-items:center; padding:0 10px; margin-bottom:10px; color: var(--sidebar-text); font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; }
-        .add-workspace { color: var(--sidebar-text); font-size: 18px; }
-        .workspace-item { margin-bottom: 5px; }
-        .workspace-item > a, .workspace-item-label { /* Aplica estilos tanto al <a> directo como al <label> */
-            font-weight: 600; color: #fff; display:flex; align-items: center; gap:10px; padding:10px; border-radius:8px; font-size: 14px;
-            cursor: pointer;
-        }
-        .workspace-item > a:hover, .workspace-item-label:hover { background: #2a2e4c; }
-        .board-list { 
-            padding-left: 25px; margin-top: 5px; 
-            max-height: 0; /* Oculto por defecto */
-            overflow: hidden;
-            transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
-            opacity: 0;
-        }
-        .board-list a { display:block; color: var(--sidebar-text); padding: 6px 0; font-size: 13px; opacity: 0.8; }
-        .board-list a:hover { color: #fff; opacity: 1; }
-
-        /* ======= ESTILOS PARA EL SIDEBAR COLAPSADO (CSS PUREO) ======= */
-        .sidebar-toggle-checkbox:checked ~ .sidebar {
-            width: 80px; /* Ancho cuando está colapsado */
+        .dashboard-container { 
+            display: flex; 
+            flex-direction: column; /* Cambiado a columna para apilar header y main */
+            min-height: 100vh; 
+            background: var(--body-bg); 
         }
 
-        .sidebar-toggle-checkbox:checked ~ .sidebar .sidebar-header .logo span,
-        .sidebar-toggle-checkbox:checked ~ .sidebar .sidebar-content {
-            opacity: 0; /* Oculta el texto y contenido con opacidad */
-            pointer-events: none; /* Deshabilita clics en elementos ocultos */
-        }
-        .sidebar-toggle-checkbox:checked ~ .sidebar .collapse-btn i {
-             transform: rotate(180deg); /* Gira la flecha */
-        }
-
-        .collapse-btn {
-            color: white;
-            font-size: 18px;
-            display: flex; /* Asegura que el icono no se salga */
+        /* ====== TOP HEADER ====== */
+        .top-header {
+            display: flex;
+            justify-content: space-between;
             align-items: center;
-            justify-content: center;
-            transition: transform 0.3s ease;
+            padding: 16px 30px;
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+            box-shadow: var(--shadow-soft);
         }
 
-        /* ======= ESTILOS PARA WORKSPACE EXPANDIBLE (CSS PURO) ======= */
-        .workspace-item-label {
-            position: relative; /* Para posicionar el chevron */
-        }
-        .workspace-chevron {
-            margin-left: auto; /* Empuja el chevron a la derecha */
-            transition: transform 0.3s ease;
-            font-size: 12px;
-        }
-        .workspace-toggle-checkbox:checked + .workspace-item-label .workspace-chevron {
-            transform: rotate(90deg); /* Gira el chevron cuando está expandido */
-        }
-        .workspace-toggle-checkbox:checked + .workspace-item-label + .board-list {
-            max-height: 200px; /* Suficiente alto para mostrar los elementos */
-            opacity: 1;
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 40px;
         }
 
+        .logo {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .main-nav {
+            display: flex;
+            gap: 20px;
+        }
+
+        .main-nav a {
+            font-weight: 500;
+            color: var(--text-light);
+            padding: 8px 12px;
+            border-radius: var(--border-radius-sm);
+            transition: var(--transition-fast);
+        }
+
+        .main-nav a.active,
+        .main-nav a:hover {
+            color: var(--primary-color);
+            background: rgba(166, 193, 238, 0.1);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
 
         /* ====== MAIN CONTENT ====== */
-        .main-content { flex:1; padding:25px 30px; }
+        .main-content { 
+            flex: 1; 
+            padding: 30px; 
+            overflow-y: auto;
+        }
 
         /* ====== BOARD HEADER ====== */
-        .board-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:25px; }
-        .board-title { display:flex; align-items:center; gap:10px; }
-        .board-title h1 { font-size:24px; font-weight:700; color:var(--text-dark); }
-        .board-title i { color: #888; cursor: pointer; transition: 0.2s; }
-        .board-title i:hover { color: #FDAB3D; transform: scale(1.2); }
-        .board-actions { display:flex; align-items:center; gap:15px; }
-        .search-board { padding:8px 12px; border-radius:var(--border-radius-md); border:1px solid var(--border-color); width:200px; transition:0.3s; }
-        .search-board:focus { border-color:var(--primary-color); outline:none; box-shadow:0 0 6px rgba(93,95,239,0.3); }
-        .btn-monday { background:var(--primary-color); color:#fff; border-radius:var(--border-radius-md); padding:8px 16px; display:flex; align-items:center; gap:6px; font-weight:600; transition:0.3s; }
-        .btn-monday:hover { background:var(--primary-hover); }
-        .user-avatar { width:36px; height:36px; border-radius:50%; background:var(--primary-color); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:600; cursor:pointer; }
+        .board-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 30px; 
+        }
+        
+        .board-title { 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+        }
+        
+        .board-title h1 { 
+            font-size: 28px; 
+            font-weight: 600; 
+            color: var(--text-dark); 
+        }
+        
+        .board-title i { 
+            color: var(--warning-color); 
+            cursor: pointer; 
+            transition: var(--transition-fast);
+            font-size: 20px;
+        }
+        
+        .board-title i:hover { 
+            color: #ff922b; 
+            transform: scale(1.2); 
+        }
+        
+        .board-actions { 
+            display: flex; 
+            align-items: center; 
+            gap: 15px; 
+        }
+        
+        .search-container {
+            position: relative;
+        }
+        
+        .search-board { 
+            padding: 10px 15px 10px 40px; 
+            border-radius: var(--border-radius-md); 
+            border: 1px solid var(--border-color); 
+            width: 220px; 
+            transition: var(--transition-fast);
+            background: white;
+        }
+        
+        .search-board:focus { 
+            border-color: var(--primary-color); 
+            outline: none; 
+            box-shadow: 0 0 0 3px rgba(166, 193, 238, 0.2);
+            width: 280px;
+        }
+        
+        .search-container i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-light);
+        }
+        
+        .btn-primary { 
+            background: var(--primary-color); 
+            color: white; 
+            border-radius: var(--border-radius-md); 
+            padding: 10px 16px; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            font-weight: 500; 
+            transition: var(--transition-fast);
+            box-shadow: var(--shadow-soft);
+        }
+        
+        .btn-primary:hover { 
+            background: var(--primary-hover); 
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-medium);
+        }
+        
+        .user-avatar { 
+            width: 40px; 
+            height: 40px; 
+            border-radius: 50%; 
+            background: var(--secondary-color); 
+            color: white; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-weight: 600; 
+            cursor: pointer;
+            transition: var(--transition-fast);
+        }
+        
+        .user-avatar:hover {
+            transform: scale(1.05);
+        }
         
         /* VIEW SWITCHER */
-        .view-switcher { display:flex; background: #E9E9F0; padding: 4px; border-radius: 10px; }
-        .view-switcher a { /* Ahora son enlaces, no botones */
-            padding: 6px 12px; border-radius: 8px; font-weight: 500; display:flex; align-items:center; gap:6px; color: #555; 
-            transition: background 0.2s, color 0.2s;
+        .view-switcher { 
+            display: flex; 
+            background: white; 
+            padding: 4px; 
+            border-radius: var(--border-radius-md);
+            box-shadow: var(--shadow-soft);
         }
-        .view-switcher a.active { background: var(--card-bg); color: var(--primary-color); box-shadow: 0 2px 4px rgba(0,0,0,0.08); }
+        
+        .view-switcher a {
+            padding: 8px 12px; 
+            border-radius: var(--border-radius-sm); 
+            font-weight: 500; 
+            display: flex; 
+            align-items: center; 
+            gap: 6px; 
+            color: var(--text-light); 
+            transition: var(--transition-fast);
+        }
+        
+        .view-switcher a.active { 
+            background: var(--primary-color); 
+            color: white; 
+        }
 
+        /* ====== STATS CONTAINER ====== */
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: var(--border-radius-md);
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: var(--shadow-soft);
+            transition: var(--transition-fast);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-medium);
+        }
+        
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: var(--border-radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .stat-content h3 {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 4px;
+        }
+        
+        .stat-content p {
+            font-size: 14px;
+            color: var(--text-light);
+        }
 
         /* ====== GRID DE CARDS ====== */
-        .cards-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(400px, 1fr)); gap:25px; }
-
-        /* ====== CARD MONDAY (CON SOMBRA MÁS SUTIL) ====== */
-        .card-monday {
-            background:var(--card-bg); border-radius:var(--border-radius-lg); padding:20px;
-            box-shadow: var(--shadow-soft);
-            transition:0.3s ease; border-left:6px solid var(--primary-color);
+        .cards-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); 
+            gap: 25px; 
         }
-        .card-monday:hover { transform:translateY(-4px); box-shadow: 0 8px 25px rgba(0,0,0,0.08); }
-        .card-title{ font-size:18px; font-weight:600; color:var(--primary-color); margin-bottom:15px; display:flex; align-items:center; }
-        .card-title i{ margin-right:8px; }
 
-        /* ====== TABLAS Y BADGES (SIN CAMBIOS, YA ESTÁN BIEN) ====== */
-        .table-monday { width:100%; border-collapse:collapse; font-size:0.9em; }
-        .table-monday th, .table-monday td { padding:12px; text-align:left; border-bottom:1px solid var(--border-color); }
-        .table-monday th { background:#F3F4FB; font-weight:600; color:var(--primary-color); }
-        .table-monday tbody tr:hover { background:#F9F9FE; }
+        /* ====== CARD MINIMALISTA ====== */
+        .card-monday {
+            background: var(--card-bg); 
+            border-radius: var(--border-radius-lg); 
+            padding: 24px;
+            box-shadow: var(--shadow-soft);
+            transition: var(--transition-medium);
+            border-top: 4px solid var(--primary-color);
+        }
+        
+        .card-monday:hover { 
+            transform: translateY(-5px); 
+            box-shadow: var(--shadow-medium); 
+        }
+        
+        .card-title{ 
+            font-size: 18px; 
+            font-weight: 600; 
+            color: var(--text-dark); 
+            margin-bottom: 20px; 
+            display: flex; 
+            align-items: center; 
+        }
+        
+        .card-title i{ 
+            margin-right: 10px; 
+            color: var(--primary-color);
+        }
 
-        .badge { display:inline-block; padding:5px 10px; border-radius:12px; color:#fff; font-size:12px; text-transform:capitalize; font-weight:500; }
-        .badge.blue{background:#5D5FEF;} .badge.green{background:#00C875;} .badge.red{background:#E2445C;} .badge.orange{background:#FDAB3D;} .badge.purple{background:#A259FF;}
+        /* ====== TABLAS Y BADGES ====== */
+        .table-monday { 
+            width: 100%; 
+            border-collapse: collapse; 
+            font-size: 14px; 
+        }
+        
+        .table-monday th, .table-monday td { 
+            padding: 12px; 
+            text-align: left; 
+            border-bottom: 1px solid var(--border-color); 
+        }
+        
+        .table-monday th { 
+            background: #f8f9fa; 
+            font-weight: 600; 
+            color: var(--text-dark); 
+        }
+        
+        .table-monday tbody tr:hover { 
+            background: #f8f9fa; 
+        }
+
+        .badge { 
+            display: inline-block; 
+            padding: 4px 10px; 
+            border-radius: 20px; 
+            color: white; 
+            font-size: 12px; 
+            text-transform: capitalize; 
+            font-weight: 500; 
+        }
+        
+        .badge.blue{background: var(--primary-color);} 
+        .badge.green{background: var(--success-color);} 
+        .badge.red{background: var(--danger-color);} 
+        .badge.orange{background: var(--warning-color);} 
+        .badge.purple{background: var(--secondary-color);}
+        
+        /* ====== KANBAN VIEW ====== */
+        .kanban-container {
+            display: flex;
+            gap: 20px;
+            overflow-x: auto;
+            padding-bottom: 20px;
+        }
+        
+        .kanban-column {
+            flex: 1;
+            min-width: 300px;
+            background: white;
+            border-radius: var(--border-radius-md);
+            padding: 20px;
+            box-shadow: var(--shadow-soft);
+        }
+        
+        .column-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .column-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+        
+        .task-count {
+            background: var(--border-color);
+            color: var(--text-light);
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 20px;
+        }
+        
+        .kanban-tasks {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .kanban-task {
+            background: var(--body-bg);
+            border-radius: var(--border-radius-sm);
+            padding: 15px;
+            transition: var(--transition-fast);
+            cursor: pointer;
+        }
+        
+        .kanban-task:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-soft);
+        }
+        
+        .kanban-task h4 {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-dark);
+            margin-bottom: 10px;
+        }
+        
+        .task-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .task-priority {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+        
+        .task-priority.high {
+            background: var(--danger-color);
+            color: white;
+        }
+        
+        .task-priority.medium {
+            background: var(--warning-color);
+            color: white;
+        }
+        
+        .task-priority.low {
+            background: var(--success-color);
+            color: white;
+        }
+        
+        .task-assignees {
+            display: flex;
+            gap: -5px;
+        }
+        
+        .assignee-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 600;
+            border: 2px solid white;
+        }
+        
+        /* ====== GANTT VIEW ====== */
+        .gantt-container {
+            background: white;
+            border-radius: var(--border-radius-md);
+            padding: 20px;
+            box-shadow: var(--shadow-soft);
+            overflow-x: auto;
+        }
+        
+        .gantt-header {
+            margin-bottom: 20px;
+        }
+        
+        .gantt-timeline {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+        
+        .timeline-month {
+            flex: 1;
+            text-align: center;
+            font-weight: 600;
+            color: var(--text-light);
+        }
+        
+        .gantt-tasks {
+            position: relative;
+        }
+        
+        .gantt-task {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            position: relative;
+            height: 40px;
+        }
+        
+        .task-info {
+            width: 150px;
+            font-weight: 500;
+            color: var(--text-dark);
+            padding-right: 20px;
+        }
+        
+        .task-bar {
+            height: 30px;
+            border-radius: var(--border-radius-sm);
+            position: absolute;
+            left: 150px;
+            right: 0;
+        }
     </style>
 </x-base-layout>
