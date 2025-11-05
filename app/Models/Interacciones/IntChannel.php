@@ -12,6 +12,7 @@ class IntChannel extends Model
     protected $table = 'int_channels'; 
 
     protected $fillable = [
+        'id',
         'name',
     ];
 
