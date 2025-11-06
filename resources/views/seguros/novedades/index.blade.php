@@ -85,6 +85,7 @@
                         <i class="feather-arrow-right"></i>
                     </a>
                 </div>
+                <x-notifications-base />
                 <div class="nxl-drp-link nxl-lavel-mega-menu">
                     <div class="nxl-lavel-mega-menu-toggle d-flex d-lg-none">
                         <a href="javascript:void(0)" id="nxl-lavel-mega-menu-hide">
