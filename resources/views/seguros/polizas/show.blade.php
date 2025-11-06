@@ -28,7 +28,7 @@
         </div>
     </div>
 
-    <div class="col-lg-12 pb-4">
+    <div class="col-lg-12">
         <div class="card stretch stretch-full px-4 py-4 mb-3">
             <div class="mb-4 d-flex align-items-center justify-content-between">
                 <div class="d-flex align-items-center justify-content-start gap-4">
@@ -106,40 +106,41 @@
             <div class="d-flex flex-wrap justify-content-center mb-4" style="height: auto;">
                 @foreach ($poliza->plan->coberturas as $cobertura)
                     @if ($poliza->esreclamacion->contains('idCobertura', $cobertura->id))
-                        <div class="d-flex flex-column align-items-center justify-content-between text-center p-4 mb-4 bg-soft-danger border border-dashed border-gray-5 rounded-1 position-relative"
-                            style="flex: 1 1 auto; max-width: 13%; min-width: 150px; margin: 5px;">
-                        @else
-                            <div class="d-flex flex-column align-items-center justify-content-between text-center p-4 mb-4 bg-soft-100 border border-dashed border-gray-5 rounded-1 position-relative"
+                    <div class="d-flex flex-column align-items-center justify-content-between text-center p-4 mb-4 bg-soft-danger border border-dashed border-gray-5 rounded-1 position-relative"
+                        style="flex: 1 1 auto; max-width: 13%; min-width: 150px; margin: 5px;">
+                    @else
+                    <div class="d-flex flex-column align-items-center justify-content-between text-center p-4 mb-4 bg-soft-100 border border-dashed border-gray-5 rounded-1 position-relative"
                                 style="flex: 1 1 auto; max-width: 13%; min-width: 150px; margin: 5px;">
                     @endif
-                    <div style="height: 60%;">
-                        <h6 class="fs-13 fw-bold">{{ $cobertura->nombre }}</h6>
-                        <p class="fs-12 fw-normal text-muted">Seguros de vida</p>
-                    </div>
-                    @if ($cobertura->id == 1)
-                        {{-- @php $valoracalcular = $cobertura->pivot->valorAsegurado @endphp //valor full plan --}}
-                        @php $valoracalcular = $poliza->valor_asegurado @endphp
-                    @endif
-                    <div class="mt-4">
-                        <span class="fs-15 fw-bold text-dark">
-                            $
-                            @php
-                                $valorcalculado = $valoracalcular * ($cobertura->pivot->porcentaje / 100) ?? 0;
-                            @endphp
-                            {{ number_format($valorcalculado) }}
-                        </span>
-                        <p class="fs-12 fw-normal text-muted">Valor asegurado</p>
-                    </div>
-                    <div class="position-absolute top-0 start-50 translate-middle">
-                        @if ($poliza->esreclamacion->contains('idCobertura', $cobertura->id))
-                            <i class="feather-info fs-12 bg-danger text-white p-1 mt-1 rounded-circle"></i>
-                        @else
-                            <i class="feather-check fs-12 bg-primary text-white p-1 rounded-circle"></i>
+                        <div style="height: 60%;">
+                            <h6 class="fs-13 fw-bold">{{ $cobertura->nombre }}</h6>
+                            <p class="fs-12 fw-normal text-muted">Seguros de vida</p>
+                        </div>
+                        @if ($cobertura->id == 1)
+                            {{-- @php $valoracalcular = $cobertura->pivot->valorAsegurado @endphp //valor full plan --}}
+                            @php $valoracalcular = $poliza->valor_asegurado @endphp
                         @endif
+                        <div class="mt-4">
+                            <span class="fs-15 fw-bold text-dark">
+                                $
+                                @php
+                                    $valorcalculado = $valoracalcular * ($cobertura->pivot->porcentaje / 100) ?? 0;
+                                @endphp
+                                {{ number_format($valorcalculado) }}
+                            </span>
+                            <p class="fs-12 fw-normal text-muted">Valor asegurado</p>
+                        </div>
+                        <div class="position-absolute top-0 start-50 translate-middle">
+                            @if ($poliza->esreclamacion->contains('idCobertura', $cobertura->id))
+                                <i class="feather-info fs-12 bg-danger text-white p-1 mt-1 rounded-circle"></i>
+                            @else
+                                <i class="feather-check fs-12 bg-primary text-white p-1 rounded-circle"></i>
+                            @endif
+                        </div>
                     </div>
+                @endforeach
             </div>
-            @endforeach
-        </div>
+    
 
         @if ($grupoFamiliar->count() >= 1)
             <div class="mb-4 px-4 d-flex align-items-center justify-content-between">
@@ -170,8 +171,7 @@
                                     @if ($familiar->polizas->first())
                                         <div class="fw-semibold mb-1">$
                                             {{ number_format($familiar->polizas->first()->valor_asegurado) }}</div>
-                                        <div class="d-flex gap-3"><a href="#"
-                                                class="hstack gap-1 fs-11 fw-normal">
+                                        <div class="d-flex gap-3"><a href="#" class="hstack gap-1 fs-11 fw-normal">
                                                 <span
                                                     class="badge bg-soft-warning text-warning">{{ $familiar->polizas->first()->plan->name ?? '' }}</span></a>
                                             <a href="#" class="hstack gap-1 fs-11 fw-normal">
@@ -203,8 +203,7 @@
                                 </td>
                                 @endcandirect
                                 <td class="hstack justify-content-end gap-4 text-end">
-                                    <form action="{{ route('seguros.poliza.show', ['poliza' => 'ID']) }}"
-                                        method="GET">
+                                    <form action="{{ route('seguros.poliza.show', ['poliza' => 'ID']) }}" method="GET">
                                         <div data-bs-toggle="tooltip" data-bs-trigger="hover"
                                             data-bs-original-title="Ver Poliza">
                                             <input type="hidden" name="id" id="valueCedula"
@@ -308,8 +307,8 @@
                 </div>
                 <div class="d-flex gap-4 align-items-center justify-content-sm-end justify-content-between">
                     <div class="text-bold">Subsidio</div>
-                    <div class="btn bg-soft-warning collapsed" data-bs-toggle="collapse"
-                        data-bs-target="#collapseOne" aria-expanded="false" style="font-size:20px;">$
+                    <div class="btn bg-soft-warning collapsed" data-bs-toggle="collapse" data-bs-target="#collapseOne"
+                        aria-expanded="false" style="font-size:20px;">$
                         @if (!$poliza->asegurado->valorpAseguradora || $totalPrima == 0)
                             0
                             @php
@@ -390,113 +389,114 @@
             @endcandirect
         @endif
     </div>
+    </div>
 
-<div id="CardAddBeneficios" class="col-lg-12" style="display: none;">
-    <div class="card stretch stretch-full">
-        <div class="card-header">
-            <h5 class="fw-bold mb-0">
-                <span class="d-block mb-2">Crear Beneficio </span>
-            </h5>
-        </div>
-        <div class="card-body p-4">
-            <form method="POST" action="{{ route('seguros.beneficios.store') }}" id="formAddBeneficio"
-                novalidate>
-                @csrf
-                @method('POST')
-                <div class="row">
-                    <div class="col-lg-3 mb-4">
-                        <label class="form-label">Valor Beneficio<span class="text-danger">*</span></label>
-                        <div class="input-group">
-                            <span class="input-group-text">$</span>
-                            <input type="number" class="form-control" name="valorbene" id="inputValorBene">
-                            <div class="fs-12 fw-normal text-muted text-truncate-1-line pt-1">
-                                <div class="custom-control custom-checkbox" style="display: none;"
-                                    id="checkvalbeneficio">
-                                    <input type="checkbox" class="form-check-input ml-3" id="checkbox2"
-                                        name="checkconfirmarbene" value=true>
-                                    <label class="form-check-label" for="checkbox2"
-                                        id="labeltextbeneficio"></label>
+    <div id="CardAddBeneficios" class="col-lg-12" style="display: none;">
+        <div class="card stretch stretch-full">
+            <div class="card-header">
+                <h5 class="fw-bold mb-0">
+                    <span class="d-block mb-2">Crear Beneficio </span>
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" action="{{ route('seguros.beneficios.store') }}" id="formAddBeneficio"
+                    novalidate>
+                    @csrf
+                    @method('POST')
+                    <div class="row">
+                        <div class="col-lg-3 mb-4">
+                            <label class="form-label">Valor Beneficio<span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input type="number" class="form-control" name="valorbene" id="inputValorBene">
+                                <div class="fs-12 fw-normal text-muted text-truncate-1-line pt-1">
+                                    <div class="custom-control custom-checkbox" style="display: none;"
+                                        id="checkvalbeneficio">
+                                        <input type="checkbox" class="form-check-input ml-3" id="checkbox2"
+                                            name="checkconfirmarbene" value=true>
+                                        <label class="form-check-label" for="checkbox2"
+                                            id="labeltextbeneficio"></label>
+                                    </div>
                                 </div>
+                                <input type="hidden" name="valorPrima" id="inputvalorprima">
                             </div>
-                            <input type="hidden" name="valorPrima" id="inputvalorprima">
                         </div>
-                    </div>
-                    <div class="col-lg-3 mb-4">
-                        <label class="form-label">Porcentaje Beneficio<span class="text-danger">*</span></label>
-                        <div class="input-group">
-                            <input type="number" class="form-control" min="0" max="100"
-                                name="porbene" id="inputporbene">
-                            <span class="input-group-text">%</span>
+                        <div class="col-lg-3 mb-4">
+                            <label class="form-label">Porcentaje Beneficio<span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" min="0" max="100"
+                                    name="porbene" id="inputporbene">
+                                <span class="input-group-text">%</span>
+                            </div>
                         </div>
+                        <div class="col-lg-6 mb-4">
+                            <label class="form-label">Observaciones<span class="text-danger">*</span></label>
+                            <input type="text" class="form-control text-uppercase" name="observacionesbene"
+                                required>
+                        </div>
+                        <input type="hidden" name="aseguradoId" value="{{ $poliza->seg_asegurado_id }}">
+                        <input type="hidden" name="polizaId" value="{{ $poliza->id }}">
                     </div>
-                    <div class="col-lg-6 mb-4">
-                        <label class="form-label">Observaciones<span class="text-danger">*</span></label>
-                        <input type="text" class="form-control text-uppercase" name="observacionesbene"
-                            required>
+                    <div class="d-flex flex-row-reverse gap-2 mt-2">
+                        <button class="btn btn-success mt-4" data-bs-toggle="tooltip" type="submit"
+                            data-bs-original-title="crear">
+                            <i class="feather-plus me-2"></i>
+                            <span>Registrar Beneficio</span>
+                        </button>
                     </div>
-                    <input type="hidden" name="aseguradoId" value="{{ $poliza->seg_asegurado_id }}">
-                    <input type="hidden" name="polizaId" value="{{ $poliza->id }}">
-                </div>
-                <div class="d-flex flex-row-reverse gap-2 mt-2">
-                    <button class="btn btn-success mt-4" data-bs-toggle="tooltip" type="submit"
-                        data-bs-original-title="crear">
-                        <i class="feather-plus me-2"></i>
-                        <span>Registrar Beneficio</span>
-                    </button>
-                </div>
-            </form>
-            <script>
-                $(document).ready(function() {
-                    $('#formAddBeneficio').submit(function(event) {
-                        var form = this;
-                        if (!form.checkValidity()) {
-                            $(form).addClass('was-validated');
-                            event.preventDefault();
-                            event.stopPropagation();
-                        }
-                    });
-                    $('#btnCardBeneficios').on('click', function() {
-                        $('#CardAddBeneficios').show();
-                        $('#CardAddBeneficios').slideDown('fast', function() {
-                            $('html, body').animate({
-                                scrollTop: $('#CardAddBeneficios').offset().top
-                            }, 500);
+                </form>
+                <script>
+                    $(document).ready(function() {
+                        $('#formAddBeneficio').submit(function(event) {
+                            var form = this;
+                            if (!form.checkValidity()) {
+                                $(form).addClass('was-validated');
+                                event.preventDefault();
+                                event.stopPropagation();
+                            }
+                        });
+                        $('#btnCardBeneficios').on('click', function() {
+                            $('#CardAddBeneficios').show();
+                            $('#CardAddBeneficios').slideDown('fast', function() {
+                                $('html, body').animate({
+                                    scrollTop: $('#CardAddBeneficios').offset().top
+                                }, 500);
+                            });
+                        });
+                        $('#inputValorBene').on('input', function() {
+                            var valor = parseFloat($(this).val().trim());
+                            var valorOriginal = parseFloat("{{ $poliza->valor_prima }}");
+                            if (!isNaN(valor) && valor > 0) {
+                                $('#checkvalbeneficio').slideDown();
+                            } else {
+                                $('#checkvalbeneficio').slideUp();
+                                $('#checkbox2').prop('checked', false);
+                            }
+                            var valorprima = valorOriginal - (isNaN(valor) ? 0 : valor);
+                            $('#labeltextbeneficio').text('Confirmar el valor de la prima en $' + valorprima);
+                            $('#inputvalorprima').val(valorprima);
+                        });
+                        $('#inputporbene').on('input', function() {
+                            var porcentaje = parseFloat($(this).val().trim());
+                            var valorOriginal = parseFloat("{{ $poliza->valor_prima }}");
+
+                            if (!isNaN(porcentaje) && porcentaje > 0) {
+                                $('#checkvalbeneficio').slideDown();
+                            } else {
+                                $('#inputValorBene').val('');
+                                $('#checkvalbeneficio').slideUp();
+                                $('#checkbox2').prop('checked', false);
+                            }
+                            let valorDescuento = (valorOriginal * porcentaje) / 100;
+                            $('#inputValorBene').val(valorDescuento);
+                            var valorprima = Math.ceil(valorOriginal - valorDescuento);
+                            $('#labeltextbeneficio').text('Confirmar valor prima $' + valorprima);
+                            $('#inputvalorprima').val(valorprima);
+
                         });
                     });
-                    $('#inputValorBene').on('input', function() {
-                        var valor = parseFloat($(this).val().trim());
-                        var valorOriginal = parseFloat("{{ $poliza->valor_prima }}");
-                        if (!isNaN(valor) && valor > 0) {
-                            $('#checkvalbeneficio').slideDown();
-                        } else {
-                            $('#checkvalbeneficio').slideUp();
-                            $('#checkbox2').prop('checked', false);
-                        }
-                        var valorprima = valorOriginal - (isNaN(valor) ? 0 : valor);
-                        $('#labeltextbeneficio').text('Confirmar el valor de la prima en $' + valorprima);
-                        $('#inputvalorprima').val(valorprima);
-                    });
-                    $('#inputporbene').on('input', function() {
-                        var porcentaje = parseFloat($(this).val().trim());
-                        var valorOriginal = parseFloat("{{ $poliza->valor_prima }}");
-
-                        if (!isNaN(porcentaje) && porcentaje > 0) {
-                            $('#checkvalbeneficio').slideDown();
-                        } else {
-                            $('#inputValorBene').val('');
-                            $('#checkvalbeneficio').slideUp();
-                            $('#checkbox2').prop('checked', false);
-                        }
-                        let valorDescuento = (valorOriginal * porcentaje) / 100;
-                        $('#inputValorBene').val(valorDescuento);
-                        var valorprima = Math.ceil(valorOriginal - valorDescuento);
-                        $('#labeltextbeneficio').text('Confirmar valor prima $' + valorprima);
-                        $('#inputvalorprima').val(valorprima);
-
-                    });
-                });
-            </script>
+                </script>
+            </div>
         </div>
     </div>
-</div>
 </x-base-layout>
