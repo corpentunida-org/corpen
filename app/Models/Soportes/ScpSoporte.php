@@ -114,7 +114,7 @@ class ScpSoporte extends Model
         return $this->belongsTo(User::class, 'id_users');
     }
 
-    // Usuario asignado inicialmente (tabla mae_terceros)
+    // Usuario asignado o ESCALADO inicialmente (tabla mae_terceros)
     public function maeTercero()
     {
         return $this->belongsTo(MaeTerceros::class, 'cod_ter_maeTercero', 'cod_ter');

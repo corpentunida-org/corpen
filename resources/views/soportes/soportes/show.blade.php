@@ -96,6 +96,24 @@
                                     <small class="text-muted">{{ \Carbon\Carbon::parse($obs->timestam)->diffForHumans() }}</small>
                                 </div>
                                 <p class="text-gray-700 mt-1 mb-2">{{ $obs->observacion }}</p>
+                                
+                                {{-- Mostrar calificación si existe --}}
+                                @if($obs->calcification)
+                                    <div class="d-flex align-items-center mb-2">
+                                        <span class="text-muted me-2">Calificación:</span>
+                                        <div class="rating-display">
+                                            @for($i = 1; $i <= 5; $i++)
+                                                @if($i <= $obs->calcification)
+                                                    <span class="text-warning">★</span>
+                                                @else
+                                                    <span class="text-muted">★</span>
+                                                @endif
+                                            @endfor
+                                        </div>
+                                        <span class="ms-2 text-muted">({{ $obs->calcification }}/5)</span>
+                                    </div>
+                                @endif
+                                
                                 <div class="d-flex align-items-center text-muted fs-7">
                                     {{-- Usuario que creó la observación --}}
                                     <span><i class="feather-user me-1"></i>{{ $obs->usuario->name ?? 'N/A' }}</span>
@@ -175,13 +193,35 @@
                                 <div class="mb-3 d-none" id="usuarioEscalamiento">
                                     <label for="terceroAsignado" class="form-label fw-semibold text-danger">Asignar a Usuario (Escalamiento):</label>
                                     <select id="terceroAsignado" name="id_scp_usuario_asignado" class="form-select">
-                                        <option value="">Seleccione un usuario...</option>
+                                        <option value="0">Seleccione un usuario...</option>
                                         @foreach($usuariosEscalamiento as $usuarioEsc)
                                             <option value="{{ $usuarioEsc->id }}">
                                                 {{ $usuarioEsc->maeTercero->nom_ter ?? 'N/A' }}
                                             </option>
                                         @endforeach
                                     </select>
+                                </div>
+
+                                {{-- Campo de calificación con estrellas --}}
+                                <div class="mb-3 d-none" id="calificacionCierre">
+                                    <label class="form-label fw-semibold">Calificación del servicio:</label>
+                                    <div class="d-flex align-items-center">
+                                        <div class="rating-container">
+                                            <div class="rating">
+                                                <input type="radio" id="star5" name="calcification" value="5" />
+                                                <label for="star5" title="5 estrellas"></label>
+                                                <input type="radio" id="star4" name="calcification" value="4" />
+                                                <label for="star4" title="4 estrellas"></label>
+                                                <input type="radio" id="star3" name="calcification" value="3" />
+                                                <label for="star3" title="3 estrellas"></label>
+                                                <input type="radio" id="star2" name="calcification" value="2" />
+                                                <label for="star2" title="2 estrellas"></label>
+                                                <input type="radio" id="star1" name="calcification" value="1" />
+                                                <label for="star1" title="1 estrella"></label>
+                                            </div>
+                                        </div>
+                                        <span class="ms-3 text-muted" id="ratingText">Seleccione una calificación</span>
+                                    </div>
                                 </div>
 
                                 <button type="submit" class="btn btn-success">
@@ -250,7 +290,9 @@
                     <div class="mb-3">
                         <span class="text-muted fw-semibold d-block"><i class="feather-user me-1"></i> Responsable:</span>
                         <p class="text-dark mb-0">
-                            {{ $soporte->observaciones()->latest('id')->first()?->scpUsuarioAsignado?->maeTercero->nom_ter ?? 'No disponible' }}
+                            {{-- {{ $soporte->usuario_escalado }} --}}
+                            {{ $soporte->scpUsuarioAsignado?->maeTercero?->nom_ter ?? 'No disponible' }}
+                            {{-- {{ $soporte->observaciones()->latest('id')->first()?->scpUsuarioAsignado?->maeTercero->nom_ter ?? 'No disponible' }} --}}
                         </p>
                     </div>
 
@@ -276,236 +318,257 @@
                         <p class="text-dark mb-0">{{ $soporte->subTipo->nombre ?? 'No disponible' }}</p>
                     </div>
 
-<h6 class="text-muted fw-bold mb-3">Archivos</h6>
+                    <h6 class="text-muted fw-bold mb-3">Archivos</h6>
 
-<div class="mb-3">
-    <span class="text-muted fw-semibold d-block"><i class="feather-layers me-1"></i> Archivo:</span>
-    <p class="text-dark mb-0">{{ $soporte->soporte ?? 'No disponible' }}</p>
+                    <div class="mb-3">
+                        <span class="text-muted fw-semibold d-block"><i class="feather-layers me-1"></i> Archivo:</span>
+                        <p class="text-dark mb-0">{{ $soporte->soporte ?? 'No disponible' }}</p>
 
-    {{-- @if($soporte->soporte && Storage::exists('soportes/' . $soporte->soporte))
-        <a href="{{ route('soportes.descargar', $soporte->id) }}" class="btn btn-sm btn-primary mt-2">
-            <i class="feather-download me-1"></i> Descargar
-        </a>
-    @else
-        <span class="text-danger">Archivo no disponible</span>
-    @endif --}}
-    @if($soporte->soporte)
-                    <a href="{{ $soporte->getFile($soporte->soporte) }}" target="_blank">Ver Soporte</a>
-                @else
-                    <span>No disponible</span>
-                @endif
-</div>
+                        {{-- @if($soporte->soporte && Storage::exists('soportes/' . $soporte->soporte))
+                            <a href="{{ route('soportes.descargar', $soporte->id) }}" class="btn btn-sm btn-primary mt-2">
+                                <i class="feather-download me-1"></i> Descargar
+                            </a>
+                        @else
+                            <span class="text-danger">Archivo no disponible</span>
+                        @endif --}}
+                        @if($soporte->soporte)
+                                        <a href="{{ $soporte->getFile($soporte->soporte) }}" target="_blank">Ver Soporte</a>
+                                    @else
+                                        <span>No disponible</span>
+                                    @endif
+                    </div>
 
             </div>
         </div>
     </div>
 
     {{-- //libreria --}}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-
-    {{-- SCRIPT ESCALAMIENTO --}}
+        {{-- SCRIPT ESCALAMIENTO --}}
     @push('scripts')
-    <script>
-    $(document).ready(function() {
-        // Función para actualizar tipos de observación según el estado
-        function actualizarTiposObservacion(estadoId) {
-            // Limpiar el select de tipo de observación
-            $('#tipoObservacion').empty();
-            $('#tipoObservacion').append('<option value="" disabled selected>Seleccione un tipo...</option>');
-            
-            // Agregar opciones según el estado seleccionado
-            if (estadoId == 1) { // Estado 1
-                $('#tipoObservacion').append('<option value="1">Comentario</option>');
-            } 
-            else if (estadoId == 2) { // Estado 2
-                $('#tipoObservacion').append('<option value="1">Comentario</option>');
-                $('#tipoObservacion').append('<option value="3">Escalamiento</option>');
-            }
-            else if (estadoId == 3) { // Estado 3
-                $('#tipoObservacion').append('<option value="2">Acción</option>');
-            }
-            else if (estadoId == 4) { // Estado 4
-                $('#tipoObservacion').append('<option value="1">Comentario</option>');
-            }
-            
-            // Disparar el evento change para actualizar el campo de escalamiento
-            $('#tipoObservacion').trigger('change');
-        }
-        
-        // Evento change en el select de estado
-        $('#estado').on('change', function() {
-            var estado = $(this).val();
-            console.log("Estado seleccionado:", estado);
-            actualizarTiposObservacion(estado);
-        });
-        
-        // Evento change en el select de tipo de observación
-        $('#tipoObservacion').on('change', function() {
-            var tipoSeleccionado = $(this).find('option:selected').text();
-            console.log("Tipo de observación seleccionado:", tipoSeleccionado);
-            
-            // Mostrar u ocultar el campo de escalamiento según el tipo seleccionado
-            if (tipoSeleccionado.toLowerCase().includes("escalamiento")) {
-                $('#usuarioEscalamiento').removeClass('d-none');
-            } else {
-                $('#usuarioEscalamiento').addClass('d-none');
-                $('#terceroAsignado').val(''); // Limpiar selección
-            }
-        });
-        
-        // Inicializar al cargar la página
-        var estadoInicial = $('#estado').val();
-        if (estadoInicial) {
-            actualizarTiposObservacion(estadoInicial);
-        }
-    });
-
-        document.addEventListener("DOMContentLoaded", function () {
-            // Script para el campo de escalamiento en el formulario de observación
-            const tipoObservacionSelect = document.getElementById("tipoObservacion");
-            const usuarioEscalamientoDiv = document.getElementById("usuarioEscalamiento");
-
-            if (tipoObservacionSelect && usuarioEscalamientoDiv) {
-                tipoObservacionSelect.addEventListener("change", function () {
-                    const isEscalamiento = tipoObservacionSelect.selectedOptions[0].text.toLowerCase().includes("escalamiento");
-                    usuarioEscalamientoDiv.classList.toggle("d-none", !isEscalamiento);
-
-                    if (!isEscalamiento) {
-                        const terceroAsignadoSelect = document.getElementById("terceroAsignado");
-                        if (terceroAsignadoSelect) {
-                            terceroAsignadoSelect.value = "";
-                        }
+        <script>
+            $(document).ready(function() {
+                // Función para actualizar tipos de observación según el estado
+                function actualizarTiposObservacion(estadoId) {
+                    // Limpiar el select de tipo de observación
+                    $('#tipoObservacion').empty();
+                    $('#tipoObservacion').append('<option value="" disabled selected>Seleccione un tipo...</option>');
+                    
+                    // Agregar opciones según el estado seleccionado
+                    if (estadoId == 1) { // Estado 1
+                        $('#tipoObservacion').append('<option value="1">Comentario</option>');
+                    } 
+                    else if (estadoId == 2) { // Estado 2
+                        $('#tipoObservacion').append('<option value="1">Comentario</option>');
+                        $('#tipoObservacion').append('<option value="3">Escalamiento</option>');
+                    }
+                    else if (estadoId == 3) { // Estado 3
+                        $('#tipoObservacion').append('<option value="2">Acción</option>');
+                    }
+                    else if (estadoId == 4) { // Estado 4
+                        $('#tipoObservacion').append('<option value="1">Comentario</option>');
+                    }
+                    
+                    // Disparar el evento change para actualizar el campo de escalamiento
+                    $('#tipoObservacion').trigger('change');
+                }
+                
+                // Evento change en el select de estado
+                $('#estado').on('change', function() {
+                    var estado = $(this).val();
+                    var estadoTexto = $(this).find('option:selected').text();
+                    console.log("Estado seleccionado:", estado);
+                    
+                    // Mostrar u ocultar el campo de calificación según el estado
+                    if (estadoTexto.toLowerCase().includes("cerrado")) {
+                        $('#calificacionCierre').removeClass('d-none');
+                    } else {
+                        $('#calificacionCierre').addClass('d-none');
+                        $('input[name="calcification"]').prop('checked', false);
+                        $('#ratingText').text('Seleccione una calificación');
+                    }
+                    
+                    actualizarTiposObservacion(estado);
+                });
+                
+                // Evento change en el select de tipo de observación
+                $('#tipoObservacion').on('change', function() {
+                    var tipoSeleccionado = $(this).find('option:selected').text();
+                    console.log("Tipo de observación seleccionado:", tipoSeleccionado);
+                    
+                    // Mostrar u ocultar el campo de escalamiento según el tipo seleccionado
+                    if (tipoSeleccionado.toLowerCase().includes("escalamiento")) {
+                        $('#usuarioEscalamiento').removeClass('d-none');
+                    } else {
+                        $('#usuarioEscalamiento').addClass('d-none');
+                        $('#terceroAsignado').val(''); // Limpiar selección
                     }
                 });
-                // Ejecutar al cargar la página por si ya hay una opción seleccionada
-                tipoObservacionSelect.dispatchEvent(new Event('change'));
-            }
+                
+                // Actualizar texto de calificación cuando se selecciona una estrella
+                $('input[name="calcification"]').on('change', function() {
+                    var rating = $(this).val();
+                    var ratingTexts = ['', 'Muy malo', 'Malo', 'Regular', 'Bueno', 'Excelente'];
+                    $('#ratingText').text(ratingTexts[rating]);
+                });
+                
+                // Inicializar al cargar la página
+                var estadoInicial = $('#estado').val();
+                if (estadoInicial) {
+                    actualizarTiposObservacion(estadoInicial);
+                    
+                    // Verificar si el estado inicial es "cerrado"
+                    var estadoTextoInicial = $('#estado').find('option:selected').text();
+                    if (estadoTextoInicial.toLowerCase().includes("cerrado")) {
+                        $('#calificacionCierre').removeClass('d-none');
+                    }
+                }
+            });
 
-            // Script para el efecto de expandir/colapsar la descripción del soporte
-            const descriptionContent = document.getElementById('descriptionContent');
-            const descriptionText = descriptionContent ? descriptionContent.querySelector('.support-description-text') : null;
-            const toggleButton = document.getElementById('toggleDescription');
-            const textButton = toggleButton ? toggleButton.querySelector('.text-button') : null;
-            const iconExpand = toggleButton ? toggleButton.querySelector('.icon-expand') : null;
-            const iconCollapse = toggleButton ? toggleButton.querySelector('.icon-collapse') : null;
+            document.addEventListener("DOMContentLoaded", function () {
+                // Script para el campo de escalamiento en el formulario de observación
+                const tipoObservacionSelect = document.getElementById("tipoObservacion");
+                const usuarioEscalamientoDiv = document.getElementById("usuarioEscalamiento");
 
-            // Solo activar si el texto y los elementos existen
-            if (descriptionText && descriptionContent && toggleButton) {
-                const maxHeight = 150; // Altura máxima deseada antes de mostrar el botón
+                if (tipoObservacionSelect && usuarioEscalamientoDiv) {
+                    tipoObservacionSelect.addEventListener("change", function () {
+                        const isEscalamiento = tipoObservacionSelect.selectedOptions[0].text.toLowerCase().includes("escalamiento");
+                        usuarioEscalamientoDiv.classList.toggle("d-none", !isEscalamiento);
 
-                if (descriptionText.scrollHeight > maxHeight) {
-                    toggleButton.classList.remove('d-none');
-                    descriptionContent.style.maxHeight = `${maxHeight}px`; // Limita la altura inicial
-                    descriptionContent.style.overflow = 'hidden';
-                    descriptionContent.style.transition = 'max-height 0.3s ease-out'; // Animación suave
-
-                    toggleButton.addEventListener('click', function() {
-                        const isExpanded = descriptionContent.classList.toggle('expanded');
-                        if (isExpanded) {
-                            descriptionContent.style.maxHeight = `${descriptionText.scrollHeight}px`; // Expande a la altura real
-                            if (textButton) textButton.textContent = 'Colapsar';
-                            if (iconExpand) iconExpand.classList.add('d-none');
-                            if (iconCollapse) iconCollapse.classList.remove('d-none');
-                        } else {
-                            descriptionContent.style.maxHeight = `${maxHeight}px`; // Colapsa
-                            if (textButton) textButton.textContent = 'Expandir';
-                            if (iconExpand) iconExpand.classList.remove('d-none');
-                            if (iconCollapse) iconCollapse.classList.add('d-none');
+                        if (!isEscalamiento) {
+                            const terceroAsignadoSelect = document.getElementById("terceroAsignado");
+                            if (terceroAsignadoSelect) {
+                                terceroAsignadoSelect.value = "";
+                            }
                         }
                     });
+                    // Ejecutar al cargar la página por si ya hay una opción seleccionada
+                    tipoObservacionSelect.dispatchEvent(new Event('change'));
                 }
-            }
-        });
-    </script>
+
+                // Script para el efecto de expandir/colapsar la descripción del soporte
+                const descriptionContent = document.getElementById('descriptionContent');
+                const descriptionText = descriptionContent ? descriptionContent.querySelector('.support-description-text') : null;
+                const toggleButton = document.getElementById('toggleDescription');
+                const textButton = toggleButton ? toggleButton.querySelector('.text-button') : null;
+                const iconExpand = toggleButton ? toggleButton.querySelector('.icon-expand') : null;
+                const iconCollapse = toggleButton ? toggleButton.querySelector('.icon-collapse') : null;
+
+                // Solo activar si el texto y los elementos existen
+                if (descriptionText && descriptionContent && toggleButton) {
+                    const maxHeight = 150; // Altura máxima deseada antes de mostrar el botón
+
+                    if (descriptionText.scrollHeight > maxHeight) {
+                        toggleButton.classList.remove('d-none');
+                        descriptionContent.style.maxHeight = `${maxHeight}px`; // Limita la altura inicial
+                        descriptionContent.style.overflow = 'hidden';
+                        descriptionContent.style.transition = 'max-height 0.3s ease-out'; // Animación suave
+
+                        toggleButton.addEventListener('click', function() {
+                            const isExpanded = descriptionContent.classList.toggle('expanded');
+                            if (isExpanded) {
+                                descriptionContent.style.maxHeight = `${descriptionText.scrollHeight}px`; // Expande a la altura real
+                                if (textButton) textButton.textContent = 'Colapsar';
+                                if (iconExpand) iconExpand.classList.add('d-none');
+                                if (iconCollapse) iconCollapse.classList.remove('d-none');
+                            } else {
+                                descriptionContent.style.maxHeight = `${maxHeight}px`; // Colapsa
+                                if (textButton) textButton.textContent = 'Expandir';
+                                if (iconExpand) iconExpand.classList.remove('d-none');
+                                if (iconCollapse) iconCollapse.classList.add('d-none');
+                            }
+                        });
+                    }
+                }
+            });
+        </script>
     @endpush
-{{-- //scripr descar pdf --}}
-@push('scripts')
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+        {{-- //scripr descar pdf --}}
+    @push('scripts')
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-<script>
-document.getElementById('btnDescargarPDF').addEventListener('click', async () => {
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF('p', 'pt', 'a4');
-    const contenedor = document.querySelector('.main-content, .content, .card-body, .container') || document.body;
+        <script>
+            document.getElementById('btnDescargarPDF').addEventListener('click', async () => {
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'pt', 'a4');
+                const contenedor = document.querySelector('.main-content, .content, .card-body, .container') || document.body;
 
-    // Overlay de carga tipo “impresora digital”
-    const overlay = document.createElement('div');
-    overlay.innerHTML = `
-        <div class="capture-overlay">
-            <div class="printer">
-                <div class="paper"></div>
-            </div>
-            <p>Generando documento, por favor espera...</p>
-        </div>
-    `;
-    document.body.appendChild(overlay);
+                // Overlay de carga tipo "impresora digital"
+                const overlay = document.createElement('div');
+                overlay.innerHTML = `
+                    <div class="capture-overlay">
+                        <div class="printer">
+                            <div class="paper"></div>
+                        </div>
+                        <p>Generando documento, por favor espera...</p>
+                    </div>
+                `;
+                document.body.appendChild(overlay);
 
-    // Efecto “impresión” lenta
-    await new Promise(r => setTimeout(r, 1500));
+                // Efecto "impresión" lenta
+                await new Promise(r => setTimeout(r, 1500));
 
-    // Captura visual
-    const canvas = await html2canvas(contenedor, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#fdfdfd',
-        scrollY: -window.scrollY
-    });
+                // Captura visual
+                const canvas = await html2canvas(contenedor, {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#fdfdfd',
+                    scrollY: -window.scrollY
+                });
 
-    const imgData = canvas.toDataURL('image/png');
-    const imgWidth = 595.28;
-    const pageHeight = 841.89;
-    const imgHeight = canvas.height * imgWidth / canvas.width;
-    let position = 110;
+                const imgData = canvas.toDataURL('image/png');
+                const imgWidth = 595.28;
+                const pageHeight = 841.89;
+                const imgHeight = canvas.height * imgWidth / canvas.width;
+                let position = 110;
 
-    // Cabecera profesional
-    pdf.setFillColor(0, 123, 131);
-    pdf.rect(0, 0, 595.28, 90, 'F');
-    pdf.setTextColor(255, 255, 255);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setFontSize(20);
-    pdf.text("SOPORTE DOCUMENTAL", 40, 55);
-    pdf.setFontSize(11);
-    pdf.text("Emitido el {{ now()->format('d/m/Y H:i') }}", 40, 70);
+                // Cabecera profesional
+                pdf.setFillColor(0, 123, 131);
+                pdf.rect(0, 0, 595.28, 90, 'F');
+                pdf.setTextColor(255, 255, 255);
+                pdf.setFont('helvetica', 'bold');
+                pdf.setFontSize(20);
+                pdf.text("SOPORTE DOCUMENTAL", 40, 55);
+                pdf.setFontSize(11);
+                pdf.text("Emitido el {{ now()->format('d/m/Y H:i') }}", 40, 70);
 
-    // Fondo sutil tipo papel
-    pdf.setFillColor(245, 245, 245);
-    pdf.rect(0, 90, 595.28, pageHeight - 90, 'F');
+                // Fondo sutil tipo papel
+                pdf.setFillColor(245, 245, 245);
+                pdf.rect(0, 90, 595.28, pageHeight - 90, 'F');
 
-    // Contenido central
-    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                // Contenido central
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
 
-    // Firma digital “animada”
-    pdf.setDrawColor(0, 123, 131);
-    pdf.setFontSize(13);
-    pdf.setFont('helvetica', 'italic');
-    pdf.text("_________________________", 350, pageHeight - 80);
-    pdf.setTextColor(0, 123, 131);
-    pdf.text("Firmado electrónicamente por:", 355, pageHeight - 65);
-    pdf.setTextColor(50, 50, 50);
-    pdf.setFont('helvetica', 'normal');
-    pdf.text("Departamento de Soporte y Control", 360, pageHeight - 50);
-    pdf.setFontSize(9);
-    pdf.text("Verificado con hash interno SCP-{{ $soporte->id }}-{{ date('YmdHis') }}", 350, pageHeight - 35);
+                // Firma digital "animada"
+                pdf.setDrawColor(0, 123, 131);
+                pdf.setFontSize(13);
+                pdf.setFont('helvetica', 'italic');
+                pdf.text("_________________________", 350, pageHeight - 80);
+                pdf.setTextColor(0, 123, 131);
+                pdf.text("Firmado electrónicamente por:", 355, pageHeight - 65);
+                pdf.setTextColor(50, 50, 50);
+                pdf.setFont('helvetica', 'normal');
+                pdf.text("Departamento de Soporte y Control", 360, pageHeight - 50);
+                pdf.setFontSize(9);
+                pdf.text("Verificado con hash interno SCP-{{ $soporte->id }}-{{ date('YmdHis') }}", 350, pageHeight - 35);
 
-    // Guardar PDF
-    pdf.save('Soporte_{{ $soporte->id }}.pdf');
+                // Guardar PDF
+                pdf.save('Soporte_{{ $soporte->id }}.pdf');
 
-    overlay.remove();
+                overlay.remove();
 
-    // Notificación flotante de éxito
-    const msg = document.createElement('div');
-    msg.className = 'pdf-success';
-    msg.innerHTML = '✅ PDF listo para descargar';
-    document.body.appendChild(msg);
-    setTimeout(() => msg.remove(), 2500);
-});
-</script>
-@endpush
-
-
+                // Notificación flotante de éxito
+                const msg = document.createElement('div');
+                msg.className = 'pdf-success';
+                msg.innerHTML = '✅ PDF listo para descargar';
+                document.body.appendChild(msg);
+                setTimeout(() => msg.remove(), 2500);
+            });
+        </script>
+    @endpush
 
     {{-- CSS ADICIONAL PARA LOS EFECTOS VISUALES --}}
     {{-- Coloca este estilo en tu archivo CSS principal o en la sección <head> de tu layout si aplica globalmente --}}
@@ -640,83 +703,124 @@ document.getElementById('btnDescargarPDF').addEventListener('click', async () =>
         .card .card-body > .d-flex:last-child .me-3 .border-start {
             display: none; /* Oculta la línea del último elemento */
         }
-/* Estilos Descargar PDF */
-/* Botón petróleo pro */
-.btn-petroleo {
-    background-color: #007b83 !important;
-    border: none !important;
-    color: white !important;
-    box-shadow: 0 4px 10px rgba(0, 123, 131, 0.3);
-    transition: all 0.3s ease;
-}
-.btn-petroleo:hover {
-    background-color: #005f66 !important;
-    transform: translateY(-2px) scale(1.05);
-}
+        /* Estilos Descargar PDF */
+        /* Botón petróleo pro */
+        .btn-petroleo {
+            background-color: #007b83 !important;
+            border: none !important;
+            color: white !important;
+            box-shadow: 0 4px 10px rgba(0, 123, 131, 0.3);
+            transition: all 0.3s ease;
+        }
+        .btn-petroleo:hover {
+            background-color: #005f66 !important;
+            transform: translateY(-2px) scale(1.05);
+        }
 
-/* Overlay con efecto impresora */
-.capture-overlay {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100vw; height: 100vh;
-    background: rgba(255, 255, 255, 0.9);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-    animation: fadeIn 0.3s ease-in-out;
-}
+        /* Overlay con efecto impresora */
+        .capture-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            animation: fadeIn 0.3s ease-in-out;
+        }
 
-.capture-overlay p {
-    font-family: 'Poppins', sans-serif;
-    font-size: 16px;
-    color: #007b83;
-    margin-top: 12px;
-    animation: pulseText 1.5s infinite;
-}
+        .capture-overlay p {
+            font-family: 'Poppins', sans-serif;
+            font-size: 16px;
+            color: #007b83;
+            margin-top: 12px;
+            animation: pulseText 1.5s infinite;
+        }
 
-/* Impresora animada */
-.printer {
-    width: 80px;
-    height: 60px;
-    background: #007b83;
-    border-radius: 6px;
-    position: relative;
-    overflow: hidden;
-}
-.paper {
-    width: 60px;
-    height: 70px;
-    background: #f8f8f8;
-    position: absolute;
-    top: -70px;
-    left: 10px;
-    animation: printPaper 2s linear infinite;
-}
-@keyframes printPaper {
-    0% { top: -70px; }
-    70% { top: 15px; }
-    100% { top: 15px; }
-}
+        /* Impresora animada */
+        .printer {
+            width: 80px;
+            height: 60px;
+            background: #007b83;
+            border-radius: 6px;
+            position: relative;
+            overflow: hidden;
+        }
+        .paper {
+            width: 60px;
+            height: 70px;
+            background: #f8f8f8;
+            position: absolute;
+            top: -70px;
+            left: 10px;
+            animation: printPaper 2s linear infinite;
+        }
+        @keyframes printPaper {
+            0% { top: -70px; }
+            70% { top: 15px; }
+            100% { top: 15px; }
+        }
 
-/* Notificación flotante */
-.pdf-success {
-    position: fixed;
-    bottom: 25px;
-    right: 25px;
-    background: #007b83;
-    color: #fff;
-    padding: 10px 18px;
-    border-radius: 10px;
-    font-family: 'Poppins', sans-serif;
-    box-shadow: 0 4px 10px rgba(0, 123, 131, 0.3);
-    animation: fadeIn 0.3s ease, fadeOut 0.5s ease 2.2s forwards;
-    z-index: 99999;
-}
+        /* Notificación flotante */
+        .pdf-success {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            background: #007b83;
+            color: #fff;
+            padding: 10px 18px;
+            border-radius: 10px;
+            font-family: 'Poppins', sans-serif;
+            box-shadow: 0 4px 10px rgba(0, 123, 131, 0.3);
+            animation: fadeIn 0.3s ease, fadeOut 0.5s ease 2.2s forwards;
+            z-index: 99999;
+        }
 
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
-@keyframes pulseText { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+        @keyframes pulseText { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+        
+        /* Estilos para el sistema de calificación con estrellas */
+        .rating {
+            display: flex;
+            flex-direction: row-reverse;
+            justify-content: flex-end;
+        }
+
+        .rating > input {
+            display: none;
+        }
+
+        .rating > label {
+            position: relative;
+            width: 1.5em;
+            font-size: 2em;
+            color: #ddd;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .rating > label:before {
+            content: "★";
+        }
+
+        .rating > input:checked ~ label,
+        .rating > label:hover,
+        .rating > label:hover ~ label {
+            color: #ffc107;
+        }
+
+        .rating > input:checked ~ label:before,
+        .rating > label:hover:before,
+        .rating > label:hover ~ label:before {
+            content: "★";
+            color: #ffc107;
+        }
+
+        .rating-container {
+            display: inline-block;
+        }
     </style>
 </x-base-layout>
