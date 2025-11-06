@@ -85,7 +85,7 @@ class SegNovedadesController extends Controller
     }
 
     public function store(Request $request)
-    {
+    {        
         $request->validate([
             'formulario_nov' => 'required|mimes:pdf|max:2048',
         ]);
@@ -118,7 +118,7 @@ class SegNovedadesController extends Controller
             $controllerapi = new ComaeTerController();
             $terapi = $controllerapi->show($request->asegurado);
             if ($terapi->getStatusCode() === 404) {
-                return redirect()->back()->with('error', 'La cédula ingresada no coincide con ningún documento en base de datos');
+                return redirect()->back()->with('error', 'La cédula ingresada no coincide con ningún documento en base de datos de SiaSoft.');
             }
             $terceroontable = maeTerceros::where('cod_ter', $request->asegurado)->exists();
             if (!$terceroontable) {
