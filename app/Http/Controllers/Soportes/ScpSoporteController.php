@@ -296,12 +296,12 @@ public function create()
 
     public function storeObservacion(Request $request, ScpSoporte $scpSoporte)
     {
-
         $request->validate([
             'observacion' => 'required|string',
             'id_scp_estados' => 'required|exists:scp_estados,id',
             'id_tipo_observacion' => 'required|exists:scp_tipo_observacions,id',
             'id_scp_usuario_asignado' => ['nullable', 'integer', 'exists:scp_usuarios,id'],
+            'calcification' => ['nullable', 'integer', 'min:1', 'max:5'], // Validación para la calificación
         ]);
 
         $observacionData = [
@@ -314,26 +314,31 @@ public function create()
             'id_tipo_observacion' => $request->id_tipo_observacion,
         ];
 
+        // Agregar calificación solo si se proporcionó
+        if ($request->has('calcification')) {
+            $observacionData['calcification'] = $request->calcification;
+        }
+
         $scpSoporte->observaciones()->create($observacionData);
 
         $updateData = [
             'estado' => $request->id_scp_estados,
         ];
 
-        if ($request->filled('id_scp_usuario_asignado')) {
-            $updateData['usuario_escalado'] = $request->id_scp_usuario_asignado;
+        if ($request->filled('id_scp_usuario_asignado') && $request->input('id_scp_usuario_asignado') != '0') {
+            $updateData['usuario_escalado'] = $request->input('id_scp_usuario_asignado');
         }
 
         $scpSoporte->update($updateData);
+        
         // ✅ Enviar correo solo si se cambió el usuario escalado
-            if ($scpSoporte->wasChanged('usuario_escalado') && 
-                $scpSoporte->usuarioEscalado && 
-                $scpSoporte->usuarioEscalado->email) {
+        if ($scpSoporte->wasChanged('usuario_escalado') && 
+            $scpSoporte->usuarioEscalado && 
+            $scpSoporte->usuarioEscalado->email) {
 
-                Mail::to($scpSoporte->usuarioEscalado->email)
-                    ->send(new SoporteEscaladoMail($scpSoporte));
-            }
-
+            Mail::to($scpSoporte->usuarioEscalado->email)
+                ->send(new SoporteEscaladoMail($scpSoporte));
+        }
 
         return redirect()->route('soportes.soportes.show', $scpSoporte)->with('success', 'Observación añadida y soporte actualizado exitosamente.');
     }
