@@ -20,6 +20,7 @@ class ScpObservacion extends Model
         'id_users', //USUARIO QUE CREA LA OBSERVACIO
         'id_users_asignado', //USUARIO A QUIEN ES ESCALADO
         'id_tipo_observacion',
+        'calcification',
     ];
 
     /*
