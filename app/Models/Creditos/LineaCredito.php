@@ -5,6 +5,7 @@ namespace App\Models\Creditos;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\Interacciones\Interaction;
 
 class LineaCredito extends Model
 {
@@ -70,4 +71,11 @@ class LineaCredito extends Model
     {
         return $this->belongsTo(TipoCredito::class, 'cre_tipos_creditos_id');
     }
+    
+    public function interacciones()
+    {
+        return $this->hasMany(Interaction::class, 'id_linea_de_obligacion', 'id');
+    }
+
+
 }

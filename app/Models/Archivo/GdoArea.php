@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Archivo\GdoCargo;
 
+use App\Models\Interacciones\Interaction;
+
 class GdoArea extends Model
 {
     use HasFactory;
@@ -59,6 +61,16 @@ class GdoArea extends Model
     public function cargos()
     {
         return $this->hasMany(GdoCargo::class, 'GDO_area_id', 'id');
+    }
+
+    public function interacciones()
+    {
+        return $this->hasMany(Interaction::class, 'id_area', 'id');
+    }
+
+    public function interaccionesAsignadas()
+    {
+        return $this->hasMany(Interaction::class, 'id_area_de_asignacion', 'id');
     }
 
     

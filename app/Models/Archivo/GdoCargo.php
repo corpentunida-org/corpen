@@ -5,6 +5,7 @@ namespace App\Models\Archivo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\User;
+use App\Models\Interacciones\Interaction;
 
 class GdoCargo extends Model
 {
@@ -45,11 +46,15 @@ class GdoCargo extends Model
         return $this->belongsTo(GdoEmpleado::class, 'GDO_empleados_cedula', 'cedula');
     }
 
-public function user()
-{
-    return $this->belongsTo(\App\Models\User::class, 'correo_corporativo', 'email');
-}
+    public function user()
+    {
+        return $this->belongsTo(\App\Models\User::class, 'correo_corporativo', 'email');
+    }
 
+    public function interacciones()
+    {
+        return $this->hasMany(Interaction::class, 'id_cargo', 'id');
+    }
 
 
 
