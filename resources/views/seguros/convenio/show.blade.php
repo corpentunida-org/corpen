@@ -7,20 +7,15 @@
                 <div class="mb-4 mb-lg-0">
                     <div class="fs-12 text-muted">Fecha de inicio: {{ $convenio->fecha_inicio }}. Fecha fin:
                         {{ $convenio->fecha_fin }} </div>
-                    <div class="fs-4 fw-bold text-dark"><span class="counter">{{ $convenio->nombre }}</span></div>
+                    <div class="fs-4 fw-bold text-dark"><span class="counter">{{ $convenio->nombre }}</span>@if ($convenio->vigente)
+                    <a class="badge bg-soft-success text-success ms-1">Vigente</a>
+                @endif</div>
                     <h3 class="fs-13 fw-semibold text-truncate-1-line">{{ $convenio->idAseguradora }}</h3>
-                </div>
+                </div>                
                 <div class="d-flex gap-2">
-                    <a href="javascript:void(0);" class="btn btn-icon" data-bs-toggle="tooltip" title=""
-                        data-bs-original-title="Make as Complete">
-                        <i class="feather-check-circle"></i>
-                    </a>
-                    <a href="javascript:void(0);" class="btn btn-icon" data-bs-toggle="tooltip" title=""
-                        data-bs-original-title="Statistics">
-                        <i class="feather-bar-chart-2"></i>
-                    </a>
                     @candirect('seguros.convenio.store')
-                    <a href="{{ route('seguros.convenio.create', ['id' => $convenio->id]) }}" class="btn btn-light-brand">Copiar Convenio</a>
+                    <a href="{{ route('seguros.convenio.create', ['id' => $convenio->id]) }}"
+                        class="btn btn-light-brand">Copiar Convenio</a>
                     @endcandirect
                     @candirect('seguros.planes.store')
                     <a href="{{ route('seguros.planes.create') }}" class="btn btn-success" data-bs-toggle="tooltip"
@@ -33,18 +28,14 @@
             </div>
         </div>
     </div>
-    @foreach ($planes as $condicionId => $planesGrupo)    
+    @foreach ($planes as $condicionId => $planesGrupo)
         <div class="col-12">
             <div class="card stretch stretch-full">
                 <div class="card-body">
-                    <div class="hstack justify-content-between flex-wrap flex-md-nowrap mb-4">                        
+                    <div class="hstack justify-content-between flex-wrap flex-md-nowrap mb-4">
                         <div>
                             <h5 class="mb-1">{{ $planesGrupo->first()->condicioncorpen->descripcion }}</h5>
-                        </div>
-                        <div class="hstack gap-3 btn-light-brand py-2 px-4">
-                            <h6 class="fs-12 fw-bolder mb-0">{{ $planesGrupo->first()->convenio->nombre }}</h6>
-                            {{-- <p class="fs-12 text-muted mb-0">{{ $planesGrupo->first()->convenio->id }}</p> --}}
-                        </div>
+                        </div>                        
                     </div>
                     <div class="row justify-content-center">
                         @php
@@ -60,19 +51,20 @@
                                                 <i class="feather-more-vertical"></i>
                                             </a>
                                             <div class="dropdown-menu dropdown-menu-end" style="">
-                                            @candirect('seguros.planes.update')
-                                                <a class="dropdown-item" href="{{ route('seguros.planes.edit', ['plan' => $plan->id]) }}">Editar</a>
-                                            @endcandirect
-                                            @candirect('seguros.planes.destroy')
+                                                @candirect('seguros.planes.update')
+                                                <a class="dropdown-item"
+                                                    href="{{ route('seguros.planes.edit', ['plan' => $plan->id]) }}">Editar</a>
+                                                @endcandirect
+                                                @candirect('seguros.planes.destroy')
                                                 <form
                                                     action="{{ route('seguros.planes.destroy', ['plan' => $plan->id]) }}"
                                                     method="POST">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button type="submit"
-                                                        class="dropdown-item btnAbrirModalDestroy" data-text="plan ">Eliminar</button>
+                                                    <button type="submit" class="dropdown-item btnAbrirModalDestroy"
+                                                        data-text="plan ">Eliminar</button>
                                                 </form>
-                                            @endcandirect
+                                                @endcandirect
                                             </div>
                                         </div>
                                         <div class="text-center">
@@ -84,16 +76,19 @@
                                             <p
                                                 class="fs-12 fw-medium text-muted text-spacing-1 mb-0 text-truncate-1-line">
                                                 <span class="fw-semibold text-dark">Prima:</span>
-                                                    ${{ number_format($plan->prima_aseguradora) }}</p>
-                                                <p
+                                                ${{ number_format($plan->prima_aseguradora) }}
+                                            </p>
+                                            <p
                                                 class="fs-12 fw-medium text-muted text-spacing-1 mb-0 text-truncate-1-line">
                                                 <span class="fw-semibold text-dark">Prima Asegurado:</span>
-                                                    ${{ number_format($plan->prima_asegurado) }}</p>
-                                                <p
+                                                ${{ number_format($plan->prima_asegurado) }}
+                                            </p>
+                                            <p
                                                 class="fs-12 fw-medium text-muted text-spacing-1 mb-0 text-truncate-1-line">
                                                 <span class="fw-semibold text-dark">Prima Pastor:</span>
-                                                    ${{ number_format($plan->prima_pastor) }}</p>
-                                                  
+                                                ${{ number_format($plan->prima_pastor) }}
+                                            </p>
+
                                         </div>
                                     </div>
                                 </div>
@@ -108,7 +103,7 @@
 </x-base-layout>
 <script>
     $(document).ready(function() {
-        $('.btnEliminar').click(function(event) { 
+        $('.btnEliminar').click(function(event) {
             event.preventDefault();
             formToSubmit = $(this).closest('form');
             $('#ModalConfirmacionEliminar').modal('show');
