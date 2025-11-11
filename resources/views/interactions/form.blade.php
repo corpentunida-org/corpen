@@ -1,866 +1,1519 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <title>Gestión de Interacciones - Versión 5 Estrellas (Completa)</title>
+@php
+    // Detectar si estamos en modo edición
+    $modoEdicion = isset($interaction) && $interaction->id;
+@endphp
 
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+/* ===== COLORES PASTELES CLAROS ===== */
+:root {
+    --pastel-blue: #E6F3FF;
+    --pastel-purple: #F5EEFF;
+    --pastel-pink: #FCE4EC;
+    --pastel-green: #E8F5E8;
+    --pastel-yellow: #FFF9E6;
+    --pastel-gray: #F8F9FA;
+    --pastel-lavender: #F5F0FF;
+    --primary-color: #6B9BD1;
+    --text-primary: #374151;
+    --text-secondary: #6B7280;
+    --border-color: #E5E7EB;
+}
 
-  <!-- ICONS & PLUGINS -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" crossorigin="anonymous" />
-  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+/* ===== ESTILOS PARA OCUPAR TODO EL ANCHO ===== */
+body {
+    margin: 0;
+    padding: 15px;
+    background: linear-gradient(135deg, #FAFBFC 0%, #F3F4F6 100%);
+}
 
-  <!-- Toastr (notificaciones) -->
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
+.card {
+    width: 100% !important;
+    max-width: none !important;
+    border-radius: 12px !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important;
+}
 
-  <!-- NProgress (barra de carga) -->
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/nprogress/0.2.0/nprogress.min.css" rel="stylesheet" />
+.card-header {
+    background: linear-gradient(135deg, var(--pastel-blue) 0%, var(--pastel-lavender) 100%) !important;
+    color: var(--text-primary) !important;
+    padding: 1.25rem !important;
+}
 
-  <!-- Google Font -->
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+.card-body {
+    padding: 0 !important;
+}
 
-  <style>
-    :root{
-      --primary-color: #345B54;
-      --primary-hover: #2A4842;
-      --accent-color: #8A2BE2;
-      --success-color: #28a745;
-      --warning-color: #ffc107;
-      --danger-color: #dc3545;
-      --text-color: #2D3748;
-      --text-muted: #718096;
-      --background-color: #F8F7F5;
-      --card-bg: #FFFFFF;
-      --border-color: #E2E8F0;
-      --focus-ring: rgba(52, 91, 84, 0.18);
-      --cluster-bg: #FDFCFB;
-      --shadow-soft: 0 8px 20px rgba(16,24,40,0.06);
-      --radius: 12px;
+/* ===== BARRA DE PROGRESO ===== */
+.progress-section {
+    background: var(--pastel-blue);
+    padding: 20px 32px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.progress-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.progress-percentage {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.progress-bar-container {
+    height: 6px;
+    background: rgba(255,255,255,0.5);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 12px;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #60A5FA, #3B82F6);
+    border-radius: 3px;
+    transition: width 0.6s ease;
+    position: relative;
+}
+
+.progress-bar-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+}
+
+.progress-message {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+/* ===== NAVEGACIÓN POR PESTAÑAS ===== */
+.tab-navigation {
+    display: flex;
+    background: var(--pastel-gray);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.tab-button {
+    flex: 1;
+    padding: 20px;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-secondary);
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.tab-button i {
+    font-size: 20px;
+}
+
+.tab-button span {
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.tab-button.active {
+    color: var(--primary-color);
+    background: white;
+    border-bottom-color: var(--primary-color);
+}
+
+.tab-button:hover:not(.active) {
+    color: var(--text-primary);
+    background: rgba(255,255,255,0.5);
+}
+
+/* ===== CONTENIDO DEL FORMULARIO ===== */
+.form-content {
+    padding: 1.5rem;
+}
+
+.tab-panel {
+    display: none;
+    animation: fadeIn 0.4s ease;
+}
+
+.tab-panel.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== CATEGORÍAS ===== */
+.category-container {
+    margin-bottom: 2rem;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    overflow: hidden;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.category-header {
+    background: linear-gradient(135deg, var(--pastel-gray) 0%, var(--pastel-blue) 20%);
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.category-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+    display: flex;
+    align-items: center;
+}
+
+.category-icon {
+    width: 32px;
+    height: 32px;
+    background: var(--primary-color);
+    color: white;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 12px;
+    font-size: 16px;
+}
+
+.category-description {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin: 4px 0 0 44px;
+}
+
+.category-content {
+    padding: 1.5rem;
+}
+
+/* ===== SECCIONES INTERNAS ===== */
+.section-divider {
+    position: relative;
+    padding-top: 1rem;
+    margin-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.section-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.section-description {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+
+/* ===== FORMULARIOS ===== */
+.form-control, .form-select {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(107, 155, 209, 0.25);
+}
+
+.form-floating label {
+    color: var(--text-secondary);
+}
+
+.form-floating > .form-control:focus ~ label,
+.form-floating > .form-control:not(:placeholder-shown) ~ label,
+.form-floating > .form-select ~ label {
+    color: var(--text-primary);
+}
+
+/* ===== BOTONES ===== */
+.btn-primary {
+    background: linear-gradient(135deg, var(--pastel-blue) 0%, var(--primary-color) 100%);
+    border: none;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, var(--primary-color) 0%, #5A8AC1 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(107, 155, 209, 0.3);
+}
+
+.btn-light {
+    background: white;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+}
+
+.btn-light:hover {
+    background: var(--pastel-gray);
+    transform: translateY(-1px);
+}
+
+.btn-outline-primary {
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
+}
+
+.btn-outline-primary:hover {
+    background: var(--pastel-blue);
+    transform: translateY(-1px);
+}
+
+.btn-outline-secondary {
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+}
+
+.btn-outline-secondary:hover {
+    background: var(--pastel-gray);
+    transform: translateY(-1px);
+}
+
+/* ===== TARJETAS ===== */
+.card.border-0.bg-light {
+    background: var(--pastel-gray) !important;
+    border: 1px solid var(--border-color) !important;
+    border-radius: 10px !important;
+    margin-bottom: 1rem !important;
+}
+
+/* ===== AVATAR ===== */
+.client-avatar {
+    background: linear-gradient(135deg, var(--pastel-blue) 0%, var(--primary-color) 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    border-radius: 50%;
+}
+
+/* ===== SELECT2 ===== */
+.select2-container--bootstrap-5 .select2-selection {
+    min-height: 58px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+}
+
+.select2-container--bootstrap-5.select2-container--focus .select2-selection {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.25rem rgba(107, 155, 209, 0.25);
+}
+
+/* ===== VALIDACIÓN ===== */
+.is-invalid {
+    border-color: #dc3545;
+}
+
+.is-valid {
+    border-color: #198754;
+}
+
+.invalid-feedback {
+    color: #dc3545;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
     }
-
-    /* Dark mode */
-    @media (prefers-color-scheme: dark) {
-      :root{
-        --card-bg: #141414;
-        --background-color: #0f1720;
-        --text-color: #e6eef2;
-        --text-muted: #9aa6b2;
-        --border-color: rgba(255,255,255,0.06);
-        --cluster-bg: #0b1416;
-      }
-    }
-
-    *{box-sizing:border-box}
-    html,body{height:100%;}
-    body{
-      margin:0;
-      font-family:'Inter',sans-serif;
-      background:linear-gradient(180deg, #FBFBFA 0%, var(--background-color) 100%);
-      color:var(--text-color);
-      -webkit-font-smoothing:antialiased;
-      -moz-osx-font-smoothing:grayscale;
-      font-size:16px;
-      line-height:1.5;
-      padding:1.25rem;
-      transition:background .18s ease,color .18s ease;
-    }
-
-    /* Container */
-    .form-container{
-      max-width:1200px;
-      margin:0 auto;
-      background:var(--card-bg);
-      border-radius:16px;
-      padding:2rem;
-      box-shadow:var(--shadow-soft);
-      border:1px solid var(--border-color);
-      transition:transform .18s ease, box-shadow .18s ease, background .18s ease;
-    }
-    .form-container:focus-within{ transform: translateY(-2px); box-shadow:0 14px 40px rgba(16,24,40,0.12); }
-
-    /* Layout */
-    .interaction-layout{ display:grid; grid-template-columns: 2fr 1fr; gap:1.75rem; }
-    @media (max-width: 1024px){ .interaction-layout{ grid-template-columns: 1fr; } }
-
-    /* Titles & labels */
-    .form-section{ margin-bottom:1.25rem; }
-    .form-section-title{ display:flex; align-items:center; gap:.75rem; font-size:1.05rem; font-weight:600; margin-bottom:.8rem; color:var(--primary-color); }
-    .form-label{ display:block; font-weight:500; font-size:.9rem; margin-bottom:.4rem; color:var(--text-muted); }
-
-    /* Inputs */
-    .form-group{ position:relative; margin-bottom:.75rem; }
-    .form-control, .select2-container .select2-selection--single, .select2-container .select2-selection--multiple {
-      width:100%;
-      padding:.8rem 1rem;
-      border-radius:10px;
-      border:1px solid var(--border-color);
-      font-size:.95rem;
-      background:#fff;
-      transition:box-shadow .18s ease, border-color .18s ease, transform .12s ease, background .18s ease;
-    }
-    .form-control:focus, .select2-container--default .select2-selection--single:focus{
-      outline:none;
-      border-color:var(--primary-color);
-      box-shadow:0 6px 20px var(--focus-ring);
-      transform:translateY(-1px);
-    }
-    textarea.form-control{ min-height:140px; resize:vertical; }
-
-    /* validation */
-    .helper-error{ color:var(--danger-color); font-size:.85rem; margin-top:.35rem; display:none; }
-    .helper-success{ color:var(--success-color); font-size:.85rem; margin-top:.35rem; display:none; }
-    .is-valid{ border-color:var(--success-color) !important; box-shadow:0 6px 18px rgba(40,167,69,0.08) !important; }
-    .is-invalid{ border-color:var(--danger-color) !important; box-shadow:0 6px 18px rgba(220,53,69,0.06) !important; }
-    .valid-icon{ position:absolute; right:1rem; top:50%; transform:translateY(-50%); color:var(--success-color); opacity:0; transition:opacity .12s ease; pointer-events:none; }
-    .is-valid + .valid-icon{ opacity:1; }
-
-    /* cluster */
-    .form-group-cluster{ background:var(--cluster-bg); border:1px solid var(--border-color); padding:1rem; border-radius:12px; }
-
-    /* buttons */
-    .btn{ display:inline-flex; align-items:center; gap:.6rem; padding:.65rem 1rem; border-radius:10px; border:1px solid transparent; cursor:pointer; font-weight:600; }
-    .btn-primary{ background:var(--primary-color); color:#fff; box-shadow: 0 6px 14px rgba(52,91,84,0.08); }
-    .btn-primary:hover{ background:var(--primary-hover); transform:translateY(-2px); }
-    .btn-secondary{ background:#fff; border:1px solid var(--border-color); color:var(--text-muted) }
-    .btn-quick-date{ background:#F0F2F5; border:1px solid var(--border-color); padding:.35rem .7rem; border-radius:8px; cursor:pointer; font-size:.85rem; }
-
-    /* sidebar client card */
-    .client-info-card{ display:none; padding:1rem; border-radius:12px; border:1px solid var(--border-color); background:linear-gradient(180deg,#fff,#fbfbfc); }
-    .client-avatar{ width:64px; height:64px; border-radius:50%; background:var(--primary-color); color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.5rem; font-weight:700; margin:0 auto 0.6rem; box-shadow:0 6px 18px rgba(52,91,84,0.08); }
-    .client-name{ text-align:center; font-weight:700; color:var(--primary-color); margin-bottom:.25rem; }
-    .info-item{ display:flex; align-items:center; gap:.6rem; color:var(--text-muted); font-size:.92rem; margin-bottom:.6rem; }
-    .info-item .fas{ width:18px; color:var(--primary-color); text-align:center; }
-
-    /* history */
-    .history-list{ max-height:220px; overflow-y:auto; padding-right:.5rem; }
-    .history-item{ padding:.6rem 0; border-bottom:1px solid var(--border-color); }
-    .history-date{ font-weight:700; color:var(--primary-color); font-size:.9rem; margin-bottom:.25rem; }
-    .history-note{ color:var(--text-muted); font-size:.9rem; display:block }
-
-    /* ajax loader */
-    .ajax-loader{
-      position:fixed;
-      top:0; left:0; right:0; bottom:0;
-      background:rgba(11,22,18,0.35);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      z-index:9999;
-      opacity:0;
-      visibility:hidden;
-      transition:opacity .18s ease, visibility .18s ease;
-    }
-    .ajax-loader.show{ opacity:1; visibility:visible; }
-    .ajax-card{ background:#fff; padding:1rem 1.25rem; border-radius:12px; display:flex; gap:.8rem; align-items:center; box-shadow:0 10px 30px rgba(2,6,23,0.12); }
-    .spinner{ width:36px; height:36px; border-radius:50%; border:4px solid rgba(0,0,0,0.08); border-top-color:var(--primary-color); animation:spin 1s linear infinite; }
-    @keyframes spin{ to { transform:rotate(360deg); } }
-
-    /* summary */
-    .summary-panel{ border:1px dashed var(--border-color); padding:1rem; border-radius:10px; background:linear-gradient(180deg,#fff,#fcfcff); }
-    .summary-row{ display:flex; justify-content:space-between; font-size:.95rem; margin-bottom:.45rem; color:var(--text-muted); }
-    .summary-row strong{ color:var(--text-color); font-weight:700; }
-
-    /* responsive */
-    @media (max-width:600px){
-      body{ padding:.75rem; font-size:15px; }
-      .form-container{ padding:1rem; border-radius:12px; }
-      .form-control{ padding:.7rem .9rem; font-size:.94rem; }
-      .client-avatar{ width:56px;height:56px;font-size:1.25rem }
-    }
-
-    /* micro-animations */
-    .fade-in { animation: fadeIn .28s ease both; }
-    @keyframes fadeIn { from { opacity:0; transform: translateY(6px);} to { opacity:1; transform: translateY(0);} }
-
-    /* small helper */
-    .muted { color: var(--text-muted); font-size: .9rem; }
     
-    /* --- Estilos consistentes para Select2 --- */
-    .select2-container {
-      width: 100% !important;
-      font-size: 14px;
+    .form-content {
+        padding: 1rem;
     }
-
-    .select2-selection--single {
-      height: 40px !important;
-      display: flex !important;
-      align-items: center !important;
-      border: 1.5px solid #28a745 !important;
-      border-radius: 8px !important;
-      transition: all 0.2s ease-in-out !important;
+    
+    .category-content {
+        padding: 1rem;
     }
-
-    .select2-selection__rendered {
-      padding-left: 12px !important;
-      color: #333 !important;
-      line-height: 38px !important;
-      white-space: nowrap !important;
-      text-overflow: ellipsis !important;
-      overflow: hidden !important;
+    
+    .tab-button span {
+        display: none;
     }
-
-    .select2-selection__arrow {
-      height: 38px !important;
-      right: 8px !important;
+    
+    .tab-button {
+        padding: 16px;
     }
-
-    .select2-container--default.select2-container--open .select2-selection--single {
-      border-color: #8A2BE2 !important;
-      box-shadow: 0 0 0 2px rgba(138, 43, 226, 0.2) !important;
+    
+    .d-flex.justify-content-between.mt-4 {
+        flex-direction: column;
+        gap: 1rem;
     }
+    
+    .d-flex.justify-content-between.mt-4 > div {
+        width: 100%;
+    }
+    
+    .d-flex.justify-content-between.mt-4 > div > button {
+        width: 100%;
+    }
+}
+</style>
 
-  </style>
-</head>
-<body>
-
-  <!-- AJAX Loader overlay -->
-  <div id="ajax-loader" class="ajax-loader" aria-hidden="true">
-    <div class="ajax-card" role="status" aria-live="polite">
-      <div class="spinner" aria-hidden="true"></div>
-      <div>
-        <div style="font-weight:700; color:var(--primary-color);">Cargando información del cliente</div>
-        <div style="font-size:.9rem; color:var(--text-muted)">Un momento por favor…</div>
-      </div>
+<div class="card shadow-lg border-0 rounded-3 overflow-hidden">
+    <!-- Header del formulario -->
+    <div class="card-header bg-gradient-primary text-white">
+        <div class="d-flex align-items-center">
+            <div class="flex-shrink-0">
+                <div class="icon-box bg-white bg-opacity-20 rounded-3 p-2 me-3">
+                    <i class="bi bi-chat-dots fs-4"></i>
+                </div>
+            </div>
+            <div class="flex-grow-1">
+                <h4 class="mb-1 fw-bold">{{ $modoEdicion ? 'Editar Interacción' : 'Nueva Interacción' }}</h4>
+                <p class="mb-0 opacity-75 small">{{ $modoEdicion ? 'Modifica la información de la interacción existente' : 'Completa el formulario para registrar una nueva interacción' }}</p>
+            </div>
+            @if($modoEdicion && $interaction->id)
+            <div class="flex-shrink-0">
+                <a href="{{ route('interactions.show', $interaction->id) }}" class="btn btn-light btn-sm">
+                    <i class="bi bi-eye me-1"></i> Ver Detalles
+                </a>
+            </div>
+            @endif
+        </div>
     </div>
-  </div>
 
-  <div class="form-container" id="interaction-form-wrapper" tabindex="-1">
-    <form id="interaction-form" action="{{ route('interactions.store') }}" method="POST" enctype="multipart/form-data" novalidate>
-      @csrf
-
-      <div class="interaction-layout">
-
-        <!-- MAIN COLUMN -->
-        <div class="main-column">
-
-          <div class="form-section">
-            <h3 class="form-section-title"><i class="fas fa-user-tie"></i> Cliente</h3>
-            <div class="form-group">
-              <label for="client_id" class="form-label">Buscar y seleccionar cliente <span style="color:var(--danger-color)">*</span></label>
-                <!-- Cliente -->
-                <select name="client_id" id="client_id" class="form-control" required>
-                  <option value=""></option>
-                  @foreach ($clientes as $cliente)
-                    <option value="{{ $cliente->cod_ter }}"
-                      {{ old('client_id', $interaction->client_id ?? '') == $cliente->cod_ter ? 'selected' : '' }}>
-                      {{ $cliente->cod_ter }} - {{ $cliente->apl1 }} {{ $cliente->apl2 }} {{ $cliente->nom1 }} {{ $cliente->nom2 }}
-                    </option>
-                  @endforeach
-                </select>
-              <i class="fas fa-check-circle valid-icon" aria-hidden="true"></i>
-              <div class="helper-error" data-for="client_id">Selecciona un cliente.</div>
-            </div>
-          </div>
-
-          <div class="form-section">
-            <h3 class="form-section-title"><i class="fas fa-comments"></i> Detalles de la Interacción</h3>
-            <div class="form-group-cluster">
-              <div class="form-row" style="display:flex;gap:1rem;flex-wrap:wrap">
-                <div class="form-group" style="flex:1; min-width:160px;">
-                  <label for="interaction_channel" class="form-label">Canal <span style="color:var(--danger-color)">*</span></label>
-                    <!-- Canal -->
-                    <select name="interaction_channel" id="interaction_channel" class="form-control" required>
-                      <option value="">Selecciona...</option>
-                      @foreach($channels as $channel)
-                        <option value="{{ $channel->id }}"
-                          {{ old('interaction_channel', $interaction->interaction_channel ?? '') == $channel->id ? 'selected' : '' }}>
-                          {{ $channel->name }}
-                        </option>
-                      @endforeach
-                    </select>
-                  <i class="fas fa-check-circle valid-icon" aria-hidden="true"></i>
-                  <div class="helper-error" data-for="interaction_channel">Selecciona un canal.</div>
-                </div>
-
-                <div class="form-group" style="flex:1; min-width:160px;">
-                  <label for="interaction_type" class="form-label">Tipo <span style="color:var(--danger-color)">*</span></label>
-                    <!-- Tipo -->
-                    <select name="interaction_type" id="interaction_type" class="form-control" required>
-                      <option value="">Selecciona...</option>
-                      @foreach($types as $type)
-                        <option value="{{ $type->id }}"
-                          {{ old('interaction_type', $interaction->interaction_type ?? '') == $type->id ? 'selected' : '' }}>
-                          {{ $type->name }}
-                        </option>
-                      @endforeach
-                    </select>
-                  <i class="fas fa-check-circle valid-icon" aria-hidden="true"></i>
-                  <div class="helper-error" data-for="interaction_type">Selecciona un tipo.</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="form-section">
-            <h3 class="form-section-title"><i class="fas fa-clipboard-list"></i> Notas de la Interacción</h3>
-            <div class="form-group">
-              <textarea name="notes" id="notes" class="form-control" placeholder="Añade aquí todos los detalles relevantes..." required>{{ old('notes', $interaction->notes ?? '') }}</textarea>
-              <i class="fas fa-check-circle valid-icon" aria-hidden="true"></i>
-              <div class="helper-error" data-for="notes">Escribe las notas de la interacción.</div>
-            </div>
-          </div>
-
-          <div class="form-section">
-            <h3 class="form-section-title"><i class="fas fa-tags"></i> Etiquetas de Interacción</h3>
-            <div class="form-group">
-              <label for="tags" class="form-label">Categoriza la interacción</label>
-                <!-- Tags -->
-                <select name="tags[]" id="tags" class="form-control" multiple>
-                  @php
-                    $selectedTags = old('tags', $interaction->tags ?? []);
-                  @endphp
-                  <option value="venta" {{ in_array('venta', $selectedTags) ? 'selected' : '' }}>Venta Cruzada</option>
-                  <option value="soporte" {{ in_array('soporte', $selectedTags) ? 'selected' : '' }}>Soporte Técnico</option>
-                  <option value="queja" {{ in_array('queja', $selectedTags) ? 'selected' : '' }}>Queja o Reclamo</option>
-                  <option value="cotizacion" {{ in_array('cotizacion', $selectedTags) ? 'selected' : '' }}>Seguimiento Cotización</option>
-                  <option value="informacion" {{ in_array('informacion', $selectedTags) ? 'selected' : '' }}>Solicitud de Información</option>
-                  <option value="cobranza" {{ in_array('cobranza', $selectedTags) ? 'selected' : '' }}>Gestión de Cobranza</option>
-                </select>
-              <div class="helper-error" data-for="tags">Selecciona al menos una etiqueta (si aplica).</div>
-            </div>
-          </div>
-
-          <div class="form-section">
-            <h3 class="form-section-title"><i class="fas fa-check-circle"></i> Resultado de la Gestión</h3>
-            <div class="form-group">
-                <!-- Resultado -->
-                <select name="outcome" id="outcome" class="form-control" required>
-                  <option value="">Selecciona un resultado...</option>
-                  @foreach ($outcomes as $outcome)
-                    <option value="{{ $outcome->id }}"
-                      {{ old('outcome', $interaction->outcome ?? '') == $outcome->id ? 'selected' : '' }}>
-                      {{ $outcome->name }}
-                    </option>
-                  @endforeach
-                </select>
-              <i class="fas fa-check-circle valid-icon" aria-hidden="true"></i>
-              <div class="helper-error" data-for="outcome">Selecciona el resultado de la gestión.</div>
-            </div>
-          </div>
-
+    <!-- Barra de progreso -->
+    <div class="progress-section">
+        <div class="progress-header">
+            <span class="progress-title">Progreso del formulario</span>
+            <span class="progress-percentage" id="progress-percentage">0%</span>
         </div>
-
-        <!-- SIDEBAR -->
-        <div class="sidebar-column">
-
-          <div class="form-section">
-            <h3 class="form-section-title"><i class="fas fa-user-shield"></i> Agente y Fecha</h3>
-            <div class="form-group">
-              <div style="background-color:#F7F9FC;padding:0.9rem;border-radius:10px;border:1px solid var(--border-color)">
-                <strong>Agente:</strong> {{ auth()->user()->name }} <br>
-                <strong>Fecha:</strong> {{ now()->format('d/m/Y h:i A') }}
-              </div>
-              <input type="hidden" name="agent_id" value="{{ auth()->user()->id }}">
-              <input type="hidden" name="interaction_date" value="{{ now()->toDateTimeString() }}">
-            </div>
-          </div>
-
-          <div class="form-section">
-            <h3 class="form-section-title"><i class="fas fa-address-card"></i> Información del Cliente</h3>
-            <div id="client-info-card" class="client-info-card" aria-live="polite">
-              <div class="card-header" style="text-align:center;padding-bottom:.75rem;border-bottom:1px solid var(--border-color);margin-bottom:.75rem">
-                <div class="client-avatar" id="info-avatar" aria-hidden="true"></div>
-                <p id="info-nombre" class="client-name">—</p>
-                <span id="info-id" class="client-id-badge" style="display:block;text-align:center;margin-top:.25rem;color:var(--text-muted)"></span>
-              </div>
-              <div class="card-body">
-                <div class="info-item"><i class="fas fa-map"></i><span id="info-distrito">Cargando...</span></div>
-
-                <div class="info-item"><i class="fas fa-tags"></i><span id="info-categoria">Cargando...</span></div>
-                <div class="info-item"><i class="fas fa-envelope"></i><span id="info-email">Cargando...</span></div>
-                <div class="info-item"><i class="fas fa-phone"></i><span id="info-telefono">Cargando...</span></div>
-                <div class="info-item"><i class="fas fa-map-marker-alt"></i><span id="info-direccion">Cargando...</span></div>
-                
-                <div class="info-item"><i class="fas fa-church"></i><span id="info-cod-congregacion">Cargando...</span></div>
-                <div class="info-item"><i class="fas fa-place-of-worship"></i><span id="info-nom-congregacion">Cargando...</span></div>
-                <hr style="border-color:var(--border-color);margin:0.75rem 0">
-                <div class="info-item"><i class="fas fa-clock"></i><span>Última Inter.: <span id="info-ultima-interaccion">Cargando...</span></span></div>
-              </div>
-              <div style="text-align:center;margin-top:.75rem">
-                <a id="btn-editar-cliente" href="#" class="btn btn-secondary btn-sm">Ver o actualizar ficha completa</a>
-              </div>
-            </div>
-          </div>
-
-          <div class="form-section" id="history-section" style="display:none;">
-            <h3 class="form-section-title"><i class="fas fa-history"></i> Historial Reciente</h3>
-            <div id="interaction-history-list" class="history-list">
-              <!-- items cargados por JS -->
-            </div>
-          </div>
-
-          <div class="form-section" id="planning-section" style="display:none;">
-            <h3 class="form-section-title"><i class="fas fa-calendar-alt"></i> Planificación</h3>
-            <div class="form-group-cluster">
-              <label class="form-label">Próxima Acción (Fecha y Hora)</label>
-              <div style="margin:0.5rem 0 0.75rem; display:flex; gap:.45rem; flex-wrap:wrap;">
-                <button type="button" class="btn-quick-date" data-days="1">+1 día</button>
-                <button type="button" class="btn-quick-date" data-days="3">+3 días</button>
-                <button type="button" class="btn-quick-date" data-days="7">+1 sem</button>
-                <button type="button" class="btn-quick-date" data-days="14">+2 sem</button>
-              </div>
-              <div class="input-with-icon" style="position:relative;">
-                <i class="fas fa-calendar-alt" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted)"></i>
-                <!-- Próxima acción -->
-                <input type="datetime-local" name="next_action_date" class="form-control"
-                  value="{{ old('next_action_date', $interaction->next_action_date ?? '') }}">              </div>
-              <div class="form-group" style="margin-top:.75rem">
-                <label class="form-label">Tipo de acción</label>
-                <!-- Tipo de próxima acción -->
-                <select name="next_action_type" id="next_action_type" class="form-control">
-                  <option value="">Selecciona...</option>
-                  @foreach ($nextActions as $action)
-                    <option value="{{ $action->id }}"
-                      {{ old('next_action_type', $interaction->next_action_type ?? '') == $action->id ? 'selected' : '' }}>
-                      {{ $action->name }}
-                    </option>
-                  @endforeach
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <div class="form-section">
-            <h3 class="form-section-title"><i class="fas fa-paperclip"></i> Adjuntos y Enlaces</h3>
-            <div class="form-group-cluster">
-              <div class="form-group">
-                <label class="form-label">Adjuntar archivos</label>
-                <input type="file" name="attachments[]" class="form-control" multiple>
-              </div>
-              <div class="form-group" style="margin-top:0.75rem">
-                <label class="form-label">Enlace de referencia</label>
-                <div style="position:relative">
-                  <i class="fas fa-link" style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--text-muted)"></i>
-                  <input type="url" name="interaction_url" class="form-control" placeholder="https://ejemplo.com" style="padding-left:3rem;">
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- RESUMEN DINÁMICO -->
-          <div class="form-section">
-            <h3 class="form-section-title"><i class="fas fa-swatchbook"></i> Resumen rápido</h3>
-            <div id="summary-panel" class="summary-panel" aria-live="polite">
-              <div class="summary-row"><span>Cliente</span><strong id="summary-client">—</strong></div>
-              <div class="summary-row"><span>Resultado</span><strong id="summary-outcome">—</strong></div>
-              <div class="summary-row"><span>Próxima acción</span><strong id="summary-nextaction">—</strong></div>
-              <div class="summary-row"><span>Etiquetas</span><strong id="summary-tags">—</strong></div>
-            </div>
-          </div>
-
+        <div class="progress-bar-container">
+            <div class="progress-bar-fill" id="progress-bar" style="width: 0%"></div>
         </div>
-      </div>
+        <div class="progress-message" id="progress-message">Comienza seleccionando un cliente</div>
+    </div>
 
-      <div class="form-actions" style="margin-top:1rem; display:flex; justify-content:flex-end; gap:.75rem; border-top:1px solid var(--border-color); padding-top:1rem">
-        <a href="{{ route('interactions.index') }}" class="btn btn-secondary"><i class="fas fa-times-circle"></i> Cancelar</a>
-        <button id="clear-draft" type="button" class="btn btn-secondary"><i class="fas fa-trash-alt"></i> Borrar borrador</button>
-        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Guardar Interacción</button>
-      </div>
-    </form>
-  </div>
+    <!-- Navegación por pestañas -->
+    <div class="tab-navigation">
+        <button type="button" class="tab-button active" data-tab="principal">
+            <i class="bi bi-info-circle"></i>
+            <span>Información Principal</span>
+        </button>
+        <button type="button" class="tab-button" data-tab="adicional">
+            <i class="bi bi-briefcase"></i>
+            <span>Información Adicional</span>
+        </button>
+        <button type="button" class="tab-button" data-tab="resultado">
+            <i class="bi bi-check-circle"></i>
+            <span>Resultado y Planificación</span>
+        </button>
+        <button type="button" class="tab-button" data-tab="adjuntos">
+            <i class="bi bi-paperclip"></i>
+            <span>Adjuntos y Referencias</span>
+        </button>
+        <button type="button" class="tab-button" data-tab="historial">
+            <i class="bi bi-clock-history"></i>
+            <span>Historial</span>
+        </button>
+    </div>
 
-<!-- SCRIPTS (al final para rendimiento) -->
+    <div class="form-content">
+        <form id="interaction-form" action="{{ $modoEdicion ? route('interactions.update', $interaction->id) : route('interactions.store') }}" method="POST" enctype="multipart/form-data">
+            @csrf
+            @if($modoEdicion)
+            @method('PUT')
+            @endif
+
+            <!-- PESTAÑA 1: INFORMACIÓN PRINCIPAL -->
+            <div class="tab-panel active" id="principal-tab">
+                <!-- CATEGORÍA: Información Principal -->
+                <div class="category-container">
+                    <div class="category-header">
+                        <h5 class="category-title">
+                            <div class="category-icon">
+                                <i class="bi bi-info-circle"></i>
+                            </div>
+                            Información Principal
+                        </h5>
+                        <p class="category-description">Datos esenciales de la interacción y el cliente</p>
+                    </div>
+                    <div class="category-content">
+                        <!-- Subsección: Información del Cliente -->
+                        <div class="section-divider">
+                            <h6 class="section-title">
+                                <i class="bi bi-person-badge me-2 text-primary"></i>Información del Cliente
+                            </h6>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <!-- Cliente -->
+                            <div class="col-md-8">
+                                <div class="form-floating">
+                                    <select class="form-select select2 @error('client_id') is-invalid @enderror" 
+                                            id="client_id" name="client_id" required>
+                                        <option value="">Selecciona un cliente</option>
+                                        @foreach ($clientes as $cliente)
+                                            <option value="{{ $cliente->cod_ter }}"
+                                                {{ old('client_id', $interaction->client_id ?? '') == $cliente->cod_ter ? 'selected' : '' }}>
+                                                {{ $cliente->cod_ter }} - {{ $cliente->apl1 }} {{ $cliente->apl2 }} {{ $cliente->nom1 }} {{ $cliente->nom2 }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <label for="client_id">Cliente <span class="text-danger">*</span></label>
+                                </div>
+                                @error('client_id')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <!-- Agente y Fecha -->
+                            <div class="col-md-4">
+                                <div class="form-floating">
+                                    <input type="text" class="form-control bg-light" value="{{ auth()->user()->name }}" readonly>
+                                    <label for="agent">Agente</label>
+                                </div>
+                                <input type="hidden" name="agent_id" value="{{ auth()->user()->id }}">
+                                <input type="hidden" name="interaction_date" value="{{ now()->toDateTimeString() }}">
+                                <div class="form-text mt-1">
+                                    <i class="bi bi-calendar me-1"></i> {{ now()->format('d/m/Y h:i A') }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Información del Cliente (dinámica) -->
+                        <div id="client-info-card" class="card border-0 bg-light mb-4" style="display:none;">
+                            <div class="card-body p-3">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-info-circle text-primary me-2"></i>
+                                    <h6 class="mb-0 fw-semibold">Información del Cliente</h6>
+                                    <div class="ms-auto">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" id="toggle-client-info">
+                                            <i class="bi bi-chevron-down"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="client-info-content">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <div class="client-avatar me-2" id="info-avatar" style="width:40px;height:40px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:bold;"></div>
+                                                <div>
+                                                    <div id="info-nombre" class="fw-semibold">—</div>
+                                                    <div id="info-id" class="text-muted small">ID: —</div>
+                                                </div>
+                                            </div>
+                                            <div class="info-item mb-2">
+                                                <i class="bi bi-geo-alt text-muted me-2"></i>
+                                                <span id="info-distrito">Cargando...</span>
+                                            </div>
+                                            <div class="info-item mb-2">
+                                                <i class="bi bi-tag text-muted me-2"></i>
+                                                <span id="info-categoria">Cargando...</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="info-item mb-2">
+                                                <i class="bi bi-envelope text-muted me-2"></i>
+                                                <span id="info-email">Cargando...</span>
+                                            </div>
+                                            <div class="info-item mb-2">
+                                                <i class="bi bi-telephone text-muted me-2"></i>
+                                                <span id="info-telefono">Cargando...</span>
+                                            </div>
+                                            <div class="info-item mb-2">
+                                                <i class="bi bi-geo text-muted me-2"></i>
+                                                <span id="info-direccion">Cargando...</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="text-end mt-2">
+                                        <a id="btn-editar-cliente" href="#" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-pencil me-1"></i> Ver ficha completa
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Subsección: Detalles de la Interacción -->
+                        <div class="section-divider">
+                            <h6 class="section-title">
+                                <i class="bi bi-chat-dots me-2 text-primary"></i>Detalles de la Interacción
+                            </h6>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <!-- Canal -->
+                            <div class="col-md-4">
+                                <div class="form-floating">
+                                    <select class="form-select select2 @error('interaction_channel') is-invalid @enderror" 
+                                            id="interaction_channel" name="interaction_channel" required>
+                                        <option value="">Selecciona un canal</option>
+                                        @foreach($channels as $channel)
+                                            <option value="{{ $channel->id }}"
+                                                {{ old('interaction_channel', $interaction->interaction_channel ?? '') == $channel->id ? 'selected' : '' }}>
+                                                {{ $channel->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <label for="interaction_channel">Canal <span class="text-danger">*</span></label>
+                                </div>
+                                @error('interaction_channel')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <!-- Tipo -->
+                            <div class="col-md-4">
+                                <div class="form-floating">
+                                    <select class="form-select select2 @error('interaction_type') is-invalid @enderror" 
+                                            id="interaction_type" name="interaction_type" required>
+                                        <option value="">Selecciona un tipo</option>
+                                        @foreach($types as $type)
+                                            <option value="{{ $type->id }}"
+                                                {{ old('interaction_type', $interaction->interaction_type ?? '') == $type->id ? 'selected' : '' }}>
+                                                {{ $type->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <label for="interaction_type">Tipo <span class="text-danger">*</span></label>
+                                </div>
+                                @error('interaction_type')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <!-- Duración -->
+                            <div class="col-md-4">
+                                <div class="form-floating">
+                                    <input type="number" class="form-control @error('duration') is-invalid @enderror" 
+                                           id="duration" name="duration" min="0" step="1" placeholder="0"
+                                           value="{{ old('duration', $interaction->duration ?? '') }}">
+                                    <label for="duration">Duración (minutos)</label>
+                                </div>
+                                @error('duration')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <!-- Notas -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-12">
+                                <div class="form-floating">
+                                    <textarea class="form-control @error('notes') is-invalid @enderror" 
+                                              id="notes" name="notes" rows="4"
+                                              placeholder="Describe los detalles de la interacción..."
+                                              required>{{ old('notes', $interaction->notes ?? '') }}</textarea>
+                                    <label for="notes">Notas <span class="text-danger">*</span></label>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <div class="form-text">Añade aquí todos los detalles relevantes de la interacción.</div>
+                                    <div class="form-text text-end" id="notes-counter">0/500 caracteres</div>
+                                </div>
+                                @error('notes')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <div></div>
+                    <div class="action-buttons">
+                        <button type="button" class="btn btn-primary" onclick="showTab('adicional')">
+                            Continuar <i class="bi bi-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PESTAÑA 2: INFORMACIÓN ADICIONAL -->
+            <div class="tab-panel" id="adicional-tab">
+                <!-- CATEGORÍA: Información Adicional -->
+                <div class="category-container">
+                    <div class="category-header">
+                        <h5 class="category-title">
+                            <div class="category-icon">
+                                <i class="bi bi-briefcase"></i>
+                            </div>
+                            Información Adicional
+                        </h5>
+                        <p class="category-description">Datos complementarios del cliente y asignación</p>
+                    </div>
+                    <div class="category-content">
+                        <div class="row g-3 mb-4">
+                            <!-- Área -->
+                            <div class="col-md-3">
+                                <div class="form-floating">
+                                    <select class="form-select select2 @error('id_area') is-invalid @enderror" 
+                                            id="id_area" name="id_area">
+                                        <option value="">Selecciona un área</option>
+                                        @if(isset($areas))
+                                            @foreach($areas as $id => $nombre)
+                                                <option value="{{ $id }}"
+                                                    {{ old('id_area', $interaction->id_area ?? '') == $id ? 'selected' : '' }}>
+                                                    {{ $nombre }}
+                                                </option>
+                                            @endforeach
+                                        @endif
+                                    </select>
+                                    <label for="id_area">Área</label>
+                                </div>
+                                @error('id_area')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <!-- Cargo -->
+                            <div class="col-md-3">
+                                <div class="form-floating">
+                                    <select class="form-select select2 @error('id_cargo') is-invalid @enderror" 
+                                            id="id_cargo" name="id_cargo">
+                                        <option value="">Selecciona un cargo</option>
+                                        @if(isset($cargos))
+                                            @foreach($cargos as $id => $nombre)
+                                                <option value="{{ $id }}"
+                                                    {{ old('id_cargo', $interaction->id_cargo ?? '') == $id ? 'selected' : '' }}>
+                                                    {{ $nombre }}
+                                                </option>
+                                            @endforeach
+                                        @endif
+                                    </select>
+                                    <label for="id_cargo">Cargo</label>
+                                </div>
+                                @error('id_cargo')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <!-- Línea de Obligación -->
+                            <div class="col-md-3">
+                                <div class="form-floating">
+                                    <select class="form-select select2 @error('id_linea_de_obligacion') is-invalid @enderror" 
+                                            id="id_linea_de_obligacion" name="id_linea_de_obligacion">
+                                        <option value="">Selecciona una línea</option>
+                                        @if(isset($lineasCredito))
+                                            @foreach($lineasCredito as $id => $nombre)
+                                                <option value="{{ $id }}"
+                                                    {{ old('id_linea_de_obligacion', $interaction->id_linea_de_obligacion ?? '') == $id ? 'selected' : '' }}>
+                                                    {{ $nombre }}
+                                                </option>
+                                            @endforeach
+                                        @endif
+                                    </select>
+                                    <label for="id_linea_de_obligacion">Línea de Obligación</label>
+                                </div>
+                                @error('id_linea_de_obligacion')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <!-- Área de Asignación -->
+                            <div class="col-md-3">
+                                <div class="form-floating">
+                                    <select class="form-select select2 @error('id_area_de_asignacion') is-invalid @enderror" 
+                                            id="id_area_de_asignacion" name="id_area_de_asignacion">
+                                        <option value="">Selecciona un área</option>
+                                        @if(isset($areas))
+                                            @foreach($areas as $id => $nombre)
+                                                <option value="{{ $id }}"
+                                                    {{ old('id_area_de_asignacion', $interaction->id_area_de_asignacion ?? '') == $id ? 'selected' : '' }}>
+                                                    {{ $nombre }}
+                                                </option>
+                                            @endforeach
+                                        @endif
+                                    </select>
+                                    <label for="id_area_de_asignacion">Área de Asignación</label>
+                                </div>
+                                @error('id_area_de_asignacion')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <div class="action-buttons">
+                        <button type="button" class="btn btn-light" onclick="showTab('principal')">
+                            <i class="bi bi-arrow-left"></i> Anterior
+                        </button>
+                    </div>
+                    <div class="action-buttons">
+                        <button type="button" class="btn btn-primary" onclick="showTab('resultado')">
+                            Continuar <i class="bi bi-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PESTAÑA 3: RESULTADO Y PLANIFICACIÓN -->
+            <div class="tab-panel" id="resultado-tab">
+                <!-- CATEGORÍA: Resultado y Planificación -->
+                <div class="category-container">
+                    <div class="category-header">
+                        <h5 class="category-title">
+                            <div class="category-icon">
+                                <i class="bi bi-check-circle"></i>
+                            </div>
+                            Resultado y Planificación
+                        </h5>
+                        <p class="category-description">Resultado de la interacción y próximas acciones</p>
+                    </div>
+                    <div class="category-content">
+                        <!-- Subsección: Resultado -->
+                        <div class="section-divider">
+                            <h6 class="section-title">
+                                <i class="bi bi-flag me-2 text-primary"></i>Resultado de la Interacción
+                            </h6>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <!-- Resultado -->
+                            <div class="col-md-12">
+                                <div class="form-floating">
+                                    <select class="form-select select2 @error('outcome') is-invalid @enderror" 
+                                            id="outcome" name="outcome" required>
+                                        <option value="">Selecciona un resultado</option>
+                                        @foreach ($outcomes as $outcome)
+                                            <option value="{{ $outcome->id }}"
+                                                {{ old('outcome', $interaction->outcome ?? '') == $outcome->id ? 'selected' : '' }}>
+                                                {{ $outcome->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <label for="outcome">Resultado <span class="text-danger">*</span></label>
+                                </div>
+                                @error('outcome')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+
+                        <!-- Subsección: Planificación -->
+                        <div class="section-divider">
+                            <h6 class="section-title">
+                                <i class="bi bi-calendar-check me-2 text-primary"></i>Planificación
+                            </h6>
+                        </div>
+
+                        <div class="card border-0 bg-light mb-4" id="planning-section" style="display:none;">
+                            <div class="card-body p-3">
+                                <div class="row g-3">
+                                    <!-- Próxima Acción (Fecha y Hora) -->
+                                    <div class="col-md-6">
+                                        <div class="form-floating">
+                                            <input type="datetime-local" class="form-control @error('next_action_date') is-invalid @enderror"
+                                                   id="next_action_date" name="next_action_date"
+                                                   value="{{ old('next_action_date', $interaction->next_action_date ?? '') }}">
+                                            <label for="next_action_date">Próxima Acción</label>
+                                        </div>
+                                        <div class="d-flex gap-1 flex-wrap mt-2">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary quick-date" data-days="1">+1 día</button>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary quick-date" data-days="3">+3 días</button>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary quick-date" data-days="7">+1 sem</button>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary quick-date" data-days="14">+2 sem</button>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary quick-date" data-days="30">+1 mes</button>
+                                        </div>
+                                        @error('next_action_date')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <!-- Tipo de acción -->
+                                    <div class="col-md-6">
+                                        <div class="form-floating">
+                                            <select class="form-select select2 @error('next_action_type') is-invalid @enderror" 
+                                                    id="next_action_type" name="next_action_type">
+                                                <option value="">Selecciona un tipo</option>
+                                                @foreach ($nextActions as $action)
+                                                    <option value="{{ $action->id }}"
+                                                        {{ old('next_action_type', $interaction->next_action_type ?? '') == $action->id ? 'selected' : '' }}>
+                                                        {{ $action->name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                            <label for="next_action_type">Tipo de Acción</label>
+                                        </div>
+                                        @error('next_action_type')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+
+                                    <!-- Notas sobre la próxima acción -->
+                                    <div class="col-md-12">
+                                        <div class="form-floating">
+                                            <textarea class="form-control @error('next_action_notes') is-invalid @enderror" 
+                                                      id="next_action_notes" name="next_action_notes" rows="3"
+                                                      placeholder="Detalles sobre la próxima acción programada...">{{ old('next_action_notes', $interaction->next_action_notes ?? '') }}</textarea>
+                                            <label for="next_action_notes">Notas sobre la Próxima Acción</label>
+                                        </div>
+                                        @error('next_action_notes')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <div class="action-buttons">
+                        <button type="button" class="btn btn-light" onclick="showTab('adicional')">
+                            <i class="bi bi-arrow-left"></i> Anterior
+                        </button>
+                    </div>
+                    <div class="action-buttons">
+                        <button type="button" class="btn btn-primary" onclick="showTab('adjuntos')">
+                            Continuar <i class="bi bi-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PESTAÑA 4: ADJUNTOS Y REFERENCIAS -->
+            <div class="tab-panel" id="adjuntos-tab">
+                <!-- CATEGORÍA: Adjuntos y Referencias -->
+                <div class="category-container">
+                    <div class="category-header">
+                        <h5 class="category-title">
+                            <div class="category-icon">
+                                <i class="bi bi-paperclip"></i>
+                            </div>
+                            Adjuntos y Referencias
+                        </h5>
+                        <p class="category-description">Archivos y enlaces relacionados con la interacción</p>
+                    </div>
+                    <div class="category-content">
+                        <div class="row g-3 mb-4">
+                            <!-- Adjuntar archivos -->
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="file"
+                                           class="form-control @error('attachments') is-invalid @enderror"
+                                           id="attachments"
+                                           name="attachments[]"
+                                           multiple>
+                                    <label for="attachments">Archivos Adjuntos</label>
+                                </div>
+                                <div class="form-text">Puedes adjuntar múltiples archivos (máx. 10MB por archivo)</div>
+                                @if($modoEdicion && $interaction->attachment_urls && count($interaction->attachment_urls))
+                                    <div class="mt-2">
+                                        <div class="small text-muted">Archivos existentes:</div>
+                                        @foreach($interaction->attachment_urls as $index => $url)
+                                            <div class="d-flex align-items-center mt-1">
+                                                <i class="bi bi-file-earmark me-2"></i>
+                                                <span class="me-auto">Archivo {{ $index + 1 }}</span>
+                                                <a href="{{ route('interactions.download', basename($url)) }}" class="btn btn-sm btn-outline-primary me-1" title="Descargar">
+                                                    <i class="bi bi-download"></i>
+                                                </a>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @endif
+                                @error('attachments')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <!-- Enlace de referencia -->
+                            <div class="col-md-6">
+                                <div class="form-floating">
+                                    <input type="url" class="form-control @error('interaction_url') is-invalid @enderror"
+                                           id="interaction_url" name="interaction_url"
+                                           placeholder="https://ejemplo.com"
+                                           value="{{ old('interaction_url', $interaction->interaction_url ?? '') }}">
+                                    <label for="interaction_url">Enlace de Referencia</label>
+                                </div>
+                                @error('interaction_url')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <div class="action-buttons">
+                        <button type="button" class="btn btn-light" onclick="showTab('resultado')">
+                            <i class="bi bi-arrow-left"></i> Anterior
+                        </button>
+                    </div>
+                    <div class="action-buttons">
+                        <button type="button" class="btn btn-primary" onclick="showTab('historial')">
+                            Continuar <i class="bi bi-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PESTAÑA 5: HISTORIAL -->
+            <div class="tab-panel" id="historial-tab">
+                <!-- CATEGORÍA: Historial -->
+                <div class="category-container">
+                    <div class="category-header">
+                        <h5 class="category-title">
+                            <div class="category-icon">
+                                <i class="bi bi-clock-history"></i>
+                            </div>
+                            Historial de Interacciones
+                        </h5>
+                        <p class="category-description">Interacciones previas con este cliente</p>
+                    </div>
+                    <div class="category-content">
+                        <div class="card border-0 bg-light mb-4" id="history-section" style="display:none;">
+                            <div class="card-body p-3">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="bi bi-clock-history text-primary me-2"></i>
+                                    <h6 class="mb-0 fw-semibold">Historial Reciente</h6>
+                                    <div class="ms-auto">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" id="toggle-history">
+                                            <i class="bi bi-chevron-down"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="history-content">
+                                    <div id="interaction-history-list" class="history-list" style="max-height:220px; overflow-y:auto;">
+                                        <!-- items cargados por JS -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <div class="action-buttons">
+                        <button type="button" class="btn btn-light" onclick="showTab('adjuntos')">
+                            <i class="bi bi-arrow-left"></i> Anterior
+                        </button>
+                    </div>
+                    <div class="action-buttons">
+                        <button id="clear-draft" type="button" class="btn btn-outline-secondary me-2">
+                            <i class="bi bi-trash me-1"></i> Borrar Borrador
+                        </button>
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-save me-1"></i> {{ $modoEdicion ? 'Actualizar Interacción' : 'Guardar Interacción' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- AJAX Loader overlay -->
+<div id="ajax-loader" class="ajax-loader" aria-hidden="true" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
+    <div class="card text-center p-4">
+        <div class="spinner-border text-primary mb-3" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="mb-0">Cargando información del cliente...</p>
+    </div>
+</div>
+
+@push('scripts')
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/nprogress/0.2.0/nprogress.min.js"></script>
 
 <script>
-(function(){
-  // ------- Utilities -------
-  const $ajaxLoader = $('#ajax-loader');
-  const $form = $('#interaction-form');
-  const storageKey = 'interaction_form_draft_v1';
-
-  function showLoader(){ $ajaxLoader.addClass('show'); $ajaxLoader.attr('aria-hidden','false'); NProgress.start(); }
-  function hideLoader(){ $ajaxLoader.removeClass('show'); $ajaxLoader.attr('aria-hidden','true'); NProgress.done(); }
-
-  // small toast defaults
-  toastr.options = {
-    "positionClass": "toast-bottom-right",
-    "timeOut": "2500",
-    "progressBar": true,
-  };
-
-  // ------- Select2 init (actualizado para bug visual) -------
-  try {
-    $('#client_id').select2({
-      placeholder: "Escribe para buscar por código o nombre...",
-      allowClear: true,
-      width: '100%',
-      language: { noResults: () => "No se encontraron clientes" },
-      dropdownParent: $('body') // 👈 FIX principal
+ $(document).ready(function() {
+    // Inicialización de Select2
+    $('.select2').select2({ 
+        theme: 'bootstrap-5',
+        placeholder: function() {
+            return $(this).attr('placeholder');
+        },
+        dropdownParent: $('body')
     });
 
-    // mejora visual: sombra y margen en el dropdown
-    $('#client_id').on('select2:open', function(){
-      const dropdown = $('.select2-container--open .select2-dropdown');
-      dropdown.css({
-        'border-radius': '8px',
-        'margin-top': '2px',
-        'box-shadow': '0 8px 16px rgba(0,0,0,0.1)'
-      });
+    // Variables globales
+    const $ajaxLoader = $('#ajax-loader');
+    const $form = $('#interaction-form');
+    const storageKey = 'interaction_form_draft_v1';
+
+    // Funciones de utilidad
+    function showLoader(){ 
+        $ajaxLoader.show(); 
+    }
+    
+    function hideLoader(){ 
+        $ajaxLoader.hide(); 
+    }
+
+    // Configuración de notificaciones
+    toastr.options = {
+        "positionClass": "toast-bottom-right",
+        "timeOut": "2500",
+        "progressBar": true,
+    };
+
+    // Navegación por pestañas
+    $('.tab-button').on('click', function() {
+        const tabId = $(this).data('tab');
+        showTab(tabId);
+        saveDraft();
     });
 
-  } catch(e){ console.warn('Select2 cliente init failed', e); }
-
-  $('#tags').select2({
-    placeholder: "Selecciona una o más etiquetas...",
-    width: '100%',
-    allowClear: true,
-    dropdownParent: $('body')
-  });
-
-  // Additional selects
-  $('#interaction_channel').select2({ width:'100%', placeholder:'Selecciona...', dropdownParent:$('body') });
-  $('#interaction_type').select2({ width:'100%', placeholder:'Selecciona...', dropdownParent:$('body') });
-  $('#outcome').select2({ width:'100%', placeholder:'Selecciona un resultado...', dropdownParent:$('body') });
-  $('#next_action_type').select2({ width:'100%', placeholder:'Selecciona...', dropdownParent:$('body') });
-
-  // ------- Autosave in localStorage -------
-  function saveDraft(){
-    try{
-      const data = {};
-      $form.find('input,textarea,select').each(function(){
-        const name = this.name;
-        if(!name) return;
-        if(this.type === 'file') return;
-        if(this.type === 'checkbox' || this.type === 'radio'){
-          if(this.checked) data[name] = this.value;
-        } else {
-          if ($(this).is('select[multiple]')){
-            data[name] = $(this).val() || [];
-          } else {
-            data[name] = $(this).val();
-          }
-        }
-      });
-      localStorage.setItem(storageKey, JSON.stringify(data));
-      const $wrapper = $('#interaction-form-wrapper');
-      $wrapper.css('box-shadow','0 8px 28px rgba(52,91,84,0.06)');
-      setTimeout(()=> $wrapper.css('box-shadow','var(--shadow-soft)'), 350);
-    }catch(e){
-      console.warn('No se pudo guardar el borrador', e);
-    }
-  }
-
-  function debounce(fn, wait){
-    let t;
-    return function(...args){ clearTimeout(t); t = setTimeout(()=>fn.apply(this,args), wait); };
-  }
-
-  const saveDraftDebounced = debounce(saveDraft, 700);
-
-  function loadDraft(){
-    try{
-      const raw = localStorage.getItem(storageKey);
-      if(!raw) return;
-      const data = JSON.parse(raw);
-      Object.keys(data).forEach(name => {
-        const value = data[name];
-        const $el = $form.find(`[name="${name}"]`);
-        if(!$el.length) return;
-        if($el.is('select[multiple]')){
-          $el.val(value).trigger('change');
-        } else if($el.is('select')){
-          $el.val(value).trigger('change');
-        } else {
-          $el.val(value);
-        }
-      });
-      toastr.info('Borrador restaurado automáticamente');
-    }catch(e){
-      console.warn('No se pudo cargar el borrador', e);
-    }
-  }
-
-  $form.on('input change', 'input, textarea, select', function(){
-    validateField(this);
-    updateSummary();
-    saveDraftDebounced();
-  });
-
-  loadDraft();
-  updateSummary();
-
-  $('#clear-draft').on('click', function(){
-    Swal.fire({
-      title: '¿Borrar el borrador guardado?',
-      text: "Esto eliminará el borrador localmente.",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, borrar',
-      cancelButtonText: 'Cancelar'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        localStorage.removeItem(storageKey);
-        $form[0].reset();
-        $('#client_id,#tags,#interaction_channel,#interaction_type,#outcome,#next_action_type').val(null).trigger('change');
-        $('#planning-section').hide();
-        $('#client-info-card').hide();
-        $('#history-section').hide();
-        updateSummary();
-        toastr.success('Borrador eliminado');
-      }
-    });
-  });
-
-  // ------- Validation helpers -------
-  function showError($field, message){
-    $field.addClass('is-invalid').removeClass('is-valid');
-    const name = $field.attr('name');
-    $(`[data-for="${name}"]`).text(message).show();
-    if($field.hasClass('select2-hidden-accessible')){
-      $field.next('.select2-container').find('.select2-selection--single, .select2-selection--multiple').addClass('is-invalid').removeClass('is-valid');
-    }
-  }
-  function showSuccess($field){
-    $field.addClass('is-valid').removeClass('is-invalid');
-    const name = $field.attr('name');
-    $(`[data-for="${name}"]`).hide();
-    if($field.hasClass('select2-hidden-accessible')){
-      $field.next('.select2-container').find('.select2-selection--single, .select2-selection--multiple').addClass('is-valid').removeClass('is-invalid');
-    }
-  }
-  function clearValidation($field){
-    $field.removeClass('is-valid is-invalid');
-    const name = $field.attr('name');
-    $(`[data-for="${name}"]`).hide();
-    if($field.hasClass('select2-hidden-accessible')){
-      $field.next('.select2-container').find('.select2-selection--single, .select2-selection--multiple').removeClass('is-valid is-invalid');
-    }
-  }
-
-  function validateField(el){
-    const $el = $(el);
-    const name = $el.attr('name');
-    if(!$el.prop('required')) {
-      if($el.val() && $el.val().toString().trim() !== ''){
-        showSuccess($el);
-      } else {
-        clearValidation($el);
-      }
-      return true;
+    window.showTab = function(tabId) {
+        $('.tab-button').removeClass('active');
+        $(`.tab-button[data-tab="${tabId}"]`).addClass('active');
+        
+        $('.tab-panel').removeClass('active');
+        $(`#${tabId}-tab`).addClass('active');
+        
+        updateProgress();
     }
 
-    const val = $el.val();
-    if($el.is('select[multiple]')){
-      if(Array.isArray(val) && val.length>0){
-        showSuccess($el);
-        return true;
-      } else {
-        showError($el, 'Selecciona al menos una opción.');
-        return false;
-      }
-    }
-
-    if(!val || val.toString().trim() === ''){
-      showError($el, 'Este campo es obligatorio.');
-      return false;
-    }
-    if($el.attr('type') === 'url' && val){
-      try{
-        new URL(val);
-      }catch(e){
-        showError($el, 'Ingresa una URL válida.');
-        return false;
-      }
-    }
-    showSuccess($el);
-    return true;
-  }
-
-  $form.on('submit', function(e){
-    e.preventDefault();
-    let valid = true;
-    $form.find('select[required], textarea[required], input[required]').each(function(){
-      const ok = validateField(this);
-      if(!ok) valid = false;
-    });
-    if(!valid){
-      const $first = $form.find('.is-invalid').first();
-      $('html,body').animate({scrollTop: $first.offset().top - 90}, 350);
-      Swal.fire({
-        icon: 'error',
-        title: 'Errores en el formulario',
-        text: 'Por favor corrige los campos marcados antes de enviar.',
-      });
-      return false;
-    }
-
-    Swal.fire({
-      title: 'Confirmar envío',
-      text: "¿Deseas enviar la interacción ahora?",
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Enviar',
-      cancelButtonText: 'Cancelar'
-    }).then((result) => {
-      if(result.isConfirmed){
-        localStorage.removeItem(storageKey);
-        showLoader();
-        $form.off('submit');
-        $form.submit();
-      }
-    });
-
-  });
-
-  // ------- AJAX: load client data -------
-  $('#client_id').on('change', function(){
-    const cod_ter = $(this).val();
-    const clientCard = $('#client-info-card');
-    const historySection = $('#history-section');
-    const historyList = $('#interaction-history-list');
-
-    if(!cod_ter){
-      clientCard.fadeOut();
-      historySection.fadeOut();
-      $('#summary-client').text('—');
-      return;
-    }
-
-    showLoader();
-    $.ajax({
-      url: `/interactions/cliente/${cod_ter}`,
-      type: 'GET',
-      dataType: 'json',
-      timeout: 10000,
-    }).done(function(data){
-      const initials = ((data.nom1||'').charAt(0) + (data.apl1||'').charAt(0)).toUpperCase();
-      $('#info-avatar').text(initials || '—');
-      $('#info-nombre').text(data.nom_ter ?? 'No registrado');
-      $('#info-id').text(`ID: ${data.cod_ter ?? 'N/A'}`);
-      
-      $('#info-distrito').text(data.distrito.NOM_DIST ?? 'No registrado');
-
-      $('#info-categoria').text(data.maeTipos.nombre ?? 'No registrado');
-      $('#info-email').text(data.email ?? 'No registrado');
-      $('#info-telefono').text(data.tel1 ?? 'No registrado');
-      $('#info-direccion').text(data.dir ?? 'No registrado');
-
-      $('#info-cod-congregacion').text(data.congrega ? data.congrega : 'No registrado'); //CODIGO
-      $('#info-nom-congregacion').text(data.congregaciones?.nombre ?? 'No registrado'); //NOMBRE
-
-            
-      $('#info-ultima-interaccion').text(data.last_interaction_date ?? 'Ninguna');
-      $('#btn-editar-cliente').attr('href', `/maestras/terceros/${data.cod_ter}/edit`);
-
-      historyList.empty();
-      if(data.history && data.history.length){
-        data.history.forEach(item => {
-          const html = `<div class="history-item"><div class="history-date">${item.date} - ${item.agent}</div><div class="history-note">${item.notes}</div></div>`;
-          historyList.append(html);
+    // Actualizar progreso
+    function updateProgress() {
+        const requiredFields = ['client_id', 'interaction_channel', 'interaction_type', 'notes', 'outcome'];
+        let completed = 0;
+        
+        requiredFields.forEach(field => {
+            const value = $(`[name="${field}"]`).val();
+            if (value && value.trim() !== '') {
+                completed++;
+            }
         });
-        historySection.fadeIn();
-      } else {
-        historySection.fadeOut();
-      }
+        
+        const progress = Math.round((completed / requiredFields.length) * 100);
+        
+        $('#progress-bar').css('width', progress + '%');
+        $('#progress-percentage').text(progress + '%');
+        
+        // Actualizar mensaje
+        const messages = [
+            'Comienza seleccionando un cliente',
+            'Agrega los detalles de la interacción',
+            'Completa la información adicional',
+            'Define el resultado',
+            'Adjunta archivos y revisa el historial',
+            'Formulario completo'
+        ];
+        
+        const messageIndex = Math.min(Math.floor(progress / 20), messages.length - 1);
+        $('#progress-message').text(messages[messageIndex]);
+    }
 
-      clientCard.fadeIn();
-      $('#summary-client').text($('#client_id option:selected').text() || (data.nom_ter ?? '—'));
-      toastr.success('Información del cliente cargada');
-    }).fail(function(){
-      Swal.fire({
-        icon: 'error',
-        title: 'No se pudo cargar el cliente',
-        text: 'Revisa la conexión o inténtalo más tarde.'
-      });
-      $('#client-info-card').fadeOut();
-      $('#history-section').fadeOut();
-    }).always(function(){
-      hideLoader();
+    // Guardado automático en localStorage
+    function saveDraft(){
+        try{
+            const data = {};
+            $form.find('input,textarea,select').each(function(){
+                const name = this.name;
+                if(!name) return;
+                if(this.type === 'file') return;
+                if(this.type === 'checkbox' || this.type === 'radio'){
+                    if(this.checked) data[name] = this.value;
+                } else {
+                    if ($(this).is('select[multiple]')){
+                        data[name] = $(this).val() || [];
+                    } else {
+                        data[name] = $(this).val();
+                    }
+                }
+            });
+            data.activeTab = $('.tab-button.active').data('tab');
+            localStorage.setItem(storageKey, JSON.stringify(data));
+            toastr.success('Borrador guardado automáticamente');
+        }catch(e){
+            console.warn('No se pudo guardar el borrador', e);
+        }
+    }
+
+    function debounce(fn, wait){
+        let t;
+        return function(...args){ clearTimeout(t); t = setTimeout(()=>fn.apply(this,args), wait); };
+    }
+
+    const saveDraftDebounced = debounce(saveDraft, 700);
+
+    // Cargar borrador guardado
+    function loadDraft(){
+        try{
+            const raw = localStorage.getItem(storageKey);
+            if(!raw) return;
+            const data = JSON.parse(raw);
+            Object.keys(data).forEach(name => {
+                if(name === 'activeTab') return;
+                const value = data[name];
+                const $el = $form.find(`[name="${name}"]`);
+                if(!$el.length) return;
+                if($el.is('select[multiple]')){
+                    $el.val(value).trigger('change');
+                } else if($el.is('select')){
+                    $el.val(value).trigger('change');
+                } else {
+                    $el.val(value);
+                }
+            });
+            
+            if (data.activeTab) {
+                showTab(data.activeTab);
+            }
+            
+            toastr.info('Borrador restaurado automáticamente');
+        }catch(e){
+            console.warn('No se pudo cargar el borrador', e);
+        }
+    }
+
+    // Eventos para guardar borrador
+    $form.on('input change', 'input, textarea, select', function(){
+        updateProgress();
+        saveDraftDebounced();
     });
-  });
 
-  // ------- Outcome -> planning logic -------
-  const outcomeSelect = $('#outcome');
-  const planningSection = $('#planning-section');
-  function handleOutcomeChange(){
-    const selectedOutcomeText = outcomeSelect.find("option:selected").text().trim();
-    if(selectedOutcomeText === 'Pendiente' || selectedOutcomeText === 'No contesta' || selectedOutcomeText.toLowerCase().includes('pendiente')){
-      planningSection.slideDown();
-    } else {
-      planningSection.slideUp();
+    // Cargar borrador al iniciar
+    loadDraft();
+    updateProgress();
+
+    // Botón para limpiar borrador
+    $('#clear-draft').on('click', function(){
+        Swal.fire({
+            title: '¿Borrar el borrador guardado?',
+            text: "Esto eliminará el borrador localmente.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, borrar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                localStorage.removeItem(storageKey);
+                $form[0].reset();
+                $('.select2').val(null).trigger('change');
+                $('#planning-section').hide();
+                $('#client-info-card').hide();
+                $('#history-section').hide();
+                updateProgress();
+                toastr.success('Borrador eliminado');
+            }
+        });
+    });
+
+    // Validación de formulario
+    function validateField(el){
+        const $el = $(el);
+        const name = $el.attr('name');
+        
+        if(!$el.prop('required')) {
+            if($el.val() && $el.val().toString().trim() !== ''){
+                $el.removeClass('is-invalid').addClass('is-valid');
+            } else {
+                $el.removeClass('is-valid is-invalid');
+            }
+            return true;
+        }
+
+        const val = $el.val();
+        if(!val || val.toString().trim() === ''){
+            $el.removeClass('is-valid').addClass('is-invalid');
+            return false;
+        }
+        
+        if($el.attr('type') === 'url' && val){
+            try{
+                new URL(val);
+            }catch(e){
+                $el.removeClass('is-valid').addClass('is-invalid');
+                return false;
+            }
+        }
+        
+        if($el.attr('type') === 'number' && val){
+            if(isNaN(val) || parseFloat(val) < 0){
+                $el.removeClass('is-valid').addClass('is-invalid');
+                return false;
+            }
+        }
+        
+        $el.removeClass('is-invalid').addClass('is-valid');
+        return true;
     }
-    outcomeSelect.removeClass('outcome-concretada outcome-pendiente outcome-nocontesta');
-    if(selectedOutcomeText === 'Concretada'){
-      outcomeSelect.addClass('outcome-concretada');
-    } else if(selectedOutcomeText === 'Pendiente'){
-      outcomeSelect.addClass('outcome-pendiente');
-    } else if(selectedOutcomeText === 'No contesta'){
-      outcomeSelect.addClass('outcome-nocontesta');
+
+    // Envío de formulario
+    $form.on('submit', function(e){
+        e.preventDefault();
+        let valid = true;
+        
+        $form.find('select[required], textarea[required], input[required]').each(function(){
+            const ok = validateField(this);
+            if(!ok) valid = false;
+        });
+        
+        if(!valid){
+            const $first = $form.find('.is-invalid').first();
+            $('html,body').animate({scrollTop: $first.offset().top - 90}, 350);
+            Swal.fire({
+                icon: 'error',
+                title: 'Errores en el formulario',
+                text: 'Por favor corrige los campos marcados antes de enviar.',
+            });
+            return false;
+        }
+
+        Swal.fire({
+            title: 'Confirmar envío',
+            text: "¿Deseas enviar la interacción ahora?",
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Enviar',
+            cancelButtonText: 'Cancelar'
+        }).then((result) => {
+            if(result.isConfirmed){
+                localStorage.removeItem(storageKey);
+                showLoader();
+                $form.off('submit');
+                $form.submit();
+            }
+        });
+    });
+
+    // Cargar información del cliente
+    $('#client_id').on('change', function(){
+        const cod_ter = $(this).val();
+        const clientCard = $('#client-info-card');
+        const historySection = $('#history-section');
+        const historyList = $('#interaction-history-list');
+
+        if(!cod_ter){
+            clientCard.fadeOut();
+            historySection.fadeOut();
+            updateProgress();
+            return;
+        }
+
+        showLoader();
+        $.ajax({
+            url: `/interactions/cliente/${cod_ter}`,
+            type: 'GET',
+            dataType: 'json',
+            timeout: 10000,
+        }).done(function(data){
+            const initials = ((data.nom1||'').charAt(0) + (data.apl1||'').charAt(0)).toUpperCase();
+            $('#info-avatar').text(initials || '—');
+            $('#info-nombre').text(data.nom_ter ?? 'No registrado');
+            $('#info-id').text(`ID: ${data.cod_ter ?? 'N/A'}`);
+            
+            $('#info-distrito').text(data.distrito?.NOM_DIST ?? 'No registrado');
+            $('#info-categoria').text(data.maeTipos?.nombre ?? 'No registrado');
+            $('#info-email').text(data.email ?? 'No registrado');
+            $('#info-telefono').text(data.tel1 ?? 'No registrado');
+            $('#info-direccion').text(data.dir ?? 'No registrado');
+            $('#btn-editar-cliente').attr('href', `/maestras/terceros/${data.cod_ter}/edit`);
+
+            historyList.empty();
+            if(data.history && data.history.length){
+                data.history.forEach(item => {
+                    const html = `<div class="mb-2 pb-2 border-bottom">
+                        <div class="fw-semibold">${item.date} - ${item.agent}</div>
+                        <div class="text-muted small">${item.type} - ${item.outcome}</div>
+                        <div class="text-muted small">${item.notes}</div>
+                    </div>`;
+                    historyList.append(html);
+                });
+                historySection.fadeIn();
+            } else {
+                historySection.fadeOut();
+            }
+
+            clientCard.fadeIn();
+            updateProgress();
+            toastr.success('Información del cliente cargada');
+        }).fail(function(){
+            Swal.fire({
+                icon: 'error',
+                title: 'No se pudo cargar el cliente',
+                text: 'Revisa la conexión o inténtalo más tarde.'
+            });
+            $('#client-info-card').fadeOut();
+            $('#history-section').fadeOut();
+        }).always(function(){
+            hideLoader();
+        });
+    });
+
+    // Lógica para mostrar/ocultar sección de planificación
+    const outcomeSelect = $('#outcome');
+    const planningSection = $('#planning-section');
+    
+    function handleOutcomeChange(){
+        const selectedOutcomeText = outcomeSelect.find("option:selected").text().trim();
+        if(selectedOutcomeText === 'Pendiente' || selectedOutcomeText === 'No contesta' || selectedOutcomeText.toLowerCase().includes('pendiente')){
+            planningSection.slideDown();
+        } else {
+            planningSection.slideUp();
+        }
+        updateProgress();
     }
-    updateSummary();
-  }
-  outcomeSelect.on('change', handleOutcomeChange);
-  handleOutcomeChange();
+    
+    outcomeSelect.on('change', handleOutcomeChange);
+    handleOutcomeChange();
 
-  // ------- Quick date buttons -------
-  $('.btn-quick-date').on('click', function(){
-    const daysToAdd = parseInt($(this).data('days')) || 0;
-    const nextActionInput = $('input[name="next_action_date"]');
-    const targetDate = new Date();
-    targetDate.setDate(targetDate.getDate() + daysToAdd);
-    const year = targetDate.getFullYear();
-    const month = String(targetDate.getMonth()+1).padStart(2,'0');
-    const day = String(targetDate.getDate()).padStart(2,'0');
-    const hours = '09';
-    const minutes = '00';
-    const formatted = `${year}-${month}-${day}T${hours}:${minutes}`;
-    nextActionInput.val(formatted).addClass('is-valid');
-    updateSummary();
-    saveDraftDebounced();
-    toastr.info('Fecha establecida: ' + new Date(formatted).toLocaleString());
-  });
+    // Botones de fecha rápida
+    $('.quick-date').on('click', function(){
+        const daysToAdd = parseInt($(this).data('days')) || 0;
+        const nextActionInput = $('#next_action_date');
+        const targetDate = new Date();
+        targetDate.setDate(targetDate.getDate() + daysToAdd);
+        const year = targetDate.getFullYear();
+        const month = String(targetDate.getMonth()+1).padStart(2,'0');
+        const day = String(targetDate.getDate()).padStart(2,'0');
+        const hours = '09';
+        const minutes = '00';
+        const formatted = `${year}-${month}-${day}T${hours}:${minutes}`;
+        nextActionInput.val(formatted);
+        updateProgress();
+        saveDraftDebounced();
+        toastr.info('Fecha establecida: ' + new Date(formatted).toLocaleString());
+    });
 
-  // ------- Dynamic summary -------
-  function updateSummary(){
-    const clientText = $('#client_id option:selected').text() || $('#info-nombre').text() || '—';
-    const outcomeText = $('#outcome option:selected').text() || '—';
-    const tags = $('#tags').val();
-    const tagsText = (tags && tags.length) ? tags.join(', ') : '—';
-    const nextAction = $('input[name="next_action_date"]').val();
-    const nextActionText = nextAction ? new Date(nextAction).toLocaleString() : '—';
+    // Contador de caracteres para el campo de notas
+    const $notes = $('#notes');
+    const $notesCounter = $('#notes-counter');
+    
+    $notes.on('input', function() {
+        const length = $(this).val().length;
+        $notesCounter.text(`${length}/500 caracteres`);
+        
+        if (length > 500) {
+            $notesCounter.addClass('text-danger');
+        } else {
+            $notesCounter.removeClass('text-danger');
+        }
+    });
 
-    $('#summary-client').text(clientText);
-    $('#summary-outcome').text(outcomeText);
-    $('#summary-tags').text(tagsText);
-    $('#summary-nextaction').text(nextActionText);
-  }
+    // Inicializar contador de caracteres
+    $notes.trigger('input');
 
-  updateSummary();
+    // Funcionalidad de colapsar/expandir secciones
+    $('#toggle-client-info').on('click', function() {
+        const $content = $('#client-info-content');
+        const $icon = $(this).find('i');
+        
+        $content.slideToggle();
+        $icon.toggleClass('bi-chevron-down bi-chevron-up');
+    });
 
-  $(document).on('focus', '.select2-selection', function(){
-    $(this).css('box-shadow','0 6px 20px var(--focus-ring)');
-  }).on('blur', '.select2-selection', function(){
-    $(this).css('box-shadow','');
-  });
+    $('#toggle-history').on('click', function() {
+        const $content = $('#history-content');
+        const $icon = $(this).find('i');
+        
+        $content.slideToggle();
+        $icon.toggleClass('bi-chevron-down bi-chevron-up');
+    });
 
-  setTimeout(function(){
-    $form.find('select[required], textarea[required], input[required]').each(function(){ validateField(this); });
-  }, 400);
-
-  $(document).on('keydown', function(e){
-    if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's'){
-      e.preventDefault();
-      saveDraft();
-      toastr.success('Borrador guardado (Ctrl+S)');
+    // Mejora en la carga de imágenes de avatar
+    function generateAvatar(name) {
+        const colors = ['#6B9BD1', '#7FA9D3', '#93B7D5', '#A7C5D7', '#BBD3D9'];
+        const initials = name.split(' ').map(n => n.charAt(0)).join('').toUpperCase().substring(0, 2);
+        const colorIndex = name.charCodeAt(0) % colors.length;
+        
+        return {
+            initials: initials || '—',
+            color: colors[colorIndex]
+        };
     }
-    if(e.key === 'Escape'){
-      if($ajaxLoader.hasClass('show')) hideLoader();
+
+    // Actualizar avatar con colores dinámicos
+    $('#client_id').on('change', function() {
+        const selectedText = $(this).find('option:selected').text();
+        const avatarData = generateAvatar(selectedText);
+        const $avatar = $('#info-avatar');
+        
+        $avatar.text(avatarData.initials);
+        $avatar.css('background-color', avatarData.color);
+    });
+
+    // Mejora en la visualización de archivos adjuntos
+    $('#attachments').on('change', function() {
+        const files = this.files;
+        let fileNames = [];
+        
+        for (let i = 0; i < files.length; i++) {
+            fileNames.push(files[i].name);
+        }
+        
+        if (fileNames.length > 0) {
+            toastr.info(`Archivos seleccionados: ${fileNames.join(', ')}`);
+        }
+    });
+
+    // Función para validar URL
+    function isValidUrl(string) {
+        try {
+            new URL(string);
+            return true;
+        } catch (_) {
+            return false;
+        }
     }
-  });
 
-  $(document).on('input focus', 'input,textarea,select', function(){
-    const name = $(this).attr('name');
-    $(`[data-for="${name}"]`).fadeOut(120);
-  });
+    // Validación de URL en tiempo real
+    $('#interaction_url').on('input', function() {
+        const url = $(this).val();
+        if (url && !isValidUrl(url)) {
+            $(this).addClass('is-invalid');
+        } else {
+            $(this).removeClass('is-invalid');
+        }
+    });
 
-})();
+    // Atajos de teclado
+    $(document).on('keydown', function(e) {
+        if (e.ctrlKey && e.key === 's') {
+            e.preventDefault();
+            saveDraft();
+            toastr.success('Borrador guardado');
+        }
+        
+        if (e.altKey) {
+            switch(e.key) {
+                case '1': showTab('principal'); break;
+                case '2': showTab('adicional'); break;
+                case '3': showTab('resultado'); break;
+                case '4': showTab('adjuntos'); break;
+                case '5': showTab('historial'); break;
+            }
+        }
+    });
+});
 </script>
-
-</body>
-</html>
+@endpush
