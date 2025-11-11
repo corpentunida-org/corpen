@@ -494,57 +494,51 @@ Route::middleware('auth')->prefix('soportes')->name('soportes.')->group(function
     // --- CONTROLADOR DE SOPORTES PRINCIPAL ---
     Route::resource('soportes', ScpSoporteController::class)
         ->parameters(['soportes' => 'scpSoporte']);
-
-    // ✅ Rutas seguras para descargar archivos de soporte
-
-/*     Route::get('soportes/descargar/{id}', [ScpSoporteController::class, 'descargarSoporte'])
-        ->name('descargar'); */
-// ✅ Descargar soporte
-Route::get('soportes/descargar/{id}', [ScpSoporteController::class, 'descargarSoporte'])
-    ->name('descargar');
-
-// ✅ Ver soporte (abrir temporalmente)
-Route::get('soportes/ver/{id}', [ScpSoporteController::class, 'verSoporte'])
-    ->name('ver');
+    // ✅ Descargar soporte
+    Route::get('soportes/descargar/{id}', [ScpSoporteController::class, 'descargarSoporte'])
+        ->name('descargar');
+    // ✅ Ver soporte (abrir temporalmente)
+    Route::get('soportes/ver/{id}', [ScpSoporteController::class, 'verSoporte'])
+        ->name('ver');
 
 
-    // Rutas de Observaciones Anidadas
-    Route::post('soportes/{scpSoporte}/observaciones', [ScpSoporteController::class, 'storeObservacion'])
-        ->name('observaciones.store');
+        // Rutas de Observaciones Anidadas
+        Route::post('soportes/{scpSoporte}/observaciones', [ScpSoporteController::class, 'storeObservacion'])
+            ->name('observaciones.store');
 
-    Route::delete('soportes/{scpSoporte}/observaciones/{scpObservacion}', [ScpSoporteController::class, 'destroyObservacion'])
-        ->name('observaciones.destroy');
+        Route::delete('soportes/{scpSoporte}/observaciones/{scpObservacion}', [ScpSoporteController::class, 'destroyObservacion'])
+            ->name('observaciones.destroy');
 
-    // Subtipos
-    Route::resource('subtipos', ScpSubTipoController::class);
+        // Subtipos
+        Route::resource('subtipos', ScpSubTipoController::class);
 
-    // Filtros dinámicos
-    Route::get('tipos/filtro/{categoria}', [ScpSoporteController::class, 'getTiposByCategoria'])
-        ->name('tipos.byCategoria');
+        // Filtros dinámicos
+        Route::get('tipos/filtro/{categoria}', [ScpSoporteController::class, 'getTiposByCategoria'])
+            ->name('tipos.byCategoria');
 
-    Route::get('subtipos/filtro/{tipo}', [ScpSoporteController::class, 'getSubTipos'])
-        ->name('subtipos.byTipo');
+        Route::get('subtipos/filtro/{tipo}', [ScpSoporteController::class, 'getSubTipos'])
+            ->name('subtipos.byTipo');
 
-    // Vista solo de Pendientes
-    Route::get('pendientes', [ScpSoporteController::class, 'pendientes'])
-        ->name('pendientes');
+        // Vista solo de Pendientes
+        Route::get('pendientes', [ScpSoporteController::class, 'pendientes'])
+            ->name('pendientes');
 
-    // Vista solo SinAsignar
-    /*     Route::get('sin-asignar', [ScpSoporteController::class, 'sinAsignar'])
-        ->name('soportes.sinAsignar'); */
+        // Vista solo SinAsignar
+        /*     Route::get('sin-asignar', [ScpSoporteController::class, 'sinAsignar'])
+            ->name('soportes.sinAsignar'); */
 
-    // 🔔 Notificaciones simples (contador rápido)
-    Route::get('notificaciones', [ScpSoporteController::class, 'getNotificaciones'])
-        ->name('notificaciones');
+        // 🔔 Notificaciones simples (contador rápido)
+        Route::get('notificaciones', [ScpSoporteController::class, 'getNotificaciones'])
+            ->name('notificaciones');
 
-    // 🔔 Notificaciones detalladas (con estados y redirección)
-    Route::get('notificaciones/detalladas', [ScpSoporteController::class, 'getNotificacionesDetalladas'])
-        ->name('notificaciones.detalladas');
+        // 🔔 Notificaciones detalladas (con estados y redirección)
+        Route::get('notificaciones/detalladas', [ScpSoporteController::class, 'getNotificacionesDetalladas'])
+            ->name('notificaciones.detalladas');
 
-    Route::get('soportes/enviar-correo-escalado/{id}', [ScpNotificacionController::class, 'enviarCorreoEscalado'])
-        ->name('soportes.enviarCorreoEscalado');  
-});
-
+        Route::get('soportes/enviar-correo-escalado/{id}', [ScpNotificacionController::class, 'enviarCorreoEscalado'])
+            ->name('soportes.enviarCorreoEscalado');  
+    });
+//FIN SOPORTE
 
 
 

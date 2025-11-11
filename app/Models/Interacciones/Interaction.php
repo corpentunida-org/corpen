@@ -59,7 +59,7 @@ class Interaction extends Model
     // ------------------- RELACIONES EXISTENTES -------------------
     public function agent()
     {
-        return $this->belongsTo(User::class, 'agent_id', 'nit');
+        return $this->belongsTo(User::class, 'agent_id', 'nid');
     }
     public function client()
     {
@@ -88,7 +88,7 @@ class Interaction extends Model
      */
     public function area()
     {
-        return $this->belongsTo(GdoArea::class, 'id_area');
+        return $this->belongsTo(GdoArea::class, 'id_area','id');
     }
     
     /**
@@ -96,7 +96,7 @@ class Interaction extends Model
      */
     public function areaDeAsignacion()
     {
-        return $this->belongsTo(GdoArea::class, 'id_area_de_asignacion');
+        return $this->belongsTo(GdoArea::class, 'id_area_de_asignacion','id');
     }
 
     /**
@@ -104,7 +104,7 @@ class Interaction extends Model
      */
     public function cargo()
     {
-        return $this->belongsTo(GdoCargo::class, 'id_cargo');
+        return $this->belongsTo(GdoCargo::class, 'id_cargo','id');
     }
 
     /**
@@ -112,7 +112,7 @@ class Interaction extends Model
      */
     public function lineaDeObligacion()
     {
-        return $this->belongsTo(LineaCredito::class, 'id_linea_de_obligacion');
+        return $this->belongsTo(LineaCredito::class, 'id_linea_de_obligacion','id');
     }
 
 

@@ -2,7 +2,7 @@
 <li class="nxl-item nxl-hasmenu">
     <a class="nxl-link" href="javascript:void(0)">
         <span class="nxl-micon"><i class="bi bi-chat-dots"></i></span>
-        <span class="nxl-mtext">Interacciones</span>
+        <span class="nxl-mtext">Daytrack</span>
         <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
     </a>
 
