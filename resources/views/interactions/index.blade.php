@@ -1,319 +1,1210 @@
 <x-base-layout>
+    {{-- Alertas mejoradas con diseño --}}
     @if (session('success'))
-        <div class="alert alert-success alert-dismissible fade show animate__animated animate__fadeInDown" role="alert">
-            <i class="feather-check-circle me-2"></i> {{ session('success') }}
+        <div class="alert alert-success alert-dismissible fade show d-flex align-items-center glassmorphism-alert" role="alert">
+            <i class="feather-check-circle me-2"></i>
+            <div>{{ session('success') }}</div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+    @if (session('error'))
+        <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center glassmorphism-alert" role="alert">
+            <i class="feather-alert-circle me-2"></i>
+            <div>{{ session('error') }}</div>
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
 
-    <div class="card shadow-sm border-0">
-        <div class="card-body">
-            {{-- 📌 Encabezado --}}
-            <div class="mb-4 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
-                <h5 class="fw-bold mb-0 text-primary">
-                    <i class="feather-grid me-2"></i> Gestión de Interacciones
-                    <small class="text-muted d-block mt-1 fw-normal">Visualiza, busca y gestiona todas las interacciones con tus clientes.</small>
-                </h5>
-                <a href="{{ route('interactions.create') }}" class="btn btn-primary d-flex align-items-center gap-2 animate__animated animate__pulse animate__infinite">
-                    <i class="feather-plus-circle"></i> <span>Nueva Interacción</span>
-                </a>
+    {{-- Filtros mejorados --}}
+    <div class="card shadow-sm mb-3 glassmorphism-card">
+        <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+            <div>
+                <h6 class="mb-0 fw-semibold">
+                    <i class="feather-search me-2"></i>Buscar y Filtrar
+                </h6>
+                <small class="text-muted">Refina los resultados</small>
             </div>
-
-            {{-- 📌 Buscador Principal y Filtros --}}
-            <div class="px-4 pb-4">
-                <form id="filterForm" action="{{ route('interactions.index') }}" method="GET">
-                    <div class="input-group shadow-sm rounded overflow-hidden mb-3">
-                        <span class="input-group-text bg-white border-end-0"><i class="feather-search text-muted"></i></span>
-                        <input type="text" name="q" class="form-control border-start-0"
-                               placeholder="Buscar por cliente, cédula, resultado o notas..."
-                               value="{{ request('q') }}">
-                        <button class="btn btn-primary" type="submit">
-                            <i class="feather-filter d-none d-sm-inline me-1"></i> Filtrar
-                        </button>
-                        @if (request('q') || request('channel_filter') || request('type_filter') || request('outcome_filter') || request('interaction_date_filter'))
-                            <a href="{{ route('interactions.index') }}" class="btn btn-outline-secondary">
-                                <i class="feather-x-circle me-1"></i> Limpiar
-                            </a>
-                        @endif
+            <button type="button" class="btn btn-sm btn-light" id="clearFilters">
+                <i class="feather-refresh-cw me-1"></i>Restablecer
+            </button>
+        </div>
+        <div class="card-body p-2">
+            <div class="row g-2">
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold text-muted small mb-1">Búsqueda</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="feather-search"></i></span>
+                        <input type="text" id="filterSearch" class="form-control pastel-input" placeholder="Cliente, cédula, notas..." value="{{ request('q') }}">
                     </div>
-
-                    {{-- 📦 Filtros Adicionales --}}
-                    <div class="card p-3 bg-light">
-                        <div class="row g-3">
-                            <div class="col-md-3">
-                                <label class="form-label fw-semibold">Canal</label>
-                                <select id="channel_filter" name="channel_filter" class="form-select form-select-sm">
-                                    <option value="">Todos</option>
-                                    @foreach($channels as $channel)
-                                        <option value="{{ $channel }}" {{ request('channel_filter') == $channel ? 'selected' : '' }}>{{ $channel }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label fw-semibold">Tipo</label>
-                                <select id="type_filter" name="type_filter" class="form-select form-select-sm">
-                                    <option value="">Todos</option>
-                                    @foreach($types as $type)
-                                        <option value="{{ $type }}" {{ request('type_filter') == $type ? 'selected' : '' }}>{{ $type }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label fw-semibold">Resultado</label>
-                                <select id="outcome_filter" name="outcome_filter" class="form-select form-select-sm">
-                                    <option value="">Todos</option>
-                                    @foreach($outcomes as $outcome)
-                                        <option value="{{ $outcome }}" {{ request('outcome_filter') == $outcome ? 'selected' : '' }}>{{ $outcome }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label fw-semibold">Fecha Interacción</label>
-                                <input type="date" id="interaction_date_filter" name="interaction_date_filter" class="form-control form-control-sm" value="{{ request('interaction_date_filter') }}" />
-                            </div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold text-muted small mb-1">Canal</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="feather-message-circle"></i></span>
+                        <select id="filterChannel" class="form-select pastel-select">
+                            <option value="">Todos</option>
+                            @foreach($channels as $channel)
+                                <option value="{{ $channel }}" {{ request('channel_filter') == $channel ? 'selected' : '' }}>{{ $channel }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold text-muted small mb-1">Tipo</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="feather-tag"></i></span>
+                        <select id="filterType" class="form-select pastel-select">
+                            <option value="">Todos</option>
+                            @foreach($types as $type)
+                                <option value="{{ $type }}" {{ request('type_filter') == $type ? 'selected' : '' }}>{{ $type }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold text-muted small mb-1">Resultado</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="feather-check-square"></i></span>
+                        <select id="filterOutcome" class="form-select pastel-select">
+                            <option value="">Todos</option>
+                            @foreach($outcomes as $outcome)
+                                <option value="{{ $outcome }}" {{ request('outcome_filter') == $outcome ? 'selected' : '' }}>{{ $outcome }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="row g-2 mt-2">
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold text-muted small mb-1">Área</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="feather-layers"></i></span>
+                        <select id="filterArea" class="form-select pastel-select">
+                            <option value="">Todas</option>
+                            @foreach($areas as $area)
+                                <option value="{{ $area }}" {{ request('area_filter') == $area ? 'selected' : '' }}>{{ $area }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold text-muted small mb-1">Cargo</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="feather-briefcase"></i></span>
+                        <select id="filterCargo" class="form-select pastel-select">
+                            <option value="">Todos</option>
+                            @foreach($cargos as $cargo)
+                                <option value="{{ $cargo }}" {{ request('cargo_filter') == $cargo ? 'selected' : '' }}>{{ $cargo }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold text-muted small mb-1">Línea de Obligación</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="feather-credit-card"></i></span>
+                        <select id="filterLinea" class="form-select pastel-select">
+                            <option value="">Todas</option>
+                            @foreach($lineas as $linea)
+                                <option value="{{ $linea }}" {{ request('linea_filter') == $linea ? 'selected' : '' }}>{{ $linea }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold text-muted small mb-1">Fecha</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="feather-calendar"></i></span>
+                        <input type="date" id="filterFecha" class="form-control pastel-input" value="{{ request('interaction_date_filter') }}" />
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">
+                            <span id="resultCount">Mostrando todos los resultados</span>
+                        </small>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn btn-outline-secondary active" data-view="table">
+                                <i class="feather-list"></i>
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" data-view="cards">
+                                <i class="feather-grid"></i>
+                            </button>
                         </div>
                     </div>
-                </form>
-            </div>
-
-            {{-- 📊 Tabla Actualizada --}}
-            <div class="table-responsive excel-grid-wrapper">
-                <table id="interactionsTable" class="table excel-grid table-hover mb-0 align-middle small">
-                    <thead class="table-light sticky-top shadow-sm">
-                        <tr>
-                            <th style="width: 50px;" class="text-center"># ID</th>
-                            <th style="width: 20%;">Cliente</th>
-                            <th style="width: 150px;" data-bs-toggle="tooltip" title="Número de identificación del cliente">Cédula</th>
-                            <th style="width: 120px;">Teléfono</th>
-                            <th style="width: 160px;" data-bs-toggle="tooltip" title="Fecha y hora en que ocurrió la interacción">Fecha Interacción</th>
-                            <th style="width: 160px;" data-bs-toggle="tooltip" title="Fecha y tipo de la próxima acción programada">Próxima Acción</th>
-                            <th style="width: 120px;">Resultado</th>
-                            <th style="width: 120px;" class="text-center">Acciones Rápidas</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($interactions as $interaction)
-                            @php
-                                $attachments = $interaction->attachment_urls ?? [];
-                                $outcome = $interaction->outcomeRelation?->name ?? 'Sin definir';
-                                $badgeClass = [
-                                    'Exitoso' => 'success',
-                                    'Pendiente' => 'warning',
-                                    'Fallido' => 'danger',
-                                    'Seguimiento' => 'info'
-                                ][$outcome] ?? 'secondary';
-
-                                // NOTA: El controlador carga 'nextAction' pero la vista usa columnas directas.
-                                // Esto es correcto SI 'next_action_date' y 'next_action_type' son columnas en la tabla 'interactions'.
-                                $nextActionDate = optional($interaction->next_action_date);
-                                $isPast = $nextActionDate->isPast() && !$nextActionDate->isToday();
-                                $isToday = $nextActionDate->isToday();
-                                $isFuture = $nextActionDate->isFuture();
-
-                                // Se usa 'client->nom_ter' y 'client->cod_ter' basado en la lógica de búsqueda del controlador
-                                $clientName = $interaction->client->nom_ter ?? $interaction->client->nombre ?? 'N/A';
-                                $clientId = $interaction->client->cod_ter ?? $interaction->client->identificacion ?? 'N/A'; // Corregido a identificacion
-                            @endphp
-
-                            <tr>
-                                <td class="text-center">
-                                    <a href="#"
-                                       class="fw-bold text-primary text-decoration-none"
-                                       data-bs-toggle="modal"
-                                       data-bs-target="#interactionDetailModal"
-                                       data-id="{{ $interaction->id }}"
-                                       data-client-name="{{ $clientName }}"
-                                       data-agent="{{ $interaction->agent->name ?? 'Sin asignar' }}"
-                                       data-channel="{{ $interaction->channel?->name ?? '—' }}"
-                                       data-type="{{ $interaction->type?->name ?? '—' }}"
-                                       data-duration="{{ $interaction->duration ? $interaction->duration . (is_numeric($interaction->duration) ? ' min' : '') : '—' }}"
-                                       data-date="{{ optional($interaction->interaction_date)->format('d/m/Y h:i A') ?? '—' }}"
-                                       data-notes="{{ $interaction->notes ?? 'Sin notas.' }}"
-                                       data-outcome="{{ $outcome }}"
-                                       data-outcome-badge="{{ $badgeClass }}"
-                                       data-url="{{ $interaction->interaction_url }}"
-                                       data-related-id="{{ $interaction->parent_interaction_id }}"
-                                       data-related-url="{{ $interaction->parent_interaction_id ? route('interactions.show', $interaction->parent_interaction_id) : '' }}"
-                                       data-attachments='{{ json_encode($attachments) }}'
-                                       data-next-action-date="{{ optional($interaction->next_action_date)->format('d/m/Y h:i A') }}"
-                                       data-next-action-type="{{ $interaction->next_action_type }}"
-                                       data-edit-url="{{ route('interactions.edit', $interaction->id) }}"
-                                       data-show-url="{{ route('interactions.show', $interaction->id) }}"
-                                    >
-                                        #{{ $interaction->client->cod_dist }}
-                                    </a>
-                                </td>
-                                <td>{{ $clientName }}</td>
-                                <td>
-                                    <strong>{{ $clientId }}</strong>
-                                    <br>
-                                    <span class="text-muted small">{{ $clientName }}</span>
-                                </td>
-                                <td>
-                                    <strong>{{ $interaction->client->cel ?? '—' }}</strong>
-                                    <br>
-                                    <span class="text-muted small">{{ $interaction->client->email ?? '—' }}</span>
-                                </td>
-                                <td data-order="{{ optional($interaction->interaction_date)->getTimestamp() }}">
-                                    {{ optional($interaction->interaction_date)->format('d/m/Y h:i A') ?? '—' }}
-                                </td>
-                                <td>
-                                    @if ($interaction->next_action_date)
-                                        <span class="d-block {{ $isPast ? 'text-danger' : ($isToday ? 'text-warning' : 'text-success') }}">
-                                            <i class="feather-calendar me-1"></i> {{ optional($interaction->next_action_date)->format('d/m/Y') }}
-                                        </span>
-                                        <span class="d-block text-muted small">
-                                            <i class="feather-clock me-1"></i> {{ optional($interaction->next_action_date)->format('h:i A') }}
-                                            @if($interaction->next_action_type) ({{ $interaction->next_action_type }}) @endif
-                                        </span>
-                                    @else
-                                        <span class="text-muted small">— Sin próxima acción —</span>
-                                    @endif
-                                </td>
-                                <td>
-                                    <span class="badge bg-{{ $badgeClass }} rounded-pill px-2 py-1">
-                                        {{ $outcome }}
-                                    </span>
-                                </td>
-                                <td class="text-center">
-                                    <div class="d-flex justify-content-center align-items-center gap-1">
-                                        <button type="button"
-                                                class="btn btn-sm btn-outline-primary border-0"
-                                                data-bs-toggle="modal"
-                                                data-bs-target="#interactionDetailModal"
-                                                data-id="{{ $interaction->id }}"
-                                                data-client-name="{{ $clientName }}"
-                                                data-agent="{{ $interaction->agent->name ?? 'Sin asignar' }}"
-                                                data-channel="{{ $interaction->channel?->name ?? '—' }}"
-                                                data-type="{{ $interaction->type?->name ?? '—' }}"
-                                                data-duration="{{ $interaction->duration ? $interaction->duration . (is_numeric($interaction->duration) ? ' min' : '') : '—' }}"
-                                                data-date="{{ optional($interaction->interaction_date)->format('d/m/Y h:i A') ?? '—' }}"
-                                                data-notes="{{ $interaction->notes ?? 'Sin notas.' }}"
-                                                data-outcome="{{ $outcome }}"
-                                                data-outcome-badge="{{ $badgeClass }}"
-                                                data-url="{{ $interaction->interaction_url }}"
-                                                data-related-id="{{ $interaction->parent_interaction_id }}"
-                                                data-related-url="{{ $interaction->parent_interaction_id ? route('interactions.show', $interaction->parent_interaction_id) : '' }}"
-                                                data-attachments='{{ json_encode($attachments) }}'
-                                                data-next-action-date="{{ optional($interaction->next_action_date)->format('d/m/Y h:i A') }}"
-                                                data-next-action-type="{{ $interaction->next_action_type }}"
-                                                data-edit-url="{{ route('interactions.edit', $interaction->id) }}"
-                                                data-show-url="{{ route('interactions.show', $interaction->id) }}"
-                                                title="Ver Detalles"
-                                        ><i class="feather-info"></i></button>
-
-                                        <a href="{{ route('interactions.edit', $interaction->id) }}" class="btn btn-sm btn-outline-warning border-0" title="Editar"><i class="feather-edit-3"></i></a>
-                                        {{-- El formulario de eliminación está comentado, si se necesita, descomentar y asegurarse de tener SweetAlert2 configurado --}}
-                                        {{-- <form action="{{ route('interactions.destroy', $interaction->id) }}" method="POST" class="formEliminar d-inline">
-                                            @csrf @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-outline-danger border-0" title="Eliminar"><i class="feather-trash-2"></i></button>
-                                        </form> --}}
-                                    </div>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="8" class="text-center text-muted py-4">
-                                    <i class="feather-info me-1"></i> No hay interacciones disponibles.
-                                    <br>
-                                    <a href="{{ route('interactions.create') }}" class="btn btn-sm btn-link mt-2"><i class="feather-plus-circle me-1"></i> Crear la primera interacción</a>
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-
-            @if ($interactions->hasPages())
-                <div class="d-flex justify-content-center mt-4">
-                    {{-- Esto asegura que los filtros se mantengan al cambiar de página --}}
-                    {{ $interactions->appends(request()->except('page'))->links() }}
                 </div>
-            @endif
+            </div>
         </div>
     </div>
 
-    {{-- 📦 Modal de Detalle --}}
-    <div class="modal fade" id="interactionDetailModal" tabindex="-1" aria-labelledby="modalTitle" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalTitle">
-                        <i class="feather-file-text me-2"></i> Detalles de Interacción:
-                        <span class="text-primary fw-bold"></span>
+    {{-- Tabla mejorada --}}
+    <div class="card shadow-sm mb-3 glassmorphism-card">
+        <div class="card-body p-2">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h5 class="fw-bold mb-1">Listado de Interacciones</h5>
+                    <p class="text-muted mb-0 small">Gestiona y monitorea todas las interacciones con clientes</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="exportBtn">
+                        <i class="feather-download me-1"></i>Exportar
+                    </button>
+                    <a href="{{ route('interactions.create') }}" class="btn btn-success pastel-btn-gradient btnCrear">
+                        <i class="feather-plus me-2"></i>
+                        <span>Crear Nueva Interacción</span>
+                    </a>
+                </div>
+            </div>
+
+            {{-- Tabs por estado mejorados --}}
+            <ul class="nav nav-tabs mb-3 pastel-tabs" id="interactionTabs" role="tablist">
+                <li class="nav-item" role="presentation">                  
+                    <button class="nav-link pastel-tab active"
+                            id="tab-all-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#tab-all"
+                            type="button"
+                            role="tab"
+                            aria-controls="tab-all"
+                            aria-selected="true">
+                        <i class="feather-inbox me-2"></i>
+                        TODOS
+                        <span class="badge pastel-badge-globito ms-1" style="background-color: #F0F8FF !important; color: #4682B4 !important;">                                
+                            {{ $stats['total'] }}   
+                        </span>                        
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">                  
+                    <button class="nav-link pastel-tab"
+                            id="tab-success-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#tab-success"
+                            type="button"
+                            role="tab"
+                            aria-controls="tab-success"
+                            aria-selected="false">
+                        <i class="feather-check-circle me-2"></i>
+                        EXITOSOS
+                        <span class="badge pastel-badge-globito ms-1" style="background-color: #E8F5E8 !important; color: #2E7D32 !important;">                                
+                            {{ $stats['successful'] }}   
+                        </span>                        
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">                  
+                    <button class="nav-link pastel-tab"
+                            id="tab-pending-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#tab-pending"
+                            type="button"
+                            role="tab"
+                            aria-controls="tab-pending"
+                            aria-selected="false">
+                        <i class="feather-clock me-2"></i>
+                        PENDIENTES
+                        <span class="badge pastel-badge-globito ms-1" style="background-color: #FFF8E1 !important; color: #F57C00 !important;">                                
+                            {{ $stats['pending'] }}   
+                        </span>                        
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">                  
+                    <button class="nav-link pastel-tab"
+                            id="tab-today-tab"
+                            data-bs-toggle="tab"
+                            data-bs-target="#tab-today"
+                            type="button"
+                            role="tab"
+                            aria-controls="tab-today"
+                            aria-selected="false">
+                        <i class="feather-calendar me-2"></i>
+                        HOY
+                        <span class="badge pastel-badge-globito ms-1" style="background-color: #E6F3FF !important; color: #5C7CFA !important;">                                
+                            {{ $stats['today'] }}   
+                        </span>                        
+                    </button>
+                </li>
+            </ul>
+
+            {{-- Contenido --}}
+            <div class="tab-content" id="interactionTabsContent">
+                {{-- TAB todos --}}
+                <div class="tab-pane fade show active" id="tab-all" role="tabpanel" aria-labelledby="tab-all-tab">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle interactionTable pastel-table excel-table" id="tablaPrincipal">
+                            <thead class="table-light pastel-thead">
+                                <tr>
+                                    <th class="py-1">ID</th>
+                                    <th class="py-1">Fecha</th>
+                                    <th class="py-1">Cliente</th>
+                                    <th class="py-1">Canal</th>
+                                    <th class="py-1">Área</th>
+                                    <th class="py-1">Cargo</th>
+                                    <th class="py-1">Línea</th>
+                                    <th class="py-1">Resultado</th>
+                                    <th class="py-1">Próxima Acción</th>
+                                    <th class="py-1 text-end">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse ($interactions as $interaction)
+                                    @php
+                                        $outcome = $interaction->outcomeRelation?->name ?? 'Sin definir';
+                                        $badgeClass = [
+                                            'Exitoso' => 'success',
+                                            'Pendiente' => 'warning',
+                                            'Fallido' => 'danger',
+                                            'Seguimiento' => 'info'
+                                        ][$outcome] ?? 'secondary';
+
+                                        $nextActionDate = optional($interaction->next_action_date);
+                                        $isPast = $nextActionDate->isPast() && !$nextActionDate->isToday();
+                                        $isToday = $nextActionDate->isToday();
+                                        $isFuture = $nextActionDate->isFuture();
+
+                                        $clientName = $interaction->client->nom_ter ?? $interaction->client->nombre ?? 'N/A';
+                                        $clientId = $interaction->client->cod_ter ?? $interaction->client->identificacion ?? 'N/A';
+                                        
+                                        // Nuevos datos
+                                        $areaName = $interaction->area?->nombre ?? '—';
+                                        $cargoName = $interaction->cargo?->nombre_cargo ?? '—';
+                                        $lineaName = $interaction->lineaDeObligacion?->nombre ?? '—';
+                                        $areaAsigName = $interaction->areaDeAsignacion?->nombre ?? '—';
+                                    @endphp
+
+                                    <tr class="table-row-hover pastel-row excel-row" data-outcome="{{ $outcome }}">
+                                        {{-- ID --}}
+                                        <td class="py-1">
+                                            <a href="javascript:void(0)"
+                                               class="interaction-id fw-bold text-decoration-none pastel-link"
+                                               data-id="{{ $interaction->id }}"
+                                               data-fecha="{{ optional($interaction->interaction_date)->format('d/m/Y H:i') }}"
+                                               data-cliente="{{ $clientName }}"
+                                               data-canal="{{ $interaction->channel?->name ?? '—' }}"
+                                               data-tipo="{{ $interaction->type?->name ?? '—' }}"
+                                               data-area="{{ $areaName }}"
+                                               data-cargo="{{ $cargoName }}"
+                                               data-linea="{{ $lineaName }}"
+                                               data-area-asig="{{ $areaAsigName }}"
+                                               data-outcome="{{ $outcome }}"
+                                               data-duracion="{{ $interaction->duration ? $interaction->duration . (is_numeric($interaction->duration) ? ' min' : '') : '—' }}"
+                                               data-notas="{{ $interaction->notes ?? 'Sin notas.' }}"
+                                               data-proxima-fecha="{{ optional($interaction->next_action_date)->format('d/m/Y H:i') }}"
+                                               data-proxima-tipo="{{ $interaction->nextAction?->name ?? '—' }}"
+                                               data-url="{{ $interaction->interaction_url }}"
+                                               data-agent="{{ $interaction->agent->name ?? 'Sin asignar' }}"
+                                               data-edit-url="{{ route('interactions.edit', $interaction->id) }}"
+                                               data-show-url="{{ route('interactions.show', $interaction->id) }}">
+                                                #{{ $interaction->id }}
+                                            </a>
+                                        </td>
+
+                                        {{-- Fecha --}}
+                                        <td class="py-1">
+                                            <div class="d-flex flex-column">
+                                                <span class="small">{{ optional($interaction->interaction_date)->format('d/m/Y') }}</span>
+                                                <small class="text-muted" style="font-size: 0.65rem;">{{ optional($interaction->interaction_date)->format('H:i') }}</small>
+                                            </div>
+                                        </td>
+
+                                        {{-- Cliente --}}
+                                        <td class="py-1">
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar-xs-excel pastel-avatar-primary text-white rounded-circle d-flex align-items-center justify-content-center me-1">
+                                                    {{ strtoupper(substr($clientName, 0, 1)) }}
+                                                </div>
+                                                <div>
+                                                    <div class="small">{{ $clientName }}</div>
+                                                    <small class="text-muted">{{ $clientId }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+
+                                        {{-- Canal --}}
+                                        <td class="py-1">
+                                            <span class="small">{{ $interaction->channel?->name ?? '—' }}</span>
+                                        </td>
+
+                                        {{-- Área --}}
+                                        <td class="py-1">
+                                            <span style="background-color: #F8E8FF !important; color: #6B5B95 !important; border-radius: 6px; padding: 1px 4px; font-size: 0.65rem; font-weight: 500; border: 1px solid #E8D8FF; display: inline-block;">
+                                                {{ $areaName }}
+                                            </span>
+                                        </td>
+
+                                        {{-- Cargo --}}
+                                        <td class="py-1">
+                                            <span class="small">{{ $cargoName }}</span>
+                                        </td>
+
+                                        {{-- Línea --}}
+                                        <td class="py-1">
+                                            <span class="small">{{ $lineaName }}</span>
+                                        </td>
+
+                                        {{-- Resultado --}}
+                                        <td class="py-1">
+                                            <div style="min-width: 60px; text-align: center; transition: all 0.2s ease; border-radius: 8px; font-weight: 500; font-size: 0.6rem; 
+                                                 @if($outcome === 'Exitoso')
+                                                     background-color: #E8F5E8 !important; color: #2E7D32 !important; border: 1px solid #C8E6C9 !important;
+                                                 @elseif($outcome === 'Pendiente')
+                                                     background-color: #FFF8E1 !important; color: #F57C00 !important; border: 1px solid #FFECB3 !important;
+                                                 @elseif($outcome === 'Fallido')
+                                                     background-color: #FFD6E0 !important; color: #D63384 !important; border: 1px solid #FFB3C1 !important;
+                                                 @else
+                                                     background-color: #E1F5FE !important; color: #0288D1 !important; border: 1px solid #B3E5FC !important;
+                                                 @endif
+                                                 padding: 2px 6px; display: flex; align-items: center; justify-content: center;">
+                                                <span>{{ $outcome }}</span>
+                                            </div>
+                                        </td>
+
+                                        {{-- Próxima Acción --}}
+                                        <td class="py-1">
+                                            @if ($interaction->next_action_date)
+                                                <div class="d-flex flex-column">
+                                                    <span class="small {{ $isPast ? 'text-danger' : ($isToday ? 'text-warning' : 'text-success') }}">
+                                                        {{ optional($interaction->next_action_date)->format('d/m/Y') }}
+                                                    </span>
+                                                    <small class="text-muted" style="font-size: 0.65rem;">
+                                                        {{ optional($interaction->next_action_date)->format('H:i') }}
+                                                        @if($interaction->nextAction) ({{ $interaction->nextAction->name }}) @endif
+                                                    </small>
+                                                </div>
+                                            @else
+                                                <span class="text-muted small">—</span>
+                                            @endif
+                                        </td>
+
+                                        {{-- Acciones --}}
+                                        <td class="text-end">
+                                            <div>
+                                                <button type="button"
+                                                        class="btn btn-sm btn-light"
+                                                        style="padding: 2px 6px; font-size: 0.7rem;"
+                                                        onclick="window.location.href='{{ route('interactions.show', $interaction->id) }}'">
+                                                    <i class="feather-eye me-1"></i> Ver
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="10" class="text-center py-4">
+                                            <div class="empty-state">
+                                                <i class="feather-inbox empty-icon"></i>
+                                                <h6 class="mt-2">No hay interacciones registradas</h6>
+                                                <p class="text-muted">Comienza creando una nueva interacción</p>
+                                                <a href="{{ route('interactions.create') }}" class="btn btn-sm pastel-btn-gradient">
+                                                    <i class="feather-plus me-1"></i> Crear Interacción
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {{-- fin tab Todos --}}
+                
+                {{-- TAB Exitosos --}}
+                <div class="tab-pane fade" id="tab-success" role="tabpanel" aria-labelledby="tab-success-tab">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-items-center interactionTable pastel-table excel-table">
+                            <thead class="table-light pastel-thead">
+                                <tr>
+                                    <th class="py-1">ID</th>
+                                    <th class="py-1">Fecha</th>
+                                    <th class="py-1">Cliente</th>
+                                    <th class="py-1">Canal</th>
+                                    <th class="py-1">Área</th>
+                                    <th class="py-1">Cargo</th>
+                                    <th class="py-1">Línea</th>
+                                    <th class="py-1">Resultado</th>
+                                    <th class="py-1">Próxima Acción</th>
+                                    <th class="py-1 text-end">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse ($collectionsForTabs['successful'] as $interaction)
+                                    @php
+                                        $clientName = $interaction->client->nom_ter ?? $interaction->client->nombre ?? 'N/A';
+                                        $clientId = $interaction->client->cod_ter ?? $interaction->client->identificacion ?? 'N/A';
+                                        $areaName = $interaction->area?->nombre ?? '—';
+                                        $cargoName = $interaction->cargo?->nombre_cargo ?? '—';
+                                        $lineaName = $interaction->lineaDeObligacion?->nombre ?? '—';
+                                    @endphp
+                                    <tr class="table-row-hover pastel-row excel-row">
+                                        <td class="py-1">
+                                            <a href="{{ route('interactions.show', $interaction->id) }}" class="fw-bold text-decoration-none pastel-link">
+                                                #{{ $interaction->id }}
+                                            </a>
+                                        </td>
+                                        <td class="py-1">
+                                            <div class="d-flex flex-column">
+                                                <span class="small">{{ optional($interaction->interaction_date)->format('d/m/Y') }}</span>
+                                                <small class="text-muted" style="font-size: 0.65rem;">{{ optional($interaction->interaction_date)->format('H:i') }}</small>
+                                            </div>
+                                        </td>
+                                        <td class="py-1">
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar-xs-excel pastel-avatar-primary text-white rounded-circle d-flex align-items-center justify-content-center me-1">
+                                                    {{ strtoupper(substr($clientName, 0, 1)) }}
+                                                </div>
+                                                <div>
+                                                    <div class="small">{{ $clientName }}</div>
+                                                    <small class="text-muted">{{ $clientId }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="py-1">
+                                            <span class="small">{{ $interaction->channel?->name ?? '—' }}</span>
+                                        </td>
+                                        <td class="py-1">
+                                            <span style="background-color: #F8E8FF !important; color: #6B5B95 !important; border-radius: 6px; padding: 1px 4px; font-size: 0.65rem; font-weight: 500; border: 1px solid #E8D8FF; display: inline-block;">
+                                                {{ $areaName }}
+                                            </span>
+                                        </td>
+                                        <td class="py-1">
+                                            <span class="small">{{ $cargoName }}</span>
+                                        </td>
+                                        <td class="py-1">
+                                            <span class="small">{{ $lineaName }}</span>
+                                        </td>
+                                        <td class="py-1">
+                                            <div style="background-color: #E8F5E8 !important; color: #2E7D32 !important; border-radius: 8px; font-weight: 500; font-size: 0.6rem; border: 1px solid #C8E6C9 !important; padding: 2px 6px; text-align: center;">
+                                                Exitoso
+                                            </div>
+                                        </td>
+                                        <td class="py-1">
+                                            @if ($interaction->next_action_date)
+                                                <div class="d-flex flex-column">
+                                                    <span class="small">{{ optional($interaction->next_action_date)->format('d/m/Y') }}</span>
+                                                    <small class="text-muted" style="font-size: 0.65rem;">
+                                                        {{ optional($interaction->next_action_date)->format('H:i') }}
+                                                        @if($interaction->nextAction) ({{ $interaction->nextAction->name }}) @endif
+                                                    </small>
+                                                </div>
+                                            @else
+                                                <span class="text-muted small">—</span>
+                                            @endif
+                                        </td>
+                                        <td class="text-end">
+                                            <div>
+                                                <button type="button"
+                                                        class="btn btn-sm btn-light"
+                                                        style="padding: 2px 6px; font-size: 0.7rem;"
+                                                        onclick="window.location.href='{{ route('interactions.show', $interaction->id) }}'">
+                                                    <i class="feather-eye me-1"></i> Ver
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="10" class="text-center py-4">
+                                            <div class="empty-state">
+                                                <i class="feather-check-circle empty-icon"></i>
+                                                <h6 class="mt-2">No hay interacciones exitosas</h6>
+                                                <p class="text-muted">No se encontraron interacciones con resultado exitoso</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                {{-- TAB Pendientes --}}
+                <div class="tab-pane fade" id="tab-pending" role="tabpanel" aria-labelledby="tab-pending-tab">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-items-center interactionTable pastel-table excel-table">
+                            <thead class="table-light pastel-thead">
+                                <tr>
+                                    <th class="py-1">ID</th>
+                                    <th class="py-1">Fecha</th>
+                                    <th class="py-1">Cliente</th>
+                                    <th class="py-1">Canal</th>
+                                    <th class="py-1">Área</th>
+                                    <th class="py-1">Cargo</th>
+                                    <th class="py-1">Línea</th>
+                                    <th class="py-1">Resultado</th>
+                                    <th class="py-1">Próxima Acción</th>
+                                    <th class="py-1 text-end">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse ($collectionsForTabs['pending'] as $interaction)
+                                    @php
+                                        $clientName = $interaction->client->nom_ter ?? $interaction->client->nombre ?? 'N/A';
+                                        $clientId = $interaction->client->cod_ter ?? $interaction->client->identificacion ?? 'N/A';
+                                        $areaName = $interaction->area?->nombre ?? '—';
+                                        $cargoName = $interaction->cargo?->nombre_cargo ?? '—';
+                                        $lineaName = $interaction->lineaDeObligacion?->nombre ?? '—';
+                                    @endphp
+                                    <tr class="table-row-hover pastel-row excel-row">
+                                        <td class="py-1">
+                                            <a href="{{ route('interactions.show', $interaction->id) }}" class="fw-bold text-decoration-none pastel-link">
+                                                #{{ $interaction->id }}
+                                            </a>
+                                        </td>
+                                        <td class="py-1">
+                                            <div class="d-flex flex-column">
+                                                <span class="small">{{ optional($interaction->interaction_date)->format('d/m/Y') }}</span>
+                                                <small class="text-muted" style="font-size: 0.65rem;">{{ optional($interaction->interaction_date)->format('H:i') }}</small>
+                                            </div>
+                                        </td>
+                                        <td class="py-1">
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar-xs-excel pastel-avatar-primary text-white rounded-circle d-flex align-items-center justify-content-center me-1">
+                                                    {{ strtoupper(substr($clientName, 0, 1)) }}
+                                                </div>
+                                                <div>
+                                                    <div class="small">{{ $clientName }}</div>
+                                                    <small class="text-muted">{{ $clientId }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="py-1">
+                                            <span class="small">{{ $interaction->channel?->name ?? '—' }}</span>
+                                        </td>
+                                        <td class="py-1">
+                                            <span style="background-color: #F8E8FF !important; color: #6B5B95 !important; border-radius: 6px; padding: 1px 4px; font-size: 0.65rem; font-weight: 500; border: 1px solid #E8D8FF; display: inline-block;">
+                                                {{ $areaName }}
+                                            </span>
+                                        </td>
+                                        <td class="py-1">
+                                            <span class="small">{{ $cargoName }}</span>
+                                        </td>
+                                        <td class="py-1">
+                                            <span class="small">{{ $lineaName }}</span>
+                                        </td>
+                                        <td class="py-1">
+                                            <div style="background-color: #FFF8E1 !important; color: #F57C00 !important; border-radius: 8px; font-weight: 500; font-size: 0.6rem; border: 1px solid #FFECB3 !important; padding: 2px 6px; text-align: center;">
+                                                Pendiente
+                                            </div>
+                                        </td>
+                                        <td class="py-1">
+                                            @if ($interaction->next_action_date)
+                                                <div class="d-flex flex-column">
+                                                    <span class="small">{{ optional($interaction->next_action_date)->format('d/m/Y') }}</span>
+                                                    <small class="text-muted" style="font-size: 0.65rem;">
+                                                        {{ optional($interaction->next_action_date)->format('H:i') }}
+                                                        @if($interaction->nextAction) ({{ $interaction->nextAction->name }}) @endif
+                                                    </small>
+                                                </div>
+                                            @else
+                                                <span class="text-muted small">—</span>
+                                            @endif
+                                        </td>
+                                        <td class="text-end">
+                                            <div>
+                                                <button type="button"
+                                                        class="btn btn-sm btn-light"
+                                                        style="padding: 2px 6px; font-size: 0.7rem;"
+                                                        onclick="window.location.href='{{ route('interactions.show', $interaction->id) }}'">
+                                                    <i class="feather-eye me-1"></i> Ver
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="10" class="text-center py-4">
+                                            <div class="empty-state">
+                                                <i class="feather-clock empty-icon"></i>
+                                                <h6 class="mt-2">No hay interacciones pendientes</h6>
+                                                <p class="text-muted">No se encontraron interacciones con resultado pendiente</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                {{-- TAB Hoy --}}
+                <div class="tab-pane fade" id="tab-today" role="tabpanel" aria-labelledby="tab-today-tab">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-items-center interactionTable pastel-table excel-table">
+                            <thead class="table-light pastel-thead">
+                                <tr>
+                                    <th class="py-1">ID</th>
+                                    <th class="py-1">Fecha</th>
+                                    <th class="py-1">Cliente</th>
+                                    <th class="py-1">Canal</th>
+                                    <th class="py-1">Área</th>
+                                    <th class="py-1">Cargo</th>
+                                    <th class="py-1">Línea</th>
+                                    <th class="py-1">Resultado</th>
+                                    <th class="py-1">Próxima Acción</th>
+                                    <th class="py-1 text-end">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse ($collectionsForTabs['today'] as $interaction)
+                                    @php
+                                        $outcome = $interaction->outcomeRelation?->name ?? 'Sin definir';
+                                        $clientName = $interaction->client->nom_ter ?? $interaction->client->nombre ?? 'N/A';
+                                        $clientId = $interaction->client->cod_ter ?? $interaction->client->identificacion ?? 'N/A';
+                                        $areaName = $interaction->area?->nombre ?? '—';
+                                        $cargoName = $interaction->cargo?->nombre_cargo ?? '—';
+                                        $lineaName = $interaction->lineaDeObligacion?->nombre ?? '—';
+                                    @endphp
+                                    <tr class="table-row-hover pastel-row excel-row">
+                                        <td class="py-1">
+                                            <a href="{{ route('interactions.show', $interaction->id) }}" class="fw-bold text-decoration-none pastel-link">
+                                                #{{ $interaction->id }}
+                                            </a>
+                                        </td>
+                                        <td class="py-1">
+                                            <div class="d-flex flex-column">
+                                                <span class="small">{{ optional($interaction->interaction_date)->format('d/m/Y') }}</span>
+                                                <small class="text-muted" style="font-size: 0.65rem;">{{ optional($interaction->interaction_date)->format('H:i') }}</small>
+                                            </div>
+                                        </td>
+                                        <td class="py-1">
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar-xs-excel pastel-avatar-primary text-white rounded-circle d-flex align-items-center justify-content-center me-1">
+                                                    {{ strtoupper(substr($clientName, 0, 1)) }}
+                                                </div>
+                                                <div>
+                                                    <div class="small">{{ $clientName }}</div>
+                                                    <small class="text-muted">{{ $clientId }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="py-1">
+                                            <span class="small">{{ $interaction->channel?->name ?? '—' }}</span>
+                                        </td>
+                                        <td class="py-1">
+                                            <span style="background-color: #F8E8FF !important; color: #6B5B95 !important; border-radius: 6px; padding: 1px 4px; font-size: 0.65rem; font-weight: 500; border: 1px solid #E8D8FF; display: inline-block;">
+                                                {{ $areaName }}
+                                            </span>
+                                        </td>
+                                        <td class="py-1">
+                                            <span class="small">{{ $cargoName }}</span>
+                                        </td>
+                                        <td class="py-1">
+                                            <span class="small">{{ $lineaName }}</span>
+                                        </td>
+                                        <td class="py-1">
+                                            <div style="min-width: 60px; text-align: center; transition: all 0.2s ease; border-radius: 8px; font-weight: 500; font-size: 0.6rem; 
+                                                 @if($outcome === 'Exitoso')
+                                                     background-color: #E8F5E8 !important; color: #2E7D32 !important; border: 1px solid #C8E6C9 !important;
+                                                 @elseif($outcome === 'Pendiente')
+                                                     background-color: #FFF8E1 !important; color: #F57C00 !important; border: 1px solid #FFECB3 !important;
+                                                 @elseif($outcome === 'Fallido')
+                                                     background-color: #FFD6E0 !important; color: #D63384 !important; border: 1px solid #FFB3C1 !important;
+                                                 @else
+                                                     background-color: #E1F5FE !important; color: #0288D1 !important; border: 1px solid #B3E5FC !important;
+                                                 @endif
+                                                 padding: 2px 6px; display: flex; align-items: center; justify-content: center;">
+                                                <span>{{ $outcome }}</span>
+                                            </div>
+                                        </td>
+                                        <td class="py-1">
+                                            @if ($interaction->next_action_date)
+                                                <div class="d-flex flex-column">
+                                                    <span class="small">{{ optional($interaction->next_action_date)->format('d/m/Y') }}</span>
+                                                    <small class="text-muted" style="font-size: 0.65rem;">
+                                                        {{ optional($interaction->next_action_date)->format('H:i') }}
+                                                        @if($interaction->nextAction) ({{ $interaction->nextAction->name }}) @endif
+                                                    </small>
+                                                </div>
+                                            @else
+                                                <span class="text-muted small">—</span>
+                                            @endif
+                                        </td>
+                                        <td class="text-end">
+                                            <div>
+                                                <button type="button"
+                                                        class="btn btn-sm btn-light"
+                                                        style="padding: 2px 6px; font-size: 0.7rem;"
+                                                        onclick="window.location.href='{{ route('interactions.show', $interaction->id) }}'">
+                                                    <i class="feather-eye me-1"></i> Ver
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="10" class="text-center py-4">
+                                            <div class="empty-state">
+                                                <i class="feather-calendar empty-icon"></i>
+                                                <h6 class="mt-2">No hay interacciones de hoy</h6>
+                                                <p class="text-muted">No se encontraron interacciones registradas hoy</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leyenda de colores pasteles -->
+    <div class="card shadow-sm mb-3 glassmorphism-card">
+        <div class="card-body p-2">
+            <h6 class="fw-semibold mb-2">
+                <i class="feather-palette me-2"></i>Leyenda de Resultados
+            </h6>
+            <div class="d-flex flex-wrap gap-2">
+                <div class="d-flex align-items-center">
+                    <div style="min-width: 60px; text-align: center; transition: all 0.2s ease; border-radius: 8px; font-weight: 500; font-size: 0.6rem; background-color: #E8F5E8 !important; color: #2E7D32 !important; border: 1px solid #C8E6C9 !important; padding: 2px 6px; display: flex; align-items: center; justify-content: center; margin-right: 6px;">
+                        <span>Exitoso</span>
+                    </div>
+                    <small class="text-muted">Completado</small>
+                </div>
+                <div class="d-flex align-items-center">
+                    <div style="min-width: 60px; text-align: center; transition: all 0.2s ease; border-radius: 8px; font-weight: 500; font-size: 0.6rem; background-color: #FFF8E1 !important; color: #F57C00 !important; border: 1px solid #FFECB3 !important; padding: 2px 6px; display: flex; align-items: center; justify-content: center; margin-right: 6px;">
+                        <span>Pendiente</span>
+                    </div>
+                    <small class="text-muted">En espera</small>
+                </div>
+                <div class="d-flex align-items-center">
+                    <div style="min-width: 60px; text-align: center; transition: all 0.2s ease; border-radius: 8px; font-weight: 500; font-size: 0.6rem; background-color: #FFD6E0 !important; color: #D63384 !important; border: 1px solid #FFB3C1 !important; padding: 2px 6px; display: flex; align-items: center; justify-content: center; margin-right: 6px;">
+                        <span>Fallido</span>
+                    </div>
+                    <small class="text-muted">No completado</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Modal mejorado --}}
+    <div class="modal fade" id="detalleInteractionModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content glassmorphism-modal">
+                <div class="modal-header pastel-modal-header">
+                    <h5 class="modal-title d-flex align-items-center">
+                        <i class="feather-message-circle me-2"></i>
+                        Detalles de la Interacción
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body pb-0">
-                    <div class="row g-3">
-                        <div class="col-md-6 border-end pe-md-4">
-                            <h6><i class="feather-user me-2 text-primary"></i>Datos Principales</h6>
-                            <dl class="row small mb-2">
-                                <dt class="col-sm-4 text-muted">Cliente:</dt><dd class="col-sm-8 fw-bold" id="modalClientName"></dd>
-                                <dt class="col-sm-4 text-muted">Agente:</dt><dd class="col-sm-8" id="modalAgent"></dd>
-                                <dt class="col-sm-4 text-muted">Fecha y Hora:</dt><dd class="col-sm-8" id="modalDate"></dd>
-                                <dt class="col-sm-4 text-muted">Duración:</dt><dd class="col-sm-8" id="modalDuration"></dd>
-                                <dt class="col-sm-4 text-muted">Resultado:</dt><dd class="col-sm-8" id="modalOutcome"></dd>
-                            </dl>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <h6 class="fw-bold text-primary mb-1" id="modal-id"></h6>
+                            <p class="text-muted mb-0" id="modal-fecha"></p>
                         </div>
-                        <div class="col-md-6 ps-md-4">
-                            <h6><i class="feather-settings me-2 text-primary"></i>Clasificación</h6>
-                            <dl class="row small mb-2">
-                                <dt class="col-sm-4 text-muted">Canal:</dt><dd class="col-sm-8" id="modalChannel"></dd>
-                                <dt class="col-sm-4 text-muted">Tipo:</dt><dd class="col-sm-8" id="modalType"></dd>
-                                <dt class="col-sm-4 text-muted">URL:</dt><dd class="col-sm-8" id="modalUrl"></dd>
-                                <dt class="col-sm-4 text-muted">Relacionada con:</dt><dd class="col-sm-8" id="modalRelated"></dd>
-                            </dl>
+                        <div class="col-md-4 text-end">
+                            <div id="modal-resultado" class="d-inline-block"></div>
                         </div>
                     </div>
-                    <hr class="my-3">
-
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <h6><i class="feather-clock me-2 text-primary"></i>Próxima Acción</h6>
-                            <p class="small bg-light p-2 rounded border" id="modalNextAction"></p>
+                    
+                    <div class="card mb-3 pastel-card">
+                        <div class="card-header pastel-card-header py-2">
+                            <h6 class="mb-0 fw-semibold">Información General</h6>
                         </div>
-                        <div class="col-md-6">
-                            <h6><i class="feather-paperclip me-2 text-primary"></i>Archivos Adjuntos</h6>
-                            <div id="modalAttachmentsList" class="small bg-light p-2 rounded border"></div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <small class="text-muted d-block">Cliente</small>
+                                    <span id="modal-cliente"></span>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <small class="text-muted d-block">Agente</small>
+                                    <span id="modal-agent"></span>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <small class="text-muted d-block">Canal</small>
+                                    <span id="modal-canal"></span>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <small class="text-muted d-block">Tipo</small>
+                                    <span id="modal-tipo"></span>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <small class="text-muted d-block">Duración</small>
+                                    <span id="modal-duracion"></span>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <small class="text-muted d-block">URL</small>
+                                    <span id="modal-url"></span>
+                                </div>
+                            </div>
                         </div>
                     </div>
-
-                    <hr class="my-3">
-
-                    <h6><i class="feather-edit me-2 text-primary"></i>Notas de la Interacción</h6>
-                    <p class="small bg-light p-3 rounded border" id="modalNotes" style="white-space: pre-wrap;"></p>
-
+                    
+                    <div class="card mb-3 pastel-card">
+                        <div class="card-header pastel-card-header py-2">
+                            <h6 class="mb-0 fw-semibold">Información Organizacional</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <small class="text-muted d-block">Área</small>
+                                    <span id="modal-area"></span>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <small class="text-muted d-block">Cargo</small>
+                                    <span id="modal-cargo"></span>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <small class="text-muted d-block">Línea de Obligación</small>
+                                    <span id="modal-linea"></span>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <small class="text-muted d-block">Área de Asignación</small>
+                                    <span id="modal-area-asig"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-3 pastel-card">
+                        <div class="card-header pastel-card-header py-2">
+                            <h6 class="mb-0 fw-semibold">Próxima Acción</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <small class="text-muted d-block">Fecha</small>
+                                    <span id="modal-proxima-fecha"></span>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <small class="text-muted d-block">Tipo</small>
+                                    <span id="modal-proxima-tipo"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card pastel-card">
+                        <div class="card-header pastel-card-header py-2">
+                            <h6 class="mb-0 fw-semibold">Notas</h6>
+                        </div>
+                        <div class="card-body">
+                            <p id="modal-notas"></p>
+                        </div>
+                    </div>
                 </div>
-                <div class="modal-footer d-flex justify-content-between">
-                    <div>
-                        <a href="#" id="modalShowUrl" class="btn btn-outline-secondary btn-sm"><i class="feather-eye me-1"></i> Ver Página Completa</a>
-                        <a href="#" id="modalEditUrl" class="btn btn-primary btn-sm"><i class="feather-edit-3 me-1"></i> Editar Interacción</a>
-                    </div>
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cerrar</button>
+                <div class="modal-footer pastel-modal-footer">
+                    <button type="button" class="btn pastel-btn-light" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn pastel-btn-gradient" id="editFromModal">
+                        <i class="feather-edit-3 me-1"></i> Editar
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    {{-- 📘 Estilos --}}
-    <style>
-        .excel-grid-wrapper { max-height: 70vh; overflow-x: auto; border: 1px solid #dee2e6; border-radius: 0.25rem; }
-        .excel-grid { border-collapse: collapse; white-space: nowrap; width: 100%; table-layout: fixed; }
-        .excel-grid th, .excel-grid td { border: 1px solid #eff2f7; padding: 6px 10px; overflow: hidden; text-overflow: ellipsis; }
-        .excel-grid th { text-align: left; }
-        .excel-grid thead th { background: #e9ecef; font-weight: 600; position: sticky; top: 0; z-index: 2; border-bottom: 2px solid #dee2e6; }
-        .excel-grid tbody tr:hover { background-color: #f8f9fa; cursor: pointer; }
-        .btn-outline-primary, .btn-outline-warning, .btn-outline-danger { --bs-btn-padding-y: .3rem; --bs-btn-padding-x: .5rem; --bs-btn-font-size: .75rem; }
-        .animate__animated.animate__pulse.animate__infinite { animation-duration: 2s; }
+    @push('styles')
+        <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css"/>
+        <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css"/>
+        <style>
+            /* COLORES PASTELES SUAVES Y HERMOSOS */
+            
+            body {
+                background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                min-height: 100vh;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                transition: all 0.3s ease;
+                color: #2c3e50 !important;
+            }
+            
+            /* Glassmorphism */
+            .glassmorphism-card {
+                background: rgba(255, 255, 255, 0.25);
+                backdrop-filter: blur(10px);
+                border-radius: 12px;
+                border: 1px solid rgba(255, 255, 255, 0.18);
+                box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.1);
+            }
+            
+            .glassmorphism-alert {
+                background: rgba(255, 255, 255, 0.7);
+                backdrop-filter: blur(5px);
+                border-radius: 8px;
+                border: 1px solid rgba(255, 255, 255, 0.3);
+            }
+            
+            .glassmorphism-modal {
+                background: rgba(255, 255, 255, 0.9);
+                backdrop-filter: blur(15px);
+                border-radius: 16px;
+                border: 1px solid rgba(255, 255, 255, 0.3);
+                box-shadow: 0 10px 25px rgba(50, 50, 93, 0.1), 0 3px 10px rgba(0, 0, 0, 0.05);
+            }
+            
+            /* Estilos personalizados pasteles - EXCEL STYLE */
+            .avatar-xs-excel {
+                width: 16px;
+                height: 16px;
+                font-size: 0.6rem;
+                font-weight: 600;
+            }
+            
+            .pastel-avatar-primary {
+                background: linear-gradient(135deg, #E6F3FF, #F8E8FF);
+            }
+            
+            .pastel-avatar-success {
+                background: linear-gradient(135deg, #E8F5E8, #F0FFF4);
+            }
+            
+            .excel-row {
+                transition: all 0.15s ease;
+                border-radius: 4px;
+                margin: 0;
+                color: #2c3e50 !important;
+                border-bottom: 1px solid rgba(0,0,0,0.05);
+            }
+            
+            .excel-row:hover {
+                background-color: rgba(255, 255, 255, 0.6);
+                transform: translateX(1px);
+                box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+            }
+            
+            .excel-row:last-child {
+                border-bottom: none;
+            }
+            
+            .description-cell-excel {
+                max-width: 120px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                color: #2c3e50 !important;
+            }
+            
+            .empty-state {
+                padding: 1.5rem;
+                text-align: center;
+            }
+            
+            .empty-icon {
+                font-size: 2.5rem;
+                color: #85929e;
+            }
+            
+            /* Badges pasteles SUAVES */
+            .pastel-badge {
+                background: #F8E8FF !important;
+                color: #6B5B95 !important;
+                border-radius: 6px;
+                padding: 2px 6px;
+                font-size: 0.65rem;
+                font-weight: 600;
+            }
+            
+            /* Nuevo estilo para badges de globito en pestañas */
+            .pastel-badge-globito {
+                border-radius: 12px;
+                padding: 3px 8px;
+                font-size: 0.7rem;
+                font-weight: 700;
+                background: linear-gradient(135deg, #F8E8FF, #E6F3FF) !important;
+                color: #6B5B95 !important;
+                border: 1px solid rgba(255, 255, 255, 0.5);
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+                transition: all 0.2s ease;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 20px;
+                height: 20px;
+            }
+            
+            .pastel-badge-globito:hover {
+                transform: scale(1.1);
+                box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+            }
+            
+            /* Efectos especiales para filas según resultado */
+            .excel-row[data-outcome="Exitoso"] {
+                border-left: 2px solid #C8E6C9;
+            }
+            
+            .excel-row[data-outcome="Pendiente"] {
+                border-left: 2px solid #FFECB3;
+            }
+            
+            .excel-row[data-outcome="Fallido"] {
+                border-left: 2px solid #FFB3C1;
+            }
+            
+            /* Botones pasteles SUAVES */
+            .pastel-btn-gradient {
+                background: linear-gradient(135deg, #E8F5E8, #E6F3FF) !important;
+                color: #2c3e50 !important;
+                border: none;
+                border-radius: 20px;
+                padding: 6px 16px;
+                font-weight: 600;
+                transition: all 0.3s ease;
+                box-shadow: 0 2px 8px rgba(152, 216, 200, 0.2);
+            }
+            
+            .pastel-btn-gradient:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(152, 216, 200, 0.3);
+            }
+            
+            .pastel-btn-light {
+                background: rgba(255, 255, 255, 0.7) !important;
+                color: #2c3e50 !important;
+                border: 1px solid rgba(255, 255, 255, 0.3);
+                border-radius: 16px;
+                padding: 4px 12px;
+                transition: all 0.3s ease;
+                font-weight: 500;
+            }
+            
+            .pastel-btn-light:hover {
+                background: rgba(255, 255, 255, 0.9);
+                transform: translateY(-1px);
+            }
+            
+            /* Selects e inputs pasteles SUAVES */
+            .pastel-select, .pastel-input {
+                background: rgba(255, 255, 255, 0.7) !important;
+                border: 1px solid rgba(255, 255, 255, 0.3);
+                border-radius: 8px;
+                transition: all 0.3s ease;
+                font-weight: 500;
+                color: #2c3e50 !important;
+                font-size: 0.875rem;
+            }
+            
+            .pastel-select:focus, .pastel-input:focus {
+                background: rgba(255, 255, 255, 0.9);
+                border-color: #E6F3FF;
+                box-shadow: 0 0 0 0.15rem rgba(230, 243, 255, 0.25);
+            }
+            
+            /* Tabs pasteles SUAVES */
+            .pastel-tabs .nav-link {
+                color: #2c3e50 !important;
+                background: rgba(255, 255, 255, 0.5);
+                border-radius: 12px 12px 0 0;
+                margin-right: 4px;
+                transition: all 0.3s ease;
+                font-weight: 500;
+                padding: 6px 12px;
+                font-size: 0.875rem;
+            }
+            
+            .pastel-tabs .nav-link.active {
+                background: rgba(255, 255, 255, 0.9);
+                color: #2c3e50 !important;
+                font-weight: 700;
+            }
+            
+            .pastel-tabs .nav-link:hover {
+                background: rgba(255, 255, 255, 0.8);
+            }
+            
+            /* Tabla estilo EXCEL */
+            .excel-table {
+                background: rgba(255, 255, 255, 0.3);
+                border-radius: 8px;
+                overflow: hidden;
+                font-size: 0.8rem;
+                border-collapse: separate;
+                border-spacing: 0;
+            }
+            
+            .excel-table th {
+                color: #2c3e50 !important;
+                font-weight: 700;
+                border: none;
+                font-size: 0.75rem;
+                padding: 4px 8px !important;
+                background: rgba(255, 255, 255, 0.5);
+            }
+            
+            .excel-table td {
+                vertical-align: middle;
+                border: none;
+                padding: 2px 8px !important;
+            }
+            
+            .pastel-thead {
+                background: rgba(255, 255, 255, 0.5);
+            }
+            
+            /* Modal pasteles SUAVES */
+            .pastel-modal-header {
+                background: linear-gradient(135deg, #E6F3FF, #F8E8FF) !important;
+                color: #2c3e50 !important;
+                border-radius: 16px 16px 0 0;
+                border: none;
+            }
+            
+            .pastel-modal-footer {
+                background: rgba(255, 255, 255, 0.5);
+                border-radius: 0 0 16px 16px;
+                border: none;
+            }
+            
+            .pastel-card {
+                background: rgba(255, 255, 255, 0.3);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                border-radius: 12px;
+            }
+            
+            .pastel-card-header {
+                background: rgba(255, 255, 255, 0.5);
+                border-radius: 12px 12px 0 0;
+                border: none;
+            }
+            
+            /* Links pasteles SUAVES */
+            .pastel-link {
+                color: #5C7CFA !important;
+                transition: all 0.2s ease;
+                font-weight: 600;
+                font-size: 0.875rem;
+            }
+            
+            .pastel-link:hover {
+                color: #4C63D2;
+                transform: scale(1.02);
+            }
+            
+            /* Efectos de entrada */
+            @keyframes fadeInUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(20px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+            
+            .fade-in-up {
+                animation: fadeInUp 0.4s ease-out;
+            }
+            
+            /* Responsive */
+            @media (max-width: 768px) {
+                .excel-table {
+                    font-size: 0.75rem;
+                }
+                
+                .btn-group-sm .btn {
+                    padding: 0.2rem 0.4rem;
+                    font-size: 0.7rem;
+                }
+            }
+        </style>
+    @endpush
 
-        #interactionDetailModal dt { font-weight: 600; color: #6c757d; }
-        #interactionDetailModal dd { margin-bottom: 0.25rem; }
-        #interactionDetailModal .row.small > dt, #interactionDetailModal .row.small > dd { padding-top: 0.25rem; padding-bottom: 0.25rem; }
-    </style>
-
-    {{-- 📜 Script --}}
     @push('scripts')
+        <!-- Librerías necesarias -->
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
         <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
         <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
@@ -324,171 +1215,311 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
         <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
         <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
         <script>
             document.addEventListener('DOMContentLoaded', function () {
-                var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-                tooltipTriggerList.forEach(function (el) { new bootstrap.Tooltip(el); });
+                let currentTable = null; // Variable para guardar la instancia de la tabla activa
+                let currentInteractionId = null;
+
+                // =================================================================
+                // == MANEJO DEL MODAL PARA VER DETALLES RÁPIDOS ==
+                // =================================================================
+                document.addEventListener('click', function (e) {
+                    const interactionIdLink = e.target.closest('.interaction-id');
+                    
+                    if (interactionIdLink) {
+                        e.preventDefault();
+                        
+                        const el = interactionIdLink;
+                        currentInteractionId = el.dataset.id;
+                        
+                        // Llenar el modal con los datos
+                        document.getElementById('modal-id').textContent = `#${el.dataset.id}`;
+                        document.getElementById('modal-fecha').textContent = el.dataset.fecha;
+                        document.getElementById('modal-cliente').textContent = el.dataset.cliente;
+                        document.getElementById('modal-agent').textContent = el.dataset.agent;
+                        document.getElementById('modal-canal').textContent = el.dataset.canal;
+                        document.getElementById('modal-tipo').textContent = el.dataset.tipo;
+                        document.getElementById('modal-duracion').textContent = el.dataset.duracion;
+                        document.getElementById('modal-area').textContent = el.dataset.area;
+                        document.getElementById('modal-cargo').textContent = el.dataset.cargo;
+                        document.getElementById('modal-linea').textContent = el.dataset.linea;
+                        document.getElementById('modal-area-asig').textContent = el.dataset['area-asig'];
+                        document.getElementById('modal-proxima-fecha').textContent = el.dataset['proxima-fecha'] || '—';
+                        document.getElementById('modal-proxima-tipo').textContent = el.dataset['proxima-tipo'] || '—';
+                        document.getElementById('modal-notas').textContent = el.dataset.notas;
+                        
+                        // URL
+                        const url = el.dataset.url;
+                        document.getElementById('modal-url').innerHTML = url && url !== 'null' ? 
+                            `<a href="${url}" target="_blank">Abrir enlace <i class="feather-external-link small"></i></a>` : '— No hay URL';
+                        
+                        // Aplicar colores de resultado pastel SUAVE en el modal
+                        const outcome = el.dataset.outcome;
+                        let resultadoStyle = '';
+                        switch(outcome) {
+                            case 'Exitoso':
+                                resultadoStyle = 'background-color: #E8F5E8 !important; color: #2E7D32 !important; border: 1px solid #C8E6C9 !important;';
+                                break;
+                            case 'Pendiente':
+                                resultadoStyle = 'background-color: #FFF8E1 !important; color: #F57C00 !important; border: 1px solid #FFECB3 !important;';
+                                break;
+                            case 'Fallido':
+                                resultadoStyle = 'background-color: #FFD6E0 !important; color: #D63384 !important; border: 1px solid #FFB3C1 !important;';
+                                break;
+                            default:
+                                resultadoStyle = 'background-color: #E1F5FE !important; color: #0288D1 !important; border: 1px solid #B3E5FC !important;';
+                        }
+                        
+                        document.getElementById('modal-resultado').innerHTML = 
+                            `<div style="min-width: 60px; text-align: center; transition: all 0.2s ease; border-radius: 8px; font-weight: 500; font-size: 0.6rem; ${resultadoStyle} padding: 2px 6px; display: flex; align-items: center; justify-content: center;">
+                                <span>${outcome}</span>
+                            </div>`;
+
+                        // Configurar botón de editar
+                        document.getElementById('editFromModal').onclick = function() {
+                            window.location.href = el.dataset['edit-url'];
+                        };
+
+                        new bootstrap.Modal(document.getElementById('detalleInteractionModal')).show();
+                    }
+                });
+
+                // Función para inicializar una tabla específica
+                function initializeDataTable(tableSelector) {
+                    let table = $(tableSelector).DataTable({
+                        dom: 'Bfrtip',
+                        buttons: [
+                            { extend: 'excelHtml5', className: 'btn btn-sm pastel-btn-gradient', text: '<i class="feather-file-text me-1"></i>Excel' },
+                            { extend: 'pdfHtml5', className: 'btn btn-sm pastel-btn-gradient', text: '<i class="feather-file me-1"></i>PDF' },
+                            { extend: 'print', className: 'btn btn-sm pastel-btn-light', text: '<i class="feather-printer me-1"></i>Imprimir' }
+                        ],
+                        pageLength: 20,
+                        order: [[0, 'desc']],
+                        language: {
+                            url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
+                            emptyTable: "No hay datos disponibles en la tabla",
+                            info: "Mostrando _START_ a _END_ de _TOTAL_ registros",
+                            infoEmpty: "Mostrando 0 a 0 de 0 registros",
+                            lengthMenu: "Mostrar _MENU_ registros",
+                            loadingRecords: "Cargando...",
+                            processing: "Procesando...",
+                            search: "Buscar:",
+                            zeroRecords: "No se encontraron resultados coincidentes",
+                            paginate: {
+                                first: "Primero",
+                                last: "Último",
+                                next: "Siguiente",
+                                previous: "Anterior"
+                            }
+                        },
+                        // Para que los filtros funcionen solo en la tabla activa
+                        initComplete: function () {
+                            var api = this.api();
+                            // Limpiar eventos anteriores para evitar duplicados
+                            $('#filterSearch').off('keyup change').on('keyup change', function () {
+                                api.column(0).search(this.value).draw();
+                                updateResultCount();
+                            });
+                            $('#filterChannel').off('change').on('change', function () {
+                                api.column(3).search(this.value).draw();
+                                updateResultCount();
+                            });
+                            $('#filterType').off('change').on('change', function () {
+                                 api.column(4).search(this.value).draw();
+                                updateResultCount();
+                            });
+                            $('#filterOutcome').off('change').on('change', function () {
+                                api.column(7).search(this.value).draw();
+                                updateResultCount();
+                            });
+                            $('#filterArea').off('change').on('change', function () {
+                                api.column(4).search(this.value).draw();
+                                updateResultCount();
+                            });
+                            $('#filterCargo').off('change').on('change', function () {
+                                api.column(5).search(this.value).draw();
+                                updateResultCount();
+                            });
+                            $('#filterLinea').off('change').on('change', function () {
+                                api.column(6).search(this.value).draw();
+                                updateResultCount();
+                            });
+                            $('#filterFecha').off('change').on('change', function () {
+                                let val = this.value;
+                                if (val) {
+                                    let partes = val.split("-");
+                                    let fechaFormateada = partes[2] + "/" + partes[1] + "/" + partes[0];
+                                    api.column(1).search(fechaFormateada).draw();
+                                } else {
+                                    api.column(1).search("").draw();
+                                }
+                                updateResultCount();
+                            });
+                        }
+                    });
+                    return table;
+                }
+
+                // Función para actualizar el contador de resultados
+                function updateResultCount() {
+                    if (currentTable) {
+                        const info = currentTable.page.info();
+                        document.getElementById('resultCount').textContent = 
+                            `Mostrando ${info.recordsDisplay} de ${info.recordsTotal} resultados`;
+                    }
+                }
+
+                // Inicializar la tabla de la primera pestaña (la que está activa al cargar)
+                currentTable = initializeDataTable('#tab-all .interactionTable');
+                updateResultCount();
+
+                // Evento para cuando se cambia de pestaña
+                document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
+                    tab.addEventListener('shown.bs.tab', function (e) {
+                        const targetPaneId = e.target.getAttribute('data-bs-target');
+                        const tableInPane = document.querySelector(`${targetPaneId} .interactionTable`);
+
+                        // Si ya hay una tabla, la destruimos
+                        if (currentTable) {
+                            currentTable.destroy();
+                            currentTable = null;
+                        }
+
+                        // Si la pestaña tiene una tabla, la inicializamos
+                        if (tableInPane) {
+                            currentTable = initializeDataTable(tableInPane);
+                            updateResultCount();
+                        }
+                    });
+                });
+
+                // Limpiar filtros
+                $('#clearFilters').on('click', function() {
+                    $('#filterSearch, #filterChannel, #filterType, #filterOutcome, #filterArea, #filterCargo, #filterLinea, #filterFecha').val('');
+                    if(currentTable) {
+                        currentTable.search('').columns().search('').draw();
+                        updateResultCount();
+                    }
+                });
+
+                // Botón exportar
+                $('#exportBtn').on('click', function() {
+                    if(currentTable) {
+                        currentTable.button(0).trigger();
+                    }
+                });
+
+                // SweetAlert — confirmaciones
+                function confirmarAccion(titulo, texto, icono, callback) {
+                    Swal.fire({
+                        title: titulo,
+                        text: texto,
+                        icon: icono,
+                        showCancelButton: true,
+                        confirmButtonColor: '#E6F3FF',
+                        cancelButtonColor: '#F8E8FF',
+                        confirmButtonText: 'Sí, continuar',
+                        cancelButtonText: 'Cancelar',
+                        background: 'rgba(255, 255, 255, 0.9)',
+                        backdrop: 'rgba(0, 0, 0, 0.1)'
+                    }).then((result) => { 
+                        if (result.isConfirmed) callback(); 
+                    });
+                }
+
+                // Botón crear
+                document.querySelectorAll('.btnCrear').forEach(btn => {
+                    btn.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        confirmarAccion(
+                            '¿Crear una nueva Interacción?', 
+                            'Serás redirigido al formulario de creación.', 
+                            'info', 
+                            () => { window.location.href = btn.getAttribute('href'); }
+                        );
+                    });
+                });
+
+                // Botón editar
+                document.querySelectorAll('.btnEditar').forEach(btn => {
+                    btn.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        confirmarAccion(
+                            '¿Editar esta Interacción?', 
+                            'Serás redirigido al formulario de edición.', 
+                            'question', 
+                            () => { window.location.href = btn.getAttribute('href'); }
+                        );
+                    });
+                });
+
+                // Formulario eliminar
 
                 document.querySelectorAll('.formEliminar').forEach(form => {
                     form.addEventListener('submit', function (e) {
                         e.preventDefault();
-                        Swal.fire({
-                            title: '¿Estás seguro?',
-                            text: "¡Esta acción no se puede deshacer!",
-                            icon: 'warning',
-                            showCancelButton: true,
-                            confirmButtonColor: '#d33',
-                            cancelButtonColor: '#6c757d',
-                            confirmButtonText: 'Sí, ¡eliminar!',
-                            cancelButtonText: 'Cancelar'
-                        }).then((result) => { if (result.isConfirmed) { this.submit(); } });
+                        confirmarAccion(
+                            '¿Eliminar esta Interacción?',
+                            'Esta acción eliminará la interacción y todos sus datos relacionados. Esta acción no se puede deshacer.',
+                            'warning',
+                            () => { form.submit(); }
+                        );
                     });
                 });
 
-                const interactionDetailModal = document.getElementById('interactionDetailModal');
-                interactionDetailModal.addEventListener('show.bs.modal', function (event) {
-                    const button = event.relatedTarget;
-                    const modal = interactionDetailModal;
-                    const getData = (attr) => button.getAttribute(`data-${attr}`);
+                // Activar tooltips de Bootstrap
+                var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                tooltipTriggerList.map(function (el) { 
+                    return new bootstrap.Tooltip(el, {
+                        trigger: 'hover focus',
+                        delay: { show: 300, hide: 100 }
+                    }); 
+                });
 
-                    modal.querySelector('#modalTitle span').textContent = `#${getData('id')} - ${getData('client-name')}`;
-                    modal.querySelector('#modalClientName').textContent = getData('client-name');
-                    modal.querySelector('#modalAgent').textContent = getData('agent');
-                    modal.querySelector('#modalDate').textContent = getData('date');
-                    modal.querySelector('#modalChannel').textContent = getData('channel');
-                    modal.querySelector('#modalType').textContent = getData('type');
-                    modal.querySelector('#modalDuration').textContent = getData('duration');
-                    modal.querySelector('#modalNotes').textContent = getData('notes');
-                    modal.querySelector('#modalEditUrl').href = getData('edit-url');
-                    modal.querySelector('#modalShowUrl').href = getData('show-url');
-                    modal.querySelector('#modalOutcome').innerHTML = `<span class="badge bg-${getData('outcome-badge')} rounded-pill px-2 py-1">${getData('outcome')}</span>`;
-
-                    const url = getData('url');
-                    modal.querySelector('#modalUrl').innerHTML = url && url !== 'null' ? `<a href="${url}" target="_blank">Abrir enlace <i class="feather-external-link small"></i></a>` : '— No hay URL';
-
-                    const relatedId = getData('related-id');
-                    const relatedUrl = getData('related-url');
-                    modal.querySelector('#modalRelated').innerHTML = relatedId && relatedId !== 'null' ? `<a href="${relatedUrl}">Interacción #${relatedId}</a>` : '— No relacionada';
-
-                    const nextActionDate = getData('next-action-date');
-                    const nextActionType = getData('next-action-type');
-                    const nextActionEl = modal.querySelector('#modalNextAction');
-                    if (nextActionDate && nextActionDate !== 'null' || nextActionType && nextActionType !== 'null') {
-                        const dateObj = nextActionDate ? new Date(nextActionDate.split(' ')[0].split('/').reverse().join('-') + ' ' + nextActionDate.split(' ')[1]) : null;
-                        let dateClass = 'text-body';
-                        let dateStatus = '';
-
-                        if (dateObj) {
-                            const today = new Date();
-                            today.setHours(0, 0, 0, 0);
-                            const actionDay = new Date(dateObj);
-                            actionDay.setHours(0, 0, 0, 0);
-
-                            if (actionDay < today) {
-                                dateClass = 'text-danger fw-bold';
-                                dateStatus = '(Vencida)';
-                            } else if (actionDay.getTime() === today.getTime()) {
-                                dateClass = 'text-warning fw-bold';
-                                dateStatus = '(Hoy)';
-                            } else {
-                                dateClass = 'text-success fw-bold';
-                                dateStatus = '(Próxima)';
-                            }
-                        }
-
-                        nextActionEl.innerHTML = `
-                            <p class="mb-1"><strong class="${dateClass}">Fecha:</strong> ${nextActionDate || 'No definida'} <span class="small">${dateStatus}</span></p>
-                            <p class="mb-0"><strong>Tipo:</strong> ${nextActionType || 'No definida'}</p>
-                        `;
-                    } else {
-                        nextActionEl.textContent = 'No hay próxima acción programada.';
+                // Atajos de teclado
+                document.addEventListener('keydown', function(e) {
+                    // Ctrl/Cmd + K para búsqueda rápida
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                        e.preventDefault();
+                        $('#filterSearch').focus();
                     }
-
-                    const attachmentsList = modal.querySelector('#modalAttachmentsList');
-                    const attachments = JSON.parse(getData('attachments') || '[]');
-                    attachmentsList.innerHTML = '';
-                    if (attachments && attachments.length > 0) {
-                        const list = document.createElement('ul');
-                        list.className = 'list-unstyled mb-0';
-                        attachments.forEach((fileUrl, index) => {
-                            const listItem = document.createElement('li');
-                            const link = document.createElement('a');
-                            link.href = fileUrl;
-                            link.target = '_blank';
-                            link.className = 'd-flex align-items-center gap-2 mb-1 text-decoration-none text-primary';
-                            link.innerHTML = `<i class="feather-paperclip"></i> Adjunto ${index + 1}`;
-                            listItem.appendChild(link);
-                            list.appendChild(listItem);
-                        });
-                        attachmentsList.appendChild(list);
-                    } else {
-                        attachmentsList.innerHTML = '<p class="text-muted mb-0">No hay archivos adjuntos.</p>';
+                    
+                    // Ctrl/Cmd + N para nueva interacción
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+                        e.preventDefault();
+                        window.location.href = "{{ route('interactions.create') }}";
                     }
                 });
-            });
 
-            $(document).ready(function() {
-                if ($.fn.DataTable.isDataTable('#interactionsTable')) {
-                    $('#interactionsTable').DataTable().destroy();
-                }
-
-                $('#interactionsTable').DataTable({
-                    dom: 'Bfrtip',
-                    buttons: [
-                        { extend: 'excelHtml5', className: 'btn btn-success btn-sm me-1', text: '<i class="feather-file-text me-1"></i> Excel', title: 'Interacciones_{{ date("Y-m-d") }}' },
-                        { extend: 'pdfHtml5', className: 'btn btn-danger btn-sm me-1', text: '<i class="feather-file-text me-1"></i> PDF', title: 'Interacciones_{{ date("Y-m-d") }}' },
-                        { extend: 'print', className: 'btn btn-secondary btn-sm', text: '<i class="feather-printer me-1"></i> Imprimir' }
-                    ],
-                    paging: false, // Deshabilitamos la paginación de DataTables para usar la de Laravel
-                    ordering: true, // Permitimos ordenar por columnas (solo datos de la página actual)
-                    info: false, // Ocultamos el "Mostrando X de Y"
-                    searching: false, // Deshabilitamos la búsqueda de DataTables, usamos la del backend.
-                    autoWidth: false,
-                    language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json' }
+                // Actualizar contador de resultados al cambiar de pestaña
+                document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
+                    tab.addEventListener('shown.bs.tab', function() {
+                        setTimeout(updateResultCount, 100);
+                    });
                 });
 
-                // Eventos para los filtros adicionales: submite el formulario al cambiar
-                $('#channel_filter, #type_filter, #outcome_filter, #interaction_date_filter').on('change', function() {
-                    $('#filterForm').submit();
+                // Inicializar contador
+                updateResultCount();
+                
+                // Efecto de entrada para las filas
+                $('.excel-row').each(function(index) {
+                    $(this).css({
+                        'opacity': '0',
+                        'transform': 'translateY(5px)'
+                    });
+                    setTimeout(() => {
+                        $(this).animate({
+                            'opacity': '1',
+                            'transform': 'translateY(0)'
+                        }, 200);
+                    }, index * 20);
                 });
-            });
-        </script>
-
-        {{-- ✅ EXPORTACIÓN: Excel, PDF, Imprimir --}}
-        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-        <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-        <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-        <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
-        <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
-        <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
-        <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-
-        <script>
-            $(document).ready(function() {
-                if ($.fn.DataTable.isDataTable('#interactionsTable')) {
-                    $('#interactionsTable').DataTable().destroy();
-                }
-
-                $('#interactionsTable').DataTable({
-                    dom: 'Bfrtip',
-                    buttons: [
-                        { extend: 'excelHtml5', className: 'btn btn-success btn-sm me-1', text: '<i class="feather-file-text me-1"></i> Excel', title: 'Interacciones_{{ date("Y-m-d") }}' },
-                        { extend: 'pdfHtml5', className: 'btn btn-danger btn-sm me-1', text: '<i class="feather-file-text me-1"></i> PDF', title: 'Interacciones_{{ date("Y-m-d") }}' },
-                        { extend: 'print', className: 'btn btn-secondary btn-sm', text: '<i class="feather-printer me-1"></i> Imprimir' }
-                    ],
-                    paging: false,
-                    ordering: true,
-                    info: false,
-                    searching: false,
-                    autoWidth: false,
-                    language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json' }
+                
+                // Efecto de entrada para las cards
+                $('.glassmorphism-card').each(function(index) {
+                    $(this).addClass('fade-in-up');
+                    $(this).css('animation-delay', `${index * 0.05}s`);
                 });
             });
         </script>

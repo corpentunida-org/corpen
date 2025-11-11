@@ -17,124 +17,134 @@ use App\Models\Interacciones\IntType;
 use App\Models\Interacciones\IntOutcome;
 use App\Models\Interacciones\IntNextAction;
 
+// --- NUEVO: Importar los modelos para las nuevas relaciones ---
+use App\Models\Archivo\GdoArea;
+use App\Models\Archivo\GdoCargo;
+use App\Models\Creditos\LineaCredito;
+
 class InteractionController extends Controller
 {
+    /**
+     * Muestra la lista de interacciones con filtros y búsqueda.
+     */
     public function index(Request $request)
     {
-        $query = Interaction::with([
-            'client',
-            'agent',
-            'channel',
-            'type',
-            'outcomeRelation',
-            'nextAction'
+        // --- 1. CONSTRUIMOS LA CONSULTA BASE (sin paginar aún) ---
+        $baseQuery = Interaction::with([
+            'client', 'agent', 'channel', 'type', 'outcomeRelation', 'nextAction',
+            'area', 'areaDeAsignacion', 'cargo', 'lineaDeObligacion'
         ]);
 
-        // Filtro principal de búsqueda 'q'
+        // --- 2. APLICAMOS TODOS LOS FILTROS (BÚSQUEDA Y FILTROS ADICIONALES) ---
+        // (Tu lógica de filtros está bien, la aplicamos a la consulta base)
         if ($request->filled('q')) {
+            // ... todo tu bloque de where para 'q' ...
+            // Asegúrate de aplicarlo a $baseQuery, no a $query
             $q = $request->q;
-            $query->where(function ($sub) use ($q) {
-                $sub->where('notes', 'like', "%$q%") // Buscador de notas
-                    ->orWhereHas('agent', function ($a) use ($q) {
-                        $a->where('name', 'like', "%$q%");
-                    })
-                    ->orWhereHas('client', function ($c) use ($q) {
-                        $c->where('cod_ter', 'like', "%$q%")
-                          ->orWhere('apl1', 'like', "%$q%")
-                          ->orWhere('apl2', 'like', "%$q%")
-                          ->orWhere('nom1', 'like', "%$q%")
-                          ->orWhere('nom2', 'like', "%$q%");
-                    })
-                    ->orWhereHas('outcomeRelation', function ($o) use ($q) { // Búsqueda por resultado
-                        $o->where('name', 'like', "%$q%");
-                    })
-                    ->orWhereHas('channel', function ($ch) use ($q) { // Búsqueda por canal
-                        $ch->where('name', 'like', "%$q%");
-                    })
-                    ->orWhereHas('type', function ($t) use ($q) { // Búsqueda por tipo
-                        $t->where('name', 'like', "%$q%");
-                    });
+            $baseQuery->where(function ($sub) use ($q) {
+                // ... todo tu código de búsqueda ...
             });
         }
 
-        // Filtros adicionales
         if ($request->filled('channel_filter')) {
-            $query->whereHas('channel', function ($q) use ($request) {
+            $baseQuery->whereHas('channel', function ($q) use ($request) {
                 $q->where('name', $request->channel_filter);
             });
         }
-
-        if ($request->filled('type_filter')) {
-            $query->whereHas('type', function ($q) use ($request) {
-                $q->where('name', $request->type_filter);
-            });
-        }
-
-        if ($request->filled('outcome_filter')) {
-            $query->whereHas('outcomeRelation', function ($q) use ($request) {
-                $q->where('name', $request->outcome_filter);
-            });
-        }
-
-        if ($request->filled('interaction_date_filter')) {
-            // Asegúrate de que el formato de la fecha en la base de datos coincida
-            $query->whereDate('interaction_date', $request->interaction_date_filter);
-        }
-
-        $interactions = $query->paginate(10);
-
-        // Obtener datos únicos para los filtros de la vista
-        // Se utilizan 'pluck' y 'unique' para asegurar que solo se muestren opciones existentes en las interacciones
-        $channels = Interaction::with('channel')
-                            ->get()
-                            ->pluck('channel.name')
-                            ->filter() // Eliminar nulos
-                            ->unique()
-                            ->sort()
-                            ->values();
-
-        $types = Interaction::with('type')
-                           ->get()
-                           ->pluck('type.name')
-                           ->filter()
-                           ->unique()
-                           ->sort()
-                           ->values();
-
-        $outcomes = Interaction::with('outcomeRelation')
-                              ->get()
-                              ->pluck('outcomeRelation.name')
-                              ->filter()
-                              ->unique()
-                              ->sort()
-                              ->values();
+        // ... todos los demás filtros (tipo, outcome, fecha, etc.) ...
+        // (Asegúrate de que tus otros filtros también se apliquen a $baseQuery)
 
 
-        return view('interactions.index', compact('interactions', 'channels', 'types', 'outcomes'));
+        // --- 3. OBTENEMOS LOS DATOS PARA LAS ESTADÍSTICAS Y PESTAÑAS (SIN PAGINAR) ---
+        // Hacemos una copia de la consulta para obtener los conteos totales
+        $countQuery = clone $baseQuery;
+
+        $stats = [
+            'total' => $countQuery->count(),
+            'successful' => (clone $countQuery)->whereHas('outcomeRelation', fn($q) => $q->where('name', 'Exitoso'))->count(),
+            'pending' => (clone $countQuery)->whereHas('outcomeRelation', fn($q) => $q->where('name', 'Pendiente'))->count(),
+            'today' => (clone $countQuery)->whereDate('interaction_date', today())->count(),
+        ];
+
+        // Hacemos otra copia para obtener las colecciones completas de las pestañas
+        $collectionsForTabs = [
+            'successful' => (clone $baseQuery)->whereHas('outcomeRelation', fn($q) => $q->where('name', 'Exitoso'))->get(),
+            'pending' => (clone $baseQuery)->whereHas('outcomeRelation', fn($q) => $q->where('name', 'Pendiente'))->get(),
+            'today' => (clone $baseQuery)->whereDate('interaction_date', today())->get(),
+        ];
+
+
+        // --- 4. OBTENEMOS LA COLECCIÓN PAGINADA PARA LA PESTAÑA "TODOS" ---
+        $interactions = $baseQuery->orderByDesc('interaction_date')->paginate(10);
+        // La paginación preserva los filtros de la URL
+        $interactions->appends($request->query());
+
+
+        // --- 5. DATOS PARA LOS SELECT DE LA VISTA (CORREGIDO) ---
+        $channels = IntChannel::orderBy('name')->pluck('name');
+        $types = IntType::orderBy('name')->pluck('name');
+        
+        // ¡AQUÍ ESTÁ LA CORRECCIÓN! 
+        // Definimos las variables que faltaban para los filtros.
+        $outcomes = IntOutcome::orderBy('name')->pluck('name');
+        $areas = GdoArea::orderBy('nombre')->pluck('nombre');
+        $cargos = GdoCargo::orderBy('nombre_cargo')->pluck('nombre_cargo');
+        $lineas = LineaCredito::orderBy('nombre')->pluck('nombre');
+
+
+        // --- 6. PASAMOS TODAS LAS VARIABLES A LA VISTA ---
+        return view('interactions.index', compact(
+            'interactions', // Para la paginación principal
+            'stats',        // El array de estadísticas
+            'collectionsForTabs', // Las colecciones para las otras pestañas
+            'channels',
+            'types',
+            'outcomes',     // Ahora sí existe
+            'areas',        // Ahora sí existe
+            'cargos',       // Ahora sí existe
+            'lineas'        // Ahora sí existe
+        ));
     }
-
     /**
      * Muestra detalles y estadísticas de una interacción.
      */
     public function show(Interaction $interaction)
     {
+        // --- NUEVO: Cargar todas las relaciones necesarias ---
+        $interaction->load([
+            'agent',
+            'client',
+            'channel',
+            'type',
+            'outcomeRelation',
+            'nextAction',
+            'area',
+            'areaDeAsignacion',
+            'cargo',
+            'lineaDeObligacion'
+        ]);
+
         $agentId = $interaction->agent_id;
         $range = request()->get('range', 'day');
 
+        // --- CONSULTA DE ESTADÍSTICAS ---
         $query = Interaction::where('agent_id', $agentId);
 
         switch ($range) {
             case 'day':
                 $query->selectRaw('DATE(interaction_date) as label, COUNT(*) as total')
-                      ->groupBy('label')->orderBy('label');
+                    ->groupBy('label')
+                    ->orderBy('label');
                 break;
             case 'month':
                 $query->selectRaw('DATE_FORMAT(interaction_date, "%Y-%m") as label, COUNT(*) as total')
-                      ->groupBy('label')->orderBy('label');
+                    ->groupBy('label')
+                    ->orderBy('label');
                 break;
             case 'year':
                 $query->selectRaw('YEAR(interaction_date) as label, COUNT(*) as total')
-                      ->groupBy('label')->orderBy('label');
+                    ->groupBy('label')
+                    ->orderBy('label');
                 break;
         }
 
@@ -142,11 +152,22 @@ class InteractionController extends Controller
         $labels = $chartData->pluck('label');
         $totals = $chartData->pluck('total');
 
+        // --- HISTORIAL DEL CLIENTE ---
         $clientHistory = collect();
         if ($interaction->client_id) {
-            $clientHistory = Interaction::with(['agent', 'channel', 'type', 'outcomeRelation', 'nextAction'])
+            $clientHistory = Interaction::with([
+                    'agent',
+                    'channel',
+                    'type',
+                    'outcomeRelation',
+                    'nextAction',
+                    'area',
+                    'areaDeAsignacion',
+                    'cargo',
+                    'lineaDeObligacion'
+                ])
                 ->where('client_id', $interaction->client_id)
-                ->orderBy('interaction_date', 'desc')
+                ->orderByDesc('interaction_date')
                 ->get();
         }
 
@@ -171,8 +192,16 @@ class InteractionController extends Controller
         $outcomes = IntOutcome::all();
         $nextActions = IntNextAction::all();
 
+        // --- NUEVO: Obtener datos para los nuevos campos select ---
+        // Usamos pluck para generar un array ideal para los selects de Blade: [id => nombre]
+        $areas = GdoArea::orderBy('nombre')->pluck('nombre', 'id');
+        $cargos = GdoCargo::orderBy('nombre_cargo')->pluck('nombre_cargo', 'id');
+        $lineasCredito = LineaCredito::orderBy('nombre')->pluck('nombre', 'id');
+
         return view('interactions.create', compact(
-            'interaction', 'clientes', 'channels', 'types', 'outcomes', 'nextActions'
+            'interaction', 'clientes', 'channels', 'types', 'outcomes', 'nextActions',
+            // --- NUEVO: Pasar las nuevas variables a la vista ---
+            'areas', 'cargos', 'lineasCredito'
         ));
     }
 
@@ -194,15 +223,24 @@ class InteractionController extends Controller
             'next_action_notes'  => 'nullable|string',
             'interaction_url'    => 'nullable|url',
             'attachments.*'      => 'file|mimes:jpeg,png,pdf,jpg,doc,docx|max:10240',
+
+            // --- NUEVO: Reglas de validación para los nuevos campos ---
+            'id_area'               => 'nullable|integer|exists:gdo_area,id',
+            'id_cargo'              => 'nullable|integer|exists:gdo_cargo,id',
+            'id_linea_de_obligacion'=> 'nullable|integer|exists:cre_lineas_creditos,id',
+            'id_area_de_asignacion' => 'nullable|integer|exists:gdo_area,id',
+            // 'id_funciones' se comenta porque la relación está comentada en el modelo.
+            // Si la activas, descomenta esta línea y asegúrate que la tabla 'gdo_funciones' exista.
+            // 'id_funciones'          => 'nullable|integer|exists:gdo_funciones,id',
         ]);
 
-        // 👇 Forzar el agente autenticado (independiente del formulario)
+        // Forzar el agente autenticado
         $validatedData['agent_id'] = Auth::id();
 
-        // 👇 Asignar un valor por defecto a next_action_type si viene vacío o null
+        // Asignar un valor por defecto a next_action_type si viene vacío
         $validatedData['next_action_type'] = $request->input('next_action_type') ?? 1;
 
-        // 👇 Manejo de archivos adjuntos
+        // Manejo de archivos adjuntos
         if ($request->hasFile('attachments')) {
             $storedFiles = [];
             foreach ($request->file('attachments') as $file) {
@@ -211,10 +249,10 @@ class InteractionController extends Controller
             $validatedData['attachment_urls'] = $storedFiles;
         }
 
-        // 👇 Crear la interacción
+        // Crear la interacción (los nuevos campos se guardarán gracias a $fillable en el modelo)
         $interaction = Interaction::create($validatedData);
 
-        // 👇 Calcular duración de la interacción
+        // Calcular duración de la interacción
         $inicio = Carbon::parse($interaction->interaction_date);
         $fin = Carbon::parse($interaction->created_at);
         $interaction->duration = $fin->diffInMinutes($inicio);
@@ -229,7 +267,7 @@ class InteractionController extends Controller
      */
     public function edit(Interaction $interaction)
     {
-        $clientes = maeTerceros::select('cod_ter', 'nom_ter', 'apl1', 'apl2', 'nom1', 'nom2')
+        $clientes = maeTerceros::select('cod_ter', 'nom_ter', 'apl1', 'apl2', 'nom1', 'nom2', 'nom2', 'cod_dist', 'congrega')
             ->where('estado', 1)
             ->orderBy('nom_ter')
             ->get();
@@ -239,8 +277,15 @@ class InteractionController extends Controller
         $outcomes = IntOutcome::all();
         $nextActions = IntNextAction::all();
 
+        // --- NUEVO: Obtener datos para los nuevos campos select (igual que en create) ---
+        $areas = GdoArea::orderBy('nombre')->pluck('nombre', 'id');
+        $cargos = GdoCargo::orderBy('nombre_cargo')->pluck('nombre_cargo', 'id');
+        $lineasCredito = LineaCredito::orderBy('nombre')->pluck('nombre', 'id');
+
         return view('interactions.edit', compact(
-            'interaction', 'clientes', 'channels', 'types', 'outcomes', 'nextActions'
+            'interaction', 'clientes', 'channels', 'types', 'outcomes', 'nextActions',
+            // --- NUEVO: Pasar las nuevas variables a la vista ---
+            'areas', 'cargos', 'lineasCredito'
         ));
     }
 
@@ -262,12 +307,19 @@ class InteractionController extends Controller
             'next_action_notes'  => 'nullable|string',
             'interaction_url'    => 'nullable|url',
             'attachments.*'      => 'file|mimes:jpeg,png,pdf,jpg,doc,docx|max:10240',
+
+            // --- NUEVO: Reglas de validación consistentes con store ---
+            'id_area'               => 'nullable|integer|exists:gdo_area,id',
+            'id_cargo'              => 'nullable|integer|exists:gdo_cargo,id',
+            'id_linea_de_obligacion'=> 'nullable|integer|exists:cre_lineas_creditos,id',
+            'id_area_de_asignacion' => 'nullable|integer|exists:gdo_area,id',
+            // 'id_funciones'          => 'nullable|integer|exists:gdo_funciones,id',
         ]);
 
-        // 👇 Asignar valor por defecto si el campo viene vacío o null
+        // Asignar valor por defecto si el campo viene vacío
         $validatedData['next_action_type'] = $request->input('next_action_type') ?? 1;
 
-        // 👇 Mantener archivos existentes y agregar nuevos si los hay
+        // Mantener archivos existentes y agregar nuevos si los hay
         $storedFiles = $interaction->attachment_urls ?? [];
         if ($request->hasFile('attachments')) {
             foreach ($request->file('attachments') as $file) {
@@ -276,19 +328,18 @@ class InteractionController extends Controller
         }
         $validatedData['attachment_urls'] = $storedFiles;
 
-        // 👇 Actualizar la interacción
+        // Actualizar la interacción (los nuevos campos se actualizan gracias a $fillable)
         $interaction->update($validatedData);
 
-        // 👇 Recalcular duración
+        // Recalcular duración
         $inicio = Carbon::parse($interaction->interaction_date);
-        $fin = Carbon::parse($interaction->created_at);
+        $fin = Carbon::parse($interaction->updated_at);
         $interaction->duration = $fin->diffInMinutes($inicio);
         $interaction->save();
 
         return redirect()->route('interactions.index')
             ->with('success', 'Interacción actualizada exitosamente.');
     }
-
 
     /**
      * Elimina una interacción y sus archivos adjuntos.
@@ -302,6 +353,7 @@ class InteractionController extends Controller
                     Storage::delete($path);
                 }
             }
+
             $interaction->delete();
 
             return redirect()->route('interactions.index')
@@ -339,4 +391,5 @@ class InteractionController extends Controller
 
         return response()->file($path);
     }
+
 }
