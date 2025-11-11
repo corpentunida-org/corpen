@@ -110,7 +110,7 @@ class SegNovedadesController extends Controller
             'novedad' => $novedad->id,
             'estado' => $request->estado,
             'observaciones' => strtoupper($request->observaciones),
-            'fechaIncio' => Carbon::now()->toDateString(),
+            'fechaInicio' => Carbon::now()->toDateString(),
         ]);
         if ($request->tipoNovedad === '1') {
             $accion = 'modificacion en poliza  ' . $request->id_poliza . ' Asegurado ' . $request->asegurado;
@@ -166,6 +166,7 @@ class SegNovedadesController extends Controller
     public function edit($id)
     {
         $novedad = SegNovedades::with(['poliza', 'estadoNovedad', 'cambiosEstado'])->findOrFail($id);
+        $actividadnov = SegCambioEstadoNovedad::where('novedad', $id)->with('estadosname')->get();
         if ($novedad->estado != 1) {
             $editar = false;
             return view('seguros.novedades.edit', compact('novedad', 'editar'))
@@ -177,7 +178,7 @@ class SegNovedadesController extends Controller
             //return redirect()->route('seguros.novedades.index')->with('error', 'La novedad de ingresar beneficiario no se puede editar.');
         }
         $editar = true;
-        return view('seguros.novedades.edit', compact('novedad','editar'));
+        return view('seguros.novedades.edit', compact('novedad','editar','actividadnov'));
     }
 
     public function update(Request $request, $id)
@@ -192,6 +193,7 @@ class SegNovedadesController extends Controller
                 'novedad' => $id,
                 'estado' => $request->estado,
                 'observaciones' => $request->observaciones,
+                'fechaInicio' => Carbon::now()->toDateString(),
             ]);
             return redirect()->route('seguros.novedades.index')->with('success', 'Se actualizó correctamente la novedad.');
         } else {
@@ -237,6 +239,7 @@ class SegNovedadesController extends Controller
                     'novedad' => $id,
                     'estado' => $request->estado,
                     'observaciones' => strtoupper($request->observaciones),
+                    'fechaInicio' => Carbon::now()->toDateString(),
                     'fechaCierre' => Carbon::now()->toDateString(),
                 ]);
                 return redirect()->route('seguros.novedades.index')->with('success', 'Se actualizó correctamente el cambio de estado.');

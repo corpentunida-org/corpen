@@ -149,7 +149,6 @@ class SegPolizaController extends Controller
         }
 
         $beneficiarios = SegBeneficiario::where('id_asegurado', $id)->where('activo', 1)->with('parentescos')->get();
-
         $novedades = SegNovedades::where('id_asegurado', $id)->where('id_poliza', $poliza->id)->get();
         $reclamacion = SegReclamaciones::where('cedulaAsegurado', $id)->with('cambiosEstado')->get();
 
@@ -160,7 +159,6 @@ class SegPolizaController extends Controller
         }
 
         $registrosnov = collect()->merge($novedades)->merge($reclamacion)->merge($beneficios)->sortBy('updated_at')->values();
-
         return view('seguros.polizas.show', compact('poliza', 'grupoFamiliar', 'totalPrima', 'beneficiarios', 'beneficios', 'registrosnov'));
     }
 
