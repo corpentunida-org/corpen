@@ -3,7 +3,7 @@
         <form action="{{ route('interactions.store') }}" 
               method="POST" 
               enctype="multipart/form-data"
-              class="bg-white p-6 rounded-xl shadow-md border border-gray-200 transition duration-300 hover:shadow-lg">
+              class="bg-white p-6 rounded-xl shadow-md border border-gray-200 hover:shadow-lg">
             
             @csrf
 
