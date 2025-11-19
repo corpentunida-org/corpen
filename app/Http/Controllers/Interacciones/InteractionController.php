@@ -17,6 +17,7 @@ use App\Models\Interacciones\IntType;
 use App\Models\Interacciones\IntOutcome;
 use App\Models\Interacciones\IntNextAction;
 
+// --- NUEVO: Importar los modelos para las nuevas relaciones ---
 use App\Models\Archivo\GdoArea;
 use App\Models\Archivo\GdoCargo;
 use App\Models\Creditos\LineaCredito;
@@ -24,13 +25,18 @@ use App\Models\Maestras\maeDistritos;
 
 class InteractionController extends Controller
 {
+    /**
+     * Muestra la lista de interacciones con filtros y búsqueda.
+     */
     public function index(Request $request)
     {
+        // --- 1. CONSTRUIMOS LA CONSULTA BASE (sin paginar aún) ---
         $baseQuery = Interaction::with([
             'client', 'agent', 'channel', 'type', 'outcomeRelation', 'nextAction',
             'area', 'areaDeAsignacion', 'cargo', 'lineaDeObligacion'
         ]);
 
+        // --- 2. APLICAMOS TODOS LOS FILTROS (BÚSQUEDA Y FILTROS ADICIONALES) ---
         if ($request->filled('q')) {
             $q = $request->q;
             $baseQuery->where(function ($sub) use ($q) {
@@ -69,6 +75,7 @@ class InteractionController extends Controller
             $baseQuery->whereDate('interaction_date', '<=', $request->date_to);
         }
 
+        // --- 3. OBTENEMOS LOS DATOS PARA LAS ESTADÍSTICAS Y PESTAÑAS (SIN PAGINAR) ---
         $countQuery = clone $baseQuery;
 
         $stats = [
@@ -84,17 +91,20 @@ class InteractionController extends Controller
             'today' => (clone $baseQuery)->whereDate('interaction_date', today())->get(),
         ];
 
+        // --- 4. OBTENEMOS LA COLECCIÓN PAGINADA PARA LA PESTAÑA "TODOS" ---
         $interactions = $baseQuery->orderByDesc('interaction_date')->paginate(100);
         $interactions->appends($request->query());
 
-        $channels = IntChannel::orderBy('name')->pluck('name');
-        $types = IntType::orderBy('name')->pluck('name');
-        $outcomes = IntOutcome::orderBy('name')->pluck('name');
-        $areas = GdoArea::orderBy('nombre')->pluck('nombre');
-        $cargos = GdoCargo::orderBy('nombre_cargo')->pluck('nombre_cargo');
-        $lineas = LineaCredito::orderBy('nombre')->pluck('nombre');
+        // --- 5. DATOS PARA LOS SELECT DE LA VISTA ---
+        $channels = IntChannel::orderBy('name')->pluck('name', 'id');
+        $types = IntType::orderBy('name')->pluck('name', 'id');
+        $outcomes = IntOutcome::orderBy('name')->pluck('name', 'id');
+        $areas = GdoArea::orderBy('nombre')->pluck('nombre', 'id');
+        $cargos = GdoCargo::orderBy('nombre_cargo')->pluck('nombre_cargo', 'id');
+        $lineas = LineaCredito::orderBy('nombre')->pluck('nombre', 'id');
         $distrito = maeDistritos::orderBy('NOM_DIST')->pluck('NOM_DIST', 'COD_DIST');
 
+        // --- 6. PASAMOS TODAS LAS VARIABLES A LA VISTA ---
         return view('interactions.index', compact(
             'interactions',
             'stats',
@@ -109,6 +119,9 @@ class InteractionController extends Controller
         ));
     }
 
+    /**
+     * Muestra detalles y estadísticas de una interacción.
+     */
     public function show(Interaction $interaction)
     {
         $interaction->load([
@@ -174,6 +187,9 @@ class InteractionController extends Controller
         ));
     }
 
+    /**
+     * Formulario para crear una nueva interacción.
+     */
     public function create()
     {
         $interaction = new Interaction();
@@ -188,6 +204,7 @@ class InteractionController extends Controller
         $lineasCredito = LineaCredito::orderBy('nombre')->pluck('nombre', 'id');
         $distrito = maeDistritos::orderBy('NOM_DIST')->pluck('NOM_DIST', 'COD_DIST');
         
+        // --- NUEVO: Obtener el cargo y área del agente logueado ---
         $agente = Auth::user();
         $cargoAgente = null;
         $idCargoAgente = null;
@@ -199,6 +216,7 @@ class InteractionController extends Controller
             if ($cargoAgente) {
                 $idCargoAgente = $cargoAgente->id;
                 
+                // Obtener el área a través del cargo
                 $areaAgente = $cargoAgente->gdoArea;
                 if ($areaAgente) {
                     $idAreaAgente = $areaAgente->id;
@@ -213,8 +231,11 @@ class InteractionController extends Controller
         ));
     }
 
+    /**
+     * Guarda una nueva interacción en la base de datos.
+     */
     public function store(Request $request)
-    {
+    {        
         $validatedData = $request->validate([
             'client_id'          => 'required|exists:MaeTerceros,cod_ter',
             'agent_id'           => 'required|exists:users,id',
@@ -227,7 +248,7 @@ class InteractionController extends Controller
             'next_action_type'   => 'nullable|exists:int_next_actions,id',
             'next_action_notes'  => 'nullable|string',
             'interaction_url'    => 'nullable|url',
-            'attachments.*'      => 'file|mimes:jpeg,png,pdf,jpg,doc,docx|max:10240',
+            'attachment'         => 'nullable|file|mimes:jpeg,png,pdf,jpg,doc,docx|max:10240',
             'id_area'               => 'nullable|integer|exists:gdo_area,id',
             'id_cargo'              => 'nullable|integer|exists:gdo_cargo,id',
             'id_linea_de_obligacion'=> 'nullable|integer|exists:cre_lineas_creditos,id',
@@ -240,9 +261,11 @@ class InteractionController extends Controller
         $validatedData['agent_id'] = Auth::id();
         $validatedData['next_action_type'] = $request->input('next_action_type') ?? 1;
 
+        // --- MEJORA DE ROBUSTEZ: Asegurar valores por defecto ---
         $validatedData['duration'] = $validatedData['duration'] ?? 0;
         $validatedData['start_time'] = $validatedData['start_time'] ?? null;
         
+        // --- NUEVO: Si no se proporciona un cargo, usar el del agente logueado ---
         if (!isset($validatedData['id_cargo']) || empty($validatedData['id_cargo'])) {
             $agente = Auth::user();
             $cargoAgente = $agente->cargoRelation;
@@ -251,6 +274,7 @@ class InteractionController extends Controller
             }
         }
         
+        // --- NUEVO: Si no se proporciona un área, usar la del cargo del agente logueado ---
         if (!isset($validatedData['id_area']) || empty($validatedData['id_area'])) {
             $agente = Auth::user();
             $cargoAgente = $agente->cargoRelation;
@@ -259,18 +283,28 @@ class InteractionController extends Controller
             }
         }
 
-        $archivo = $request->hasFile('attachments');
-        
+        // --- MANEJO CORREGIDO DE ARCHIVO ADJUNTO (SOLO UN ARCHIVO) ---
+        if ($request->hasFile('attachment')) {
+            try {
+                $file = $request->file('attachment');
+            } catch (\Exception $e) {
+                Log::error("Excepción al subir archivo: " . $e->getMessage());
+            }
+        }
+
+        // Crear la interacción con todos los datos, incluyendo el archivo.
         $interaction = Interaction::create($validatedData);
-        
-        if ($archivo) {
-            $ruta = Storage::disk('s3')->put('corpentunida/daytrack',$request->file('attachments'));
+        if ($file) {
+            $ruta = Storage::disk('s3')->put('corpentunida/daytrack/' . $interaction->id, $file);
             $interaction->update(['attachment_urls' => $ruta]);
         }
 
         return redirect()->route('interactions.index')->with('success', 'Interacción creada exitosamente.');
     }
 
+    /**
+     * Formulario para editar una interacción existente.
+     */
     public function edit(Interaction $interaction)
     {
         $channels = IntChannel::all(); 
@@ -283,6 +317,7 @@ class InteractionController extends Controller
         $lineasCredito = LineaCredito::orderBy('nombre')->pluck('nombre', 'id');
         $distrito = maeDistritos::orderBy('NOM_DIST')->pluck('NOM_DIST', 'COD_DIST');
         
+        // --- NUEVO: Obtener el cargo y área del agente logueado ---
         $agente = Auth::user();
         $cargoAgente = null;
         $idCargoAgente = null;
@@ -294,6 +329,7 @@ class InteractionController extends Controller
             if ($cargoAgente) {
                 $idCargoAgente = $cargoAgente->id;
                 
+                // Obtener el área a través del cargo
                 $areaAgente = $cargoAgente->gdoArea;
                 if ($areaAgente) {
                     $idAreaAgente = $areaAgente->id;
@@ -308,6 +344,9 @@ class InteractionController extends Controller
         ));
     }
 
+    /**
+     * Actualiza una interacción existente.
+     */
     public function update(Request $request, Interaction $interaction)
     {
         $validatedData = $request->validate([
@@ -322,7 +361,7 @@ class InteractionController extends Controller
             'next_action_type'   => 'nullable|exists:int_next_actions,id',
             'next_action_notes'  => 'nullable|string',
             'interaction_url'    => 'nullable|url',
-            'attachments.*'      => 'file|mimes:jpeg,png,pdf,jpg,doc,docx|max:10240',
+            'attachment'         => 'nullable|file|mimes:jpeg,png,pdf,jpg,doc,docx|max:10240',
             'id_area'               => 'nullable|integer|exists:gdo_area,id',
             'id_cargo'              => 'nullable|integer|exists:gdo_cargo,id',
             'id_linea_de_obligacion'=> 'nullable|integer|exists:cre_lineas_creditos,id',
@@ -334,9 +373,11 @@ class InteractionController extends Controller
 
         $validatedData['next_action_type'] = $request->input('next_action_type') ?? 1;
 
+        // --- MEJORA DE ROBUSTEZ: Asegurar valores por defecto ---
         $validatedData['duration'] = $validatedData['duration'] ?? 0;
         $validatedData['start_time'] = $validatedData['start_time'] ?? null;
         
+        // --- NUEVO: Si no se proporciona un cargo, usar el del agente logueado ---
         if (!isset($validatedData['id_cargo']) || empty($validatedData['id_cargo'])) {
             $agente = Auth::user();
             $cargoAgente = $agente->cargoRelation;
@@ -345,6 +386,7 @@ class InteractionController extends Controller
             }
         }
         
+        // --- NUEVO: Si no se proporciona un área, usar la del cargo del agente logueado ---
         if (!isset($validatedData['id_area']) || empty($validatedData['id_area'])) {
             $agente = Auth::user();
             $cargoAgente = $agente->cargoRelation;
@@ -353,28 +395,53 @@ class InteractionController extends Controller
             }
         }
 
-        $storedFiles = $interaction->attachment_urls ?? [];
-        if ($request->hasFile('attachments')) {
-            foreach ($request->file('attachments') as $file) {
-                $storedFiles[] = $file->store('interactions');
+        // --- MANEJO CORREGIDO DE ARCHIVO ADJUNTO (SOLO UN ARCHIVO) ---
+        if ($request->hasFile('attachment')) {
+            try {
+                $file = $request->file('attachment');
+                
+                if ($file->isValid()) {
+                    // Generar un nombre único para el archivo
+                    $fileName = time() . '_' . str_replace(' ', '_', $file->getClientOriginalName());
+                    
+                    // Subir el archivo a S3 con un nombre específico
+                    $ruta = Storage::disk('s3')->putFileAs(
+                        'corpentunida/daytrack', // Directorio en S3
+                        $file,                   // El archivo temporal
+                        $fileName,               // El nombre final del archivo
+                        'public'                 // Visibilidad del archivo
+                    );
+                    
+                    if ($ruta) {
+                        Log::info("Nuevo archivo guardado exitosamente en S3: " . $ruta);
+                        $validatedData['attachment_urls'] = $ruta;
+                    } else {
+                        Log::error("Fallo al guardar el nuevo archivo en S3: " . $file->getClientOriginalName());
+                    }
+                } else {
+                    Log::error("El nuevo archivo no es válido: " . $file->getClientOriginalName());
+                }
+            } catch (\Exception $e) {
+                Log::error("Excepción al subir nuevo archivo: " . $e->getMessage());
             }
         }
-        $validatedData['attachment_urls'] = $storedFiles;
 
+        // Actualizar la interacción con todos los datos.
         $interaction->update($validatedData);
 
         return redirect()->route('interactions.index')
             ->with('success', 'Interacción actualizada exitosamente.');
     }
 
+    /**
+     * Elimina una interacción y sus archivos adjuntos.
+     */
     public function destroy(Interaction $interaction)
     {
         try {
+            // --- CORRECCIÓN: Manejo correcto de archivo adjunto ---
             if ($interaction->attachment_urls) {
-                foreach ($interaction->attachment_urls as $url) {
-                    $path = str_replace('/storage', 'public', $url);
-                    Storage::delete($path);
-                }
+                Storage::disk('s3')->delete($interaction->attachment_urls);
             }
 
             $interaction->delete();
@@ -387,88 +454,131 @@ class InteractionController extends Controller
         }
     }
 
+    /**
+     * Descarga un archivo adjunto.
+     */
     public function downloadAttachment($fileName)
     {
-        $path = "public/interactions/" . $fileName;
-
-        if (!Storage::exists($path)) {
+        // --- CORRECCIÓN: Descarga desde S3 ---
+        try {
+            // Buscar el archivo en S3
+            $path = 'corpentunida/daytrack/' . $fileName;
+            
+            if (!Storage::disk('s3')->exists($path)) {
+                abort(404, "Archivo no encontrado.");
+            }
+            
+            return Storage::disk('s3')->download($path);
+        } catch (Exception $e) {
+            Log::error('Error al descargar archivo: ' . $e->getMessage());
             abort(404, "Archivo no encontrado.");
         }
-
-        return Storage::download($path);
     }
 
+    /**
+     * Visualiza un archivo adjunto en el navegador.
+     */
     public function viewAttachment($fileName)
     {
-        $path = storage_path("app/interactions/{$fileName}");
-
-        if (!file_exists($path)) {
+        // --- CORRECCIÓN: Visualización desde S3 ---
+        try {
+            // Buscar el archivo en S3
+            $path = 'corpentunida/daytrack/' . $fileName;
+            
+            if (!Storage::disk('s3')->exists($path)) {
+                abort(404, "Archivo no encontrado.");
+            }
+            
+            $file = Storage::disk('s3')->get($path);
+            $mimeType = Storage::disk('s3')->mimeType($path);
+            
+            return response($file)->header('Content-Type', $mimeType);
+        } catch (Exception $e) {
+            Log::error('Error al visualizar archivo: ' . $e->getMessage());
             abort(404, "Archivo no encontrado: {$fileName}");
         }
-
-        return response()->file($path);
     }
     
+    /**
+     * Obtener datos del cliente para AJAX
+     */
     public function getCliente($cod_ter)
     {
-        $cliente = maeTerceros::where('cod_ter', $cod_ter)
-            ->with(['maeTipos', 'distrito', 'congregaciones'])
-            ->first();
+        try {
+            // Mejoramos la consulta para asegurar que se carguen todas las relaciones necesarias
+            $cliente = maeTerceros::where('cod_ter', $cod_ter)
+                ->with(['maeTipos', 'distrito', 'congregaciones'])
+                ->first();
 
-        if ($cliente) {
+            if (!$cliente) {
+                return response()->json(['error' => 'Cliente no encontrado'], 404);
+            }
+
+            // Obtener historial de interacciones del cliente con más información
             $history = Interaction::with(['agent', 'channel', 'type', 'outcomeRelation'])
                 ->where('client_id', $cod_ter)
                 ->orderByDesc('interaction_date')
-                ->limit(5)
+                ->limit(10)
                 ->get()
                 ->map(function ($item) {
                     return [
+                        'id' => $item->id,
                         'date' => $item->interaction_date->format('d/m/Y H:i'),
-                        'agent' => $item->agent->name,
-                        'type' => $item->type->name,
-                        'outcome' => $item->outcomeRelation->name,
-                        'notes' => substr($item->notes, 0, 100) . (strlen($item->notes) > 100 ? '...' : ''),
+                        'agent' => $item->agent ? $item->agent->name : 'No asignado',
+                        'type' => $item->type ? $item->type->name : 'No definido',
+                        'outcome' => $item->outcomeRelation ? $item->outcomeRelation->name : 'No definido',
+                        'notes' => $item->notes ? substr($item->notes, 0, 100) . (strlen($item->notes) > 100 ? '...' : '') : '',
+                        'channel' => $item->channel ? $item->channel->name : 'No definido',
+                        'duration' => $item->duration ?? 0,
                     ];
                 });
 
-            return response()->json([
+            // Preparamos la respuesta con todos los datos necesarios
+            $response = [
                 'cod_ter' => $cliente->cod_ter,
-                'nom_ter' => $cliente->nom_ter,
-                'email' => $cliente->email,
-                'dir' => $cliente->dir,
-                'tel1' => $cliente->tel1,
-                'cel1' => $cliente->cel1,
-                'ciudad' => $cliente->ciudad,
-                'departamento' => $cliente->departamento,
-                'pais' => $cliente->pais,
-                'cod_dist' => $cliente->cod_dist,
-                'barrio' => $cliente->barrio,
-                'cod_est' => $cliente->cod_est,
-                'congrega' => $cliente->congrega,
+                'nom_ter' => $cliente->nom_ter ?? 'No registrado',
+                'email' => $cliente->email ?? 'No registrado',
+                'dir' => $cliente->dir ?? 'No registrado',
+                'tel1' => $cliente->tel1 ?? 'No registrado',
+                'cel1' => $cliente->cel1 ?? 'No registrado',
+                'ciudad' => $cliente->ciudad ?? 'No registrado',
+                'departamento' => $cliente->departamento ?? 'No registrado',
+                'pais' => $cliente->pais ?? 'No registrado',
+                'cod_dist' => $cliente->cod_dist ?? 'No registrado',
+                'barrio' => $cliente->barrio ?? 'No registrado',
+                'cod_est' => $cliente->cod_est ?? 'No registrado',
+                'congrega' => $cliente->congrega ?? 'No registrado',
                 'history' => $history,
-
+                // Tipo de cliente
                 'maeTipos' => $cliente->maeTipos ? [
                     'id' => $cliente->maeTipos->id,
-                    'nombre' => $cliente->maeTipos->nombre,
+                    'nombre' => $cliente->maeTipos->nombre ?? 'No definido',
                 ] : null,
-
+                // Distrito
                 'distrito' => $cliente->distrito ? [
                     'COD_DIST' => $cliente->distrito->COD_DIST,
-                    'NOM_DIST' => $cliente->distrito->NOM_DIST,
-                    'DETALLE' => $cliente->distrito->DETALLE,
-                    'COMPUEST' => $cliente->distrito->COMPUEST,
+                    'NOM_DIST' => $cliente->distrito->NOM_DIST ?? 'No definido',
+                    'DETALLE' => $cliente->distrito->DETALLE ?? 'No definido',
+                    'COMPUEST' => $cliente->distrito->COMPUEST ?? 'No definido',
                 ] : null,
-
+                // Congregacion
                 'congregaciones' => $cliente->congregaciones ? [
                     'codigo' => $cliente->congregaciones->codigo,
-                    'nombre' => $cliente->congregaciones->nombre,
+                    'nombre' => $cliente->congregaciones->nombre ?? 'No definido',
                 ] : null,
-            ]);
-        }
+            ];
 
-        return response()->json(['error' => 'Cliente no encontrado'], 404);
+            return response()->json($response);
+        } catch (\Exception $e) {
+            // Registramos el error para depuración
+            \Log::error('Error al cargar cliente: ' . $e->getMessage());
+            return response()->json(['error' => 'Error interno del servidor: ' . $e->getMessage()], 500);
+        }
     }
     
+    /**
+     * Buscar clientes para Select2 AJAX
+     */
     public function searchClients(Request $request)
     {
         $search = $request->get('q');
