@@ -4,7 +4,7 @@
 <--!----------------------------------------------------------------!-->
 */
 
-input,
+/*input,
 .custom-file,
 .custom-select,
 .form-select,
@@ -62,12 +62,13 @@ input,
 }
 input[type="search"]::-webkit-search-cancel-button {
 	display: none;
-}
+}*/
 /*
 <--!----------------------------------------------------------------!-->
 <--! Custom Checkbox !-->
 <--!----------------------------------------------------------------!-->
 */
+/*
 input[type="checkbox"],
 input[type="radio"] {
 	padding: 0;
@@ -207,3 +208,4 @@ input[type="radio"] {
 .form-switch.form-switch-xl {
 	@include switch("xl");
 }
+*/
