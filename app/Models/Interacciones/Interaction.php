@@ -78,7 +78,7 @@ class Interaction extends Model
     // ------------------- RELACIONES EXISTENTES -------------------
     public function agent()
     {
-        return $this->belongsTo(User::class, 'agent_id', 'nid');
+        return $this->belongsTo(User::class, 'agent_id', 'id');
     }
     public function client()
     {

@@ -235,6 +235,7 @@
                             <thead class="table-light pastel-thead">
                                 <tr>
                                     <th class="py-1">ID</th>
+                                    <th class="py-1">Distrito</th>
                                     <th class="py-1">Fecha</th>
                                     <th class="py-1">Cliente</th>
                                     <th class="py-1">Canal</th>
@@ -298,6 +299,9 @@
                                                 #{{ $interaction->id }}
                                             </a>
                                         </td>
+                                        <td>
+                                            {{ $interaction->DistritoDeObligacion->NOM_DIST ?? ' ' }}
+                                        </td> 
 
                                         {{-- Fecha --}}
                                         <td class="py-1">
