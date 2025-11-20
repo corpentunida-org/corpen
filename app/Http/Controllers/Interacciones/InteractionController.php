@@ -249,6 +249,12 @@ class InteractionController extends Controller
             'next_action_notes'  => 'nullable|string',
             'interaction_url'    => 'nullable|url',
             'attachment'         => 'nullable|file|mimes:jpeg,png,pdf,jpg,doc,docx|max:10240',
+
+            'cedula_quien_llama'   => 'nullable|string|max:50',
+            'nombre_quien_llama'   => 'nullable|string|max:255',
+            'celular_quien_llama'  => 'nullable|string|max:50',
+            'parentezco_quien_llama' => 'nullable|string|max:50',
+
             'id_area'               => 'nullable|integer|exists:gdo_area,id',
             'id_cargo'              => 'nullable|integer|exists:gdo_cargo,id',
             'id_linea_de_obligacion'=> 'nullable|integer|exists:cre_lineas_creditos,id',
@@ -362,6 +368,12 @@ class InteractionController extends Controller
             'next_action_notes'  => 'nullable|string',
             'interaction_url'    => 'nullable|url',
             'attachment'         => 'nullable|file|mimes:jpeg,png,pdf,jpg,doc,docx|max:10240',
+
+            'cedula_quien_llama'   => 'nullable|string|max:50',
+            'nombre_quien_llama'   => 'nullable|string|max:255',
+            'celular_quien_llama'  => 'nullable|string|max:50',
+            'parentezco_quien_llama' => 'nullable|string|max:50',
+
             'id_area'               => 'nullable|integer|exists:gdo_area,id',
             'id_cargo'              => 'nullable|integer|exists:gdo_cargo,id',
             'id_linea_de_obligacion'=> 'nullable|integer|exists:cre_lineas_creditos,id',
@@ -604,4 +616,28 @@ class InteractionController extends Controller
             ]
         ]);
     }
+
+    /**
+     * 🆕 Obtener el COD_DIST de un cliente para AJAX.
+     *
+     * @param  int  $client_id  (Este es el cod_ter)
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getClientDistrict($client_id)
+    {
+        // Buscamos el cliente usando su cod_ter
+        $client = maeTerceros::find($client_id);
+
+        if (!$client) {
+            // Si no se encuentra el cliente, devolvemos un error 404
+            return response()->json(['error' => 'Cliente no encontrado'], 404);
+        }
+
+        // Devolvemos el código del distrito en formato JSON.
+        // Usamos 'district_id' como clave para mayor claridad en el frontend.
+        return response()->json([
+            'district_id' => $client->cod_dist,
+        ]);
+    }
+
 }
