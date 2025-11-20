@@ -34,7 +34,12 @@ class Interaction extends Model
 
         'next_action_date',         // 9) Fecha programada para la próxima acción o seguimiento
         'next_action_type',         // 10)* Tipo de próxima acción (ej: llamada, reunión, envío de correo)
-        'next_action_notes',        // 11) Notas o detalles sobre la próxima acción
+        'next_action_notes',        // 11) Notas o detalles sobre la próxima acción 
+        'parentezco_quien_llama',
+
+        'cedula_quien_llama', 
+        'nombre_quien_llama', 
+        'celular_quien_llama', 
 
         'attachment_urls',          // 12) URLs de archivos adjuntos relacionados a la interacción
         'interaction_url',          // 13) URL del registro o recurso externo vinculado a la interacción
