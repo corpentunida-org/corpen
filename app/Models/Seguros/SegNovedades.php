@@ -13,6 +13,7 @@ use App\Models\Seguros\SegPoliza;
 use App\Models\Seguros\SegTercero;
 use App\Models\Seguros\SegBeneficiario;
 use App\Models\Seguros\SegTipoNovedad;
+use Illuminate\Support\Facades\Storage;
 
 class SegNovedades extends Model
 {
@@ -31,13 +32,28 @@ class SegNovedades extends Model
     ]; */
 
     protected $table = 'Seg_novedadaes';
-    protected $fillable = ['id_poliza', 'id_asegurado', 'tipo', 'estado', 'id_plan', 'valorAsegurado', 'primaAseguradora', 'primaCorpen', 'extraprima', 'formulario'];
-    
+    protected $fillable = [
+        'id_poliza', 
+        'id_asegurado', 
+        'tipo', 
+        'estado', 'id_plan', 'valorAsegurado', 'primaAseguradora', 'primaCorpen', 'extraprima', 
+        'beneficiario_id'
+        ,'formulario'];
 
     /* public function tercero()
     {
         return $this->belongsTo(SegTercero::class, 'id_asegurado', 'cedula');
     } */
+    public function getFile($nameFile)
+    {
+        $url = '#';
+        if ($nameFile) {
+            if (Storage::disk('s3')->exists($nameFile)) {
+                $url = Storage::disk('s3')->temporaryUrl($nameFile, now()->addMinutes(5));
+            }
+        }
+        return $url;
+    }
     public function tercero()
     {
         return $this->belongsTo(maeTerceros::class, 'id_asegurado', 'cod_ter');
@@ -55,7 +71,6 @@ class SegNovedades extends Model
         }
         return '';
     }
-
     public function asegurado()
     {
         return $this->belongsTo(SegAsegurado::class, 'id_asegurado', 'cedula');

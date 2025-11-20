@@ -16,14 +16,16 @@
                             </div>
                             <h3 class="fs-13 fw-semibold text-truncate-1-line">{{ $id }}</h3>
                         </div>
-                        
+
                         @if ($tercero != null && $tercero->verificado)
-                        <div class="d-flex gap-3 align-items-center">                            
-                            <div>
-                                <div class="fw-semibold text-dark"><span class="badge bg-soft-success text-success">VERIFICADO</span> {{$tercero->verificadousuario}}</div>
-                                <div class="fs-12 text-muted">{{$tercero->observacion}}</div>
+                            <div class="d-flex gap-3 align-items-center">
+                                <div>
+                                    <div class="fw-semibold text-dark"><span
+                                            class="badge bg-soft-success text-success">VERIFICADO</span>
+                                        {{ $tercero->verificadousuario }}</div>
+                                    <div class="fs-12 text-muted">{{ $tercero->observacion }}</div>
+                                </div>
                             </div>
-                        </div>
                         @endif
                     </div>
                 </div>
@@ -31,8 +33,8 @@
                     <form action="{{ route('cinco.movcontables.show', ['cinco' => 'ID']) }}" method="GET"
                         class="d-flex align-items-center gap-2 page-header-right-items-wrapper" validate>
                         <label class="mb-0 me-2">Buscar:</label>
-                        <input type="text" name="id" class="form-control form-control-sm" placeholder="número de cédula"
-                            aria-controls="customerList" required>
+                        <input type="text" name="id" class="form-control form-control-sm"
+                            placeholder="número de cédula" aria-controls="customerList" required>
                         <button type="submit" class="btn btn-primary"><i class="bi bi-search"></i></button>
                     </form>
                 </div>
@@ -51,7 +53,7 @@
                         </a>
                         <div class="text-end">
                             <p class="fs-11 fw-medium text-uppercase text-muted mb-1">Fecha Ingreso a Corpentunida</p>
-                            <h5>{{$fechas->fecha_ipuc->format('Y-m-d') ?? 'sin fecha'}}</h5>
+                            <h5>{{ $fechas->fecha_ipuc->format('Y-m-d') ?? 'sin fecha' }}</h5>
                         </div>
                     </div>
                 </div>
@@ -68,7 +70,7 @@
                         </a>
                         <div class="text-end">
                             <p class="fs-11 fw-medium text-uppercase text-muted mb-1">Fecha Primer Aporte</p>
-                            <h5>{{$fechas->fec_aport->format('Y-m-d') ?? 'sin fecha'}}</h5>
+                            <h5>{{ $fechas->fec_aport->format('Y-m-d') ?? 'sin fecha' }}</h5>
                         </div>
                     </div>
                 </div>
@@ -85,7 +87,7 @@
                         </a>
                         <div class="text-end">
                             <p class="fs-11 fw-medium text-uppercase text-muted mb-1">Fecha Ingreso al Ministerio</p>
-                            <h5>{{$fechas->fec_minis->format('Y-m-d') ?? 'sin fecha'}}</h5>
+                            <h5>{{ $fechas->fec_minis->format('Y-m-d') ?? 'sin fecha' }}</h5>
                         </div>
                     </div>
                 </div>
@@ -114,7 +116,8 @@
                                         {{ $c->cuentaContable->Descripcion }}</span></button>
                             </h2>
                             <div id="flush-collapse{{ $i }}" class="accordion-collapse collapse"
-                                aria-labelledby="flush-heading{{ $i }}" data-bs-parent="#accordionFaqGroup" style="">
+                                aria-labelledby="flush-heading{{ $i }}" data-bs-parent="#accordionFaqGroup"
+                                style="">
                                 <div class="accordion-body">
                                     <table class="table table-responsive table-hover">
                                         <thead>
@@ -133,8 +136,8 @@
                                                 $contadordebitos = 0;
                                             @endphp
 
-                                            @foreach ($movimientos as $mov)
-                                                @if ($mov->Cuenta == $c->cuenta)
+                                            @if ($c->cuenta == '416542')
+                                                @foreach ($apOrdenado as $mov)
                                                     <tr>
                                                         <td>{{ $mov->CodComprob }}</td>
                                                         <td>{{ $mov->NumComprob }}</td>
@@ -147,8 +150,25 @@
                                                         $contadorcreditos += $mov->VrCreditos;
                                                         $contadordebitos += $mov->VrDebitos;
                                                     @endphp
-                                                @endif
-                                            @endforeach
+                                                @endforeach
+                                            @else
+                                                @foreach ($movimientos as $mov)
+                                                    @if ($mov->Cuenta == $c->cuenta)
+                                                        <tr>
+                                                            <td>{{ $mov->CodComprob }}</td>
+                                                            <td>{{ $mov->NumComprob }}</td>
+                                                            <td>{{ $mov->Fecha }}</td>
+                                                            <td>{{ $mov->Observacion }}</td>
+                                                            <td>{{ number_format($mov->VrDebitos) }}</td>
+                                                            <td>{{ number_format($mov->VrCreditos) }}</td>
+                                                        </tr>
+                                                        @php
+                                                            $contadorcreditos += $mov->VrCreditos;
+                                                            $contadordebitos += $mov->VrDebitos;
+                                                        @endphp
+                                                    @endif
+                                                @endforeach
+                                            @endif
                                             <tr>
                                                 <td></td>
                                                 <td></td>
