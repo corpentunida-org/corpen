@@ -36,7 +36,8 @@
                             </form>
                             <div class="col-lg-3 mb-4">
                                 <label class="form-label">Cedula Asegurado</label>
-                                <input type="text" class="form-control" value="{{ $asegurado->cedula ?? ' ' }}" disabled>
+                                <input type="text" class="form-control" value="{{ $asegurado->cedula ?? ' ' }}"
+                                    disabled>
                             </div>
                             <div class="col-lg-7 mb-4">
                                 <label class="form-label">Nombre Asegurado</label>
@@ -194,6 +195,9 @@
                                     <input class="form-control" type="file" id="formulario_nov"
                                         name="formulario_nov" required>
                                     <small class="form-text text-muted">Formato permitidos: PDF</small>
+                                    @error('formulario_nov')
+                                        <small class="text-danger">{{ $message }}</small>
+                                    @enderror
                                 </div>
                                 <div class="d-flex flex-row-reverse gap-2 mt-2">
                                     <button class="btn btn-success mt-4" data-bs-toggle="tooltip" title="Timesheets"
@@ -209,7 +213,7 @@
 
                 {{-- INGRESO --}}
                 <div class="tab-pane fade p-4 " id="TaskTab" role="tabpanel">
-                    <form action={{ route('seguros.novedades.store') }} method="POST" id="formAddPoliza" novalidate>
+                    <form action={{ route('seguros.novedades.store') }} method="POST" id="formAddPoliza" enctype="multipart/form-data" novalidate>
                         @csrf
                         @method('POST')
                         <div class="mb-3 d-flex align-items-center justify-content-between">
@@ -328,9 +332,12 @@
                             </div>
                             <div class="col-md-3">
                                 <label for="ubicacion_foto" class="form-label">Formulario</label>
-                                <input class="form-control" type="file" id="formulario_nov" name="formulario_nov"
+                                <input class="form-control" type="file" id="formulario_nov" name="formulario_nov" accept="application/pdf"
                                     required>
                                 <small class="form-text text-muted">Formato permitidos: PDF</small>
+                                @error('formulario_nov')
+                                    <small class="text-danger">{{ $message }}</small>
+                                @enderror
                             </div>
                         </div>
                         <div class="d-flex flex-row-reverse gap-2 mt-2">
@@ -362,9 +369,9 @@
                                 value="{{ $asegurado->nombre_tercero ?? ' ' }}" disabled>
                         </div>
                     </div>
-                    @if (isset($asegurado))
+                    @if (isset($asegurado))                        
                         <form method="POST" class="px-4"
-                            action="{{ route('seguros.novedades.destroy', ['novedade' => $asegurado->cedula]) }}">
+                            action="{{ route('seguros.novedades.destroy', ['novedade' => $asegurado->cedula]) }}" enctype="multipart/form-data">
                             @csrf
                             @method('DELETE')
                             <input type="hidden" name="tipoNovedad" value="3">
@@ -372,19 +379,19 @@
                             <div class="mb-4">
                                 <label class="form-label">Plan</label>
                                 <select class="form-control" name="planid" readonly>
-                                    <option value="{{ $plan->id }}">
-                                        {{ $plan->convenio->nombre ?? '' }} - {{ $plan->name }} -
-                                        ${{ number_format($plan->valor) }} -
+                                    <option value="{{ $asegurado->polizas->first()->plan->id }}">
+                                        {{ $asegurado->polizas->first()->plan->name }} -
+                                        ${{ number_format($asegurado->polizas->first()->plan->valor) }} -
                                         PRIMA:
                                         @if ($asegurado->parentesco == 'AF')
-                                            {{ $plan->prima_aseguradoraAF !== null ? number_format($plan->prima_aseguradoraAF) : '' }}
+                                            {{ $asegurado->polizas->first()->plan->prima_aseguradoraAF !== null ? number_format($asegurado->polizas->first()->plan->prima_aseguradoraAF) : '' }}
                                             -
                                             PRIMA PASTOR:
-                                            ${{ number_format($plan->prima_pastor) ?? '' }}
+                                            ${{ number_format($asegurado->polizas->first()->plan->prima_pastor) ?? '' }}
                                         @else
-                                            ${{ number_format($plan->prima_aseguradora) ?? '' }} -
+                                            ${{ number_format($asegurado->polizas->first()->plan->prima_aseguradora) ?? '' }} -
                                             PRIMA ASEGURADO:
-                                            ${{ number_format($plan->prima_asegurado) ?? '' }}
+                                            ${{ number_format($asegurado->polizas->first()->plan->prima_asegurado) ?? '' }}
                                         @endif
                                     </option>
                                 </select>
@@ -402,6 +409,9 @@
                                     required>
                                 <small class="form-text text-muted">Formato permitidos: PDF</small>
                             </div>
+                            @error('formulario_nov')
+                                    <small class="text-danger">{{ $message }}</small>
+                            @enderror
                             <div class="d-flex flex-row-reverse gap-2 mt-2">
                                 <button class="btn btn-danger mt-4" data-bs-toggle="tooltip" title="Timesheets"
                                     type="submit">
@@ -425,7 +435,6 @@
                 console.log($(this).serialize());
             }
         });
-
         $('#selectPlan').on('change', function() {
             const selected = $(this).find('option:selected');
             $('#valoraseguradoplan').val("$ " + selected.data('valor'));
@@ -540,7 +549,9 @@
                 event.preventDefault();
                 event.stopPropagation();
                 $(form).addClass('was-validated');
-            }
+            }else {
+                console.log($(this).serialize());
+            };
         });
 
         function crearbeneficio() {

@@ -203,8 +203,6 @@ class maeTerceros extends Model
     ];
 
 
-
-
     public function getEdadAttribute()
     {
         if ($this->fec_nac) {

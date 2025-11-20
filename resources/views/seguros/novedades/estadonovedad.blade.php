@@ -15,12 +15,12 @@
 @endphp
 <div class="content-sidebar content-sidebar-md" data-scrollbar-target="#psScrollbarInit">
     <div class="content-sidebar-header bg-white sticky-top hstack justify-content-between">
-    @candirect('seguros.poliza.update')
+        @candirect('seguros.poliza.update')
         <a href="{{ route('seguros.novedades.create') }}" class="btn btn-primary w-100">
             <i class="feather-plus me-2"></i>
             <span>Crear Solicitud</span>
         </a>
-    @endcandirect
+        @endcandirect
     </div>
     <div class="content-sidebar-body">
         <ul class="nav flex-column nxl-content-sidebar-item">
@@ -84,9 +84,9 @@
                         class="d-flex align-items-center gap-2 me-3">
                         @csrf
                         @method('PUT')
-                        <select name="estado" class="form-select form-select-sm me-2" required>                            
+                        <select name="estado" class="form-select form-select-sm me-2" required>
                             @foreach ($opcionesestados as $valor => $texto)
-                                @if ($texto !== $estado)                                
+                                @if ($texto !== $estado)
                                     <option value="{{ $valor }}">{{ strtoupper($texto) }}</option>
                                 @endif
                             @endforeach
@@ -151,9 +151,9 @@
     </div>
     <div class="content-area-body p-0">
         @foreach ($data as $index => $reg)
-            <div class="single-items">
+            <div class="single-items" style="pointer-events: none;">
                 <!--! [item-meta] !-->
-                <div class="d-flex wd-80 gap-4 ms-1 item-meta">
+                <div class="d-flex wd-80 gap-4 ms-1 item-meta" style="pointer-events: auto;">
                     <div class="item-checkbox">
                         <div class="custom-control custom-checkbox">
                             <input type="checkbox" class="custom-control-input checkbox" id="{{ $index + 1 }}bcb"
@@ -164,7 +164,7 @@
                     </div>
                 </div>
                 <!--! [item-info] !-->
-                <div class="d-flex align-items-start gap-4 w-100 item-info" data-view-toggle="details">
+                <div class="d-flex align-items-start gap-4 w-100 item-info">
                     <a href="{{ route('seguros.poliza.show', ['poliza' => 'ID']) . '?id=' . $reg->id_asegurado }}"
                         class="hstack gap-3" style="width: 30%;">
                         <i class="bi bi-person-circle"></i>
@@ -198,9 +198,11 @@
                 <!--! [item-date] !-->
                 <div class="d-flex align-items-center justify-content-end wd-150 gap-3 item-data">
                     <div class="fs-11 fw-medium text-muted text-uppercase d-none d-sm-block item-time">
-                        {{ optional($reg->cambiosEstado->last()->fechaCierre)->translatedFormat('d M Y') ?? $reg->created_at->translatedFormat('d M Y') }}
+                        {{ optional($reg->cambiosEstado->last())->fechaCierre
+                            ? optional($reg->cambiosEstado->last()->fechaCierre)->translatedFormat('d M Y')
+                            : $reg->created_at->translatedFormat('d M Y') }}
                     </div>
-                    <div class="item-action">
+                    <div class="item-action" style="pointer-events: auto;">
                         <div class="dropdown">
                             <a href="javascript:void(0)" data-bs-toggle="dropdown" data-bs-offset="0, 28">
                                 <div class="avatar-text avatar-sm" data-bs-toggle="tooltip" data-bs-trigger="hover"

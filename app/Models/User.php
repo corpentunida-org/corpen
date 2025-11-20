@@ -102,13 +102,13 @@ class User extends Authenticatable
 
     public function cargoRelation()
     {
-        return $this->hasOne(\App\Models\Archivo\GdoCargo::class, 'correo_corporativo', 'email');
+        return $this->hasOne(GdoCargo::class, 'correo_corporativo', 'email');
     }
 
     // Un "getter" que trae el cargo por email directamente
     public function getCargoAttribute()
     {
-        return \App\Models\Archivo\GdoCargo::where('correo_corporativo', $this->email)->first();
+        return GdoCargo::where('correo_corporativo', $this->email)->first();
     }
 
     public function soportesEscalados()
@@ -117,11 +117,7 @@ class User extends Authenticatable
     }
 
 
-
-
-
     /*
-
     protected $appends = [
         'profile_photo_url',
 
