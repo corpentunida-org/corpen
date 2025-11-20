@@ -3939,6 +3939,161 @@
                     <!-- PESTAÑA 1: INFORMACIÓN PRINCIPAL -->
                     <div class="tab-panel active" id="principal-tab">
                         <div class="category-container">
+                            <!-- ================================================================= -->
+                            <!-- INICIO: BLOQUE DE "QUIEN LLAMA" (SOLUCIÓN DEFINITIVA) -->
+                            <!-- ================================================================= -->
+                            <div class="category-container mb-4">
+                                <div class="category-header">
+                                    <h5 class="category-title">
+                                        <div class="category-icon">
+                                            <i class="bi bi-person-check"></i>
+                                        </div>
+                                        Información de Quien Llama
+                                    </h5>
+                                    <p class="category-description">Especifica si la llamada es realizada por el asociado o un tercero.</p>
+                                </div>
+                                <div class="category-content">
+                                    <div class="form-group">
+                                        <label class="form-label required-field">¿Quién realiza la llamada?</label>
+                                        <div class="d-flex gap-2 mb-3">
+                                            <input type="radio" class="btn-check" name="caller_type" id="caller_is_client" value="client" autocomplete="off" checked>
+                                            <label class="btn btn-soft-choice flex-grow-1" for="caller_is_client">
+                                                <i class="bi bi-person me-2"></i>Es el cliente
+                                            </label>
+                                            
+                                            <input type="radio" class="btn-check" name="caller_type" id="caller_is_third_party" value="third_party" autocomplete="off">
+                                            <label class="btn btn-soft-choice flex-grow-1" for="caller_is_third_party">
+                                                <i class="bi bi-people me-2"></i>Es un tercero
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Campos para cuando es un tercero quien llama -->
+                                    <div id="third-party-fields" style="display: none;">
+                                        <div class="row g-3">
+                                            <div class="col-md-4">
+                                                <div class="form-group">
+                                                    <label for="nombre_quien_llama" class="form-label">Nombre del Tercero</label>
+                                                    <input type="text" class="form-control" id="nombre_quien_llama" name="nombre_quien_llama" 
+                                                        placeholder="Nombre completo de quien llama">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="form-group">
+                                                    <label for="cedula_quien_llama" class="form-label">Identificación</label>
+                                                    <input type="text" class="form-control" id="cedula_quien_llama" name="cedula_quien_llama" 
+                                                        placeholder="Cédula o documento de identidad">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="form-group">
+                                                    <label for="celular_quien_llama" class="form-label">Teléfono</label>
+                                                    <input type="text" class="form-control" id="celular_quien_llama" name="celular_quien_llama" 
+                                                        placeholder="Número de contacto">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-12">
+                                                <div class="form-group">
+                                                    <label for="parentezco_quien_llama" class="form-label">Relación con el Cliente</label>
+                                                    <select class="form-select" id="parentezco_quien_llama" name="parentezco_quien_llama">
+                                                        <option value="">Selecciona una opción</option>
+                                                        <option value="familiar">Familiar</option>
+                                                        <option value="amigo">Amigo</option>
+                                                        <option value="representante">Representante legal</option>
+                                                        <option value="conocido">Conocido</option>
+                                                        <option value="otro">Otro</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- SCRIPT PARA CONTROLAR LA VISIBILIDAD Y AUTOCOMPLETADO -->
+                            <script>
+                            document.addEventListener("DOMContentLoaded", function() {
+                                const clientSelect = document.getElementById('client_id');
+                                const radioButtons = document.querySelectorAll('input[name="caller_type"]');
+                                const thirdPartyFields = document.getElementById('third-party-fields');
+
+                                // Variable para guardar los datos del cliente seleccionado
+                                let currentClientData = null;
+
+                                // Función para obtener los detalles del cliente desde el servidor
+                                async function fetchClientDetails(clientId) {
+                                    if (!clientId) {
+                                        currentClientData = null;
+                                        return;
+                                    }
+                                    try {
+                                        const response = await fetch(`/clientes/${clientId}/detalles`);
+                                        if (!response.ok) {
+                                            throw new Error('Network response was not ok');
+                                        }
+                                        currentClientData = await response.json();
+                                    } catch (error) {
+                                        console.error('Error fetching client details:', error);
+                                        currentClientData = null;
+                                    }
+                                }
+
+                                // Función principal que maneja los cambios en quién llama
+                                function handleCallerChange() {
+                                    const selectedButton = document.querySelector('input[name="caller_type"]:checked');
+                                    
+                                    if (selectedButton.value === 'third_party') {
+                                        thirdPartyFields.style.display = 'block';
+                                        // Limpiar campos para que el usuario los llene
+                                        document.getElementById('nombre_quien_llama').value = '';
+                                        document.getElementById('cedula_quien_llama').value = '';
+                                        document.getElementById('celular_quien_llama').value = '';
+                                        document.getElementById('parentezco_quien_llama').value = '';
+                                    } else { // 'client'
+                                        thirdPartyFields.style.display = 'none';
+                                        // Autocompletar campos si hay datos de cliente disponibles
+                                        if (currentClientData) {
+                                            document.getElementById('nombre_quien_llama').value = currentClientData.nom_ter;
+                                            document.getElementById('cedula_quien_llama').value = clientSelect.value; // Usa el ID del cliente
+                                            document.getElementById('celular_quien_llama').value = currentClientData.tel;
+                                            document.getElementById('parentezco_quien_llama').value = 'representante'; // Valor fijo
+                                        } else {
+                                            // Limpiar si no hay cliente seleccionado
+                                            document.getElementById('nombre_quien_llama').value = '';
+                                            document.getElementById('cedula_quien_llama').value = '';
+                                            document.getElementById('celular_quien_llama').value = '';
+                                            document.getElementById('parentezco_quien_llama').value = '';
+                                        }
+                                    }
+                                }
+
+                                // Event Listeners
+                                radioButtons.forEach(radioButton => {
+                                    radioButton.addEventListener('change', handleCallerChange);
+                                });
+
+                                clientSelect.addEventListener('change', function() {
+                                    const selectedClientId = this.value;
+                                    fetchClientDetails(selectedClientId).then(() => {
+                                        // Después de obtener los datos, actualiza el formulario
+                                        handleCallerChange();
+                                    });
+                                });
+
+                                // Establecer el estado inicial al cargar la página
+                                // Si hay un cliente preseleccionado (en modo edición), obtén sus datos
+                                if (clientSelect.value) {
+                                    fetchClientDetails(clientSelect.value).then(() => {
+                                        handleCallerChange();
+                                    });
+                                } else {
+                                    handleCallerChange();
+                                }
+                            });
+                            </script>
+                            <!-- ================================================================= -->
+                            <!-- FIN: BLOQUE DE "QUIEN LLAMA" -->
+                            <!-- ================================================================= -->
                             <div class="category-header">
                                 <h5 class="category-title">
                                     <div class="category-icon">
@@ -4034,9 +4189,19 @@
                                                 </div>
                                             </div>
                                             <div class="text-end mt-2">
-                                                <a id="btn-editar-cliente" href="#"
-                                                    class="btn btn-sm btn-outline-primary">
-                                                    <i class="bi bi-pencil me-1"></i> Ver ficha completa
+                                                <a id="btn-editar-cliente"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1">                             
+                                                    <i class="bi bi-pencil-square"></i>
+                                                    <span>Actualizar datos</span>
+                                                </a>
+                                                <a id="btn-ver-cliente"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1">                             
+                                                    <i class="bi bi-pencil-square"></i>
+                                                    <span>Ver ficha completa</span>
                                                 </a>
                                             </div>
                                         </div>
@@ -4211,29 +4376,100 @@
                                         </div>
                                     </div>
                                 </div>
+                                <!-- BLOQUE DE DISTRITO MODIFICADO -->
                                 <div class="row g-3 mb-4">
                                     <div class="col-md-6">
                                         <div class="form-group">
                                             <label for="id_distrito_interaccion" class="form-label">Distrito de la Interacción</label>
-                                            <select
-                                                class="form-select select2 @error('id_distrito_interaccion') is-invalid @enderror"
-                                                id="id_distrito_interaccion" name="id_distrito_interaccion">
-                                                <option value="">Selecciona un distrito</option>
-                                                @if (isset($distrito))
-                                                    @foreach ($distrito as $id => $nombre)
-                                                        <option value="{{ $id }}"
-                                                            {{ old('id_distrito_interaccion', $interaction->id_distrito_interaccion ?? '') == $id ? 'selected' : '' }}>
-                                                            {{ $nombre }}
-                                                        </option>
-                                                    @endforeach
-                                                @endif
-                                            </select>
+                                            <div class="input-group"> <!-- Usamos input-group para agrupar el select y el botón -->
+                                                <select
+                                                    class="form-select select2 @error('id_distrito_interaccion') is-invalid @enderror"
+                                                    id="id_distrito_interaccion" name="id_distrito_interaccion">
+                                                    <option value="">Selecciona un distrito</option>
+                                                    @if (isset($distrito))
+                                                        @foreach ($distrito as $id => $nombre)
+                                                            <option value="{{ $id }}"
+                                                                {{ old('id_distrito_interaccion', $interaction->id_distrito_interaccion ?? '') == $id ? 'selected' : '' }}>
+                                                                {{ $nombre }}
+                                                            </option>
+                                                        @endforeach
+                                                    @endif
+                                                </select>
+                                                <!-- 🆕 Botón para actualizar el distrito desde el cliente -->
+                                            <button class="btn btn-outline-secondary" type="button" id="update-district-btn" title="Sincroniza el distrito con los datos del cliente">
+                                                    <i class="bi bi-arrow-clockwise"></i> Sincronizar distrito
+                                                </button>
+                                            </div>
                                             @error('id_distrito_interaccion')
                                                 <div class="invalid-feedback">{{ $message }}</div>
                                             @enderror
                                         </div>
                                     </div>
                                 </div>
+                                <script>
+                                    document.addEventListener("DOMContentLoaded", function() {
+                                        // Obtenemos los elementos del DOM que necesitamos
+                                        const clientSelect = document.getElementById('client_id'); // Asegúrate que tu select de cliente tenga este ID
+                                        const districtSelect = document.getElementById('id_distrito_interaccion');
+                                        const updateDistrictBtn = document.getElementById('update-district-btn');
+
+                                        // Función que se ejecuta al hacer clic en el botón "Actualizar"
+                                        async function handleUpdateDistrictClick() {
+                                            const selectedClientId = clientSelect.value;
+
+                                            // Verificamos que se haya seleccionado un cliente
+                                            if (!selectedClientId) {
+                                                alert('Por favor, selecciona un cliente primero.');
+                                                return;
+                                            }
+
+                                            // Deshabilitamos el botón y mostramos un indicador de carga
+                                            updateDistrictBtn.disabled = true;
+                                            updateDistrictBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Actualizando...';
+
+                                            try {
+                                                // Hacemos la llamada a nuestra nueva ruta del backend
+                                                const response = await fetch(`/interactions/clientes/${selectedClientId}/distrito`);
+                                                
+                                                if (!response.ok) {
+                                                    throw new Error('No se pudo obtener el distrito del cliente.');
+                                                }
+
+                                                const data = await response.json();
+                                                const newDistrictId = data.district_id;
+
+                                                if (newDistrictId) {
+                                                    // Actualizamos el valor del select
+                                                    districtSelect.value = newDistrictId;
+                                                    
+                                                    // IMPORTANTE: Si usas Select2, debes notificarle del cambio para que actualice su visualización
+                                                    if (typeof jQuery !== 'undefined' && jQuery().select2) {
+                                                        jQuery(districtSelect).trigger('change');
+                                                    }
+
+                                                    console.log(`Distrito actualizado a: ${newDistrictId}`);
+                                                } else {
+                                                    console.log('El cliente seleccionado no tiene un distrito asignado.');
+                                                    alert('El cliente seleccionado no tiene un distrito asignado.');
+                                                }
+
+                                            } catch (error) {
+                                                console.error('Error:', error);
+                                                alert('Ocurrió un error al actualizar el distrito.');
+                                            } finally {
+                                                // Rehabilitamos el botón y restauramos su texto original
+                                                updateDistrictBtn.disabled = false;
+                                                updateDistrictBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Actualizar';
+                                            }
+                                        }
+
+                                        // Asignamos el evento de clic al botón
+                                        if (updateDistrictBtn) {
+                                            updateDistrictBtn.addEventListener('click', handleUpdateDistrictClick);
+                                        }
+                                    });
+                                </script>
+                                <!-- FIN DEL BLOQUE MODIFICADO -->
                             </div>
                         </div>
                         <div class="form-actions">
@@ -5008,6 +5244,7 @@
                     $('#info-telefono').text(data.tel1 || 'No registrado');
                     $('#info-direccion').text(data.dir || 'No registrado');
                     $('#btn-editar-cliente').attr('href', `/maestras/terceros/${data.cod_ter}/edit`);
+                    $('#btn-ver-cliente').attr('href', `/maestras/terceros/${data.cod_ter}`);
 
                     // Mejora en la carga del historial
                     historyList.empty();
