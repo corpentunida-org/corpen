@@ -119,19 +119,40 @@
                     </div>
                 </div>
             </div>
+            <!-- INICIO: NUEVO FILTRO "DISTRITO" -->
+            <div class="row g-2 mt-2">
+                <div class="col-md-3">
+                    <label class="form-label fw-semibold text-muted small mb-1">Distrito</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="feather-map-pin"></i></span>
+                        <select id="filterDistrito" class="form-select pastel-select">
+                            <option value="">Todos</option>
+                            @foreach($distrito as $distritoOption)
+                                <option value="{{ $distritoOption }}" {{ request('distrito_filter') == $distritoOption ? 'selected' : '' }}>{{ $distritoOption }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <!-- FIN: NUEVO FILTRO "DISTRITO" -->
             <div class="row mt-2">
                 <div class="col-12">
                     <div class="d-flex justify-content-between align-items-center">
                         <small class="text-muted">
                             <span id="resultCount">Mostrando todos los resultados</span>
                         </small>
-                        <div class="btn-group btn-group-sm" role="group">
-                            <button type="button" class="btn btn-outline-secondary active" data-view="table">
-                                <i class="feather-list"></i>
+                        <div>
+                            <button type="button" class="btn btn-sm btn-primary" id="applyFilters">
+                                <i class="feather-filter me-1"></i>Aplicar Filtros
                             </button>
-                            <button type="button" class="btn btn-outline-secondary" data-view="cards">
-                                <i class="feather-grid"></i>
-                            </button>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button type="button" class="btn btn-outline-secondary active" data-view="table">
+                                    <i class="feather-list"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" data-view="cards">
+                                    <i class="feather-grid"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -394,7 +415,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="10" class="text-center py-4">
+                                        <td colspan="11" class="text-center py-4">
                                             <div class="empty-state">
                                                 <i class="feather-inbox empty-icon"></i>
                                                 <h6 class="mt-2">No hay interacciones registradas</h6>
@@ -415,10 +436,11 @@
                 {{-- TAB Exitosos --}}
                 <div class="tab-pane fade" id="tab-success" role="tabpanel" aria-labelledby="tab-success-tab">
                     <div class="table-responsive">
-                        <table class="table table-hover align-items-center interactionTable pastel-table excel-table">
+                        <table class="table table-hover align-items-center interactionTable pastel-table excel-table" id="tablaExitosos">
                             <thead class="table-light pastel-thead">
                                 <tr>
                                     <th class="py-1">ID</th>
+                                    <th class="py-1">Distrito</th>
                                     <th class="py-1">Fecha</th>
                                     <th class="py-1">Cliente</th>
                                     <th class="py-1">Canal</th>
@@ -444,6 +466,9 @@
                                             <a href="{{ route('interactions.show', $interaction->id) }}" class="fw-bold text-decoration-none pastel-link">
                                                 #{{ $interaction->id }}
                                             </a>
+                                        </td>
+                                        <td>
+                                            {{ $interaction->DistritoDeObligacion->NOM_DIST ?? ' ' }}
                                         </td>
                                         <td class="py-1">
                                             <div class="d-flex flex-column">
@@ -507,7 +532,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="10" class="text-center py-4">
+                                        <td colspan="11" class="text-center py-4">
                                             <div class="empty-state">
                                                 <i class="feather-check-circle empty-icon"></i>
                                                 <h6 class="mt-2">No hay interacciones exitosas</h6>
@@ -524,10 +549,11 @@
                 {{-- TAB Pendientes --}}
                 <div class="tab-pane fade" id="tab-pending" role="tabpanel" aria-labelledby="tab-pending-tab">
                     <div class="table-responsive">
-                        <table class="table table-hover align-items-center interactionTable pastel-table excel-table">
+                        <table class="table table-hover align-items-center interactionTable pastel-table excel-table" id="tablaPendientes">
                             <thead class="table-light pastel-thead">
                                 <tr>
                                     <th class="py-1">ID</th>
+                                    <th class="py-1">Distrito</th>
                                     <th class="py-1">Fecha</th>
                                     <th class="py-1">Cliente</th>
                                     <th class="py-1">Canal</th>
@@ -553,6 +579,9 @@
                                             <a href="{{ route('interactions.show', $interaction->id) }}" class="fw-bold text-decoration-none pastel-link">
                                                 #{{ $interaction->id }}
                                             </a>
+                                        </td>
+                                        <td>
+                                            {{ $interaction->DistritoDeObligacion->NOM_DIST ?? ' ' }}
                                         </td>
                                         <td class="py-1">
                                             <div class="d-flex flex-column">
@@ -616,7 +645,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="10" class="text-center py-4">
+                                        <td colspan="11" class="text-center py-4">
                                             <div class="empty-state">
                                                 <i class="feather-clock empty-icon"></i>
                                                 <h6 class="mt-2">No hay interacciones pendientes</h6>
@@ -633,10 +662,11 @@
                 {{-- TAB Hoy --}}
                 <div class="tab-pane fade" id="tab-today" role="tabpanel" aria-labelledby="tab-today-tab">
                     <div class="table-responsive">
-                        <table class="table table-hover align-items-center interactionTable pastel-table excel-table">
+                        <table class="table table-hover align-items-center interactionTable pastel-table excel-table" id="tablaHoy">
                             <thead class="table-light pastel-thead">
                                 <tr>
                                     <th class="py-1">ID</th>
+                                    <th class="py-1">Distrito</th>
                                     <th class="py-1">Fecha</th>
                                     <th class="py-1">Cliente</th>
                                     <th class="py-1">Canal</th>
@@ -663,6 +693,9 @@
                                             <a href="{{ route('interactions.show', $interaction->id) }}" class="fw-bold text-decoration-none pastel-link">
                                                 #{{ $interaction->id }}
                                             </a>
+                                        </td>
+                                        <td>
+                                            {{ $interaction->DistritoDeObligacion->NOM_DIST ?? ' ' }}
                                         </td>
                                         <td class="py-1">
                                             <div class="d-flex flex-column">
@@ -736,7 +769,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="10" class="text-center py-4">
+                                        <td colspan="11" class="text-center py-4">
                                             <div class="empty-state">
                                                 <i class="feather-calendar empty-icon"></i>
                                                 <h6 class="mt-2">No hay interacciones de hoy</h6>
@@ -1222,76 +1255,26 @@
 
         <script>
             document.addEventListener('DOMContentLoaded', function () {
-                let currentTable = null; // Variable para guardar la instancia de la tabla activa
+                let currentTable = null;
                 let currentInteractionId = null;
 
                 // =================================================================
-                // == MANEJO DEL MODAL PARA VER DETALLES RÁPIDOS ==
+                // == LÓGICA DE DATATABLES CORREGIDA ==
                 // =================================================================
-                document.addEventListener('click', function (e) {
-                    const interactionIdLink = e.target.closest('.interaction-id');
-                    
-                    if (interactionIdLink) {
-                        e.preventDefault();
-                        
-                        const el = interactionIdLink;
-                        currentInteractionId = el.dataset.id;
-                        
-                        // Llenar el modal con los datos
-                        document.getElementById('modal-id').textContent = `RADICADO ${el.dataset.id}`;
-                        document.getElementById('modal-fecha').textContent = el.dataset.fecha;
-                        document.getElementById('modal-cliente').textContent = el.dataset.cliente;
-                        document.getElementById('modal-agent').textContent = el.dataset.agent;
-                        document.getElementById('modal-canal').textContent = el.dataset.canal;
-                        document.getElementById('modal-tipo').textContent = el.dataset.tipo;
-                        document.getElementById('modal-duracion').textContent = el.dataset.duracion;
-                        document.getElementById('modal-area').textContent = el.dataset.area;
-                        document.getElementById('modal-cargo').textContent = el.dataset.cargo;
-                        document.getElementById('modal-linea').textContent = el.dataset.linea;
-                        document.getElementById('modal-area-asig').textContent = el.dataset['area-asig'];
-                        document.getElementById('modal-proxima-fecha').textContent = el.dataset['proxima-fecha'] || '—';
-                        document.getElementById('modal-proxima-tipo').textContent = el.dataset['proxima-tipo'] || '—';
-                        document.getElementById('modal-notas').textContent = el.dataset.notas;
-                        
-                        // URL
-                        const url = el.dataset.url;
-                        document.getElementById('modal-url').innerHTML = url && url !== 'null' ? 
-                            `<a href="${url}" target="_blank">Abrir enlace <i class="feather-external-link small"></i></a>` : '— No hay URL';
-                        
-                        // Aplicar colores de resultado pastel SUAVE en el modal
-                        const outcome = el.dataset.outcome;
-                        let resultadoStyle = '';
-                        switch(outcome) {
-                            case 'Exitoso':
-                                resultadoStyle = 'background-color: #E8F5E8 !important; color: #2E7D32 !important; border: 1px solid #C8E6C9 !important;';
-                                break;
-                            case 'Pendiente':
-                                resultadoStyle = 'background-color: #FFF8E1 !important; color: #F57C00 !important; border: 1px solid #FFECB3 !important;';
-                                break;
-                            case 'Fallido':
-                                resultadoStyle = 'background-color: #FFD6E0 !important; color: #D63384 !important; border: 1px solid #FFB3C1 !important;';
-                                break;
-                            default:
-                                resultadoStyle = 'background-color: #E1F5FE !important; color: #0288D1 !important; border: 1px solid #B3E5FC !important;';
-                        }
-                        
-                        document.getElementById('modal-resultado').innerHTML = 
-                            `<div style="min-width: 60px; text-align: center; transition: all 0.2s ease; border-radius: 8px; font-weight: 500; font-size: 0.6rem; ${resultadoStyle} padding: 2px 6px; display: flex; align-items: center; justify-content: center;">
-                                <span>${outcome}</span>
-                            </div>`;
 
-                        // Configurar botón de editar
-                        document.getElementById('editFromModal').onclick = function() {
-                            window.location.href = el.dataset['edit-url'];
-                        };
-
-                        new bootstrap.Modal(document.getElementById('detalleInteractionModal')).show();
+                /**
+                 * Inicializa o reinicializa DataTables en una tabla específica.
+                 * @param {string} tableId - El ID de la tabla a inicializar (ej. '#tablaPrincipal').
+                 */
+                function initializeDataTable(tableId) {
+                    // Si ya existe una instancia de DataTables, la destruimos para liberar memoria y evitar conflictos.
+                    if (currentTable) {
+                        currentTable.destroy();
+                        currentTable = null;
                     }
-                });
 
-                // Función para inicializar una tabla específica
-                function initializeDataTable(tableSelector) {
-                    let table = $(tableSelector).DataTable({
+                    // Inicializamos la nueva instancia de DataTables en la tabla especificada.
+                    currentTable = $(tableId).DataTable({
                         dom: 'Bfrtip',
                         buttons: [
                             { extend: 'excelHtml5', className: 'btn btn-sm pastel-btn-gradient', text: '<i class="feather-file-text me-1"></i>Excel' },
@@ -1310,62 +1293,18 @@
                             processing: "Procesando...",
                             search: "Buscar:",
                             zeroRecords: "No se encontraron resultados coincidentes",
-                            paginate: {
-                                first: "Primero",
-                                last: "Último",
-                                next: "Siguiente",
-                                previous: "Anterior"
-                            }
+                            paginate: { first: "Primero", last: "Último", next: "Siguiente", previous: "Anterior" }
                         },
-                        // Para que los filtros funcionen solo en la tabla activa
                         initComplete: function () {
-                            var api = this.api();
-                            // Limpiar eventos anteriores para evitar duplicados
-                            $('#filterSearch').off('keyup change').on('keyup change', function () {
-                                api.column(0).search(this.value).draw();
-                                updateResultCount();
-                            });
-                            $('#filterChannel').off('change').on('change', function () {
-                                api.column(3).search(this.value).draw();
-                                updateResultCount();
-                            });
-                            $('#filterType').off('change').on('change', function () {
-                                 api.column(4).search(this.value).draw();
-                                updateResultCount();
-                            });
-                            $('#filterOutcome').off('change').on('change', function () {
-                                api.column(7).search(this.value).draw();
-                                updateResultCount();
-                            });
-                            $('#filterArea').off('change').on('change', function () {
-                                api.column(4).search(this.value).draw();
-                                updateResultCount();
-                            });
-                            $('#filterCargo').off('change').on('change', function () {
-                                api.column(5).search(this.value).draw();
-                                updateResultCount();
-                            });
-                            $('#filterLinea').off('change').on('change', function () {
-                                api.column(6).search(this.value).draw();
-                                updateResultCount();
-                            });
-                            $('#filterFecha').off('change').on('change', function () {
-                                let val = this.value;
-                                if (val) {
-                                    let partes = val.split("-");
-                                    let fechaFormateada = partes[2] + "/" + partes[1] + "/" + partes[0];
-                                    api.column(1).search(fechaFormateada).draw();
-                                } else {
-                                    api.column(1).search("").draw();
-                                }
-                                updateResultCount();
-                            });
+                            // Una vez que la tabla se ha inicializado, actualizamos el contador de resultados.
+                            updateResultCount();
                         }
                     });
-                    return table;
                 }
 
-                // Función para actualizar el contador de resultados
+                /**
+                 * Actualiza el texto del contador de resultados debajo de los filtros.
+                 */
                 function updateResultCount() {
                     if (currentTable) {
                         const info = currentTable.page.info();
@@ -1374,157 +1313,122 @@
                     }
                 }
 
-                // Inicializar la tabla de la primera pestaña (la que está activa al cargar)
-                currentTable = initializeDataTable('#tab-all .interactionTable');
-                updateResultCount();
+                // Inicializamos la tabla de la primera pestaña ("Todos") cuando la página carga.
+                // Usamos un pequeño retraso para asegurar que el DOM esté completamente renderizado.
+                setTimeout(function() {
+                    initializeDataTable('#tablaPrincipal');
+                }, 300);
 
-                // Evento para cuando se cambia de pestaña
-                document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
-                    tab.addEventListener('shown.bs.tab', function (e) {
-                        const targetPaneId = e.target.getAttribute('data-bs-target');
-                        const tableInPane = document.querySelector(`${targetPaneId} .interactionTable`);
+                // Añadimos un event listener para el evento 'shown.bs.tab', que se dispara cuando una pestaña se muestra.
+                document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(function (tabElement) {
+                    tabElement.addEventListener('shown.bs.tab', function (event) {
+                        let targetTableId = null;
+                        const targetPaneId = event.target.getAttribute('data-bs-target');
 
-                        // Si ya hay una tabla, la destruimos
-                        if (currentTable) {
-                            currentTable.destroy();
-                            currentTable = null;
+                        // Determinamos qué tabla inicializar basándonos en la pestaña activa.
+                        if (targetPaneId === '#tab-all') {
+                            targetTableId = '#tablaPrincipal';
+                        } else if (targetPaneId === '#tab-success') {
+                            targetTableId = '#tablaExitosos';
+                        } else if (targetPaneId === '#tab-pending') {
+                            targetTableId = '#tablaPendientes';
+                        } else if (targetPaneId === '#tab-today') {
+                            targetTableId = '#tablaHoy';
                         }
 
-                        // Si la pestaña tiene una tabla, la inicializamos
-                        if (tableInPane) {
-                            currentTable = initializeDataTable(tableInPane);
-                            updateResultCount();
+                        // Inicializamos la tabla de la pestaña activa con un pequeño retraso.
+                        // Esto es CRUCIAL para darle tiempo al navegador a hacer visible el contenido de la pestaña.
+                        if (targetTableId) {
+                            setTimeout(function() {
+                                initializeDataTable(targetTableId);
+                            }, 150); // 150ms es un tiempo suficiente para la mayoría de los navegadores.
                         }
                     });
                 });
 
-                // Limpiar filtros
-                $('#clearFilters').on('click', function() {
-                    $('#filterSearch, #filterChannel, #filterType, #filterOutcome, #filterArea, #filterCargo, #filterLinea, #filterFecha').val('');
-                    if(currentTable) {
-                        currentTable.search('').columns().search('').draw();
-                        updateResultCount();
+
+                // =================================================================
+                // == RESTO DE LA LÓGICA DE LA VISTA (Sin cambios relevantes) ==
+                // =================================================================
+
+                // Manejo del Modal para ver detalles rápidos
+                document.addEventListener('click', function (e) {
+                    const interactionIdLink = e.target.closest('.interaction-id');
+                    if (interactionIdLink) {
+                        e.preventDefault();
+                        const el = interactionIdLink;
+                        currentInteractionId = el.dataset.id;
+                        // Llenar el modal con los datos (lógica existente)
+                        document.getElementById('modal-id').textContent = `RADICADO ${el.dataset.id}`;
+                        document.getElementById('modal-fecha').textContent = el.dataset.fecha;
+                        document.getElementById('modal-cliente').textContent = el.dataset.cliente;
+                        document.getElementById('modal-agent').textContent = el.dataset.agent;
+                        document.getElementById('modal-canal').textContent = el.dataset.canal;
+                        document.getElementById('modal-tipo').textContent = el.dataset.tipo;
+                        document.getElementById('modal-duracion').textContent = el.dataset.duracion;
+                        document.getElementById('modal-area').textContent = el.dataset.area;
+                        document.getElementById('modal-cargo').textContent = el.dataset.cargo;
+                        document.getElementById('modal-linea').textContent = el.dataset.linea;
+                        document.getElementById('modal-area-asig').textContent = el.dataset['area-asig'];
+                        document.getElementById('modal-proxima-fecha').textContent = el.dataset['proxima-fecha'] || '—';
+                        document.getElementById('modal-proxima-tipo').textContent = el.dataset['proxima-tipo'] || '—';
+                        document.getElementById('modal-notas').textContent = el.dataset.notas;
+                        
+                        const url = el.dataset.url;
+                        document.getElementById('modal-url').innerHTML = url && url !== 'null' ? 
+                            `<a href="${url}" target="_blank">Abrir enlace <i class="feather-external-link small"></i></a>` : '— No hay URL';
+                        
+                        const outcome = el.dataset.outcome;
+                        let resultadoStyle = '';
+                        switch(outcome) {
+                            case 'Exitoso': resultadoStyle = 'background-color: #E8F5E8 !important; color: #2E7D32 !important; border: 1px solid #C8E6C9 !important;'; break;
+                            case 'Pendiente': resultadoStyle = 'background-color: #FFF8E1 !important; color: #F57C00 !important; border: 1px solid #FFECB3 !important;'; break;
+                            case 'Fallido': resultadoStyle = 'background-color: #FFD6E0 !important; color: #D63384 !important; border: 1px solid #FFB3C1 !important;'; break;
+                            default: resultadoStyle = 'background-color: #E1F5FE !important; color: #0288D1 !important; border: 1px solid #B3E5FC !important;';
+                        }
+                        document.getElementById('modal-resultado').innerHTML = `<div style="min-width: 60px; text-align: center; transition: all 0.2s ease; border-radius: 8px; font-weight: 500; font-size: 0.6rem; ${resultadoStyle} padding: 2px 6px; display: flex; align-items: center; justify-content: center;"><span>${outcome}</span></div>`;
+                        document.getElementById('editFromModal').onclick = function() { window.location.href = el.dataset['edit-url']; };
+                        new bootstrap.Modal(document.getElementById('detalleInteractionModal')).show();
                     }
                 });
 
-                // Botón exportar
-                $('#exportBtn').on('click', function() {
-                    if(currentTable) {
-                        currentTable.button(0).trigger();
-                    }
-                });
+                // Función para aplicar filtros
+                function applyFilters() {
+                    const searchParams = new URLSearchParams();
+                    if ($('#filterSearch').val()) searchParams.set('q', $('#filterSearch').val());
+                    if ($('#filterChannel').val()) searchParams.set('channel_filter', $('#filterChannel').val());
+                    if ($('#filterType').val()) searchParams.set('type_filter', $('#filterType').val());
+                    if ($('#filterOutcome').val()) searchParams.set('outcome_filter', $('#filterOutcome').val());
+                    if ($('#filterArea').val()) searchParams.set('area_filter', $('#filterArea').val());
+                    if ($('#filterCargo').val()) searchParams.set('cargo_filter', $('#filterCargo').val());
+                    if ($('#filterLinea').val()) searchParams.set('linea_filter', $('#filterLinea').val());
+                    if ($('#filterDistrito').val()) searchParams.set('distrito_filter', $('#filterDistrito').val());
+                    if ($('#filterFecha').val()) searchParams.set('interaction_date_filter', $('#filterFecha').val());
+                    window.location.href = `${window.location.pathname}?${searchParams.toString()}`;
+                }
+
+                // Eventos para los filtros
+                $('#applyFilters').on('click', applyFilters);
+                $('#clearFilters').on('click', () => window.location.href = window.location.pathname);
+                $('#exportBtn').on('click', () => { if(currentTable) currentTable.button(0).trigger(); });
 
                 // SweetAlert — confirmaciones
                 function confirmarAccion(titulo, texto, icono, callback) {
-                    Swal.fire({
-                        title: titulo,
-                        text: texto,
-                        icon: icono,
-                        showCancelButton: true,
-                        confirmButtonColor: '#E6F3FF',
-                        cancelButtonColor: '#F8E8FF',
-                        confirmButtonText: 'Sí, continuar',
-                        cancelButtonText: 'Cancelar',
-                        background: 'rgba(255, 255, 255, 0.9)',
-                        backdrop: 'rgba(0, 0, 0, 0.1)'
-                    }).then((result) => { 
-                        if (result.isConfirmed) callback(); 
-                    });
+                    Swal.fire({ title: titulo, text: texto, icon: icono, showCancelButton: true, confirmButtonColor: '#E6F3FF', cancelButtonColor: '#F8E8FF', confirmButtonText: 'Sí, continuar', cancelButtonText: 'Cancelar', background: 'rgba(255, 255, 255, 0.9)', backdrop: 'rgba(0, 0, 0, 0.1)' }).then((result) => { if (result.isConfirmed) callback(); });
                 }
-
-                // Botón crear
-                document.querySelectorAll('.btnCrear').forEach(btn => {
-                    btn.addEventListener('click', function (e) {
-                        e.preventDefault();
-                        confirmarAccion(
-                            '¿Crear una nueva Interacción?', 
-                            'Serás redirigido al formulario de creación.', 
-                            'info', 
-                            () => { window.location.href = btn.getAttribute('href'); }
-                        );
-                    });
-                });
-
-                // Botón editar
-                document.querySelectorAll('.btnEditar').forEach(btn => {
-                    btn.addEventListener('click', function (e) {
-                        e.preventDefault();
-                        confirmarAccion(
-                            '¿Editar esta Interacción?', 
-                            'Serás redirigido al formulario de edición.', 
-                            'question', 
-                            () => { window.location.href = btn.getAttribute('href'); }
-                        );
-                    });
-                });
-
-                // Formulario eliminar
-
-                document.querySelectorAll('.formEliminar').forEach(form => {
-                    form.addEventListener('submit', function (e) {
-                        e.preventDefault();
-                        confirmarAccion(
-                            '¿Eliminar esta Interacción?',
-                            'Esta acción eliminará la interacción y todos sus datos relacionados. Esta acción no se puede deshacer.',
-                            'warning',
-                            () => { form.submit(); }
-                        );
-                    });
-                });
-
-                // Activar tooltips de Bootstrap
-                var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-                tooltipTriggerList.map(function (el) { 
-                    return new bootstrap.Tooltip(el, {
-                        trigger: 'hover focus',
-                        delay: { show: 300, hide: 100 }
-                    }); 
-                });
+                document.querySelectorAll('.btnCrear').forEach(btn => { btn.addEventListener('click', function (e) { e.preventDefault(); confirmarAccion('¿Crear una nueva Interacción?', 'Serás redirigido al formulario de creación.', 'info', () => { window.location.href = btn.getAttribute('href'); }); }); });
+                document.querySelectorAll('.formEliminar').forEach(form => { form.addEventListener('submit', function (e) { e.preventDefault(); confirmarAccion('¿Eliminar esta Interacción?', 'Esta acción eliminará la interacción y todos sus datos relacionados. Esta acción no se puede deshacer.', 'warning', () => { form.submit(); }); }); });
 
                 // Atajos de teclado
                 document.addEventListener('keydown', function(e) {
-                    // Ctrl/Cmd + K para búsqueda rápida
-                    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-                        e.preventDefault();
-                        $('#filterSearch').focus();
-                    }
-                    
-                    // Ctrl/Cmd + N para nueva interacción
-                    if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
-                        e.preventDefault();
-                        window.location.href = "{{ route('interactions.create') }}";
-                    }
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); $('#filterSearch').focus(); }
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'n') { e.preventDefault(); window.location.href = "{{ route('interactions.create') }}"; }
+                    if (e.key === 'Enter' && (e.target.id === 'filterSearch' || e.target.classList.contains('pastel-select'))) { e.preventDefault(); applyFilters(); }
                 });
 
-                // Actualizar contador de resultados al cambiar de pestaña
-                document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
-                    tab.addEventListener('shown.bs.tab', function() {
-                        setTimeout(updateResultCount, 100);
-                    });
-                });
-
-                // Inicializar contador
-                updateResultCount();
-                
-                // Efecto de entrada para las filas
-                $('.excel-row').each(function(index) {
-                    $(this).css({
-                        'opacity': '0',
-                        'transform': 'translateY(5px)'
-                    });
-                    setTimeout(() => {
-                        $(this).animate({
-                            'opacity': '1',
-                            'transform': 'translateY(0)'
-                        }, 200);
-                    }, index * 20);
-                });
-                
-                // Efecto de entrada para las cards
-                $('.glassmorphism-card').each(function(index) {
-                    $(this).addClass('fade-in-up');
-                    $(this).css('animation-delay', `${index * 0.05}s`);
-                });
+                // Efectos de entrada
+                $('.excel-row').each(function(index) { $(this).css({ 'opacity': '0', 'transform': 'translateY(5px)' }); setTimeout(() => { $(this).animate({ 'opacity': '1', 'transform': 'translateY(0)' }, 200); }, index * 20); });
+                $('.glassmorphism-card').each(function(index) { $(this).addClass('fade-in-up'); $(this).css('animation-delay', `${index * 0.05}s`); });
             });
         </script>
     @endpush
