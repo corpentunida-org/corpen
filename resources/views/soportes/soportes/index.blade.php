@@ -30,7 +30,7 @@
     </div>
         <div class="card-body p-2">
             <div class="row g-2">
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label fw-semibold text-muted small mb-1">Área</label>
                     <div class="input-group input-group-sm">
                         <span class="input-group-text"><i class="feather-layers"></i></span>
@@ -44,7 +44,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label fw-semibold text-muted small mb-1">Prioridad</label>
                     <div class="input-group input-group-sm">
                         <span class="input-group-text"><i class="feather-flag"></i></span>
@@ -73,6 +73,22 @@
                     </div>
                 </div>
                 <div class="col-md-3">
+                    <label class="form-label fw-semibold text-muted small mb-1">Asignados a</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text"><i class="feather-user-check"></i></span>
+                        <select id="filterAsignado" class="form-select pastel-select">
+                            <option value="">Todos</option>
+                            {{--@foreach($soportes->pluck('scpUsuarioAsignado.maeTercero.nom_ter')->unique()->filter() as $asignado)
+                            --}}                            
+                            @foreach($soportes->map(function($soporte) { 
+                                return $soporte->scpUsuarioAsignado ? $soporte->scpUsuarioAsignado->maeTercero->nom_ter : null; 
+                            })->filter()->unique() as $asignado)
+                                <option value="{{ $asignado }}">{{ $asignado }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-2">
                     <label class="form-label fw-semibold text-muted small mb-1">Fecha Creación</label>
                     <div class="input-group input-group-sm">
                         <span class="input-group-text"><i class="feather-calendar"></i></span>
@@ -1263,7 +1279,11 @@
                 $('#filterUsuario').on('change', function () {
                     aplicarFiltro(2, this.value);
                 });
-
+                
+                $('#filterAsignado').on('change', function () {
+                    aplicarFiltro(8, this.value); // Columna 8 es "Asignado"
+                });
+                
                 $('#filterFecha').on('change', function () {
                     let val = this.value;
                     if (val) {
@@ -1277,7 +1297,7 @@
 
                 // Limpiar filtros
                 $('#clearFilters').on('click', function() {
-                    $('#filterArea, #filterPrioridad, #filterUsuario, #filterFecha').val('');
+                    $('#filterArea, #filterPrioridad, #filterUsuario, #filterAsignado, #filterFecha').val('');
                     tables.forEach(function(t) {
                         t.search('').columns().search('').draw();
                     });
