@@ -18,7 +18,8 @@ class RetirosListadoController extends Controller
     public function index()
     {
         $tabla = DB::table('RET_condicionesRetiros')->get();
-        return view('cinco.retiros.index', compact('tabla'));
+        $retopciones = DB::table('Ret_opciones')->get()->groupBy('tipo'); 
+        return view('cinco.retiros.index', compact('tabla','retopciones'));
     }
 
     public function namesearch(Request $request)
@@ -58,6 +59,10 @@ class RetirosListadoController extends Controller
             'fecInicialLiquidacion' => $request->fechaInicialLiquidacion,
             'consecutivoDocumento' => "BPA-{$añoActual}{$nuevoConsecutivo}",
             'beneficioAntiguedad' => $totalbeneficios,
+            'fechaRetiro' => $request->FechaRetiro,
+            'fechaUltimoAporte' => $request->FechaUltimoAporte,
+            'fechaInicialLiquidacion' => $request->fechaInicialLiquidacion,
+            'fechaCreacion' => Carbon::now()->format('d/m/Y H:i:s'),
         ]);
 
         foreach ($request->opcion as $opcionId => $valor) {
@@ -87,7 +92,7 @@ class RetirosListadoController extends Controller
         $arrayliquidacion = $this->liquidaciones($tercero->fec_minis);
         $tiposselect = DB::table('RET_TiposRetiros')->where('activo', 1)->get();
         $retiro = Retiros::where('cod_ter', $id)->get();
-        //dd($retiro);
+        
         return view('cinco.retiros.show', compact('tercero', 'arrayliquidacion', 'tiposselect', 'opciones', 'retiro'));
     }
 

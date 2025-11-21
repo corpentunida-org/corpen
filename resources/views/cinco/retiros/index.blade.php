@@ -8,23 +8,7 @@
                 <div class="row">
                     <div class="col-sm-12 col-md-6">
                         <div class="page-header-right ms-auto">
-                            <div class="page-header-right-items">
-                                <div class="d-flex align-items-center gap-2 page-header-right-items-wrapper">
-                                    <a href="javascript:void(0);" class="btn btn-icon btn-light-brand"
-                                        data-bs-toggle="collapse" data-bs-target="#collapseOne">
-                                        <i class="feather-bar-chart"></i>
-                                    </a>
-                                    <a href="" class="btn btn-primary">
-                                        <i class="feather-plus me-2"></i>
-                                        <span></span>
-                                    </a>
-                                </div>
-                            </div>
-                            <div class="d-md-none d-flex align-items-center">
-                                <a href="javascript:void(0)" class="page-header-right-open-toggle">
-                                    <i class="feather-align-right fs-20"></i>
-                                </a>
-                            </div>
+
                         </div>
                     </div>
                     <div class="col-sm-12 col-md-6 d-flex justify-content-end align-items-center">
@@ -40,8 +24,9 @@
             </div>
         </div>
     </div>
-    <div class="col-lg-12">
-        <div class="card stretch stretch-full  ">
+
+    <div class="col-lg-6">
+        <div class="card stretch stretch-full ">
             <div class="card-header">
                 <h5 class="card-title">Retiro por año</h5>
                 <a href="#CardAddCalculo" id="btnAddCalculo" class="btn btn-success">
@@ -64,9 +49,10 @@
                         <tbody>
                             @foreach ($tabla as $r)
                                 <tr>
-                                    <td><span class="badge bg-gray-200 text-dark">{{$r->anio}}</span></td>
-                                    <td>${{number_format($r->valor)}}</td>
-                                    <td><span class="badge bg-soft-primary text-primary">${{number_format($r->plus)}}</span>
+                                    <td><span class="badge bg-gray-200 text-dark">{{ $r->anio }}</span></td>
+                                    <td>${{ number_format($r->valor) }}</td>
+                                    <td><span
+                                            class="badge bg-soft-primary text-primary">${{ number_format($r->plus) }}</span>
                                     </td>
                                     <td>0</td>
                                     <td class="hstack justify-content-end gap-4 text-end">
@@ -99,6 +85,40 @@
             </div>
         </div>
     </div>
+
+    <div class="col-lg-6">
+        <div class="card stretch stretch-full">
+            <div class="card-header">
+                <h5 class="card-title">Opciones de liquidación</h5>
+                <a href="{{ route('cinco.condicionRetiros.create') }}" id="btnAddCalculo" class="btn btn-warning">
+                    <i class="bi bi-pencil-square me-2"></i>
+                    <span>Editar Opciones</span>
+                </a>
+            </div>
+            <div class="card-body custom-card-action p-0">
+                <div class="table-responsive">
+                    <table class="table m-2">
+                        <tbody>
+                            @foreach ($retopciones as $tipo => $opciones)
+                                <tr>
+                                    <th colspan="5">
+                                        {{ $tipo == 1 ? 'BENEFICIOS' : ($tipo == 2 ? 'BASE RETENCION' : 'SALDOS A FAVOR') }}
+                                    </th>
+                                </tr>                                
+                                @foreach ($opciones as $opcion)
+                                    <tr>
+                                        <td>{{ $opcion->nombre }}</td>
+                                    </tr>
+                                @endforeach
+                                <tr><td></td></tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="CardAddCalculo" class="col-lg-12" style="display: none;">
         <div class="card stretch stretch-full">
             <div class="card-header">
@@ -107,7 +127,8 @@
                 </h5>
             </div>
             <div class="card-body p-4">
-                <form method="POST" action="{{ route('cinco.condicionRetiros.store') }}" id="formAddCondicion" novalidate>
+                <form method="POST" action="{{ route('cinco.condicionRetiros.store') }}" id="formAddCondicion"
+                    novalidate>
                     @csrf
                     @method('POST')
                     <div class="row">
@@ -144,17 +165,17 @@
     </div>
 
     <script>
-        $(document).ready(function () {
-            $('#btnAddCalculo').on('click', function (e) {
+        $(document).ready(function() {
+            $('#btnAddCalculo').on('click', function(e) {
                 console.log('Button clicked');
                 $('#CardAddCalculo').show();
-                $('#CardAddCalculo').slideDown('fast', function () {
+                $('#CardAddCalculo').slideDown('fast', function() {
                     $('html, body').animate({
                         scrollTop: $('#CardAddCalculo').offset().top
                     }, 500);
                 });
             });
-            $('#formAddCondicion').submit(function (event) {
+            $('#formAddCondicion').submit(function(event) {
                 var form = this;
                 if (!form.checkValidity()) {
                     $(form).addClass('was-validated');
