@@ -25,7 +25,7 @@ use App\Models\Maestras\maeDistritos;
 
 class InteractionController extends Controller
 {
-    /**
+/**
      * Muestra la lista de interacciones con filtros y búsqueda.
      */
     public function index(Request $request)
@@ -67,6 +67,35 @@ class InteractionController extends Controller
             });
         }
 
+        // --- FILTROS ADICIONALES ---
+        if ($request->filled('area_filter')) {
+            $baseQuery->whereHas('area', function ($q) use ($request) {
+                $q->where('nombre', $request->area_filter);
+            });
+        }
+
+        if ($request->filled('cargo_filter')) {
+            $baseQuery->whereHas('cargo', function ($q) use ($request) {
+                $q->where('nombre_cargo', $request->cargo_filter);
+            });
+        }
+
+        if ($request->filled('linea_filter')) {
+            $baseQuery->whereHas('lineaDeObligacion', function ($q) use ($request) {
+                $q->where('nombre', $request->linea_filter);
+            });
+        }
+
+        if ($request->filled('distrito_filter')) {
+            $baseQuery->whereHas('DistritoDeObligacion', function ($q) use ($request) {
+                $q->where('NOM_DIST', $request->distrito_filter);
+            });
+        }
+
+        if ($request->filled('interaction_date_filter')) {
+            $baseQuery->whereDate('interaction_date', $request->interaction_date_filter);
+        }
+
         if ($request->filled('date_from')) {
             $baseQuery->whereDate('interaction_date', '>=', $request->date_from);
         }
@@ -85,6 +114,7 @@ class InteractionController extends Controller
             'today' => (clone $countQuery)->whereDate('interaction_date', today())->count(),
         ];
 
+        // CAMBIO: Aplicar los mismos filtros a las colecciones de las pestañas
         $collectionsForTabs = [
             'successful' => (clone $baseQuery)->whereHas('outcomeRelation', fn($q) => $q->where('name', 'Exitoso'))->get(),
             'pending' => (clone $baseQuery)->whereHas('outcomeRelation', fn($q) => $q->where('name', 'Pendiente'))->get(),
@@ -92,7 +122,7 @@ class InteractionController extends Controller
         ];
 
         // --- 4. OBTENEMOS LA COLECCIÓN PAGINADA PARA LA PESTAÑA "TODOS" ---
-        $interactions = $baseQuery->orderBy('id')->paginate(100);
+        $interactions = $baseQuery->orderBy('id', 'desc')->paginate(100);
         $interactions->appends($request->query());
 
         // --- 5. DATOS PARA LOS SELECT DE LA VISTA ---
