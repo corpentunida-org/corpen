@@ -340,47 +340,6 @@ class InteractionController extends Controller
         return redirect()->route('interactions.index')->with('success', 'Interacción creada exitosamente.');
     }
 
-    /**
-     * Formulario para editar una interacción existente.
-     */
-    public function edit(Interaction $interaction)
-    {
-        $channels = IntChannel::all(); 
-        $types = IntType::all();
-        $outcomes = IntOutcome::all();
-        $nextActions = IntNextAction::all();
-
-        $areas = GdoArea::orderBy('nombre')->pluck('nombre', 'id');
-        $cargos = GdoCargo::orderBy('nombre_cargo')->pluck('nombre_cargo', 'id');
-        $lineasCredito = LineaCredito::orderBy('nombre')->pluck('nombre', 'id');
-        $distrito = maeDistritos::orderBy('NOM_DIST')->pluck('NOM_DIST', 'COD_DIST');
-        
-        // --- NUEVO: Obtener el cargo y área del agente logueado ---
-        $agente = Auth::user();
-        $cargoAgente = null;
-        $idCargoAgente = null;
-        $areaAgente = null;
-        $idAreaAgente = null;
-        
-        if ($agente) {
-            $cargoAgente = $agente->cargoRelation;
-            if ($cargoAgente) {
-                $idCargoAgente = $cargoAgente->id;
-                
-                // Obtener el área a través del cargo
-                $areaAgente = $cargoAgente->gdoArea;
-                if ($areaAgente) {
-                    $idAreaAgente = $areaAgente->id;
-                }
-            }
-        }
-
-        return view('interactions.edit', compact(
-            'interaction', 'channels', 'types', 'outcomes', 'nextActions',
-            'areas', 'cargos', 'lineasCredito', 'distrito', 
-            'idCargoAgente', 'idAreaAgente'
-        ));
-    }
 
     /**
      * Actualiza una interacción existente.
@@ -476,27 +435,6 @@ class InteractionController extends Controller
 
         return redirect()->route('interactions.index')
             ->with('success', 'Interacción actualizada exitosamente.');
-    }
-
-    /**
-     * Elimina una interacción y sus archivos adjuntos.
-     */
-    public function destroy(Interaction $interaction)
-    {
-        try {
-            // --- CORRECCIÓN: Manejo correcto de archivo adjunto ---
-            if ($interaction->attachment_urls) {
-                Storage::disk('s3')->delete($interaction->attachment_urls);
-            }
-
-            $interaction->delete();
-
-            return redirect()->route('interactions.index')
-                ->with('success', 'Interacción eliminada exitosamente.');
-        } catch (Exception $e) {
-            Log::error('Error al eliminar interacción ' . $interaction->id . ': ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Hubo un error al eliminar la interacción.');
-        }
     }
 
     /**
@@ -671,5 +609,71 @@ class InteractionController extends Controller
             'district_id' => $client->cod_dist,
         ]);
     }
+
+    /**
+     * Formulario para editar una interacción existente.
+     */
+/*
+    public function edit(Interaction $interaction)
+    {
+        $channels = IntChannel::all(); 
+        $types = IntType::all();
+        $outcomes = IntOutcome::all();
+        $nextActions = IntNextAction::all();
+
+        $areas = GdoArea::orderBy('nombre')->pluck('nombre', 'id');
+        $cargos = GdoCargo::orderBy('nombre_cargo')->pluck('nombre_cargo', 'id');
+        $lineasCredito = LineaCredito::orderBy('nombre')->pluck('nombre', 'id');
+        $distrito = maeDistritos::orderBy('NOM_DIST')->pluck('NOM_DIST', 'COD_DIST');
+        
+        // --- NUEVO: Obtener el cargo y área del agente logueado ---
+        $agente = Auth::user();
+        $cargoAgente = null;
+        $idCargoAgente = null;
+        $areaAgente = null;
+        $idAreaAgente = null;
+        
+        if ($agente) {
+            $cargoAgente = $agente->cargoRelation;
+            if ($cargoAgente) {
+                $idCargoAgente = $cargoAgente->id;
+                
+                // Obtener el área a través del cargo
+                $areaAgente = $cargoAgente->gdoArea;
+                if ($areaAgente) {
+                    $idAreaAgente = $areaAgente->id;
+                }
+            }
+        }
+
+        return view('interactions.edit', compact(
+            'interaction', 'channels', 'types', 'outcomes', 'nextActions',
+            'areas', 'cargos', 'lineasCredito', 'distrito', 
+            'idCargoAgente', 'idAreaAgente'
+        ));
+    }
+*/
+    /**
+     * Elimina una interacción y sus archivos adjuntos.
+     */
+/*    
+    public function destroy(Interaction $interaction)
+    {
+        try {
+            // --- CORRECCIÓN: Manejo correcto de archivo adjunto ---
+            if ($interaction->attachment_urls) {
+                Storage::disk('s3')->delete($interaction->attachment_urls);
+            }
+
+            $interaction->delete();
+
+            return redirect()->route('interactions.index')
+                ->with('success', 'Interacción eliminada exitosamente.');
+        } catch (Exception $e) {
+            Log::error('Error al eliminar interacción ' . $interaction->id . ': ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Hubo un error al eliminar la interacción.');
+        }
+    } 
+*/
 
 }
