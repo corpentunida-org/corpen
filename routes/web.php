@@ -176,8 +176,7 @@ Route::prefix('retiros')->group(function () {
 });
 
 //RUTA CARTERA MOROSOS
-Route::get('cartera', [ReadExelController::class, 'index'])
-    ->name('cartera.morosos.index')->middleware(['auth', 'can:cartera.listamorosos.generarcarta']);
+Route::get('cartera', [ReadExelController::class, 'index'])->name('cartera.morosos.index')->middleware(['auth', 'can:cartera.listamorosos.generarcarta']);
 Route::post('cartera', [ReadExelController::class, 'store'])
     ->name('cartera.morosos.store')->middleware(['auth', 'can:cartera.listamorosos.generarcarta']);
 Route::post('/cartera/pdfMora', [ReadExelController::class, 'pdfMora'])->middleware('auth')->name('cartera.morosos.pdfMora');
