@@ -1249,8 +1249,8 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
-       {{--  <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
-        <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script> --}}
+        <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+        <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
 
         <script>
             document.addEventListener('DOMContentLoaded', function () {
@@ -1392,6 +1392,28 @@
                             `Mostrando ${info.recordsDisplay} de ${info.recordsTotal} resultados`;
                     }
                 }
+                /**
+                 * Actualiza el texto del contador de resultados debajo de los filtros.
+                 */
+                function updateResultCount() {
+                    if (currentTable) {
+                        const info = currentTable.page.info();
+                        document.getElementById('resultCount').textContent = 
+                            `Mostrando ${info.recordsDisplay} de ${info.recordsTotal} resultados`;
+                    }
+                }
+
+                // Inicializamos la tabla de la primera pestaña ("Todos") cuando la página carga.
+                // Usamos un pequeño retraso para asegurar que el DOM esté completamente renderizado.
+                setTimeout(function() {
+                    initializeDataTable('#tablaPrincipal');
+                }, 300);
+
+                // Añadimos un event listener para el evento 'shown.bs.tab', que se dispara cuando una pestaña se muestra.
+                document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(function (tabElement) {
+                    tabElement.addEventListener('shown.bs.tab', function (event) {
+                        let targetTableId = null;
+                        const targetPaneId = event.target.getAttribute('data-bs-target');
 
                 // Inicializamos la tabla de la primera pestaña ("Todos") cuando la página carga.
                 // Usamos un pequeño retraso para asegurar que el DOM esté completamente renderizado.
