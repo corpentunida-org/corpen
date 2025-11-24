@@ -1,6 +1,5 @@
 <x-base-layout>
     @section('titlepage', 'Usuarios')
-
     <div class="col-lg-12">
         <div class="card stretch stretch-full">
             <div class="card-header">

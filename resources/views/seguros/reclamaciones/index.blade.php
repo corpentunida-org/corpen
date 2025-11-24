@@ -123,7 +123,7 @@
                                     <td><span
                                             class="badge bg-gray-200 text-dark">{{ $r->asegurado->parentesco ?? '' }}</span>
                                     </td>
-                                    <td class="text-wrap">{{ $r->cobertura->nombre }}</td>
+                                    <td class="text-wrap">{{ $r->cobertura->nombre ?? ' '}}</td>
                                     <td>$ {{ number_format((float) $r->valor_asegurado) }} </td>
                                     <td><span
                                             class="badge bg-soft-primary text-primary text-wrap">{{ $r->estadoReclamacion->nombre }}</span>
@@ -232,11 +232,9 @@
                                     <td><span
                                             class="badge bg-gray-200 text-dark">{{ $r->asegurado->parentesco ?? '' }}</span>
                                     </td>
-                                    <td>{{ $r->cobertura->nombre }}</td>
+                                    <td>{{ $r->cobertura->nombre ?? ' ' }}</td>
                                     <td>$ {{ number_format((float) ($r->valor_asegurado ?? 0)) }} </td>
-                                    <td><span
-                                            class="badge bg-soft-primary text-primary">{{ $r->estadoReclamacion->nombre }}</span>
-                                    </td>
+                                    <td><span class="badge bg-soft-primary text-primary">{{ $r->estadoReclamacion->nombre }}</span></td>
                                     <td>
                                         <div class="d-flex align-items-center gap-3">
                                             <a>

@@ -28,8 +28,8 @@ class IndexController extends Controller
             return redirect()->route('seguros.poliza.index');
         } elseif ($roles->first()->name===('cinco')) {
             return redirect()->route('cinco.tercero.index');
-        } elseif ($roles->first()->name===('cartera')) {
-            return redirect()->route('cartera.morosos.index');
+        } elseif ($roles->first()->name===('soporte')) {
+            return redirect()->route('soportes.soportes.index');
         } else {
                 return view('welcome');
             }
