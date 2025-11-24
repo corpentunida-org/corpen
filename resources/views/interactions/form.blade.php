@@ -1358,194 +1358,274 @@
                     </div>
 
                     <!-- PESTAÑA 2: INFORMACIÓN ADICIONAL -->
-                    <div class="tab-panel" id="adicional-tab">
+                    <div class="tab-panel" id="adicional-tab" 
+                        data-agent-area-id="{{ $idAreaAgente ?? '' }}" 
+                        data-agent-cargo-id="{{ $idCargoAgente ?? '' }}">
                         <div class="category-container">
                             <div class="category-header">
                                 <h5 class="category-title">
                                     <div class="category-icon">
-                                        <i class="bi bi-briefcase"></i>
+                                        <i class="feather-briefcase"></i>
                                     </div>
                                     Información Adicional
                                 </h5>
                                 <p class="category-description">Datos complementarios del cliente y asignación</p>
                             </div>
                             <div class="category-content">
+                                <!-- Fila 1: Pregunta de Asignación -->
                                 <div class="row g-3 mb-4">
-                                    <div class="col-md-3">
-                                        <div class="form-group">
-                                            <label for="area-display" class="form-label">Área</label>
-                                            <input type="text" class="form-control bg-light" id="area-display" readonly 
-                                                   value="{{ $idAreaAgente ? $areas[$idAreaAgente] : 'No asignada' }}">
-                                            <input type="hidden" id="id_area" name="id_area" value="{{ old('id_area', $interaction->id_area ?? $idAreaAgente ?? '') }}">
-                                            <div class="form-text mt-1">Asignada automáticamente según el cargo del agente.</div>
-                                            @error('id_area')
-                                                <div class="invalid-feedback">{{ $message }}</div>
-                                            @enderror
+                                    <div class="col-12">
+                                        <label class="form-label fw-semibold text-muted small">
+                                            <i class="feather-help-circle me-1"></i>¿Quién gestionará esta interacción?
+                                        </label>
+                                        <div class="btn-group w-100" role="group" aria-label="Gestión de la interacción">
+                                            <input type="radio" class="btn-check" name="handled_by_agent" id="handled_by_me" value="yes" autocomplete="off" checked>
+                                            <label class="btn btn-outline-primary" for="handled_by_me">
+                                                <i class="feather-user me-1"></i>Yo la gestionaré
+                                            </label>
+
+                                            <input type="radio" class="btn-check" name="handled_by_agent" id="handled_by_other" value="no" autocomplete="off">
+                                            <label class="btn btn-outline-secondary" for="handled_by_other">
+                                                <i class="feather-users me-1"></i>Otro cargo/área la gestionará
+                                            </label>
                                         </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="form-group">
-                                            <label for="cargo-display" class="form-label">Cargo</label>
-                                            <input type="text" class="form-control bg-light" id="cargo-display" readonly 
-                                                   value="{{ $idCargoAgente ? $cargos[$idCargoAgente] : 'No asignado' }}">
-                                            <input type="hidden" id="id_cargo" name="id_cargo" value="{{ old('id_cargo', $interaction->id_cargo ?? $idCargoAgente ?? '') }}">
-                                            <div class="form-text mt-1">Asignado automáticamente según el agente logueado.</div>
-                                            @error('id_cargo')
-                                                <div class="invalid-feedback">{{ $message }}</div>
-                                            @enderror
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="form-group">
-                                            <label for="id_linea_de_obligacion" class="form-label">Línea de Obligación</label>
-                                            <select
-                                                class="form-select select2 @error('id_linea_de_obligacion') is-invalid @enderror"
-                                                id="id_linea_de_obligacion" name="id_linea_de_obligacion">
-                                                <option value="">Selecciona una línea</option>
-                                                @if (isset($lineasCredito))
-                                                    @foreach ($lineasCredito as $id => $nombre)
-                                                        <option value="{{ $id }}"
-                                                            {{ old('id_linea_de_obligacion', $interaction->id_linea_de_obligacion ?? '') == $id ? 'selected' : '' }}>
-                                                            {{ $nombre }}
-                                                        </option>
-                                                    @endforeach
-                                                @endif
-                                            </select>
-                                            @error('id_linea_de_obligacion')
-                                                <div class="invalid-feedback">{{ $message }}</div>
-                                            @enderror
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <div class="form-group">
-                                            <label for="id_area_de_asignacion" class="form-label">Área de Asignación</label>
-                                            <select
-                                                class="form-select select2 @error('id_area_de_asignacion') is-invalid @enderror"
-                                                id="id_area_de_asignacion" name="id_area_de_asignacion">
-                                                <option value="">Selecciona un área</option>
-                                                @if (isset($areas))
-                                                    @foreach ($areas as $id => $nombre)
-                                                        <option value="{{ $id }}"
-                                                            {{ old('id_area_de_asignacion', $interaction->id_area_de_asignacion ?? '') == $id ? 'selected' : '' }}>
-                                                            {{ $nombre }}
-                                                        </option>
-                                                    @endforeach
-                                                @endif
-                                            </select>
-                                            @error('id_area_de_asignacion')
-                                                <div class="invalid-feedback">{{ $message }}</div>
-                                            @enderror
-                                        </div>
+                                        <div class="form-text mt-1">Selecciona si tú serás el responsable o si la interacción será asignada a otra área o cargo.</div>
                                     </div>
                                 </div>
-                                <!-- BLOQUE DE DISTRITO MODIFICADO -->
+
+                                <!-- Fila 2: Datos del Agente (Solo Lectura) -->
                                 <div class="row g-3 mb-4">
                                     <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label for="id_distrito_interaccion" class="form-label">Distrito de la Interacción</label>
-                                            <div class="input-group"> <!-- Usamos input-group para agrupar el select y el botón -->
-                                                <select
-                                                    class="form-select select2 @error('id_distrito_interaccion') is-invalid @enderror"
-                                                    id="id_distrito_interaccion" name="id_distrito_interaccion">
-                                                    <option value="">Selecciona un distrito</option>
-                                                    @if (isset($distrito))
-                                                        @foreach ($distrito as $id => $nombre)
-                                                            <option value="{{ $id }}"
-                                                                {{ old('id_distrito_interaccion', $interaction->id_distrito_interaccion ?? '') == $id ? 'selected' : '' }}>
-                                                                {{ $nombre }}
-                                                            </option>
-                                                        @endforeach
-                                                    @endif
-                                                </select>
-                                                <!-- 🆕 Botón para actualizar el distrito desde el cliente -->
-                                            <button class="btn btn-outline-secondary" type="button" id="update-district-btn" title="Sincroniza el distrito con los datos del cliente">
-                                                    <i class="bi bi-arrow-clockwise"></i> Sincronizar distrito
-                                                </button>
-                                            </div>
-                                            @error('id_distrito_interaccion')
-                                                <div class="invalid-feedback">{{ $message }}</div>
-                                            @enderror
+                                        <label for="area-agente-display" class="form-label fw-semibold text-muted small">
+                                            <i class="feather-layers me-1"></i>Área del Agente
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="feather-user"></i></span>
+                                            <input type="text" class="form-control bg-light" id="area-agente-display" readonly 
+                                                value="{{ $idAreaAgente ? $areas[$idAreaAgente] : 'No asignada' }}">
+                                            <!-- CORRECCIÓN: ID del campo oculto cambiado para evitar duplicados -->
+                                            <input type="hidden" id="id_area" name="id_area" value="{{ old('id_area', $interaction->id_area ?? $idAreaAgente ?? '') }}">
                                         </div>
+                                        <div class="form-text mt-1">Tu área actual, asignada automáticamente.</div>
+                                        @error('id_area')
+                                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="cargo-agente-display" class="form-label fw-semibold text-muted small">
+                                            <i class="feather-briefcase me-1"></i>Cargo del Agente
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="feather-user"></i></span>
+                                            <input type="text" class="form-control bg-light" id="cargo-agente-display" readonly 
+                                                value="{{ $idCargoAgente ? $cargos[$idCargoAgente] : 'No asignado' }}">
+                                            <!-- CORRECCIÓN: ID del campo oculto cambiado para evitar duplicados -->
+                                            <input type="hidden" id="id_cargo_agente" name="id_cargo_agente" value="{{ old('id_cargo_agente', $idCargoAgente ?? '') }}">
+                                        </div>
+                                        <div class="form-text mt-1">Tu cargo actual, asignado automáticamente.</div>
+                                        @error('id_cargo_agente')
+                                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                                        @enderror
                                     </div>
                                 </div>
-                                <script>
-                                    document.addEventListener("DOMContentLoaded", function() {
-                                        // Obtenemos los elementos del DOM que necesitamos
-                                        const clientSelect = document.getElementById('client_id'); // Asegúrate que tu select de cliente tenga este ID
-                                        const districtSelect = document.getElementById('id_distrito_interaccion');
-                                        const updateDistrictBtn = document.getElementById('update-district-btn');
 
-                                        // Función que se ejecuta al hacer clic en el botón "Actualizar"
-                                        async function handleUpdateDistrictClick() {
-                                            const selectedClientId = clientSelect.value;
+                                <!-- Fila 3: Datos de Asignación (Seleccionables) -->
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-6">
+                                        <label for="id_area_de_asignacion" class="form-label fw-semibold text-muted small">
+                                            <i class="feather-target me-1"></i>Área de Asignación
+                                        </label>
+                                        <select class="form-select select2 @error('id_area_de_asignacion') is-invalid @enderror"
+                                                id="id_area_de_asignacion" name="id_area_de_asignacion">
+                                            <option value="">Selecciona un área</option>
+                                            @if (isset($areas))
+                                                @foreach ($areas as $id => $nombre)
+                                                    <option value="{{ $id }}" {{ old('id_area_de_asignacion', $interaction->id_area_de_asignacion ?? '') == $id ? 'selected' : '' }}>
+                                                        {{ $nombre }}
+                                                    </option>
+                                                @endforeach
+                                            @endif
+                                        </select>
+                                        <div class="form-text mt-1">Área responsable de gestionar esta interacción.</div>
+                                        @error('id_area_de_asignacion')
+                                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="id_cargo_asignacion" class="form-label fw-semibold text-muted small">
+                                            <i class="feather-user-check me-1"></i>Cargo de Asignación
+                                        </label>
+                                        <!-- CORRECCIÓN: ID del select cambiado para evitar duplicados -->
+                                        <select class="form-select select2 @error('id_cargo_asignacion') is-invalid @enderror"
+                                                id="id_cargo_asignacion" name="id_cargo_asignacion">
+                                            <option value="">Selecciona un cargo</option>
+                                            @if (isset($cargos))
+                                                @foreach ($cargos as $id => $nombre)
+                                                    <option value="{{ $id }}" {{ old('id_cargo_asignacion', $interaction->id_cargo ?? '') == $id ? 'selected' : '' }}>
+                                                        {{ $nombre }}
+                                                    </option>
+                                                @endforeach
+                                            @endif
+                                        </select>
+                                        <div class="form-text mt-1">Cargo específico que atenderá o desarrollará la interacción.</div>
+                                        @error('id_cargo_asignacion')
+                                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
 
-                                            // Verificamos que se haya seleccionado un cliente
-                                            if (!selectedClientId) {
-                                                alert('Por favor, selecciona un cliente primero.');
-                                                return;
-                                            }
-
-                                            // Deshabilitamos el botón y mostramos un indicador de carga
-                                            updateDistrictBtn.disabled = true;
-                                            updateDistrictBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Actualizando...';
-
-                                            try {
-                                                // Hacemos la llamada a nuestra nueva ruta del backend
-                                                const response = await fetch(`/interactions/clientes/${selectedClientId}/distrito`);
-                                                
-                                                if (!response.ok) {
-                                                    throw new Error('No se pudo obtener el distrito del cliente.');
-                                                }
-
-                                                const data = await response.json();
-                                                const newDistrictId = data.district_id;
-
-                                                if (newDistrictId) {
-                                                    // Actualizamos el valor del select
-                                                    districtSelect.value = newDistrictId;
-                                                    
-                                                    // IMPORTANTE: Si usas Select2, debes notificarle del cambio para que actualice su visualización
-                                                    if (typeof jQuery !== 'undefined' && jQuery().select2) {
-                                                        jQuery(districtSelect).trigger('change');
-                                                    }
-
-                                                    console.log(`Distrito actualizado a: ${newDistrictId}`);
-                                                } else {
-                                                    console.log('El cliente seleccionado no tiene un distrito asignado.');
-                                                    alert('El cliente seleccionado no tiene un distrito asignado.');
-                                                }
-
-                                            } catch (error) {
-                                                console.error('Error:', error);
-                                                alert('Ocurrió un error al actualizar el distrito.');
-                                            } finally {
-                                                // Rehabilitamos el botón y restauramos su texto original
-                                                updateDistrictBtn.disabled = false;
-                                                updateDistrictBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Actualizar';
-                                            }
-                                        }
-
-                                        // Asignamos el evento de clic al botón
-                                        if (updateDistrictBtn) {
-                                            updateDistrictBtn.addEventListener('click', handleUpdateDistrictClick);
-                                        }
-                                    });
-                                </script>
-                                <!-- FIN DEL BLOQUE MODIFICADO -->
+                                <!-- Fila 4: Detalles Adicionales -->
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="id_linea_de_obligacion" class="form-label fw-semibold text-muted small">
+                                            <i class="feather-credit-card me-1"></i>Línea de Obligación
+                                        </label>
+                                        <select class="form-select select2 @error('id_linea_de_obligacion') is-invalid @enderror"
+                                                id="id_linea_de_obligacion" name="id_linea_de_obligacion">
+                                            <option value="">Selecciona una línea</option>
+                                            @if (isset($lineasCredito))
+                                                @foreach ($lineasCredito as $id => $nombre)
+                                                    <option value="{{ $id }}" {{ old('id_linea_de_obligacion', $interaction->id_linea_de_obligacion ?? '') == $id ? 'selected' : '' }}>
+                                                        {{ $nombre }}
+                                                    </option>
+                                                @endforeach
+                                            @endif
+                                        </select>
+                                        <div class="form-text mt-1">Relaciona la interacción con una línea de crédito o producto específico.</div>
+                                        @error('id_linea_de_obligacion')
+                                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="id_distrito_interaccion" class="form-label fw-semibold text-muted small">
+                                            <i class="feather-map-pin me-1"></i>Distrito de la Interacción
+                                        </label>
+                                        <div class="input-group">
+                                            <select class="form-select select2 @error('id_distrito_interaccion') is-invalid @enderror"
+                                                    id="id_distrito_interaccion" name="id_distrito_interaccion">
+                                                <option value="">Selecciona un distrito</option>
+                                                @if (isset($distrito))
+                                                    @foreach ($distrito as $id => $nombre)
+                                                        <option value="{{ $id }}" {{ old('id_distrito_interaccion', $interaction->id_distrito_interaccion ?? '') == $id ? 'selected' : '' }}>
+                                                            {{ $nombre }}
+                                                        </option>
+                                                    @endforeach
+                                                @endif
+                                            </select>
+                                            <button class="btn btn-outline-secondary" type="button" id="update-district-btn" title="Actualiza el campo de distrito con la información del cliente seleccionado.">
+                                                <i class="feather-refresh-cw"></i>
+                                            </button>
+                                        </div>
+                                        <div class="form-text mt-1">Selecciona el distrito o usa el botón para sincronizarlo con los datos del cliente.</div>
+                                        @error('id_distrito_interaccion')
+                                            <div class="invalid-feedback d-block">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="form-actions">
                             <div class="action-buttons">
                                 <button type="button" class="btn btn-light" onclick="showTab('principal')">
-                                    <i class="bi bi-arrow-left"></i> Anterior
+                                    <i class="feather-arrow-left"></i> Anterior
                                 </button>
                             </div>
                             <div class="action-buttons">
                                 <button type="button" class="btn btn-primary" onclick="showTab('resultado')">
-                                    Continuar <i class="bi bi-arrow-right"></i>
+                                    Continuar <i class="feather-arrow-right"></i>
                                 </button>
                             </div>
                         </div>
+
+                        <!-- Script Unificado para Autocompletado y Sincronización -->
+                        <script>
+                        document.addEventListener("DOMContentLoaded", function() {
+                            // --- Elementos del DOM para la lógica de autocompletado ---
+                            const infoTab = document.getElementById('adicional-tab');
+                            const handledByMeRadio = document.getElementById('handled_by_me');
+                            const handledByOtherRadio = document.getElementById('handled_by_other');
+                            const areaAsignacionSelect = document.getElementById('id_area_de_asignacion');
+                            const cargoAsignacionSelect = document.getElementById('id_cargo_asignacion');
+
+                            // --- Elementos del DOM para la lógica de sincronización de distrito ---
+                            const clientSelect = document.getElementById('client_id');
+                            const districtSelect = document.getElementById('id_distrito_interaccion');
+                            const updateDistrictBtn = document.getElementById('update-district-btn');
+
+                            // --- Lógica de Autocompletado de Asignación ---
+                            function handleAssignmentChange() {
+                                if (!areaAsignacionSelect || !cargoAsignacionSelect || !infoTab) return;
+
+                                const agentAreaId = infoTab.dataset.agentAreaId;
+                                const agentCargoId = infoTab.dataset.agentCargoId;
+
+                                if (handledByMeRadio.checked) {
+                                    areaAsignacionSelect.value = agentAreaId;
+                                    cargoAsignacionSelect.value = agentCargoId;
+                                } else {
+                                    areaAsignacionSelect.value = '';
+                                    cargoAsignacionSelect.value = '';
+                                }
+
+                                // Notificar a Select2 del cambio para que actualice la visualización
+                                if (typeof jQuery !== 'undefined' && jQuery().select2) {
+                                    jQuery(areaAsignacionSelect).trigger('change');
+                                    jQuery(cargoAsignacionSelect).trigger('change');
+                                }
+                            }
+
+                            // Asignar event listeners a los botones de radio
+                            if (handledByMeRadio) handledByMeRadio.addEventListener('change', handleAssignmentChange);
+                            if (handledByOtherRadio) handledByOtherRadio.addEventListener('change', handleAssignmentChange);
+
+                            // Ejecutar la función una vez al cargar la página para establecer el estado inicial
+                            handleAssignmentChange();
+
+
+                            // --- Lógica de Sincronización de Distrito ---
+                            async function handleUpdateDistrictClick() {
+                                if (!clientSelect || !districtSelect || !updateDistrictBtn) return;
+                                
+                                const selectedClientId = clientSelect.value;
+                                if (!selectedClientId) {
+                                    Swal.fire({ icon: 'warning', title: 'Atención', text: 'Por favor, selecciona un cliente primero.' });
+                                    return;
+                                }
+
+                                updateDistrictBtn.disabled = true;
+                                updateDistrictBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+
+                                try {
+                                    const response = await fetch(`/interacciones/clientes/${selectedClientId}/distrito`);
+                                    if (!response.ok) throw new Error('Error en la respuesta del servidor.');
+
+                                    const data = await response.json();
+                                    const newDistrictId = data.district_id;
+
+                                    if (newDistrictId) {
+                                        districtSelect.value = newDistrictId;
+                                        if (typeof jQuery !== 'undefined' && jQuery().select2) {
+                                            jQuery(districtSelect).trigger('change');
+                                        }
+                                        Swal.fire({ icon: 'success', title: 'Actualizado', text: 'El distrito ha sido sincronizado.', timer: 2000, showConfirmButton: false });
+                                    } else {
+                                        Swal.fire({ icon: 'info', title: 'Sin Datos', text: 'El cliente seleccionado no tiene un distrito asignado.' });
+                                    }
+                                } catch (error) {
+                                    console.error('Error al actualizar distrito:', error);
+                                    Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo sincronizar el distrito.' });
+                                } finally {
+                                    updateDistrictBtn.disabled = false;
+                                    updateDistrictBtn.innerHTML = '<i class="feather-refresh-cw"></i>';
+                                }
+                            }
+
+                            // Asignar evento al botón de sincronización
+                            if (updateDistrictBtn) {
+                                updateDistrictBtn.addEventListener('click', handleUpdateDistrictClick);
+                            }
+                        });
+                        </script>
                     </div>
 
                     <!-- PESTAÑA 3: RESULTADO Y PLANIFICACIÓN -->
