@@ -315,10 +315,18 @@
                                                data-proxima-tipo="{{ $interaction->nextAction?->name ?? '—' }}"
                                                data-url="{{ $interaction->interaction_url }}"
                                                data-agent="{{ $interaction->agent->name ?? 'Sin asignar' }}"
-                                               data-edit-url="{{ route('interactions.edit', $interaction->id) }}"
+                                               {{-- data-edit-url="{{ route('interactions.edit', $interaction->id) }}" --}}
                                                data-show-url="{{ route('interactions.show', $interaction->id) }}">
                                                 #{{ $interaction->id }}
                                             </a>
+                                            @if ($interaction->attachment_urls)
+                                                <a href="{{ $interaction->getFile($interaction->attachment_urls) }}"
+                                                target="_blank"
+                                                class="ms-2 text-info"
+                                                title="Ver archivo adjunto">
+                                                    <i class="fas fa-paperclip"></i>
+                                                </a>
+                                            @endif
                                         </td>
                                         <td>
                                             {{ $interaction->DistritoDeObligacion->NOM_DIST ?? ' ' }}
@@ -455,15 +463,36 @@
                             <tbody>
                                 @forelse ($collectionsForTabs['successful'] as $interaction)
                                     @php
+                                        $outcome = 'Exitoso'; // El resultado es fijo aquí
                                         $clientName = $interaction->client->nom_ter ?? $interaction->client->nombre ?? 'N/A';
                                         $clientId = $interaction->client->cod_ter ?? $interaction->client->identificacion ?? 'N/A';
                                         $areaName = $interaction->area?->nombre ?? '—';
                                         $cargoName = $interaction->cargo?->nombre_cargo ?? '—';
                                         $lineaName = $interaction->lineaDeObligacion?->nombre ?? '—';
+                                        $areaAsigName = $interaction->areaDeAsignacion?->nombre ?? '—';
                                     @endphp
-                                    <tr class="table-row-hover pastel-row excel-row">
+                                    <tr class="table-row-hover pastel-row excel-row" data-outcome="{{ $outcome }}">
                                         <td class="py-1">
-                                            <a href="{{ route('interactions.show', $interaction->id) }}" class="fw-bold text-decoration-none pastel-link">
+                                            <a href="javascript:void(0)"
+                                               class="interaction-id fw-bold text-decoration-none pastel-link"
+                                               data-id="{{ $interaction->id }}"
+                                               data-fecha="{{ optional($interaction->interaction_date)->format('d/m/Y H:i') }}"
+                                               data-cliente="{{ $clientName }}"
+                                               data-canal="{{ $interaction->channel?->name ?? '—' }}"
+                                               data-tipo="{{ $interaction->type?->name ?? '—' }}"
+                                               data-area="{{ $areaName }}"
+                                               data-cargo="{{ $cargoName }}"
+                                               data-linea="{{ $lineaName }}"
+                                               data-area-asig="{{ $areaAsigName }}"
+                                               data-outcome="{{ $outcome }}"
+                                               data-duracion="{{ $interaction->duration ? $interaction->duration . (is_numeric($interaction->duration) ? ' min' : '') : '—' }}"
+                                               data-notas="{{ $interaction->notes ?? 'Sin notas.' }}"
+                                               data-proxima-fecha="{{ optional($interaction->next_action_date)->format('d/m/Y H:i') }}"
+                                               data-proxima-tipo="{{ $interaction->nextAction?->name ?? '—' }}"
+                                               data-url="{{ $interaction->interaction_url }}"
+                                               data-agent="{{ $interaction->agent->name ?? 'Sin asignar' }}"
+                                               {{-- data-edit-url="{{ route('interactions.edit', $interaction->id) }}" --}}
+                                               data-show-url="{{ route('interactions.show', $interaction->id) }}">
                                                 #{{ $interaction->id }}
                                             </a>
                                         </td>
@@ -568,15 +597,36 @@
                             <tbody>
                                 @forelse ($collectionsForTabs['pending'] as $interaction)
                                     @php
+                                        $outcome = 'Pendiente'; // El resultado es fijo aquí
                                         $clientName = $interaction->client->nom_ter ?? $interaction->client->nombre ?? 'N/A';
                                         $clientId = $interaction->client->cod_ter ?? $interaction->client->identificacion ?? 'N/A';
                                         $areaName = $interaction->area?->nombre ?? '—';
                                         $cargoName = $interaction->cargo?->nombre_cargo ?? '—';
                                         $lineaName = $interaction->lineaDeObligacion?->nombre ?? '—';
+                                        $areaAsigName = $interaction->areaDeAsignacion?->nombre ?? '—';
                                     @endphp
-                                    <tr class="table-row-hover pastel-row excel-row">
+                                    <tr class="table-row-hover pastel-row excel-row" data-outcome="{{ $outcome }}">
                                         <td class="py-1">
-                                            <a href="{{ route('interactions.show', $interaction->id) }}" class="fw-bold text-decoration-none pastel-link">
+                                            <a href="javascript:void(0)"
+                                               class="interaction-id fw-bold text-decoration-none pastel-link"
+                                               data-id="{{ $interaction->id }}"
+                                               data-fecha="{{ optional($interaction->interaction_date)->format('d/m/Y H:i') }}"
+                                               data-cliente="{{ $clientName }}"
+                                               data-canal="{{ $interaction->channel?->name ?? '—' }}"
+                                               data-tipo="{{ $interaction->type?->name ?? '—' }}"
+                                               data-area="{{ $areaName }}"
+                                               data-cargo="{{ $cargoName }}"
+                                               data-linea="{{ $lineaName }}"
+                                               data-area-asig="{{ $areaAsigName }}"
+                                               data-outcome="{{ $outcome }}"
+                                               data-duracion="{{ $interaction->duration ? $interaction->duration . (is_numeric($interaction->duration) ? ' min' : '') : '—' }}"
+                                               data-notas="{{ $interaction->notes ?? 'Sin notas.' }}"
+                                               data-proxima-fecha="{{ optional($interaction->next_action_date)->format('d/m/Y H:i') }}"
+                                               data-proxima-tipo="{{ $interaction->nextAction?->name ?? '—' }}"
+                                               data-url="{{ $interaction->interaction_url }}"
+                                               data-agent="{{ $interaction->agent->name ?? 'Sin asignar' }}"
+                                               {{-- data-edit-url="{{ route('interactions.edit', $interaction->id) }}" --}}
+                                               data-show-url="{{ route('interactions.show', $interaction->id) }}">
                                                 #{{ $interaction->id }}
                                             </a>
                                         </td>
@@ -687,10 +737,30 @@
                                         $areaName = $interaction->area?->nombre ?? '—';
                                         $cargoName = $interaction->cargo?->nombre_cargo ?? '—';
                                         $lineaName = $interaction->lineaDeObligacion?->nombre ?? '—';
+                                        $areaAsigName = $interaction->areaDeAsignacion?->nombre ?? '—';
                                     @endphp
-                                    <tr class="table-row-hover pastel-row excel-row">
+                                    <tr class="table-row-hover pastel-row excel-row" data-outcome="{{ $outcome }}">
                                         <td class="py-1">
-                                            <a href="{{ route('interactions.show', $interaction->id) }}" class="fw-bold text-decoration-none pastel-link">
+                                            <a href="javascript:void(0)"
+                                               class="interaction-id fw-bold text-decoration-none pastel-link"
+                                               data-id="{{ $interaction->id }}"
+                                               data-fecha="{{ optional($interaction->interaction_date)->format('d/m/Y H:i') }}"
+                                               data-cliente="{{ $clientName }}"
+                                               data-canal="{{ $interaction->channel?->name ?? '—' }}"
+                                               data-tipo="{{ $interaction->type?->name ?? '—' }}"
+                                               data-area="{{ $areaName }}"
+                                               data-cargo="{{ $cargoName }}"
+                                               data-linea="{{ $lineaName }}"
+                                               data-area-asig="{{ $areaAsigName }}"
+                                               data-outcome="{{ $outcome }}"
+                                               data-duracion="{{ $interaction->duration ? $interaction->duration . (is_numeric($interaction->duration) ? ' min' : '') : '—' }}"
+                                               data-notas="{{ $interaction->notes ?? 'Sin notas.' }}"
+                                               data-proxima-fecha="{{ optional($interaction->next_action_date)->format('d/m/Y H:i') }}"
+                                               data-proxima-tipo="{{ $interaction->nextAction?->name ?? '—' }}"
+                                               data-url="{{ $interaction->interaction_url }}"
+                                               data-agent="{{ $interaction->agent->name ?? 'Sin asignar' }}"
+                                               {{-- data-edit-url="{{ route('interactions.edit', $interaction->id) }}" --}}
+                                               data-show-url="{{ route('interactions.show', $interaction->id) }}">
                                                 #{{ $interaction->id }}
                                             </a>
                                         </td>
@@ -815,6 +885,31 @@
         </div>
     </div>
 
+    {{-- Modal de depuración --}}
+    <div class="modal fade" id="debugModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title">
+                        <i class="feather-alert-triangle me-2"></i>
+                        MODO DEPURACIÓN
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <h6>Elemento Clickeado:</h6>
+                    <pre id="debugElement" style="background: #f8f9fa; padding: 10px; border-radius: 5px; font-size: 0.9em;"></pre>
+
+                    <h6 class="mt-3">Datos Encontrados (dataset):</h6>
+                    <pre id="debugData" style="background: #e9ecef; padding: 10px; border-radius: 5px; font-size: 0.9em; white-space: pre-wrap;"></pre>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar Depuración</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     {{-- Modal mejorado --}}
     <div class="modal fade" id="detalleInteractionModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -926,7 +1021,7 @@
                 </div>
                 <div class="modal-footer pastel-modal-footer">
                     <button type="button" class="btn pastel-btn-light" data-bs-dismiss="modal">Cerrar</button>
-                    {{--<button type="button" class="btn pastel-btn-gradient" id="editFromModal">
+                    {{--                     <button type="button" class="btn pastel-btn-gradient" id="editFromModal">
                         <i class="feather-edit-3 me-1"></i> Editar
                     </button> --}}
                 </div>
@@ -1448,51 +1543,92 @@
                     });
                 });
 
-
                 // =================================================================
-                // == RESTO DE LA LÓGICA DE LA VISTA (Sin cambios relevantes) ==
+                // == MANEJO CORREGIDO DEL MODAL CON DELEGACIÓN DE EVENTOS ==
                 // =================================================================
 
-                // Manejo del Modal para ver detalles rápidos
-                document.addEventListener('click', function (e) {
-                    const interactionIdLink = e.target.closest('.interaction-id');
-                    if (interactionIdLink) {
-                        e.preventDefault();
-                        const el = interactionIdLink;
-                        currentInteractionId = el.dataset.id;
-                        // Llenar el modal con los datos (lógica existente)
-                        document.getElementById('modal-id').textContent = `RADICADO ${el.dataset.id}`;
-                        document.getElementById('modal-fecha').textContent = el.dataset.fecha;
-                        document.getElementById('modal-cliente').textContent = el.dataset.cliente;
-                        document.getElementById('modal-agent').textContent = el.dataset.agent;
-                        document.getElementById('modal-canal').textContent = el.dataset.canal;
-                        document.getElementById('modal-tipo').textContent = el.dataset.tipo;
-                        document.getElementById('modal-duracion').textContent = el.dataset.duracion;
-                        document.getElementById('modal-area').textContent = el.dataset.area;
-                        document.getElementById('modal-cargo').textContent = el.dataset.cargo;
-                        document.getElementById('modal-linea').textContent = el.dataset.linea;
-                        document.getElementById('modal-area-asig').textContent = el.dataset['area-asig'];
-                        document.getElementById('modal-proxima-fecha').textContent = el.dataset['proxima-fecha'] || '—';
-                        document.getElementById('modal-proxima-tipo').textContent = el.dataset['proxima-tipo'] || '—';
-                        document.getElementById('modal-notas').textContent = el.dataset.notas;
-                        
-                        const url = el.dataset.url;
-                        document.getElementById('modal-url').innerHTML = url && url !== 'null' ? 
-                            `<a href="${url}" target="_blank">Abrir enlace <i class="feather-external-link small"></i></a>` : '— No hay URL';
-                        
-                        const outcome = el.dataset.outcome;
-                        let resultadoStyle = '';
-                        switch(outcome) {
-                            case 'Exitoso': resultadoStyle = 'background-color: #E8F5E8 !important; color: #2E7D32 !important; border: 1px solid #C8E6C9 !important;'; break;
-                            case 'Pendiente': resultadoStyle = 'background-color: #FFF8E1 !important; color: #F57C00 !important; border: 1px solid #FFECB3 !important;'; break;
-                            case 'Fallido': resultadoStyle = 'background-color: #FFD6E0 !important; color: #D63384 !important; border: 1px solid #FFB3C1 !important;'; break;
-                            default: resultadoStyle = 'background-color: #E1F5FE !important; color: #0288D1 !important; border: 1px solid #B3E5FC !important;';
-                        }
-                        document.getElementById('modal-resultado').innerHTML = `<div style="min-width: 60px; text-align: center; transition: all 0.2s ease; border-radius: 8px; font-weight: 500; font-size: 0.6rem; ${resultadoStyle} padding: 2px 6px; display: flex; align-items: center; justify-content: center;"><span>${outcome}</span></div>`;
-                        document.getElementById('editFromModal').onclick = function() { window.location.href = el.dataset['edit-url']; };
-                        new bootstrap.Modal(document.getElementById('detalleInteractionModal')).show();
+                // Función para manejar el clic y mostrar los datos
+                function handleInteractionClick(event) {
+                    // Previene el comportamiento por defecto del enlace
+                    event.preventDefault();
+                    // Detiene la propagación del evento
+                    event.stopPropagation();
+
+                    console.log('>>> DEPURACIÓN: Clic detectado en el enlace del ID.');
+
+                    // Obtenemos el elemento que fue clickeado
+                    const el = event.target;
+                    const data = el.dataset;
+
+                    // --- INICIO DE LA DEPURACIÓN VISUAL ---
+                    console.log('>>> Elemento HTML clickeado:', el);
+                    console.log('>>> Objeto de datos (dataset):', data);
+
+                    // Llena el modal de depuración con la información
+                    document.getElementById('debugElement').textContent = el.outerHTML;
+                    document.getElementById('debugData').textContent = JSON.stringify(data, null, 2);
+
+                    // Muestra el modal de depuración
+                    const debugModal = new bootstrap.Modal(document.getElementById('debugModal'));
+                    debugModal.show();
+                    // --- FIN DE LA DEPURACIÓN VISUAL ---
+
+                    // --- LÓGICA PARA ABRIR EL MODAL PRINCIPAL ---
+                    document.getElementById('modal-id').textContent = `RADICADO ${data.id}`;
+                    document.getElementById('modal-fecha').textContent = data.fecha;
+                    document.getElementById('modal-cliente').textContent = data.cliente;
+                    document.getElementById('modal-agent').textContent = data.agent;
+                    document.getElementById('modal-canal').textContent = data.canal;
+                    document.getElementById('modal-tipo').textContent = data.tipo;
+                    document.getElementById('modal-duracion').textContent = data.duracion;
+                    document.getElementById('modal-area').textContent = data.area;
+                    document.getElementById('modal-cargo').textContent = data.cargo;
+                    document.getElementById('modal-linea').textContent = data.linea;
+                    document.getElementById('modal-area-asig').textContent = data.areaAsig;
+                    document.getElementById('modal-proxima-fecha').textContent = data.proximaFecha || '—';
+                    document.getElementById('modal-proxima-tipo').textContent = data.proximaTipo || '—';
+                    document.getElementById('modal-notas').textContent = data.notas;
+
+                    const url = data.url;
+                    document.getElementById('modal-url').innerHTML = url && url !== 'null' ?
+                        `<a href="${url}" target="_blank">Abrir enlace <i class="feather-external-link small"></i></a>` : '— No hay URL';
+
+                    const outcome = data.outcome;
+                    let resultadoStyle = '';
+                    switch(outcome) {
+                        case 'Exitoso': resultadoStyle = 'background-color: #E8F5E8 !important; color: #2E7D32 !important; border: 1px solid #C8E6C9 !important;'; break;
+                        case 'Pendiente': resultadoStyle = 'background-color: #FFF8E1 !important; color: #F57C00 !important; border: 1px solid #FFECB3 !important;'; break;
+                        case 'Fallido': resultadoStyle = 'background-color: #FFD6E0 !important; color: #D63384 !important; border: 1px solid #FFB3C1 !important;'; break;
+                        default: resultadoStyle = 'background-color: #E1F5FE !important; color: #0288D1 !important; border: 1px solid #B3E5FC !important;';
                     }
-                });
+                    document.getElementById('modal-resultado').innerHTML = `<div style="min-width: 60px; text-align: center; transition: all 0.2s ease; border-radius: 8px; font-weight: 500; font-size: 0.6rem; ${resultadoStyle} padding: 2px 6px; display: flex; align-items: center; justify-content: center;"><span>${outcome}</span></div>`;
+                    
+                    // Asigna la función al botón de editar del modal
+                    const editButton = document.getElementById('editFromModal');
+                    if (editButton) {
+                        editButton.onclick = function() { window.location.href = data.editUrl; };
+                    }
+
+                    // Muestra el modal principal
+                    const modalElement = document.getElementById('detalleInteractionModal');
+                    const modal = new bootstrap.Modal(modalElement);
+                    modal.show();
+                }
+
+                // Adjuntamos el listener al contenedor de las pestañas.
+                // Este contenedor no es modificado por DataTables, por lo que el listener siempre funcionará.
+                const tabContent = document.getElementById('interactionTabsContent');
+                if (tabContent) {
+                    tabContent.addEventListener('click', function(event) {
+                        // Usamos .matches() para comprobar si el clic fue en un elemento con la clase 'interaction-id'
+                        if (event.target.matches('.interaction-id')) {
+                            handleInteractionClick(event);
+                        }
+                    });
+                    console.log('>>> Listener de clic adjuntado correctamente a #interactionTabsContent');
+                } else {
+                    console.error('>>> ERROR: No se encontró el contenedor #interactionTabsContent');
+                }
 
                 // Función para aplicar filtros
                 function applyFilters() {
