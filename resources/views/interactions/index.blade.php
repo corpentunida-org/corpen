@@ -926,9 +926,9 @@
                 </div>
                 <div class="modal-footer pastel-modal-footer">
                     <button type="button" class="btn pastel-btn-light" data-bs-dismiss="modal">Cerrar</button>
-                    <button type="button" class="btn pastel-btn-gradient" id="editFromModal">
+                    {{--<button type="button" class="btn pastel-btn-gradient" id="editFromModal">
                         <i class="feather-edit-3 me-1"></i> Editar
-                    </button>
+                    </button> --}}
                 </div>
             </div>
         </div>

@@ -266,6 +266,7 @@ class InteractionController extends Controller
      */
     public function store(Request $request)
     {        
+        /* dd($request->all()); */
         $validatedData = $request->validate([
             'client_id'          => 'required|exists:MaeTerceros,cod_ter',
             'agent_id'           => 'required|exists:users,id',
@@ -289,6 +290,7 @@ class InteractionController extends Controller
             'id_cargo'              => 'nullable|integer|exists:gdo_cargo,id',
             'id_linea_de_obligacion'=> 'nullable|integer|exists:cre_lineas_creditos,id',
             'id_area_de_asignacion' => 'nullable|integer|exists:gdo_area,id',
+            'id_cargo_de_asignacion' => 'nullable|integer|exists:gdo_cargo,id',
             'id_distrito_interaccion' => 'nullable|integer|exists:MaeDistritos,COD_DIST',
             'start_time'            => 'nullable|date',
             'duration'              => 'nullable|integer|min:0',
@@ -408,6 +410,7 @@ class InteractionController extends Controller
             'id_cargo'              => 'nullable|integer|exists:gdo_cargo,id',
             'id_linea_de_obligacion'=> 'nullable|integer|exists:cre_lineas_creditos,id',
             'id_area_de_asignacion' => 'nullable|integer|exists:gdo_area,id',
+            'id_cargo_de_asignacion' => 'nullable|integer|exists:gdo_cargo,id',
             'id_distrito_interaccion' => 'nullable|integer|exists:MaeDistritos,COD_DIST',
             'start_time'            => 'nullable|date',
             'duration'              => 'nullable|integer|min:0',
