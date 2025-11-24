@@ -1263,45 +1263,126 @@
                 // =================================================================
 
                 /**
-                 * Inicializa o reinicializa DataTables en una tabla específica.
-                 * @param {string} tableId - El ID de la tabla a inicializar (ej. '#tablaPrincipal').
-                 */
+                * Inicializa o reinicializa DataTables en una tabla específica.
+                * Ahora comprueba si la tabla tiene datos antes de inicializar.
+                * @param {string} tableId - El ID de la tabla a inicializar (ej. '#tablaPrincipal').
+                */
                 function initializeDataTable(tableId) {
-                    // Si ya existe una instancia de DataTables, la destruimos para liberar memoria y evitar conflictos.
+                    // Si ya existe una instancia de DataTables de una pestaña anterior, la destruimos.
                     if (currentTable) {
-                        currentTable.destroy();
-                        currentTable = null;
+                        // Importante: solo destruimos la tabla si es diferente a la que queremos inicializar ahora.
+                        if (currentTable.settings()[0].nTable.id !== tableId.replace('#', '')) {
+                            currentTable.destroy();
+                            currentTable = null;
+                        }
                     }
 
-                    // Inicializamos la nueva instancia de DataTables en la tabla especificada.
-                    currentTable = $(tableId).DataTable({
-                        dom: 'Bfrtip',
-                        buttons: [
-                            { extend: 'excelHtml5', className: 'btn btn-sm pastel-btn-gradient', text: '<i class="feather-file-text me-1"></i>Excel' },
-                            { extend: 'pdfHtml5', className: 'btn btn-sm pastel-btn-gradient', text: '<i class="feather-file me-1"></i>PDF' },
-                            { extend: 'print', className: 'btn btn-sm pastel-btn-light', text: '<i class="feather-printer me-1"></i>Imprimir' }
-                        ],
-                        pageLength: 20,
-                        order: [[0, 'desc']],
-                        language: {
-                            url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
-                            emptyTable: "No hay datos disponibles en la tabla",
-                            info: "Mostrando _START_ a _END_ de _TOTAL_ registros",
-                            infoEmpty: "Mostrando 0 a 0 de 0 registros",
-                            lengthMenu: "Mostrar _MENU_ registros",
-                            loadingRecords: "Cargando...",
-                            processing: "Procesando...",
-                            search: "Buscar:",
-                            zeroRecords: "No se encontraron resultados coincidentes",
-                            paginate: { first: "Primero", last: "Último", next: "Siguiente", previous: "Anterior" }
-                        },
-                        initComplete: function () {
-                            // Una vez que la tabla se ha inicializado, actualizamos el contador de resultados.
-                            updateResultCount();
+                    const $table = $(tableId);
+
+                    // Comprobación crucial: ¿La tabla tiene datos reales o solo el mensaje de "vacío"?
+                    // Contamos las filas que NO tienen un 'colspan' en su primera celda.
+                    const hasDataRows = $table.find('tbody tr').filter(function() {
+                        return $(this).find('td:first').attr('colspan') === undefined;
+                    }).length > 0;
+
+                    if (hasDataRows) {
+                        // Si hay datos, destruimos la instancia anterior (si existe) e inicializamos DataTables.
+                        if (currentTable) {
+                            currentTable.destroy();
+                        }
+                        
+                        currentTable = $table.DataTable({
+                            dom: 'Bfrtip',
+                            buttons: [
+                                { extend: 'excelHtml5', className: 'btn btn-sm pastel-btn-gradient', text: '<i class="feather-file-text me-1"></i>Excel' },
+                                { extend: 'pdfHtml5', className: 'btn btn-sm pastel-btn-gradient', text: '<i class="feather-file me-1"></i>PDF' },
+                                { extend: 'print', className: 'btn btn-sm pastel-btn-light', text: '<i class="feather-printer me-1"></i>Imprimir' }
+                            ],
+                            pageLength: 20,
+                            order: [[0, 'desc']],
+                            language: {
+                                url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
+                                emptyTable: "No hay datos disponibles en la tabla",
+                                info: "Mostrando _START_ a _END_ de _TOTAL_ registros",
+                                infoEmpty: "Mostrando 0 a 0 de 0 registros",
+                                lengthMenu: "Mostrar _MENU_ registros",
+                                loadingRecords: "Cargando...",
+                                processing: "Procesando...",
+                                search: "Buscar:",
+                                zeroRecords: "No se encontraron resultados coincidentes",
+                                paginate: { first: "Primero", last: "Último", next: "Siguiente", previous: "Anterior" }
+                            },
+                            initComplete: function () {
+                                // Una vez que la tabla se ha inicializado, actualizamos el contador de resultados.
+                                updateResultCount();
+                            },
+                            autoWidth: false,
+                            columnDefs: [
+                                { width: "5%", targets: 0 },  // ID
+                                { width: "10%", targets: 1 }, // Distrito
+                                { width: "8%", targets: 2 },  // Fecha
+                                { width: "15%", targets: 3 }, // Cliente
+                                { width: "8%", targets: 4 },  // Canal
+                                { width: "8%", targets: 5 },  // Área
+                                { width: "8%", targets: 6 },  // Cargo
+                                { width: "8%", targets: 7 },  // Línea
+                                { width: "10%", targets: 8 }, // Resultado
+                                { width: "12%", targets: 9 }, // Próxima Acción
+                                { width: "8%", targets: 10, orderable: false } // Acciones
+                            ]
+                        });
+
+                    } else {
+                        // Si no hay datos (solo la fila de "vacío"), no hacemos nada.
+                        // Esto evita el error de "Incorrect column count".
+                        // Nos aseguramos de que no quede una instancia de una tabla anterior.
+                        if (currentTable) {
+                            currentTable.destroy();
+                            currentTable = null;
+                        }
+                        console.log(`Tabla ${tableId} está vacía. No se inicializará DataTables.`);
+                        // Actualizamos el contador para que sea coherente
+                        document.getElementById('resultCount').textContent = 'Mostrando 0 de 0 resultados';
+                    }
+                }
+                function verifyTableStructure() {
+                    const tables = ['#tablaPrincipal', '#tablaExitosos', '#tablaPendientes', '#tablaHoy'];
+                    let expectedColumns = null;
+                    
+                    tables.forEach(tableId => {
+                        const table = $(tableId);
+                        if (table.length) {
+                            const headerColumns = table.find('thead th').length;
+                            const firstRow = table.find('tbody tr:first');
+                            const firstCell = firstRow.find('td:first');
+                            let bodyColumns = 0;
+
+                            if (firstCell.length) {
+                                const colspan = firstCell.attr('colspan');
+                                if (colspan !== undefined) {
+                                    // Si hay colspan, ese es el número de columnas que representa
+                                    bodyColumns = parseInt(colspan, 10);
+                                } else {
+                                    // Si no hay colspan, contamos las celdas de la fila
+                                    bodyColumns = firstRow.find('td').length;
+                                }
+                            }
+                            
+                            if (expectedColumns === null) {
+                                expectedColumns = headerColumns;
+                                console.log(`Tabla ${tableId}: Se esperan ${expectedColumns} columnas`);
+                            }
+                            
+                            if (headerColumns !== expectedColumns || bodyColumns !== expectedColumns) {
+                                console.error(`Error en ${tableId}: Se esperaban ${expectedColumns} columnas, se encontraron ${headerColumns} en el encabezado y ${bodyColumns} en el cuerpo (contando colspan)`);
+                            } else {
+                                console.log(`Tabla ${tableId}: Estructura correcta con ${headerColumns} columnas`);
+                            }
+                        } else {
+                            console.warn(`Tabla ${tableId} no encontrada en el DOM`);
                         }
                     });
                 }
-
                 /**
                  * Actualiza el texto del contador de resultados debajo de los filtros.
                  */
