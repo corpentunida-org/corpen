@@ -110,7 +110,7 @@ class SegNovedadesController extends Controller
             'novedad' => $novedad->id,
             'estado' => $request->estado,
             'observaciones' => strtoupper($request->observaciones),
-            'fechaIncio' => Carbon::now()->toDateString(),
+            'fechaInicio' => Carbon::now()->toDateString(),
         ]);
         if ($request->tipoNovedad === '1') {
             $accion = 'modificacion en poliza  ' . $request->id_poliza . ' Asegurado ' . $request->asegurado;
@@ -166,9 +166,10 @@ class SegNovedadesController extends Controller
     public function edit($id)
     {
         $novedad = SegNovedades::with(['poliza', 'estadoNovedad', 'cambiosEstado'])->findOrFail($id);
+        $actividadnov = SegCambioEstadoNovedad::where('novedad', $id)->with('estadosname')->get();
         if ($novedad->estado != 1) {
             $editar = false;
-            return view('seguros.novedades.edit', compact('novedad', 'editar'))
+            return view('seguros.novedades.edit', compact('novedad','editar','actividadnov'))
                 ->with('error', 'La novedad no esta en estado nueva solicitud. No se puede editar.');
             //return back()->with('error', 'La novedad no esta en estado nueva solicitud. No se puede editar.');
         }
@@ -177,7 +178,7 @@ class SegNovedadesController extends Controller
             //return redirect()->route('seguros.novedades.index')->with('error', 'La novedad de ingresar beneficiario no se puede editar.');
         }
         $editar = true;
-        return view('seguros.novedades.edit', compact('novedad','editar'));
+        return view('seguros.novedades.edit', compact('novedad','editar','actividadnov'));
     }
 
     public function update(Request $request, $id)
@@ -192,7 +193,9 @@ class SegNovedadesController extends Controller
                 'novedad' => $id,
                 'estado' => $request->estado,
                 'observaciones' => $request->observaciones,
+                'fechaInicio' => Carbon::now()->toDateTimeString(),
             ]);
+            $this->auditoria('SE EDITO UNA NOVEDAD, ID: ' . $id);
             return redirect()->route('seguros.novedades.index')->with('success', 'Se actualizó correctamente la novedad.');
         } else {
             foreach ($request->ids as $id) {
@@ -217,13 +220,13 @@ class SegNovedadesController extends Controller
                             'primapagar' => $novedad->primaCorpen,
                             'valor_asegurado' => $novedad->valorAsegurado,
                             'active' => true,
-                            'fecha_inicio' => Carbon::now()->toDateString(),
+                            'fecha_inicio' => Carbon::now()->toDateTimeString(),
                         ]);
                     } elseif ($novedad->tipo == 3) {
                         $poliza = SegPoliza::findOrFail($novedad->id_poliza);
                         $poliza->update([
                             'active' => false,
-                            'fecha_fin' => Carbon::now()->toDateString(),
+                            'fecha_fin' => Carbon::now()->toDateTimeString(),
                         ]);
                     } elseif ($novedad->tipo == 4) {
                         $beneficiario = SegBeneficiario::findOrFail($novedad->beneficiario_id);
@@ -237,14 +240,17 @@ class SegNovedadesController extends Controller
                     'novedad' => $id,
                     'estado' => $request->estado,
                     'observaciones' => strtoupper($request->observaciones),
-                    'fechaCierre' => Carbon::now()->toDateString(),
+                    'fechaInicio' => Carbon::now()->toDateTimeString(),
+                    'fechaCierre' => Carbon::now()->toDateTimeString(),
                 ]);
-                return redirect()->route('seguros.novedades.index')->with('success', 'Se actualizó correctamente el cambio de estado.');
+                $this->auditoria('SE ACTUALIZO EL ESTADO NOVEDAD, ID: ' . $novedad->id);
             }
+            return redirect()->route('seguros.novedades.index')->with('success', 'Se actualizó correctamente el cambio de estado.');
         }
     }
     public function destroy(Request $request, $id)
     {
+        //registrar una novedad de retiro
         $request->validate([
             'formulario_nov' => 'required|mimes:pdf|max:2048',
         ]);
@@ -261,7 +267,7 @@ class SegNovedadesController extends Controller
             'novedad' => $novedad->id,
             'estado' => $request->estado,
             'observaciones' => strtoupper($request->observacionretiro),
-            'fechaIncio' => Carbon::now()->toDateString(),
+            'fechaIncio' => Carbon::now()->toDateTimeString(),
         ]);
         return redirect()->route('seguros.novedades.index')->with('success', 'Novedad registrada correctamente');
     }

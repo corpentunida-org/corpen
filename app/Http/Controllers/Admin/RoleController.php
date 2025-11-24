@@ -7,20 +7,29 @@ use App\Models\User;
 use App\Models\Role;
 use App\Models\Action;
 use App\Models\Permisos;
+use App\Http\Controllers\AuditoriaController;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
 class RoleController extends Controller
-{
-    public function index()
+{   
+    private function auditoria($accion)
     {
-        $roles = Role::with(['permissions','permissionsRole'])->get();
-        return view('admin.roles.index',compact('roles'));
+        $auditoriaController = app(AuditoriaController::class);
+        $auditoriaController->create($accion, "ADMINISTRACIÓN");
     }
 
-    public function store(Request $request){
+    public function index()
+    {
+        $roles = Role::with(['permissions', 'permissionsRole'])->get();
+        return view('admin.roles.index', compact('roles'));
+    }
+
+    public function store(Request $request)
+    {
         $role = Role::create([
             'name' => strtolower($request->input('namerole')),
-            'guard_name' => 'web'
+            'guard_name' => 'web',
         ]);
         if (!$role) {
             return redirect()->back()->with('error', 'No se pudo crear el rol');
@@ -28,11 +37,20 @@ class RoleController extends Controller
         return redirect()->back()->with('success', 'Rol creado con éxito');
     }
 
-    public function destroy(Request $request, $idUser){
-        
+    public function destroy(Request $request, $idUser)
+    {
+        $user = User::find($idUser);
+        $role = Role::find($request->rol);
+        if (!$user) {
+            return redirect()->back()->with('error', 'Usuario no encontrado');
+        }
+        DB::table('actions')->where('user_id', $user->id)->where('role_id', $request->rol)->delete();
+        $this->auditoria("Se eliminó rol ". $role->name ." al usuario " . $user->email);
+        return redirect()->back()->with('success', 'Rol eliminado correctamente');
     }
 
-    public function update(Request $request, Role $role){
+    public function update(Request $request, Role $role)
+    {
         //$role = Role::find($request->input('roleid'));
         $currentPermissions = $role->permissions()->pluck('id')->toArray();
         $permissions = $request->input('permissions', []);
@@ -47,5 +65,4 @@ class RoleController extends Controller
         }
         return redirect()->back()->with('success', 'Permisos actualizados al rol correctamente.');
     }
-
 }
