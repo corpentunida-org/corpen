@@ -115,6 +115,7 @@
         }
     </style>
 
+    {{-- Encabezado --}}
     <div class="header">
         <table style="border: none; width: 100%;">
             <tr style="border: none">
@@ -130,6 +131,8 @@
             </tr>
         </table>
     </div>
+
+    {{-- Descripción --}}
     <table class="tabla-certificado" style="margin: 5px;">
         <tr>
             <th colspan="4">{{ $tercero->nom_ter }}</th>
@@ -184,37 +187,35 @@
         </tr>
     </table>
 
-
-
+    {{-- Beneficios --}}
     <table style="width:100%; vertical-align: top;">
         <tr>
             <td style="width:33%; vertical-align: top;">
                 <table class="tabla-certificado">
-                    
                     <tr>
                         <th colspan="2">BENEFICIOS</th>
                     </tr>
-                    
-
-                    <tr>
-                        <td style="background:#f4f4f4;font-weight:bold;">SUBTOTAL OTROS BENEFICIOS</td>
-                        <td class="centrado" style="background:#f4f4f4;font-weight:bold;">$0</td>
-                    </tr>
-
-                    <tr>
-                        <td style="background:#f4f4f4;font-weight:bold;">SUBTOTAL BENEFICIO POR ANTIGÜEDAD</td>
-                        <td class="centrado" style="background:#f4f4f4;font-weight:bold;">$30,988,502</td>
-                    </tr>
-
+                    @foreach ($opciones[1] as $item)
+                        <tr>
+                            @if ($item->id == 1)
+                                <td style="background:#f4f4f4;font-weight:bold;">{{ $item->nombre }}</td>
+                                <td style="background:#f4f4f4;font-weight:bold;">
+                            @else
+                                <td>{{ $item->nombre }}</td>
+                                <td>
+                            @endif
+                                {{ isset($valores[$item->id]) ? '$'.number_format($valores[$item->id]) : '' }}</td>
+                        </tr>
+                    @endforeach
                     <tr>
                         <td style="background:#f4f4f4;font-weight:bold;">TOTAL BRUTO BENEFICIO POR ANTIGÜEDAD</td>
-                        <td class="centrado" style="background:#f4f4f4;font-weight:bold;">$30,988,502</td>
+                        <td style="background:#f4f4f4;font-weight:bold;">$</td>
                     </tr>
                 </table>
             </td>
 
             <!-- BASE RETENCIÓN -->
-            <td style="width:33%; vertical-align: top;">
+            <td style="width:34%; vertical-align: top;">
                 <table class="tabla-certificado">
                     <tr>
                         <th colspan="3">BASE RETENCIÓN</th>
@@ -222,8 +223,8 @@
 
                     <tr>
                         <td>DECLARA RENTA</td>
-                        <td class="centrado">NO</td>
-                        <td class="centrado">$30,988,502</td>
+                        <td class="centrado"></td>
+                        <td class="centrado"></td>
                     </tr>
 
                     <tr>
@@ -232,49 +233,16 @@
 
                     <tr>
                         <td>RETENCIÓN EN LA FUENTE</td>
-                        <td class="centrado">0.035</td>
-                        <td class="centrado">$1,084,598</td>
+                        <td class="centrado"></td>
+                        <td class="centrado"></td>
                     </tr>
-                    <tr>
-                        <td>SEGURO DE VIDA 2025</td>
-                        <td></td>
-                        <td class="centrado">$2,143,500</td>
-                    </tr>
-                    <tr>
-                        <td>EXEQUIALES</td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>RAPICREDITO</td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>ANTICIPO SEGURO DE VIDA</td>
-                        <td></td>
-                        <td class="centrado">$2,442,900</td>
-                    </tr>
-                    <tr>
-                        <td>ANTICIPO RAPICRÉDITO</td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>CRÉDITO LIBRE INVERSIÓN MAYORES</td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>LIBRERÍA</td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>VEJEZ E INVALIDEZ</td>
-                        <td></td>
-                        <td></td>
-                    </tr>
+                    @foreach ($opciones[2] as $item)
+                        <tr>
+                            <td colspan="2">{{ $item->nombre }}</td>                            
+                            <td>{{ isset($valores[$item->id]) ? '$'.number_format($valores[$item->id]) : '' }}</td>
+                        </tr>
+                    @endforeach
+                    
 
                     <tr>
                         <td colspan="2" style="background:#f4f4f4;font-weight:bold;">TOTAL DESCUENTOS</td>
@@ -308,7 +276,7 @@
 
                     <tr>
                         <td colspan="2" style="font-size:28px; font-weight:bold; text-align:center; padding:15px;">
-                            $25,317,504
+                            {{ $retiro->beneficioAntiguedad }}
                         </td>
                     </tr>
                 </table>

@@ -167,7 +167,7 @@
                     <div class="d-flex flex-row-reverse gap-2 mt-2">
                         <button class="btn btn-danger mt-4" data-bs-toggle="tooltip"
                             title="Timesheets"type="submit">
-                            <i class="feather-plus me-2"></i>
+                            <i class="bi bi-trash3-fill me-2"></i>
                             <span>Eliminar</span>
                         </button>
                     </div>

@@ -44,9 +44,9 @@ class CondicionesRetirosController extends Controller
         foreach ($ret_opciones as $r) {
             $valores[$r->id_opcion] = $r->valor;
         }
-        //return view('cinco.retiros.liquidacionpdf', compact('image_path', 'tercero', 'retiro', 'ret_opciones', 'opciones','valores'));
-        $pdf = Pdf::loadView('cinco.retiros.liquidacionpdf', compact( 'image_path','tercero', 'retiro','ret_opciones', 'opciones','valores'))
+        return view('cinco.retiros.liquidacionpdf', compact('image_path', 'tercero', 'retiro', 'ret_opciones', 'opciones','valores'));
+        /*$pdf = Pdf::loadView('cinco.retiros.liquidacionpdf', compact( 'image_path','tercero', 'retiro','ret_opciones', 'opciones','valores'))
             ->setPaper('letter', 'landscape');
-        return $pdf->download(date('Y-m-d') . " Reporte " . $id . '.pdf');
+        return $pdf->download(date('Y-m-d') . " Reporte " . $id . '.pdf');*/
     }
 }
