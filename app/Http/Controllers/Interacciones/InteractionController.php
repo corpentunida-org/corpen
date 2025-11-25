@@ -611,6 +611,40 @@ class InteractionController extends Controller
     }
 
     /**
+     * 🆕 Actualizar el COD_DIST de un cliente.
+     *
+     * @param  int  $client_id  (Este es el cod_ter)
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function updateClientDistrict($client_id, Request $request)
+    {
+        // Validar que se proporcionó un district_id
+        $request->validate([
+            'district_id' => 'required|string|max:255',
+        ]);
+
+        // Buscamos el cliente usando su cod_ter
+        $client = maeTerceros::find($client_id);
+
+        if (!$client) {
+            // Si no se encuentra el cliente, devolvemos un error 404
+            return response()->json(['error' => 'Cliente no encontrado'], 404);
+        }
+
+        // Actualizamos el código del distrito
+        $client->cod_dist = $request->input('district_id');
+        $client->save();
+
+        // Devolvemos una respuesta exitosa
+        return response()->json([
+            'success' => true,
+            'message' => 'Distrito actualizado correctamente',
+            'district_id' => $client->cod_dist,
+        ]);
+    }
+
+    /**
      * Formulario para editar una interacción existente.
      */
 /*
