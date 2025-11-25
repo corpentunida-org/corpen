@@ -324,8 +324,12 @@ Route::prefix('interactions')
     
     // 📌 AJAX: Buscar clientes para Select2
     Route::get('/search-clients', [InteractionController::class, 'searchClients'])->name('search-clients');
+
     // 🆕 NUEVA RUTA: Obtener el distrito de un cliente
     Route::get('/clientes/{client_id}/distrito', [InteractionController::class, 'getClientDistrict'])->name('clientes.distrito');
+    // 🆕 NUEVA RUTA: Actualizar el distrito de un cliente
+    Route::put('/clientes/{client_id}/actualizar-distrito', [InteractionController::class, 'updateClientDistrict'])->name('clientes.actualizar-distrito');
+
     // --- 📡 GRUPO DE RUTAS PARA CANALES DE INTERACCIÓN ---
     Route::prefix('channels')->name('channels.')->group(function () {
         Route::get('/', [IntChannelController::class, 'index'])->name('index');
