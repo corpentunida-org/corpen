@@ -495,6 +495,14 @@
                                                data-show-url="{{ route('interactions.show', $interaction->id) }}">
                                                 #{{ $interaction->id }}
                                             </a>
+                                            @if ($interaction->attachment_urls)
+                                                <a href="{{ $interaction->getFile($interaction->attachment_urls) }}"
+                                                target="_blank"
+                                                class="ms-2 text-info"
+                                                title="Ver archivo adjunto">
+                                                    <i class="fas fa-paperclip"></i>
+                                                </a>
+                                            @endif
                                         </td>
                                         <td>
                                             {{ $interaction->DistritoDeObligacion->NOM_DIST ?? ' ' }}
@@ -629,6 +637,14 @@
                                                data-show-url="{{ route('interactions.show', $interaction->id) }}">
                                                 #{{ $interaction->id }}
                                             </a>
+                                            @if ($interaction->attachment_urls)
+                                                <a href="{{ $interaction->getFile($interaction->attachment_urls) }}"
+                                                target="_blank"
+                                                class="ms-2 text-info"
+                                                title="Ver archivo adjunto">
+                                                    <i class="fas fa-paperclip"></i>
+                                                </a>
+                                            @endif
                                         </td>
                                         <td>
                                             {{ $interaction->DistritoDeObligacion->NOM_DIST ?? ' ' }}
@@ -763,6 +779,14 @@
                                                data-show-url="{{ route('interactions.show', $interaction->id) }}">
                                                 #{{ $interaction->id }}
                                             </a>
+                                            @if ($interaction->attachment_urls)
+                                                <a href="{{ $interaction->getFile($interaction->attachment_urls) }}"
+                                                target="_blank"
+                                                class="ms-2 text-info"
+                                                title="Ver archivo adjunto">
+                                                    <i class="fas fa-paperclip"></i>
+                                                </a>
+                                            @endif
                                         </td>
                                         <td>
                                             {{ $interaction->DistritoDeObligacion->NOM_DIST ?? ' ' }}
@@ -886,6 +910,7 @@
     </div>
 
     {{-- Modal de depuración --}}
+{{--     -
     <div class="modal fade" id="debugModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -909,6 +934,7 @@
             </div>
         </div>
     </div>
+    - --}}
 
     {{-- Modal mejorado --}}
     <div class="modal fade" id="detalleInteractionModal" tabindex="-1" aria-hidden="true">
@@ -1560,6 +1586,7 @@
                     const el = event.target;
                     const data = el.dataset;
 
+                    /*  -
                     // --- INICIO DE LA DEPURACIÓN VISUAL ---
                     console.log('>>> Elemento HTML clickeado:', el);
                     console.log('>>> Objeto de datos (dataset):', data);
@@ -1572,6 +1599,7 @@
                     const debugModal = new bootstrap.Modal(document.getElementById('debugModal'));
                     debugModal.show();
                     // --- FIN DE LA DEPURACIÓN VISUAL ---
+                    - */
 
                     // --- LÓGICA PARA ABRIR EL MODAL PRINCIPAL ---
                     document.getElementById('modal-id').textContent = `RADICADO ${data.id}`;
@@ -1652,21 +1680,68 @@
 
                 // SweetAlert — confirmaciones
                 function confirmarAccion(titulo, texto, icono, callback) {
-                    Swal.fire({ title: titulo, text: texto, icon: icono, showCancelButton: true, confirmButtonColor: '#E6F3FF', cancelButtonColor: '#F8E8FF', confirmButtonText: 'Sí, continuar', cancelButtonText: 'Cancelar', background: 'rgba(255, 255, 255, 0.9)', backdrop: 'rgba(0, 0, 0, 0.1)' }).then((result) => { if (result.isConfirmed) callback(); });
+                    Swal.fire({ 
+                        title: titulo, 
+                        text: texto, 
+                        icon: icono, 
+                        showCancelButton: true, 
+                        confirmButtonColor: '#E6F3FF', 
+                        cancelButtonColor: '#F8E8FF', 
+                        confirmButtonText: 'Sí, continuar', 
+                        cancelButtonText: 'Cancelar', 
+                        background: 'rgba(255, 255, 255, 0.9)', 
+                        backdrop: 'rgba(0, 0, 0, 0.1)' 
+                    }).then((result) => { 
+                        if (result.isConfirmed) callback(); 
+                    });
                 }
-                document.querySelectorAll('.btnCrear').forEach(btn => { btn.addEventListener('click', function (e) { e.preventDefault(); confirmarAccion('¿Crear una nueva Interacción?', 'Serás redirigido al formulario de creación.', 'info', () => { window.location.href = btn.getAttribute('href'); }); }); });
-                document.querySelectorAll('.formEliminar').forEach(form => { form.addEventListener('submit', function (e) { e.preventDefault(); confirmarAccion('¿Eliminar esta Interacción?', 'Esta acción eliminará la interacción y todos sus datos relacionados. Esta acción no se puede deshacer.', 'warning', () => { form.submit(); }); }); });
+                
+                document.querySelectorAll('.btnCrear').forEach(btn => { 
+                    btn.addEventListener('click', function (e) { 
+                        e.preventDefault(); 
+                        confirmarAccion('¿Crear una nueva Interacción?', 'Serás redirigido al formulario de creación.', 'info', () => { 
+                            window.location.href = btn.getAttribute('href'); 
+                        }); 
+                    }); 
+                });
+                
+                document.querySelectorAll('.formEliminar').forEach(form => { 
+                    form.addEventListener('submit', function (e) { 
+                        e.preventDefault(); 
+                        confirmarAccion('¿Eliminar esta Interacción?', 'Esta acción eliminará la interacción y todos sus datos relacionados. Esta acción no se puede deshacer.', 'warning', () => { 
+                            form.submit(); 
+                        }); 
+                    }); 
+                });
 
                 // Atajos de teclado
                 document.addEventListener('keydown', function(e) {
-                    if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); $('#filterSearch').focus(); }
-                    if ((e.ctrlKey || e.metaKey) && e.key === 'n') { e.preventDefault(); window.location.href = "{{ route('interactions.create') }}"; }
-                    if (e.key === 'Enter' && (e.target.id === 'filterSearch' || e.target.classList.contains('pastel-select'))) { e.preventDefault(); applyFilters(); }
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'k') { 
+                        e.preventDefault(); 
+                        $('#filterSearch').focus(); 
+                    }
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'n') { 
+                        e.preventDefault(); 
+                        window.location.href = "{{ route('interactions.create') }}"; 
+                    }
+                    if (e.key === 'Enter' && (e.target.id === 'filterSearch' || e.target.classList.contains('pastel-select'))) { 
+                        e.preventDefault(); 
+                        applyFilters(); 
+                    }
                 });
 
                 // Efectos de entrada
-                $('.excel-row').each(function(index) { $(this).css({ 'opacity': '0', 'transform': 'translateY(5px)' }); setTimeout(() => { $(this).animate({ 'opacity': '1', 'transform': 'translateY(0)' }, 200); }, index * 20); });
-                $('.glassmorphism-card').each(function(index) { $(this).addClass('fade-in-up'); $(this).css('animation-delay', `${index * 0.05}s`); });
+                $('.excel-row').each(function(index) { 
+                    $(this).css({ 'opacity': '0', 'transform': 'translateY(5px)' }); 
+                    setTimeout(() => { 
+                        $(this).animate({ 'opacity': '1', 'transform': 'translateY(0)' }, 200); 
+                    }, index * 20); 
+                });
+                
+                $('.glassmorphism-card').each(function(index) { 
+                    $(this).addClass('fade-in-up'); 
+                    $(this).css('animation-delay', `${index * 0.05}s`); 
+                });
             });
         </script>
     @endpush

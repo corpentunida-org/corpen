@@ -1496,31 +1496,39 @@
                                             <div class="invalid-feedback d-block">{{ $message }}</div>
                                         @enderror
                                     </div>
-                                    <div class="col-md-6">
-                                        <label for="id_distrito_interaccion" class="form-label fw-semibold text-muted small">
-                                            <i class="feather-map-pin me-1"></i>Distrito de la Interacción
-                                        </label>
-                                        <div class="input-group">
-                                            <select class="form-select select2 @error('id_distrito_interaccion') is-invalid @enderror"
-                                                    id="id_distrito_interaccion" name="id_distrito_interaccion">
-                                                <option value="">Selecciona un distrito</option>
-                                                @if (isset($distrito))
-                                                    @foreach ($distrito as $id => $nombre)
-                                                        <option value="{{ $id }}" {{ old('id_distrito_interaccion', $interaction->id_distrito_interaccion ?? '') == $id ? 'selected' : '' }}>
-                                                            {{ $nombre }}
-                                                        </option>
-                                                    @endforeach
-                                                @endif
-                                            </select>
-                                            <button class="btn btn-outline-secondary" type="button" id="update-district-btn" title="Actualiza el campo de distrito con la información del cliente seleccionado.">
-                                                <i class="feather-refresh-cw"></i>
-                                            </button>
-                                        </div>
-                                        <div class="form-text mt-1">Selecciona el distrito o usa el botón para sincronizarlo con los datos del cliente.</div>
-                                        @error('id_distrito_interaccion')
-                                            <div class="invalid-feedback d-block">{{ $message }}</div>
-                                        @enderror
-                                    </div>
+<div class="col-md-6">
+    <label for="id_distrito_interaccion" class="form-label fw-semibold text-muted small">
+        <i class="feather-map-pin me-1"></i>Distrito de la Interacción
+    </label>
+    <div class="input-group">
+        <select class="form-select select2 @error('id_distrito_interaccion') is-invalid @enderror"
+                id="id_distrito_interaccion" name="id_distrito_interaccion">
+            <option value="">Selecciona un distrito</option>
+            @if (isset($distrito))
+                @foreach ($distrito as $id => $nombre)
+                    <option value="{{ $id }}" {{ old('id_distrito_interaccion', $interaction->id_distrito_interaccion ?? '') == $id ? 'selected' : '' }}>
+                        {{ $nombre }}
+                    </option>
+                @endforeach
+            @endif
+        </select>
+        <button class="btn btn-outline-secondary" type="button" id="sync-from-client-btn" 
+                title="Sincroniza el campo de distrito con la información del cliente seleccionado.">
+            <i class="feather-download"></i>
+        </button>
+        <button class="btn btn-outline-primary" type="button" id="sync-to-client-btn" 
+                title="Actualiza el distrito del cliente con el valor seleccionado en este formulario.">
+            <i class="feather-upload"></i>
+        </button>
+    </div>
+    <div class="form-text mt-1">
+        Selecciona el distrito, usa el botón de descarga para sincronizar desde el cliente 
+        o el botón de subida para actualizar el cliente.
+    </div>
+    @error('id_distrito_interaccion')
+        <div class="invalid-feedback d-block">{{ $message }}</div>
+    @enderror
+</div>
                                 </div>
                             </div>
                         </div>
@@ -1540,19 +1548,26 @@
                         <!-- Script Unificado para Autocompletado y Sincronización -->
                         <script>
                         document.addEventListener("DOMContentLoaded", function() {
-                            // --- Elementos del DOM para la lógica de autocompletado ---
+                            // =================================================================
+                            // ELEMENTOS DEL DOM PARA LA LÓGICA DE AUTOCOMPLETADO
+                            // =================================================================
                             const infoTab = document.getElementById('adicional-tab');
                             const handledByMeRadio = document.getElementById('handled_by_me');
                             const handledByOtherRadio = document.getElementById('handled_by_other');
                             const areaAsignacionSelect = document.getElementById('id_area_de_asignacion');
                             const cargoAsignacionSelect = document.getElementById('id_cargo_asignacion');
 
-                            // --- Elementos del DOM para la lógica de sincronización de distrito ---
+                            // =================================================================
+                            // ELEMENTOS DEL DOM PARA LA LÓGICA DE SINCRONIZACIÓN DE DISTRITO
+                            // =================================================================
                             const clientSelect = document.getElementById('client_id');
                             const districtSelect = document.getElementById('id_distrito_interaccion');
-                            const updateDistrictBtn = document.getElementById('update-district-btn');
+                            const syncFromClientBtn = document.getElementById('sync-from-client-btn'); // Botón para sincronizar desde cliente
+                            const syncToClientBtn = document.getElementById('sync-to-client-btn'); // Botón para actualizar cliente
 
-                            // --- Lógica de Autocompletado de Asignación ---
+                            // =================================================================
+                            // LÓGICA DE AUTOCOMPLETADO DE ASIGNACIÓN
+                            // =================================================================
                             function handleAssignmentChange() {
                                 if (!areaAsignacionSelect || !cargoAsignacionSelect || !infoTab) return;
 
@@ -1581,10 +1596,11 @@
                             // Ejecutar la función una vez al cargar la página para establecer el estado inicial
                             handleAssignmentChange();
 
-
-                            // --- Lógica de Sincronización de Distrito ---
-                            async function handleUpdateDistrictClick() {
-                                if (!clientSelect || !districtSelect || !updateDistrictBtn) return;
+                            // =================================================================
+                            // LÓGICA DE SINCRONIZACIÓN DE DISTRITO DESDE CLIENTE
+                            // =================================================================
+                            async function handleSyncFromClientClick() {
+                                if (!clientSelect || !districtSelect || !syncFromClientBtn) return;
                                 
                                 const selectedClientId = clientSelect.value;
                                 if (!selectedClientId) {
@@ -1592,14 +1608,34 @@
                                     return;
                                 }
 
-                                updateDistrictBtn.disabled = true;
-                                updateDistrictBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+                                syncFromClientBtn.disabled = true;
+                                syncFromClientBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
 
                                 try {
-                                    const response = await fetch(`/interacciones/clientes/${selectedClientId}/distrito`);
-                                    if (!response.ok) throw new Error('Error en la respuesta del servidor.');
+                                    console.log(`Intentando obtener distrito para cliente ID: ${selectedClientId}`);
+                                    
+                                    // ✅ MEJOR PRÁCTICA: Usar el helper de ruta de Laravel
+                                    const url = "{{ route('interactions.clientes.distrito', ':id') }}".replace(':id', selectedClientId);
+                                    const response = await fetch(url);
+                                    
+                                    console.log('Respuesta del servidor:', response.status, response.statusText);
+                                    
+                                    if (!response.ok) {
+                                        let errorMessage = `Error ${response.status}: ${response.statusText}`;
+                                        try {
+                                            const errorData = await response.json();
+                                            if (errorData.error) {
+                                                errorMessage = errorData.error;
+                                            }
+                                        } catch (e) {
+                                            console.log('No se pudo parsear el error como JSON');
+                                        }
+                                        throw new Error(errorMessage);
+                                    }
 
                                     const data = await response.json();
+                                    console.log('Datos recibidos:', data);
+                                    
                                     const newDistrictId = data.district_id;
 
                                     if (newDistrictId) {
@@ -1607,22 +1643,136 @@
                                         if (typeof jQuery !== 'undefined' && jQuery().select2) {
                                             jQuery(districtSelect).trigger('change');
                                         }
-                                        Swal.fire({ icon: 'success', title: 'Actualizado', text: 'El distrito ha sido sincronizado.', timer: 2000, showConfirmButton: false });
+                                        Swal.fire({ 
+                                            icon: 'success', 
+                                            title: 'Actualizado', 
+                                            text: 'El distrito ha sido sincronizado desde el cliente.', 
+                                            timer: 2000, 
+                                            showConfirmButton: false 
+                                        });
                                     } else {
-                                        Swal.fire({ icon: 'info', title: 'Sin Datos', text: 'El cliente seleccionado no tiene un distrito asignado.' });
+                                        Swal.fire({ 
+                                            icon: 'info', 
+                                            title: 'Sin Datos', 
+                                            text: 'El cliente seleccionado no tiene un distrito asignado.' 
+                                        });
                                     }
                                 } catch (error) {
                                     console.error('Error al actualizar distrito:', error);
-                                    Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo sincronizar el distrito.' });
+                                    Swal.fire({ 
+                                        icon: 'error', 
+                                        title: 'Error', 
+                                        text: `No se pudo sincronizar el distrito: ${error.message}` 
+                                    });
                                 } finally {
-                                    updateDistrictBtn.disabled = false;
-                                    updateDistrictBtn.innerHTML = '<i class="feather-refresh-cw"></i>';
+                                    syncFromClientBtn.disabled = false;
+                                    syncFromClientBtn.innerHTML = '<i class="feather-download"></i>';
                                 }
                             }
 
-                            // Asignar evento al botón de sincronización
-                            if (updateDistrictBtn) {
-                                updateDistrictBtn.addEventListener('click', handleUpdateDistrictClick);
+                            // =================================================================
+                            // LÓGICA DE ACTUALIZACIÓN DE DISTRITO EN CLIENTE
+                            // =================================================================
+                            async function handleSyncToClientClick() {
+                                if (!clientSelect || !districtSelect || !syncToClientBtn) return;
+                                
+                                const selectedClientId = clientSelect.value;
+                                const selectedDistrictId = districtSelect.value;
+                                
+                                if (!selectedClientId) {
+                                    Swal.fire({ icon: 'warning', title: 'Atención', text: 'Por favor, selecciona un cliente primero.' });
+                                    return;
+                                }
+                                
+                                if (!selectedDistrictId) {
+                                    Swal.fire({ icon: 'warning', title: 'Atención', text: 'Por favor, selecciona un distrito primero.' });
+                                    return;
+                                }
+
+                                // Confirmar antes de actualizar
+                                const result = await Swal.fire({
+                                    title: '¿Estás seguro?',
+                                    text: `¿Quieres actualizar el distrito del cliente con el valor seleccionado?`,
+                                    icon: 'question',
+                                    showCancelButton: true,
+                                    confirmButtonColor: '#3085d6',
+                                    cancelButtonColor: '#d33',
+                                    confirmButtonText: 'Sí, actualizar',
+                                    cancelButtonText: 'Cancelar'
+                                });
+
+                                if (!result.isConfirmed) {
+                                    return;
+                                }
+
+                                syncToClientBtn.disabled = true;
+                                syncToClientBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+
+                                try {
+                                    console.log(`Intentando actualizar distrito para cliente ID: ${selectedClientId} con distrito: ${selectedDistrictId}`);
+                                    
+                                    // ✅ MEJOR PRÁCTICA: Usar el helper de ruta de Laravel
+                                    const url = "{{ route('interactions.clientes.actualizar-distrito', ':id') }}".replace(':id', selectedClientId);
+                                    const response = await fetch(url, {
+                                        method: 'PUT',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                        },
+                                        body: JSON.stringify({
+                                            district_id: selectedDistrictId
+                                        })
+                                    });
+                                    
+                                    console.log('Respuesta del servidor:', response.status, response.statusText);
+                                    
+                                    if (!response.ok) {
+                                        let errorMessage = `Error ${response.status}: ${response.statusText}`;
+                                        try {
+                                            const errorData = await response.json();
+                                            if (errorData.error) {
+                                                errorMessage = errorData.error;
+                                            }
+                                        } catch (e) {
+                                            console.log('No se pudo parsear el error como JSON');
+                                        }
+                                        throw new Error(errorMessage);
+                                    }
+
+                                    const data = await response.json();
+                                    console.log('Datos recibidos:', data);
+                                    
+                                    Swal.fire({ 
+                                        icon: 'success', 
+                                        title: 'Actualizado', 
+                                        text: 'El distrito del cliente ha sido actualizado correctamente.', 
+                                        timer: 2000, 
+                                        showConfirmButton: false 
+                                    });
+                                } catch (error) {
+                                    console.error('Error al actualizar distrito del cliente:', error);
+                                    Swal.fire({ 
+                                        icon: 'error', 
+                                        title: 'Error', 
+                                        text: `No se pudo actualizar el distrito del cliente: ${error.message}` 
+                                    });
+                                } finally {
+                                    syncToClientBtn.disabled = false;
+                                    syncToClientBtn.innerHTML = '<i class="feather-upload"></i>';
+                                }
+                            }
+
+                            // =================================================================
+                            // ASIGNACIÓN DE EVENTOS A LOS BOTONES
+                            // =================================================================
+                            // Asignar evento al botón de sincronización desde cliente
+                            if (syncFromClientBtn) {
+                                syncFromClientBtn.addEventListener('click', handleSyncFromClientClick);
+                            }
+                            
+                            // Asignar evento al botón de actualización de cliente
+                            if (syncToClientBtn) {
+                                syncToClientBtn.addEventListener('click', handleSyncToClientClick);
                             }
                         });
                         </script>
