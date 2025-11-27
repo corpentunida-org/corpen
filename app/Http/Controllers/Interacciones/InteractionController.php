@@ -286,6 +286,8 @@ class InteractionController extends Controller
             'celular_quien_llama'  => 'nullable|string|max:50',
             'parentezco_quien_llama' => 'nullable|string|max:50',
 
+            'parent_interaction_id' => 'nullable|integer',
+
             'id_area'               => 'nullable|integer|exists:gdo_area,id',
             'id_cargo'              => 'nullable|integer|exists:gdo_cargo,id',
             'id_linea_de_obligacion'=> 'nullable|integer|exists:cre_lineas_creditos,id',

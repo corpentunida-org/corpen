@@ -1976,63 +1976,80 @@
                         </div>
                     </div>
 
-                    <!-- PESTAÑA 5: HISTORIAL -->
-                    <div class="tab-panel" id="historial-tab">
-                        <div class="category-container">
-                            <div class="category-header">
-                                <h5 class="category-title">
-                                    <div class="category-icon">
-                                        <i class="bi bi-clock-history"></i>
-                                    </div>
-                                    Historial de Interacciones
-                                </h5>
-                                <p class="category-description">Interacciones previas con este cliente</p>
-                            </div>
-                            <div class="category-content">
-                                <div id="no-client-selected" class="text-center py-5">
-                                    <i class="bi bi-person-x display-1 text-muted"></i>
-                                    <p class="mt-3 text-muted">Selecciona un cliente para ver su historial de interacciones</p>
-                                </div>
-                                <div class="card border-0 bg-light mb-4" id="history-section" style="display:none;">
-                                    <div class="card-body p-3">
-                                        <div class="d-flex align-items-center mb-3">
-                                            <i class="bi bi-clock-history text-primary me-2"></i>
-                                            <h6 class="mb-0 fw-semibold">Historial Reciente</h6>
-                                            <div class="ms-auto">
-                                                <button type="button" class="btn btn-sm btn-outline-primary" id="refresh-history">
-                                                    <i class="bi bi-arrow-clockwise"></i> Actualizar
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-outline-secondary ms-1" id="toggle-history">
-                                                    <i class="bi bi-chevron-down"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div id="history-content">
-                                            <div id="interaction-history-list" class="history-list" style="max-height:400px; overflow-y:auto;">
-                                                <!-- items cargados por JS -->
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-actions">
-                            <div class="action-buttons">
-                                <button type="button" class="btn btn-light" onclick="showTab('adjuntos')">
-                                    <i class="bi bi-arrow-left"></i> Anterior
-                                </button>
-                            </div>
-                            <div class="action-buttons">
-                                <button id="clear-draft" type="button" class="btn btn-outline-secondary me-2">
-                                    <i class="bi bi-trash me-1"></i> Borrar Borrador
-                                </button>
-                                <button type="submit" class="btn btn-primary px-4">
-                                    <i class="bi bi-save me-1"></i>
-                                    {{ $modoEdicion ? 'Actualizar Interacción' : 'Guardar Interacción' }}
-                                </button>
-                            </div>
+<!-- PESTAÑA 5: HISTORIAL -->
+<div class="tab-panel" id="historial-tab">
+    <div class="category-container">
+        <div class="category-header">
+            <h5 class="category-title">
+                <div class="category-icon">
+                    <i class="bi bi-clock-history"></i>
+                </div>
+                Historial de Interacciones
+            </h5>
+            <p class="category-description">Interacciones previas con este cliente. Selecciona una para escalar.</p>
+        </div>
+        <div class="category-content">
+            <div id="no-client-selected" class="text-center py-5">
+                <i class="bi bi-person-x display-1 text-muted"></i>
+                <p class="mt-3 text-muted">Selecciona un cliente para ver su historial de interacciones</p>
+            </div>
+            
+            <!-- Campo oculto para almacenar el ID de la interacción padre -->
+            <input type="hidden" id="parent_interaction_id" name="parent_interaction_id" value="">
+            
+            <div class="card border-0 bg-light mb-4" id="history-section" style="display:none;">
+                <div class="card-body p-3">
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="bi bi-clock-history text-primary me-2"></i>
+                        <h6 class="mb-0 fw-semibold">Historial Reciente</h6>
+                        <div class="ms-auto">
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="refresh-history">
+                                <i class="bi bi-arrow-clockwise"></i> Actualizar
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary ms-1" id="toggle-history">
+                                <i class="bi bi-chevron-down"></i>
+                            </button>
                         </div>
                     </div>
+                    
+                    <!-- Indicador de interacción padre seleccionada -->
+                    <div id="selected-parent-info" class="alert alert-info d-flex align-items-center" style="display:none;">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <div class="flex-grow-1">
+                            <strong>Interacción padre seleccionada:</strong> 
+                            <span id="selected-parent-text">Ninguna</span>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="clear-parent-selection">
+                            <i class="bi bi-x-circle"></i> Limpiar
+                        </button>
+                    </div>
+                    
+                    <div id="history-content">
+                        <div id="interaction-history-list" class="history-list" style="max-height:400px; overflow-y:auto;">
+                            <!-- items cargados por JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="form-actions">
+        <div class="action-buttons">
+            <button type="button" class="btn btn-light" onclick="showTab('adjuntos')">
+                <i class="bi bi-arrow-left"></i> Anterior
+            </button>
+        </div>
+        <div class="action-buttons">
+            <button id="clear-draft" type="button" class="btn btn-outline-secondary me-2">
+                <i class="bi bi-trash me-1"></i> Borrar Borrador
+            </button>
+            <button type="submit" class="btn btn-primary px-4">
+                <i class="bi bi-save me-1"></i>
+                {{ $modoEdicion ? 'Actualizar Interacción' : 'Guardar Interacción' }}
+            </button>
+        </div>
+    </div>
+</div>
                 </form>
             </div>
         </div>
@@ -2054,732 +2071,880 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 
-    <script>
-        $(document).ready(function() {
-            // Inicialización de Select2
-            $('.select2').select2({
-                theme: 'bootstrap-5',
-                placeholder: function() {
-                    return $(this).attr('placeholder');
+<script>
+    $(document).ready(function() {
+        // =================================================================
+        // INICIALIZACIÓN DE COMPONENTES
+        // =================================================================
+        
+        // Inicialización de Select2
+        $('.select2').select2({
+            theme: 'bootstrap-5',
+            placeholder: function() {
+                return $(this).attr('placeholder');
+            },
+            dropdownParent: $('body')
+        });
+
+        // Configuración especial para el campo de cliente con AJAX
+        $('#client_id').select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Buscar cliente...',
+            allowClear: true,
+            minimumInputLength: 2,
+            ajax: {
+                url: @json(route('interactions.search-clients')),
+                dataType: 'json',
+                delay: 250,
+                data: function(params) {
+                    return {
+                        q: params.term,
+                        page: params.page || 1
+                    };
                 },
-                dropdownParent: $('body')
-            });
-
-            // Configuración especial para el campo de cliente con AJAX
-            $('#client_id').select2({
-                theme: 'bootstrap-5',
-                placeholder: 'Buscar cliente...',
-                allowClear: true,
-                minimumInputLength: 2,
-                ajax: {
-                    url: @json(route('interactions.search-clients')),
-                    dataType: 'json',
-                    delay: 250,
-                    data: function(params) {
-                        return {
-                            q: params.term,
-                            page: params.page || 1
-                        };
-                    },
-                    processResults: function(data) {
-                        return {
-                            results: data.results.map(function(item) {
-                                return {
-                                    id: item.cod_ter,
-                                    text: `${item.cod_ter} - ${item.apl1} ${item.apl2} ${item.nom1} ${item.nom2}`
-                                };
-                            }),
-                            pagination: {
-                                more: data.pagination.more
-                            }
-                        };
-                    },
-                    cache: true
-                }
-            });
-
-            // Variables globales
-            const $ajaxLoader = $('#ajax-loader');
-            const $form = $('#interaction-form');
-            const storageKey = 'interaction_form_draft_v1';
-
-            // Variables para el cronómetro
-            let startTimeInterval = null;
-            let startTime = null;
-
-            // Funciones de utilidad
-            function showLoader() {
-                $ajaxLoader.show();
-            }
-
-            function hideLoader() {
-                $ajaxLoader.hide();
-            }
-
-            // Configuración de notificaciones
-            toastr.options = {
-                "positionClass": "toast-bottom-right",
-                "timeOut": "2500",
-                "progressBar": true,
-            };
-
-            // Navegación por pestañas
-            $('.tab-button').on('click', function() {
-                const tabId = $(this).data('tab');
-                showTab(tabId);
-                saveDraft();
-            });
-
-            window.showTab = function(tabId) {
-                $('.tab-button').removeClass('active');
-                $(`.tab-button[data-tab="${tabId}"]`).addClass('active');
-
-                $('.tab-panel').removeClass('active');
-                $(`#${tabId}-tab`).addClass('active');
-
-                if (tabId === 'historial') {
-                    updateHistoryTabVisibility();
-                }
-
-                updateProgress();
-            }
-
-            // Actualizar progreso
-            function updateProgress() {
-                const requiredFields = ['client_id', 'interaction_channel', 'interaction_type', 'notes', 'outcome'];
-                let completed = 0;
-
-                requiredFields.forEach(field => {
-                    const value = $(`[name="${field}"]`).val();
-                    if (value && value.trim() !== '') {
-                        completed++;
-                    }
-                });
-
-                const progress = Math.round((completed / requiredFields.length) * 100);
-
-                $('#progress-bar').css('width', progress + '%');
-                $('#progress-percentage').text(progress + '%');
-
-                // Actualizar mensaje
-                const messages = [
-                    'Comienza seleccionando un cliente',
-                    'Agrega los detalles de la interacción',
-                    'Completa la información adicional',
-                    'Define el resultado',
-                    'Adjunta archivos y revisa el historial',
-                    'Formulario completo'
-                ];
-
-                const messageIndex = Math.min(Math.floor(progress / 20), messages.length - 1);
-                $('#progress-message').text(messages[messageIndex]);
-            }
-
-            // Guardado automático en localStorage
-            function saveDraft() {
-                try {
-                    const data = {};
-                    $form.find('input,textarea,select').each(function() {
-                        const name = this.name;
-                        if (!name) return;
-                        if (this.type === 'file') return;
-                        if (this.type === 'checkbox' || this.type === 'radio') {
-                            if (this.checked) data[name] = this.value;
-                        } else {
-                            if ($(this).is('select[multiple]')) {
-                                data[name] = $(this).val() || [];
-                            } else {
-                                data[name] = $(this).val();
-                            }
+                processResults: function(data) {
+                    return {
+                        results: data.results.map(function(item) {
+                            return {
+                                id: item.cod_ter,
+                                text: `${item.cod_ter} - ${item.apl1} ${item.apl2} ${item.nom1} ${item.nom2}`
+                            };
+                        }),
+                        pagination: {
+                            more: data.pagination.more
                         }
-                    });
-                    data.activeTab = $('.tab-button.active').data('tab');
-                    localStorage.setItem(storageKey, JSON.stringify(data));
-                    toastr.success('Borrador guardado automáticamente');
-                } catch (e) {
-                    console.warn('No se pudo guardar el borrador', e);
-                }
+                    };
+                },
+                cache: true
+            }
+        });
+
+        // =================================================================
+        // VARIABLES GLOBALES
+        // =================================================================
+        
+        const $ajaxLoader = $('#ajax-loader');
+        const $form = $('#interaction-form');
+        const storageKey = 'interaction_form_draft_v1';
+
+        // Variables para el cronómetro
+        let startTimeInterval = null;
+        let startTime = null;
+
+        // =================================================================
+        // FUNCIONES DE UTILIDAD
+        // =================================================================
+        
+        function showLoader() {
+            $ajaxLoader.show();
+        }
+
+        function hideLoader() {
+            $ajaxLoader.hide();
+        }
+
+        // Configuración de notificaciones
+        toastr.options = {
+            "positionClass": "toast-bottom-right",
+            "timeOut": "2500",
+            "progressBar": true,
+        };
+
+        // =================================================================
+        // LÓGICA DE NAVEGACIÓN POR PESTAÑAS
+        // =================================================================
+        
+        // Navegación por pestañas
+        $('.tab-button').on('click', function() {
+            const tabId = $(this).data('tab');
+            showTab(tabId);
+            saveDraft();
+        });
+
+        window.showTab = function(tabId) {
+            $('.tab-button').removeClass('active');
+            $(`.tab-button[data-tab="${tabId}"]`).addClass('active');
+
+            $('.tab-panel').removeClass('active');
+            $(`#${tabId}-tab`).addClass('active');
+
+            if (tabId === 'historial') {
+                updateHistoryTabVisibility();
             }
 
-            function debounce(fn, wait) {
-                let t;
-                return function(...args) {
-                    clearTimeout(t);
-                    t = setTimeout(() => fn.apply(this, args), wait);
-                };
-            }
-
-            const saveDraftDebounced = debounce(saveDraft, 700);
-
-            // Cargar borrador guardado
-            function loadDraft() {
-                try {
-                    const raw = localStorage.getItem(storageKey);
-                    if (!raw) return;
-                    const data = JSON.parse(raw);
-                    Object.keys(data).forEach(name => {
-                        if (name === 'activeTab') return;
-                        const value = data[name];
-                        const $el = $form.find(`[name="${name}"]`);
-                        if (!$el.length) return;
-                        if ($el.is('select[multiple]')) {
-                            $el.val(value).trigger('change');
-                        } else if ($el.is('select')) {
-                            $el.val(value).trigger('change');
-                        } else {
-                            $el.val(value);
-                        }
-                    });
-
-                    // Restaurar el estado del cronómetro
-                    if (data.start_time && data.client_id) {
-                        $('#start_time').val(data.start_time);
-                        if (data.duration) {
-                            $('#duration-display').val(`${data.duration} segundos`);
-                        }
-
-                        startTime = new Date(data.start_time);
-
-                        startTimeInterval = setInterval(() => {
-                            const now = new Date();
-                            const durationSeconds = Math.round((now - startTime) / 1000);
-                            $('#duration-display').val(`${durationSeconds} segundos`);
-                            $('#duration').val(durationSeconds);
-                        }, 1000);
-                    }
-
-                    if (data.activeTab) {
-                        showTab(data.activeTab);
-                    }
-
-                    toastr.info('Borrador restaurado automáticamente');
-                } catch (e) {
-                    console.warn('No se pudo cargar el borrador', e);
-                }
-            }
-
-            // Eventos para guardar borrador
-            $form.on('input change', 'input, textarea, select', function() {
-                updateProgress();
-                saveDraftDebounced();
-            });
-
-            // Cargar borrador al iniciar
-            loadDraft();
             updateProgress();
+        }
 
-            // Botón para limpiar borrador
-            $('#clear-draft').on('click', function() {
-                Swal.fire({
-                    title: '¿Borrar el borrador guardado?',
-                    text: "Esto eliminará el borrador localmente.",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: 'Sí, borrar',
-                    cancelButtonText: 'Cancelar'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        localStorage.removeItem(storageKey);
-                        $form[0].reset();
-                        $('.select2').val(null).trigger('change');
-                        $('#planning-section').hide();
-                        $('#client-info-card').hide();
-                        $('#history-section').hide();
-                        updateProgress();
-                        toastr.success('Borrador eliminado');
-                    }
-                });
+        // =================================================================
+        // LÓGICA DE PROGRESO DEL FORMULARIO
+        // =================================================================
+        
+        // Actualizar progreso
+        function updateProgress() {
+            const requiredFields = ['client_id', 'interaction_channel', 'interaction_type', 'notes', 'outcome'];
+            let completed = 0;
+
+            requiredFields.forEach(field => {
+                const value = $(`[name="${field}"]`).val();
+                if (value && value.trim() !== '') {
+                    completed++;
+                }
             });
 
-            // Validación de formulario
-            function validateField(el) {
-                const $el = $(el);
-                const name = $el.attr('name');
+            const progress = Math.round((completed / requiredFields.length) * 100);
 
-                if (!$el.prop('required')) {
-                    if ($el.val() && $el.val().toString().trim() !== '') {
-                        $el.removeClass('is-invalid').addClass('is-valid');
+            $('#progress-bar').css('width', progress + '%');
+            $('#progress-percentage').text(progress + '%');
+
+            // Actualizar mensaje
+            const messages = [
+                'Comienza seleccionando un cliente',
+                'Agrega los detalles de la interacción',
+                'Completa la información adicional',
+                'Define el resultado',
+                'Adjunta archivos y revisa el historial',
+                'Formulario completo'
+            ];
+
+            const messageIndex = Math.min(Math.floor(progress / 20), messages.length - 1);
+            $('#progress-message').text(messages[messageIndex]);
+        }
+
+        // =================================================================
+        // LÓGICA DE GUARDADO Y CARGA DE BORRADOR
+        // =================================================================
+        
+        // Guardado automático en localStorage
+        function saveDraft() {
+            try {
+                const data = {};
+                $form.find('input,textarea,select').each(function() {
+                    const name = this.name;
+                    if (!name) return;
+                    if (this.type === 'file') return;
+                    if (this.type === 'checkbox' || this.type === 'radio') {
+                        if (this.checked) data[name] = this.value;
                     } else {
-                        $el.removeClass('is-valid is-invalid');
+                        if ($(this).is('select[multiple]')) {
+                            data[name] = $(this).val() || [];
+                        } else {
+                            data[name] = $(this).val();
+                        }
                     }
-                    return true;
-                }
-
-                const val = $el.val();
-                if (!val || val.toString().trim() === '') {
-                    $el.removeClass('is-valid').addClass('is-invalid');
-                    return false;
-                }
-
-                if ($el.attr('type') === 'url' && val) {
-                    try {
-                        new URL(val);
-                    } catch (e) {
-                        $el.removeClass('is-valid').addClass('is-invalid');
-                        return false;
-                    }
-                }
-
-                if ($el.attr('type') === 'number' && val) {
-                    if (isNaN(val) || parseFloat(val) < 0) {
-                        $el.removeClass('is-valid').addClass('is-invalid');
-                        return false;
-                    }
-                }
-
-                $el.removeClass('is-invalid').addClass('is-valid');
-                return true;
+                });
+                data.activeTab = $('.tab-button.active').data('tab');
+                localStorage.setItem(storageKey, JSON.stringify(data));
+                toastr.success('Borrador guardado automáticamente');
+            } catch (e) {
+                console.warn('No se pudo guardar el borrador', e);
             }
+        }
 
-            // Envío de formulario con cálculo final
-            $form.on('submit', function(e) {
-                e.preventDefault();
+        function debounce(fn, wait) {
+            let t;
+            return function(...args) {
+                clearTimeout(t);
+                t = setTimeout(() => fn.apply(this, args), wait);
+            };
+        }
 
-                // Detener el cronómetro y calcular la duración final
-                if (startTimeInterval) {
-                    clearInterval(startTimeInterval);
-                    startTimeInterval = null;
-                }
+        const saveDraftDebounced = debounce(saveDraft, 700);
 
-                const $startTimeField = $('#start_time');
-                const $durationField = $('#duration');
-                const $durationDisplay = $('#duration-display');
-
-                if (startTime && $startTimeField.val()) {
-                    const endTime = new Date();
-                    const durationInSeconds = Math.round((endTime - startTime) / 1000);
-                    $durationField.val(durationInSeconds);
-                    $durationDisplay.val(`${durationInSeconds} segundos`);
-                } else {
-                    $durationField.val(0);
-                    $durationDisplay.val('0 segundos');
-                }
-
-                let valid = true;
-
-                $form.find('select[required], textarea[required], input[required]').each(function() {
-                    const ok = validateField(this);
-                    if (!ok) valid = false;
-                });
-
-                if (!valid) {
-                    const $first = $form.find('.is-invalid').first();
-                    $('html,body').animate({
-                        scrollTop: $first.offset().top - 90
-                    }, 350);
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Errores en el formulario',
-                        text: 'Por favor corrige los campos marcados antes de enviar.',
-                    });
-                    return false;
-                }
-
-                Swal.fire({
-                    title: 'Confirmar envío',
-                    text: "¿Deseas enviar la interacción ahora?",
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonText: 'Enviar',
-                    cancelButtonText: 'Cancelar'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        localStorage.removeItem(storageKey);
-                        showLoader();
-                        $form.off('submit');
-                        $form.submit();
-                    }
-                });
-            });
-
-            // Función para actualizar el historial del cliente
-            function refreshClientHistory() {
-                //console.log("hfasnflajnf");
-                const cod_ter = $('#client_id').val();
-                if (!cod_ter) return;
-                
-                const historyList = $('#interaction-history-list');
-                historyList.empty().html('<div class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary" role="status"><span class="visually-hidden">Cargando...</span></div> Cargando historial...</div>');
-                
-                $.ajax({
-                    url: @json(route('interactions.cliente.show', ['cod_ter' => ':cod_ter'])).replace(':cod_ter', cod_ter),
-                    type: 'GET',
-                    dataType: 'json',
-                    timeout: 15000,
-                }).done(function(data) {
-                
-                    historyList.empty();
-                    if (data.history && data.history.length) {
-                        let historyHtml = '';
-                        data.history.forEach(item => {
-                            console.log(data);
-                            historyHtml += `
-                                <div class="history-item mb-3 p-3 border rounded bg-white">
-                                    <div class="d-flex justify-content-between align-items-start mb-2">
-                                        <div>
-                                            <span class="badge bg-primary me-2">${item.type}</span>
-                                            <span class="badge bg-success">${item.outcome}</span>
-                                        </div>
-                                        <small class="text-muted">${item.date}</small>
-                                    </div>
-                                    <div class="mb-1">
-                                        <i class="bi bi-person-circle me-1"></i>
-                                        <strong>Agente:</strong> ${item.agent}
-                                    </div>
-                                    <div class="text-muted">
-                                        <i class="bi bi-chat-text me-1"></i>
-                                        ${item.notes}
-                                    </div>
-                                </div>
-                            `;
-                        });
-                        historyList.html(historyHtml);
+        // Cargar borrador guardado
+        function loadDraft() {
+            try {
+                const raw = localStorage.getItem(storageKey);
+                if (!raw) return;
+                const data = JSON.parse(raw);
+                Object.keys(data).forEach(name => {
+                    if (name === 'activeTab') return;
+                    const value = data[name];
+                    const $el = $form.find(`[name="${name}"]`);
+                    if (!$el.length) return;
+                    if ($el.is('select[multiple]')) {
+                        $el.val(value).trigger('change');
+                    } else if ($el.is('select')) {
+                        $el.val(value).trigger('change');
                     } else {
-                        historyList.html('<div class="text-center text-muted py-3">No hay interacciones previas con este cliente</div>');
+                        $el.val(value);
                     }
-                    toastr.success('Historial actualizado correctamente');
-                }).fail(function(xhr, status, error) {
-                    console.error('Error al actualizar historial:', {xhr, status, error});
-                    
-                    let errorMessage = 'No se pudo cargar el historial del cliente';
-                    
-                    if (xhr.responseJSON && xhr.responseJSON.error) {
-                        errorMessage = xhr.responseJSON.error;
-                    } else if (status === 'timeout') {
-                        errorMessage = 'La solicitud tardó demasiado tiempo. Inténtalo de nuevo.';
-                    }
-                    
-                    historyList.html(`<div class="text-center text-danger py-3">${errorMessage}</div>`);
-                    toastr.error(errorMessage);
                 });
-            }
 
-            // Función para actualizar la visibilidad de elementos en la pestaña de historial
-            function updateHistoryTabVisibility() {
-                const clientId = $('#client_id').val();
-                if (clientId) {
-                    $('#no-client-selected').hide();
-                    $('#history-section').show();
-                    // Cargar el historial si no está cargado
-                    if ($('#interaction-history-list').is(':empty')) {
-                        refreshClientHistory();
+                // Restaurar el estado del cronómetro
+                if (data.start_time && data.client_id) {
+                    $('#start_time').val(data.start_time);
+                    if (data.duration) {
+                        $('#duration-display').val(`${data.duration} segundos`);
                     }
-                } else {
-                    $('#no-client-selected').show();
+
+                    startTime = new Date(data.start_time);
+
+                    startTimeInterval = setInterval(() => {
+                        const now = new Date();
+                        const durationSeconds = Math.round((now - startTime) / 1000);
+                        $('#duration-display').val(`${durationSeconds} segundos`);
+                        $('#duration').val(durationSeconds);
+                    }, 1000);
+                }
+
+                if (data.activeTab) {
+                    showTab(data.activeTab);
+                }
+
+                toastr.info('Borrador restaurado automáticamente');
+            } catch (e) {
+                console.warn('No se pudo cargar el borrador', e);
+            }
+        }
+
+        // Eventos para guardar borrador
+        $form.on('input change', 'input, textarea, select', function() {
+            updateProgress();
+            saveDraftDebounced();
+        });
+
+        // Cargar borrador al iniciar
+        loadDraft();
+        updateProgress();
+
+        // Botón para limpiar borrador
+        $('#clear-draft').on('click', function() {
+            Swal.fire({
+                title: '¿Borrar el borrador guardado?',
+                text: "Esto eliminará el borrador localmente.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, borrar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    localStorage.removeItem(storageKey);
+                    $form[0].reset();
+                    $('.select2').val(null).trigger('change');
+                    $('#planning-section').hide();
+                    $('#client-info-card').hide();
                     $('#history-section').hide();
-                }
-            }
-
-            // Cargar información del cliente con cronómetro
-            $('#client_id').on('change', function() {
-                const cod_ter = $(this).val();
-                const clientCard = $('#client-info-card');
-                const historySection = $('#history-section');
-                const historyList = $('#interaction-history-list');
-                const $durationDisplay = $('#duration-display');
-                const $startTimeField = $('#start_time');
-
-                // Limpiar cualquier cronómetro existente
-                if (startTimeInterval) {
-                    clearInterval(startTimeInterval);
-                    startTimeInterval = null;
-                }
-
-                if (!cod_ter) {
-                    clientCard.fadeOut();
-                    historySection.fadeOut();
-                    $durationDisplay.val('0 segundos');
-                    $startTimeField.val('');
-                    $('#duration').val(0);
                     updateProgress();
-                    updateHistoryTabVisibility();
-                    return;
-                }
-
-                // Registrar hora de inicio y empezar a contar
-                startTime = new Date();
-                $startTimeField.val(startTime.toISOString());
-                $durationDisplay.val('0 segundos');
-                $('#duration').val(0);
-
-                startTimeInterval = setInterval(() => {
-                    const now = new Date();
-                    const durationSeconds = Math.round((now - startTime) / 1000);
-                    $durationDisplay.val(`${durationSeconds} segundos`);
-                    $('#duration').val(durationSeconds);
-                }, 1000);
-
-                showLoader();
-                
-                $.ajax({
-                    url: @json(route('interactions.cliente.show', ['cod_ter' => ':cod_ter'])).replace(':cod_ter', cod_ter),
-                    type: 'GET',
-                    dataType: 'json',
-                    timeout: 15000,
-                })
-                .done(function(data) {                    
-                    // Verificar si hay error en la respuesta
-                    if (data.error) {
-                        throw new Error(data.error);
-                    }
-                    
-                    // Actualizar avatar con iniciales
-                    const initials = ((data.nom1 || '').charAt(0) + (data.apl1 || '').charAt(0))
-                        .toUpperCase();
-                    $('#info-avatar').text(initials || '—');
-                    
-                    // Actualizar información básica del cliente
-                    $('#info-nombre').text(data.nom_ter || 'No registrado');
-                    $('#info-id').text(`ID: ${data.cod_ter || 'N/A'}`);
-                    $('#info-distrito').text(data.distrito?.NOM_DIST || 'No registrado');
-                    $('#info-categoria').text(data.maeTipos?.nombre || 'No registrado');
-                    $('#info-email').text(data.email || 'No registrado');
-                    $('#info-telefono').text(data.tel1 || 'No registrado');
-                    $('#info-direccion').text(data.dir || 'No registrado');
-                    $('#btn-editar-cliente').attr('href', `/maestras/terceros/${data.cod_ter}/edit`);
-                    $('#btn-ver-cliente').attr('href', `/maestras/terceros/${data.cod_ter}`);
-
-                    // Mejora en la carga del historial
-                    historyList.empty();
-                    if (data.history && data.history.length > 0) {
-                        console.log(data);
-                        let historyHtml = '';
-                        data.history.forEach(item => {
-                            historyHtml += `
-                                <div class="history-item mb-3 p-3 border rounded bg-white">
-                                    <div class="d-flex justify-content-between align-items-start mb-2">
-                                        <div>
-                                            <span class="badge bg-primary me-2">${item.type}</span>
-                                            <span class="badge bg-success">${item.outcome}</span>
-                                        </div>
-                                        <small class="text-muted">${item.date}</small>
-                                    </div>
-                                    <div class="mb-1">
-                                        <i class="bi bi-person-circle me-1"></i>
-                                        <strong>Agente:</strong> ${item.agent}
-                                    </div>
-                                    <div class="text-muted">
-                                        <i class="bi bi-chat-text me-1"></i>
-                                        ${item.notes}
-                                    </div>
-                                </div>
-                            `;
-                        });
-                        historyList.html(historyHtml);
-                        historySection.fadeIn();
-                    } else {
-                        historyList.html('<div class="text-center text-muted py-3">No hay interacciones previas con este cliente</div>');
-                        historySection.fadeIn();
-                    }
-
-                    clientCard.fadeIn();
-                    updateProgress();
-                    toastr.success('Información del cliente cargada correctamente');
-                })
-                .fail(function(xhr, status, error) {
-                    console.error('Error en la solicitud AJAX:', {xhr, status, error});
-                    
-                    let errorMessage = 'No se pudo cargar la información del cliente';
-                    
-                    // Intentar obtener un mensaje de error más específico
-                    if (xhr.responseJSON && xhr.responseJSON.error) {
-                        errorMessage = xhr.responseJSON.error;
-                    } else if (status === 'timeout') {
-                        errorMessage = 'La solicitud tardó demasiado tiempo. Inténtalo de nuevo.';
-                    } else if (status === 'error') {
-                        errorMessage = 'Error de conexión. Verifica tu conexión a internet.';
-                    }
-                    
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error al cargar cliente',
-                        text: errorMessage,
-                        footer: 'Código de error: ' + xhr.status
-                    });
-                    
-                    $('#client-info-card').fadeOut();
-                    $('#history-section').fadeOut();
-                })
-                .always(function() {
-                    hideLoader();
-                });
-            });
-
-            // Lógica para mostrar/ocultar sección de planificación
-            const outcomeSelect = $('#outcome');
-            const planningSection = $('#planning-section');
-
-            function handleOutcomeChange() {
-                const selectedOutcomeText = outcomeSelect.find("option:selected").text().trim();
-                if (selectedOutcomeText === 'Pendiente' || selectedOutcomeText === 'No contesta' ||
-                    selectedOutcomeText.toLowerCase().includes('pendiente')) {
-                    planningSection.slideDown();
-                } else {
-                    planningSection.slideUp();
-                }
-                updateProgress();
-            }
-
-            outcomeSelect.on('change', handleOutcomeChange);
-            handleOutcomeChange();
-
-            // Botones de fecha rápida
-            $('.quick-date').on('click', function() {
-                const daysToAdd = parseInt($(this).data('days')) || 0;
-                const nextActionInput = $('#next_action_date');
-                const targetDate = new Date();
-                targetDate.setDate(targetDate.getDate() + daysToAdd);
-                const year = targetDate.getFullYear();
-                const month = String(targetDate.getMonth() + 1).padStart(2, '0');
-                const day = String(targetDate.getDate()).padStart(2, '0');
-                const hours = '09';
-                const minutes = '00';
-                const formatted = `${year}-${month}-${day}T${hours}:${minutes}`;
-                nextActionInput.val(formatted);
-                updateProgress();
-                saveDraftDebounced();
-                toastr.info('Fecha establecida: ' + new Date(formatted).toLocaleString());
-            });
-
-            // Contador de caracteres para el campo de notas
-            const $notes = $('#notes');
-            const $notesCounter = $('#notes-counter');
-
-            $notes.on('input', function() {
-                const length = $(this).val().length;
-                $notesCounter.text(`${length}/500 caracteres`);
-
-                if (length > 500) {
-                    $notesCounter.addClass('text-danger');
-                } else {
-                    $notesCounter.removeClass('text-danger');
-                }
-            });
-
-            // Inicializar contador de caracteres
-            $notes.trigger('input');
-
-            // Funcionalidad de colapsar/expandir secciones
-            $('#toggle-client-info').on('click', function() {
-                const $content = $('#client-info-content');
-                const $icon = $(this).find('i');
-
-                $content.slideToggle();
-                $icon.toggleClass('bi-chevron-down bi-chevron-up');
-            });
-
-            $('#refresh-history').on('click', function() {
-                refreshClientHistory();
-            });
-
-            $('#toggle-history').on('click', function() {
-                const $content = $('#history-content');
-                const $icon = $(this).find('i');
-
-                $content.slideToggle();
-                $icon.toggleClass('bi-chevron-down bi-chevron-up');
-            });
-
-            // Mejora en la carga de imágenes de avatar
-            function generateAvatar(name) {
-                const colors = ['#6B9BD1', '#7FA9D3', '#93B7D5', '#A7C5D7', '#BBD3D9'];
-                const initials = name.split(' ').map(n => n.charAt(0)).join('').toUpperCase().substring(0, 2);
-                const colorIndex = name.charCodeAt(0) % colors.length;
-
-                return {
-                    initials: initials || '—',
-                    color: colors[colorIndex]
-                };
-            }
-
-            // Actualizar avatar con colores dinámicos
-            $('#client_id').on('change', function() {
-                const selectedText = $(this).find('option:selected').text();
-                const avatarData = generateAvatar(selectedText);
-                const $avatar = $('#info-avatar');
-
-                $avatar.text(avatarData.initials);
-                $avatar.css('background-color', avatarData.color);
-            });
-
-            // Mejora en la visualización de archivos adjuntos
-            $('#attachment').on('change', function() {
-                const file = this.files[0];
-                
-                if (file) {
-                    // Mostrar información del archivo
-                    toastr.info(`Archivo seleccionado: ${file.name}`);
-                    
-                    // Si es una imagen, mostrar vista previa
-                    if (file.type.startsWith('image/')) {
-                        const reader = new FileReader();
-                        
-                        reader.onload = function(e) {
-                            $('#image-preview').attr('src', e.target.result);
-                            $('#image-preview-container').show();
-                        };
-                        
-                        reader.onerror = function() {
-                            toastr.error('Error al cargar la vista previa de la imagen');
-                            $('#image-preview-container').hide();
-                        };
-                        
-                        reader.readAsDataURL(file);
-                    } else {
-                        $('#image-preview-container').hide();
-                    }
-                }
-            });
-
-            // Función para validar URL
-            function isValidUrl(string) {
-                try {
-                    new URL(string);
-                    return true;
-                } catch (_) {
-                    return false;
-                }
-            }
-
-            // Validación de URL en tiempo real
-            $('#interaction_url').on('input', function() {
-                const url = $(this).val();
-                if (url && !isValidUrl(url)) {
-                    $(this).addClass('is-invalid');
-                } else {
-                    $(this).removeClass('is-invalid');
-                }
-            });
-
-            // Atajos de teclado
-            $(document).on('keydown', function(e) {
-                if (e.ctrlKey && e.key === 's') {
-                    e.preventDefault();
-                    saveDraft();
-                    toastr.success('Borrador guardado');
-                }
-
-                if (e.altKey) {
-                    switch (e.key) {
-                        case '1':
-                            showTab('principal');
-                            break;
-                        case '2':
-                            showTab('adicional');
-                            break;
-                        case '3':
-                            showTab('resultado');
-                            break;
-                        case '4':
-                            showTab('adjuntos');
-                            break;
-                        case '5':
-                            showTab('historial');
-                            break;
-                    }
+                    toastr.success('Borrador eliminado');
                 }
             });
         });
-    </script>
+
+        // =================================================================
+        // LÓGICA DE VALIDACIÓN Y ENVÍO DEL FORMULARIO
+        // =================================================================
+        
+        // Validación de formulario
+        function validateField(el) {
+            const $el = $(el);
+            const name = $el.attr('name');
+
+            if (!$el.prop('required')) {
+                if ($el.val() && $el.val().toString().trim() !== '') {
+                    $el.removeClass('is-invalid').addClass('is-valid');
+                } else {
+                    $el.removeClass('is-valid is-invalid');
+                }
+                return true;
+            }
+
+            const val = $el.val();
+            if (!val || val.toString().trim() === '') {
+                $el.removeClass('is-valid').addClass('is-invalid');
+                return false;
+            }
+
+            if ($el.attr('type') === 'url' && val) {
+                try {
+                    new URL(val);
+                } catch (e) {
+                    $el.removeClass('is-valid').addClass('is-invalid');
+                    return false;
+                }
+            }
+
+            if ($el.attr('type') === 'number' && val) {
+                if (isNaN(val) || parseFloat(val) < 0) {
+                    $el.removeClass('is-valid').addClass('is-invalid');
+                    return false;
+                }
+            }
+
+            $el.removeClass('is-invalid').addClass('is-valid');
+            return true;
+        }
+
+        // Envío de formulario con cálculo final
+        $form.on('submit', function(e) {
+            e.preventDefault();
+
+            // Detener el cronómetro y calcular la duración final
+            if (startTimeInterval) {
+                clearInterval(startTimeInterval);
+                startTimeInterval = null;
+            }
+
+            const $startTimeField = $('#start_time');
+            const $durationField = $('#duration');
+            const $durationDisplay = $('#duration-display');
+
+            if (startTime && $startTimeField.val()) {
+                const endTime = new Date();
+                const durationInSeconds = Math.round((endTime - startTime) / 1000);
+                $durationField.val(durationInSeconds);
+                $durationDisplay.val(`${durationInSeconds} segundos`);
+            } else {
+                $durationField.val(0);
+                $durationDisplay.val('0 segundos');
+            }
+
+            let valid = true;
+
+            $form.find('select[required], textarea[required], input[required]').each(function() {
+                const ok = validateField(this);
+                if (!ok) valid = false;
+            });
+
+            if (!valid) {
+                const $first = $form.find('.is-invalid').first();
+                $('html,body').animate({
+                    scrollTop: $first.offset().top - 90
+                }, 350);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Errores en el formulario',
+                    text: 'Por favor corrige los campos marcados antes de enviar.',
+                });
+                return false;
+            }
+
+            Swal.fire({
+                title: 'Confirmar envío',
+                text: "¿Deseas enviar la interacción ahora?",
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Enviar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    localStorage.removeItem(storageKey);
+                    showLoader();
+                    $form.off('submit');
+                    $form.submit();
+                }
+            });
+        });
+
+        // =================================================================
+        // LÓGICA DE ESCALAMIENTO DESDE EL HISTORIAL
+        // =================================================================
+        
+        // Función para manejar la selección de interacción padre
+        function selectParentInteraction(interactionId, interactionInfo) {
+            console.log('selectParentInteraction llamado con ID:', interactionId); // DEBUG
+            // Actualizar el campo oculto
+            $('#parent_interaction_id').val(interactionId);
+            
+            // Mostrar información de la interacción seleccionada
+            const $selectedInfo = $('#selected-parent-info');
+            const $selectedText = $('#selected-parent-text');
+            
+            $selectedText.text(interactionInfo);
+            $selectedInfo.fadeIn();
+            
+            // Resaltar visualmente el elemento seleccionado
+            $('.history-item').removeClass('border-primary bg-light');
+            $(`#history-item-${interactionId}`).addClass('border-primary bg-light');
+            
+            // Guardar en el borrador
+            saveDraftDebounced();
+            
+            // Notificar al usuario
+            toastr.info('Interacción padre seleccionada para escalamiento');
+        }
+
+        // Función para limpiar la selección de interacción padre
+        function clearParentSelection() {
+            console.log('clearParentSelection llamado'); // DEBUG
+            $('#parent_interaction_id').val('');
+            $('#selected-parent-info').fadeOut();
+            
+            // Quitar resaltado visual
+            $('.history-item').removeClass('border-primary bg-light');
+            
+            // Guardar en el borrador
+            saveDraftDebounced();
+            
+            // Notificar al usuario
+            toastr.info('Selección de interacción padre eliminada');
+        }
+
+        // Hacer las funciones globales por si acaso
+        window.selectParentInteraction = selectParentInteraction;
+        window.clearParentSelection = clearParentSelection;
+
+        // Evento para el botón de limpiar selección
+        $('#clear-parent-selection').on('click', clearParentSelection);
+
+        // Delegación de eventos para los botones de escalar (para elementos dinámicos)
+        $('#interaction-history-list').on('click', '.btn-escalate', function() {
+            console.log('Botón de escalar clickeado'); // DEBUG
+            const $button = $(this);
+            const interactionId = $button.data('id');
+            const interactionInfo = $button.data('info');
+            
+            selectParentInteraction(interactionId, interactionInfo);
+        });
+
+        // =================================================================
+        // LÓGICA DE HISTORIAL DE CLIENTES
+        // =================================================================
+        
+        // Función para actualizar el historial del cliente (versión mejorada con escalamiento)
+        function refreshClientHistory() {
+            console.log('refreshClientHistory llamado'); // DEBUG
+            const cod_ter = $('#client_id').val();
+            if (!cod_ter) return;
+            
+            const $historyList = $('#interaction-history-list');
+            $historyList.empty().html('<div class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary" role="status"><span class="visually-hidden">Cargando...</span></div> Cargando historial...</div>');
+            
+            $.ajax({
+                url: @json(route('interactions.cliente.show', ['cod_ter' => ':cod_ter'])).replace(':cod_ter', cod_ter),
+                type: 'GET',
+                dataType: 'json',
+                timeout: 15000,
+            }).done(function(data) {
+                console.log('Datos de historial recibidos:', data); // DEBUG
+                $historyList.empty();
+                if (data.history && data.history.length) {
+                    let historyHtml = '';
+                    data.history.forEach(item => {
+                        // Crear una cadena de info segura para el atributo data
+                        const interactionInfo = `${item.type} - ${item.date.substring(0, 10)}`;
+                        
+                        historyHtml += `
+                            <div class="history-item mb-3 p-3 border rounded bg-white" id="history-item-${item.id}">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <span class="badge bg-primary me-2">${item.type}</span>
+                                        <span class="badge bg-success">${item.outcome}</span>
+                                    </div>
+                                    <small class="text-muted">${item.date}</small>
+                                </div>
+                                <div class="mb-1">
+                                    <i class="bi bi-person-circle me-1"></i>
+                                    <strong>Agente:</strong> ${item.agent}
+                                </div>
+                                <div class="text-muted mb-2">
+                                    <i class="bi bi-chat-text me-1"></i>
+                                    ${item.notes}
+                                </div>
+                                <div class="d-flex justify-content-end">
+                                    <button type="button" class="btn btn-sm btn-outline-primary btn-escalate" 
+                                            data-id="${item.id}" 
+                                            data-info="${interactionInfo}">
+                                        <i class="bi bi-arrow-up-circle me-1"></i> Escalar desde aquí
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    $historyList.html(historyHtml);
+                    
+                    // Restaurar la selección si existe en el borrador
+                    const parentId = $('#parent_interaction_id').val();
+                    if (parentId) {
+                        console.log('Restaurando selección para ID de padre:', parentId); // DEBUG
+                        const $selectedItem = $(`#history-item-${parentId}`);
+                        if ($selectedItem.length) {
+                            $selectedItem.addClass('border-primary bg-light');
+                            
+                            // Mostrar información de la interacción seleccionada
+                            const $selectedInfo = $('#selected-parent-info');
+                            const $selectedText = $('#selected-parent-text');
+                            
+                            // Buscar la información de la interacción seleccionada
+                            const parentItem = data.history.find(item => item.id == parentId);
+                            if (parentItem) {
+                                const interactionInfo = `${parentItem.type} - ${parentItem.date.substring(0, 10)}`;
+                                $selectedText.text(interactionInfo);
+                                $selectedInfo.show();
+                            }
+                        }
+                    }
+                } else {
+                    $historyList.html('<div class="text-center text-muted py-3">No hay interacciones previas con este cliente</div>');
+                }
+                toastr.success('Historial actualizado correctamente');
+            }).fail(function(xhr, status, error) {
+                console.error('Error al actualizar historial:', {xhr, status, error});
+                
+                let errorMessage = 'No se pudo cargar el historial del cliente';
+                
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMessage = xhr.responseJSON.error;
+                } else if (status === 'timeout') {
+                    errorMessage = 'La solicitud tardó demasiado tiempo. Inténtalo de nuevo.';
+                }
+                
+                $historyList.html(`<div class="text-center text-danger py-3">${errorMessage}</div>`);
+                toastr.error(errorMessage);
+            });
+        }
+
+        // Función para actualizar la visibilidad de elementos en la pestaña de historial
+        function updateHistoryTabVisibility() {
+            const clientId = $('#client_id').val();
+            if (clientId) {
+                $('#no-client-selected').hide();
+                $('#history-section').show();
+                // Cargar el historial si no está cargado
+                if ($('#interaction-history-list').is(':empty')) {
+                    refreshClientHistory();
+                }
+            } else {
+                $('#no-client-selected').show();
+                $('#history-section').hide();
+            }
+        }
+
+        // =================================================================
+        // LÓGICA DE CARGA DE INFORMACIÓN DEL CLIENTE
+        // =================================================================
+        
+        // Cargar información del cliente con cronómetro
+        $('#client_id').on('change', function() {
+            const cod_ter = $(this).val();
+            const clientCard = $('#client-info-card');
+            const historySection = $('#history-section');
+            const historyList = $('#interaction-history-list');
+            const $durationDisplay = $('#duration-display');
+            const $startTimeField = $('#start_time');
+
+            // Limpiar cualquier cronómetro existente
+            if (startTimeInterval) {
+                clearInterval(startTimeInterval);
+                startTimeInterval = null;
+            }
+
+            if (!cod_ter) {
+                clientCard.fadeOut();
+                historySection.fadeOut();
+                $durationDisplay.val('0 segundos');
+                $startTimeField.val('');
+                $('#duration').val(0);
+                updateProgress();
+                updateHistoryTabVisibility();
+                return;
+            }
+
+            // Registrar hora de inicio y empezar a contar
+            startTime = new Date();
+            $startTimeField.val(startTime.toISOString());
+            $durationDisplay.val('0 segundos');
+            $('#duration').val(0);
+
+            startTimeInterval = setInterval(() => {
+                const now = new Date();
+                const durationSeconds = Math.round((now - startTime) / 1000);
+                $durationDisplay.val(`${durationSeconds} segundos`);
+                $('#duration').val(durationSeconds);
+            }, 1000);
+
+            showLoader();
+            
+            $.ajax({
+                url: @json(route('interactions.cliente.show', ['cod_ter' => ':cod_ter'])).replace(':cod_ter', cod_ter),
+                type: 'GET',
+                dataType: 'json',
+                timeout: 15000,
+            })
+            .done(function(data) {                    
+                // Verificar si hay error en la respuesta
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+                
+                // Actualizar avatar con iniciales
+                const initials = ((data.nom1 || '').charAt(0) + (data.apl1 || '').charAt(0))
+                    .toUpperCase();
+                $('#info-avatar').text(initials || '—');
+                
+                // Actualizar información básica del cliente
+                $('#info-nombre').text(data.nom_ter || 'No registrado');
+                $('#info-id').text(`ID: ${data.cod_ter || 'N/A'}`);
+                $('#info-distrito').text(data.distrito?.NOM_DIST || 'No registrado');
+                $('#info-categoria').text(data.maeTipos?.nombre || 'No registrado');
+                $('#info-email').text(data.email || 'No registrado');
+                $('#info-telefono').text(data.tel1 || 'No registrado');
+                $('#info-direccion').text(data.dir || 'No registrado');
+                $('#btn-editar-cliente').attr('href', `/maestras/terceros/${data.cod_ter}/edit`);
+                $('#btn-ver-cliente').attr('href', `/maestras/terceros/${data.cod_ter}`);
+
+                // Mejora en la carga del historial
+                historyList.empty();
+                if (data.history && data.history.length > 0) {
+                    console.log(data);
+                    let historyHtml = '';
+                    data.history.forEach(item => {
+                        // Crear una cadena de info segura para el atributo data
+                        const interactionInfo = `${item.type} - ${item.date.substring(0, 10)}`;
+                        
+                        historyHtml += `
+                            <div class="history-item mb-3 p-3 border rounded bg-white" id="history-item-${item.id}">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div>
+                                        <span class="badge bg-primary me-2">${item.type}</span>
+                                        <span class="badge bg-success">${item.outcome}</span>
+                                    </div>
+                                    <small class="text-muted">${item.date}</small>
+                                </div>
+                                <div class="mb-1">
+                                    <i class="bi bi-person-circle me-1"></i>
+                                    <strong>Agente:</strong> ${item.agent}
+                                </div>
+                                <div class="text-muted mb-2">
+                                    <i class="bi bi-chat-text me-1"></i>
+                                    ${item.notes}
+                                </div>
+                                <div class="d-flex justify-content-end">
+                                    <button type="button" class="btn btn-sm btn-outline-primary btn-escalate" 
+                                            data-id="${item.id}" 
+                                            data-info="${interactionInfo}">
+                                        <i class="bi bi-arrow-up-circle me-1"></i> Escalar desde aquí
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    historyList.html(historyHtml);
+                    historySection.fadeIn();
+                } else {
+                    historyList.html('<div class="text-center text-muted py-3">No hay interacciones previas con este cliente</div>');
+                    historySection.fadeIn();
+                }
+
+                clientCard.fadeIn();
+                updateProgress();
+                toastr.success('Información del cliente cargada correctamente');
+            })
+            .fail(function(xhr, status, error) {
+                console.error('Error en la solicitud AJAX:', {xhr, status, error});
+                
+                let errorMessage = 'No se pudo cargar la información del cliente';
+                
+                // Intentar obtener un mensaje de error más específico
+                if (xhr.responseJSON && xhr.responseJSON.error) {
+                    errorMessage = xhr.responseJSON.error;
+                } else if (status === 'timeout') {
+                    errorMessage = 'La solicitud tardó demasiado tiempo. Inténtalo de nuevo.';
+                } else if (status === 'error') {
+                    errorMessage = 'Error de conexión. Verifica tu conexión a internet.';
+                }
+                
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error al cargar cliente',
+                    text: errorMessage,
+                    footer: 'Código de error: ' + xhr.status
+                });
+                
+                $('#client-info-card').fadeOut();
+                $('#history-section').fadeOut();
+            })
+            .always(function() {
+                hideLoader();
+            });
+        });
+
+        // =================================================================
+        // LÓGICA DE PLANIFICACIÓN
+        // =================================================================
+        
+        // Lógica para mostrar/ocultar sección de planificación
+        const outcomeSelect = $('#outcome');
+        const planningSection = $('#planning-section');
+
+        function handleOutcomeChange() {
+            const selectedOutcomeText = outcomeSelect.find("option:selected").text().trim();
+            if (selectedOutcomeText === 'Pendiente' || selectedOutcomeText === 'No contesta' ||
+                selectedOutcomeText.toLowerCase().includes('pendiente')) {
+                planningSection.slideDown();
+            } else {
+                planningSection.slideUp();
+            }
+            updateProgress();
+        }
+
+        outcomeSelect.on('change', handleOutcomeChange);
+        handleOutcomeChange();
+
+        // Botones de fecha rápida
+        $('.quick-date').on('click', function() {
+            const daysToAdd = parseInt($(this).data('days')) || 0;
+            const nextActionInput = $('#next_action_date');
+            const targetDate = new Date();
+            targetDate.setDate(targetDate.getDate() + daysToAdd);
+            const year = targetDate.getFullYear();
+            const month = String(targetDate.getMonth() + 1).padStart(2, '0');
+            const day = String(targetDate.getDate()).padStart(2, '0');
+            const hours = '09';
+            const minutes = '00';
+            const formatted = `${year}-${month}-${day}T${hours}:${minutes}`;
+            nextActionInput.val(formatted);
+            updateProgress();
+            saveDraftDebounced();
+            toastr.info('Fecha establecida: ' + new Date(formatted).toLocaleString());
+        });
+
+        // =================================================================
+        // LÓGICA DE INTERFAZ DE USUARIO
+        // =================================================================
+        
+        // Contador de caracteres para el campo de notas
+        const $notes = $('#notes');
+        const $notesCounter = $('#notes-counter');
+
+        $notes.on('input', function() {
+            const length = $(this).val().length;
+            $notesCounter.text(`${length}/500 caracteres`);
+
+            if (length > 500) {
+                $notesCounter.addClass('text-danger');
+            } else {
+                $notesCounter.removeClass('text-danger');
+            }
+        });
+
+        // Inicializar contador de caracteres
+        $notes.trigger('input');
+
+        // Funcionalidad de colapsar/expandir secciones
+        $('#toggle-client-info').on('click', function() {
+            const $content = $('#client-info-content');
+            const $icon = $(this).find('i');
+
+            $content.slideToggle();
+            $icon.toggleClass('bi-chevron-down bi-chevron-up');
+        });
+
+        $('#refresh-history').on('click', function() {
+            refreshClientHistory();
+        });
+
+        $('#toggle-history').on('click', function() {
+            const $content = $('#history-content');
+            const $icon = $(this).find('i');
+
+            $content.slideToggle();
+            $icon.toggleClass('bi-chevron-down bi-chevron-up');
+        });
+
+        // Mejora en la carga de imágenes de avatar
+        function generateAvatar(name) {
+            const colors = ['#6B9BD1', '#7FA9D3', '#93B7D5', '#A7C5D7', '#BBD3D9'];
+            const initials = name.split(' ').map(n => n.charAt(0)).join('').toUpperCase().substring(0, 2);
+            const colorIndex = name.charCodeAt(0) % colors.length;
+
+            return {
+                initials: initials || '—',
+                color: colors[colorIndex]
+            };
+        }
+
+        // Actualizar avatar con colores dinámicos
+        $('#client_id').on('change', function() {
+            const selectedText = $(this).find('option:selected').text();
+            const avatarData = generateAvatar(selectedText);
+            const $avatar = $('#info-avatar');
+
+            $avatar.text(avatarData.initials);
+            $avatar.css('background-color', avatarData.color);
+        });
+
+        // Mejora en la visualización de archivos adjuntos
+        $('#attachment').on('change', function() {
+            const file = this.files[0];
+            
+            if (file) {
+                // Mostrar información del archivo
+                toastr.info(`Archivo seleccionado: ${file.name}`);
+                
+                // Si es una imagen, mostrar vista previa
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        $('#image-preview').attr('src', e.target.result);
+                        $('#image-preview-container').show();
+                    };
+                    
+                    reader.onerror = function() {
+                        toastr.error('Error al cargar la vista previa de la imagen');
+                        $('#image-preview-container').hide();
+                    };
+                    
+                    reader.readAsDataURL(file);
+                } else {
+                    $('#image-preview-container').hide();
+                }
+            }
+        });
+
+        // Función para validar URL
+        function isValidUrl(string) {
+            try {
+                new URL(string);
+                return true;
+            } catch (_) {
+                return false;
+            }
+        }
+
+        // Validación de URL en tiempo real
+        $('#interaction_url').on('input', function() {
+            const url = $(this).val();
+            if (url && !isValidUrl(url)) {
+                $(this).addClass('is-invalid');
+            } else {
+                $(this).removeClass('is-invalid');
+            }
+        });
+
+        // =================================================================
+        // ATAJOS DE TECLADO
+        // =================================================================
+        
+        // Atajos de teclado
+        $(document).on('keydown', function(e) {
+            if (e.ctrlKey && e.key === 's') {
+                e.preventDefault();
+                saveDraft();
+                toastr.success('Borrador guardado');
+            }
+
+            if (e.altKey) {
+                switch (e.key) {
+                    case '1':
+                        showTab('principal');
+                        break;
+                    case '2':
+                        showTab('adicional');
+                        break;
+                    case '3':
+                        showTab('resultado');
+                        break;
+                    case '4':
+                        showTab('adjuntos');
+                        break;
+                    case '5':
+                        showTab('historial');
+                        break;
+                }
+            }
+        });
+    });
+</script>
 </body>
 </html>
