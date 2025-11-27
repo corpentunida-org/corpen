@@ -2,28 +2,57 @@
 
 namespace App\Mail;
 
+use App\Models\Soportes\ScpSoporte;
+use App\Models\Soportes\ScpObservacion;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
-use App\Models\Soportes\ScpSoporte;
-use Illuminate\Support\Facades\Auth;
 
 class SoporteEscaladoMail extends Mailable
 {
     use Queueable, SerializesModels;
 
     public $soporte;
-    public $escaladoPor;
+    public $observacion;
+    public $destinatarioTipo; // 'escalado' o 'creador'
 
-    public function __construct(ScpSoporte $soporte)
+    /**
+     * Create a new message instance.
+     *
+     * @param ScpSoporte $soporte
+     * @param ScpObservacion $observacion
+     * @param string $destinatarioTipo
+     * @return void
+     */
+    public function __construct(ScpSoporte $soporte, ScpObservacion $observacion, $destinatarioTipo = 'escalado')
     {
         $this->soporte = $soporte;
-        $this->escaladoPor = Auth::user(); // Usuario que hizo el escalamiento
+        $this->observacion = $observacion;
+        $this->destinatarioTipo = $destinatarioTipo;
     }
 
+    /**
+     * Build the message.
+     *
+     * @return $this
+     */
     public function build()
     {
-        return $this->subject('📢 Nuevo Soporte Escalado #' . $this->soporte->id)
-                    ->view('emails.soporte_escalado');
+        if ($this->destinatarioTipo === 'escalado') {
+            $subject = "Nuevo soporte escalado: #{$this->soporte->id}";
+            $view = 'emails.soportes.escalado_usuario';
+        } else {
+            $subject = "Su soporte ha sido escalado: #{$this->soporte->id}";
+            $view = 'emails.soportes.escalado_creador';
+        }
+
+        return $this->subject($subject)
+                    ->view($view)
+                    ->with([
+                        'soporte' => $this->soporte,
+                        'observacion' => $this->observacion,
+                        'destinatarioTipo' => $this->destinatarioTipo,
+                    ]);
     }
 }
