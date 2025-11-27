@@ -82,6 +82,7 @@ use App\Http\Controllers\Soportes\ScpSubTipoController;
 use App\Http\Controllers\Soportes\ScpCategoriaController;
 use App\Http\Controllers\Soportes\ScpUsuarioController;
 use App\Http\Controllers\Soportes\ScpNotificacionController;
+use App\Http\Controllers\Soportes\ScpEstadisticaController;
 
 //VISITAS
 use App\Http\Controllers\Vistas\VisitaCorpenController;
@@ -412,6 +413,9 @@ Route::middleware('auth')->prefix('soportes')->name('soportes.')->group(function
     // Tablero principal
     Route::get('tablero', [ScpTableroParametroController::class, 'index'])
         ->name('tablero')->middleware('candirect:soporte.lista.administrador');
+    // Estadisticas de Soprte (Ruta Actualizada)
+    Route::get('estadisticas', [ScpEstadisticaController::class, 'index'])
+        ->name('estadisticas')->middleware('candirect:soporte.lista.administrador');
 
     // Recursos base
     Route::resource('categorias', ScpCategoriaController::class)

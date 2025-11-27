@@ -294,14 +294,16 @@ public function create()
             ->with('success', 'Prioridad del soporte actualizada correctamente.');
     }
 
+    /* REVISAR - dd($request->all()); */
     public function storeObservacion(Request $request, ScpSoporte $scpSoporte)
     {
+        /* dd($request->all()); */
         $request->validate([
             'observacion' => 'required|string',
             'id_scp_estados' => 'required|exists:scp_estados,id',
             'id_tipo_observacion' => 'required|exists:scp_tipo_observacions,id',
             'id_scp_usuario_asignado' => ['nullable', 'integer', 'exists:scp_usuarios,id'],
-            'calcification' => ['nullable', 'integer', 'min:1', 'max:5'], // Validación para la calificación
+            'calcification' => ['nullable', 'integer', 'min:1', 'max:5'],
         ]);
 
         $observacionData = [
@@ -319,7 +321,7 @@ public function create()
             $observacionData['calcification'] = $request->calcification;
         }
 
-        $scpSoporte->observaciones()->create($observacionData);
+        $observacion = $scpSoporte->observaciones()->create($observacionData);
 
         $updateData = [
             'estado' => $request->id_scp_estados,
@@ -331,13 +333,31 @@ public function create()
 
         $scpSoporte->update($updateData);
         
-        // ✅ Enviar correo solo si se cambió el usuario escalado
-        if ($scpSoporte->wasChanged('usuario_escalado') && 
-            $scpSoporte->usuarioEscalado && 
-            $scpSoporte->usuarioEscalado->email) {
-
-            Mail::to($scpSoporte->usuarioEscalado->email)
-                ->send(new SoporteEscaladoMail($scpSoporte));
+        // Verificar si es un escalamiento (tipo de observación = 3 según el código JavaScript)
+        $esEscalamiento = $request->id_tipo_observacion == 3;
+        
+        // Enviar correos si es un escalamiento
+        if ($esEscalamiento) {
+            // Obtener el tipo de observación para confirmar que es "Escalamiento"
+            $tipoObservacion = ScpTipoObservacion::find($request->id_tipo_observacion);
+            
+            if ($tipoObservacion && strtolower($tipoObservacion->nombre) === 'escalamiento') {
+                // Enviar correo al usuario escalado
+                if ($request->filled('id_scp_usuario_asignado') && $request->input('id_scp_usuario_asignado') != '0') {
+                    $usuarioEscalado = ScpUsuario::find($request->input('id_scp_usuario_asignado'));
+                    
+                    if ($usuarioEscalado && $usuarioEscalado->maeTercero && $usuarioEscalado->maeTercero->email) {
+                        Mail::to($usuarioEscalado->maeTercero->email)
+                            ->send(new SoporteEscaladoMail($scpSoporte, $observacion, 'escalado'));
+                    }
+                }
+                
+                // Enviar correo al creador del soporte
+                if ($scpSoporte->usuario && $scpSoporte->usuario->email) {
+                    Mail::to($scpSoporte->usuario->email)
+                        ->send(new SoporteEscaladoMail($scpSoporte, $observacion, 'creador'));
+                }
+            }
         }
 
         return redirect()->route('soportes.soportes.show', $scpSoporte)->with('success', 'Observación añadida y soporte actualizado exitosamente.');
