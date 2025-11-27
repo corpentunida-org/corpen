@@ -34,6 +34,14 @@
                 <i class="bi bi-gear me-2"></i> Parámetros de Soportes
             </a>
         </li>
+        
+        <!-- ===== Opción de Estadísticas (Agregada) ===== -->
+        <li class="nxl-item">
+            <a class="nxl-link" href="{{ route('soportes.estadisticas') }}">
+                <i class="bi bi-bar-chart-fill me-2"></i> Estadísticas
+            </a>
+        </li>
+        <!-- ===== Fin Opción Agregada ===== -->
         @endcandirect
     </ul>
 </li>
