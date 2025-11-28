@@ -27,7 +27,6 @@
             </div>
         </div>
     </div>
-
     <div class="col-lg-12">
         <div class="card stretch stretch-full px-4 py-4 mb-3">
             <div class="mb-4 d-flex align-items-center justify-content-between">

@@ -1,6 +1,17 @@
 <x-base-layout>
     @section('titlepage', 'Beneficiarios')
-    <x-warning />        
+    <x-warning />
+    <style>
+        #circle svg {
+            width: 65px !important;
+            height: 65px !important;
+        }
+        #circle .circle-progress-value {
+            stroke: #198754 !important;
+            stroke-width: 8 !important;
+            stroke-linecap: round !important;
+        }
+    </style>
     <div class="col-12">
         <div class="card stretch stretch-full">
             <div class="card-body">
@@ -59,21 +70,15 @@
                             <div class="hstack justify-content-between gap-4">
                                 <div>
                                     <h6 class="fs-14 text-truncate-1-line">Beneficiarios Agregados</h6>
-                                    <div class="fs-12 text-muted"><span class="text-dark fw-medium">Mes 2024:</span>
-                                        <script>
-                                            const meses = [
-                                                "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-                                                "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
-                                            ];
-                                            const fecha = new Date();
-                                            const mesActual = meses[fecha.getMonth()];
-                                            document.write(mesActual)
-                                        </script>
+                                    <div class="fs-12 text-muted"><span class="text-dark fw-medium">Mes
+                                            {{ \Carbon\Carbon::now()->locale('es')->translatedFormat('Y') }}:</span>
+                                        {{ ucfirst(\Carbon\Carbon::now()->locale('es')->translatedFormat('F')) }}
                                     </div>
                                 </div>
-                                <div class="project-progress-4"></div>
+                                {{-- <div class="project-progress-4"></div> --}}
+                                <div id="circle" style="width:65px;height: 65px;"></div>
                             </div>
-                            <div class="badge bg-gray-200 text-dark project-mini-card-badge">Updates</div>
+                            <div class="badge bg-gray-200 text-dark project-mini-card-badge">Registros</div>
                         </div>
                     </div>
                     <div class="col-xxl-3 col-md-6">
@@ -116,8 +121,26 @@
                         </div>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>
+    <script>
+        $(document).ready(function() {
+            // Cambia este valor por el porcentaje que quieras (0 a 100)
+            let porcentaje = 10;
+
+            $('#circle').circleProgress({
+                max: 100,
+                value: 65,
+                textFormat: "percent",
+                thickness: 6,
+                lineCap: "round",
+                valueColor: "#4B49AC",
+            }).on('circle-animation-progress', function(event, progress) {
+                $(this).html(
+                    '<strong>' + Math.round(porcentaje * progress) + '%</strong>'
+                );
+            });
+        });
+    </script>
 </x-base-layout>>
