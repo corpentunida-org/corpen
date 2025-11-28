@@ -59,8 +59,6 @@ use App\Http\Controllers\Interacciones\IntTypeController;
 use App\Http\Controllers\Interacciones\IntOutcomeController;
 use App\Http\Controllers\Interacciones\IntNextActionController;
 
-
-
 // FLUJO
 use App\Http\Controllers\Flujo\WorkflowController;
 use App\Http\Controllers\Flujo\TaskController;
@@ -85,6 +83,9 @@ use App\Http\Controllers\Soportes\ScpNotificacionController;
 
 //VISITAS
 use App\Http\Controllers\Vistas\VisitaCorpenController;
+
+//QUIZ INDICATORS
+use App\Http\Controllers\Indicators\QuizController;
 
 
 /* Route::middleware(['auth'])->group(function () {
@@ -493,9 +494,6 @@ Route::middleware('auth')->prefix('soportes')->name('soportes.')->group(function
 //FIN SOPORTE
 
 
-
-
-
 //VISITAS
 Route::middleware('auth')->prefix('visitas')->name('visitas.')->group(function () {
 
@@ -520,3 +518,13 @@ Route::middleware('auth')->prefix('visitas')->name('visitas.')->group(function (
         ])
         ->parameters(['corpen' => 'visitaCorpen']);
 });
+
+//QUIZ TI
+Route::get('/indicators/quiz', [QuizController::class, 'index'])->name('indicators.quiz.inicio');
+Route::get('/indicators/quiz/preguntas', [QuizController::class, 'generarpreguntas'])->name('indicators.quiz.preguntas');
+Route::post('/indicators/validarcorreo', function (Illuminate\Http\Request $request) {
+    $existe = \DB::table('gdo_cargo')->where('correo_corporativo', $request->correoUsuario)->exists();
+    $respondido  = \DB::table('Ind_usuarios')->where('id_correo', $request->correoUsuario)->exists();
+    return response()->json(['existe' => $existe,'respondido' => $respondido ]);
+})->name('indicators.validar.correo');
+Route::post('/indicators/quiz/store', [QuizController::class, 'store'])->name('indicators.quiz.store');
