@@ -336,7 +336,10 @@ public function create()
         // Verificar si es un escalamiento (tipo de observación = 3 según el código JavaScript)
         $esEscalamiento = $request->id_tipo_observacion == 3;
         
-        // Enviar correos si es un escalamiento
+        // ================================
+        //   LÓGICA DE ENVÍO DE CORREOS (COMENTADA)
+        // ================================
+        /*
         if ($esEscalamiento) {
             // Obtener el tipo de observación para confirmar que es "Escalamiento"
             $tipoObservacion = ScpTipoObservacion::find($request->id_tipo_observacion);
@@ -359,9 +362,13 @@ public function create()
                 }
             }
         }
+        */
+        // ================================
 
-        return redirect()->route('soportes.soportes.show', $scpSoporte)->with('success', 'Observación añadida y soporte actualizado exitosamente.');
+        return redirect()->route('soportes.soportes.show', $scpSoporte)
+            ->with('success', 'Observación añadida y soporte actualizado exitosamente.');
     }
+
 
     public function destroyObservacion(ScpSoporte $scpSoporte, ScpObservacion $scpObservacion)
     {
