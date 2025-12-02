@@ -39,17 +39,18 @@
                 <div class="col-lg-4 mb-4">
                     <label class="form-label">Valor Asegurado Actual</label>
                     <input type="text" id="valoraseguradoplan" name="valorAsegurado" class="form-control"
-                        value="$ {{ number_format($novedad->poliza->valor_asegurado) }}" disabled>
+                        value="{{ optional($novedad->poliza)->valor_asegurado ? '$ ' . number_format($novedad->poliza->valor_asegurado) : '' }}"
+                        disabled>
                 </div>
                 <div class="col-lg-4 mb-4">
                     <label class="form-label">Prima Plan Actual</label>
                     <input type="text" id="valoraseguradoplan" name="valorAsegurado" class="form-control"
-                        value="$ {{ number_format($novedad->poliza->valor_prima) }}" disabled>
+                        value="{{ optional($novedad->poliza)->valor_prima ? '$ '.number_format($novedad->poliza->valor_prima) : '' }}" disabled>
                 </div>
                 <div class="col-lg-4 mb-4">
                     <label class="form-label">Valor a Pagar Mensualidad</label>
                     <input type="text" id="primaplan" class="form-control" name="valorPrima"
-                        value="$ {{ number_format($novedad->poliza->primapagar) }}" disabled>
+                        value="{{ optional($novedad->poliza)->primapagar ? '$ '.number_format($novedad->poliza->primapagar) : '' }}" disabled>
                 </div>
             </div>
             @if ($editar)
@@ -143,14 +144,15 @@
                                     </thead>
                                     <tbody>
                                         @foreach ($actividadnov as $actividad)
-                                            @php                                                
+                                            @php
                                                 $color = $estados[$actividad->estado]['color'] ?? 'secondary';
                                             @endphp
                                             <tr>
                                                 <td>{{ $actividad->fechaInicio }}</td>
-                                                <td><span class="badge bg-soft-{{$color}} text-{{$color}}">{{$actividad->estadosname->nombre}}</span>
+                                                <td><span
+                                                        class="badge bg-soft-{{ $color }} text-{{ $color }}">{{ $actividad->estadosname->nombre ?? ' ' }}</span>
                                                 </td>
-                                                <td>{{strtoupper($actividad->observaciones)}}</td>
+                                                <td>{{ strtoupper($actividad->observaciones) }}</td>
                                             </tr>
                                         @endforeach
                                     </tbody>
