@@ -267,10 +267,28 @@ Route::prefix('archivo')->middleware('auth')->group(function () {
         ->names('archivo.area')
         ->parameters(['areas' => 'area']);
 
-    Route::resource('empleados', GdoEmpleadoController::class)
-        ->names('archivo.empleado')
-        ->parameters(['empleados' => 'empleado']);
-
+    // Empleados - Modificado para manejar la vista unificada
+    Route::get('empleados', [GdoEmpleadoController::class, 'index'])
+        ->name('archivo.empleado.index');
+    
+    Route::get('empleados/create', [GdoEmpleadoController::class, 'create'])
+        ->name('archivo.empleado.create');
+    
+    Route::post('empleados', [GdoEmpleadoController::class, 'store'])
+        ->name('archivo.empleado.store');
+    
+    Route::get('empleados/{empleado}', [GdoEmpleadoController::class, 'show'])
+        ->name('archivo.empleado.show');
+    
+    Route::get('empleados/{empleado}/edit', [GdoEmpleadoController::class, 'edit'])
+        ->name('archivo.empleado.edit');
+    
+    Route::put('empleados/{empleado}', [GdoEmpleadoController::class, 'update'])
+        ->name('archivo.empleado.update');
+    
+    Route::delete('empleados/{empleado}', [GdoEmpleadoController::class, 'destroy'])
+        ->name('archivo.empleado.destroy');
+    
     Route::get('empleados/{empleado}/foto', [GdoEmpleadoController::class, 'verFoto'])
         ->name('archivo.empleado.verFoto')
         ->middleware('auth');
