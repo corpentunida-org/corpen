@@ -4,19 +4,19 @@ namespace App\Http\Controllers\Archivo;
 
 use App\Http\Controllers\Controller;
 use App\Models\Archivo\GdoEmpleado;
+use App\Models\Archivo\GdoCargo;
+use App\Models\Archivo\GdoArea;
 use App\Models\Archivo\GdoDocsEmpleados;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage; // Importante para manejar archivos
 
 class GdoEmpleadoController extends Controller
 {
-    /**
-     * Mostrar listado de empleados con búsqueda y paginación.
-     */
     public function index(Request $request)
     {
         $search = $request->input('search');
-
+        $empleadoId = $request->input('id');
+        
+        // Obtener la lista de empleados
         $empleados = GdoEmpleado::when($search, function ($query, $search) {
                 $query->where('cedula', 'like', "%{$search}%")
                     ->orWhere('nombre1', 'like', "%{$search}%")
@@ -26,151 +26,160 @@ class GdoEmpleadoController extends Controller
             })
             ->orderBy('apellido1')
             ->orderBy('apellido2')
-            ->paginate(7)
+            ->paginate(1)
             ->appends(['search' => $search]);
-
-        return view('archivo.empleado.index', compact('empleados', 'search'));
-    }
-
-    /**
-     * Mostrar formulario de creación.
-     */
-    public function create()
-    {
-        $empleado = new GdoEmpleado();
-        return view('archivo.empleado.create', compact('empleado'));
-    }
-
-    /**
-     * Guardar un nuevo empleado.
-     */
-    public function store(Request $request)
-    {
-        $validatedData = $request->validate([
-            'cedula' => 'required|string|max:20|unique:gdo_empleados,cedula',
-            'apellido1' => 'required|string|max:50',
-            'apellido2' => 'nullable|string|max:50',
-            'nombre1' => 'required|string|max:50',
-            'nombre2' => 'nullable|string|max:50',
-            'nacimiento' => 'nullable|date',
-            'lugar' => 'nullable|string|max:100',
-            'sexo' => 'nullable|in:M,F',
-            'correo_personal' => 'nullable|email|max:100',
-            'celular_personal' => 'nullable|string|max:20',
-            'celular_acudiente' => 'nullable|string|max:20',
-            // Se mantiene la validación de la imagen
-            'ubicacion_foto' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-        ]);
-
-        if ($request->hasFile('ubicacion_foto')) {
-            // CORREGIDO: Guardar en el disco local (privado) en la carpeta especificada
-            $path = $request->file('ubicacion_foto')->store('gestion/fotosempleados');
-            $validatedData['ubicacion_foto'] = $path;
+        
+        // Obtener el empleado seleccionado si se proporciona un ID
+        $empleadoSeleccionado = null;
+        $documentosDelEmpleado = null;
+        
+        if ($empleadoId) {
+            $empleadoSeleccionado = GdoEmpleado::with('cargo')->find($empleadoId);
+            
+            if ($empleadoSeleccionado) {
+                $documentosDelEmpleado = GdoDocsEmpleados::where('empleado_id', $empleadoSeleccionado->cedula)
+                                                    ->with('tipoDocumento')
+                                                    ->latest('fecha_subida')
+                                                    ->paginate(10, ['*'], 'docs_page');
+            }
         }
-
-        GdoEmpleado::create($validatedData);
-
-        return redirect()
-            ->route('archivo.empleado.index')
-            ->with('success', 'Empleado creado correctamente.');
-    }
-
-    /**
-     * Mostrar un empleado específico.
-     */
-    public function show(GdoEmpleado $empleado)
-    {
-        $empleado->load('cargo');
-        $documentosDelEmpleado = GdoDocsEmpleados::where('empleado_id', $empleado->cedula)
-                                                ->with('tipoDocumento')
-                                                ->latest('fecha_subida')
-                                                ->paginate(10, ['*'], 'docs_page');
-
-        return view('archivo.empleado.show', [
-            'empleado' => $empleado,
+        
+        return view('archivo.empleado.index', [
+            'empleados' => $empleados,
+            'search' => $search,
+            'empleadoSeleccionado' => $empleadoSeleccionado,
             'documentosDelEmpleado' => $documentosDelEmpleado,
         ]);
     }
 
     /**
-     * Mostrar formulario de edición.
+     * Store a newly created resource in storage.
      */
-    public function edit(GdoEmpleado $empleado)
+    public function store(Request $request)
     {
-        return view('archivo.empleado.edit', compact('empleado'));
-    }
-
-    /**
-     * Actualizar un empleado.
-     */
-    public function update(Request $request, GdoEmpleado $empleado)
-    {
-        
-        $validatedData = $request->validate([
-            'cedula' => 'required|string|max:20|unique:gdo_empleados,cedula,' . $empleado->id,
-            'apellido1' => 'required|string|max:50',
-            'apellido2' => 'nullable|string|max:50',
+        // Validación de datos
+        $validated = $request->validate([
+            'cedula' => 'required|string|max:20|unique:gdo_empleados,cedula',
             'nombre1' => 'required|string|max:50',
             'nombre2' => 'nullable|string|max:50',
+            'apellido1' => 'required|string|max:50',
+            'apellido2' => 'nullable|string|max:50',
             'nacimiento' => 'nullable|date',
             'lugar' => 'nullable|string|max:100',
             'sexo' => 'nullable|in:M,F',
             'correo_personal' => 'nullable|email|max:100',
             'celular_personal' => 'nullable|string|max:20',
             'celular_acudiente' => 'nullable|string|max:20',
-            'ubicacion_foto' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'ubicacion_foto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'cargo_id' => 'nullable|exists:gdo_cargos,id',
         ]);
-
+        
+        // Manejo de la foto
         if ($request->hasFile('ubicacion_foto')) {
-            // 1. CORREGIDO: Borrar la foto anterior del disco local.
-            if ($empleado->ubicacion_foto) {
-                Storage::delete($empleado->ubicacion_foto);
-            }
-            // 2. CORREGIDO: Guardar la nueva foto en el disco local.
-            $path = $request->file('ubicacion_foto')->store('gestion/fotosempleados');
-            $validatedData['ubicacion_foto'] = $path;
+            $path = $request->file('ubicacion_foto')->store('empleados_fotos', 'public');
+            $validated['ubicacion_foto'] = $path;
         }
-
-        $empleado->update($validatedData);
-
-        return redirect()
-            ->route('archivo.empleado.index')
-            ->with('success', 'Empleado actualizado correctamente.');
+        
+        // Crear el empleado
+        $empleado = GdoEmpleado::create($validated);
+        
+        // Si es una petición AJAX, devolver respuesta JSON
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Empleado creado exitosamente.',
+                'empleado' => $empleado->load('cargo')
+            ]);
+        }
+        
+        return redirect()->route('archivo.empleado.index', ['id' => $empleado->id])
+            ->with('success', 'Empleado creado exitosamente.');
     }
 
     /**
-     * Eliminar un empleado.
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, GdoEmpleado $empleado)
+    {
+        // Validación de datos
+        $validated = $request->validate([
+            'cedula' => 'required|string|max:20|unique:gdo_empleados,cedula,'.$empleado->id,
+            'nombre1' => 'required|string|max:50',
+            'nombre2' => 'nullable|string|max:50',
+            'apellido1' => 'required|string|max:50',
+            'apellido2' => 'nullable|string|max:50',
+            'nacimiento' => 'nullable|date',
+            'lugar' => 'nullable|string|max:100',
+            'sexo' => 'nullable|in:M,F',
+            'correo_personal' => 'nullable|email|max:100',
+            'celular_personal' => 'nullable|string|max:20',
+            'celular_acudiente' => 'nullable|string|max:20',
+            'ubicacion_foto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'cargo_id' => 'nullable|exists:gdo_cargos,id',
+        ]);
+        
+        // Manejo de la foto
+        if ($request->hasFile('ubicacion_foto')) {
+            // Eliminar foto anterior si existe
+            if ($empleado->ubicacion_foto) {
+                //Storage::disk('public')->delete($empleado->ubicacion_foto);
+            }
+            
+            $path = $request->file('ubicacion_foto')->store('empleados_fotos', 'public');
+            $validated['ubicacion_foto'] = $path;
+        }
+        
+        // Actualizar el empleado
+        $empleado->update($validated);
+        
+        // Si es una petición AJAX, devolver respuesta JSON
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Empleado actualizado exitosamente.',
+                'empleado' => $empleado->load('cargo')
+            ]);
+        }
+        
+        return redirect()->route('archivo.empleado.index', ['id' => $empleado->id])
+            ->with('success', 'Empleado actualizado exitosamente.');
+    }
+
+    /**
+     * Remove the specified resource from storage.
      */
     public function destroy(GdoEmpleado $empleado)
     {
-        // CORREGIDO: Borrar la foto asociada del disco local.
+        // Eliminar documentos asociados si es necesario
+        GdoDocsEmpleados::where('empleado_id', $empleado->cedula)->delete();
+        
+        // Eliminar foto si existe
         if ($empleado->ubicacion_foto) {
-            Storage::delete($empleado->ubicacion_foto);
+            //Storage::disk('public')->delete($empleado->ubicacion_foto);
         }
-
+        
+        // Eliminar el empleado
         $empleado->delete();
-
-        return redirect()
-            ->route('archivo.empleado.index')
-            ->with('success', 'Empleado eliminado correctamente.');
+        
+        // Si es una petición AJAX, devolver respuesta JSON
+        if (request()->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Empleado eliminado exitosamente.',
+                'redirect' => route('archivo.empleado.index')
+            ]);
+        }
+        
+        return redirect()->route('archivo.empleado.index')
+            ->with('success', 'Empleado eliminado exitosamente.');
     }
 
     /**
-     * NUEVO: Método para servir la imagen de forma segura.
-     * Este método se encarga de leer el archivo del storage privado y enviarlo al navegador.
-     *
-     * @param  \App\Models\Archivo\GdoEmpleado  $empleado
-     * @return \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse
+     * Mostrar la foto de un empleado.
      */
     public function verFoto(GdoEmpleado $empleado)
     {
-        // Validamos que el empleado realmente tenga una foto y que el archivo exista en el disco.
-        if (!$empleado->ubicacion_foto || !Storage::exists($empleado->ubicacion_foto)) {
-            // Si no se encuentra, abortamos con un error 404 (Not Found).
-            abort(404, 'Imagen no encontrada.');
-        }
-
-        // Retornamos la respuesta del archivo. Laravel se encarga de los encabezados correctos.
-        return Storage::response($empleado->ubicacion_foto);
+        // Lógica para mostrar la foto del empleado
+        // ...
     }
 }
