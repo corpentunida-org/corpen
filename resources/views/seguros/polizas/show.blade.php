@@ -188,7 +188,7 @@
                                                 floatval($familiar->polizas->first()->primapagar);
                                         }
                                     @endphp
-                                    @if (isset($valortotalbene) && $valortotalbene !== null)
+                                    @if (isset($valortotalbene) && $valortotalbene !== null && $valortotalbene > 0)
                                         <span
                                             class="{{ $valortotalbene != 0 ? 'badge bg-soft-success text-success' : '' }}">
                                             $ {{ number_format($valortotalbene) }}
