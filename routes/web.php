@@ -431,9 +431,14 @@ Route::middleware('auth')->prefix('soportes')->name('soportes.')->group(function
     // Tablero principal
     Route::get('tablero', [ScpTableroParametroController::class, 'index'])
         ->name('tablero')->middleware('candirect:soporte.lista.administrador');
+    
     // Estadisticas de Soprte (Ruta Actualizada)
     Route::get('estadisticas', [ScpEstadisticaController::class, 'index'])
         ->name('estadisticas')->middleware('candirect:soporte.lista.administrador');
+    
+    // Ruta para obtener datos del dashboard via AJAX
+    Route::get('estadisticas/data', [ScpEstadisticaController::class, 'getDashboardData'])
+        ->name('estadisticas.data')->middleware('candirect:soporte.lista.administrador');
 
     // Recursos base
     Route::resource('categorias', ScpCategoriaController::class)
