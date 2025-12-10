@@ -1,4 +1,5 @@
 @php
+    // Detectar si estamos en modo edición
     $modoEdicion = isset($interaction) && $interaction->id;
 @endphp
 <<<<<<< HEAD
@@ -2950,1065 +2951,1576 @@
 </html>
 =======
 
-<style>
-    :root {
-        --pastel-blue: #E6F3FF;
-        --pastel-purple: #F5EEFF;
-        --pastel-pink: #FCE4EC;
-        --pastel-green: #E8F5E8;
-        --pastel-yellow: #FFF9E6;
-        --pastel-gray: #F8F9FA;
-        --pastel-lavender: #F5F0FF;
-        --primary-color: #6B9BD1;
-        --text-primary: #374151;
-        --text-secondary: #6B7280;
-        --border-color: #E5E7EB;
-    }
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ $modoEdicion ? 'Editar Interacción' : 'Registro de Seguimiento Diario' }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet">
 
-    body {
-        margin: 0;
-        padding: 15px;
-        background: linear-gradient(135deg, #FAFBFC 0%, #F3F4F6 100%);
-    }
-
-    .card {
-        width: 100% !important;
-        max-width: none !important;
-        border-radius: 12px !important;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
-    }
-
-    .card-header {
-        background: linear-gradient(135deg, var(--pastel-blue) 0%, var(--pastel-lavender) 100%) !important;
-        color: var(--text-primary) !important;
-        padding: 1.25rem !important;
-    }
-
-    .card-body {
-        padding: 0 !important;
-    }
-
-    .progress-section {
-        background: var(--pastel-blue);
-        padding: 20px 32px;
-        border-bottom: 1px solid var(--border-color);
-    }
-
-    .progress-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 16px;
-    }
-
-    .progress-title {
-        font-size: 14px;
-        font-weight: 500;
-        color: var(--text-secondary);
-    }
-
-    .progress-percentage {
-        font-size: 14px;
-        font-weight: 600;
-        color: var(--primary-color);
-    }
-
-    .progress-bar-container {
-        height: 6px;
-        background: rgba(255, 255, 255, 0.5);
-        border-radius: 3px;
-        overflow: hidden;
-        margin-bottom: 12px;
-    }
-
-    .progress-bar-fill {
-        height: 100%;
-        background: linear-gradient(90deg, #60A5FA, #3B82F6);
-        border-radius: 3px;
-        transition: width 0.6s ease;
-        position: relative;
-    }
-
-    .progress-bar-fill::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-        animation: shimmer 2s infinite;
-    }
-
-    @keyframes shimmer {
-        0% {
-            transform: translateX(-100%);
+    <style>
+        /* ===== COLORES PASTELES CORPORATIVOS MINIMALISTAS ===== */
+        :root {
+            --primary-color: #6B9BD1;
+            --primary-light: #E6F3FF;
+            --secondary-color: #F5F0FF;
+            --accent-color: #E8F5E8;
+            --text-primary: #374151;
+            --text-secondary: #6B7280;
+            --border-color: #E5E7EB;
+            --background-color: #FAFBFC;
+            --card-background: #FFFFFF;
+            --input-background: #F8F9FA;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+            --border-radius: 8px;
+            --transition: all 0.2s ease;
         }
 
-        100% {
-            transform: translateX(100%);
-        }
-    }
-
-    .progress-message {
-        font-size: 12px;
-        color: var(--text-secondary);
-        text-align: center;
-    }
-
-    .tab-navigation {
-        display: flex;
-        background: var(--pastel-gray);
-        border-bottom: 1px solid var(--border-color);
-    }
-
-    .tab-button {
-        flex: 1;
-        padding: 20px;
-        background: transparent;
-        border: none;
-        border-bottom: 3px solid transparent;
-        cursor: pointer;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 8px;
-        color: var(--text-secondary);
-        transition: all 0.3s ease;
-        position: relative;
-    }
-
-    .tab-button i {
-        font-size: 20px;
-    }
-
-    .tab-button span {
-        font-size: 12px;
-        font-weight: 500;
-    }
-
-    .tab-button.active {
-        color: var(--primary-color);
-        background: white;
-        border-bottom-color: var(--primary-color);
-    }
-
-    .tab-button:hover:not(.active) {
-        color: var(--text-primary);
-        background: rgba(255, 255, 255, 0.5);
-    }
-
-    .form-content {
-        padding: 1.5rem;
-    }
-
-    .tab-panel {
-        display: none;
-        animation: fadeIn 0.4s ease;
-    }
-
-    .tab-panel.active {
-        display: block;
-    }
-
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(10px);
+        /* ===== ESTILOS GENERALES ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
+        /*  body {
+            margin: 0;
+            padding: 20px;
+            background-color: var(--background-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-primary);
+            line-height: 1.6;} 
+        */
 
-    .category-container {
-        margin-bottom: 2rem;
-        border: 1px solid var(--border-color);
-        border-radius: 12px;
-        overflow: hidden;
-        background: white;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-    }
-
-    .category-header {
-        background: linear-gradient(135deg, var(--pastel-gray) 0%, var(--pastel-blue) 20%);
-        padding: 1rem 1.5rem;
-        border-bottom: 1px solid var(--border-color);
-    }
-
-    .category-title {
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: var(--text-primary);
-        margin: 0;
-        display: flex;
-        align-items: center;
-    }
-
-    .category-icon {
-        width: 32px;
-        height: 32px;
-        background: var(--primary-color);
-        color: white;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-right: 12px;
-        font-size: 16px;
-    }
-
-    .category-description {
-        font-size: 0.85rem;
-        color: var(--text-secondary);
-        margin: 4px 0 0 44px;
-    }
-
-    .category-content {
-        padding: 1.5rem;
-    }
-
-    .section-divider {
-        position: relative;
-        padding-top: 1rem;
-        margin-top: 1rem;
-        border-top: 1px solid var(--border-color);
-    }
-
-    .section-title {
-        font-size: 0.95rem;
-        font-weight: 600;
-        color: var(--text-primary);
-        margin-bottom: 0.5rem;
-        display: flex;
-        align-items: center;
-    }
-
-    .section-description {
-        font-size: 0.85rem;
-        color: var(--text-secondary);
-        margin-bottom: 1rem;
-    }
-
-    .form-control,
-    .form-select {
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
-        transition: all 0.2s ease;
-    }
-
-    .form-control:focus,
-    .form-select:focus {
-        border-color: var(--primary-color);
-        box-shadow: 0 0 0 0.25rem rgba(107, 155, 209, 0.25);
-    }
-
-    .form-floating label {
-        color: var(--text-secondary);
-    }
-
-    .form-floating>.form-control:focus~label,
-    .form-floating>.form-control:not(:placeholder-shown)~label,
-    .form-floating>.form-select~label {
-        color: var(--text-primary);
-    }
-
-    .btn-primary {
-        background: linear-gradient(135deg, var(--pastel-blue) 0%, var(--primary-color) 100%);
-        border: none;
-        color: white;
-    }
-
-    .btn-primary:hover {
-        background: linear-gradient(135deg, var(--primary-color) 0%, #5A8AC1 100%);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 8px rgba(107, 155, 209, 0.3);
-    }
-
-    .btn-light {
-        background: white;
-        border: 1px solid var(--border-color);
-        color: var(--text-primary);
-    }
-
-    .btn-light:hover {
-        background: var(--pastel-gray);
-        transform: translateY(-1px);
-    }
-
-    .btn-outline-primary {
-        border: 1px solid var(--primary-color);
-        color: var(--primary-color);
-    }
-
-    .btn-outline-primary:hover {
-        background: var(--pastel-blue);
-        transform: translateY(-1px);
-    }
-
-    .btn-outline-secondary {
-        border: 1px solid var(--border-color);
-        color: var(--text-secondary);
-    }
-
-    .btn-outline-secondary:hover {
-        background: var(--pastel-gray);
-        transform: translateY(-1px);
-    }
-
-    .card.border-0.bg-light {
-        background: var(--pastel-gray) !important;
-        border: 1px solid var(--border-color) !important;
-        border-radius: 10px !important;
-        margin-bottom: 1rem !important;
-    }
-
-    .client-avatar {
-        background: linear-gradient(135deg, var(--pastel-blue) 0%, var(--primary-color) 100%);
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-        border-radius: 50%;
-    }
-
-    .select2-container--bootstrap-5 .select2-selection {
-        min-height: 58px;
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
-    }
-
-    .select2-container--bootstrap-5.select2-container--focus .select2-selection {
-        border-color: var(--primary-color);
-        box-shadow: 0 0 0 0.25rem rgba(107, 155, 209, 0.25);
-    }
-
-    .is-invalid {
-        border-color: #dc3545;
-    }
-
-    .is-valid {
-        border-color: #198754;
-    }
-
-    .invalid-feedback {
-        color: #dc3545;
-        font-size: 0.875rem;
-        margin-top: 0.25rem;
-    }
-
-    @media (max-width: 768px) {
-        body {
-            padding: 10px;
+        .container-fluid {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0;
         }
 
-        .form-content {
-            padding: 1rem;
+        /* ===== TARJETA PRINCIPAL ===== */
+        .card {
+            width: 100%;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-md);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            background-color: var(--card-background);
+            transition: var(--transition);
         }
 
-        .category-content {
-            padding: 1rem;
+        .card:hover {
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
         }
 
-        .tab-button span {
-            display: none;
+        .card-header {
+            background-color: var(--primary-light);
+            color: var(--text-primary);
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .card-body {
+            padding: 0;
+        }
+
+        /* ===== BARRA DE PROGRESO ===== */
+        .progress-section {
+            background-color: var(--input-background);
+            padding: 20px 32px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .progress-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .progress-percentage {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .progress-bar-container {
+            height: 6px;
+            background: rgba(107, 155, 209, 0.2);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--primary-color);
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        .progress-message {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+
+        /* ===== NAVEGACIÓN POR PESTAÑAS ===== */
+        .tab-navigation {
+            display: flex;
+            background-color: var(--input-background);
+            border-bottom: 1px solid var(--border-color);
         }
 
         .tab-button {
-            padding: 16px;
+            flex: 1;
+            padding: 18px;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            color: var(--text-secondary);
+            transition: var(--transition);
         }
 
-        .d-flex.justify-content-between.mt-4 {
-            flex-direction: column;
+        .tab-button i { 
+            font-size: 18px; 
+        }
+        
+        .tab-button span { 
+            font-size: 12px; 
+            font-weight: 500; 
+        }
+
+        .tab-button.active {
+            color: var(--primary-color);
+            background: var(--card-background);
+            border-bottom-color: var(--primary-color);
+        }
+
+        .tab-button:hover:not(.active) {
+            color: var(--text-primary);
+            background-color: rgba(107, 155, 209, 0.05);
+        }
+
+        /* ===== CONTENIDO DEL FORMULARIO ===== */
+        .form-content { 
+            padding: 1.5rem; 
+        }
+        
+        .tab-panel { 
+            display: none; 
+            animation: fadeIn 0.3s ease; 
+        }
+        
+        .tab-panel.active { 
+            display: block; 
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* ===== CATEGORÍAS ===== */
+        .category-container {
+            margin-bottom: 2rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            background: var(--card-background);
+            box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+        }
+
+        .category-container:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+        .category-header {
+            background-color: var(--input-background);
+            padding: 1.2rem 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .category-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .category-icon {
+            width: 36px;
+            height: 36px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: var(--border-radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            font-size: 16px;
+        }
+
+        .category-description {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin: 4px 0 0 48px;
+        }
+
+        .category-content { 
+            padding: 1.5rem; 
+        }
+
+        /* ===== SECCIONES INTERNAS ===== */
+        .section-divider {
+            position: relative;
+            padding-top: 1rem;
+            margin-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .section-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-description {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+
+        /* ===== FORMULARIOS ===== */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        
+        .form-control, .form-select {
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            padding: 0.75rem;
+            transition: var(--transition);
+            font-size: 0.95rem;
+            width: 100%;
+            background-color: var(--card-background);
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(107, 155, 209, 0.1);
+            outline: none;
+        }
+
+        /* ===== BOTONES ===== */
+        .btn-primary {
+            background-color: var(--primary-color);
+            border: none; 
+            color: white;
+            font-weight: 500;
+            padding: 0.6rem 1.25rem;
+            border-radius: var(--border-radius);
+            transition: var(--transition);
+            cursor: pointer;
+        }
+        
+        .btn-primary:hover {
+            background-color: #5A8AC1;
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-light {
+            background-color: var(--card-background);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            font-weight: 500;
+            padding: 0.6rem 1.25rem;
+            border-radius: var(--border-radius);
+            transition: var(--transition);
+            cursor: pointer;
+        }
+        
+        .btn-light:hover {
+            background-color: var(--input-background);
+            transform: translateY(-1px);
+        }
+
+        .btn-outline-primary {
+            border: 1px solid var(--primary-color);
+            color: var(--primary-color);
+            font-weight: 500;
+            padding: 0.6rem 1.25rem;
+            border-radius: var(--border-radius);
+            background: transparent;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+        
+        .btn-outline-primary:hover {
+            background-color: var(--primary-light);
+            transform: translateY(-1px);
+        }
+
+        .btn-outline-secondary {
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-weight: 500;
+            padding: 0.6rem 1.25rem;
+            border-radius: var(--border-radius);
+            background: transparent;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+        
+        .btn-outline-secondary:hover {
+            background-color: var(--input-background);
+            transform: translateY(-1px);
+        }
+
+        /* ===== TARJETAS ===== */
+        .card.border-0.bg-light {
+            background-color: var(--input-background) !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: var(--border-radius) !important;
+            margin-bottom: 1rem !important;
+            transition: var(--transition);
+        }
+
+        .card.border-0.bg-light:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        /* ===== AVATAR ===== */
+        .client-avatar {
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            border-radius: 50%;
+            transition: var(--transition);
+        }
+
+        .client-avatar:hover {
+            transform: scale(1.05);
+        }
+
+        /* ===== SELECT2 ===== */
+        .select2-container--bootstrap-5 .select2-selection {
+            min-height: 38px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+        }
+        
+        .select2-container--bootstrap-5.select2-container--focus .select2-selection {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(107, 155, 209, 0.1);
+        }
+
+        /* ===== VALIDACIÓN ===== */
+        .is-invalid { 
+            border-color: #EF4444; 
+        }
+        
+        .is-valid { 
+            border-color: #10B981; 
+        }
+        
+        .invalid-feedback { 
+            color: #EF4444; 
+            font-size: 0.875rem; 
+            margin-top: 0.25rem; 
+        }
+
+        /* ===== CAMPO SOLO LECTURA ===== */
+        .form-control[readonly] {
+            background-color: var(--input-background);
+            opacity: 1;
+        }
+
+        /* ===== ACCIONES DEL FORMULARIO ===== */
+        .form-actions {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        /* ===== ESTILOS PARA EL HISTORIAL ===== */
+        .history-item {
+            transition: var(--transition);
+        }
+        
+        .history-item:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .history-list::-webkit-scrollbar { 
+            width: 6px; 
+        }
+        
+        .history-list::-webkit-scrollbar-track { 
+            background: var(--input-background); 
+            border-radius: 3px; 
+        }
+        
+        .history-list::-webkit-scrollbar-thumb { 
+            background: var(--border-color); 
+            border-radius: 3px; 
+        }
+        
+        .history-list::-webkit-scrollbar-thumb:hover { 
+            background: var(--text-secondary); 
+        }
+
+        /* ===== IMÁGENES ===== */
+        .img-thumbnail {
+            max-width: 100%;
+            height: auto;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+            padding: 0.25rem;
+            background-color: var(--card-background);
+            transition: var(--transition);
+        }
+
+        .img-thumbnail:hover {
+            transform: scale(1.02);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .file-preview {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: var(--border-radius);
+            margin-top: 0.5rem;
+            object-fit: contain;
+        }
+
+        /* ===== UTILIDADES BOOTSTRAP REEMPLAZADAS ===== */
+        .d-flex {
+            display: flex;
+        }
+        
+        .justify-content-between {
+            justify-content: space-between;
+        }
+        
+        .align-items-center {
+            align-items: center;
+        }
+        
+        .align-items-start {
+            align-items: flex-start;
+        }
+        
+        .text-center {
+            text-align: center;
+        }
+        
+        .text-end {
+            text-align: right;
+        }
+        
+        .text-muted {
+            color: var(--text-secondary);
+        }
+        
+        .text-primary {
+            color: var(--primary-color);
+        }
+        
+        .text-danger {
+            color: #EF4444;
+        }
+        
+        .text-white {
+            color: white;
+        }
+        
+        .mb-0 {
+            margin-bottom: 0;
+        }
+        
+        .mb-1 {
+            margin-bottom: 0.25rem;
+        }
+        
+        .mb-2 {
+            margin-bottom: 0.5rem;
+        }
+        
+        .mb-3 {
+            margin-bottom: 1rem;
+        }
+        
+        .mb-4 {
+            margin-bottom: 1.5rem;
+        }
+        
+        .mt-1 {
+            margin-top: 0.25rem;
+        }
+        
+        .mt-2 {
+            margin-top: 0.5rem;
+        }
+        
+        .mt-3 {
+            margin-top: 1rem;
+        }
+        
+        .mt-4 {
+            margin-top: 1.5rem;
+        }
+        
+        .me-1 {
+            margin-right: 0.25rem;
+        }
+        
+        .me-2 {
+            margin-right: 0.5rem;
+        }
+        
+        .me-3 {
+            margin-right: 1rem;
+        }
+        
+        .me-auto {
+            margin-right: auto;
+        }
+        
+        .ms-1 {
+            margin-left: 0.25rem;
+        }
+        
+        .ms-auto {
+            margin-left: auto;
+        }
+        
+        .py-3 {
+            padding-top: 1rem;
+            padding-bottom: 1rem;
+        }
+        
+        .py-5 {
+            padding-top: 3rem;
+            padding-bottom: 3rem;
+        }
+        
+        .p-2 {
+            padding: 0.5rem;
+        }
+        
+        .p-3 {
+            padding: 1rem;
+        }
+        
+        .p-4 {
+            padding: 1.5rem;
+        }
+        
+        .px-4 {
+            padding-left: 1.5rem;
+            padding-right: 1.5rem;
+        }
+        
+        .gap-1 {
+            gap: 0.25rem;
+        }
+        
+        .gap-2 {
+            gap: 0.5rem;
+        }
+        
+        .gap-3 {
             gap: 1rem;
         }
-
-        .d-flex.justify-content-between.mt-4>div {
+        
+        .g-3 > * {
+            margin-bottom: 1rem;
+        }
+        
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin-right: -15px;
+            margin-left: -15px;
+        }
+        
+        .col-md-3, .col-md-4, .col-md-6, .col-md-8, .col-md-12 {
+            position: relative;
             width: 100%;
+            padding-right: 15px;
+            padding-left: 15px;
+        }
+        
+        @media (min-width: 768px) {
+            .col-md-3 {
+                flex: 0 0 25%;
+                max-width: 25%;
+            }
+            
+            .col-md-4 {
+                flex: 0 0 33.333333%;
+                max-width: 33.333333%;
+            }
+            
+            .col-md-6 {
+                flex: 0 0 50%;
+                max-width: 50%;
+            }
+            
+            .col-md-8 {
+                flex: 0 0 66.666667%;
+                max-width: 66.666667%;
+            }
+            
+            .col-md-12 {
+                flex: 0 0 100%;
+                max-width: 100%;
+            }
+        }
+        
+        .flex-grow-1 {
+            flex-grow: 1;
+        }
+        
+        .flex-shrink-0 {
+            flex-shrink: 0;
+        }
+        
+        .small {
+            font-size: 0.875em;
+        }
+        
+        .fw-bold {
+            font-weight: 700;
+        }
+        
+        .fw-semibold {
+            font-weight: 600;
+        }
+        
+        .rounded-3 {
+            border-radius: var(--border-radius);
+        }
+        
+        .border {
+            border: 1px solid var(--border-color);
+        }
+        
+        .border-0 {
+            border: 0;
+        }
+        
+        .rounded {
+            border-radius: var(--border-radius);
+        }
+        
+        .bg-light {
+            background-color: var(--input-background);
+        }
+        
+        .bg-gradient-primary {
+            background: var(--primary-light);
+        }
+        
+        .opacity-75 {
+            opacity: 0.75;
+        }
+        
+        .overflow-hidden {
+            overflow: hidden;
+        }
+        
+        .shadow-lg {
+            box-shadow: var(--shadow-md);
+        }
+        
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+            border-radius: calc(var(--border-radius) - 2px);
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 0.35em 0.65em;
+            font-size: 0.75em;
+            font-weight: 500;
+            line-height: 1;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: baseline;
+            border-radius: calc(var(--border-radius) - 2px);
+        }
+        
+        .bg-primary {
+            background-color: var(--primary-color);
+        }
+        
+        .bg-success {
+            background-color: #10B981;
+        }
+        
+        .spinner-border {
+            display: inline-block;
+            width: 2rem;
+            height: 2rem;
+            vertical-align: -0.125em;
+            border: 0.25em solid currentColor;
+            border-right-color: transparent;
+            border-radius: 50%;
+            animation: spinner-border 0.75s linear infinite;
+        }
+        
+        .spinner-border-sm {
+            width: 1rem;
+            height: 1rem;
+            border-width: 0.125em;
+        }
+        
+        @keyframes spinner-border {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        
+        .visually-hidden {
+            position: absolute !important;
+            width: 1px !important;
+            height: 1px !important;
+            padding: 0 !important;
+            margin: -1px !important;
+            overflow: hidden !important;
+            clip: rect(0, 0, 0, 0) !important;
+            white-space: nowrap !important;
+            border: 0 !important;
+        }
+        
+        .form-text {
+            margin-top: 0.25rem;
+            font-size: 0.875em;
+            color: var(--text-secondary);
+        }
+        
+        .position-fixed {
+            position: fixed;
+        }
+        
+        .z-index-9999 {
+            z-index: 9999;
+        }
+        
+        .top-0 {
+            top: 0;
+        }
+        
+        .start-0 {
+            left: 0;
+        }
+        
+        .end-0 {
+            right: 0;
+        }
+        
+        .bottom-0 {
+            bottom: 0;
+        }
+        
+        .display-1 {
+            font-size: 6rem;
+            font-weight: 300;
+            line-height: 1.2;
         }
 
-        .d-flex.justify-content-between.mt-4>div>button {
-            width: 100%;
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            body { 
+                padding: 10px; 
+            }
+            
+            .form-content { 
+                padding: 1rem; 
+            }
+            
+            .category-content { 
+                padding: 1rem; 
+            }
+            
+            .tab-button span { 
+                display: none; 
+            }
+            
+            .tab-button { 
+                padding: 16px; 
+            }
+            
+            .d-flex.justify-content-between.mt-4 { 
+                flex-direction: column; 
+                gap: 1rem; 
+            }
+            
+            .d-flex.justify-content-between.mt-4>div { 
+                width: 100%; 
+            }
+            
+            .d-flex.justify-content-between.mt-4>div>button { 
+                width: 100%; 
+            }
+
+            .form-actions {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .action-buttons {
+                width: 100%;
+                justify-content: space-between;
+            }
         }
-    }
-</style>
 
-<div class="card shadow-lg border-0 rounded-3 overflow-hidden">
-    <div class="card-header bg-gradient-primary text-white">
-        <div class="d-flex align-items-center">
-            <div class="flex-shrink-0">
-                <div class="icon-box bg-white bg-opacity-20 rounded-3 p-2 me-3">
-                    <i class="bi bi-chat-dots fs-4"></i>
-                </div>
-            </div>
-            <div class="flex-grow-1">
-                <h4 class="mb-1 fw-bold">{{ $modoEdicion ? 'Editar Interacción' : 'Nueva Interacción' }}</h4>
-                <p class="mb-0 opacity-75 small">
-                    {{ $modoEdicion ? 'Modifica la información de la interacción existente' : 'Completa el formulario para registrar una nueva interacción' }}
-                </p>
-            </div>
-            @if ($modoEdicion && $interaction->id)
-                <div class="flex-shrink-0">
-                    <a href="{{ route('interactions.show', $interaction->id) }}" class="btn btn-light btn-sm">
-                        <i class="bi bi-eye me-1"></i> Ver Detalles
-                    </a>
-                </div>
-            @endif
-        </div>
-    </div>
+        /* ===== MEJORAS VISUALES ===== */
+        .badge {
+            font-size: 0.75rem;
+            padding: 0.35em 0.65em;
+            font-weight: 500;
+        }
 
-    <div class="progress-section">
-        <div class="progress-header">
-            <span class="progress-title">Progreso del formulario</span>
-            <span class="progress-percentage" id="progress-percentage">0%</span>
-        </div>
-        <div class="progress-bar-container">
-            <div class="progress-bar-fill" id="progress-bar" style="width: 0%"></div>
-        </div>
-        <div class="progress-message" id="progress-message">Comienza seleccionando un cliente</div>
-    </div>
+        .spinner-border {
+            width: 1rem;
+            height: 1rem;
+        }
 
-    <div class="tab-navigation">
-        <button type="button" class="tab-button active" data-tab="principal">
-            <i class="bi bi-info-circle"></i>
-            <span>Información Principal</span>
-        </button>
-        <button type="button" class="tab-button" data-tab="adicional">
-            <i class="bi bi-briefcase"></i>
-            <span>Información Adicional</span>
-        </button>
-        <button type="button" class="tab-button" data-tab="resultado">
-            <i class="bi bi-check-circle"></i>
-            <span>Resultado y Planificación</span>
-        </button>
-        <button type="button" class="tab-button" data-tab="adjuntos">
-            <i class="bi bi-paperclip"></i>
-            <span>Adjuntos y Referencias</span>
-        </button>
-        <button type="button" class="tab-button" data-tab="historial">
-            <i class="bi bi-clock-history"></i>
-            <span>Historial</span>
-        </button>
-    </div>
+        .dropdown-menu {
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+            border-radius: var(--border-radius);
+        }
 
-    <div class="form-content">
-        <form id="interaction-form"
-            action="{{ $modoEdicion ? route('interactions.update', $interaction->id) : route('interactions.store') }}"
-            method="POST" enctype="multipart/form-data">
-            @csrf
-            @if ($modoEdicion)
-                @method('PUT')
-            @endif
+        .dropdown-item {
+            padding: 0.5rem 1rem;
+            transition: background-color 0.2s ease;
+        }
 
-            <div class="tab-panel active" id="principal-tab">
-                <div class="category-container">
-                    <div class="category-header">
-                        <h5 class="category-title">
-                            <div class="category-icon">
-                                <i class="bi bi-info-circle"></i>
-                            </div>
-                            Información Principal
-                        </h5>
-                        <p class="category-description">Datos esenciales de la interacción y el cliente</p>
+        .dropdown-item:hover {
+            background-color: var(--input-background);
+        }
+
+        /* ===== ESTADOS ESPECIALES ===== */
+        .highlight {
+            background-color: var(--primary-light);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            transition: background-color 0.3s ease;
+        }
+
+        .highlight:hover {
+            background-color: #D1E9FF;
+        }
+
+        .required-field::after {
+            content: " *";
+            color: #EF4444;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="card shadow-lg border-0 rounded-3 overflow-hidden">
+            <!-- Header del formulario -->
+            <div class="card-header bg-gradient-primary text-white">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="icon-box bg-white bg-opacity-20 rounded-3 p-2 me-3">
+                            <i class="bi bi-chat-dots fs-4"></i>
+                        </div>
                     </div>
-                    <div class="category-content">
-                        <div class="section-divider">
-                            <h6 class="section-title">
-                                <i class="bi bi-person-badge me-2 text-primary"></i>Información del Cliente
-                            </h6>
+                    <div class="flex-grow-1">
+                        <h4 class="mb-1 fw-bold">{{ $modoEdicion ? 'Editar Interacción' : 'Registro de Seguimiento Diario' }}</h4>
+                        <p class="mb-0 opacity-75 small">
+                            {{ $modoEdicion ? 'Modifica la información de la interacción existente' : 'Completa el formulario para registrar una nueva interacción' }}
+                        </p>
+                    </div>
+                    @if ($modoEdicion && $interaction->id)
+                        <div class="flex-shrink-0">
+                            <a href="{{ route('interactions.show', $interaction->id) }}" class="btn btn-light btn-sm">
+                                <i class="bi bi-eye me-1"></i> Ver Detalles
+                            </a>
                         </div>
+                    @endif
+                </div>
+            </div>
 
-                        <div class="row g-3 mb-4">
-                            <div class="col-md-8">
-                                <div class="form-floating">
-                                    <select class="form-select select2 @error('client_id') is-invalid @enderror"
-                                        id="client_id" name="client_id" required>
-                                        <option value="">Selecciona un cliente</option>
-                                        @if ($modoEdicion && $interaction->client_id)
-                                            <option value="{{ $interaction->client_id }}" selected>
-                                                {{ $interaction->client->nom_ter }} ({{ $interaction->client_id }})
-                                            </option>
-                                        @endif
-                                    </select>
-                                    <label for="client_id">Cliente <span class="text-danger">*</span></label>
-                                </div>
-                                @error('client_id')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
+            <!-- Barra de progreso -->
+            <div class="progress-section">
+                <div class="progress-header">
+                    <span class="progress-title">Progreso del formulario</span>
+                    <span class="progress-percentage" id="progress-percentage">0%</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" id="progress-bar" style="width: 0%"></div>
+                </div>
+                <div class="progress-message" id="progress-message">Comienza seleccionando un cliente</div>
+            </div>
+
+            <!-- Navegación por pestañas -->
+            <div class="tab-navigation">
+                <button type="button" class="tab-button active" data-tab="principal">
+                    <i class="bi bi-info-circle"></i>
+                    <span>Información Principal</span>
+                </button>
+                <button type="button" class="tab-button" data-tab="adicional">
+                    <i class="bi bi-briefcase"></i>
+                    <span>Información Adicional</span>
+                </button>
+                <button type="button" class="tab-button" data-tab="resultado">
+                    <i class="bi bi-check-circle"></i>
+                    <span>Resultado y Planificación</span>
+                </button>
+                <button type="button" class="tab-button" data-tab="adjuntos">
+                    <i class="bi bi-paperclip"></i>
+                    <span>Adjuntos y Referencias</span>
+                </button>
+                <button type="button" class="tab-button" data-tab="historial">
+                    <i class="bi bi-clock-history"></i>
+                    <span>Historial</span>
+                </button>
+            </div>
+
+            <div class="form-content">
+                <form id="interaction-form"
+                    action="{{ $modoEdicion ? route('interactions.update', $interaction->id) : route('interactions.store') }}"
+                    method="POST" enctype="multipart/form-data">
+                    @csrf
+                    @if ($modoEdicion)
+                        @method('PUT')
+                    @endif
+
+                    <!-- PESTAÑA 1: INFORMACIÓN PRINCIPAL -->
+                    <div class="tab-panel active" id="principal-tab">
+                        <div class="category-container">
+                            <div class="category-header">
+                                <h5 class="category-title">
+                                    <div class="category-icon">
+                                        <i class="bi bi-info-circle"></i>
+                                    </div>
+                                    Información Principal
+                                </h5>
+                                <p class="category-description">Datos esenciales de la interacción y el cliente</p>
                             </div>
-
-                            <div class="col-md-4">
-                                <div class="form-floating">
-                                    <input type="text" class="form-control bg-light"
-                                        value="{{ auth()->user()->name }}" readonly>
-                                    <label for="agent">Agente</label>
+                            <div class="category-content">
+                                <div class="section-divider">
+                                    <h6 class="section-title">
+                                        <i class="bi bi-person-badge me-2 text-primary"></i>Registro del Asociado
+                                    </h6>
                                 </div>
-                                <input type="hidden" name="agent_id" value="{{ auth()->user()->id }}">
-                                <input type="hidden" name="interaction_date" value="{{ now()->toDateTimeString() }}">
-                                <div class="form-text mt-1">
-                                    <i class="bi bi-calendar me-1"></i> {{ now()->format('d/m/Y h:i A') }}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div id="client-info-card" class="card border-0 bg-light mb-4" style="display:none;">
-                            <div class="card-body p-3">
-                                <div class="d-flex align-items-center mb-2">
-                                    <i class="bi bi-info-circle text-primary me-2"></i>
-                                    <h6 class="mb-0 fw-semibold">Información del Cliente</h6>
-                                    <div class="ms-auto">
-                                        <button type="button" class="btn btn-sm btn-outline-secondary"
-                                            id="toggle-client-info">
-                                            <i class="bi bi-chevron-down"></i>
-                                        </button>
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-8">
+                                        <div class="form-group">
+                                            <label for="client_id" class="form-label required-field">Cliente</label>
+                                            <select class="form-select select2 @error('client_id') is-invalid @enderror"
+                                                id="client_id" name="client_id" required>
+                                                <option value="">Selecciona un cliente</option>
+                                                @if ($modoEdicion && $interaction->client_id)
+                                                    <option value="{{ $interaction->client_id }}" selected>
+                                                        {{ $interaction->client->nom_ter }} ({{ $interaction->client_id }})
+                                                    </option>
+                                                @endif
+                                            </select>
+                                            @error('client_id')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="agent" class="form-label">Agente</label>
+                                            <input type="text" class="form-control bg-light"
+                                                value="{{ auth()->user()->name }}" readonly>
+                                            <input type="hidden" name="agent_id" value="{{ auth()->user()->id }}">
+                                            <input type="hidden" name="interaction_date" value="{{ now()->toDateTimeString() }}">
+                                            <div class="form-text mt-1">
+                                                <i class="bi bi-calendar me-1"></i> {{ now()->format('d/m/Y h:i A') }}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                                <div id="client-info-content">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="d-flex align-items-center mb-2">
-                                                <div class="client-avatar me-2" id="info-avatar"
-                                                    style="width:40px;height:40px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:bold;">
+                                <div id="client-info-card" class="card border-0 bg-light mb-4" style="display:none;">
+                                    <div class="card-body p-3">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <i class="bi bi-info-circle text-primary me-2"></i>
+                                            <h6 class="mb-0 fw-semibold">Información del Cliente</h6>
+                                            <div class="ms-auto">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary"
+                                                    id="toggle-client-info">
+                                                    <i class="bi bi-chevron-down"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div id="client-info-content">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="d-flex align-items-center mb-2">
+                                                        <div class="client-avatar me-2" id="info-avatar"
+                                                            style="width:40px;height:40px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:bold;">
+                                                        </div>
+                                                        <div>
+                                                            <div id="info-nombre" class="fw-semibold">—</div>
+                                                            <div id="info-id" class="text-muted small">ID: —</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="info-item mb-2">
+                                                        <i class="bi bi-geo-alt text-muted me-2"></i>
+                                                        <span id="info-distrito">Cargando...</span>
+                                                    </div>
+                                                    <div class="info-item mb-2">
+                                                        <i class="bi bi-tag text-muted me-2"></i>
+                                                        <span id="info-categoria">Cargando...</span>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <div id="info-nombre" class="fw-semibold">—</div>
-                                                    <div id="info-id" class="text-muted small">ID: —</div>
+                                                <div class="col-md-6">
+                                                    <div class="info-item mb-2">
+                                                        <i class="bi bi-envelope text-muted me-2"></i>
+                                                        <span id="info-email">Cargando...</span>
+                                                    </div>
+                                                    <div class="info-item mb-2">
+                                                        <i class="bi bi-telephone text-muted me-2"></i>
+                                                        <span id="info-telefono">Cargando...</span>
+                                                    </div>
+                                                    <div class="info-item mb-2">
+                                                        <i class="bi bi-geo text-muted me-2"></i>
+                                                        <span id="info-direccion">Cargando...</span>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div class="info-item mb-2">
-                                                <i class="bi bi-geo-alt text-muted me-2"></i>
-                                                <span id="info-distrito">Cargando...</span>
-                                            </div>
-                                            <div class="info-item mb-2">
-                                                <i class="bi bi-tag text-muted me-2"></i>
-                                                <span id="info-categoria">Cargando...</span>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="info-item mb-2">
-                                                <i class="bi bi-envelope text-muted me-2"></i>
-                                                <span id="info-email">Cargando...</span>
-                                            </div>
-                                            <div class="info-item mb-2">
-                                                <i class="bi bi-telephone text-muted me-2"></i>
-                                                <span id="info-telefono">Cargando...</span>
-                                            </div>
-                                            <div class="info-item mb-2">
-                                                <i class="bi bi-geo text-muted me-2"></i>
-                                                <span id="info-direccion">Cargando...</span>
+                                            <div class="text-end mt-2">
+                                                <a id="btn-editar-cliente" href="#"
+                                                    class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-pencil me-1"></i> Ver ficha completa
+                                                </a>
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="text-end mt-2">
-                                        <a id="btn-editar-cliente" href="#"
-                                            class="btn btn-sm btn-outline-primary">
-                                            <i class="bi bi-pencil me-1"></i> Ver ficha completa
-                                        </a>
-                                    </div>
                                 </div>
-                            </div>
-                        </div>
-
-                        <div class="section-divider">
-                            <h6 class="section-title">
-                                <i class="bi bi-chat-dots me-2 text-primary"></i>Detalles de la Interacción
-                            </h6>
-                        </div>
-
-                        <div class="row g-3 mb-4">
-                            <div class="col-md-4">
-                                <div class="form-floating">
-                                    <select
-                                        class="form-select select2 @error('interaction_channel') is-invalid @enderror"
-                                        id="interaction_channel" name="interaction_channel" required>
-                                        <option value="">Selecciona un canal</option>
-                                        @foreach ($channels as $channel)
-                                            <option value="{{ $channel->id }}"
-                                                {{ old('interaction_channel', $interaction->interaction_channel ?? '') == $channel->id ? 'selected' : '' }}>
-                                                {{ $channel->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    <label for="interaction_channel">Canal <span class="text-danger">*</span></label>
+                                <div class="section-divider">
+                                    <h6 class="section-title">
+                                        <i class="bi bi-chat-dots me-2 text-primary"></i>Detalles de la Interacción
+                                    </h6>
                                 </div>
-                                @error('interaction_channel')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="col-md-4">
-                                <div class="form-floating">
-                                    <select class="form-select select2 @error('interaction_type') is-invalid @enderror"
-                                        id="interaction_type" name="interaction_type" required>
-                                        <option value="">Selecciona un tipo</option>
-                                        @foreach ($types as $type)
-                                            <option value="{{ $type->id }}"
-                                                {{ old('interaction_type', $interaction->interaction_type ?? '') == $type->id ? 'selected' : '' }}>
-                                                {{ $type->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    <label for="interaction_type">Tipo <span class="text-danger">*</span></label>
-                                </div>
-                                @error('interaction_type')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="col-md-4">
-                                <div class="form-floating">
-                                    <input type="text" class="form-control bg-light" id="duration-display"
-                                        readonly
-                                        value="{{ $modoEdicion && $interaction->duration ? $interaction->duration . ' segundos' : '0 segundos' }}">
-                                    <label for="duration-display">Duración</label>
-                                </div>
-                                <input type="hidden" id="start_time" name="start_time"
-                                    value="{{ old('start_time', $interaction->start_time ?? '') }}">
-                                <input type="hidden" id="duration" name="duration"
-                                    value="{{ old('duration', $interaction->duration ?? '') }}">
-                                <div class="form-text mt-1">Se calcula automáticamente al seleccionar un cliente.</div>
-                                @error('duration')
-                                    <div class="invalid-feedback d-block">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-
-                        <div class="row g-3 mb-4">
-                            <div class="col-md-12">
-                                <div class="form-floating">
-                                    <textarea class="form-control @error('notes') is-invalid @enderror" id="notes" name="notes" rows="4"
-                                        placeholder="Describe los detalles de la interacción..." required>{{ old('notes', $interaction->notes ?? '') }}</textarea>
-                                    <label for="notes">Notas <span class="text-danger">*</span></label>
-                                </div>
-                                <div class="d-flex justify-content-between">
-                                    <div class="form-text">Añade aquí todos los detalles relevantes de la interacción.
-                                    </div>
-                                    <div class="form-text text-end" id="notes-counter">0/500 caracteres</div>
-                                </div>
-                                @error('notes')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-actions">
-                    <div></div>
-                    <div class="action-buttons">
-                        <button type="button" class="btn btn-primary" onclick="showTab('adicional')">
-                            Continuar <i class="bi bi-arrow-right"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="tab-panel" id="adicional-tab">
-                <div class="category-container">
-                    <div class="category-header">
-                        <h5 class="category-title">
-                            <div class="category-icon">
-                                <i class="bi bi-briefcase"></i>
-                            </div>
-                            Información Adicional
-                        </h5>
-                        <p class="category-description">Datos complementarios del cliente y asignación</p>
-                    </div>
-                    <div class="category-content">
-                        <div class="row g-3 mb-4">
-                            <div class="col-md-3">
-                                <div class="form-floating">
-                                    <select class="form-select select2 @error('id_area') is-invalid @enderror"
-                                        id="id_area" name="id_area">
-                                        <option value="">Selecciona un área</option>
-                                        @if (isset($areas))
-                                            @foreach ($areas as $id => $nombre)
-                                                <option value="{{ $id }}"
-                                                    {{ old('id_area', $interaction->id_area ?? '') == $id ? 'selected' : '' }}>
-                                                    {{ $nombre }}
-                                                </option>
-                                            @endforeach
-                                        @endif
-                                    </select>
-                                    <label for="id_area">Área</label>
-                                </div>
-                                @error('id_area')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="col-md-3">
-                                <div class="form-floating">
-                                    <select class="form-select select2 @error('id_cargo') is-invalid @enderror"
-                                        id="id_cargo" name="id_cargo">
-                                        <option value="">Selecciona un cargo</option>
-                                        @if (isset($cargos))
-                                            @foreach ($cargos as $id => $nombre)
-                                                <option value="{{ $id }}"
-                                                    {{ old('id_cargo', $interaction->id_cargo ?? '') == $id ? 'selected' : '' }}>
-                                                    {{ $nombre }}
-                                                </option>
-                                            @endforeach
-                                        @endif
-                                    </select>
-                                    <label for="id_cargo">Cargo</label>
-                                </div>
-                                @error('id_cargo')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="col-md-3">
-                                <div class="form-floating">
-                                    <select
-                                        class="form-select select2 @error('id_linea_de_obligacion') is-invalid @enderror"
-                                        id="id_linea_de_obligacion" name="id_linea_de_obligacion">
-                                        <option value="">Selecciona una línea</option>
-                                        @if (isset($lineasCredito))
-                                            @foreach ($lineasCredito as $id => $nombre)
-                                                <option value="{{ $id }}"
-                                                    {{ old('id_linea_de_obligacion', $interaction->id_linea_de_obligacion ?? '') == $id ? 'selected' : '' }}>
-                                                    {{ $nombre }}
-                                                </option>
-                                            @endforeach
-                                        @endif
-                                    </select>
-                                    <label for="id_linea_de_obligacion">Línea de Obligación</label>
-                                </div>
-                                @error('id_linea_de_obligacion')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="col-md-3">
-                                <div class="form-floating">
-                                    <select
-                                        class="form-select select2 @error('id_area_de_asignacion') is-invalid @enderror"
-                                        id="id_area_de_asignacion" name="id_area_de_asignacion">
-                                        <option value="">Selecciona un área</option>
-                                        @if (isset($areas))
-                                            @foreach ($areas as $id => $nombre)
-                                                <option value="{{ $id }}"
-                                                    {{ old('id_area_de_asignacion', $interaction->id_area_de_asignacion ?? '') == $id ? 'selected' : '' }}>
-                                                    {{ $nombre }}
-                                                </option>
-                                            @endforeach
-                                        @endif
-                                    </select>
-                                    <label for="id_area_de_asignacion">Área de Asignación</label>
-                                </div>
-                                @error('id_area_de_asignacion')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-
-                        <div class="row g-3 mb-4">
-                            <div class="col-md-6">
-                                <div class="form-floating">
-                                    <select
-                                        class="form-select select2 @error('id_distrito_interaccion') is-invalid @enderror"
-                                        id="id_distrito_interaccion" name="id_distrito_interaccion">
-                                        <option value="">Selecciona un distrito</option>
-                                        @if (isset($distrito))
-                                            @foreach ($distrito as $id => $nombre)
-                                                <option value="{{ $id }}"
-                                                    {{ old('id_distrito_interaccion', $interaction->id_distrito_interaccion ?? '') == $id ? 'selected' : '' }}>
-                                                    {{ $nombre }}
-                                                </option>
-                                            @endforeach
-                                        @endif
-                                    </select>
-                                    <label for="id_distrito_interaccion">Distrito de la Interacción</label>
-                                </div>
-                                @error('id_distrito_interaccion')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-actions">
-                    <div class="action-buttons">
-                        <button type="button" class="btn btn-light" onclick="showTab('principal')">
-                            <i class="bi bi-arrow-left"></i> Anterior
-                        </button>
-                    </div>
-                    <div class="action-buttons">
-                        <button type="button" class="btn btn-primary" onclick="showTab('resultado')">
-                            Continuar <i class="bi bi-arrow-right"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="tab-panel" id="resultado-tab">
-                <div class="category-container">
-                    <div class="category-header">
-                        <h5 class="category-title">
-                            <div class="category-icon">
-                                <i class="bi bi-check-circle"></i>
-                            </div>
-                            Resultado y Planificación
-                        </h5>
-                        <p class="category-description">Resultado de la interacción y próximas acciones</p>
-                    </div>
-                    <div class="category-content">
-                        <div class="section-divider">
-                            <h6 class="section-title">
-                                <i class="bi bi-flag me-2 text-primary"></i>Resultado de la Interacción
-                            </h6>
-                        </div>
-
-                        <div class="row g-3 mb-4">
-                            <div class="col-md-12">
-                                <div class="form-floating">
-                                    <select class="form-select select2 @error('outcome') is-invalid @enderror"
-                                        id="outcome" name="outcome" required>
-                                        <option value="">Selecciona un resultado</option>
-                                        @foreach ($outcomes as $outcome)
-                                            <option value="{{ $outcome->id }}"
-                                                {{ old('outcome', $interaction->outcome ?? '') == $outcome->id ? 'selected' : '' }}>
-                                                {{ $outcome->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    <label for="outcome">Resultado <span class="text-danger">*</span></label>
-                                </div>
-                                @error('outcome')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-
-                        <div class="section-divider">
-                            <h6 class="section-title">
-                                <i class="bi bi-calendar-check me-2 text-primary"></i>Planificación
-                            </h6>
-                        </div>
-
-                        <div class="card border-0 bg-light mb-4" id="planning-section" style="display:none;">
-                            <div class="card-body p-3">
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <div class="form-floating">
-                                            <input type="datetime-local"
-                                                class="form-control @error('next_action_date') is-invalid @enderror"
-                                                id="next_action_date" name="next_action_date"
-                                                value="{{ old('next_action_date', $interaction->next_action_date ?? '') }}">
-                                            <label for="next_action_date">Próxima Acción</label>
-                                        </div>
-                                        <div class="d-flex gap-1 flex-wrap mt-2">
-                                            <button type="button" class="btn btn-sm btn-outline-secondary quick-date"
-                                                data-days="1">+1 día</button>
-                                            <button type="button" class="btn btn-sm btn-outline-secondary quick-date"
-                                                data-days="3">+3 días</button>
-                                            <button type="button" class="btn btn-sm btn-outline-secondary quick-date"
-                                                data-days="7">+1 sem</button>
-                                            <button type="button" class="btn btn-sm btn-outline-secondary quick-date"
-                                                data-days="14">+2 sem</button>
-                                            <button type="button" class="btn btn-sm btn-outline-secondary quick-date"
-                                                data-days="30">+1 mes</button>
-                                        </div>
-                                        @error('next_action_date')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-
-                                    <div class="col-md-6">
-                                        <div class="form-floating">
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="interaction_channel" class="form-label required-field">Canal</label>
                                             <select
-                                                class="form-select select2 @error('next_action_type') is-invalid @enderror"
-                                                id="next_action_type" name="next_action_type">
-                                                <option value="">Selecciona un tipo</option>
-                                                @foreach ($nextActions as $action)
-                                                    <option value="{{ $action->id }}"
-                                                        {{ old('next_action_type', $interaction->next_action_type ?? '') == $action->id ? 'selected' : '' }}>
-                                                        {{ $action->name }}
+                                                class="form-select select2 @error('interaction_channel') is-invalid @enderror"
+                                                id="interaction_channel" name="interaction_channel" required>
+                                                <option value="">Selecciona un canal</option>
+                                                @foreach ($channels as $channel)
+                                                    <option value="{{ $channel->id }}"
+                                                        {{ old('interaction_channel', $interaction->interaction_channel ?? '') == $channel->id ? 'selected' : '' }}>
+                                                        {{ $channel->name }}
                                                     </option>
                                                 @endforeach
                                             </select>
-                                            <label for="next_action_type">Tipo de Acción</label>
+                                            @error('interaction_channel')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
                                         </div>
-                                        @error('next_action_type')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
                                     </div>
-
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="interaction_type" class="form-label required-field">Tipo</label>
+                                            <select class="form-select select2 @error('interaction_type') is-invalid @enderror"
+                                                id="interaction_type" name="interaction_type" required>
+                                                <option value="">Selecciona un tipo</option>
+                                                @foreach ($types as $type)
+                                                    <option value="{{ $type->id }}"
+                                                        {{ old('interaction_type', $interaction->interaction_type ?? '') == $type->id ? 'selected' : '' }}>
+                                                        {{ $type->name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                            @error('interaction_type')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            <label for="duration-display" class="form-label">Duración</label>
+                                            <input type="text" class="form-control bg-light" id="duration-display"
+                                                readonly
+                                                value="{{ $modoEdicion && $interaction->duration ? $interaction->duration . ' segundos' : '0 segundos' }}">
+                                            <input type="hidden" id="start_time" name="start_time"
+                                                value="{{ old('start_time', $interaction->start_time ?? '') }}">
+                                            <input type="hidden" id="duration" name="duration"
+                                                value="{{ old('duration', $interaction->duration ?? '') }}">
+                                            <div class="form-text mt-1">Se calcula automáticamente al seleccionar un cliente.</div>
+                                            @error('duration')
+                                                <div class="invalid-feedback d-block">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row g-3 mb-4">
                                     <div class="col-md-12">
-                                        <div class="form-floating">
-                                            <textarea class="form-control @error('next_action_notes') is-invalid @enderror" id="next_action_notes"
-                                                name="next_action_notes" rows="3" placeholder="Detalles sobre la próxima acción programada...">{{ old('next_action_notes', $interaction->next_action_notes ?? '') }}</textarea>
-                                            <label for="next_action_notes">Notas sobre la Próxima Acción</label>
-                                        </div>
-                                        @error('next_action_notes')
-                                            <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-actions">
-                    <div class="action-buttons">
-                        <button type="button" class="btn btn-light" onclick="showTab('adicional')">
-                            <i class="bi bi-arrow-left"></i> Anterior
-                        </button>
-                    </div>
-                    <div class="action-buttons">
-                        <button type="button" class="btn btn-primary" onclick="showTab('adjuntos')">
-                            Continuar <i class="bi bi-arrow-right"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="tab-panel" id="adjuntos-tab">
-                <div class="category-container">
-                    <div class="category-header">
-                        <h5 class="category-title">
-                            <div class="category-icon">
-                                <i class="bi bi-paperclip"></i>
-                            </div>
-                            Adjuntos y Referencias
-                        </h5>
-                        <p class="category-description">Archivos y enlaces relacionados con la interacción</p>
-                    </div>
-                    <div class="category-content">
-                        <div class="row g-3 mb-4">
-                            <div class="col-md-6">
-                                <div class="form-floating">
-                                    <input type="file"
-                                        class="form-control @error('attachments') is-invalid @enderror"
-                                        id="attachments" name="attachments" multiple>
-                                    <label for="attachments">Archivos Adjuntos</label>
-                                </div>
-                                <div class="form-text">Puedes adjuntar múltiples archivos (máx. 10MB por archivo)</div>
-                                @if ($modoEdicion && $interaction->attachment_urls && count($interaction->attachment_urls))
-                                    <div class="mt-2">
-                                        <div class="small text-muted">Archivos existentes:</div>
-
-                                        @if ($interaction->attachment_urls)
-                                            <a href="{{ $novedad->getFile($interaction->attachment_urls) }}"
-                                                target="_blank">Archivo</a>
-
-                                            <div class="d-flex align-items-center mt-1">
-                                                <i class="bi bi-file-earmark me-2"></i>
-                                                <span class="me-auto">Archivo</span>
-                                                <a href="{{ $novedad->getFile($interaction->attachment_urls) }}"
-                                                    target="_blank">Archivo</a>
-
+                                        <div class="form-group">
+                                            <label for="notes" class="form-label required-field">Notas</label>
+                                            <textarea class="form-control @error('notes') is-invalid @enderror" id="notes" name="notes" rows="4"
+                                                placeholder="Describe los detalles de la interacción..." required>{{ old('notes', $interaction->notes ?? '') }}</textarea>
+                                            <div class="d-flex justify-content-between">
+                                                <div class="form-text">Añade aquí todos los detalles relevantes de la interacción.</div>
+                                                <div class="form-text text-end" id="notes-counter">0/500 caracteres</div>
                                             </div>
-                                        @endif
-                                    </div>
-                                @endif
-                                @error('attachments')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="form-floating">
-                                    <input type="url"
-                                        class="form-control @error('interaction_url') is-invalid @enderror"
-                                        id="interaction_url" name="interaction_url" placeholder="https://ejemplo.com"
-                                        value="{{ old('interaction_url', $interaction->interaction_url ?? '') }}">
-                                    <label for="interaction_url">Enlace de Referencia</label>
-                                </div>
-                                @error('interaction_url')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-actions">
-                    <div class="action-buttons">
-                        <button type="button" class="btn btn-light" onclick="showTab('resultado')">
-                            <i class="bi bi-arrow-left"></i> Anterior
-                        </button>
-                    </div>
-                    <div class="action-buttons">
-                        <button type="button" class="btn btn-primary" onclick="showTab('historial')">
-                            Continuar <i class="bi bi-arrow-right"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="tab-panel" id="historial-tab">
-                <div class="category-container">
-                    <div class="category-header">
-                        <h5 class="category-title">
-                            <div class="category-icon">
-                                <i class="bi bi-clock-history"></i>
-                            </div>
-                            Historial de Interacciones
-                        </h5>
-                        <p class="category-description">Interacciones previas con este cliente</p>
-                    </div>
-                    <div class="category-content">
-                        <div class="card border-0 bg-light mb-4" id="history-section" style="display:none;">
-                            <div class="card-body p-3">
-                                <div class="d-flex align-items-center mb-2">
-                                    <i class="bi bi-clock-history text-primary me-2"></i>
-                                    <h6 class="mb-0 fw-semibold">Historial Reciente</h6>
-                                    <div class="ms-auto">
-                                        <button type="button" class="btn btn-sm btn-outline-secondary"
-                                            id="toggle-history">
-                                            <i class="bi bi-chevron-down"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                                <div id="history-content">
-                                    <div id="interaction-history-list" class="history-list"
-                                        style="max-height:220px; overflow-y:auto;">
+                                            @error('notes')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
+                        <div class="form-actions">
+                            <div></div>
+                            <div class="action-buttons">
+                                <button type="button" class="btn btn-primary" onclick="showTab('adicional')">
+                                    Continuar <i class="bi bi-arrow-right"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                </div>
 
-                <div class="form-actions">
-                    <div class="action-buttons">
-                        <button type="button" class="btn btn-light" onclick="showTab('adjuntos')">
-                            <i class="bi bi-arrow-left"></i> Anterior
-                        </button>
+                    <!-- PESTAÑA 2: INFORMACIÓN ADICIONAL -->
+                    <div class="tab-panel" id="adicional-tab">
+                        <div class="category-container">
+                            <div class="category-header">
+                                <h5 class="category-title">
+                                    <div class="category-icon">
+                                        <i class="bi bi-briefcase"></i>
+                                    </div>
+                                    Información Adicional
+                                </h5>
+                                <p class="category-description">Datos complementarios del cliente y asignación</p>
+                            </div>
+                            <div class="category-content">
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="area-display" class="form-label">Área</label>
+                                            <input type="text" class="form-control bg-light" id="area-display" readonly 
+                                                   value="{{ $idAreaAgente ? $areas[$idAreaAgente] : 'No asignada' }}">
+                                            <input type="hidden" id="id_area" name="id_area" value="{{ old('id_area', $interaction->id_area ?? $idAreaAgente ?? '') }}">
+                                            <div class="form-text mt-1">Asignada automáticamente según el cargo del agente.</div>
+                                            @error('id_area')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="cargo-display" class="form-label">Cargo</label>
+                                            <input type="text" class="form-control bg-light" id="cargo-display" readonly 
+                                                   value="{{ $idCargoAgente ? $cargos[$idCargoAgente] : 'No asignado' }}">
+                                            <input type="hidden" id="id_cargo" name="id_cargo" value="{{ old('id_cargo', $interaction->id_cargo ?? $idCargoAgente ?? '') }}">
+                                            <div class="form-text mt-1">Asignado automáticamente según el agente logueado.</div>
+                                            @error('id_cargo')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="id_linea_de_obligacion" class="form-label">Línea de Obligación</label>
+                                            <select
+                                                class="form-select select2 @error('id_linea_de_obligacion') is-invalid @enderror"
+                                                id="id_linea_de_obligacion" name="id_linea_de_obligacion">
+                                                <option value="">Selecciona una línea</option>
+                                                @if (isset($lineasCredito))
+                                                    @foreach ($lineasCredito as $id => $nombre)
+                                                        <option value="{{ $id }}"
+                                                            {{ old('id_linea_de_obligacion', $interaction->id_linea_de_obligacion ?? '') == $id ? 'selected' : '' }}>
+                                                            {{ $nombre }}
+                                                        </option>
+                                                    @endforeach
+                                                @endif
+                                            </select>
+                                            @error('id_linea_de_obligacion')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-group">
+                                            <label for="id_area_de_asignacion" class="form-label">Área de Asignación</label>
+                                            <select
+                                                class="form-select select2 @error('id_area_de_asignacion') is-invalid @enderror"
+                                                id="id_area_de_asignacion" name="id_area_de_asignacion">
+                                                <option value="">Selecciona un área</option>
+                                                @if (isset($areas))
+                                                    @foreach ($areas as $id => $nombre)
+                                                        <option value="{{ $id }}"
+                                                            {{ old('id_area_de_asignacion', $interaction->id_area_de_asignacion ?? '') == $id ? 'selected' : '' }}>
+                                                            {{ $nombre }}
+                                                        </option>
+                                                    @endforeach
+                                                @endif
+                                            </select>
+                                            @error('id_area_de_asignacion')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="id_distrito_interaccion" class="form-label">Distrito de la Interacción</label>
+                                            <select
+                                                class="form-select select2 @error('id_distrito_interaccion') is-invalid @enderror"
+                                                id="id_distrito_interaccion" name="id_distrito_interaccion">
+                                                <option value="">Selecciona un distrito</option>
+                                                @if (isset($distrito))
+                                                    @foreach ($distrito as $id => $nombre)
+                                                        <option value="{{ $id }}"
+                                                            {{ old('id_distrito_interaccion', $interaction->id_distrito_interaccion ?? '') == $id ? 'selected' : '' }}>
+                                                            {{ $nombre }}
+                                                        </option>
+                                                    @endforeach
+                                                @endif
+                                            </select>
+                                            @error('id_distrito_interaccion')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <div class="action-buttons">
+                                <button type="button" class="btn btn-light" onclick="showTab('principal')">
+                                    <i class="bi bi-arrow-left"></i> Anterior
+                                </button>
+                            </div>
+                            <div class="action-buttons">
+                                <button type="button" class="btn btn-primary" onclick="showTab('resultado')">
+                                    Continuar <i class="bi bi-arrow-right"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                    <div class="action-buttons">
-                        <button id="clear-draft" type="button" class="btn btn-outline-secondary me-2">
-                            <i class="bi bi-trash me-1"></i> Borrar Borrador
-                        </button>
-                        <button type="submit" class="btn btn-primary px-4">
-                            <i class="bi bi-save me-1"></i>
-                            {{ $modoEdicion ? 'Actualizar Interacción' : 'Guardar Interacción' }}
-                        </button>
+
+                    <!-- PESTAÑA 3: RESULTADO Y PLANIFICACIÓN -->
+                    <div class="tab-panel" id="resultado-tab">
+                        <div class="category-container">
+                            <div class="category-header">
+                                <h5 class="category-title">
+                                    <div class="category-icon">
+                                        <i class="bi bi-check-circle"></i>
+                                    </div>
+                                    Resultado y Planificación
+                                </h5>
+                                <p class="category-description">Resultado de la interacción y próximas acciones</p>
+                            </div>
+                            <div class="category-content">
+                                <div class="section-divider">
+                                    <h6 class="section-title">
+                                        <i class="bi bi-flag me-2 text-primary"></i>Resultado de la Interacción
+                                    </h6>
+                                </div>
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-12">
+                                        <div class="form-group">
+                                            <label for="outcome" class="form-label required-field">Resultado</label>
+                                            <select class="form-select select2 @error('outcome') is-invalid @enderror"
+                                                id="outcome" name="outcome" required>
+                                                <option value="">Selecciona un resultado</option>
+                                                @foreach ($outcomes as $outcome)
+                                                    <option value="{{ $outcome->id }}"
+                                                        {{ old('outcome', $interaction->outcome ?? '') == $outcome->id ? 'selected' : '' }}>
+                                                        {{ $outcome->name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                            @error('outcome')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="section-divider">
+                                    <h6 class="section-title">
+                                        <i class="bi bi-calendar-check me-2 text-primary"></i>Planificación
+                                    </h6>
+                                </div>
+                                <div class="card border-0 bg-light mb-4" id="planning-section" style="display:none;">
+                                    <div class="card-body p-3">
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label for="next_action_date" class="form-label">Próxima Acción</label>
+                                                    <input type="datetime-local"
+                                                        class="form-control @error('next_action_date') is-invalid @enderror"
+                                                        id="next_action_date" name="next_action_date"
+                                                        value="{{ old('next_action_date', $interaction->next_action_date ?? '') }}">
+                                                    <div class="d-flex gap-1 flex-wrap mt-2">
+                                                        <button type="button" class="btn btn-sm btn-outline-secondary quick-date"
+                                                            data-days="1">+1 día</button>
+                                                        <button type="button" class="btn btn-sm btn-outline-secondary quick-date"
+                                                            data-days="3">+3 días</button>
+                                                        <button type="button" class="btn btn-sm btn-outline-secondary quick-date"
+                                                            data-days="7">+1 sem</button>
+                                                        <button type="button" class="btn btn-sm btn-outline-secondary quick-date"
+                                                            data-days="14">+2 sem</button>
+                                                        <button type="button" class="btn btn-sm btn-outline-secondary quick-date"
+                                                            data-days="30">+1 mes</button>
+                                                    </div>
+                                                    @error('next_action_date')
+                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                    @enderror
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    <label for="next_action_type" class="form-label">Tipo de Acción</label>
+                                                    <select
+                                                        class="form-select select2 @error('next_action_type') is-invalid @enderror"
+                                                        id="next_action_type" name="next_action_type">
+                                                        <option value="">Selecciona un tipo</option>
+                                                        @foreach ($nextActions as $action)
+                                                            <option value="{{ $action->id }}"
+                                                                {{ old('next_action_type', $interaction->next_action_type ?? '') == $action->id ? 'selected' : '' }}>
+                                                                {{ $action->name }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                    @error('next_action_type')
+                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                    @enderror
+                                                </div>
+                                            </div>
+                                            <div class="col-md-12">
+                                                <div class="form-group">
+                                                    <label for="next_action_notes" class="form-label">Notas sobre la Próxima Acción</label>
+                                                    <textarea class="form-control @error('next_action_notes') is-invalid @enderror" id="next_action_notes"
+                                                        name="next_action_notes" rows="3" placeholder="Detalles sobre la próxima acción programada...">{{ old('next_action_notes', $interaction->next_action_notes ?? '') }}</textarea>
+                                                    @error('next_action_notes')
+                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                    @enderror
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <div class="action-buttons">
+                                <button type="button" class="btn btn-light" onclick="showTab('adicional')">
+                                    <i class="bi bi-arrow-left"></i> Anterior
+                                </button>
+                            </div>
+                            <div class="action-buttons">
+                                <button type="button" class="btn btn-primary" onclick="showTab('adjuntos')">
+                                    Continuar <i class="bi bi-arrow-right"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                </div>
+
+                    <!-- PESTAÑA 4: ADJUNTOS Y REFERENCIAS -->
+                    <div class="tab-panel" id="adjuntos-tab">
+                        <div class="category-container">
+                            <div class="category-header">
+                                <h5 class="category-title">
+                                    <div class="category-icon">
+                                        <i class="bi bi-paperclip"></i>
+                                    </div>
+                                    Adjuntos y Referencias
+                                </h5>
+                                <p class="category-description">Archivos y enlaces relacionados con la interacción</p>
+                            </div>
+                            <div class="category-content">
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="attachment" class="form-label">Archivo Adjunto</label>
+                                            <input type="file"
+                                                class="form-control @error('attachment') is-invalid @enderror"
+                                                id="attachment" name="attachment" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx">
+                                            <div class="form-text">Puedes adjuntar un archivo (máx. 10MB)</div>
+                                            
+                                            @if ($modoEdicion && $interaction->attachment_urls)
+                                                <div class="mt-3">
+                                                    <div class="small text-muted fw-semibold">Archivo existente:</div>
+                                                    <div class="d-flex align-items-center mt-2 p-2 border rounded bg-light">
+                                                        <i class="bi bi-file-earmark me-2"></i>
+                                                        <span class="me-auto">{{ basename($interaction->attachment_urls) }}</span>
+                                                        <a href="{{ route('interactions.download', basename($interaction->attachment_urls)) }}" 
+                                                           class="btn btn-sm btn-outline-primary me-1" target="_blank">
+                                                            <i class="bi bi-download"></i> Descargar
+                                                        </a>
+                                                        <a href="{{ route('interactions.view', basename($interaction->attachment_urls)) }}" 
+                                                           class="btn btn-sm btn-outline-secondary" target="_blank">
+                                                            <i class="bi bi-eye"></i> Ver
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            @endif
+                                            
+                                            @error('attachment')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="interaction_url" class="form-label">Enlace de Referencia</label>
+                                            <input type="url"
+                                                class="form-control @error('interaction_url') is-invalid @enderror"
+                                                id="interaction_url" name="interaction_url" placeholder="https://ejemplo.com"
+                                                value="{{ old('interaction_url', $interaction->interaction_url ?? '') }}">
+                                            @error('interaction_url')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Vista previa de imagen -->
+                                <div id="image-preview-container" class="mt-3" style="display: none;">
+                                    <div class="small text-muted fw-semibold mb-2">Vista previa:</div>
+                                    <img id="image-preview" class="img-thumbnail file-preview" alt="Vista previa de la imagen">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <div class="action-buttons">
+                                <button type="button" class="btn btn-light" onclick="showTab('resultado')">
+                                    <i class="bi bi-arrow-left"></i> Anterior
+                                </button>
+                            </div>
+                            <div class="action-buttons">
+                                <button type="button" class="btn btn-primary" onclick="showTab('historial')">
+                                    Continuar <i class="bi bi-arrow-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PESTAÑA 5: HISTORIAL -->
+                    <div class="tab-panel" id="historial-tab">
+                        <div class="category-container">
+                            <div class="category-header">
+                                <h5 class="category-title">
+                                    <div class="category-icon">
+                                        <i class="bi bi-clock-history"></i>
+                                    </div>
+                                    Historial de Interacciones
+                                </h5>
+                                <p class="category-description">Interacciones previas con este cliente</p>
+                            </div>
+                            <div class="category-content">
+                                <div id="no-client-selected" class="text-center py-5">
+                                    <i class="bi bi-person-x display-1 text-muted"></i>
+                                    <p class="mt-3 text-muted">Selecciona un cliente para ver su historial de interacciones</p>
+                                </div>
+                                <div class="card border-0 bg-light mb-4" id="history-section" style="display:none;">
+                                    <div class="card-body p-3">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <i class="bi bi-clock-history text-primary me-2"></i>
+                                            <h6 class="mb-0 fw-semibold">Historial Reciente</h6>
+                                            <div class="ms-auto">
+                                                <button type="button" class="btn btn-sm btn-outline-primary" id="refresh-history">
+                                                    <i class="bi bi-arrow-clockwise"></i> Actualizar
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-secondary ms-1" id="toggle-history">
+                                                    <i class="bi bi-chevron-down"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div id="history-content">
+                                            <div id="interaction-history-list" class="history-list" style="max-height:400px; overflow-y:auto;">
+                                                <!-- items cargados por JS -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <div class="action-buttons">
+                                <button type="button" class="btn btn-light" onclick="showTab('adjuntos')">
+                                    <i class="bi bi-arrow-left"></i> Anterior
+                                </button>
+                            </div>
+                            <div class="action-buttons">
+                                <button id="clear-draft" type="button" class="btn btn-outline-secondary me-2">
+                                    <i class="bi bi-trash me-1"></i> Borrar Borrador
+                                </button>
+                                <button type="submit" class="btn btn-primary px-4">
+                                    <i class="bi bi-save me-1"></i>
+                                    {{ $modoEdicion ? 'Actualizar Interacción' : 'Guardar Interacción' }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
             </div>
-        </form>
-    </div>
-</div>
-
-<div id="ajax-loader" class="ajax-loader" aria-hidden="true"
-    style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
-    <div class="card text-center p-4">
-        <div class="spinner-border text-primary mb-3" role="status">
-            <span class="visually-hidden">Cargando...</span>
         </div>
-        <p class="mb-0">Cargando información del cliente...</p>
     </div>
-</div>
 
-@push('scripts')
+    <!-- AJAX Loader overlay -->
+    <div id="ajax-loader" class="ajax-loader" aria-hidden="true"
+        style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
+        <div class="card text-center p-4">
+            <div class="spinner-border text-primary mb-3" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p class="mb-0">Cargando información del cliente...</p>
+        </div>
+    </div>
+
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -4016,6 +4528,7 @@
 
     <script>
         $(document).ready(function() {
+            // Inicialización de Select2
             $('.select2').select2({
                 theme: 'bootstrap-5',
                 placeholder: function() {
@@ -4024,13 +4537,14 @@
                 dropdownParent: $('body')
             });
 
+            // Configuración especial para el campo de cliente con AJAX
             $('#client_id').select2({
                 theme: 'bootstrap-5',
                 placeholder: 'Buscar cliente...',
                 allowClear: true,
                 minimumInputLength: 2,
                 ajax: {
-                    url: '{{ route('interactions.search-clients') }}',
+                    url: @json(route('interactions.search-clients')),
                     dataType: 'json',
                     delay: 250,
                     data: function(params) {
@@ -4056,13 +4570,16 @@
                 }
             });
 
+            // Variables globales
             const $ajaxLoader = $('#ajax-loader');
             const $form = $('#interaction-form');
             const storageKey = 'interaction_form_draft_v1';
 
+            // Variables para el cronómetro
             let startTimeInterval = null;
             let startTime = null;
 
+            // Funciones de utilidad
             function showLoader() {
                 $ajaxLoader.show();
             }
@@ -4071,12 +4588,14 @@
                 $ajaxLoader.hide();
             }
 
+            // Configuración de notificaciones
             toastr.options = {
                 "positionClass": "toast-bottom-right",
                 "timeOut": "2500",
                 "progressBar": true,
             };
 
+            // Navegación por pestañas
             $('.tab-button').on('click', function() {
                 const tabId = $(this).data('tab');
                 showTab(tabId);
@@ -4090,9 +4609,14 @@
                 $('.tab-panel').removeClass('active');
                 $(`#${tabId}-tab`).addClass('active');
 
+                if (tabId === 'historial') {
+                    updateHistoryTabVisibility();
+                }
+
                 updateProgress();
             }
 
+            // Actualizar progreso
             function updateProgress() {
                 const requiredFields = ['client_id', 'interaction_channel', 'interaction_type', 'notes', 'outcome'];
                 let completed = 0;
@@ -4109,6 +4633,7 @@
                 $('#progress-bar').css('width', progress + '%');
                 $('#progress-percentage').text(progress + '%');
 
+                // Actualizar mensaje
                 const messages = [
                     'Comienza seleccionando un cliente',
                     'Agrega los detalles de la interacción',
@@ -4122,6 +4647,7 @@
                 $('#progress-message').text(messages[messageIndex]);
             }
 
+            // Guardado automático en localStorage
             function saveDraft() {
                 try {
                     const data = {};
@@ -4157,6 +4683,7 @@
 
             const saveDraftDebounced = debounce(saveDraft, 700);
 
+            // Cargar borrador guardado
             function loadDraft() {
                 try {
                     const raw = localStorage.getItem(storageKey);
@@ -4176,6 +4703,7 @@
                         }
                     });
 
+                    // Restaurar el estado del cronómetro
                     if (data.start_time && data.client_id) {
                         $('#start_time').val(data.start_time);
                         if (data.duration) {
@@ -4202,14 +4730,17 @@
                 }
             }
 
+            // Eventos para guardar borrador
             $form.on('input change', 'input, textarea, select', function() {
                 updateProgress();
                 saveDraftDebounced();
             });
 
+            // Cargar borrador al iniciar
             loadDraft();
             updateProgress();
 
+            // Botón para limpiar borrador
             $('#clear-draft').on('click', function() {
                 Swal.fire({
                     title: '¿Borrar el borrador guardado?',
@@ -4232,6 +4763,7 @@
                 });
             });
 
+            // Validación de formulario
             function validateField(el) {
                 const $el = $(el);
                 const name = $el.attr('name');
@@ -4271,9 +4803,11 @@
                 return true;
             }
 
+            // Envío de formulario con cálculo final
             $form.on('submit', function(e) {
                 e.preventDefault();
 
+                // Detener el cronómetro y calcular la duración final
                 if (startTimeInterval) {
                     clearInterval(startTimeInterval);
                     startTimeInterval = null;
@@ -4330,6 +4864,82 @@
                 });
             });
 
+            // Función para actualizar el historial del cliente
+            function refreshClientHistory() {
+                const cod_ter = $('#client_id').val();
+                if (!cod_ter) return;
+                
+                const historyList = $('#interaction-history-list');
+                historyList.empty().html('<div class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary" role="status"><span class="visually-hidden">Cargando...</span></div> Cargando historial...</div>');
+                
+                $.ajax({
+                    url: `/interactions/cliente/${cod_ter}`,
+                    type: 'GET',
+                    dataType: 'json',
+                    timeout: 15000,
+                }).done(function(data) {
+                    historyList.empty();
+                    if (data.history && data.history.length) {
+                        let historyHtml = '';
+                        data.history.forEach(item => {
+                            historyHtml += `
+                                <div class="history-item mb-3 p-3 border rounded bg-white">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div>
+                                            <span class="badge bg-primary me-2">${item.type}</span>
+                                            <span class="badge bg-success">${item.outcome}</span>
+                                        </div>
+                                        <small class="text-muted">${item.date}</small>
+                                    </div>
+                                    <div class="mb-1">
+                                        <i class="bi bi-person-circle me-1"></i>
+                                        <strong>Agente:</strong> ${item.agent}
+                                    </div>
+                                    <div class="text-muted">
+                                        <i class="bi bi-chat-text me-1"></i>
+                                        ${item.notes}
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        historyList.html(historyHtml);
+                    } else {
+                        historyList.html('<div class="text-center text-muted py-3">No hay interacciones previas con este cliente</div>');
+                    }
+                    toastr.success('Historial actualizado correctamente');
+                }).fail(function(xhr, status, error) {
+                    console.error('Error al actualizar historial:', {xhr, status, error});
+                    
+                    let errorMessage = 'No se pudo cargar el historial del cliente';
+                    
+                    if (xhr.responseJSON && xhr.responseJSON.error) {
+                        errorMessage = xhr.responseJSON.error;
+                    } else if (status === 'timeout') {
+                        errorMessage = 'La solicitud tardó demasiado tiempo. Inténtalo de nuevo.';
+                    }
+                    
+                    historyList.html(`<div class="text-center text-danger py-3">${errorMessage}</div>`);
+                    toastr.error(errorMessage);
+                });
+            }
+
+            // Función para actualizar la visibilidad de elementos en la pestaña de historial
+            function updateHistoryTabVisibility() {
+                const clientId = $('#client_id').val();
+                if (clientId) {
+                    $('#no-client-selected').hide();
+                    $('#history-section').show();
+                    // Cargar el historial si no está cargado
+                    if ($('#interaction-history-list').is(':empty')) {
+                        refreshClientHistory();
+                    }
+                } else {
+                    $('#no-client-selected').show();
+                    $('#history-section').hide();
+                }
+            }
+
+            // Cargar información del cliente con cronómetro
             $('#client_id').on('change', function() {
                 const cod_ter = $(this).val();
                 const clientCard = $('#client-info-card');
@@ -4338,6 +4948,7 @@
                 const $durationDisplay = $('#duration-display');
                 const $startTimeField = $('#start_time');
 
+                // Limpiar cualquier cronómetro existente
                 if (startTimeInterval) {
                     clearInterval(startTimeInterval);
                     startTimeInterval = null;
@@ -4350,9 +4961,11 @@
                     $startTimeField.val('');
                     $('#duration').val(0);
                     updateProgress();
+                    updateHistoryTabVisibility();
                     return;
                 }
 
+                // Registrar hora de inicio y empezar a contar
                 startTime = new Date();
                 $startTimeField.val(startTime.toISOString());
                 $durationDisplay.val('0 segundos');
@@ -4366,57 +4979,102 @@
                 }, 1000);
 
                 showLoader();
+                
                 $.ajax({
                     url: `/interactions/cliente/${cod_ter}`,
                     type: 'GET',
                     dataType: 'json',
-                    timeout: 10000,
-                }).done(function(data) {
+                    timeout: 15000,
+                })
+                .done(function(data) {
+                    console.log('Datos del cliente recibidos:', data);
+                    
+                    // Verificar si hay error en la respuesta
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+                    
+                    // Actualizar avatar con iniciales
                     const initials = ((data.nom1 || '').charAt(0) + (data.apl1 || '').charAt(0))
                         .toUpperCase();
                     $('#info-avatar').text(initials || '—');
-                    $('#info-nombre').text(data.nom_ter ?? 'No registrado');
-                    $('#info-id').text(`ID: ${data.cod_ter ?? 'N/A'}`);
+                    
+                    // Actualizar información básica del cliente
+                    $('#info-nombre').text(data.nom_ter || 'No registrado');
+                    $('#info-id').text(`ID: ${data.cod_ter || 'N/A'}`);
+                    $('#info-distrito').text(data.distrito?.NOM_DIST || 'No registrado');
+                    $('#info-categoria').text(data.maeTipos?.nombre || 'No registrado');
+                    $('#info-email').text(data.email || 'No registrado');
+                    $('#info-telefono').text(data.tel1 || 'No registrado');
+                    $('#info-direccion').text(data.dir || 'No registrado');
+                    $('#btn-editar-cliente').attr('href', `/maestras/terceros/${data.cod_ter}/edit`);
 
-                    $('#info-distrito').text(data.distrito?.NOM_DIST ?? 'No registrado');
-                    $('#info-categoria').text(data.maeTipos?.nombre ?? 'No registrado');
-                    $('#info-email').text(data.email ?? 'No registrado');
-                    $('#info-telefono').text(data.tel1 ?? 'No registrado');
-                    $('#info-direccion').text(data.dir ?? 'No registrado');
-                    $('#btn-editar-cliente').attr('href',
-                    `/maestras/terceros/${data.cod_ter}/edit`);
-
+                    // Mejora en la carga del historial
                     historyList.empty();
-                    if (data.history && data.history.length) {
+                    if (data.history && data.history.length > 0) {
+                        let historyHtml = '';
                         data.history.forEach(item => {
-                            const html = `<div class="mb-2 pb-2 border-bottom">
-                        <div class="fw-semibold">${item.date} - ${item.agent}</div>
-                        <div class="text-muted small">${item.type} - ${item.outcome}</div>
-                        <div class="text-muted small">${item.notes}</div>
-                    </div>`;
-                            historyList.append(html);
+                            historyHtml += `
+                                <div class="history-item mb-3 p-3 border rounded bg-white">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div>
+                                            <span class="badge bg-primary me-2">${item.type}</span>
+                                            <span class="badge bg-success">${item.outcome}</span>
+                                        </div>
+                                        <small class="text-muted">${item.date}</small>
+                                    </div>
+                                    <div class="mb-1">
+                                        <i class="bi bi-person-circle me-1"></i>
+                                        <strong>Agente:</strong> ${item.agent}
+                                    </div>
+                                    <div class="text-muted">
+                                        <i class="bi bi-chat-text me-1"></i>
+                                        ${item.notes}
+                                    </div>
+                                </div>
+                            `;
                         });
+                        historyList.html(historyHtml);
                         historySection.fadeIn();
                     } else {
-                        historySection.fadeOut();
+                        historyList.html('<div class="text-center text-muted py-3">No hay interacciones previas con este cliente</div>');
+                        historySection.fadeIn();
                     }
 
                     clientCard.fadeIn();
                     updateProgress();
-                    toastr.success('Información del cliente cargada');
-                }).fail(function() {
+                    toastr.success('Información del cliente cargada correctamente');
+                })
+                .fail(function(xhr, status, error) {
+                    console.error('Error en la solicitud AJAX:', {xhr, status, error});
+                    
+                    let errorMessage = 'No se pudo cargar la información del cliente';
+                    
+                    // Intentar obtener un mensaje de error más específico
+                    if (xhr.responseJSON && xhr.responseJSON.error) {
+                        errorMessage = xhr.responseJSON.error;
+                    } else if (status === 'timeout') {
+                        errorMessage = 'La solicitud tardó demasiado tiempo. Inténtalo de nuevo.';
+                    } else if (status === 'error') {
+                        errorMessage = 'Error de conexión. Verifica tu conexión a internet.';
+                    }
+                    
                     Swal.fire({
                         icon: 'error',
-                        title: 'No se pudo cargar el cliente',
-                        text: 'Revisa la conexión o inténtalo más tarde.'
+                        title: 'Error al cargar cliente',
+                        text: errorMessage,
+                        footer: 'Código de error: ' + xhr.status
                     });
+                    
                     $('#client-info-card').fadeOut();
                     $('#history-section').fadeOut();
-                }).always(function() {
+                })
+                .always(function() {
                     hideLoader();
                 });
             });
 
+            // Lógica para mostrar/ocultar sección de planificación
             const outcomeSelect = $('#outcome');
             const planningSection = $('#planning-section');
 
@@ -4442,6 +5100,7 @@
             outcomeSelect.on('change', handleOutcomeChange);
             handleOutcomeChange();
 
+            // Botones de fecha rápida
             $('.quick-date').on('click', function() {
                 const daysToAdd = parseInt($(this).data('days')) || 0;
                 const nextActionInput = $('#next_action_date');
@@ -4459,6 +5118,7 @@
                 toastr.info('Fecha establecida: ' + new Date(formatted).toLocaleString());
             });
 
+            // Contador de caracteres para el campo de notas
             const $notes = $('#notes');
             const $notesCounter = $('#notes-counter');
 
@@ -4473,14 +5133,20 @@
                 }
             });
 
+            // Inicializar contador de caracteres
             $notes.trigger('input');
 
+            // Funcionalidad de colapsar/expandir secciones
             $('#toggle-client-info').on('click', function() {
                 const $content = $('#client-info-content');
                 const $icon = $(this).find('i');
 
                 $content.slideToggle();
                 $icon.toggleClass('bi-chevron-down bi-chevron-up');
+            });
+
+            $('#refresh-history').on('click', function() {
+                refreshClientHistory();
             });
 
             $('#toggle-history').on('click', function() {
@@ -4491,6 +5157,7 @@
                 $icon.toggleClass('bi-chevron-down bi-chevron-up');
             });
 
+            // Mejora en la carga de imágenes de avatar
             function generateAvatar(name) {
                 const colors = ['#6B9BD1', '#7FA9D3', '#93B7D5', '#A7C5D7', '#BBD3D9'];
                 const initials = name.split(' ').map(n => n.charAt(0)).join('').toUpperCase().substring(0, 2);
@@ -4502,6 +5169,7 @@
                 };
             }
 
+            // Actualizar avatar con colores dinámicos
             $('#client_id').on('change', function() {
                 const selectedText = $(this).find('option:selected').text();
                 const avatarData = generateAvatar(selectedText);
@@ -4511,19 +5179,36 @@
                 $avatar.css('background-color', avatarData.color);
             });
 
-            $('#attachments').on('change', function() {
-                const files = this.files;
-                let fileNames = [];
-
-                for (let i = 0; i < files.length; i++) {
-                    fileNames.push(files[i].name);
-                }
-
-                if (fileNames.length > 0) {
-                    toastr.info(`Archivos seleccionados: ${fileNames.join(', ')}`);
+            // Mejora en la visualización de archivos adjuntos
+            $('#attachment').on('change', function() {
+                const file = this.files[0];
+                
+                if (file) {
+                    // Mostrar información del archivo
+                    toastr.info(`Archivo seleccionado: ${file.name}`);
+                    
+                    // Si es una imagen, mostrar vista previa
+                    if (file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+                        
+                        reader.onload = function(e) {
+                            $('#image-preview').attr('src', e.target.result);
+                            $('#image-preview-container').show();
+                        };
+                        
+                        reader.onerror = function() {
+                            toastr.error('Error al cargar la vista previa de la imagen');
+                            $('#image-preview-container').hide();
+                        };
+                        
+                        reader.readAsDataURL(file);
+                    } else {
+                        $('#image-preview-container').hide();
+                    }
                 }
             });
 
+            // Función para validar URL
             function isValidUrl(string) {
                 try {
                     new URL(string);
@@ -4533,6 +5218,7 @@
                 }
             }
 
+            // Validación de URL en tiempo real
             $('#interaction_url').on('input', function() {
                 const url = $(this).val();
                 if (url && !isValidUrl(url)) {
@@ -4542,6 +5228,7 @@
                 }
             });
 
+            // Atajos de teclado
             $(document).on('keydown', function(e) {
                 if (e.ctrlKey && e.key === 's') {
                     e.preventDefault();
@@ -4571,5 +5258,10 @@
             });
         });
     </script>
+<<<<<<< HEAD
 @endpush
 >>>>>>> a605699 (INTERACCIONES 001)
+=======
+</body>
+</html>
+>>>>>>> 0e82171 (INTERACCIONES 003)
