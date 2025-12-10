@@ -1969,7 +1969,7 @@
                         currentInteractionId = el.dataset.id;
                         
                         // Llenar el modal con los datos
-                        document.getElementById('modal-id').textContent = `#${el.dataset.id}`;
+                        document.getElementById('modal-id').textContent = `RADICADO ${el.dataset.id}`;
                         document.getElementById('modal-fecha').textContent = el.dataset.fecha;
                         document.getElementById('modal-cliente').textContent = el.dataset.cliente;
                         document.getElementById('modal-agent').textContent = el.dataset.agent;

@@ -348,6 +348,7 @@ Route::prefix('interactions')
     // 📌 AJAX: Buscar clientes para Select2
     Route::get('/search-clients', [InteractionController::class, 'searchClients'])->name('search-clients');
 
+<<<<<<< HEAD
     // 🆕 NUEVA RUTA: Obtener el distrito de un cliente
     Route::get('/clientes/{client_id}/distrito', [InteractionController::class, 'getClientDistrict'])->name('clientes.distrito');
     // 🆕 NUEVA RUTA: Actualizar el distrito de un cliente
@@ -386,6 +387,41 @@ Route::prefix('interactions')
         Route::delete('/{outcome}', [IntOutcomeController::class, 'destroy'])->name('destroy');
     });
 
+=======
+    // --- 📡 GRUPO DE RUTAS PARA CANALES DE INTERACCIÓN ---
+    Route::prefix('channels')->name('channels.')->group(function () {
+        Route::get('/', [IntChannelController::class, 'index'])->name('index');
+        Route::get('/create', [IntChannelController::class, 'create'])->name('create');
+        Route::post('/', [IntChannelController::class, 'store'])->name('store');
+        Route::get('/{channel}', [IntChannelController::class, 'show'])->name('show');
+        Route::get('/{channel}/edit', [IntChannelController::class, 'edit'])->name('edit');
+        Route::put('/{channel}', [IntChannelController::class, 'update'])->name('update');
+        Route::delete('/{channel}', [IntChannelController::class, 'destroy'])->name('destroy');
+    });
+
+    // --- 📡 GRUPO DE RUTAS PARA TIPOS DE INTERACCIÓN ---
+    Route::prefix('types')->name('types.')->group(function () {
+        Route::get('/', [IntTypeController::class, 'index'])->name('index');
+        Route::get('/create', [IntTypeController::class, 'create'])->name('create');
+        Route::post('/', [IntTypeController::class, 'store'])->name('store');
+        Route::get('/{type}', [IntTypeController::class, 'show'])->name('show');
+        Route::get('/{type}/edit', [IntTypeController::class, 'edit'])->name('edit');
+        Route::put('/{type}', [IntTypeController::class, 'update'])->name('update');
+        Route::delete('/{type}', [IntTypeController::class, 'destroy'])->name('destroy');
+    });
+
+    // --- 📡 GRUPO DE RUTAS PARA RESULTADOS DE INTERACCIÓN ---
+    Route::prefix('outcomes')->name('outcomes.')->group(function () {
+        Route::get('/', [IntOutcomeController::class, 'index'])->name('index');
+        Route::get('/create', [IntOutcomeController::class, 'create'])->name('create');
+        Route::post('/', [IntOutcomeController::class, 'store'])->name('store');
+        Route::get('/{outcome}', [IntOutcomeController::class, 'show'])->name('show');
+        Route::get('/{outcome}/edit', [IntOutcomeController::class, 'edit'])->name('edit');
+        Route::put('/{outcome}', [IntOutcomeController::class, 'update'])->name('update');
+        Route::delete('/{outcome}', [IntOutcomeController::class, 'destroy'])->name('destroy');
+    });
+
+>>>>>>> a605699 (INTERACCIONES 001)
     // --- 📡 GRUPO DE RUTAS PARA PRÓXIMAS ACCIONES ---
     Route::prefix('next_actions')->name('next_actions.')->group(function () {
         Route::get('/', [IntNextActionController::class, 'index'])->name('index');
