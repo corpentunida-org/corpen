@@ -119,6 +119,7 @@
                     </div>
                 </div>
             </div>
+<<<<<<< HEAD
             <!-- INICIO: NUEVO FILTRO "DISTRITO" -->
             <div class="row g-2 mt-2">
                 <div class="col-md-3">
@@ -135,12 +136,15 @@
                 </div>
             </div>
             <!-- FIN: NUEVO FILTRO "DISTRITO" -->
+=======
+>>>>>>> dc320ee (Interacciones)
             <div class="row mt-2">
                 <div class="col-12">
                     <div class="d-flex justify-content-between align-items-center">
                         <small class="text-muted">
                             <span id="resultCount">Mostrando todos los resultados</span>
                         </small>
+<<<<<<< HEAD
                         <div>
                             <button type="button" class="btn btn-sm btn-primary" id="applyFilters">
                                 <i class="feather-filter me-1"></i>Aplicar Filtros
@@ -153,6 +157,15 @@
                                     <i class="feather-grid"></i>
                                 </button>
                             </div>
+=======
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button" class="btn btn-outline-secondary active" data-view="table">
+                                <i class="feather-list"></i>
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary" data-view="cards">
+                                <i class="feather-grid"></i>
+                            </button>
+>>>>>>> dc320ee (Interacciones)
                         </div>
                     </div>
                 </div>
@@ -256,7 +269,10 @@
                             <thead class="table-light pastel-thead">
                                 <tr>
                                     <th class="py-1">ID</th>
+<<<<<<< HEAD
                                     <th class="py-1">Distrito</th>
+=======
+>>>>>>> dc320ee (Interacciones)
                                     <th class="py-1">Fecha</th>
                                     <th class="py-1">Cliente</th>
                                     <th class="py-1">Canal</th>
@@ -315,6 +331,7 @@
                                                data-proxima-tipo="{{ $interaction->nextAction?->name ?? '—' }}"
                                                data-url="{{ $interaction->interaction_url }}"
                                                data-agent="{{ $interaction->agent->name ?? 'Sin asignar' }}"
+<<<<<<< HEAD
                                                {{-- data-edit-url="{{ route('interactions.edit', $interaction->id) }}" --}}
                                                data-show-url="{{ route('interactions.show', $interaction->id) }}">
                                                 #{{ $interaction->id }}
@@ -331,6 +348,13 @@
                                         <td>
                                             {{ $interaction->DistritoDeObligacion->NOM_DIST ?? ' ' }}
                                         </td> 
+=======
+                                               data-edit-url="{{ route('interactions.edit', $interaction->id) }}"
+                                               data-show-url="{{ route('interactions.show', $interaction->id) }}">
+                                                #{{ $interaction->id }}
+                                            </a>
+                                        </td>
+>>>>>>> dc320ee (Interacciones)
 
                                         {{-- Fecha --}}
                                         <td class="py-1">
@@ -423,7 +447,11 @@
                                     </tr>
                                 @empty
                                     <tr>
+<<<<<<< HEAD
                                         <td colspan="11" class="text-center py-4">
+=======
+                                        <td colspan="10" class="text-center py-4">
+>>>>>>> dc320ee (Interacciones)
                                             <div class="empty-state">
                                                 <i class="feather-inbox empty-icon"></i>
                                                 <h6 class="mt-2">No hay interacciones registradas</h6>
@@ -444,11 +472,18 @@
                 {{-- TAB Exitosos --}}
                 <div class="tab-pane fade" id="tab-success" role="tabpanel" aria-labelledby="tab-success-tab">
                     <div class="table-responsive">
+<<<<<<< HEAD
                         <table class="table table-hover align-items-center interactionTable pastel-table excel-table" id="tablaExitosos">
                             <thead class="table-light pastel-thead">
                                 <tr>
                                     <th class="py-1">ID</th>
                                     <th class="py-1">Distrito</th>
+=======
+                        <table class="table table-hover align-items-center interactionTable pastel-table excel-table">
+                            <thead class="table-light pastel-thead">
+                                <tr>
+                                    <th class="py-1">ID</th>
+>>>>>>> dc320ee (Interacciones)
                                     <th class="py-1">Fecha</th>
                                     <th class="py-1">Cliente</th>
                                     <th class="py-1">Canal</th>
@@ -463,12 +498,16 @@
                             <tbody>
                                 @forelse ($collectionsForTabs['successful'] as $interaction)
                                     @php
+<<<<<<< HEAD
                                         $outcome = 'Exitoso'; // El resultado es fijo aquí
+=======
+>>>>>>> dc320ee (Interacciones)
                                         $clientName = $interaction->client->nom_ter ?? $interaction->client->nombre ?? 'N/A';
                                         $clientId = $interaction->client->cod_ter ?? $interaction->client->identificacion ?? 'N/A';
                                         $areaName = $interaction->area?->nombre ?? '—';
                                         $cargoName = $interaction->cargo?->nombre_cargo ?? '—';
                                         $lineaName = $interaction->lineaDeObligacion?->nombre ?? '—';
+<<<<<<< HEAD
                                         $areaAsigName = $interaction->areaDeAsignacion?->nombre ?? '—';
                                     @endphp
                                     <tr class="table-row-hover pastel-row excel-row" data-outcome="{{ $outcome }}">
@@ -506,6 +545,14 @@
                                         </td>
                                         <td>
                                             {{ $interaction->DistritoDeObligacion->NOM_DIST ?? ' ' }}
+=======
+                                    @endphp
+                                    <tr class="table-row-hover pastel-row excel-row">
+                                        <td class="py-1">
+                                            <a href="{{ route('interactions.show', $interaction->id) }}" class="fw-bold text-decoration-none pastel-link">
+                                                #{{ $interaction->id }}
+                                            </a>
+>>>>>>> dc320ee (Interacciones)
                                         </td>
                                         <td class="py-1">
                                             <div class="d-flex flex-column">
@@ -569,7 +616,11 @@
                                     </tr>
                                 @empty
                                     <tr>
+<<<<<<< HEAD
                                         <td colspan="11" class="text-center py-4">
+=======
+                                        <td colspan="10" class="text-center py-4">
+>>>>>>> dc320ee (Interacciones)
                                             <div class="empty-state">
                                                 <i class="feather-check-circle empty-icon"></i>
                                                 <h6 class="mt-2">No hay interacciones exitosas</h6>
@@ -586,11 +637,18 @@
                 {{-- TAB Pendientes --}}
                 <div class="tab-pane fade" id="tab-pending" role="tabpanel" aria-labelledby="tab-pending-tab">
                     <div class="table-responsive">
+<<<<<<< HEAD
                         <table class="table table-hover align-items-center interactionTable pastel-table excel-table" id="tablaPendientes">
                             <thead class="table-light pastel-thead">
                                 <tr>
                                     <th class="py-1">ID</th>
                                     <th class="py-1">Distrito</th>
+=======
+                        <table class="table table-hover align-items-center interactionTable pastel-table excel-table">
+                            <thead class="table-light pastel-thead">
+                                <tr>
+                                    <th class="py-1">ID</th>
+>>>>>>> dc320ee (Interacciones)
                                     <th class="py-1">Fecha</th>
                                     <th class="py-1">Cliente</th>
                                     <th class="py-1">Canal</th>
@@ -605,12 +663,16 @@
                             <tbody>
                                 @forelse ($collectionsForTabs['pending'] as $interaction)
                                     @php
+<<<<<<< HEAD
                                         $outcome = 'Pendiente'; // El resultado es fijo aquí
+=======
+>>>>>>> dc320ee (Interacciones)
                                         $clientName = $interaction->client->nom_ter ?? $interaction->client->nombre ?? 'N/A';
                                         $clientId = $interaction->client->cod_ter ?? $interaction->client->identificacion ?? 'N/A';
                                         $areaName = $interaction->area?->nombre ?? '—';
                                         $cargoName = $interaction->cargo?->nombre_cargo ?? '—';
                                         $lineaName = $interaction->lineaDeObligacion?->nombre ?? '—';
+<<<<<<< HEAD
                                         $areaAsigName = $interaction->areaDeAsignacion?->nombre ?? '—';
                                     @endphp
                                     <tr class="table-row-hover pastel-row excel-row" data-outcome="{{ $outcome }}">
@@ -648,6 +710,14 @@
                                         </td>
                                         <td>
                                             {{ $interaction->DistritoDeObligacion->NOM_DIST ?? ' ' }}
+=======
+                                    @endphp
+                                    <tr class="table-row-hover pastel-row excel-row">
+                                        <td class="py-1">
+                                            <a href="{{ route('interactions.show', $interaction->id) }}" class="fw-bold text-decoration-none pastel-link">
+                                                #{{ $interaction->id }}
+                                            </a>
+>>>>>>> dc320ee (Interacciones)
                                         </td>
                                         <td class="py-1">
                                             <div class="d-flex flex-column">
@@ -711,7 +781,11 @@
                                     </tr>
                                 @empty
                                     <tr>
+<<<<<<< HEAD
                                         <td colspan="11" class="text-center py-4">
+=======
+                                        <td colspan="10" class="text-center py-4">
+>>>>>>> dc320ee (Interacciones)
                                             <div class="empty-state">
                                                 <i class="feather-clock empty-icon"></i>
                                                 <h6 class="mt-2">No hay interacciones pendientes</h6>
@@ -728,11 +802,18 @@
                 {{-- TAB Hoy --}}
                 <div class="tab-pane fade" id="tab-today" role="tabpanel" aria-labelledby="tab-today-tab">
                     <div class="table-responsive">
+<<<<<<< HEAD
                         <table class="table table-hover align-items-center interactionTable pastel-table excel-table" id="tablaHoy">
                             <thead class="table-light pastel-thead">
                                 <tr>
                                     <th class="py-1">ID</th>
                                     <th class="py-1">Distrito</th>
+=======
+                        <table class="table table-hover align-items-center interactionTable pastel-table excel-table">
+                            <thead class="table-light pastel-thead">
+                                <tr>
+                                    <th class="py-1">ID</th>
+>>>>>>> dc320ee (Interacciones)
                                     <th class="py-1">Fecha</th>
                                     <th class="py-1">Cliente</th>
                                     <th class="py-1">Canal</th>
@@ -753,6 +834,7 @@
                                         $areaName = $interaction->area?->nombre ?? '—';
                                         $cargoName = $interaction->cargo?->nombre_cargo ?? '—';
                                         $lineaName = $interaction->lineaDeObligacion?->nombre ?? '—';
+<<<<<<< HEAD
                                         $areaAsigName = $interaction->areaDeAsignacion?->nombre ?? '—';
                                     @endphp
                                     <tr class="table-row-hover pastel-row excel-row" data-outcome="{{ $outcome }}">
@@ -790,6 +872,14 @@
                                         </td>
                                         <td>
                                             {{ $interaction->DistritoDeObligacion->NOM_DIST ?? ' ' }}
+=======
+                                    @endphp
+                                    <tr class="table-row-hover pastel-row excel-row">
+                                        <td class="py-1">
+                                            <a href="{{ route('interactions.show', $interaction->id) }}" class="fw-bold text-decoration-none pastel-link">
+                                                #{{ $interaction->id }}
+                                            </a>
+>>>>>>> dc320ee (Interacciones)
                                         </td>
                                         <td class="py-1">
                                             <div class="d-flex flex-column">
@@ -863,7 +953,11 @@
                                     </tr>
                                 @empty
                                     <tr>
+<<<<<<< HEAD
                                         <td colspan="11" class="text-center py-4">
+=======
+                                        <td colspan="10" class="text-center py-4">
+>>>>>>> dc320ee (Interacciones)
                                             <div class="empty-state">
                                                 <i class="feather-calendar empty-icon"></i>
                                                 <h6 class="mt-2">No hay interacciones de hoy</h6>
@@ -909,6 +1003,7 @@
         </div>
     </div>
 
+<<<<<<< HEAD
     {{-- Modal de depuración --}}
 {{--     -
     <div class="modal fade" id="debugModal" tabindex="-1" aria-hidden="true">
@@ -918,10 +1013,21 @@
                     <h5 class="modal-title">
                         <i class="feather-alert-triangle me-2"></i>
                         MODO DEPURACIÓN
+=======
+    {{-- Modal mejorado --}}
+    <div class="modal fade" id="detalleInteractionModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content glassmorphism-modal">
+                <div class="modal-header pastel-modal-header">
+                    <h5 class="modal-title d-flex align-items-center">
+                        <i class="feather-message-circle me-2"></i>
+                        Detalles de la Interacción
+>>>>>>> dc320ee (Interacciones)
                     </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
+<<<<<<< HEAD
                     <h6>Elemento Clickeado:</h6>
                     <pre id="debugElement" style="background: #f8f9fa; padding: 10px; border-radius: 5px; font-size: 0.9em;"></pre>
 
@@ -1050,6 +1156,110 @@
                     {{--                     <button type="button" class="btn pastel-btn-gradient" id="editFromModal">
                         <i class="feather-edit-3 me-1"></i> Editar
                     </button> --}}
+=======
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <h6 class="fw-bold text-primary mb-1" id="modal-id"></h6>
+                            <p class="text-muted mb-0" id="modal-fecha"></p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div id="modal-resultado" class="d-inline-block"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-3 pastel-card">
+                        <div class="card-header pastel-card-header py-2">
+                            <h6 class="mb-0 fw-semibold">Información General</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <small class="text-muted d-block">Cliente</small>
+                                    <span id="modal-cliente"></span>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <small class="text-muted d-block">Agente</small>
+                                    <span id="modal-agent"></span>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <small class="text-muted d-block">Canal</small>
+                                    <span id="modal-canal"></span>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <small class="text-muted d-block">Tipo</small>
+                                    <span id="modal-tipo"></span>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <small class="text-muted d-block">Duración</small>
+                                    <span id="modal-duracion"></span>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <small class="text-muted d-block">URL</small>
+                                    <span id="modal-url"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-3 pastel-card">
+                        <div class="card-header pastel-card-header py-2">
+                            <h6 class="mb-0 fw-semibold">Información Organizacional</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <small class="text-muted d-block">Área</small>
+                                    <span id="modal-area"></span>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <small class="text-muted d-block">Cargo</small>
+                                    <span id="modal-cargo"></span>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <small class="text-muted d-block">Línea de Obligación</small>
+                                    <span id="modal-linea"></span>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <small class="text-muted d-block">Área de Asignación</small>
+                                    <span id="modal-area-asig"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mb-3 pastel-card">
+                        <div class="card-header pastel-card-header py-2">
+                            <h6 class="mb-0 fw-semibold">Próxima Acción</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <small class="text-muted d-block">Fecha</small>
+                                    <span id="modal-proxima-fecha"></span>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <small class="text-muted d-block">Tipo</small>
+                                    <span id="modal-proxima-tipo"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card pastel-card">
+                        <div class="card-header pastel-card-header py-2">
+                            <h6 class="mb-0 fw-semibold">Notas</h6>
+                        </div>
+                        <div class="card-body">
+                            <p id="modal-notas"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer pastel-modal-footer">
+                    <button type="button" class="btn pastel-btn-light" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn pastel-btn-gradient" id="editFromModal">
+                        <i class="feather-edit-3 me-1"></i> Editar
+                    </button>
+>>>>>>> dc320ee (Interacciones)
                 </div>
             </div>
         </div>
@@ -1375,6 +1585,7 @@
 
         <script>
             document.addEventListener('DOMContentLoaded', function () {
+<<<<<<< HEAD
                 let currentTable = null;
                 let currentInteractionId = null;
 
@@ -1741,6 +1952,310 @@
                 $('.glassmorphism-card').each(function(index) { 
                     $(this).addClass('fade-in-up'); 
                     $(this).css('animation-delay', `${index * 0.05}s`); 
+=======
+                let currentTable = null; // Variable para guardar la instancia de la tabla activa
+                let currentInteractionId = null;
+
+                // =================================================================
+                // == MANEJO DEL MODAL PARA VER DETALLES RÁPIDOS ==
+                // =================================================================
+                document.addEventListener('click', function (e) {
+                    const interactionIdLink = e.target.closest('.interaction-id');
+                    
+                    if (interactionIdLink) {
+                        e.preventDefault();
+                        
+                        const el = interactionIdLink;
+                        currentInteractionId = el.dataset.id;
+                        
+                        // Llenar el modal con los datos
+                        document.getElementById('modal-id').textContent = `#${el.dataset.id}`;
+                        document.getElementById('modal-fecha').textContent = el.dataset.fecha;
+                        document.getElementById('modal-cliente').textContent = el.dataset.cliente;
+                        document.getElementById('modal-agent').textContent = el.dataset.agent;
+                        document.getElementById('modal-canal').textContent = el.dataset.canal;
+                        document.getElementById('modal-tipo').textContent = el.dataset.tipo;
+                        document.getElementById('modal-duracion').textContent = el.dataset.duracion;
+                        document.getElementById('modal-area').textContent = el.dataset.area;
+                        document.getElementById('modal-cargo').textContent = el.dataset.cargo;
+                        document.getElementById('modal-linea').textContent = el.dataset.linea;
+                        document.getElementById('modal-area-asig').textContent = el.dataset['area-asig'];
+                        document.getElementById('modal-proxima-fecha').textContent = el.dataset['proxima-fecha'] || '—';
+                        document.getElementById('modal-proxima-tipo').textContent = el.dataset['proxima-tipo'] || '—';
+                        document.getElementById('modal-notas').textContent = el.dataset.notas;
+                        
+                        // URL
+                        const url = el.dataset.url;
+                        document.getElementById('modal-url').innerHTML = url && url !== 'null' ? 
+                            `<a href="${url}" target="_blank">Abrir enlace <i class="feather-external-link small"></i></a>` : '— No hay URL';
+                        
+                        // Aplicar colores de resultado pastel SUAVE en el modal
+                        const outcome = el.dataset.outcome;
+                        let resultadoStyle = '';
+                        switch(outcome) {
+                            case 'Exitoso':
+                                resultadoStyle = 'background-color: #E8F5E8 !important; color: #2E7D32 !important; border: 1px solid #C8E6C9 !important;';
+                                break;
+                            case 'Pendiente':
+                                resultadoStyle = 'background-color: #FFF8E1 !important; color: #F57C00 !important; border: 1px solid #FFECB3 !important;';
+                                break;
+                            case 'Fallido':
+                                resultadoStyle = 'background-color: #FFD6E0 !important; color: #D63384 !important; border: 1px solid #FFB3C1 !important;';
+                                break;
+                            default:
+                                resultadoStyle = 'background-color: #E1F5FE !important; color: #0288D1 !important; border: 1px solid #B3E5FC !important;';
+                        }
+                        
+                        document.getElementById('modal-resultado').innerHTML = 
+                            `<div style="min-width: 60px; text-align: center; transition: all 0.2s ease; border-radius: 8px; font-weight: 500; font-size: 0.6rem; ${resultadoStyle} padding: 2px 6px; display: flex; align-items: center; justify-content: center;">
+                                <span>${outcome}</span>
+                            </div>`;
+
+                        // Configurar botón de editar
+                        document.getElementById('editFromModal').onclick = function() {
+                            window.location.href = el.dataset['edit-url'];
+                        };
+
+                        new bootstrap.Modal(document.getElementById('detalleInteractionModal')).show();
+                    }
+                });
+
+                // Función para inicializar una tabla específica
+                function initializeDataTable(tableSelector) {
+                    let table = $(tableSelector).DataTable({
+                        dom: 'Bfrtip',
+                        buttons: [
+                            { extend: 'excelHtml5', className: 'btn btn-sm pastel-btn-gradient', text: '<i class="feather-file-text me-1"></i>Excel' },
+                            { extend: 'pdfHtml5', className: 'btn btn-sm pastel-btn-gradient', text: '<i class="feather-file me-1"></i>PDF' },
+                            { extend: 'print', className: 'btn btn-sm pastel-btn-light', text: '<i class="feather-printer me-1"></i>Imprimir' }
+                        ],
+                        pageLength: 20,
+                        order: [[0, 'desc']],
+                        language: {
+                            url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
+                            emptyTable: "No hay datos disponibles en la tabla",
+                            info: "Mostrando _START_ a _END_ de _TOTAL_ registros",
+                            infoEmpty: "Mostrando 0 a 0 de 0 registros",
+                            lengthMenu: "Mostrar _MENU_ registros",
+                            loadingRecords: "Cargando...",
+                            processing: "Procesando...",
+                            search: "Buscar:",
+                            zeroRecords: "No se encontraron resultados coincidentes",
+                            paginate: {
+                                first: "Primero",
+                                last: "Último",
+                                next: "Siguiente",
+                                previous: "Anterior"
+                            }
+                        },
+                        // Para que los filtros funcionen solo en la tabla activa
+                        initComplete: function () {
+                            var api = this.api();
+                            // Limpiar eventos anteriores para evitar duplicados
+                            $('#filterSearch').off('keyup change').on('keyup change', function () {
+                                api.column(0).search(this.value).draw();
+                                updateResultCount();
+                            });
+                            $('#filterChannel').off('change').on('change', function () {
+                                api.column(3).search(this.value).draw();
+                                updateResultCount();
+                            });
+                            $('#filterType').off('change').on('change', function () {
+                                 api.column(4).search(this.value).draw();
+                                updateResultCount();
+                            });
+                            $('#filterOutcome').off('change').on('change', function () {
+                                api.column(7).search(this.value).draw();
+                                updateResultCount();
+                            });
+                            $('#filterArea').off('change').on('change', function () {
+                                api.column(4).search(this.value).draw();
+                                updateResultCount();
+                            });
+                            $('#filterCargo').off('change').on('change', function () {
+                                api.column(5).search(this.value).draw();
+                                updateResultCount();
+                            });
+                            $('#filterLinea').off('change').on('change', function () {
+                                api.column(6).search(this.value).draw();
+                                updateResultCount();
+                            });
+                            $('#filterFecha').off('change').on('change', function () {
+                                let val = this.value;
+                                if (val) {
+                                    let partes = val.split("-");
+                                    let fechaFormateada = partes[2] + "/" + partes[1] + "/" + partes[0];
+                                    api.column(1).search(fechaFormateada).draw();
+                                } else {
+                                    api.column(1).search("").draw();
+                                }
+                                updateResultCount();
+                            });
+                        }
+                    });
+                    return table;
+                }
+
+                // Función para actualizar el contador de resultados
+                function updateResultCount() {
+                    if (currentTable) {
+                        const info = currentTable.page.info();
+                        document.getElementById('resultCount').textContent = 
+                            `Mostrando ${info.recordsDisplay} de ${info.recordsTotal} resultados`;
+                    }
+                }
+
+                // Inicializar la tabla de la primera pestaña (la que está activa al cargar)
+                currentTable = initializeDataTable('#tab-all .interactionTable');
+                updateResultCount();
+
+                // Evento para cuando se cambia de pestaña
+                document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
+                    tab.addEventListener('shown.bs.tab', function (e) {
+                        const targetPaneId = e.target.getAttribute('data-bs-target');
+                        const tableInPane = document.querySelector(`${targetPaneId} .interactionTable`);
+
+                        // Si ya hay una tabla, la destruimos
+                        if (currentTable) {
+                            currentTable.destroy();
+                            currentTable = null;
+                        }
+
+                        // Si la pestaña tiene una tabla, la inicializamos
+                        if (tableInPane) {
+                            currentTable = initializeDataTable(tableInPane);
+                            updateResultCount();
+                        }
+                    });
+                });
+
+                // Limpiar filtros
+                $('#clearFilters').on('click', function() {
+                    $('#filterSearch, #filterChannel, #filterType, #filterOutcome, #filterArea, #filterCargo, #filterLinea, #filterFecha').val('');
+                    if(currentTable) {
+                        currentTable.search('').columns().search('').draw();
+                        updateResultCount();
+                    }
+                });
+
+                // Botón exportar
+                $('#exportBtn').on('click', function() {
+                    if(currentTable) {
+                        currentTable.button(0).trigger();
+                    }
+                });
+
+                // SweetAlert — confirmaciones
+                function confirmarAccion(titulo, texto, icono, callback) {
+                    Swal.fire({
+                        title: titulo,
+                        text: texto,
+                        icon: icono,
+                        showCancelButton: true,
+                        confirmButtonColor: '#E6F3FF',
+                        cancelButtonColor: '#F8E8FF',
+                        confirmButtonText: 'Sí, continuar',
+                        cancelButtonText: 'Cancelar',
+                        background: 'rgba(255, 255, 255, 0.9)',
+                        backdrop: 'rgba(0, 0, 0, 0.1)'
+                    }).then((result) => { 
+                        if (result.isConfirmed) callback(); 
+                    });
+                }
+
+                // Botón crear
+                document.querySelectorAll('.btnCrear').forEach(btn => {
+                    btn.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        confirmarAccion(
+                            '¿Crear una nueva Interacción?', 
+                            'Serás redirigido al formulario de creación.', 
+                            'info', 
+                            () => { window.location.href = btn.getAttribute('href'); }
+                        );
+                    });
+                });
+
+                // Botón editar
+                document.querySelectorAll('.btnEditar').forEach(btn => {
+                    btn.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        confirmarAccion(
+                            '¿Editar esta Interacción?', 
+                            'Serás redirigido al formulario de edición.', 
+                            'question', 
+                            () => { window.location.href = btn.getAttribute('href'); }
+                        );
+                    });
+                });
+
+                // Formulario eliminar
+
+                document.querySelectorAll('.formEliminar').forEach(form => {
+                    form.addEventListener('submit', function (e) {
+                        e.preventDefault();
+                        confirmarAccion(
+                            '¿Eliminar esta Interacción?',
+                            'Esta acción eliminará la interacción y todos sus datos relacionados. Esta acción no se puede deshacer.',
+                            'warning',
+                            () => { form.submit(); }
+                        );
+                    });
+                });
+
+                // Activar tooltips de Bootstrap
+                var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                tooltipTriggerList.map(function (el) { 
+                    return new bootstrap.Tooltip(el, {
+                        trigger: 'hover focus',
+                        delay: { show: 300, hide: 100 }
+                    }); 
+                });
+
+                // Atajos de teclado
+                document.addEventListener('keydown', function(e) {
+                    // Ctrl/Cmd + K para búsqueda rápida
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+                        e.preventDefault();
+                        $('#filterSearch').focus();
+                    }
+                    
+                    // Ctrl/Cmd + N para nueva interacción
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+                        e.preventDefault();
+                        window.location.href = "{{ route('interactions.create') }}";
+                    }
+                });
+
+                // Actualizar contador de resultados al cambiar de pestaña
+                document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
+                    tab.addEventListener('shown.bs.tab', function() {
+                        setTimeout(updateResultCount, 100);
+                    });
+                });
+
+                // Inicializar contador
+                updateResultCount();
+                
+                // Efecto de entrada para las filas
+                $('.excel-row').each(function(index) {
+                    $(this).css({
+                        'opacity': '0',
+                        'transform': 'translateY(5px)'
+                    });
+                    setTimeout(() => {
+                        $(this).animate({
+                            'opacity': '1',
+                            'transform': 'translateY(0)'
+                        }, 200);
+                    }, index * 20);
+                });
+                
+                // Efecto de entrada para las cards
+                $('.glassmorphism-card').each(function(index) {
+                    $(this).addClass('fade-in-up');
+                    $(this).css('animation-delay', `${index * 0.05}s`);
+>>>>>>> dc320ee (Interacciones)
                 });
             });
         </script>
