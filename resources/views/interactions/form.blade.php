@@ -3955,6 +3955,16 @@
                                 <div class="category-content">
                                     <div class="form-group">
                                         <label class="form-label required-field">¿Quién realiza la llamada?</label>
+                                        <style>
+                                            /* ESTOS ESTILOS EVITAN QUE EL BOTÓN SE PIERDA CON EL FONDO AL PASAR EL MOUSE */
+                                            .btn-soft-choice:hover {
+                                                /* Fuerza a que el botón mantenga su color de fondo por defecto al pasar el mouse */
+                                                background-color: #f8f9fa !important;
+                                                border-color: #dee2e6 !important;
+                                                color: #212529 !important;
+                                            }
+                                        </style>
+
                                         <div class="d-flex gap-2 mb-3">
                                             <input type="radio" class="btn-check" name="caller_type" id="caller_is_client" value="client" autocomplete="off" checked>
                                             <label class="btn btn-soft-choice flex-grow-1" for="caller_is_client">
@@ -5102,6 +5112,7 @@
 
             // Función para actualizar el historial del cliente
             function refreshClientHistory() {
+                //console.log("hfasnflajnf");
                 const cod_ter = $('#client_id').val();
                 if (!cod_ter) return;
                 
@@ -5109,15 +5120,17 @@
                 historyList.empty().html('<div class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary" role="status"><span class="visually-hidden">Cargando...</span></div> Cargando historial...</div>');
                 
                 $.ajax({
-                    url: `/interactions/cliente/${cod_ter}`,
+                    url: @json(route('interactions.cliente.show', ['cod_ter' => ':cod_ter'])).replace(':cod_ter', cod_ter),
                     type: 'GET',
                     dataType: 'json',
                     timeout: 15000,
                 }).done(function(data) {
+                
                     historyList.empty();
                     if (data.history && data.history.length) {
                         let historyHtml = '';
                         data.history.forEach(item => {
+                            console.log(data);
                             historyHtml += `
                                 <div class="history-item mb-3 p-3 border rounded bg-white">
                                     <div class="d-flex justify-content-between align-items-start mb-2">
@@ -5217,14 +5230,12 @@
                 showLoader();
                 
                 $.ajax({
-                    url: `/interactions/cliente/${cod_ter}`,
+                    url: @json(route('interactions.cliente.show', ['cod_ter' => ':cod_ter'])).replace(':cod_ter', cod_ter),
                     type: 'GET',
                     dataType: 'json',
                     timeout: 15000,
                 })
-                .done(function(data) {
-                    console.log('Datos del cliente recibidos:', data);
-                    
+                .done(function(data) {                    
                     // Verificar si hay error en la respuesta
                     if (data.error) {
                         throw new Error(data.error);
@@ -5249,6 +5260,7 @@
                     // Mejora en la carga del historial
                     historyList.empty();
                     if (data.history && data.history.length > 0) {
+                        console.log(data);
                         let historyHtml = '';
                         data.history.forEach(item => {
                             historyHtml += `

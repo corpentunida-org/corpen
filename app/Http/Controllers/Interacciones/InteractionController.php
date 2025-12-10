@@ -33,7 +33,7 @@ class InteractionController extends Controller
         // --- 1. CONSTRUIMOS LA CONSULTA BASE (sin paginar aún) ---
         $baseQuery = Interaction::with([
             'client', 'agent', 'channel', 'type', 'outcomeRelation', 'nextAction',
-            'area', 'areaDeAsignacion', 'cargo', 'lineaDeObligacion'
+            'area', 'areaDeAsignacion', 'cargo', 'lineaDeObligacion','DistritoDeObligacion'
         ]);
 
         // --- 2. APLICAMOS TODOS LOS FILTROS (BÚSQUEDA Y FILTROS ADICIONALES) ---
@@ -92,7 +92,7 @@ class InteractionController extends Controller
         ];
 
         // --- 4. OBTENEMOS LA COLECCIÓN PAGINADA PARA LA PESTAÑA "TODOS" ---
-        $interactions = $baseQuery->orderByDesc('interaction_date')->paginate(100);
+        $interactions = $baseQuery->orderBy('id')->paginate(100);
         $interactions->appends($request->query());
 
         // --- 5. DATOS PARA LOS SELECT DE LA VISTA ---

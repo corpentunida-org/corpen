@@ -270,9 +270,13 @@
                                 <tr>
                                     <th class="py-1">ID</th>
 <<<<<<< HEAD
+<<<<<<< HEAD
                                     <th class="py-1">Distrito</th>
 =======
 >>>>>>> dc320ee (Interacciones)
+=======
+                                    <th class="py-1">Distrito</th>
+>>>>>>> 53a6e9c (INTERACCIONES 005)
                                     <th class="py-1">Fecha</th>
                                     <th class="py-1">Cliente</th>
                                     <th class="py-1">Canal</th>
@@ -354,7 +358,13 @@
                                                 #{{ $interaction->id }}
                                             </a>
                                         </td>
+<<<<<<< HEAD
 >>>>>>> dc320ee (Interacciones)
+=======
+                                        <td>
+                                            {{ $interaction->DistritoDeObligacion->NOM_DIST ?? ' ' }}
+                                        </td> 
+>>>>>>> 53a6e9c (INTERACCIONES 005)
 
                                         {{-- Fecha --}}
                                         <td class="py-1">
