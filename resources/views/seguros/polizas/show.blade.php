@@ -138,8 +138,7 @@
                         </div>
                     </div>
                 @endforeach
-            </div>
-    
+            </div>    
 
         @if ($grupoFamiliar->count() >= 1)
             <div class="mb-4 px-4 d-flex align-items-center justify-content-between">
