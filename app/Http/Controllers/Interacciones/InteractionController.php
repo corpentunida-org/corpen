@@ -475,9 +475,7 @@ class InteractionController extends Controller
             ->with('success', 'Interacción actualizada exitosamente.');
     }
 
-    /**
-     * Elimina una interacción y sus archivos adjuntos.
-     */
+    
     public function destroy(Interaction $interaction)
     {
         try {
@@ -495,11 +493,8 @@ class InteractionController extends Controller
             return redirect()->back()->with('error', 'Hubo un error al eliminar la interacción.');
         }
     } 
-*/
 
-    /**
-     * Descarga un archivo adjunto.
-     */
+
     public function downloadAttachment($fileName)
     {
         // --- CORRECCIÓN: Descarga desde S3 ---
