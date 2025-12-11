@@ -332,16 +332,40 @@ public function create()
 
         $scpSoporte->update($updateData);
         
-        // ✅ Enviar correo solo si se cambió el usuario escalado
-        if ($scpSoporte->wasChanged('usuario_escalado') && 
-            $scpSoporte->usuarioEscalado && 
-            $scpSoporte->usuarioEscalado->email) {
-
-            Mail::to($scpSoporte->usuarioEscalado->email)
-                ->send(new SoporteEscaladoMail($scpSoporte));
+        // Verificar si es un escalamiento (tipo de observación = 3 según el código JavaScript)
+        $esEscalamiento = $request->id_tipo_observacion == 3;
+        
+        // ================================
+        //   LÓGICA DE ENVÍO DE CORREOS (COMENTADA)
+        // ================================
+        /*
+        if ($esEscalamiento) {
+            // Obtener el tipo de observación para confirmar que es "Escalamiento"
+            $tipoObservacion = ScpTipoObservacion::find($request->id_tipo_observacion);
+            
+            if ($tipoObservacion && strtolower($tipoObservacion->nombre) === 'escalamiento') {
+                // Enviar correo al usuario escalado
+                if ($request->filled('id_scp_usuario_asignado') && $request->input('id_scp_usuario_asignado') != '0') {
+                    $usuarioEscalado = ScpUsuario::find($request->input('id_scp_usuario_asignado'));
+                    
+                    if ($usuarioEscalado && $usuarioEscalado->maeTercero && $usuarioEscalado->maeTercero->email) {
+                        Mail::to($usuarioEscalado->maeTercero->email)
+                            ->send(new SoporteEscaladoMail($scpSoporte, $observacion, 'escalado'));
+                    }
+                }
+                
+                // Enviar correo al creador del soporte
+                if ($scpSoporte->usuario && $scpSoporte->usuario->email) {
+                    Mail::to($scpSoporte->usuario->email)
+                        ->send(new SoporteEscaladoMail($scpSoporte, $observacion, 'creador'));
+                }
+            }
         }
+        */
+        // ================================
 
-        return redirect()->route('soportes.soportes.show', $scpSoporte)->with('success', 'Observación añadida y soporte actualizado exitosamente.');
+        return redirect()->route('soportes.soportes.show', $scpSoporte)
+            ->with('success', 'Observación añadida y soporte actualizado exitosamente.');
     }
 
 
