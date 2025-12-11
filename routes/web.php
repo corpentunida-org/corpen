@@ -382,7 +382,7 @@ Route::prefix('interactions')
         Route::delete('/{outcome}', [IntOutcomeController::class, 'destroy'])->name('destroy');
     });
 
->>>>>>> a605699 (INTERACCIONES 001)
+
     // --- 📡 GRUPO DE RUTAS PARA PRÓXIMAS ACCIONES ---
     Route::prefix('next_actions')->name('next_actions.')->group(function () {
         Route::get('/', [IntNextActionController::class, 'index'])->name('index');

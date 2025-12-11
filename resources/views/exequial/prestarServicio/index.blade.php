@@ -87,8 +87,7 @@
                                 <th>Fallecido</th>
                                 <th>Parentesco</th>
                                 <th>Titular</th>
-                                <th>Factura</th>
-                                <th>Traslado</th>
+                                <th>Estado</th>
                                 <th class="text-end">Actions</th>
                             </tr>
                         </thead>
@@ -98,8 +97,7 @@
                                     <td>
                                         <div class="fw-semibold mb-1">{{ $r->fechaFallecimiento }}</div>
                                         <div class="d-flex gap-3">
-                                            <a href="javascript:void(0);"
-                                                class="hstack gap-1 fs-11 fw-normal text-primary">
+                                            <a class="hstack gap-1 fs-11 fw-normal text-primary">
                                                 <i class="feather-clock fs-10 text-primary"></i>
                                                 <span>{{ $r->horaFallecimiento }}</span>
                                             </a>
@@ -111,7 +109,6 @@
                                             @endphp
                                             <a href="javascript:void(0);"
                                                 class="hstack gap-1 fs-11 fw-normal text-primary">
-                                                <i class="feather-grid calendar-icon fs-10 text-primary"></i>
                                                 <span>{{ ucfirst($diaSemana) }}</span>
                                             </a>
                                         </div>
@@ -136,40 +133,19 @@
                                         <div class="fw-semibold mb-1">{{ $r->nombreTitular }}</div>
                                         <div class="d-flex gap-3">
                                             <a
-                                                href="javascript:void(0);"class="hstack gap-1 fs-11 fw-normal text-muted">{{ $r->cedulaTitular }}</a>
+                                                class="hstack gap-1 fs-11 fw-normal text-muted">{{ $r->cedulaTitular }}</a>
                                         </div>
                                     </td>
-                                    {{-- <td>
-                                        <select class="form-control" data-select2-selector="status">
-                                            <option value="success" data-bg="bg-success">{{ $r->factura }}
-                                            </option>
-                                            <option value="success" data-bg="bg-success">{{ $r->valor }}
-                                            </option>
-                                        </select>
-                                    </td> --}}
-                                    <td>
-                                        <div>
-                                            <a href="javascript:void(0);"
-                                                class="fs-12 fw-normal text-muted d-block">{{ $r->factura }}</a>
-                                            <a href="javascript:void(0);" class="d-block">$ {{ $r->valor }}</a>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        @if ($r->traslado)
-                                            <div class="badge bg-soft-success text-success">Si</div>
-                                        @else
-                                            <div class="badge bg-soft-danger text-danger">No</div>
-                                        @endif
+                                    <td class="fw-semibold text-primary">
+                                        {{ $r->estado == 1 ? 'PENDIENTE' : ($r->estado == 2 ? 'EN PROCESO' : 'CERRADO') }}
                                     </td>
                                     <td>
                                         <div class="hstack gap-2 justify-content-end">
-
                                             <a href="{{ route('exequial.prestarServicio.edit', $r->id) }}"
                                                 class="avatar-text avatar-md" data-bs-toggle="tooltip" title="EDITAR"
-                                                data-bs-original-title="EDITAR">
+                                                data-bs-original-title="VER/EDITAR">
                                                 <i class="feather feather-eye"></i>
                                             </a>
-
                                         </div>
                                     </td>
                                 </tr>
@@ -177,15 +153,10 @@
                         </tbody>
                     </table>
                     <div class="d-flex justify-content-end gap-2 m-3 ">
-                        <a href={{ route('prestarServicio.generarpdf') }} class="btn btn-md btn-primary">Descargar
-                            PDF</a>
+                        <a href={{ route('prestarServicio.generarpdf') }} class="btn btn-md btn-primary">Descargar PDF</a>
                     </div>
-
                 </div>
             </div>
-
         </div>
     </div>
-    </div>
-
 </x-base-layout>
