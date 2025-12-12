@@ -6,11 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Maestras\claseCongregacion;
 use App\Models\Maestras\maeDistritos;
 use App\Models\Maestras\maeTerceros;
-use App\Models\Maestras\maeMunicipios;
+use App\Models\Maestras\MaeMunicipios;
 use App\Models\Maestras\Congregacion;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
-
 
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -35,11 +34,8 @@ class CongregacionController extends Controller
             });
         }
 
-        
         // CAMBIO: Simplemente elimina .withQueryString() de esta línea
-        $congregaciones = $query
-        ->orderBy('codigo', 'desc')
-        ->paginate(10);
+        $congregaciones = $query->orderBy('codigo', 'desc')->paginate(10);
 
         return view('maestras.congregaciones.index', compact('congregaciones'));
     }
@@ -52,8 +48,7 @@ class CongregacionController extends Controller
         $claselist = claseCongregacion::all();
         $distritos = maeDistritos::all();
         $terceros = maeTerceros::all();
-        $municipios = maeMunicipios::all();
-       
+        $municipios = MaeMunicipios::all();
 
         return view('maestras.congregaciones.create', compact('claselist', 'distritos', 'terceros', 'municipios'));
     }
@@ -66,32 +61,27 @@ class CongregacionController extends Controller
     {
         // Verificar si ya existe una congregación con ese código
         if (Congregacion::where('codigo', $request->Codigo)->exists()) {
-            return redirect()
-                ->back()
-                ->withInput()
-                ->with('error', 'El código ingresado ya está registrado.');
+            return redirect()->back()->withInput()->with('error', 'El código ingresado ya está registrado.');
         }
 
         // Crear la congregación
         Congregacion::create([
-            'codigo'      => $request->Codigo,
-            'nombre'      => strtoupper($request->nombre),
-            'pastor'      => $request->pastor,
-            'estado'      => $request->estado,
-            'clase'       => $request->clase,
-            'municipio'   => $request->municipio,
-            'direccion'   => strtoupper($request->direccion),
-            'telefono'    => $request->telefono,
-            'celular'     => $request->celular,
-            'distrito'    => $request->distrito,
-            'apertura'    => $request->apertura,
-            'cierre'      => $request->cierre,
+            'codigo' => $request->Codigo,
+            'nombre' => strtoupper($request->nombre),
+            'pastor' => $request->pastor,
+            'estado' => $request->estado,
+            'clase' => $request->clase,
+            'municipio' => $request->municipio,
+            'direccion' => strtoupper($request->direccion),
+            'telefono' => $request->telefono,
+            'celular' => $request->celular,
+            'distrito' => $request->distrito,
+            'apertura' => $request->apertura,
+            'cierre' => $request->cierre,
             'observacion' => $request->observacion,
         ]);
 
-        return redirect()
-            ->route('maestras.congregacion.index')
-            ->with('success', '¡Congregación registrada exitosamente!');
+        return redirect()->route('maestras.congregacion.index')->with('success', '¡Congregación registrada exitosamente!');
     }
 
     /**
@@ -100,14 +90,12 @@ class CongregacionController extends Controller
      */
     public function edit(Congregacion $congregacion)
     {
-
-        
         $clases = claseCongregacion::all();
         $distritos = maeDistritos::all(); //get
         $pastores = maeTerceros::all();
-        $municipios = maeMunicipios::all();
+        $municipios = MaeMunicipios::all();
         // La vista debe estar en la ruta correcta
-        return view('maestras.congregaciones.edit', compact('congregacion', 'clases','distritos','pastores','municipios'));
+        return view('maestras.congregaciones.edit', compact('congregacion', 'clases', 'distritos', 'pastores', 'municipios'));
     }
     /**
      * ACTUALIZA
@@ -118,24 +106,23 @@ class CongregacionController extends Controller
 
         // Se actualiza la congregación directamente con los datos del request.
         $congregacion->update([
-            'nombre'      => strtoupper($request->nombre), // Se mantiene la conversión a mayúsculas
-            'pastor'      => $request->pastor,
-            'pastorAnterior'      => $request->pastorAnterior,
-            'estado'      => $request->estado,
-            'clase'       => $request->clase,
-            'municipio'   => $request->municipio,
-            'direccion'   => strtoupper($request->direccion), // Se mantiene la conversión a mayúsculas
-            'telefono'    => $request->telefono,
-            'celular'     => $request->celular,
-            'distrito'    => $request->distrito,
-            'apertura'    => $request->apertura,
-            'cierre'      => $request->cierre,
+            'nombre' => strtoupper($request->nombre), // Se mantiene la conversión a mayúsculas
+            'pastor' => $request->pastor,
+            'pastorAnterior' => $request->pastorAnterior,
+            'estado' => $request->estado,
+            'clase' => $request->clase,
+            'municipio' => $request->municipio,
+            'direccion' => strtoupper($request->direccion), // Se mantiene la conversión a mayúsculas
+            'telefono' => $request->telefono,
+            'celular' => $request->celular,
+            'distrito' => $request->distrito,
+            'apertura' => $request->apertura,
+            'cierre' => $request->cierre,
             'observacion' => $request->observacion,
         ]);
-       
+
         // Se redirige a la lista de congregaciones con un mensaje de éxito.
-        return redirect()->route('maestras.congregacion.index')
-            ->with('success', '¡Congregación actualizada exitosamente, y distrito del pastor sincronizado!');
+        return redirect()->route('maestras.congregacion.index')->with('success', '¡Congregación actualizada exitosamente, y distrito del pastor sincronizado!');
     }
 
     /**
@@ -149,13 +136,11 @@ class CongregacionController extends Controller
             $congregacion->delete();
 
             // Redirige de vuelta a la lista con un mensaje de éxito.
-            return redirect()->route('maestras.congregacion.index')
-                ->with('success', '¡Congregación eliminada exitosamente!');
+            return redirect()->route('maestras.congregacion.index')->with('success', '¡Congregación eliminada exitosamente!');
         } catch (\Exception $e) {
             // En caso de un error (por ejemplo, una restricción de clave foránea),
             // redirige con un mensaje de error.
-            return redirect()->route('maestras.congregacion.index')
-                ->with('error', 'No se pudo eliminar la congregación. Es posible que esté asociada a otros registros.');
+            return redirect()->route('maestras.congregacion.index')->with('error', 'No se pudo eliminar la congregación. Es posible que esté asociada a otros registros.');
         }
     }
     /**
@@ -174,17 +159,13 @@ class CongregacionController extends Controller
     }
     public function show($codigo)
     {
-        $congregacion = Congregacion::with([
-            'claseCongregacion',
-            'maeDistritos',
-            'maeMunicipios',
-            'maeTerceros'
-        ])->where('codigo', $codigo)->firstOrFail();
+        $congregacion = Congregacion::with(['claseCongregacion', 'maeDistritos', 'maeMunicipios', 'maeTerceros'])
+            ->where('codigo', $codigo)
+            ->firstOrFail();
 
         // Si el request trae ?pdf=1, generar el PDF con la MISMA vista show
         if (request()->has('pdf')) {
-            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('maestras.congregaciones.show', compact('congregacion'))
-                        ->setPaper('a4', 'portrait');
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('maestras.congregaciones.show', compact('congregacion'))->setPaper('a4', 'portrait');
 
             return $pdf->download('Informe_Congregacion_' . $congregacion->codigo . '.pdf');
         }
@@ -194,22 +175,12 @@ class CongregacionController extends Controller
     }
     public function generarPdf($codigo)
     {
-        $congregacion = Congregacion::with([
-            'claseCongregacion',
-            'maeDistritos',
-            'maeMunicipios',
-            'maeTerceros'
-        ])->where('codigo', $codigo)->firstOrFail();
+        $congregacion = Congregacion::with(['claseCongregacion', 'maeDistritos', 'maeMunicipios', 'maeTerceros'])
+            ->where('codigo', $codigo)
+            ->firstOrFail();
 
-        $pdf = Pdf::loadView('maestras.congregacion.pdf', compact('congregacion'))
-                ->setPaper('a4', 'portrait');
+        $pdf = Pdf::loadView('maestras.congregacion.pdf', compact('congregacion'))->setPaper('a4', 'portrait');
 
         return $pdf->download('Informe_Congregacion_' . $congregacion->codigo . '.pdf');
     }
 }
-
-
-
-
-
-
