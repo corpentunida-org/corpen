@@ -49,7 +49,6 @@ class Interaction extends Model
         'id_cargo',
         'id_linea_de_obligacion',
         'id_area_de_asignacion',
-        'id_cargo_de_asignacion',
         'id_funciones',
     ];
 

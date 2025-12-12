@@ -1,8 +1,9 @@
 <x-base-layout>
     @section('titlepage', 'Editar')
-    <form method="POST" action="{{ route('exequial.prestarServicio.update', $registro->id) }}" class="row" id="formupdateprestarservicio" novalidate>
-    @csrf
-    @method('PUT')
+    <form method="POST" action="{{ route('exequial.prestarServicio.update', $registro->id) }}" class="row"
+        id="formupdateprestarservicio" novalidate>
+        @csrf
+        @method('PUT')
         <div class="col-xl-6">
             <div class="card stretch stretch-full">
                 <div class="card-body">
@@ -14,29 +15,32 @@
                         <label class="form-label">Fallecido</label>
                         <div class="row">
                             <div class="col-lg-4">
-                                <input type="text" class="form-control" value="{{ $registro->cedulaFallecido }}" name="cedulaFallecido" readonly>
+                                <input type="text" class="form-control" value="{{ $registro->cedulaFallecido }}"
+                                    name="cedulaFallecido" readonly>
                             </div>
                             <div class="col-lg-8">
-                                <input type="text" class="form-control" value="{{ $registro->nombreFallecido }}" readonly>
+                                <input type="text" class="form-control" value="{{ $registro->nombreFallecido }}"
+                                    readonly>
                             </div>
                         </div>
-                
+
                     </div>
                     <div class="row">
                         <div class="col-lg-6 mb-4">
                             <label class="form-label">Fecha Fallecimiento<span class="text-danger">*</span></label>
-                            <input type="date" class="form-control datepicker-input" name="fechaFallecimiento" value="{{ $registro->fechaFallecimiento }}"
-                                required>
+                            <input type="date" class="form-control datepicker-input" name="fechaFallecimiento"
+                                value="{{ $registro->fechaFallecimiento }}" required>
                         </div>
                         <div class="col-lg-6 mb-4">
                             <label class="form-label">Hora Fallecimiento<span class="text-danger">*</span></label>
-                            <input type="time" class="form-control datepicker-input" name="horaFallecimiento" value="{{ $registro->horaFallecimiento }}"
-                                required>
+                            <input type="time" class="form-control datepicker-input" name="horaFallecimiento"
+                                value="{{ $registro->horaFallecimiento }}" required>
                         </div>
                     </div>
                     <div class="mb-4">
                         <label class="form-label">Lugar Fallecimiento<span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" name="lugarFallecimiento" value="{{ $registro->lugarFallecimiento }}" required>
+                        <input type="text" class="form-control" name="lugarFallecimiento"
+                            value="{{ $registro->lugarFallecimiento }}" required>
                     </div>
                     <div class="row">
                         <div class="col-lg-4 mb-4">
@@ -48,7 +52,8 @@
                         </div>
                         <div class="col-lg-4 mb-4">
                             <label class="form-label">Factura <span class="text-danger">*</span></label>
-                            <input class="form-control datepicker-input" name="factura" value="{{ $registro->factura }}">
+                            <input class="form-control datepicker-input" name="factura"
+                                value="{{ $registro->factura }}">
                         </div>
                         <div class="col-lg-4 mb-4">
                             <label class="form-label">Valor <span class="text-danger">*</span></label>
@@ -64,32 +69,35 @@
                 <div class="card-body">
                     <div class="mb-4">
                         <label class="form-label">Titular</label>
-                        <input type="text" class="form-control" value="{{ $registro->cedulaTitular}} - {{ $registro->nombreTitular}}" readonly>
+                        <input type="text" class="form-control"
+                            value="{{ $registro->cedulaTitular }} - {{ $registro->nombreTitular }}" readonly>
                     </div>
                     <div class="mb-4">
                         <label class="form-label">Parentesco</label>
-                        <input type="text" class="form-control" value="{{$registro->parentesco}}" readonly>
+                        <input type="text" class="form-control" value="{{ $registro->parentesco }}" readonly>
                     </div>
                     <div class="row">
                         <div class="col-lg-7 mb-4">
                             <label class="form-label">Contacto 1 <span class="text-danger">*</span></label>
-                            <input class="form-control datepicker-input" name="contacto" value="{{$registro->contacto}}">
+                            <input class="form-control datepicker-input" name="contacto"
+                                value="{{ $registro->contacto }}">
                         </div>
                         <div class="col-lg-5 mb-4">
                             <label class="form-label">Telefono 1 <span class="text-danger">*</span></label>
-                            <input type="" class="form-control datepicker-input" value="{{$registro->telefonoContacto}}"
-                                name="telefonoContacto">
+                            <input type="" class="form-control datepicker-input"
+                                value="{{ $registro->telefonoContacto }}" name="telefonoContacto">
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-lg-7 mb-4">
                             <label class="form-label">Contacto 2 <span class="text-danger">*</span></label>
-                            <input class="form-control datepicker-input" name="contacto2" value="{{$registro->Contacto2}}">
+                            <input class="form-control datepicker-input" name="contacto2"
+                                value="{{ $registro->Contacto2 }}">
                         </div>
                         <div class="col-lg-5 mb-4">
                             <label class="form-label">Telefono 2 <span class="text-danger">*</span></label>
-                            <input type="" class="form-control datepicker-input"
-                                name="telefonoContacto2" value="{{$registro->telefonoContacto2}}">
+                            <input type="" class="form-control datepicker-input" name="telefonoContacto2"
+                                value="{{ $registro->telefonoContacto2 }}">
                         </div>
                     </div>
                     @candirect('exequial.prestarServicio.update')
@@ -103,12 +111,48 @@
                 </div>
             </div>
         </div>
+
+        <div class="col-xl-12">
+            <div class="accordion proposal-faq-accordion mt-4">
+                <div class="accordion-item mt-2">
+                    <h2 class="accordion-header" id="flush-headingOne">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#flush-collapseOne" aria-expanded="false"
+                            aria-controls="flush-collapseOne">Actividad sobre el servicio</button>
+                    </h2>
+                    <div id="flush-collapseOne" class="accordion-collapse collapse"
+                        aria-labelledby="flush-headingOne" data-bs-parent="#accordionFaqGroup" style="">
+                        <div class="accordion-body">
+                            <div class="table-responsive">
+                                <table class="table mb-0">
+                                    <thead>
+                                        <tr class="border-top">
+                                            <th>Fecha </th>
+                                            <th>Tipo </th>
+                                            <th>Observación </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td></td>
+                                            <td><span class="badge bg-soft-warning text-warning"></span>
+                                            </td>
+                                            <td></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </form>
     <script>
         $('#formupdateprestarservicio').submit(function(event) {
             var form = this;
             if (!form.checkValidity()) {
-                $(form).addClass('was-validated'); 
+                $(form).addClass('was-validated');
                 event.preventDefault();
                 event.stopPropagation();
             } else {

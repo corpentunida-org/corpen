@@ -59,8 +59,6 @@ use App\Http\Controllers\Interacciones\IntTypeController;
 use App\Http\Controllers\Interacciones\IntOutcomeController;
 use App\Http\Controllers\Interacciones\IntNextActionController;
 
-
-
 // FLUJO
 use App\Http\Controllers\Flujo\WorkflowController;
 use App\Http\Controllers\Flujo\TaskController;
@@ -86,6 +84,9 @@ use App\Http\Controllers\Soportes\ScpEstadisticaController;
 
 //VISITAS
 use App\Http\Controllers\Vistas\VisitaCorpenController;
+
+//QUIZ INDICATORS
+use App\Http\Controllers\Indicators\QuizController;
 
 
 /* Route::middleware(['auth'])->group(function () {
@@ -134,47 +135,50 @@ Route::get('/parentescosall', [ParentescosController::class, 'index'])->name('ex
 Route::get('/plansall', [PlanController::class, 'index'])->name('exequial.plansall');
 
 //RUTAS SEGUROS
-Route::get('/poliza/formato', [SegPolizaController::class, 'exportarFormato'])->name('seguros.poliza.formato');
-Route::resource('poliza', SegPolizaController::class)->names('seguros.poliza')->middleware(['auth', 'candirect:seguros.poliza.index']);
-Route::get('/polizaname/{name}', [SegPolizaController::class, 'namesearch'])->name('poliza.search');
-Route::resource('plan', SegPlanController::class)->names('seguros.planes')->middleware('auth');
-Route::resource('cobertura', SegCoberturaController::class)->names('seguros.cobertura')->middleware('auth');
-Route::resource('beneficiario', SegBeneficiarioController::class)->names('seguros.beneficiario')->middleware('auth');
-Route::resource('convenio', SegConvenioController::class)->names('seguros.convenio')->middleware(['auth', 'candirect:seguros.convenio.index']);
-Route::resource('reclamacion', SegReclamacionesController::class)->names('seguros.reclamacion')->middleware(['auth', 'candirect:seguros.reclamacion.index']);
-Route::resource('novedades', SegNovedadesController::class)->names('seguros.novedades')->middleware(['auth',]);
-Route::post('/reclamacion/generarpdf', [SegReclamacionesController::class, 'generarpdf'])->middleware('auth')->name('seguros.reclamacion.generarpdf');
-Route::get('/reclamacion/informe/excel', [SegReclamacionesController::class, 'exportexcel'])->middleware('auth')->name('seguros.reclamacion.download');
-Route::post('poliza/upload', [SegPolizaController::class, 'upload'])->name('seguros.poliza.upload');
-Route::post('poliza/create/upload', [SegPolizaController::class, 'uploadCreate'])->name('seguros.poliza.createupload');
-Route::get('/poliza/create/upload', function () {
-    return view('seguros.polizas.upload');
-})->name('seguros.poliza.viewupload');
-Route::get('/seguros/cxc', [SegPolizaController::class, 'exportcxc'])->name('seguros.poliza.download');
-Route::prefix('seguros')->get('/dashboard/reclamaciones', [SegReclamacionesController::class, 'dashboard'])->name('seguros.reclamaciones.dashboard');
-Route::get('/planes/{edad}', [SegPlanController::class, 'getPlanes'])->name('seguros.planes.getplanes');
-Route::resource('beneficios', SegBeneficiosController::class)->names('seguros.beneficios')->middleware(['auth', 'candirect:seguros.beneficios.index']);
-Route::post('beneficios/list', [SegBeneficiosController::class, 'listFilter'])->name('seguros.beneficios.list');
-Route::post('/seguros/filtopolizas', [SegBeneficiosController::class, 'exportFiltroPdf'])->name('seguros.poliza.filtros');
-Route::post('/seguros/filtopolizas/excel', [SegBeneficiosController::class, 'exportexcel'])->middleware('auth')->name('seguros.poliza.filtroexcel');
-Route::prefix('seguros')->get('/reclamacion/informe-completo', [SegReclamacionesController::class, 'exportarInformeCompleto'])->name('seguros.reclamacion.exportarInformeCompleto');
-Route::get('/novedades/{id}/formulario', [SegNovedadesController::class, 'verArchivo'])->name('seguros.novedades.formulario');
-Route::get('/seguros/novedades/download', [SegNovedadesController::class, 'descargarexcel'])->name('seguros.novedades.download');
-
-
+Route::prefix('seguros')->group(function () {
+    Route::get('/poliza/formato', [SegPolizaController::class, 'exportarFormato'])->name('seguros.poliza.formato');
+    Route::resource('poliza', SegPolizaController::class)->names('seguros.poliza')->middleware(['auth', 'candirect:seguros.poliza.index']);
+    Route::get('/polizaname/{name}', [SegPolizaController::class, 'namesearch'])->name('poliza.search');
+    Route::resource('plan', SegPlanController::class)->names('seguros.planes')->middleware('auth');
+    Route::resource('cobertura', SegCoberturaController::class)->names('seguros.cobertura')->middleware('auth');
+    Route::resource('beneficiario', SegBeneficiarioController::class)->names('seguros.beneficiario')->middleware('auth');
+    Route::resource('convenio', SegConvenioController::class)->names('seguros.convenio')->middleware(['auth', 'candirect:seguros.convenio.index']);
+    Route::resource('reclamacion', SegReclamacionesController::class)->names('seguros.reclamacion')->middleware(['auth', 'candirect:seguros.reclamacion.index']);
+    Route::resource('novedades', SegNovedadesController::class)->names('seguros.novedades')->middleware(['auth',]);
+    Route::post('/reclamacion/generarpdf', [SegReclamacionesController::class, 'generarpdf'])->middleware('auth')->name('seguros.reclamacion.generarpdf');
+    Route::get('/reclamacion/informe/excel', [SegReclamacionesController::class, 'exportexcel'])->middleware('auth')->name('seguros.reclamacion.download');
+    Route::post('poliza/upload', [SegPolizaController::class, 'upload'])->name('seguros.poliza.upload');
+    Route::post('poliza/create/upload', [SegPolizaController::class, 'uploadCreate'])->name('seguros.poliza.createupload');
+    Route::get('/poliza/create/upload', function () {
+        return view('seguros.polizas.upload');
+    })->name('seguros.poliza.viewupload');
+    Route::get('/seguros/cxc', [SegPolizaController::class, 'exportcxc'])->name('seguros.poliza.download');
+    Route::prefix('seguros')->get('/dashboard/reclamaciones', [SegReclamacionesController::class, 'dashboard'])->name('seguros.reclamaciones.dashboard');
+    Route::get('/planes/{edad}', [SegPlanController::class, 'getPlanes'])->name('seguros.planes.getplanes');
+    Route::resource('beneficios', SegBeneficiosController::class)->names('seguros.beneficios')->middleware(['auth', 'candirect:seguros.beneficios.index']);
+    Route::post('beneficios/list', [SegBeneficiosController::class, 'listFilter'])->name('seguros.beneficios.list');
+    Route::post('/seguros/filtopolizas', [SegBeneficiosController::class, 'exportFiltroPdf'])->name('seguros.poliza.filtros');
+    Route::post('/seguros/filtopolizas/excel', [SegBeneficiosController::class, 'exportexcel'])->middleware('auth')->name('seguros.poliza.filtroexcel');
+    Route::prefix('seguros')->get('/reclamacion/informe-completo', [SegReclamacionesController::class, 'exportarInformeCompleto'])->name('seguros.reclamacion.exportarInformeCompleto');
+    Route::get('/novedades/{id}/formulario', [SegNovedadesController::class, 'verArchivo'])->name('seguros.novedades.formulario');
+    Route::get('/seguros/novedades/download', [SegNovedadesController::class, 'descargarexcel'])->name('seguros.novedades.download');
+});
 
 //RUTAS CINCO
-Route::resource('terceros', TercerosController::class)->names('cinco.tercero')->middleware(['auth', 'can:cinco.tercero.index']);
-Route::resource('cinco', MoviContCincoController::class)->names('cinco.movcontables')->middleware(['auth', 'can:cinco.movcontables.index']);
-Route::resource('calculoretiros', RetirosListadoController::class)->names('cinco.retiros')->middleware(['auth', 'can:cinco.retiros.index']);
-Route::resource('condicionRetiros', CondicionesRetirosController::class)->names('cinco.condicionRetiros')->middleware(['auth', 'can:cinco.retiros.index']);
-Route::get('condicionRetiros/{id}/reportepdf/', [CondicionesRetirosController::class, 'generarpdf'])->name('cinco.liquidacionretiro');
-Route::get('movcontables/{id}/reportepdf/', [MoviContCincoController::class, 'generarpdf'])->name('cinco.reportepdf');
-Route::get('/retirosname/{name}', [RetirosListadoController::class, 'namesearch'])->name('cinco.retiros.search');
+Route::prefix('cinco')->group(function () {
+    Route::resource('terceros', TercerosController::class)->names('cinco.tercero')->middleware(['auth', 'can:cinco.tercero.index']);
+    Route::resource('cinco', MoviContCincoController::class)->names('cinco.movcontables')->middleware(['auth', 'can:cinco.movcontables.index']);
+    Route::get('movcontables/{id}/reportepdf/', [MoviContCincoController::class, 'generarpdf'])->name('cinco.reportepdf');
+});
+Route::prefix('retiros')->group(function () {
+    Route::resource('calculoretiros', RetirosListadoController::class)->names('cinco.retiros')->middleware(['auth', 'can:cinco.retiros.index']);
+    Route::resource('condicionRetiros', CondicionesRetirosController::class)->names('cinco.condicionRetiros')->middleware(['auth', 'can:cinco.retiros.index']);
+    Route::get('/retirosname/{name}', [RetirosListadoController::class, 'namesearch'])->name('cinco.retiros.search');
+    Route::get('condicionRetiros/{id}/reportepdf/', [CondicionesRetirosController::class, 'generarpdf'])->name('cinco.liquidacionretiro');
+});
 
 //RUTA CARTERA MOROSOS
-Route::get('cartera', [ReadExelController::class, 'index'])
-    ->name('cartera.morosos.index')->middleware(['auth', 'can:cartera.listamorosos.generarcarta']);
+Route::get('cartera', [ReadExelController::class, 'index'])->name('cartera.morosos.index')->middleware(['auth', 'can:cartera.listamorosos.generarcarta']);
 Route::post('cartera', [ReadExelController::class, 'store'])
     ->name('cartera.morosos.store')->middleware(['auth', 'can:cartera.listamorosos.generarcarta']);
 Route::post('/cartera/pdfMora', [ReadExelController::class, 'pdfMora'])->middleware('auth')->name('cartera.morosos.pdfMora');
@@ -343,12 +347,8 @@ Route::prefix('interactions')
     
     // 📌 AJAX: Buscar clientes para Select2
     Route::get('/search-clients', [InteractionController::class, 'searchClients'])->name('search-clients');
-
     // 🆕 NUEVA RUTA: Obtener el distrito de un cliente
     Route::get('/clientes/{client_id}/distrito', [InteractionController::class, 'getClientDistrict'])->name('clientes.distrito');
-    // 🆕 NUEVA RUTA: Actualizar el distrito de un cliente
-    Route::put('/clientes/{client_id}/actualizar-distrito', [InteractionController::class, 'updateClientDistrict'])->name('clientes.actualizar-distrito');
-
     // --- 📡 GRUPO DE RUTAS PARA CANALES DE INTERACCIÓN ---
     Route::prefix('channels')->name('channels.')->group(function () {
         Route::get('/', [IntChannelController::class, 'index'])->name('index');
@@ -381,6 +381,7 @@ Route::prefix('interactions')
         Route::put('/{outcome}', [IntOutcomeController::class, 'update'])->name('update');
         Route::delete('/{outcome}', [IntOutcomeController::class, 'destroy'])->name('destroy');
     });
+
 
     // --- 📡 GRUPO DE RUTAS PARA PRÓXIMAS ACCIONES ---
     Route::prefix('next_actions')->name('next_actions.')->group(function () {
@@ -521,9 +522,6 @@ Route::middleware('auth')->prefix('soportes')->name('soportes.')->group(function
 //FIN SOPORTE
 
 
-
-
-
 //VISITAS
 Route::middleware('auth')->prefix('visitas')->name('visitas.')->group(function () {
 
@@ -548,3 +546,13 @@ Route::middleware('auth')->prefix('visitas')->name('visitas.')->group(function (
         ])
         ->parameters(['corpen' => 'visitaCorpen']);
 });
+
+//QUIZ TI
+Route::get('/indicators/quiz', [QuizController::class, 'index'])->name('indicators.quiz.inicio');
+Route::get('/indicators/quiz/preguntas', [QuizController::class, 'generarpreguntas'])->name('indicators.quiz.preguntas');
+Route::post('/indicators/validarcorreo', function (Illuminate\Http\Request $request) {
+    $existe = \DB::table('gdo_cargo')->where('correo_corporativo', $request->correoUsuario)->exists();
+    $respondido  = \DB::table('Ind_usuarios')->where('id_correo', $request->correoUsuario)->exists();
+    return response()->json(['existe' => $existe,'respondido' => $respondido ]);
+})->name('indicators.validar.correo');
+Route::post('/indicators/quiz/store', [QuizController::class, 'store'])->name('indicators.quiz.store');

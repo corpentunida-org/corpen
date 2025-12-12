@@ -149,7 +149,6 @@ class SegPolizaController extends Controller
         }
 
         $beneficiarios = SegBeneficiario::where('id_asegurado', $id)->where('activo', 1)->with('parentescos')->get();
-
         $novedades = SegNovedades::where('id_asegurado', $id)->where('id_poliza', $poliza->id)->get();
         $reclamacion = SegReclamaciones::where('cedulaAsegurado', $id)->with('cambiosEstado')->get();
 
@@ -160,7 +159,6 @@ class SegPolizaController extends Controller
         }
 
         $registrosnov = collect()->merge($novedades)->merge($reclamacion)->merge($beneficios)->sortBy('updated_at')->values();
-
         return view('seguros.polizas.show', compact('poliza', 'grupoFamiliar', 'totalPrima', 'beneficiarios', 'beneficios', 'registrosnov'));
     }
 
@@ -322,12 +320,18 @@ class SegPolizaController extends Controller
         $updatedCount = 0;
         $failedRows = [];
         foreach ($rows as $index => $row) {
-            $modeloData = SegPoliza::where('seg_asegurado_id', $row['cod_ter'])->first();
+            $modeloData = SegPoliza::where('seg_asegurado_id', $row['cod_ter'])->with('asegurado')->first();
             if ($modeloData) {
                 $modeloData->update([
                     'primapagar' => $row['deb_mov'],
-                    'valorpagaraseguradora' => $row['pagar_aco'],
+                    'valorpagaraseguradora' => isset($row['pagar_aco']) ? $row['pagar_aco'] : null,
                 ]);
+                $grupoFamiliar = SegAsegurado::where('Titular', $modeloData->asegurado->titular)->get();
+                $primaAseguradora = SegPoliza::whereIn('seg_asegurado_id', $grupoFamiliar->pluck('cedula'))->sum('primapagar');
+                $polizaTitular = SegPoliza::where('seg_asegurado_id', $modeloData->asegurado->titular)->first();
+                if ($polizaTitular && $polizaTitular->valorpagaraseguradora != $primaAseguradora) {
+                    $polizaTitular->update(['valorpagaraseguradora' => $primaAseguradora]);
+                }
                 $updatedCount++;
             } else {
                 $failedRows[] = $row;

@@ -27,7 +27,6 @@
             </div>
         </div>
     </div>
-
     <div class="col-lg-12">
         <div class="card stretch stretch-full px-4 py-4 mb-3">
             <div class="mb-4 d-flex align-items-center justify-content-between">
@@ -139,8 +138,7 @@
                         </div>
                     </div>
                 @endforeach
-            </div>
-    
+            </div>    
 
         @if ($grupoFamiliar->count() >= 1)
             <div class="mb-4 px-4 d-flex align-items-center justify-content-between">
@@ -189,7 +187,7 @@
                                                 floatval($familiar->polizas->first()->primapagar);
                                         }
                                     @endphp
-                                    @if (isset($valortotalbene) && $valortotalbene !== null)
+                                    @if (isset($valortotalbene) && $valortotalbene !== null && $valortotalbene > 0)
                                         <span
                                             class="{{ $valortotalbene != 0 ? 'badge bg-soft-success text-success' : '' }}">
                                             $ {{ number_format($valortotalbene) }}

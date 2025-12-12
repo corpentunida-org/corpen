@@ -297,13 +297,12 @@ public function create()
     /* REVISAR - dd($request->all()); */
     public function storeObservacion(Request $request, ScpSoporte $scpSoporte)
     {
-        /* dd($request->all()); */
         $request->validate([
             'observacion' => 'required|string',
             'id_scp_estados' => 'required|exists:scp_estados,id',
             'id_tipo_observacion' => 'required|exists:scp_tipo_observacions,id',
             'id_scp_usuario_asignado' => ['nullable', 'integer', 'exists:scp_usuarios,id'],
-            'calcification' => ['nullable', 'integer', 'min:1', 'max:5'],
+            'calcification' => ['nullable', 'integer', 'min:1', 'max:5'], // Validación para la calificación
         ]);
 
         $observacionData = [
@@ -321,7 +320,7 @@ public function create()
             $observacionData['calcification'] = $request->calcification;
         }
 
-        $observacion = $scpSoporte->observaciones()->create($observacionData);
+        $scpSoporte->observaciones()->create($observacionData);
 
         $updateData = [
             'estado' => $request->id_scp_estados,

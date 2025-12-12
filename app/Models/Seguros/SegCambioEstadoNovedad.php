@@ -17,8 +17,8 @@ class SegCambioEstadoNovedad extends Model
         'fechaInicio' => 'datetime',
     ];
 
-    public function estado()
+    public function estadosname()
     {
-        return $this->belongsTo(SegEstadoReclamacion::class, 'estado_id', 'id');
+        return $this->belongsTo(SegEstadosNovedad::class, 'estado', 'id');
     }
 }
