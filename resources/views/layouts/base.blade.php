@@ -113,7 +113,6 @@
                                 </div>
                             </div>
                         </a>
-
                         <div class="nxl-navigation-toggle">
                             <a href="javascript:void(0);" id="menu-mini-button">
                                 <i class="feather-align-left"></i>
@@ -122,7 +121,6 @@
                                 <i class="feather-arrow-right"></i>
                             </a>
                         </div>
-
                     </div>
                     <!--! [End] nxl-lavel-mega-menu-toggle !-->
                     <!--! [Start] nxl-lavel-mega-menu !-->
@@ -147,9 +145,7 @@
                                     <i class="feather-sun"></i>
                                 </a>
                             </div>
-
                             <x-notifications-base />
-
                             <div class="nxl-h-item d-none d-sm-flex">
                                 <div class="full-screen-switcher">
                                     <a href="javascript:void(0);" class="nxl-head-link me-0"
@@ -158,8 +154,7 @@
                                         <i class="feather-minimize minimize"></i>
                                     </a>
                                 </div>
-                            </div>
-                            
+                            </div>                            
                             <div class="dropdown nxl-h-item">
                                 <a href="javascript:void(0);" data-bs-toggle="dropdown" role="button"
                                     data-bs-auto-close="outside">
@@ -191,7 +186,6 @@
                                             <i class="feather-log-out"></i>{{ __('Cerrar Sesión') }}
                                         </button>
                                     </form>
-
                                 </div>
                             </div>                        
                         </div>

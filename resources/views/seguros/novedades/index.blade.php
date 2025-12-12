@@ -85,7 +85,6 @@
                         <i class="feather-arrow-right"></i>
                     </a>
                 </div>
-                <x-notifications-base />
                 <div class="nxl-drp-link nxl-lavel-mega-menu">
                     <div class="nxl-lavel-mega-menu-toggle d-flex d-lg-none">
                         <a href="javascript:void(0)" id="nxl-lavel-mega-menu-hide">
@@ -97,7 +96,15 @@
             </div>
             <div class="header-right ms-auto">
                 <div class="d-flex align-items-center">
-
+                    <div class="nxl-head-link dark-light-theme">
+                        <a href="javascript:void(0);" class="nxl-head-link me-0 dark-button">
+                            <i class="feather-moon"></i>
+                        </a>
+                        <a href="javascript:void(0);" class="nxl-head-link me-0 light-button" style="display: none">
+                            <i class="feather-sun"></i>
+                        </a>
+                    </div>
+                    <x-notifications-base />
                     <div class="nxl-h-item d-none d-sm-flex">
                         <div class="full-screen-switcher">
                             <a href="javascript:void(0);" class="nxl-head-link me-0"
@@ -106,14 +113,6 @@
                                 <i class="feather-minimize minimize"></i>
                             </a>
                         </div>
-                    </div>
-                    <div class="nxl-h-item dark-light-theme">
-                        <a href="javascript:void(0);" class="nxl-head-link me-0 dark-button">
-                            <i class="feather-moon"></i>
-                        </a>
-                        <a href="javascript:void(0);" class="nxl-head-link me-0 light-button" style="display: none">
-                            <i class="feather-sun"></i>
-                        </a>
                     </div>
                     <div class="dropdown nxl-h-item">
                         <a href="javascript:void(0);" data-bs-toggle="dropdown" role="button"
@@ -124,6 +123,7 @@
                         <div class="dropdown-menu dropdown-menu-end nxl-h-dropdown nxl-user-dropdown">
                             <div class="dropdown-header">
                                 <div class="d-flex align-items-center">
+                                    <!-- <img src="" alt="user-image" class="img-fluid user-avtar" /> -->
                                     <div>
                                         <h6 class="text-dark mb-0">{{ auth()->user()->name }}</h6>
                                         <span class="fs-12 fw-medium text-muted">{{ auth()->user()->email }}</span>
@@ -135,7 +135,9 @@
                                 <i class="feather-user"></i>
                                 <span>Detalle Perfil</span>
                             </a>
+
                             <div class="dropdown-divider"></div>
+
                             <form method="POST" action="{{ route('logout') }}" class="inline">
                                 @csrf
                                 <button type="submit" class="dropdown-item">

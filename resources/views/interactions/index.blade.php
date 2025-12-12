@@ -257,6 +257,7 @@
                                 <tr>
                                     <th class="py-1">ID</th>
                                     <th class="py-1">Distrito</th>
+                                    <th class="py-1">Distrito</th>
                                     <th class="py-1">Fecha</th>
                                     <th class="py-1">Cliente</th>
                                     <th class="py-1">Canal</th>
@@ -315,6 +316,7 @@
                                                data-proxima-tipo="{{ $interaction->nextAction?->name ?? '—' }}"
                                                data-url="{{ $interaction->interaction_url }}"
                                                data-agent="{{ $interaction->agent->name ?? 'Sin asignar' }}"
+
                                                {{-- data-edit-url="{{ route('interactions.edit', $interaction->id) }}" --}}
                                                data-show-url="{{ route('interactions.show', $interaction->id) }}">
                                                 #{{ $interaction->id }}
@@ -331,6 +333,18 @@
                                         <td>
                                             {{ $interaction->DistritoDeObligacion->NOM_DIST ?? ' ' }}
                                         </td> 
+
+                                               data-edit-url="{{ route('interactions.edit', $interaction->id) }}"
+                                               data-show-url="{{ route('interactions.show', $interaction->id) }}">
+                                                #{{ $interaction->id }}
+                                            </a>
+                                        </td>
+
+
+                                        <td>
+                                            {{ $interaction->DistritoDeObligacion->NOM_DIST ?? ' ' }}
+                                        </td> 
+
 
                                         {{-- Fecha --}}
                                         <td class="py-1">
@@ -463,7 +477,6 @@
                             <tbody>
                                 @forelse ($collectionsForTabs['successful'] as $interaction)
                                     @php
-                                        $outcome = 'Exitoso'; // El resultado es fijo aquí
                                         $clientName = $interaction->client->nom_ter ?? $interaction->client->nombre ?? 'N/A';
                                         $clientId = $interaction->client->cod_ter ?? $interaction->client->identificacion ?? 'N/A';
                                         $areaName = $interaction->area?->nombre ?? '—';
@@ -503,6 +516,16 @@
                                                     <i class="fas fa-paperclip"></i>
                                                 </a>
                                             @endif
+                                        </td>
+                                        <td>
+                                            {{ $interaction->DistritoDeObligacion->NOM_DIST ?? ' ' }}
+=======
+                                    @endphp
+                                    <tr class="table-row-hover pastel-row excel-row">
+                                        <td class="py-1">
+                                            <a href="{{ route('interactions.show', $interaction->id) }}" class="fw-bold text-decoration-none pastel-link">
+                                                #{{ $interaction->id }}
+                                            </a>
                                         </td>
                                         <td>
                                             {{ $interaction->DistritoDeObligacion->NOM_DIST ?? ' ' }}
@@ -605,7 +628,6 @@
                             <tbody>
                                 @forelse ($collectionsForTabs['pending'] as $interaction)
                                     @php
-                                        $outcome = 'Pendiente'; // El resultado es fijo aquí
                                         $clientName = $interaction->client->nom_ter ?? $interaction->client->nombre ?? 'N/A';
                                         $clientId = $interaction->client->cod_ter ?? $interaction->client->identificacion ?? 'N/A';
                                         $areaName = $interaction->area?->nombre ?? '—';
@@ -645,6 +667,15 @@
                                                     <i class="fas fa-paperclip"></i>
                                                 </a>
                                             @endif
+                                        </td>
+                                        <td>
+                                            {{ $interaction->DistritoDeObligacion->NOM_DIST ?? ' ' }}
+                                    @endphp
+                                    <tr class="table-row-hover pastel-row excel-row">
+                                        <td class="py-1">
+                                            <a href="{{ route('interactions.show', $interaction->id) }}" class="fw-bold text-decoration-none pastel-link">
+                                                #{{ $interaction->id }}
+                                            </a>
                                         </td>
                                         <td>
                                             {{ $interaction->DistritoDeObligacion->NOM_DIST ?? ' ' }}
@@ -790,6 +821,15 @@
                                         </td>
                                         <td>
                                             {{ $interaction->DistritoDeObligacion->NOM_DIST ?? ' ' }}
+                                    @endphp
+                                    <tr class="table-row-hover pastel-row excel-row">
+                                        <td class="py-1">
+                                            <a href="{{ route('interactions.show', $interaction->id) }}" class="fw-bold text-decoration-none pastel-link">
+                                                #{{ $interaction->id }}
+                                            </a>
+                                        </td>
+                                        <td>
+                                            {{ $interaction->DistritoDeObligacion->NOM_DIST ?? ' ' }}
                                         </td>
                                         <td class="py-1">
                                             <div class="d-flex flex-column">
@@ -909,33 +949,6 @@
         </div>
     </div>
 
-    {{-- Modal de depuración --}}
-{{--     -
-    <div class="modal fade" id="debugModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header bg-warning text-dark">
-                    <h5 class="modal-title">
-                        <i class="feather-alert-triangle me-2"></i>
-                        MODO DEPURACIÓN
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <h6>Elemento Clickeado:</h6>
-                    <pre id="debugElement" style="background: #f8f9fa; padding: 10px; border-radius: 5px; font-size: 0.9em;"></pre>
-
-                    <h6 class="mt-3">Datos Encontrados (dataset):</h6>
-                    <pre id="debugData" style="background: #e9ecef; padding: 10px; border-radius: 5px; font-size: 0.9em; white-space: pre-wrap;"></pre>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar Depuración</button>
-                </div>
-            </div>
-        </div>
-    </div>
-    - --}}
-
     {{-- Modal mejorado --}}
     <div class="modal fade" id="detalleInteractionModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
@@ -1047,9 +1060,9 @@
                 </div>
                 <div class="modal-footer pastel-modal-footer">
                     <button type="button" class="btn pastel-btn-light" data-bs-dismiss="modal">Cerrar</button>
-                    {{--                     <button type="button" class="btn pastel-btn-gradient" id="editFromModal">
+                    <button type="button" class="btn pastel-btn-gradient" id="editFromModal">
                         <i class="feather-edit-3 me-1"></i> Editar
-                    </button> --}}
+                    </button>
                 </div>
             </div>
         </div>
@@ -1363,11 +1376,10 @@
     @push('scripts')
         <!-- Librerías necesarias -->
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-        <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+{{--         <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
         <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
         <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
-        <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
+        <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script> --}}
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
@@ -1384,125 +1396,54 @@
                 // =================================================================
 
                 /**
-                * Inicializa o reinicializa DataTables en una tabla específica.
-                * Ahora comprueba si la tabla tiene datos antes de inicializar.
-                * @param {string} tableId - El ID de la tabla a inicializar (ej. '#tablaPrincipal').
-                */
+                 * Inicializa o reinicializa DataTables en una tabla específica.
+                 * @param {string} tableId - El ID de la tabla a inicializar (ej. '#tablaPrincipal').
+                 */
                 function initializeDataTable(tableId) {
-                    // Si ya existe una instancia de DataTables de una pestaña anterior, la destruimos.
+                    // Si ya existe una instancia de DataTables, la destruimos para liberar memoria y evitar conflictos.
                     if (currentTable) {
-                        // Importante: solo destruimos la tabla si es diferente a la que queremos inicializar ahora.
-                        if (currentTable.settings()[0].nTable.id !== tableId.replace('#', '')) {
-                            currentTable.destroy();
-                            currentTable = null;
-                        }
+                        currentTable.destroy();
+                        currentTable = null;
                     }
 
-                    const $table = $(tableId);
-
-                    // Comprobación crucial: ¿La tabla tiene datos reales o solo el mensaje de "vacío"?
-                    // Contamos las filas que NO tienen un 'colspan' en su primera celda.
-                    const hasDataRows = $table.find('tbody tr').filter(function() {
-                        return $(this).find('td:first').attr('colspan') === undefined;
-                    }).length > 0;
-
-                    if (hasDataRows) {
-                        // Si hay datos, destruimos la instancia anterior (si existe) e inicializamos DataTables.
-                        if (currentTable) {
-                            currentTable.destroy();
-                        }
-                        
-                        currentTable = $table.DataTable({
-                            dom: 'Bfrtip',
-                            buttons: [
-                                { extend: 'excelHtml5', className: 'btn btn-sm pastel-btn-gradient', text: '<i class="feather-file-text me-1"></i>Excel' },
-                                { extend: 'pdfHtml5', className: 'btn btn-sm pastel-btn-gradient', text: '<i class="feather-file me-1"></i>PDF' },
-                                { extend: 'print', className: 'btn btn-sm pastel-btn-light', text: '<i class="feather-printer me-1"></i>Imprimir' }
-                            ],
-                            pageLength: 20,
-                            order: [[0, 'desc']],
-                            language: {
-                                url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
-                                emptyTable: "No hay datos disponibles en la tabla",
-                                info: "Mostrando _START_ a _END_ de _TOTAL_ registros",
-                                infoEmpty: "Mostrando 0 a 0 de 0 registros",
-                                lengthMenu: "Mostrar _MENU_ registros",
-                                loadingRecords: "Cargando...",
-                                processing: "Procesando...",
-                                search: "Buscar:",
-                                zeroRecords: "No se encontraron resultados coincidentes",
-                                paginate: { first: "Primero", last: "Último", next: "Siguiente", previous: "Anterior" }
-                            },
-                            initComplete: function () {
-                                // Una vez que la tabla se ha inicializado, actualizamos el contador de resultados.
-                                updateResultCount();
-                            },
-                            autoWidth: false,
-                            columnDefs: [
-                                { width: "5%", targets: 0 },  // ID
-                                { width: "10%", targets: 1 }, // Distrito
-                                { width: "8%", targets: 2 },  // Fecha
-                                { width: "15%", targets: 3 }, // Cliente
-                                { width: "8%", targets: 4 },  // Canal
-                                { width: "8%", targets: 5 },  // Área
-                                { width: "8%", targets: 6 },  // Cargo
-                                { width: "8%", targets: 7 },  // Línea
-                                { width: "10%", targets: 8 }, // Resultado
-                                { width: "12%", targets: 9 }, // Próxima Acción
-                                { width: "8%", targets: 10, orderable: false } // Acciones
-                            ]
-                        });
-
-                    } else {
-                        // Si no hay datos (solo la fila de "vacío"), no hacemos nada.
-                        // Esto evita el error de "Incorrect column count".
-                        // Nos aseguramos de que no quede una instancia de una tabla anterior.
-                        if (currentTable) {
-                            currentTable.destroy();
-                            currentTable = null;
-                        }
-                        console.log(`Tabla ${tableId} está vacía. No se inicializará DataTables.`);
-                        // Actualizamos el contador para que sea coherente
-                        document.getElementById('resultCount').textContent = 'Mostrando 0 de 0 resultados';
-                    }
-                }
-                function verifyTableStructure() {
-                    const tables = ['#tablaPrincipal', '#tablaExitosos', '#tablaPendientes', '#tablaHoy'];
-                    let expectedColumns = null;
-                    
-                    tables.forEach(tableId => {
-                        const table = $(tableId);
-                        if (table.length) {
-                            const headerColumns = table.find('thead th').length;
-                            const firstRow = table.find('tbody tr:first');
-                            const firstCell = firstRow.find('td:first');
-                            let bodyColumns = 0;
-
-                            if (firstCell.length) {
-                                const colspan = firstCell.attr('colspan');
-                                if (colspan !== undefined) {
-                                    // Si hay colspan, ese es el número de columnas que representa
-                                    bodyColumns = parseInt(colspan, 10);
-                                } else {
-                                    // Si no hay colspan, contamos las celdas de la fila
-                                    bodyColumns = firstRow.find('td').length;
-                                }
-                            }
-                            
-                            if (expectedColumns === null) {
-                                expectedColumns = headerColumns;
-                                console.log(`Tabla ${tableId}: Se esperan ${expectedColumns} columnas`);
-                            }
-                            
-                            if (headerColumns !== expectedColumns || bodyColumns !== expectedColumns) {
-                                console.error(`Error en ${tableId}: Se esperaban ${expectedColumns} columnas, se encontraron ${headerColumns} en el encabezado y ${bodyColumns} en el cuerpo (contando colspan)`);
-                            } else {
-                                console.log(`Tabla ${tableId}: Estructura correcta con ${headerColumns} columnas`);
-                            }
-                        } else {
-                            console.warn(`Tabla ${tableId} no encontrada en el DOM`);
+                    // Inicializamos la nueva instancia de DataTables en la tabla especificada.
+                    currentTable = $(tableId).DataTable({
+                        dom: 'Bfrtip',
+                        buttons: [
+                            { extend: 'excelHtml5', className: 'btn btn-sm pastel-btn-gradient', text: '<i class="feather-file-text me-1"></i>Excel' },
+                            { extend: 'pdfHtml5', className: 'btn btn-sm pastel-btn-gradient', text: '<i class="feather-file me-1"></i>PDF' },
+                            { extend: 'print', className: 'btn btn-sm pastel-btn-light', text: '<i class="feather-printer me-1"></i>Imprimir' }
+                        ],
+                        pageLength: 20,
+                        order: [[0, 'desc']],
+                        language: {
+                            url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json",
+                            emptyTable: "No hay datos disponibles en la tabla",
+                            info: "Mostrando _START_ a _END_ de _TOTAL_ registros",
+                            infoEmpty: "Mostrando 0 a 0 de 0 registros",
+                            lengthMenu: "Mostrar _MENU_ registros",
+                            loadingRecords: "Cargando...",
+                            processing: "Procesando...",
+                            search: "Buscar:",
+                            zeroRecords: "No se encontraron resultados coincidentes",
+                            paginate: { first: "Primero", last: "Último", next: "Siguiente", previous: "Anterior" }
+                        },
+                        initComplete: function () {
+                            // Una vez que la tabla se ha inicializado, actualizamos el contador de resultados.
+                            updateResultCount();
                         }
                     });
+                }
+
+                /**
+                 * Actualiza el texto del contador de resultados debajo de los filtros.
+                 */
+                function updateResultCount() {
+                    if (currentTable) {
+                        const info = currentTable.page.info();
+                        document.getElementById('resultCount').textContent = 
+                            `Mostrando ${info.recordsDisplay} de ${info.recordsTotal} resultados`;
+                    }
                 }
                 /**
                  * Actualiza el texto del contador de resultados debajo de los filtros.
@@ -1514,6 +1455,18 @@
                             `Mostrando ${info.recordsDisplay} de ${info.recordsTotal} resultados`;
                     }
                 }
+
+                // Inicializamos la tabla de la primera pestaña ("Todos") cuando la página carga.
+                // Usamos un pequeño retraso para asegurar que el DOM esté completamente renderizado.
+                setTimeout(function() {
+                    initializeDataTable('#tablaPrincipal');
+                }, 300);
+
+                // Añadimos un event listener para el evento 'shown.bs.tab', que se dispara cuando una pestaña se muestra.
+                document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(function (tabElement) {
+                    tabElement.addEventListener('shown.bs.tab', function (event) {
+                        let targetTableId = null;
+                        const targetPaneId = event.target.getAttribute('data-bs-target');
 
                 // Inicializamos la tabla de la primera pestaña ("Todos") cuando la página carga.
                 // Usamos un pequeño retraso para asegurar que el DOM esté completamente renderizado.
@@ -1548,94 +1501,51 @@
                     });
                 });
 
+
                 // =================================================================
-                // == MANEJO CORREGIDO DEL MODAL CON DELEGACIÓN DE EVENTOS ==
+                // == RESTO DE LA LÓGICA DE LA VISTA (Sin cambios relevantes) ==
                 // =================================================================
 
-                // Función para manejar el clic y mostrar los datos
-                function handleInteractionClick(event) {
-                    // Previene el comportamiento por defecto del enlace
-                    event.preventDefault();
-                    // Detiene la propagación del evento
-                    event.stopPropagation();
-
-                    console.log('>>> DEPURACIÓN: Clic detectado en el enlace del ID.');
-
-                    // Obtenemos el elemento que fue clickeado
-                    const el = event.target;
-                    const data = el.dataset;
-
-                    /*  -
-                    // --- INICIO DE LA DEPURACIÓN VISUAL ---
-                    console.log('>>> Elemento HTML clickeado:', el);
-                    console.log('>>> Objeto de datos (dataset):', data);
-
-                    // Llena el modal de depuración con la información
-                    document.getElementById('debugElement').textContent = el.outerHTML;
-                    document.getElementById('debugData').textContent = JSON.stringify(data, null, 2);
-
-                    // Muestra el modal de depuración
-                    const debugModal = new bootstrap.Modal(document.getElementById('debugModal'));
-                    debugModal.show();
-                    // --- FIN DE LA DEPURACIÓN VISUAL ---
-                    - */
-
-                    // --- LÓGICA PARA ABRIR EL MODAL PRINCIPAL ---
-                    document.getElementById('modal-id').textContent = `RADICADO ${data.id}`;
-                    document.getElementById('modal-fecha').textContent = data.fecha;
-                    document.getElementById('modal-cliente').textContent = data.cliente;
-                    document.getElementById('modal-agent').textContent = data.agent;
-                    document.getElementById('modal-canal').textContent = data.canal;
-                    document.getElementById('modal-tipo').textContent = data.tipo;
-                    document.getElementById('modal-duracion').textContent = data.duracion;
-                    document.getElementById('modal-area').textContent = data.area;
-                    document.getElementById('modal-cargo').textContent = data.cargo;
-                    document.getElementById('modal-linea').textContent = data.linea;
-                    document.getElementById('modal-area-asig').textContent = data.areaAsig;
-                    document.getElementById('modal-proxima-fecha').textContent = data.proximaFecha || '—';
-                    document.getElementById('modal-proxima-tipo').textContent = data.proximaTipo || '—';
-                    document.getElementById('modal-notas').textContent = data.notas;
-
-                    const url = data.url;
-                    document.getElementById('modal-url').innerHTML = url && url !== 'null' ?
-                        `<a href="${url}" target="_blank">Abrir enlace <i class="feather-external-link small"></i></a>` : '— No hay URL';
-
-                    const outcome = data.outcome;
-                    let resultadoStyle = '';
-                    switch(outcome) {
-                        case 'Exitoso': resultadoStyle = 'background-color: #E8F5E8 !important; color: #2E7D32 !important; border: 1px solid #C8E6C9 !important;'; break;
-                        case 'Pendiente': resultadoStyle = 'background-color: #FFF8E1 !important; color: #F57C00 !important; border: 1px solid #FFECB3 !important;'; break;
-                        case 'Fallido': resultadoStyle = 'background-color: #FFD6E0 !important; color: #D63384 !important; border: 1px solid #FFB3C1 !important;'; break;
-                        default: resultadoStyle = 'background-color: #E1F5FE !important; color: #0288D1 !important; border: 1px solid #B3E5FC !important;';
-                    }
-                    document.getElementById('modal-resultado').innerHTML = `<div style="min-width: 60px; text-align: center; transition: all 0.2s ease; border-radius: 8px; font-weight: 500; font-size: 0.6rem; ${resultadoStyle} padding: 2px 6px; display: flex; align-items: center; justify-content: center;"><span>${outcome}</span></div>`;
-                    
-                    // Asigna la función al botón de editar del modal
-                    const editButton = document.getElementById('editFromModal');
-                    if (editButton) {
-                        editButton.onclick = function() { window.location.href = data.editUrl; };
-                    }
-
-                    // Muestra el modal principal
-                    const modalElement = document.getElementById('detalleInteractionModal');
-                    const modal = new bootstrap.Modal(modalElement);
-                    modal.show();
-                }
-
-                // Adjuntamos el listener al contenedor de las pestañas.
-                // Este contenedor no es modificado por DataTables, por lo que el listener siempre funcionará.
-                const tabContent = document.getElementById('interactionTabsContent');
-                if (tabContent) {
-                    tabContent.addEventListener('click', function(event) {
-                        // Usamos .matches() para comprobar si el clic fue en un elemento con la clase 'interaction-id'
-                        if (event.target.matches('.interaction-id')) {
-                            handleInteractionClick(event);
+                // Manejo del Modal para ver detalles rápidos
+                document.addEventListener('click', function (e) {
+                    const interactionIdLink = e.target.closest('.interaction-id');
+                    if (interactionIdLink) {
+                        e.preventDefault();
+                        const el = interactionIdLink;
+                        currentInteractionId = el.dataset.id;
+                        // Llenar el modal con los datos (lógica existente)
+                        document.getElementById('modal-id').textContent = `RADICADO ${el.dataset.id}`;
+                        document.getElementById('modal-fecha').textContent = el.dataset.fecha;
+                        document.getElementById('modal-cliente').textContent = el.dataset.cliente;
+                        document.getElementById('modal-agent').textContent = el.dataset.agent;
+                        document.getElementById('modal-canal').textContent = el.dataset.canal;
+                        document.getElementById('modal-tipo').textContent = el.dataset.tipo;
+                        document.getElementById('modal-duracion').textContent = el.dataset.duracion;
+                        document.getElementById('modal-area').textContent = el.dataset.area;
+                        document.getElementById('modal-cargo').textContent = el.dataset.cargo;
+                        document.getElementById('modal-linea').textContent = el.dataset.linea;
+                        document.getElementById('modal-area-asig').textContent = el.dataset['area-asig'];
+                        document.getElementById('modal-proxima-fecha').textContent = el.dataset['proxima-fecha'] || '—';
+                        document.getElementById('modal-proxima-tipo').textContent = el.dataset['proxima-tipo'] || '—';
+                        document.getElementById('modal-notas').textContent = el.dataset.notas;
+                        
+                        const url = el.dataset.url;
+                        document.getElementById('modal-url').innerHTML = url && url !== 'null' ? 
+                            `<a href="${url}" target="_blank">Abrir enlace <i class="feather-external-link small"></i></a>` : '— No hay URL';
+                        
+                        const outcome = el.dataset.outcome;
+                        let resultadoStyle = '';
+                        switch(outcome) {
+                            case 'Exitoso': resultadoStyle = 'background-color: #E8F5E8 !important; color: #2E7D32 !important; border: 1px solid #C8E6C9 !important;'; break;
+                            case 'Pendiente': resultadoStyle = 'background-color: #FFF8E1 !important; color: #F57C00 !important; border: 1px solid #FFECB3 !important;'; break;
+                            case 'Fallido': resultadoStyle = 'background-color: #FFD6E0 !important; color: #D63384 !important; border: 1px solid #FFB3C1 !important;'; break;
+                            default: resultadoStyle = 'background-color: #E1F5FE !important; color: #0288D1 !important; border: 1px solid #B3E5FC !important;';
                         }
-                    });
-                    console.log('>>> Listener de clic adjuntado correctamente a #interactionTabsContent');
-                } else {
-                    console.error('>>> ERROR: No se encontró el contenedor #interactionTabsContent');
-                }
+                        document.getElementById('modal-resultado').innerHTML = `<div style="min-width: 60px; text-align: center; transition: all 0.2s ease; border-radius: 8px; font-weight: 500; font-size: 0.6rem; ${resultadoStyle} padding: 2px 6px; display: flex; align-items: center; justify-content: center;"><span>${outcome}</span></div>`;
+                        document.getElementById('editFromModal').onclick = function() { window.location.href = el.dataset['edit-url']; };
+                        new bootstrap.Modal(document.getElementById('detalleInteractionModal')).show();
+                    }
+                });
 
                 // Función para aplicar filtros
                 function applyFilters() {
@@ -1659,68 +1569,21 @@
 
                 // SweetAlert — confirmaciones
                 function confirmarAccion(titulo, texto, icono, callback) {
-                    Swal.fire({ 
-                        title: titulo, 
-                        text: texto, 
-                        icon: icono, 
-                        showCancelButton: true, 
-                        confirmButtonColor: '#E6F3FF', 
-                        cancelButtonColor: '#F8E8FF', 
-                        confirmButtonText: 'Sí, continuar', 
-                        cancelButtonText: 'Cancelar', 
-                        background: 'rgba(255, 255, 255, 0.9)', 
-                        backdrop: 'rgba(0, 0, 0, 0.1)' 
-                    }).then((result) => { 
-                        if (result.isConfirmed) callback(); 
-                    });
+                    Swal.fire({ title: titulo, text: texto, icon: icono, showCancelButton: true, confirmButtonColor: '#E6F3FF', cancelButtonColor: '#F8E8FF', confirmButtonText: 'Sí, continuar', cancelButtonText: 'Cancelar', background: 'rgba(255, 255, 255, 0.9)', backdrop: 'rgba(0, 0, 0, 0.1)' }).then((result) => { if (result.isConfirmed) callback(); });
                 }
-                
-                document.querySelectorAll('.btnCrear').forEach(btn => { 
-                    btn.addEventListener('click', function (e) { 
-                        e.preventDefault(); 
-                        confirmarAccion('¿Crear una nueva Interacción?', 'Serás redirigido al formulario de creación.', 'info', () => { 
-                            window.location.href = btn.getAttribute('href'); 
-                        }); 
-                    }); 
-                });
-                
-                document.querySelectorAll('.formEliminar').forEach(form => { 
-                    form.addEventListener('submit', function (e) { 
-                        e.preventDefault(); 
-                        confirmarAccion('¿Eliminar esta Interacción?', 'Esta acción eliminará la interacción y todos sus datos relacionados. Esta acción no se puede deshacer.', 'warning', () => { 
-                            form.submit(); 
-                        }); 
-                    }); 
-                });
+                document.querySelectorAll('.btnCrear').forEach(btn => { btn.addEventListener('click', function (e) { e.preventDefault(); confirmarAccion('¿Crear una nueva Interacción?', 'Serás redirigido al formulario de creación.', 'info', () => { window.location.href = btn.getAttribute('href'); }); }); });
+                document.querySelectorAll('.formEliminar').forEach(form => { form.addEventListener('submit', function (e) { e.preventDefault(); confirmarAccion('¿Eliminar esta Interacción?', 'Esta acción eliminará la interacción y todos sus datos relacionados. Esta acción no se puede deshacer.', 'warning', () => { form.submit(); }); }); });
 
                 // Atajos de teclado
                 document.addEventListener('keydown', function(e) {
-                    if ((e.ctrlKey || e.metaKey) && e.key === 'k') { 
-                        e.preventDefault(); 
-                        $('#filterSearch').focus(); 
-                    }
-                    if ((e.ctrlKey || e.metaKey) && e.key === 'n') { 
-                        e.preventDefault(); 
-                        window.location.href = "{{ route('interactions.create') }}"; 
-                    }
-                    if (e.key === 'Enter' && (e.target.id === 'filterSearch' || e.target.classList.contains('pastel-select'))) { 
-                        e.preventDefault(); 
-                        applyFilters(); 
-                    }
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); $('#filterSearch').focus(); }
+                    if ((e.ctrlKey || e.metaKey) && e.key === 'n') { e.preventDefault(); window.location.href = "{{ route('interactions.create') }}"; }
+                    if (e.key === 'Enter' && (e.target.id === 'filterSearch' || e.target.classList.contains('pastel-select'))) { e.preventDefault(); applyFilters(); }
                 });
 
                 // Efectos de entrada
-                $('.excel-row').each(function(index) { 
-                    $(this).css({ 'opacity': '0', 'transform': 'translateY(5px)' }); 
-                    setTimeout(() => { 
-                        $(this).animate({ 'opacity': '1', 'transform': 'translateY(0)' }, 200); 
-                    }, index * 20); 
-                });
-                
-                $('.glassmorphism-card').each(function(index) { 
-                    $(this).addClass('fade-in-up'); 
-                    $(this).css('animation-delay', `${index * 0.05}s`); 
-                });
+                $('.excel-row').each(function(index) { $(this).css({ 'opacity': '0', 'transform': 'translateY(5px)' }); setTimeout(() => { $(this).animate({ 'opacity': '1', 'transform': 'translateY(0)' }, 200); }, index * 20); });
+                $('.glassmorphism-card').each(function(index) { $(this).addClass('fade-in-up'); $(this).css('animation-delay', `${index * 0.05}s`); });
             });
         </script>
     @endpush

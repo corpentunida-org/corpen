@@ -1,3 +1,12 @@
+@php
+    $estados = [
+        1 => ['color' => 'primary'],
+        2 => ['color' => 'warning'],
+        3 => ['color' => 'success'],
+        4 => ['color' => 'danger'],
+        5 => ['color' => 'info'],
+    ];
+@endphp
 <x-base-layout>
     <x-error />
     @if (isset($error))
@@ -30,17 +39,18 @@
                 <div class="col-lg-4 mb-4">
                     <label class="form-label">Valor Asegurado Actual</label>
                     <input type="text" id="valoraseguradoplan" name="valorAsegurado" class="form-control"
-                        value="$ {{ number_format($novedad->poliza->valor_asegurado) }}" disabled>
+                        value="{{ optional($novedad->poliza)->valor_asegurado ? '$ ' . number_format($novedad->poliza->valor_asegurado) : '' }}"
+                        disabled>
                 </div>
                 <div class="col-lg-4 mb-4">
                     <label class="form-label">Prima Plan Actual</label>
                     <input type="text" id="valoraseguradoplan" name="valorAsegurado" class="form-control"
-                        value="$ {{ number_format($novedad->poliza->valor_prima) }}" disabled>
+                        value="{{ optional($novedad->poliza)->valor_prima ? '$ '.number_format($novedad->poliza->valor_prima) : '' }}" disabled>
                 </div>
                 <div class="col-lg-4 mb-4">
                     <label class="form-label">Valor a Pagar Mensualidad</label>
                     <input type="text" id="primaplan" class="form-control" name="valorPrima"
-                        value="$ {{ number_format($novedad->poliza->primapagar) }}" disabled>
+                        value="{{ optional($novedad->poliza)->primapagar ? '$ '.number_format($novedad->poliza->primapagar) : '' }}" disabled>
                 </div>
             </div>
             @if ($editar)
@@ -112,6 +122,45 @@
                 @if ($novedad->formulario)
                     <a href="{{ $novedad->getFile($novedad->formulario) }}" target="_blank">Ver Formulario PDF</a>
                 @endif
+            </div>
+            <div class="accordion proposal-faq-accordion mt-4">
+                <div class="accordion-item mt-2">
+                    <h2 class="accordion-header" id="flush-headingOne">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#flush-collapseOne" aria-expanded="false"
+                            aria-controls="flush-collapseOne">Actividad de la solicitud</button>
+                    </h2>
+                    <div id="flush-collapseOne" class="accordion-collapse collapse"
+                        aria-labelledby="flush-headingOne" data-bs-parent="#accordionFaqGroup" style="">
+                        <div class="accordion-body">
+                            <div class="table-responsive">
+                                <table class="table mb-0">
+                                    <thead>
+                                        <tr class="border-top">
+                                            <th>Fecha </th>
+                                            <th>Estado </th>
+                                            <th>Observación </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($actividadnov as $actividad)
+                                            @php
+                                                $color = $estados[$actividad->estado]['color'] ?? 'secondary';
+                                            @endphp
+                                            <tr>
+                                                <td>{{ $actividad->fechaInicio }}</td>
+                                                <td><span
+                                                        class="badge bg-soft-{{ $color }} text-{{ $color }}">{{ $actividad->estadosname->nombre ?? ' ' }}</span>
+                                                </td>
+                                                <td>{{ strtoupper($actividad->observaciones) }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
             @if ($editar)
                 <div class="d-flex flex-row-reverse gap-2 mt-2">

@@ -12,7 +12,6 @@ use Illuminate\Queue\SerializesModels;
 class SoporteEscaladoMail extends Mailable
 {
     use Queueable, SerializesModels;
-
     public $soporte;
     public $observacion;
     public $destinatarioTipo; // 'escalado' o 'creador'

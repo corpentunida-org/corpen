@@ -454,7 +454,7 @@
         
         // Inicializar
         actualizarNotificacionesDetalladas();
-        setInterval(actualizarNotificacionesDetalladas, 60000);
+        setInterval(actualizarNotificacionesDetalladas, 10000);
         
         // Event listeners
         refreshBtn.addEventListener('click', () => {
@@ -480,7 +480,6 @@
         
         function actualizarNotificacionesDetalladas() {
             return fetch('{{ route('soportes.notificaciones.detalladas') }}')
-                .then(res => res.json())
                 .then(data => {
                     notificationsData.sinAsignar = data.sinAsignar || [];
                     notificationsData.enProceso = data.enProceso || [];
