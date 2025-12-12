@@ -1,5 +1,13 @@
 <x-base-layout>
     @section('titlepage', 'Editar')
+    @php
+        $tipos = [
+            1 => ['color' => 'primary', 'text' => 'Notificacion a C.F'],
+            2 => ['color' => 'teal', 'text' => 'Corpentunida'],
+            3 => ['color' => 'warning', 'text' => 'Coorserpark'],
+            4 => ['color' => 'success', 'text' => 'Fin Servicio'],
+        ];
+    @endphp
     <form method="POST" action="{{ route('exequial.prestarServicio.update', $registro->id) }}" class="row"
         id="formupdateprestarservicio" novalidate>
         @csrf
@@ -133,12 +141,24 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr>
-                                            <td></td>
-                                            <td><span class="badge bg-soft-warning text-warning"></span>
-                                            </td>
-                                            <td></td>
-                                        </tr>
+                                        @foreach ($registro->comments as $comment)
+                                            <tr>
+                                                <td>{{ $comment->fecha }}</td>
+                                                <td>
+                                                    @php
+                                                        $t = $tipos[$comment->tipo_id] ?? [
+                                                            'color' => 'bg-secondary',
+                                                            'texto' => 'Desconocido',
+                                                        ];
+                                                    @endphp
+                                                    <span
+                                                        class="badge bg-soft-{{ $t['color'] }} text-{{ $t['color'] }}" >{{ $t['texto'] }}</span>
+                                                </td>
+                                                <td><span class="badge bg-soft-warning text-warning"></span>
+                                                </td>
+                                                <td></td>
+                                            </tr>
+                                        @endforeach
                                     </tbody>
                                 </table>
                             </div>
