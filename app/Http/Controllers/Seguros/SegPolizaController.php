@@ -324,7 +324,7 @@ class SegPolizaController extends Controller
         foreach ($rows as $index => $row) {
             $modeloData = SegPoliza::where('seg_asegurado_id', $row['cod_ter'])->first();
             if ($modeloData) {
-                $modeloData::update([
+                $modeloData->update([
                     'primapagar' => $row['deb_mov'],
                     'valorpagaraseguradora' => $row['pagar_aco'],
                 ]);
