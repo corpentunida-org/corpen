@@ -34,15 +34,16 @@ class MaeC_ExSerController extends Controller
 
     public function edit($id)
     {
-        $registro = ExMonitoria::findOrFail($id);
+        $registro = ExMonitoria::with('comments')->findOrFail($id);
+
         $controllerparentesco = app()->make(ParentescosController::class);   
         
         $nomPar = $controllerparentesco->showName($registro->parentesco);
         $registro->parentesco = $nomPar;
+
         
-        return view('exequial.prestarServicio.edit', [
-            'registro' => $registro
-        ]);
+        
+        return view('exequial.prestarServicio.edit', compact('registro'));
     }
 
     public function store(Request $request)
