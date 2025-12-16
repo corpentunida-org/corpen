@@ -8,6 +8,8 @@
             4 => ['color' => 'success', 'text' => 'Fin Servicio'],
         ];
     @endphp
+    <x-success />
+    <x-error />
     <form method="POST" action="{{ route('exequial.prestarServicio.update', $registro->id) }}" class="row"
         id="formupdateprestarservicio" novalidate>
         @csrf
@@ -17,7 +19,8 @@
                 <div class="card-body">
                     <div class="mb-4">
                         <h5 class="fw-bold">PRESTAR SERVICIO:</h5>
-                        <div class="fs-12 text-muted">{{ $registro->fechaRegistro }}</div>
+                        <div class="fs-12 text-muted"><span class="fs-13 fw-semibold">Fecha de registro:
+                            </span>{{ $registro->fechaRegistro }}</div>
                     </div>
                     <div class="mb-4">
                         <label class="form-label">Fallecido</label>
@@ -27,11 +30,10 @@
                                     name="cedulaFallecido" readonly>
                             </div>
                             <div class="col-lg-8">
-                                <input type="text" class="form-control" value="{{ $registro->nombreFallecido }}"
-                                    readonly>
+                                <input type="text" class="form-control"
+                                    value="{{ $registro->nombreFallecido }}"readonly>
                             </div>
                         </div>
-
                     </div>
                     <div class="row">
                         <div class="col-lg-6 mb-4">
@@ -50,28 +52,9 @@
                         <input type="text" class="form-control" name="lugarFallecimiento"
                             value="{{ $registro->lugarFallecimiento }}" required>
                     </div>
-                    <div class="row">
-                        <div class="col-lg-4 mb-4">
-                            <label class="form-label">Traslado <span class="text-danger">*</span></label>
-                            <select class="form-control" name="traslado">
-                                <option value="1" {{ $registro->traslado ? 'selected' : '' }}>Sí</option>
-                                <option value="0" {{ !$registro->traslado ? 'selected' : '' }}>No</option>
-                            </select>
-                        </div>
-                        <div class="col-lg-4 mb-4">
-                            <label class="form-label">Factura <span class="text-danger">*</span></label>
-                            <input class="form-control datepicker-input" name="factura"
-                                value="{{ $registro->factura }}">
-                        </div>
-                        <div class="col-lg-4 mb-4">
-                            <label class="form-label">Valor <span class="text-danger">*</span></label>
-                            <input class="form-control datepicker-input" name="valor" value="{{ $registro->valor }}">
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
-
         <div class="col-xl-6">
             <div class="card stretch stretch-full">
                 <div class="card-body">
@@ -111,7 +94,7 @@
                     @candirect('exequial.prestarServicio.update')
                     <div class="d-flex justify-content-end gap-2 mt-3">
                         <button class="btn btn-warning" title="Prestar servicio" type="submit">
-                            <i class="feather-plus me-2"></i>
+                            <i class="bi bi-pencil-square me-2"></i>
                             <span>Actualizar datos</span>
                         </button>
                     </div>
@@ -119,7 +102,6 @@
                 </div>
             </div>
         </div>
-
         <div class="col-xl-12">
             <div class="accordion proposal-faq-accordion mt-4">
                 <div class="accordion-item mt-2">
@@ -131,43 +113,86 @@
                     <div id="flush-collapseOne" class="accordion-collapse collapse"
                         aria-labelledby="flush-headingOne" data-bs-parent="#accordionFaqGroup" style="">
                         <div class="accordion-body">
-                            <div class="table-responsive">
-                                <table class="table mb-0">
-                                    <thead>
-                                        <tr class="border-top">
-                                            <th>Fecha </th>
-                                            <th>Tipo </th>
-                                            <th>Observación </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @foreach ($registro->comments as $comment)
-                                            <tr>
-                                                <td>{{ $comment->fecha }}</td>
-                                                <td>
-                                                    @php
-                                                        $t = $tipos[$comment->tipo_id] ?? [
-                                                            'color' => 'bg-secondary',
-                                                            'texto' => 'Desconocido',
-                                                        ];
-                                                    @endphp
-                                                    <span
-                                                        class="badge bg-soft-{{ $t['color'] }} text-{{ $t['color'] }}" >{{ $t['texto'] }}</span>
-                                                </td>
-                                                <td><span class="badge bg-soft-warning text-warning"></span>
-                                                </td>
-                                                <td></td>
+                            @if (!$registro->comments->isEmpty())
+                                <div class="table-responsive">
+                                    <table class="table mb-0">
+                                        <thead>
+                                            <tr class="border-top">
+                                                <th>Fecha </th>
+                                                <th>Tipo </th>
+                                                <th>Observación </th>
                                             </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
+                                        </thead>
+                                        <tbody>
+                                            @foreach ($registro->comments as $comment)
+                                                <tr>
+                                                    <td>{{ $comment->fecha }}</td>
+                                                    <td>
+                                                        @php
+                                                            $t = $tipos[$comment->tipo] ?? [
+                                                                'color' => 'bg-secondary',
+                                                                'text' => 'Desconocido',
+                                                            ];
+                                                        @endphp
+                                                        <span
+                                                            class="badge bg-soft-{{ $t['color'] }} text-{{ $t['color'] }}">{{ $t['text'] }}</span>
+                                                    </td>
+                                                    <td class="text-wrap">{{ $comment->observacion }}</td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>                                
+                            @endif
+                            <button type="button" id="btnCardComentarios" class="btn btn-primary mt-3" title="Agregar Comentario">
+                                <i class="feather-plus me-2"></i>
+                                <span>Agregar comentario</span>
+                            </a>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </form>
+
+    <div id="CardAddComentarios" class="col-lg-12" style="display: none;">
+        <div class="card stretch stretch-full">
+            <div class="card-header">
+                <h5 class="fw-bold mb-0">
+                    <span class="d-block mb-2">Crear Comentario </span>
+                </h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" action="{{route('prestarServicio.comentario.store', $registro->id)}}" id="formAddComentarios" novalidate>
+                    @csrf
+                    @method('POST')
+                    <div class="row">
+                        <div class="col-lg-3 mb-4">
+                            <label class="form-label">Tipo de comentario<span class="text-danger">*</span></label>
+                            <select class="form-select" name="tipocomment" required>
+                                <option value="1">Notificacion a C.F</option>
+                                <option value="2">Corpentunida</option>
+                                <option value="3">Coorserpark</option>
+                                <option value="4">Fin Servicio</option>
+                            </select>
+                        </div>
+                        <div class="col-lg-9 mb-4">
+                            <label class="form-label">Observacion<span class="text-danger">*</span></label>
+                            <textarea type="text" class="form-control" name="observacioncomment"required></textarea>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-row-reverse gap-2 mt-2">
+                        <button class="btn btn-success mt-4" data-bs-toggle="tooltip" type="submit"
+                            data-bs-original-title="crear">
+                            <i class="feather-plus me-2"></i>
+                            <span>Agregar comentario</span>
+                        </button>
+                    </div>
+                </form>                
+            </div>
+        </div>
+    </div>
+
     <script>
         $('#formupdateprestarservicio').submit(function(event) {
             var form = this;
@@ -178,6 +203,15 @@
             } else {
                 console.log($(this).serialize());
             }
+        });
+        $('#btnCardComentarios').on('click', function() {
+            console.log('edit prestar servicio loaded');
+            $('#CardAddComentarios').show();
+            $('#CardAddComentarios').slideDown('fast', function() {
+                $('html, body').animate({
+                    scrollTop: $('#CardAddComentarios').offset().top
+                }, 500);
+            });
         });
     </script>
 </x-base-layout>

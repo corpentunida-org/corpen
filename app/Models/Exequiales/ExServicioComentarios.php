@@ -11,5 +11,8 @@ class ExServicioComentarios extends Model
     protected $table = 'Exe_ServiciosComentarios';
     protected $fillable = ['id_exser', 'tipo', 'fecha', 'observacion'];
 
-    
+    public function prestarServicio()
+    {
+        return $this->belongsTo(ExMonitoria::class, 'monitoria_id');
+    }
 }

@@ -123,6 +123,7 @@ Route::resource('roles', RoleController::class)->names('admin.roles')->middlewar
 Route::resource('permisos', PermissionsController::class)->names('admin.permisos')->middleware(['auth']);
 
 //RUTAS DE EXEQUIALES
+Route::prefix('exequiales')->group(function () {
 Route::get('asociados/{id}/generarpdf/{active}', [ComaeExCliController::class, 'generarpdf'])->name('asociados.generarpdf');
 Route::resource('asociados', ComaeExCliController::class)->names('exequial.asociados')->middleware(['auth', 'can:exequial.asociados.index']);
 Route::get('/prestarServicio/generarpdf', [MaeC_ExSerController::class, 'generarpdf'])->middleware('auth')->name('prestarServicio.generarpdf');
@@ -133,6 +134,8 @@ Route::resource('beneficiarios', ComaeExRelParController::class)->middleware('au
 Route::resource('terceros', ComaeTerController::class)->middleware('auth')->names('exequial.terceros');
 Route::get('/parentescosall', [ParentescosController::class, 'index'])->name('exequial.parentescosall');
 Route::get('/plansall', [PlanController::class, 'index'])->name('exequial.plansall');
+Route::post('/prestarServicio/{id}/comentario', [MaeC_ExSerController::class, 'addComment'])->name('prestarServicio.comentario.store');
+});
 
 //RUTAS SEGUROS
 Route::prefix('seguros')->group(function () {
