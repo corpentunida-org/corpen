@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Exequiales\ExMonitoria;
 use App\Models\Exequiales\Parentescos;
+use App\Models\Exequiales\ExServicioComentarios;
 use Illuminate\Support\Facades\Http;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
@@ -39,9 +40,7 @@ class MaeC_ExSerController extends Controller
         $controllerparentesco = app()->make(ParentescosController::class);   
         
         $nomPar = $controllerparentesco->showName($registro->parentesco);
-        $registro->parentesco = $nomPar;
-
-        
+        $registro->parentesco = $nomPar;     
         
         return view('exequial.prestarServicio.edit', compact('registro'));
     }
@@ -208,6 +207,22 @@ class MaeC_ExSerController extends Controller
             ]);
         }else{
             return response()->json(['error' => 'error al cambiar estado',], 500);
+        }
+    }
+
+    public function addComment(Request $request, $id){
+        $comment = ExServicioComentarios::create([
+            'id_exser' => $id,
+            'tipo' => $request->tipocomment,
+            'fecha' => Carbon::now(),
+            'observacion' => $request->observacioncomment,
+        ]);
+        if($comment){
+            $accion = "add comentario al servicio id " . $id;
+            $this->auditoria($accion, "EXEQUIALES");
+            return redirect()->route('exequial.prestarServicio.edit', $id)->with('success', 'Comentario agregado exitosamente.');
+        }else{
+            return redirect()->route('exequial.prestarServicio.edit', $id)->with('error', 'Error al agregar el comentario.');
         }
     }
 }
