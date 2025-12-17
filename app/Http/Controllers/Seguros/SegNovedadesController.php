@@ -86,9 +86,9 @@ class SegNovedadesController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        /*$request->validate([
             'formulario_nov' => 'required|mimes:pdf|max:2048',
-        ]);
+        ]);*/
         $formulario = null;
         if ($request->hasFile('formulario_nov')) {
             $formulario = $request->file('formulario_nov');
@@ -159,7 +159,6 @@ class SegNovedadesController extends Controller
     public function verArchivo($id)
     {
         $novedad = SegNovedades::findOrFail($id);
-
         if (!$novedad->formulario || !Storage::exists($novedad->formulario)) {
             abort(404);
         }
@@ -253,9 +252,9 @@ class SegNovedadesController extends Controller
     public function destroy(Request $request, $id)
     {
         //registrar una novedad de retiro
-        $request->validate([
+        /*$request->validate([
             'formulario_nov' => 'required|mimes:pdf|max:2048',
-        ]);
+        ]);*/
         $formulario = null;        
         if ($request->hasFile('formulario_nov')) {
             $formulario = Storage::disk('s3')->put('corpentunida/seguros_vida/novedades/'. $id, $request->file('formulario_nov'));
