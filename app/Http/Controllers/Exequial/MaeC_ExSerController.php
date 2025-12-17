@@ -94,13 +94,11 @@ class MaeC_ExSerController extends Controller
                 'fechaFallecimiento' => $request->fechaFallecimiento,
                 'lugarFallecimiento' => strtoupper($request->lugarFallecimiento),
                 'parentesco'=> $request->parentesco,
-                'traslado'=> $request->traslado,
+                'estado'=> $request->estadonuevo,
                 'contacto'=> strtoupper($request->contacto),
                 'telefonoContacto'=> $request->telefonoContacto,
                 'Contacto2'=> strtoupper($request->contacto2),
-                'telefonoContacto2'=> $request->telefonoContacto2,
-                'factura'=> $request->factura,
-                'valor'=> $request->valor,
+                'telefonoContacto2'=> $request->telefonoContacto2,                
                 'genero'=>$request->genero,
             ]);
             $accion = "prestar servicio a " . $request->cedulaFallecido;
