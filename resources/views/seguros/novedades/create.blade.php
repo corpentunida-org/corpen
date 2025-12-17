@@ -192,8 +192,7 @@
                                 </div>
                                 <div class="col-md-12">
                                     <label for="ubicacion_foto" class="form-label">Formulario</label>
-                                    <input class="form-control" type="file" id="formulario_nov"
-                                        name="formulario_nov" required>
+                                    <input class="form-control" type="file" id="formulario_nov" name="formulario_nov">
                                     <small class="form-text text-muted">Formato permitidos: PDF</small>
                                     @error('formulario_nov')
                                         <small class="text-danger">{{ $message }}</small>
@@ -332,8 +331,7 @@
                             </div>
                             <div class="col-md-3">
                                 <label for="ubicacion_foto" class="form-label">Formulario</label>
-                                <input class="form-control" type="file" id="formulario_nov" name="formulario_nov" accept="application/pdf"
-                                    required>
+                                <input class="form-control" type="file" id="formulario_nov" name="formulario_nov" accept="application/pdf">
                                 <small class="form-text text-muted">Formato permitidos: PDF</small>
                                 @error('formulario_nov')
                                     <small class="text-danger">{{ $message }}</small>
@@ -405,8 +403,7 @@
                             </div>
                             <div class="col-md-12">
                                 <label for="ubicacion_foto" class="form-label">Formulario</label>
-                                <input class="form-control" type="file" id="formulario_nov" name="formulario_nov"
-                                    required>
+                                <input class="form-control" type="file" id="formulario_nov" name="formulario_nov">
                                 <small class="form-text text-muted">Formato permitidos: PDF</small>
                             </div>
                             @error('formulario_nov')

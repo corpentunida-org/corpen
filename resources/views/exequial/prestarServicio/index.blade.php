@@ -152,9 +152,10 @@
                             @endforeach
                         </tbody>
                     </table>
-                    <div class="d-flex justify-content-end gap-2 m-3 ">
+                    <div class="d-flex justify-content-end gap-2 m-3 ">                    
                         <a href={{ route('prestarServicio.generarpdf') }} class="btn btn-md btn-primary">Descargar PDF</a>
-                    </div>
+                        <a href={{ route('prestarServicio.generate.excel') }} class="btn btn-md btn-warning">Descargar Excel</a>
+                    </div>                    
                 </div>
             </div>
         </div>
