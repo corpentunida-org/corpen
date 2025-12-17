@@ -59,7 +59,7 @@ class ComaeExRelParController extends Controller
                 'documentBeneficiaryId' => $request->documentid,
                 'codePastor' => $request->cedulaAsociado,
                 'name' => $request->apellidos . ' ' . $request->nombres,
-                'dateBirthDate' => $request->fechaNacimiento,
+                'dateBirthDate' => $request->fechaNacimiento ?? Carbon::now(),
                 'dateEntry' => $fechaActual,
                 'codeParentesco' => $request->codePar,
                 'type' => "A"
@@ -70,7 +70,7 @@ class ComaeExRelParController extends Controller
             'cod_par' => $request->codePar,
             'tipo' => "A",
             'fec_ing' => $fechaActual,
-            'fec_nac' => $request->fechaNacimiento,
+            'fec_nac' => $request->fechaNacimiento ?? Carbon::now(),
             'estado' => true,
             'cod_cli' => $request->cedulaAsociado
         ]);
