@@ -85,11 +85,14 @@ class SegNovedadesController extends Controller
     }
 
     public function store(Request $request)
-    {        
+    {
         $request->validate([
             'formulario_nov' => 'required|mimes:pdf|max:2048',
         ]);
-        $formulario = $request->file('formulario_nov');
+        $formulario = null;
+        if ($request->hasFile('formulario_nov')) {
+            $formulario = $request->file('formulario_nov');
+        }
         $plan = SegPlan::findOrFail($request->planid);
         $novedad = SegNovedades::create([
             'id_poliza' => $request->id_poliza ?? null,
@@ -169,8 +172,7 @@ class SegNovedadesController extends Controller
         $actividadnov = SegCambioEstadoNovedad::where('novedad', $id)->with('estadosname')->get();
         if ($novedad->estado != 1) {
             $editar = false;
-            return view('seguros.novedades.edit', compact('novedad','editar','actividadnov'))
-                ->with('error', 'La novedad no esta en estado nueva solicitud. No se puede editar.');
+            return view('seguros.novedades.edit', compact('novedad', 'editar', 'actividadnov'))->with('error', 'La novedad no esta en estado nueva solicitud. No se puede editar.');
             //return back()->with('error', 'La novedad no esta en estado nueva solicitud. No se puede editar.');
         }
         if ($novedad->tipo == 4) {
@@ -178,7 +180,7 @@ class SegNovedadesController extends Controller
             //return redirect()->route('seguros.novedades.index')->with('error', 'La novedad de ingresar beneficiario no se puede editar.');
         }
         $editar = true;
-        return view('seguros.novedades.edit', compact('novedad','editar','actividadnov'));
+        return view('seguros.novedades.edit', compact('novedad', 'editar', 'actividadnov'));
     }
 
     public function update(Request $request, $id)
@@ -254,7 +256,10 @@ class SegNovedadesController extends Controller
         $request->validate([
             'formulario_nov' => 'required|mimes:pdf|max:2048',
         ]);
-        $formulario = $request->file('formulario_nov')->store('seguros/novedades');
+        $formulario = null;        
+        if ($request->hasFile('formulario_nov')) {
+            $formulario = Storage::disk('s3')->put('corpentunida/seguros_vida/novedades/'. $id, $request->file('formulario_nov'));
+        }
         $novedad = SegNovedades::create([
             'id_poliza' => $request->id_poliza ?? null,
             'id_asegurado' => $id,

@@ -68,7 +68,7 @@
     <table>
         <thead>
             <tr>
-                <th colspan="15" style="text-align: center; background-color: rgba(0, 128, 0, 0.5);">INFORME FALLECIDOS</th>
+                <th colspan="13" style="text-align: center; background-color: rgba(0, 128, 0, 0.5);">INFORME FALLECIDOS</th>
             </tr>
         </thead>
         <tbody>
@@ -83,11 +83,9 @@
                 <th>Nombre Fallecido</th>
                 <th>Lugar Fallecimiento</th>
                 <th>Parentesco</th>
-                <th>Traslado</th>
                 <th>Contacto 1</th>
                 <th>Telefono</th>
-                <th>Factura</th>
-                <th>Valor</th>
+                <th>Estado</th>
             </tr>
             @php
                 $i = 1;
@@ -109,16 +107,10 @@
                 <td>{{ $reg->cedulaFallecido }}</td>
                 <td>{{ $reg->nombreFallecido }}</td>
                 <td>{{ $reg->lugarFallecimiento }}</td>
-                <td>{{ $reg->parentesco }}</td>
-                @if( $reg->traslado)
-                <td>SI</td>
-                @else
-                <td>NO</td>
-                @endif
+                <td>{{ $reg->parentesco }}</td>              
                 <td>{{ $reg->contacto }}</td>
                 <td>{{ $reg->telefonoContacto }}</td>
-                <td>{{ $reg->factura }}</td>
-                <td>{{ $reg->valor }}</td>
+                <td>{{ $reg->estado == 1 ? 'PENDIENTE' : ($reg->estado == 2 ? 'EN PROCESO' : 'CERRADO') }}</td>
             </tr>
             @php
                 $i++;

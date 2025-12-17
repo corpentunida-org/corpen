@@ -11,17 +11,20 @@ use Illuminate\Support\Facades\Http;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use App\Http\Controllers\AuditoriaController;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\ExcelExport;
 
 class MaeC_ExSerController extends Controller
 {
-    private function auditoria($accion,$area){
+    private function auditoria($accion, $area)
+    {
         $auditoriaController = app(AuditoriaController::class);
         $auditoriaController->create($accion, $area);
     }
     public function index()
     {
         $registros = ExMonitoria::orderBy('id', 'desc')->get();
-        $controllerparentesco = app()->make(ParentescosController::class);        
+        $controllerparentesco = app()->make(ParentescosController::class);
         foreach ($registros as $registro) {
             $nomPar = $controllerparentesco->showName($registro->parentesco);
             $registro->parentesco = $nomPar;
@@ -29,19 +32,19 @@ class MaeC_ExSerController extends Controller
         $mReg = ExMonitoria::whereMonth('fechaFallecimiento', Carbon::now()->month)->count();
         $nmen = ExMonitoria::where('genero', 'M')->count();
         $nwomen = ExMonitoria::where('genero', 'F')->count();
-        
-        return view('exequial.prestarServicio.index', compact('registros','mReg', 'nmen', 'nwomen'));
+
+        return view('exequial.prestarServicio.index', compact('registros', 'mReg', 'nmen', 'nwomen'));
     }
 
     public function edit($id)
     {
         $registro = ExMonitoria::with('comments')->findOrFail($id);
 
-        $controllerparentesco = app()->make(ParentescosController::class);   
-        
+        $controllerparentesco = app()->make(ParentescosController::class);
+
         $nomPar = $controllerparentesco->showName($registro->parentesco);
-        $registro->parentesco = $nomPar;     
-        
+        $registro->parentesco = $nomPar;
+
         return view('exequial.prestarServicio.edit', compact('registro'));
     }
 
@@ -50,65 +53,64 @@ class MaeC_ExSerController extends Controller
         //$this->authorize('create', auth()->user());
         $token = env('TOKEN_ADMIN');
         $fechaActual = Carbon::now();
-        if($request->pastor === 'true'){
+        if ($request->pastor === 'true') {
             $codPar = null;
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $token,
                 'Accept' => '*/*',
             ])->patch(env('API_PRODUCCION') . '/api/Exequiales/Tercero', [
-                "documentId"=> $request->cedulaTitular,
-                "dateInit"=> $request->dateInit ? $request->dateInit : ' ',
-                "codePlan" => $request->codePlan ? $request->codePlan : '01',
-                "discount"=> $request->discount,
-                "observation"=> "PASTOR FALLECIDO" . $request->observation,
-                "stade"=> false
+                'documentId' => $request->cedulaTitular,
+                'dateInit' => $request->dateInit ? $request->dateInit : ' ',
+                'codePlan' => $request->codePlan ? $request->codePlan : '01',
+                'discount' => $request->discount,
+                'observation' => 'PASTOR FALLECIDO' . $request->observation,
+                'stade' => false,
             ]);
             ComaeExCli::where('cod_cli', $request->cedulaTitular)->update(['estado' => false]);
-            $request->parentesco = "TITULAR";
-        }else{
+            $request->parentesco = 'TITULAR';
+        } else {
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $token,
                 'Accept' => '*/*',
             ])->put(env('API_PRODUCCION') . '/api/Exequiales/Beneficiary', [
-                "name" => $request->nameBeneficiary,
-                "codeParentesco" => $request->parentesco,
-                "type" => "I",
-                "dateEntry"=>$request->dateInit ? $request->dateInit : ' ',
-                "documentBeneficiaryId" => $request->cedulaFallecido,
-                "dateBirthDate"=>$request->fecNacFallecido,
+                'name' => $request->nameBeneficiary,
+                'codeParentesco' => $request->parentesco,
+                'type' => 'I',
+                'dateEntry' => $request->dateInit ? $request->dateInit : ' ',
+                'documentBeneficiaryId' => $request->cedulaFallecido,
+                'dateBirthDate' => $request->fecNacFallecido,
             ]);
             ComaeExRelPar::where('cod_cli', $request->cedula)->update([
                 'estado' => false,
                 'tipo' => 'I',
             ]);
         }
-        
+
         if ($response->successful()) {
             ExMonitoria::create([
                 'fechaRegistro' => $fechaActual,
                 'horaFallecimiento' => $request->horaFallecimiento,
-                'cedulaTitular'  => $request->cedulaTitular,
+                'cedulaTitular' => $request->cedulaTitular,
                 'nombreTitular' => $request->nameTitular,
                 'nombreFallecido' => strtoupper($request->nameBeneficiary),
-                'cedulaFallecido'  => $request->cedulaFallecido,
+                'cedulaFallecido' => $request->cedulaFallecido,
                 'fechaFallecimiento' => $request->fechaFallecimiento,
                 'lugarFallecimiento' => strtoupper($request->lugarFallecimiento),
-                'parentesco'=> $request->parentesco,
-                'estado'=> $request->estadonuevo,
-                'contacto'=> strtoupper($request->contacto),
-                'telefonoContacto'=> $request->telefonoContacto,
-                'Contacto2'=> strtoupper($request->contacto2),
-                'telefonoContacto2'=> $request->telefonoContacto2,                
-                'genero'=>$request->genero,
+                'parentesco' => $request->parentesco,
+                'estado' => $request->estadonuevo,
+                'contacto' => strtoupper($request->contacto),
+                'telefonoContacto' => $request->telefonoContacto,
+                'Contacto2' => strtoupper($request->contacto2),
+                'telefonoContacto2' => $request->telefonoContacto2,
+                'genero' => $request->genero,
             ]);
-            $accion = "prestar servicio a " . $request->cedulaFallecido;
-            $this->auditoria($accion, "EXEQUIALES");
+            $accion = 'prestar servicio a ' . $request->cedulaFallecido;
+            $this->auditoria($accion, 'EXEQUIALES');
             return $this->index();
+        } else {
+            return 'error ' . response()->json(['error' => $response->json()], $response->status());
         }
-        else{
-            return "error " . response()->json(['error' => $response->json()], $response->status());;
-        }
-    } 
+    }
 
     public function consultaMes($mes)
     {
@@ -121,62 +123,91 @@ class MaeC_ExSerController extends Controller
         return Excel::download(new DataExport, 'data.xlsx');
     } */
 
-    public function generarpdf(){
+    public function generarpdf()
+    {
         $registros = ExMonitoria::orderBy('id', 'desc')->get();
-        $controllerparentesco = app()->make(ParentescosController::class);        
+        $controllerparentesco = app()->make(ParentescosController::class);
         foreach ($registros as $registro) {
             $nomPar = $controllerparentesco->showName($registro->parentesco);
             $registro->parentesco = $nomPar;
         }
-        $pdf = Pdf::loadView('exequial.prestarServicio.indexpdf', 
-            ['registros' => $registros,'image_path' => public_path('assets/images/CORPENTUNIDA_LOGO PRINCIPAL  (2).png'),])
-                ->setPaper('letter', 'landscape');
-        return $pdf->download(date('Y-m-d') . " Reporte.pdf");
+        $pdf = Pdf::loadView('exequial.prestarServicio.indexpdf', ['registros' => $registros, 'image_path' => public_path('assets/images/CORPENTUNIDA_LOGO PRINCIPAL  (2).png')])->setPaper('letter', 'landscape');
+        return $pdf->download(date('Y-m-d') . ' Reporte.pdf');
         //return view('exequial.prestarServicio.indexpdf', ['registros' => $registros, 'image_path' => public_path('assets/images/CORPENTUNIDA_LOGO PRINCIPAL  (2).png')]);
     }
 
-    public function reporteIndividual($id){
+    public function generarExcelPrestarServicio()
+    {
+        Carbon::setLocale('es');
+        $registros = ExMonitoria::orderBy('id', 'desc')->get();
+        $data = [];
+        $i = 1;
+        $controllerparentesco = app()->make(ParentescosController::class);
+        foreach ($registros as $reg) {
+            $reg->parentesco = $controllerparentesco->showName($reg->parentesco);
+            $data[] = [
+                $i++,
+                $reg->fechaFallecimiento,
+                Carbon::parse($reg->fechaFallecimiento)->translatedFormat('l'),
+                $reg->horaFallecimiento,
+                $reg->cedulaTitular,
+                $reg->nombreTitular,
+                $reg->cedulaFallecido,
+                $reg->nombreFallecido,
+                $reg->lugarFallecimiento,
+                $reg->parentesco,
+                $reg->contacto,
+                $reg->telefonoContacto,
+                $reg->estado == 1 ? 'PENDIENTE' : ($reg->estado == 2 ? 'EN PROCESO' : 'CERRADO'),
+            ];
+        }
+
+        $headings = ['Nº', 'Fecha Fallecimiento', 'Día', 'Hora', 'Cédula Titular', 'Nombre Titular', 'Cédula Fallecido', 'Nombre Fallecido', 'Lugar Fallecimiento', 'Parentesco', 'Contacto', 'Teléfono', 'Estado'];
+        $name = Carbon::now()->format('Y-m-d_H-i-s') . 'Prestar_Servicio.xlsx';
+        return Excel::download(new ExcelExport($data, $headings), $name);
+    }
+
+    public function reporteIndividual($id)
+    {
         $registro = ExMonitoria::find($id);
-        $controllerparentesco = app()->make(ParentescosController::class);        
-        
-            $nomPar = $controllerparentesco->showName($registro->parentesco);
-            $registro->parentesco = $nomPar;
-        
-        $pdf = Pdf::loadView('exequial.prestarServicio.indexpdf', 
-            ['registros' => collect([$registro]),'image_path' => public_path('assets/img/corpentunida-logo-azul-oscuro-2021x300.png'),])
-                ->setPaper('letter', 'landscape');
-        return $pdf->download(date('Y-m-d') . " " . $registro->cedulaFallecido . " Reporte.pdf");
+        $controllerparentesco = app()->make(ParentescosController::class);
+        $nomPar = $controllerparentesco->showName($registro->parentesco);
+        $registro->parentesco = $nomPar;
+
+        $pdf = Pdf::loadView('exequial.prestarServicio.indexpdf', ['registros' => collect([$registro]), 'image_path' => public_path('assets/img/corpentunida-logo-azul-oscuro-2021x300.png')])->setPaper('letter', 'landscape');
+        return $pdf->download(date('Y-m-d') . ' ' . $registro->cedulaFallecido . ' Reporte.pdf');
 
         // return view('exequial.prestarServicio.indexpdf', [
         //     'registros' => collect([$registro]),
         //     'image_path' => public_path('assets/img/corpentunida-logo-azul-oscuro-2021x300.png'),]);
-    
     }
 
-    public function update(Request $request, $id){
-        $updated  = ExMonitoria::where('id', $id)->update([
+    public function update(Request $request, $id)
+    {
+        $updated = ExMonitoria::where('id', $id)->update([
             'horaFallecimiento' => $request->horaFallecimiento,
             'fechaFallecimiento' => $request->fechaFallecimiento,
             'lugarFallecimiento' => $request->lugarFallecimiento,
             'traslado' => $request->traslado,
             'contacto' => $request->contacto,
-            'telefonoContacto' =>$request->telefonoContacto,
-            'Contacto2' =>$request->contacto2,
-            'telefonoContacto2' =>$request->telefonoContacto2,
-            'factura' =>$request->factura,
-            'valor' =>$request->valor
+            'telefonoContacto' => $request->telefonoContacto,
+            'Contacto2' => $request->contacto2,
+            'telefonoContacto2' => $request->telefonoContacto2,
+            'factura' => $request->factura,
+            'valor' => $request->valor,
         ]);
-        if($updated > 0){
-            $accion = "actualizar prestar servicio a " . $request->cedulaFallecido;
-            $this->auditoria($accion, "EXEQUIALES");
+        if ($updated > 0) {
+            $accion = 'actualizar prestar servicio a ' . $request->cedulaFallecido;
+            $this->auditoria($accion, 'EXEQUIALES');
             return redirect()->route('exequial.prestarServicio.index')->with('success', 'Registro actualizado exitosamente');
-        }else{
+        } else {
             return redirect()->route('exequial.prestarServicio.index')->with('error', 'Error al actualizar el registro');
             //return response()->json(['error' => 'Error al actualizar el registro'], 500);
         }
     }
 
-    public function destroy($id){
+    public function destroy($id)
+    {
         $token = env('TOKEN_ADMIN');
         $fechaActual = now()->toDateString();
         $nombreFallecido = ExMonitoria::find($id)->value('nombreFallecido');
@@ -188,7 +219,7 @@ class MaeC_ExSerController extends Controller
         ])->put(env('API_PRODUCCION') . '/api/Exequiales/Beneficiary', [
             'name' => $nombreFallecido,
             'codeParentesco' => $parentesco,
-            'type' => "A",
+            'type' => 'A',
             'dateEntry' => $fechaActual,
             'documentBeneficiaryId' => $cedulaFallecido,
             'dateBirthDate' => $fechaActual,
@@ -203,23 +234,24 @@ class MaeC_ExSerController extends Controller
                 'serverError' => $response->serverError(),
                 'clientError' => $response->clientError(),
             ]);
-        }else{
-            return response()->json(['error' => 'error al cambiar estado',], 500);
+        } else {
+            return response()->json(['error' => 'error al cambiar estado'], 500);
         }
     }
 
-    public function addComment(Request $request, $id){
+    public function addComment(Request $request, $id)
+    {
         $comment = ExServicioComentarios::create([
             'id_exser' => $id,
             'tipo' => $request->tipocomment,
             'fecha' => Carbon::now(),
             'observacion' => $request->observacioncomment,
         ]);
-        if($comment){
-            $accion = "add comentario al servicio id " . $id;
-            $this->auditoria($accion, "EXEQUIALES");
+        if ($comment) {
+            $accion = 'add comentario al servicio id ' . $id;
+            $this->auditoria($accion, 'EXEQUIALES');
             return redirect()->route('exequial.prestarServicio.edit', $id)->with('success', 'Comentario agregado exitosamente.');
-        }else{
+        } else {
             return redirect()->route('exequial.prestarServicio.edit', $id)->with('error', 'Error al agregar el comentario.');
         }
     }

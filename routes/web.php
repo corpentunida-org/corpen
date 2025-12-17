@@ -127,6 +127,7 @@ Route::prefix('exequiales')->group(function () {
 Route::get('asociados/{id}/generarpdf/{active}', [ComaeExCliController::class, 'generarpdf'])->name('asociados.generarpdf');
 Route::resource('asociados', ComaeExCliController::class)->names('exequial.asociados')->middleware(['auth', 'can:exequial.asociados.index']);
 Route::get('/prestarServicio/generarpdf', [MaeC_ExSerController::class, 'generarpdf'])->middleware('auth')->name('prestarServicio.generarpdf');
+Route::get('prestarServicio/excel', [MaeC_ExSerController::class, 'generarExcelPrestarServicio'])->name('prestarServicio.generate.excel');
 Route::resource('prestarServicio', MaeC_ExSerController::class)->names('exequial.prestarServicio')->middleware(['auth', 'can:exequial.prestarServicio.index']);
 Route::get('/prestarServicio/{id}/generarpdf', [MaeC_ExSerController::class, 'reporteIndividual'])->name('prestarServicio.repIndividual');
 Route::get('/exportar-datos', [MaeC_ExSerController::class, 'exportData']);
