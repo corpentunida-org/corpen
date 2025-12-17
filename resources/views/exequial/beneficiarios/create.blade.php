@@ -131,15 +131,13 @@
                                         </tr>
                                         <tr>
                                             <td>
-                                                <a href="javascript:void(0);">Fecha de nacimiento</a>
+                                                <a href="">Fecha de nacimiento</a>
                                             </td>
                                             <td>
-                                                <input type="date" class="form-control fs-12 fw-normal text-muted p-2"
-                                                    name="fechaNacimiento" required>
+                                                <input type="date" class="form-control fs-12 fw-normal text-muted p-2" name="fechaNacimiento" value="{{ \Carbon\Carbon::now()->format('Y-m-d') }}">
                                             </td>
                                         </tr>
                                         <tr></tr>
-
                                     </tbody>
                                 </table>
                             </div>
