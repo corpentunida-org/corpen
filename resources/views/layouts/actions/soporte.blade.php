@@ -7,33 +7,37 @@
     </a>
 
     <ul class="nxl-submenu">
-        <!-- Submenú: Soporte -->
+        <!-- Crear Soporte -->
         <li class="nxl-item">
             <a class="nxl-link" href="{{ route('soportes.soportes.create') }}">
                 <i class="bi bi-plus-circle me-2"></i> Crear Soporte
             </a>
         </li>
 
+        <!-- Mi Lista -->
         <li class="nxl-item">
             <a class="nxl-link" href="{{ route('soportes.soportes.index') }}">
                 <i class="bi bi-list-ul me-2"></i> Mi Lista
             </a>
         </li>
 
-        {{-- Ejemplo de opción adicional (desactivada)
-        <li class="nxl-item">
-            <a class="nxl-link" href="{{ route('soportes.pendientes', ['estado' => 'resuelto']) }}">
-                <i class="bi bi-check2-square me-2"></i> Lista Soportes
-            </a>
-        </li>
-        --}}
-
+        <!-- Opciones solo para Administrador -->
         @candirect('soporte.lista.administrador')
+
+        <!-- Parámetros -->
         <li class="nxl-item">
             <a class="nxl-link" href="{{ route('soportes.tablero') }}">
-                Parámetros de Soportes
+                <i class="bi bi-gear me-2"></i> Parámetros de Soportes
             </a>
         </li>
-@endcandirect
+
+        <!-- Estadísticas -->
+        <li class="nxl-item">
+            <a class="nxl-link" href="{{ route('soportes.estadisticas') }}">
+                <i class="bi bi-bar-chart-fill me-2"></i> Estadísticas
+            </a>
+        </li>
+
+        @endcandirect
     </ul>
 </li>
