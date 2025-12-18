@@ -118,11 +118,11 @@ class SegNovedadesController extends Controller
         if ($request->tipoNovedad === '1') {
             $accion = 'modificacion en poliza  ' . $request->id_poliza . ' Asegurado ' . $request->asegurado;
         } elseif ($request->tipoNovedad === '2') {
-            $controllerapi = new ComaeTerController();
+            /*$controllerapi = new ComaeTerController();
             $terapi = $controllerapi->show($request->asegurado);
             if ($terapi->getStatusCode() === 404) {
                 return redirect()->back()->with('error', 'La cédula ingresada no coincide con ningún documento en base de datos de SiaSoft.');
-            }
+            }*/
             $terceroontable = maeTerceros::where('cod_ter', $request->asegurado)->exists();
             if (!$terceroontable) {
                 $terceroontable = maeTerceros::create([
