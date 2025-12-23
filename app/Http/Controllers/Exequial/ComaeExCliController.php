@@ -69,7 +69,7 @@ class ComaeExCliController extends Controller
     }
 
     public function show(Request $request, $id)
-    {       
+    {
         //API
         $token = env('TOKEN_ADMIN');
         $id = $request->input('id');

@@ -135,6 +135,9 @@ class SegNovedadesController extends Controller
                 ]);
             } else {
                 $terceroontable = maeTerceros::where('cod_ter', $request->asegurado)->first();
+            }
+            $aseguradontable = SegAsegurado::where('cedula', $terceroontable->cod_ter)->first();
+            if (!$aseguradontable) {
                 if ($request->estitular === '1') {
                     $asegurado = SegAsegurado::create([
                         'cedula' => $terceroontable->cod_ter,
@@ -149,9 +152,9 @@ class SegNovedadesController extends Controller
                         'titular' => $request->titularasegurado,
                     ]);
                 }
-                $this->auditoria('TERCERO CREAD0 ID ' . $terceroontable->cod_ter);
-                $this->auditoria('ASEGURADO CREADO ID ' . $asegurado->cedula);
             }
+            $this->auditoria('TERCERO CREAD0 ID ' . $terceroontable->cod_ter);
+            $this->auditoria('ASEGURADO CREADO ID ' . $asegurado->cedula);
         }
         return redirect()->route('seguros.novedades.index')->with('success', 'Novedad registrada correctamente');
     }
@@ -255,9 +258,9 @@ class SegNovedadesController extends Controller
         /*$request->validate([
             'formulario_nov' => 'required|mimes:pdf|max:2048',
         ]);*/
-        $formulario = null;        
+        $formulario = null;
         if ($request->hasFile('formulario_nov')) {
-            $formulario = Storage::disk('s3')->put('corpentunida/seguros_vida/novedades/'. $id, $request->file('formulario_nov'));
+            $formulario = Storage::disk('s3')->put('corpentunida/seguros_vida/novedades/' . $id, $request->file('formulario_nov'));
         }
         $novedad = SegNovedades::create([
             'id_poliza' => $request->id_poliza ?? null,
