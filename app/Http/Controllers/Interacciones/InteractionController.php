@@ -260,7 +260,45 @@ class InteractionController extends Controller
             'idCargoAgente', 'idAreaAgente'
         ));
     }
+    /**
+     * 🆕 Actualizar el distrito de un cliente.
+     */
+    public function updateClientDistrict(Request $request, $client_id)
+    {
+        try {
+            // 1. Validar que el distrito existe
+            $district_id = $request->input('district_id');
+            if (!$district_id) {
+                return response()->json(['error' => 'El ID del distrito es requerido.'], 400);
+            }
 
+            // 2. Buscar y actualizar el cliente
+            $updated = \DB::table('MaeTerceros')
+                ->where('cod_ter', $client_id)
+                ->update(['cod_dist' => $district_id]);
+
+            if ($updated === 0) {
+                return response()->json(['error' => 'No se encontró el cliente o no se actualizó.'], 404);
+            }
+
+            // 3. Devolver éxito
+            return response()->json([
+                'success' => true,
+                'message' => 'Distrito actualizado correctamente.',
+                'new_district_id' => $district_id
+            ]);
+
+        } catch (\Exception $e) {
+            // 4. Capturar cualquier error inesperado y registrarlo
+            \Log::error('Error fatal en updateClientDistrict: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            
+            return response()->json([
+                'error' => 'Error interno del servidor.',
+                'details' => $e->getMessage() // Muestra el error real en la respuesta
+            ], 500);
+        }
+    }
     /**
      * Guarda una nueva interacción en la base de datos.
      */
