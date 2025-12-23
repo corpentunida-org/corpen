@@ -481,7 +481,7 @@
                                                         onclick="window.location.href='{{ route('interactions.show', $interaction->id) }}'">
                                                     <i class="feather-eye"></i>
                                                 </button>
-                                                <button type="button"
+                                                <!-- <button type="button"
                                                         class="btn btn-sm btn-light"
                                                         title="Editar"
                                                         onclick="window.location.href='{{ route('interactions.edit', $interaction->id) }}'">
@@ -492,7 +492,7 @@
                                                         title="Eliminar"
                                                         onclick="confirmDelete({{ $interaction->id }})">
                                                     <i class="feather-trash-2"></i>
-                                                </button>
+                                                </button> -->
                                             </div>
                                         </td>
                                     </tr>
