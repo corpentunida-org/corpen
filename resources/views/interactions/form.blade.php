@@ -1702,8 +1702,8 @@
                                 try {
                                     console.log(`Intentando actualizar distrito para cliente ID: ${selectedClientId} con distrito: ${selectedDistrictId}`);
                                     
-                                    // ✅ MEJOR PRÁCTICA: Usar el helper de ruta de Laravel
-                                    const url = "{{ route('interactions.clientes.actualizar-distrito', ':id') }}".replace(':id', selectedClientId);
+                                    // ✅ CORREGIDO: Usar la URL directa para evitar problemas con las rutas
+                                    const url = `/interactions/clientes/${selectedClientId}/actualizar-distrito`;
                                     const response = await fetch(url, {
                                         method: 'PUT',
                                         headers: {

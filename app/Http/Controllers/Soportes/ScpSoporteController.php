@@ -66,35 +66,35 @@ class ScpSoporteController extends Controller
         return view('soportes.soportes.index', compact('categorias', 'categoriaActivaPorDefecto', 'soportes'));
     }
 
-public function create()
-{
-    $categorias = ScpCategoria::all();
-    $tipos = ScpTipo::all();
-    $prioridades = ScpPrioridad::all();
-    $terceros = maeTerceros::select('cod_ter', 'nom_ter')->get();
-    $usuarios = User::select('id', 'name')->get();
-    $cargos = GdoCargo::select('id', 'nombre_cargo')->get();
-    $lineas = LineaCredito::select('id', 'nombre')->get();
+    public function create()
+    {
+        $categorias = ScpCategoria::all();
+        $tipos = ScpTipo::all();
+        $prioridades = ScpPrioridad::all();
+        $terceros = maeTerceros::select('cod_ter', 'nom_ter')->get();
+        $usuarios = User::select('id', 'name')->get();
+        $cargos = GdoCargo::select('id', 'nombre_cargo')->get();
+        $lineas = LineaCredito::select('id', 'nombre')->get();
 
-    $usuario = User::find(Auth::id());
+        $usuario = User::find(Auth::id());
 
-    // 🔹 Calcular el próximo ID de soporte
-    $ultimo = ScpSoporte::max('id');
-    $proximoId = $ultimo ? $ultimo + 1 : 1;
+        // 🔹 Calcular el próximo ID de soporte
+        $ultimo = ScpSoporte::max('id');
+        $proximoId = $ultimo ? $ultimo + 1 : 1;
 
-    // 🔹 Enviar $proximoId a la vista
-    return view('soportes.soportes.create', compact(
-        'categorias',
-        'tipos',
-        'prioridades',
-        'terceros',
-        'usuarios',
-        'cargos',
-        'lineas',
-        'usuario',
-        'proximoId' // 👈 este es nuevo
-    ));
-}
+        // 🔹 Enviar $proximoId a la vista
+        return view('soportes.soportes.create', compact(
+            'categorias',
+            'tipos',
+            'prioridades',
+            'terceros',
+            'usuarios',
+            'cargos',
+            'lineas',
+            'usuario',
+            'proximoId' // 👈 este es nuevo
+        ));
+    }
 
 
     // ==========================
