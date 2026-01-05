@@ -1048,7 +1048,7 @@
                                             <div class="col-md-12">
                                                 <div class="form-group">
                                                     <label for="parentezco_quien_llama" class="form-label">Relación con el Cliente</label>
-                                                    <select class="form-select" id="parentezgo_quien_llama" name="parentezgo_quien_llama">
+                                                    <select class="form-select" id="parentezco_quien_llama" name="parentezco_quien_llama">
                                                         <option value="">Selecciona una opción</option>
                                                         <option value="familiar">Familiar</option>
                                                         <option value="amigo">Amigo</option>
@@ -2435,7 +2435,9 @@
                 console.log('selectParentInteraction llamado con ID:', interactionId); // DEBUG
                 // Actualizar el campo oculto
                 $('#parent_interaction_id').val(interactionId);
-                
+                // Agregar esta línea para verificar
+                console.log('Valor de parent_interaction_id después de establecer:', $('#parent_interaction_id').val());
+
                 // Mostrar información de la interacción seleccionada
                 const $selectedInfo = $('#selected-parent-info');
                 const $selectedText = $('#selected-parent-text');
