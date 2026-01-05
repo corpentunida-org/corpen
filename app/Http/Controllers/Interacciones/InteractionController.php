@@ -304,6 +304,7 @@ class InteractionController extends Controller
      */
     public function store(Request $request)
     {        
+        /* dd($request->all()); */
         $validatedData = $request->validate([
             'client_id'          => 'required|exists:MaeTerceros,cod_ter',
             'agent_id'           => 'required|exists:users,id',
@@ -330,6 +331,9 @@ class InteractionController extends Controller
             'id_distrito_interaccion' => 'nullable|integer|exists:MaeDistritos,COD_DIST',
             'start_time'            => 'nullable|date',
             'duration'              => 'nullable|integer|min:0',
+
+            'parent_interaction_id' => 'nullable|integer|exists:interactions,id',
+ 
         ]);
 
         $validatedData['agent_id'] = Auth::id();
@@ -449,6 +453,9 @@ class InteractionController extends Controller
             'id_distrito_interaccion' => 'nullable|integer|exists:MaeDistritos,COD_DIST',
             'start_time'            => 'nullable|date',
             'duration'              => 'nullable|integer|min:0',
+
+            'parent_interaction_id' => 'nullable|integer|exists:interactions,id',
+ 
         ]);
 
         $validatedData['next_action_type'] = $request->input('next_action_type') ?? 1;
