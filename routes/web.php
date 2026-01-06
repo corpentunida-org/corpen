@@ -444,8 +444,10 @@ Route::middleware('auth')->prefix('soportes')->name('soportes.')->group(function
         ->name('estadisticas')->middleware('candirect:soporte.lista.administrador');
     
     // Ruta para obtener datos del dashboard via AJAX
-    Route::get('estadisticas/data', [ScpEstadisticaController::class, 'getDashboardData'])
-        ->name('estadisticas.data')->middleware('candirect:soporte.lista.administrador');
+    /*Route::get('estadisticas/data', [ScpEstadisticaController::class, 'getDashboardData'])
+        ->name('estadisticas.data')->middleware('candirect:soporte.lista.administrador');*/
+        Route::get('estadisticas/data', [ScpEstadisticaController::class, 'getDashboardData'])
+        ->name('estadisticas.data');
 
     // Recursos base
     Route::resource('categorias', ScpCategoriaController::class)

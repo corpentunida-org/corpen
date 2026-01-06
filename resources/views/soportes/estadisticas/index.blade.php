@@ -1611,10 +1611,14 @@
 
                     // Hacer llamada a la API
                     fetch(url)
+                    .then(async response => {
+                            
+                        })
                         .then(response => {
                             if (!response.ok) {
                                 throw new Error('Error en la respuesta del servidor: ' + response.status);
                             }
+                            console.log('Respuesta recibida:', response); // Para depuración
                             return response.json();
                         })
                         .then(data => {
@@ -1693,8 +1697,7 @@
                             );
                         })
                         .catch(error => {
-                            console.error('Error al actualizar los datos:', error);
-                            
+                            console.error('Error en get dashboard los datos:', error.message);
                             // Mostrar mensaje de error
                             showToast(
                                 'Error al actualizar',

@@ -184,7 +184,7 @@ class ComaeExCliController extends Controller
         ComaeExCli::where('cod_cli', $request->documentid)->update([
             'cod_plan' => $request->codePlan,
             'por_descto' => $request->discount,
-            'observacion' => $request->observation,
+            'benef' => $request->observation,
             'estado' => true,
         ]);
 

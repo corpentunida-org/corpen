@@ -311,6 +311,7 @@ class ScpEstadisticaController extends Controller
      */
     public function getDashboardData(Request $request): JsonResponse
     {
+        
         // --- 1. Obtener rango de fechas (por defecto, últimos 6 meses) ---
         $startDate = Carbon::parse($request->get('start_date', now()->subMonths(6)->startOfDay()));
         $endDate = Carbon::parse($request->get('end_date', now()->endOfDay()));
@@ -553,7 +554,7 @@ class ScpEstadisticaController extends Controller
         // --- Gráfico 8: Rendimiento por Agente (Top 10) ---
         $agentesRendimiento = User::join('scp_soportes', 'users.id', '=', 'scp_soportes.usuario_escalado')
             ->whereBetween('scp_soportes.created_at', [$startDate, $endDate]);
-            
+        //dd($agentesRendimiento);
         // Aplicar filtros adicionales si se proporcionan
         if ($priority) {
             $agentesRendimiento->where('scp_soportes.id_scp_prioridad', $priority);
