@@ -1,134 +1,231 @@
 <x-base-layout>
-    <div class="container">
-        <h1 class="titulo-principal">Listado de Tareas</h1>
-
-        {{-- Contenedor de botones y buscador --}}
-        <div class="toolbar">
-            {{-- Botones a la izquierda --}}
-            <div class="botones">
-                <a href="{{ route('flujo.tasks.create') }}" class="btn btn-crear">
-                    <i class="fas fa-plus"></i> Crear
+    <div class="task-index-wrapper">
+        {{-- Encabezado Ejecutivo --}}
+        <header class="index-header">
+            <div class="header-titles">
+                <span class="system-tag">Operaciones Administrativas</span>
+                <h1 class="main-title">Control de Unidades de Trabajo</h1>
+                <p class="main-subtitle">Gestión centralizada de asignaciones, plazos y estados operativos.</p>
+            </div>
+            
+            <div class="header-actions">
+                <a href="{{ route('flujo.tablero') }}" class="btn-ghost-corporate">
+                    <i class="fas fa-th-large"></i> Tablero
                 </a>
-                <a href="{{ route('flujo.tablero') }}" class="btn btn-tablero">
-                    <i class="fas fa-th-large"></i> Volver a Tablero
+                <a href="{{ route('flujo.tasks.create') }}" class="btn-corporate-black">
+                    <i class="fas fa-plus"></i> Nueva Tarea
                 </a>
             </div>
+        </header>
 
-            {{-- Buscador a la derecha --}}
-            <form action="{{ route('flujo.tasks.index') }}" method="GET" class="buscador">
-                <input type="text" name="search" placeholder="Buscar por título o descripción"
-                       value="{{ request('search') }}">
-                <button type="submit" class="btn btn-buscar">
-                    <i class="fas fa-search"></i> Buscar
-                </button>
+        {{-- Toolbar de Filtrado --}}
+        <div class="index-toolbar">
+            <form action="{{ route('flujo.tasks.index') }}" method="GET" class="search-form-corporate">
+                <div class="search-input-wrapper">
+                    <i class="fas fa-search"></i>
+                    <input type="text" name="search" placeholder="Filtrar por título, descripción o referencia..." value="{{ request('search') }}">
+                </div>
+                <button type="submit" class="btn-search-action">Aplicar Filtro</button>
             </form>
         </div>
 
-        {{-- Tabla estilo Excel con scroll --}}
-        <div class="tabla-container">
-            <table class="tabla-tareas">
+        {{-- Tabla Corporativa --}}
+        <div class="table-card-container">
+            <table class="corporate-table">
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Título</th>
-                        <th>Descripción</th>
-                        <th>Estado</th>
+                        <th width="60">ID</th>
+                        <th>Detalle de la Unidad</th>
+                        <th>Estado Operativo</th>
                         <th>Prioridad</th>
                         <th>Responsable</th>
-                        <th>Workflow</th>
-                        <th>Acciones</th>
+                        <th>Workflow Relacionado</th>
+                        <th width="100" class="text-right">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($tasks as $task)
                         <tr>
-                            <td>{{ $task->id }}</td>
-                            <td>{{ $task->titulo }}</td>
-                            <td>{{ $task->descripcion }}</td>
+                            <td class="text-id">#{{ $task->id }}</td>
+                            <td>
+                                <div class="task-info-cell">
+                                    <span class="task-title-main">{{ $task->titulo }}</span>
+                                    <span class="task-desc-sub">{{ Str::limit($task->descripcion, 50) }}</span>
+                                </div>
+                            </td>
                             <td>
                                 @php
-                                    $estadoClass = match(strtolower($task->estado)) {
-                                        'pendiente' => 'estado-pendiente',
-                                        'en progreso' => 'estado-progreso',
-                                        'completada' => 'estado-completada',
-                                        'revisado' => 'estado-revisado',
-                                        default => 'estado-default',
+                                    $statusStyle = match(strtolower($task->estado)) {
+                                        'pendiente' => 'st-pending',
+                                        'en_proceso' => 'st-process',
+                                        'completado', 'completada' => 'st-completed',
+                                        'revisado' => 'st-review',
+                                        default => 'st-default',
                                     };
                                 @endphp
-                                <span class="estado {{ $estadoClass }}">{{ ucfirst($task->estado) }}</span>
+                                <span class="badge-status-corp {{ $statusStyle }}">
+                                    {{ str_replace('_', ' ', ucfirst($task->estado)) }}
+                                </span>
                             </td>
-                            <td>{{ ucfirst($task->prioridad) }}</td>
-                            <td>{{ $task->user->name ?? 'N/A' }}</td>
-                            <td>{{ $task->workflow->nombre ?? 'Sin Workflow' }}</td>
                             <td>
-                                <div class="acciones">
-                                    <a href="{{ route('flujo.tasks.show', $task->id) }}" class="accion ver" title="Ver"><i class="fas fa-eye"></i></a>
-                                    <a href="{{ route('flujo.tasks.edit', $task->id) }}" class="accion editar" title="Editar"><i class="fas fa-edit"></i></a>
+                                <span class="prio-indicator prio-{{ strtolower($task->prioridad) }}">
+                                    <i class="fas fa-circle"></i> {{ ucfirst($task->prioridad) }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="user-cell">
+                                    <div class="user-avatar-small">{{ substr($task->user->name ?? 'N', 0, 1) }}</div>
+                                    <span>{{ $task->user->name ?? 'Sin asignar' }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="workflow-tag">
+                                    <i class="fas fa-project-diagram"></i> {{ $task->workflow->nombre ?? 'General' }}
+                                </span>
+                            </td>
+                            <td class="text-right">
+                                <div class="actions-group">
+                                    <a href="{{ route('flujo.tasks.show', $task->id) }}" class="btn-icon-table" title="Consultar"><i class="fas fa-eye"></i></a>
+                                    <a href="{{ route('flujo.tasks.edit', $task->id) }}" class="btn-icon-table" title="Gestionar"><i class="fas fa-pen"></i></a>
                                 </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="sin-tareas">No se encontraron tareas.</td>
+                            <td colspan="7" class="empty-state-row">
+                                <i class="fas fa-inbox"></i>
+                                <p>No se encontraron registros de trabajo bajo los criterios seleccionados.</p>
+                            </td>
                         </tr>
                     @endforelse
                 </tbody>
             </table>
         </div>
 
-        {{-- Paginador --}}
-        <div class="paginador">
-            {{ $tasks->links() }}
-        </div>
+        {{-- Footer con Paginación --}}
+        <footer class="index-footer">
+            <div class="pagination-info">
+                Mostrando {{ $tasks->firstItem() }} - {{ $tasks->lastItem() }} de {{ $tasks->total() }} registros
+            </div>
+            <div class="corporate-pagination">
+                {{ $tasks->links() }}
+            </div>
+        </footer>
     </div>
 
-    {{-- ESTILOS --}}
     <style>
-        .container { max-width: 1200px; margin: auto; padding: 20px; font-family: sans-serif; }
-        .titulo-principal { color: #1E3A8A; font-size: 24px; margin-bottom: 20px; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-        /* Toolbar */
-        .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; }
-        .botones { display: flex; gap: 10px; flex-shrink: 0; }
-        .buscador { display: flex; align-items: center; flex-shrink: 0; }
-        .buscador input { padding: 6px 10px; border-radius: 4px; border: 1px solid #ccc; margin-right: 5px; width: 200px; max-width: 100%; }
-        .buscador button { padding: 6px 12px; border-radius: 4px; border: none; background-color: #2563EB; color: white; cursor: pointer; }
-        .buscador button:hover { background-color: #3B82F6; }
+        :root {
+            --brand-dark: #0f172a;
+            --brand-accent: #2563eb;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --bg-page: #fafafa;
+            --white: #ffffff;
+            --border-soft: #f1f5f9;
+        }
 
-        /* Botones */
-        .btn { padding: 6px 12px; border-radius: 4px; text-decoration: none; font-weight: 500; display: inline-flex; align-items: center; gap: 5px; }
-        .btn-crear { background-color: #3B82F6; color: #fff; }
-        .btn-crear:hover { background-color: #60A5FA; }
-        .btn-tablero { background-color: #9CA3AF; color: #1E3A8A; }
-        .btn-tablero:hover { background-color: #B0B7BF; }
+        .task-index-wrapper {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 24px;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+        }
 
-        /* Tabla */
-        .tabla-container { overflow-x: auto; border: 1px solid #ccc; border-radius: 4px; }
-        .tabla-tareas { width: 100%; border-collapse: collapse; font-size: 14px; }
-        .tabla-tareas th, .tabla-tareas td { padding: 8px; border: 1px solid #ccc; text-align: left; }
-        .tabla-tareas thead { background-color: #E5E7EB; color: #1E3A8A; }
-        .tabla-tareas tbody tr:hover { background-color: #BFDBFE; }
+        /* HEADER */
+        .index-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 40px; }
+        .system-tag { font-size: 0.65rem; font-weight: 800; text-transform: uppercase; color: var(--brand-accent); letter-spacing: 0.1em; display: block; margin-bottom: 8px; }
+        .main-title { font-size: 2rem; font-weight: 800; letter-spacing: -0.04em; margin: 0; color: var(--brand-dark); }
+        .main-subtitle { font-size: 0.95rem; color: var(--text-muted); margin-top: 4px; }
+        .header-actions { display: flex; gap: 12px; }
 
-        /* Estados */
-        .estado { padding: 2px 6px; border-radius: 9999px; font-size: 12px; font-weight: 600; }
-        .estado-pendiente { background-color: #FEF3C7; color: #B45309; }
-        .estado-progreso { background-color: #DBEAFE; color: #1E40AF; }
-        .estado-completada { background-color: #D1D5DB; color: #111827; }
-        .estado-revisado { background-color: #93C5FD; color: #1E3A8A; }
-        .estado-default { background-color: #F3F4F6; color: #4B5563; }
+        /* BUTTONS */
+        .btn-corporate-black {
+            background: var(--brand-dark); color: var(--white); padding: 10px 20px; border-radius: 8px;
+            font-size: 0.85rem; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+            transition: 0.2s ease;
+        }
+        .btn-corporate-black:hover { background: #000; transform: translateY(-1px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        
+        .btn-ghost-corporate {
+            background: var(--white); color: var(--text-main); padding: 10px 20px; border-radius: 8px;
+            font-size: 0.85rem; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+            border: 1px solid var(--border-soft); transition: 0.2s;
+        }
+        .btn-ghost-corporate:hover { background: #f8fafc; border-color: #cbd5e1; }
 
-        /* Acciones */
-        .acciones a { margin-right: 5px; color: #2563EB; text-decoration: none; }
-        .acciones a:hover { transform: scale(1.2); }
+        /* TOOLBAR */
+        .index-toolbar { margin-bottom: 24px; }
+        .search-form-corporate { display: flex; gap: 12px; }
+        .search-input-wrapper { position: relative; flex: 1; }
+        .search-input-wrapper i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.85rem; }
+        .search-input-wrapper input {
+            width: 100%; padding: 10px 10px 10px 40px; border-radius: 10px; border: 1px solid var(--border-soft);
+            background: var(--white); font-size: 0.9rem; outline: none; transition: 0.2s;
+        }
+        .search-input-wrapper input:focus { border-color: var(--brand-accent); box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.05); }
+        .btn-search-action { 
+            background: #fff; border: 1px solid var(--border-soft); padding: 0 20px; border-radius: 10px;
+            font-weight: 600; font-size: 0.85rem; color: var(--text-main); cursor: pointer; transition: 0.2s;
+        }
+        .btn-search-action:hover { background: #f8fafc; }
 
-        /* Mensaje sin tareas */
-        .sin-tareas { text-align: center; color: #6B7280; font-style: italic; }
+        /* TABLE CARD */
+        .table-card-container {
+            background: var(--white); border-radius: 16px; border: 1px solid var(--border-soft);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02); overflow: hidden;
+        }
+        .corporate-table { width: 100%; border-collapse: collapse; text-align: left; }
+        .corporate-table th {
+            background: #f8fafc; padding: 14px 20px; font-size: 0.7rem; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);
+            border-bottom: 1px solid var(--border-soft);
+        }
+        .corporate-table td { padding: 16px 20px; font-size: 0.85rem; border-bottom: 1px solid var(--border-soft); vertical-align: middle; }
+        .corporate-table tbody tr:hover { background-color: #fcfdfe; }
+        .text-id { font-family: monospace; font-weight: 600; color: var(--text-muted); }
+        .task-title-main { display: block; font-weight: 600; color: var(--brand-dark); }
+        .task-desc-sub { display: block; font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
 
-        /* Paginador */
-        .paginador { margin-top: 20px; text-align: center; }
-        .paginador li { display: inline-block; margin-right: 5px; }
-        .paginador li a, .paginador li span { padding: 5px 10px; border-radius: 4px; border: 1px solid #ccc; text-decoration: none; color: #1E3A8A; }
-        .paginador li a:hover { background-color: #BFDBFE; border-color: #3B82F6; color: #1E40AF; }
-        .paginador li.active span { background-color: #3B82F6; color: white; border-color: #3B82F6; }
+        /* BADGES & PRIO */
+        .badge-status-corp {
+            padding: 4px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+        }
+        .st-pending { background: #fef3c7; color: #b45309; }
+        .st-process { background: #e0f2fe; color: #0369a1; }
+        .st-review { background: #ede9fe; color: #5b21b6; }
+        .st-completed { background: #dcfce7; color: #15803d; }
+
+        .prio-indicator { font-size: 0.75rem; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+        .prio-indicator i { font-size: 6px; }
+        .prio-alta { color: #ef4444; }
+        .prio-media { color: #f59e0b; }
+        .prio-baja { color: #10b981; }
+
+        /* USER & ACTIONS */
+        .user-cell { display: flex; align-items: center; gap: 8px; }
+        .user-avatar-small {
+            width: 24px; height: 24px; border-radius: 50%; background: #e2e8f0;
+            display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 700;
+        }
+        .workflow-tag { 
+            font-size: 0.75rem; color: var(--text-muted); background: #f1f5f9; 
+            padding: 4px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px;
+        }
+        .actions-group { display: flex; gap: 8px; justify-content: flex-end; }
+        .btn-icon-table {
+            width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+            border-radius: 8px; color: var(--text-muted); transition: 0.2s;
+        }
+        .btn-icon-table:hover { background: #f1f5f9; color: var(--brand-accent); }
+        .text-right { text-align: right; }
+
+        /* FOOTER */
+        .index-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 24px; }
+        .pagination-info { font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
+        .empty-state-row { padding: 60px !important; text-align: center; color: var(--text-muted); }
+        .empty-state-row i { font-size: 2rem; margin-bottom: 10px; opacity: 0.2; }
     </style>
 </x-base-layout>
