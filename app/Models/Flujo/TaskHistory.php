@@ -10,6 +10,12 @@ class TaskHistory extends Model
 {
     use HasFactory;
 
+    /**
+     * Definición de la tabla (opcional si sigue la convención, 
+     * pero útil para claridad en flujos complejos)
+     */
+    protected $table = 'task_histories';
+
     protected $fillable = [
         'task_id',
         'estado_anterior',
@@ -19,16 +25,43 @@ class TaskHistory extends Model
     ];
 
     /**
-     * Tarea asociada al historial
+     * Conversión de tipos.
+     * Crucial para evitar el error "format() on string" en las vistas.
      */
-    public function task() {
+    protected $casts = [
+        'fecha_cambio' => 'datetime',
+        'created_at'   => 'datetime',
+        'updated_at'   => 'datetime',
+    ];
+
+    /**
+     * Relación: Tarea asociada al evento de auditoría.
+     * Permite acceder a $history->task->titulo
+     */
+    public function task() 
+    {
         return $this->belongsTo(Task::class);
     }
 
     /**
-     * Usuario que realizó el cambio
+     * Relación: Usuario que realizó la transición de estado.
+     * Se especifica 'cambiado_por' como la llave foránea.
      */
-    public function user() {
+    public function user() 
+    {
         return $this->belongsTo(User::class, 'cambiado_por');
+    }
+
+    /**
+     * Boot Method del Modelo.
+     * Automatiza la asignación de la fecha de cambio si no se provee.
+     */
+    protected static function booted()
+    {
+        static::creating(function ($history) {
+            if (!$history->fecha_cambio) {
+                $history->fecha_cambio = now();
+            }
+        });
     }
 }
