@@ -1,6 +1,6 @@
 {{-- resources/views/flujo/componentes/workflows-card.blade.php --}}
 
-<div class="projects-card-container">
+<div class="projects-card-container" id="workflows-container">
     <header class="card-header-minimal">
         <div class="header-info">
             <h2 class="card-title"><i class="fas fa-project-diagram"></i> Proyectos</h2>
@@ -14,69 +14,85 @@
     </header>
     
     <div class="card-toolbar-soft">
-        <form action="{{ route('flujo.workflows.index') }}" method="GET" class="search-box-soft">
+        <form id="search-form" class="search-box-soft">
             <i class="fas fa-search"></i>
-            <input type="text" name="search" placeholder="Buscar por nombre..." value="{{ request('search') }}">
+            <input type="text" name="search" id="search-input" placeholder="Búsqueda rápida..." value="{{ request('search') }}">
         </form>
 
-        @isset($estados, $prioridades)
-            <div class="filter-dropdown">
-                <button type="button" class="btn-filter-trigger" id="filterTrigger">
-                    <i class="fas fa-sliders-h"></i> <span>Filtros</span>
-                </button>
-                <div class="filter-popover" id="filterPopover">
-                    <form action="{{ route('flujo.workflows.index') }}" method="GET" class="filters-form">
-                        <input type="hidden" name="search" value="{{ request('search') }}">
-                        
+        <div class="filter-dropdown">
+            <button type="button" class="btn-filter-trigger" id="filterTrigger">
+                <i class="fas fa-sliders-h"></i> <span>Filtros Avanzados</span>
+            </button>
+            <div class="filter-popover" id="filterPopover">
+                <form id="filters-form" class="filters-form">
+                    {{-- Campo oculto para mantener la búsqueda global --}}
+                    <input type="hidden" name="search" id="filter-search" value="{{ request('search') }}">
+                    
+                    {{-- Filtro por Nombre (Variable de Modelo) --}}
+                    <div class="filter-group">
+                        <label>Nombre del Proceso</label>
+                        <input type="text" name="nombre" id="filter-nombre" placeholder="Nombre específico..." value="{{ request('nombre') }}" style="width: 100%; padding: 8px; border: 1px solid var(--p-border); border-radius: 8px; font-size: 0.8rem;">
+                    </div>
+
+                    @isset($estados)
                         <div class="filter-group">
                             <label>Estado</label>
-                            <select name="estado">
+                            <select name="estado" id="filter-estado">
                                 <option value="">Todos</option>
                                 @foreach($estados as $key => $value)
                                     <option value="{{ $key }}" {{ request('estado') == $key ? 'selected' : '' }}>{{ $value }}</option>
                                 @endforeach
                             </select>
                         </div>
+                    @endisset
 
+                    @isset($prioridades)
                         <div class="filter-group">
                             <label>Prioridad</label>
-                            <select name="prioridad">
+                            <select name="prioridad" id="filter-prioridad">
                                 <option value="">Todas</option>
                                 @foreach($prioridades as $key => $value)
                                     <option value="{{ $key }}" {{ request('prioridad') == $key ? 'selected' : '' }}>{{ $value }}</option>
                                 @endforeach
                             </select>
                         </div>
+                    @endisset
 
-                        <div class="filter-actions">
-                            <a href="{{ route('flujo.workflows.index') }}" class="btn-link">Limpiar</a>
-                            <button type="submit" class="btn-apply">Aplicar</button>
+                    {{-- FILTRO AGREGADO: Asignado A (Variable de Modelo) --}}
+                    @isset($users)
+                        <div class="filter-group">
+                            <label>Asignado A</label>
+                            <select name="asignado_a" id="filter-asignado">
+                                <option value="">Cualquier usuario</option>
+                                @foreach($users as $user)
+                                    <option value="{{ $user->id }}" {{ request('asignado_a') == $user->id ? 'selected' : '' }}>{{ $user->name }}</option>
+                                @endforeach
+                            </select>
                         </div>
-                    </form>
-                </div>
+                    @endisset
+
+                    <div class="filter-actions">
+                        <a href="#" id="clear-filters" class="btn-link">Limpiar</a>
+                        <button type="submit" class="btn-apply">Aplicar Filtros</button>
+                    </div>
+                </form>
             </div>
-        @endisset
+        </div>
     </div>
 
-    <div class="projects-grid-soft">
+    <div class="projects-grid-soft" id="workflows-grid">
         @forelse ($workflows as $workflow)
             @php
-                // LÓGICA DE PROGRESO INTEGRADA
                 $totalTasks = $workflow->tasks->count();
                 $completedTasks = $workflow->tasks->where('estado', 'completada')->count();
+                $progress = $totalTasks > 0 ? round(($completedTasks / $totalTasks) * 100) : ($workflow->estado === 'completado' ? 100 : 0);
                 
-                // Si el estado es 'completado', forzamos 100% aunque no tenga tareas.
-                if ($workflow->estado === 'completado') {
-                    $progress = 100;
-                } else {
-                    $progress = $totalTasks > 0 ? round(($completedTasks / $totalTasks) * 100) : 0;
-                }
-
-                // Color dinámico de la barra
-                $barColor = '#4f46e5'; // Indigo (Default/Activo)
-                if($workflow->estado === 'completado') $barColor = '#10b981'; // Verde
-                if($workflow->estado === 'pausado') $barColor = '#f59e0b'; // Naranja
-                if($workflow->estado === 'borrador') $barColor = '#94a3b8'; // Gris
+                $barColor = match($workflow->estado) {
+                    'completado' => '#10b981',
+                    'pausado' => '#f59e0b',
+                    'borrador' => '#94a3b8',
+                    default => '#4f46e5'
+                };
             @endphp
 
             <div class="project-item-card {{ $workflow->estado === 'archivado' ? 'is-archived' : '' }}">
@@ -114,148 +130,87 @@
                         </div>
                     </div>
                     <div class="p-user">
-                        <div class="user-avatar-mini" title="{{ $workflow->creator->name ?? 'Usuario' }}">
-                            {{ substr($workflow->creator->name ?? '?', 0, 1) }}
+                        <div class="user-avatar-mini" title="Asignado a: {{ $workflow->asignado->name ?? 'Sin asignar' }}" style="background: {{ $workflow->asignado_a ? '#10b981' : '#64748b' }}">
+                            {{ substr($workflow->asignado->name ?? '?', 0, 1) }}
                         </div>
                     </div>
                 </div>
             </div>
         @empty
             <div class="no-projects-soft">
-                <i class="fas fa-inbox"></i>
-                <p>No se encontraron flujos de trabajo</p>
-                <small>Intenta cambiar los filtros o crear uno nuevo.</small>
+                <i class="fas fa-search"></i>
+                <p>No se encontraron resultados.</p>
+                <small>Intenta ajustar los filtros de búsqueda.</small>
             </div>
         @endforelse
     </div>
     
-    <div class="pagination-minimal">
+    <div class="pagination-minimal" id="pagination-container">
         {{ $workflows->links() }}
     </div>
 </div>
 
 <style>
-    /* VARIABLES Y RESET */
     .projects-card-container {
         --p-primary: #4f46e5;
         --p-text: #0f172a;
         --p-text-light: #64748b;
         --p-border: #f1f5f9;
-        background: #fff;
-        border-radius: 16px;
-        padding: 24px;
-        font-family: 'Inter', sans-serif;
+        background: #fff; border-radius: 16px; padding: 24px; font-family: 'Inter', sans-serif; position: relative;
     }
-
-    /* HEADER */
     .card-header-minimal { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
     .card-title { font-size: 1.2rem; font-weight: 800; color: var(--p-text); margin: 0; display: flex; align-items: center; gap: 10px; }
     .card-title i { color: var(--p-primary); font-size: 1rem; }
     .subtitle { font-size: 0.8rem; color: var(--p-text-light); margin: 2px 0 0 0; }
-    
-    .btn-new-minimal {
-        background: #f8fafc; color: var(--p-text); border: 1px solid var(--p-border);
-        padding: 8px 14px; border-radius: 10px; font-weight: 600; font-size: 0.8rem;
-        text-decoration: none; transition: 0.2s;
-    }
+    .btn-new-minimal { background: #f8fafc; color: var(--p-text); border: 1px solid var(--p-border); padding: 8px 14px; border-radius: 10px; font-weight: 600; font-size: 0.8rem; text-decoration: none; transition: 0.2s; }
     .btn-new-minimal:hover { background: var(--p-primary); color: #fff; border-color: var(--p-primary); }
-
-    /* TOOLBAR & SEARCH */
     .card-toolbar-soft { display: flex; gap: 12px; margin-bottom: 24px; }
     .search-box-soft { flex: 1; position: relative; }
     .search-box-soft i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--p-text-light); font-size: 0.85rem; }
-    .search-box-soft input {
-        width: 100%; padding: 10px 10px 10px 36px; border: 1px solid var(--p-border);
-        border-radius: 12px; background: #f8fafc; font-size: 0.85rem; outline: none; transition: 0.2s;
-    }
+    .search-box-soft input { width: 100%; padding: 10px 10px 10px 36px; border: 1px solid var(--p-border); border-radius: 12px; background: #f8fafc; font-size: 0.85rem; outline: none; transition: 0.2s; }
     .search-box-soft input:focus { border-color: var(--p-primary); background: #fff; box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.05); }
-
-    /* GRID */
     .projects-grid-soft { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 20px; }
-
-    /* CARDS */
-    .project-item-card {
-        border: 1px solid var(--p-border); border-radius: 14px;
-        display: flex; flex-direction: column; transition: 0.3s ease;
-        background: #fff; position: relative;
-    }
-    .project-item-card:hover {
-        transform: translateY(-5px); border-color: #e2e8f0;
-        box-shadow: 0 12px 24px -10px rgba(0,0,0,0.06);
-    }
-
+    .project-item-card { border: 1px solid var(--p-border); border-radius: 14px; display: flex; flex-direction: column; transition: 0.3s ease; background: #fff; position: relative; }
+    .project-item-card:hover { transform: translateY(-5px); border-color: #e2e8f0; box-shadow: 0 12px 24px -10px rgba(0,0,0,0.06); }
     .p-card-body { padding: 20px; flex: 1; }
     .p-card-top { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-    .p-name { font-size: 0.95rem; font-weight: 700; margin: 0; flex: 1; }
+    .p-name { font-size: 0.95rem; font-weight: 700; margin: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .p-name a { color: var(--p-text); text-decoration: none; }
-    
     .p-priority-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
     .p-priority-dot.baja { background: #94a3b8; }
     .p-priority-dot.media { background: #3b82f6; }
     .p-priority-dot.alta { background: #f59e0b; }
     .p-priority-dot.crítica { background: #ef4444; box-shadow: 0 0 6px rgba(239, 68, 68, 0.4); }
-
     .p-actions-hidden { opacity: 0; transition: 0.2s; }
     .project-item-card:hover .p-actions-hidden { opacity: 1; }
     .edit-link { color: var(--p-text-light); font-size: 0.8rem; }
-
     .p-description { font-size: 0.8rem; color: var(--p-text-light); line-height: 1.5; margin: 0 0 20px 0; min-height: 36px; }
-
-    /* PROGRESS BAR */
     .p-progress-area { margin-top: auto; }
     .progress-label { display: flex; justify-content: space-between; font-size: 0.7rem; margin-bottom: 6px; color: var(--p-text-light); }
     .progress-track { height: 6px; background: #f1f5f9; border-radius: 10px; overflow: hidden; }
     .progress-fill-soft { height: 100%; border-radius: 10px; transition: 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
-
-    /* FOOTER CARD */
-    .p-card-footer {
-        padding: 12px 20px; border-top: 1px solid var(--p-border);
-        display: flex; justify-content: space-between; align-items: center; background: #fafafa;
-        border-radius: 0 0 14px 14px;
-    }
-    .p-status-tag {
-        font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
-        padding: 3px 8px; border-radius: 6px; letter-spacing: 0.02em;
-    }
+    .p-card-footer { padding: 12px 20px; border-top: 1px solid var(--p-border); display: flex; justify-content: space-between; align-items: center; background: #fafafa; border-radius: 0 0 14px 14px; }
+    .p-status-tag { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; letter-spacing: 0.02em; }
     .st-activo { background: #dcfce7; color: #15803d; }
     .st-borrador { background: #f1f5f9; color: #475569; }
     .st-pausado { background: #fef3c7; color: #b45309; }
     .st-completado { background: #e0e7ff; color: #4338ca; }
     .st-archivado { background: #ebebeb; color: #707070; }
-
     .p-dates { font-size: 0.7rem; color: var(--p-text-light); display: flex; align-items: center; gap: 5px; margin-left: 10px; }
-    .user-avatar-mini {
-        width: 24px; height: 24px; background: var(--p-primary); color: #fff;
-        border-radius: 50%; display: flex; align-items: center; justify-content: center;
-        font-size: 0.65rem; font-weight: 700;
-    }
-
-    /* POPOVER FILTROS */
+    .user-avatar-mini { width: 24px; height: 24px; background: var(--p-primary); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 700; }
     .filter-dropdown { position: relative; }
-    .btn-filter-trigger {
-        background: #fff; border: 1px solid var(--p-border); padding: 9px 15px;
-        border-radius: 12px; font-size: 0.85rem; color: var(--p-text-light);
-        cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 500;
-    }
-    .filter-popover {
-        position: absolute; top: 120%; right: 0; width: 240px;
-        background: white; border: 1px solid var(--p-border); border-radius: 14px;
-        box-shadow: 0 15px 30px rgba(0,0,0,0.1); padding: 16px;
-        z-index: 100; display: none;
-    }
+    .btn-filter-trigger { background: #fff; border: 1px solid var(--p-border); padding: 9px 15px; border-radius: 12px; font-size: 0.85rem; color: var(--p-text-light); cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 500; }
+    .filter-popover { position: absolute; top: 120%; right: 0; width: 260px; background: white; border: 1px solid var(--p-border); border-radius: 14px; box-shadow: 0 15px 30px rgba(0,0,0,0.1); padding: 16px; z-index: 100; display: none; }
     .filter-popover.active { display: block; animation: slideDown 0.2s ease; }
     .filter-group { margin-bottom: 12px; }
     .filter-group label { display: block; font-size: 0.7rem; font-weight: 700; color: var(--p-text-light); text-transform: uppercase; margin-bottom: 5px; }
-    .filter-group select { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid var(--p-border); font-size: 0.8rem; }
+    .filter-group select { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid var(--p-border); font-size: 0.8rem; outline: none; }
     .filter-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px solid var(--p-border); padding-top: 12px; }
     .btn-apply { background: var(--p-primary); color: white; border: none; padding: 7px 14px; border-radius: 8px; font-size: 0.75rem; font-weight: 600; cursor: pointer; }
     .btn-link { font-size: 0.75rem; color: var(--p-text-light); text-decoration: none; }
-
-    /* ESTADOS ESPECIALES */
-    .is-archived { opacity: 0.6; filter: grayscale(0.5); }
-    .no-projects-soft { grid-column: 1/-1; text-align: center; padding: 60px; color: var(--p-text-light); }
-    .no-projects-soft i { font-size: 2rem; margin-bottom: 15px; opacity: 0.3; display: block; }
-
+    .loading-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255, 255, 255, 0.8); display: flex; justify-content: center; align-items: center; z-index: 1000; border-radius: 16px; }
+    .loading-spinner { width: 40px; height: 40px; border: 4px solid rgba(79, 70, 229, 0.1); border-radius: 50%; border-top-color: var(--p-primary); animation: spin 1s ease-in-out infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
     @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
 </style>
 
@@ -263,6 +218,55 @@
     document.addEventListener('DOMContentLoaded', function() {
         const trigger = document.getElementById('filterTrigger');
         const popover = document.getElementById('filterPopover');
+        const searchInput = document.getElementById('search-input');
+        const filtersForm = document.getElementById('filters-form');
+        const clearFiltersBtn = document.getElementById('clear-filters');
+        const workflowsContainer = document.getElementById('workflows-container');
+        const workflowsGrid = document.getElementById('workflows-grid');
+        const paginationContainer = document.getElementById('pagination-container');
+
+        function showLoading() {
+            const loadingOverlay = document.createElement('div');
+            loadingOverlay.className = 'loading-overlay';
+            loadingOverlay.innerHTML = '<div class="loading-spinner"></div>';
+            workflowsContainer.style.position = 'relative';
+            workflowsContainer.appendChild(loadingOverlay);
+        }
+
+        function hideLoading() {
+            const loadingOverlay = workflowsContainer.querySelector('.loading-overlay');
+            if (loadingOverlay) loadingOverlay.remove();
+        }
+
+        function updateView(html) {
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
+            const newGrid = tempDiv.querySelector('#workflows-grid');
+            if (newGrid) workflowsGrid.innerHTML = newGrid.innerHTML;
+            const newPagination = tempDiv.querySelector('#pagination-container');
+            if (newPagination) paginationContainer.innerHTML = newPagination.innerHTML;
+            const newSubtitle = tempDiv.querySelector('.subtitle');
+            if (newSubtitle) document.querySelector('.subtitle').textContent = newSubtitle.textContent;
+            hideLoading();
+        }
+
+        function fetchWorkflows(params) {
+            showLoading();
+            fetch('{{ route("flujo.workflows.index") }}?' + params, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.html) updateView(data.html);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                hideLoading();
+            });
+        }
 
         if(trigger) {
             trigger.addEventListener('click', (e) => {
@@ -271,10 +275,51 @@
             });
         }
 
-        // Cerrar al hacer clic fuera
         document.addEventListener('click', (e) => {
             if (popover && !popover.contains(e.target) && !trigger.contains(e.target)) {
                 popover.classList.remove('active');
+            }
+        });
+
+        let searchTimeout;
+        if(searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                const searchTerm = e.target.value;
+                document.getElementById('filter-search').value = searchTerm;
+                searchTimeout = setTimeout(() => {
+                    const formData = new FormData(filtersForm);
+                    fetchWorkflows(new URLSearchParams(formData).toString());
+                }, 500);
+            });
+        }
+
+        if(filtersForm) {
+            filtersForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const formData = new FormData(filtersForm);
+                fetchWorkflows(new URLSearchParams(formData).toString());
+                popover.classList.remove('active');
+            });
+        }
+
+        if(clearFiltersBtn) {
+            clearFiltersBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                filtersForm.reset();
+                searchInput.value = '';
+                document.getElementById('filter-search').value = '';
+                fetchWorkflows('');
+                popover.classList.remove('active');
+            });
+        }
+
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.pagination a')) {
+                e.preventDefault();
+                const url = e.target.closest('.pagination a').getAttribute('href');
+                const params = url.split('?')[1];
+                fetchWorkflows(params);
             }
         });
     });
