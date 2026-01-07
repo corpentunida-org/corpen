@@ -9,6 +9,7 @@ use App\Models\Soportes\ScpObservacion;
 use App\Models\Soportes\ScpTipo;
 use App\Models\Soportes\ScpPrioridad;
 use App\Models\Soportes\ScpCategoria;
+use App\Models\Soportes\ScpUsuario;
 use App\Models\Archivo\GdoArea;
 use App\Models\Archivo\GdoCargo;
 use App\Models\Creditos\LineaCredito;
@@ -250,22 +251,26 @@ class ScpEstadisticaController extends Controller
             ->get();
         
         // --- Datos para la tabla de top agentes ---
-        $topAgentes = User::join('scp_soportes', 'users.id', '=', 'scp_soportes.usuario_escalado')
-            ->where('scp_soportes.estado', $idEstadoCerrado)
+        $topAgentes = ScpUsuario::join('scp_soportes', 'scp_usuarios.id', '=', 'scp_soportes.usuario_escalado')
+            ->join('MaeTerceros', 'MaeTerceros.cod_ter', '=', 'scp_usuarios.cod_ter')
+            ->where('scp_soportes.estado', 3)
             ->whereBetween('scp_soportes.created_at', [$startDate, $endDate])
             ->selectRaw('
-                users.id,
-                users.name,
+                scp_usuarios.id,
+                MaeTerceros.nom_ter,
                 COUNT(scp_soportes.id) as total_cerrados,
-                AVG(TIMESTAMPDIFF(HOUR, 
-                    (SELECT timestam FROM scp_observaciones WHERE id_scp_soporte = scp_soportes.id ORDER BY timestam ASC LIMIT 1),
-                    (SELECT timestam FROM scp_observaciones WHERE id_scp_soporte = scp_soportes.id AND id_scp_estados = ? ORDER BY timestam DESC LIMIT 1)
-                )) as tiempo_promedio
-            ', [$idEstadoCerrado])
-            ->groupBy('users.id', 'users.name')
-            ->orderBy('total_cerrados', 'desc')
-            ->limit(10)
+                AVG(
+                    TIMESTAMPDIFF(HOUR,
+                        (SELECT timestam FROM scp_observaciones WHERE id_scp_soporte = scp_soportes.id ORDER BY timestam ASC LIMIT 1),
+                        (SELECT timestam FROM scp_observaciones WHERE id_scp_soporte = scp_soportes.id AND id_scp_estados = 3 ORDER BY timestam DESC LIMIT 1)
+                    )
+                ) as tiempo_promedio
+            ')
+            ->groupBy('scp_usuarios.id', 'MaeTerceros.nom_ter')
+            ->orderByDesc('total_cerrados')
             ->get();
+
+            
 
         // --- 3. Pasar todos los datos a la vista ---
         return view('soportes.estadisticas.index', compact(

@@ -838,7 +838,7 @@
                                             <th class="text-center">Satisfacción</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
+                                    <tbody>                                        
                                         @foreach($topAgentes as $agente)
                                             <tr>
                                                 <td>
@@ -848,7 +848,7 @@
                                                                 {{ substr($agente->name, 0, 2) }}
                                                             </span>
                                                         </div>
-                                                        <div>{{ $agente->name }}</div>
+                                                        <div>{{ $agente->nom_ter }}</div>
                                                     </div>
                                                 </td>
                                                 <td class="text-center">{{ $agente->total_cerrados }}</td>
