@@ -8,22 +8,20 @@
         </div>
         <div class="header-actions">
             <a href="{{ route('flujo.workflows.create') }}" class="btn-new-minimal">
-                <i class="fas fa-plus"></i> <span class="d-none-mobile">Nuevo Proyecto</span>
+                <i class="fas fa-plus"></i> Nuevo Proyecto
             </a>
         </div>
     </header>
     
     <div class="card-toolbar-soft">
         <form id="search-form" class="search-box-soft">
-            <div class="search-inner-wrapper">
-                <i class="fas fa-search search-icon"></i>
-                <input type="text" name="search" id="search-input" placeholder="Búsqueda rápida..." value="{{ request('search') }}">
-            </div>
+            <i class="fas fa-search"></i>
+            <input type="text" name="search" id="search-input" placeholder="Búsqueda rápida..." value="{{ request('search') }}">
         </form>
 
         <div class="filter-dropdown">
             <button type="button" class="btn-filter-trigger" id="filterTrigger">
-                <i class="fas fa-sliders-h"></i> <span class="d-none-mobile">Filtros Avanzados</span>
+                <i class="fas fa-sliders-h"></i> <span>Filtros Avanzados</span>
             </button>
             <div class="filter-popover" id="filterPopover">
                 <form id="filters-form" class="filters-form">
@@ -168,7 +166,7 @@
                             </div>
                         </div>
                         <div class="p-user">
-                            <div class="user-avatar-mini" title="Asignado a: {{ $workflow->asignado->name ?? 'Sin asignar' }}" style="background: {{ $workflow->asignado_a ? '#4f46e5' : '#64748b' }}">
+                            <div class="user-avatar-mini" title="Asignado a: {{ $workflow->asignado->name ?? 'Sin asignar' }}" style="background: {{ $workflow->asignado_a ? '#10b981' : '#64748b' }}">
                                 {{ substr($workflow->asignado->name ?? '?', 0, 1) }}
                             </div>
                         </div>
@@ -190,98 +188,146 @@
 </div>
 
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;800&display=swap');
-
+    /* VARIABLES Y RESET (TUYOS) */
     .projects-card-container {
         --p-primary: #4f46e5;
         --p-text: #0f172a;
         --p-text-light: #64748b;
-        --p-border: #e2e8f0;
-        background: #fff; border-radius: 20px; padding: 28px; font-family: 'Inter', sans-serif; position: relative;
-        border: 1px solid var(--p-border);
+        --p-border: #f1f5f9;
+        background: #fff; border-radius: 16px; padding: 24px; font-family: 'Inter', sans-serif; position: relative;
     }
 
-    /* Header */
-    .card-header-minimal { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
-    .card-title { font-family: 'Outfit'; font-size: 1.4rem; font-weight: 800; color: var(--p-text); margin: 0; display: flex; align-items: center; gap: 12px; }
-    .card-title i { color: var(--p-primary); }
-    .subtitle { font-size: 0.85rem; color: var(--p-text-light); margin-top: 2px; }
-    .btn-new-minimal { background: #f8fafc; color: var(--p-text); border: 1px solid var(--p-border); padding: 10px 16px; border-radius: 12px; font-weight: 700; font-size: 0.85rem; text-decoration: none; transition: 0.2s; display: flex; align-items: center; gap: 8px; }
+    /* ESTILOS PARA EL DESPLAZAMIENTO HORIZONTAL (NUEVO) */
+    .horizontal-scroll-wrapper {
+        width: 100%;
+        overflow-x: auto;
+        padding-bottom: 15px; /* Espacio para la barra */
+        cursor: grab;
+    }
+
+    .horizontal-scroll-wrapper:active {
+        cursor: grabbing;
+    }
+
+    /* Personalización de la barra de desplazamiento */
+    .horizontal-scroll-wrapper::-webkit-scrollbar {
+        height: 8px;
+    }
+    .horizontal-scroll-wrapper::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+    .horizontal-scroll-wrapper::-webkit-scrollbar-thumb {
+        background: #c7c7c7;
+        border-radius: 10px;
+        transition: background 0.3s;
+    }
+    .horizontal-scroll-wrapper::-webkit-scrollbar-thumb:hover {
+        background: var(--p-primary);
+    }
+
+    /* Ajuste de la Grilla para que no rompa filas */
+    .projects-grid-soft {
+        display: flex; /* Cambiado de grid a flex */
+        gap: 20px;
+        flex-wrap: nowrap; /* Fuerza una sola línea */
+        width: max-content; /* Se ajusta al contenido */
+        min-width: 100%;
+    }
+
+    /* Ajuste de la Card para mantener tamaño constante en el scroll */
+    .project-item-card {
+        width: 320px; /* Ancho fijo para las tarjetas */
+        flex-shrink: 0; /* Evita que se encojan */
+        border: 1px solid var(--p-border); border-radius: 14px;
+        display: flex; flex-direction: column; transition: 0.3s ease;
+        background: #fff; position: relative;
+    }
+
+    /* TUS ESTILOS RESTANTES */
+    .card-header-minimal { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .card-title { font-size: 1.2rem; font-weight: 800; color: var(--p-text); margin: 0; display: flex; align-items: center; gap: 10px; }
+    .card-title i { color: var(--p-primary); font-size: 1rem; }
+    .subtitle { font-size: 0.8rem; color: var(--p-text-light); margin: 2px 0 0 0; }
+    .btn-new-minimal { background: #f8fafc; color: var(--p-text); border: 1px solid var(--p-border); padding: 8px 14px; border-radius: 10px; font-weight: 600; font-size: 0.8rem; text-decoration: none; transition: 0.2s; }
     .btn-new-minimal:hover { background: var(--p-primary); color: #fff; border-color: var(--p-primary); }
-
-    /* Toolbar Simétrica */
-    .card-toolbar-soft { display: flex; gap: 12px; margin-bottom: 30px; height: 48px; align-items: stretch; }
-    .search-box-soft { flex: 1; position: relative; display: flex; align-items: center; }
-    .search-inner-wrapper { position: relative; width: 100%; height: 100%; display: flex; align-items: center; }
-    .search-box-soft i { position: absolute; left: 16px; color: var(--p-text-light); font-size: 0.9rem; z-index: 2; }
-    .search-box-soft input { width: 100%; height: 100%; padding: 0 10px 0 45px; border: 1px solid var(--p-border); border-radius: 14px; background: #f8fafc; font-size: 0.9rem; outline: none; transition: 0.2s; font-weight: 500; }
-    .search-box-soft input:focus { border-color: var(--p-primary); background: #fff; box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.08); }
-
-    /* Filtros trigger */
-    .btn-filter-trigger { height: 100%; background: #fff; border: 1px solid var(--p-border); padding: 0 20px; border-radius: 14px; font-size: 0.85rem; color: var(--p-text); cursor: pointer; display: flex; align-items: center; gap: 10px; font-weight: 700; transition: 0.2s; }
-    .btn-filter-trigger:hover { background: #f8fafc; border-color: var(--p-primary); }
-
-    /* Popover */
-    .filter-popover { position: absolute; top: calc(100% + 10px); right: 0; width: 320px; background: white; border: 1px solid var(--p-border); border-radius: 16px; box-shadow: 0 15px 40px rgba(0,0,0,0.12); padding: 20px; z-index: 1000; display: none; }
-    .filter-popover.active { display: block; animation: slideDown 0.3s ease; }
-
-    /* Scroll Horizontal */
-    .horizontal-scroll-wrapper { width: 100%; overflow-x: auto; padding: 5px 0 20px 0; cursor: grab; }
-    .horizontal-scroll-wrapper::-webkit-scrollbar { height: 6px; }
-    .horizontal-scroll-wrapper::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
-    .horizontal-scroll-wrapper::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-    
-    .projects-grid-soft { display: flex; gap: 20px; flex-wrap: nowrap; width: max-content; min-width: 100%; }
-
-    /* Card Item */
-    .project-item-card { width: 320px; flex-shrink: 0; border: 1px solid var(--p-border); border-radius: 18px; background: #fff; transition: 0.3s ease; display: flex; flex-direction: column; overflow: hidden; }
-    .project-item-card:hover { transform: translateY(-5px); border-color: var(--p-primary); box-shadow: 0 12px 25px rgba(0,0,0,0.05); }
-
-    .p-card-body { padding: 24px; flex: 1; display: flex; flex-direction: column; }
-    .p-card-top { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
-    .p-name { font-size: 1.05rem; font-weight: 700; margin: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .card-toolbar-soft { display: flex; gap: 12px; margin-bottom: 24px; }
+    .search-box-soft { flex: 1; position: relative; }
+    .search-box-soft i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--p-text-light); font-size: 0.85rem; }
+    .search-box-soft input { width: 100%; padding: 10px 10px 10px 36px; border: 1px solid var(--p-border); border-radius: 12px; background: #f8fafc; font-size: 0.85rem; outline: none; transition: 0.2s; }
+    .search-box-soft input:focus { border-color: var(--p-primary); background: #fff; box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.05); }
+    .project-item-card:hover { transform: translateY(-5px); border-color: #e2e8f0; box-shadow: 0 12px 24px -10px rgba(0,0,0,0.06); }
+    .p-card-body { padding: 20px; flex: 1; }
+    .p-card-top { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .p-name { font-size: 0.95rem; font-weight: 700; margin: 0; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .p-name a { color: var(--p-text); text-decoration: none; }
-    .p-priority-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .p-priority-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
     .p-priority-dot.baja { background: #94a3b8; }
     .p-priority-dot.media { background: #3b82f6; }
     .p-priority-dot.alta { background: #f59e0b; }
-    .p-priority-dot.crítica { background: #ef4444; box-shadow: 0 0 8px rgba(239, 68, 68, 0.4); }
-
-    .p-description { font-size: 0.85rem; color: var(--p-text-light); line-height: 1.5; margin-bottom: 20px; min-height: 42px; }
-
-    /* Progress */
-    .progress-label { display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 8px; color: var(--p-text-light); font-weight: 600; }
-    .progress-track { height: 7px; background: #f1f5f9; border-radius: 10px; overflow: hidden; }
-    .progress-fill-soft { height: 100%; border-radius: 10px; transition: 0.8s ease; }
-
-    /* Footer Card */
-    .p-card-footer { padding: 15px 24px; border-top: 1px solid var(--p-border); display: flex; justify-content: space-between; align-items: center; background: #fafbfc; }
-    .p-status-tag { font-size: 10px; font-weight: 800; text-transform: uppercase; padding: 4px 10px; border-radius: 8px; }
+    .p-priority-dot.crítica { background: #ef4444; box-shadow: 0 0 6px rgba(239, 68, 68, 0.4); }
+    .p-actions-hidden { opacity: 0; transition: 0.2s; }
+    .project-item-card:hover .p-actions-hidden { opacity: 1; }
+    .edit-link { color: var(--p-text-light); font-size: 0.8rem; }
+    .p-description { font-size: 0.8rem; color: var(--p-text-light); line-height: 1.5; margin: 0 0 20px 0; min-height: 36px; }
+    .p-progress-area { margin-top: auto; }
+    .progress-label { display: flex; justify-content: space-between; font-size: 0.7rem; margin-bottom: 6px; color: var(--p-text-light); }
+    .progress-track { height: 6px; background: #f1f5f9; border-radius: 10px; overflow: hidden; }
+    .progress-fill-soft { height: 100%; border-radius: 10px; transition: 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+    .p-card-footer { padding: 12px 20px; border-top: 1px solid var(--p-border); display: flex; justify-content: space-between; align-items: center; background: #fafafa; border-radius: 0 0 14px 14px; }
+    .p-status-tag { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; letter-spacing: 0.02em; }
     .st-activo { background: #dcfce7; color: #15803d; }
+    .st-borrador { background: #f1f5f9; color: #475569; }
     .st-pausado { background: #fef3c7; color: #b45309; }
     .st-completado { background: #e0e7ff; color: #4338ca; }
-    .p-dates { font-size: 11px; font-weight: 600; color: var(--p-text-light); }
-    .user-avatar-mini { width: 28px; height: 28px; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 800; }
-
-    /* Acordeón */
-    .accordion-header { padding: 12px; background: #f8fafc; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border-radius: 8px; }
-    .accordion-item.active .accordion-header { background: #f1f5f9; }
-    .accordion-content { max-height: 0; overflow: hidden; transition: 0.3s ease; }
-    .accordion-item.active .accordion-content { max-height: 200px; padding: 10px; }
-
-    /* MOBILE UX */
-    @media (max-width: 768px) {
-        .projects-card-container { padding: 20px 15px; border-radius: 0; }
-        .d-none-mobile { display: none !important; }
-        .card-toolbar-soft { height: auto; flex-direction: column; }
-        .btn-filter-trigger { height: 48px; width: 100%; justify-content: center; }
-        .horizontal-scroll-wrapper { overflow-x: visible; cursor: default; }
-        .projects-grid-soft { flex-direction: column; width: 100%; gap: 16px; }
-        .project-item-card { width: 100%; }
-        .filter-popover { position: fixed; top: auto; bottom: 0; left: 0; right: 0; width: 100%; border-radius: 20px 20px 0 0; }
-    }
-
+    .st-archivado { background: #ebebeb; color: #707070; }
+    .p-dates { font-size: 0.7rem; color: var(--p-text-light); display: flex; align-items: center; gap: 5px; margin-left: 10px; }
+    .user-avatar-mini { width: 24px; height: 24px; background: var(--p-primary); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 700; }
+    .filter-dropdown { position: relative; }
+    .btn-filter-trigger { background: #fff; border: 1px solid var(--p-border); padding: 9px 15px; border-radius: 12px; font-size: 0.85rem; color: var(--p-text-light); cursor: pointer; display: flex; align-items: center; gap: 8px; font-weight: 500; }
+    .filter-popover { position: absolute; top: 120%; right: 0; width: 320px; background: white; border: 1px solid var(--p-border); border-radius: 14px; box-shadow: 0 15px 30px rgba(0,0,0,0.1); padding: 16px; z-index: 1000; display: none; max-height: 80vh; overflow-y: auto; }
+    .filter-popover.active { display: block; animation: slideDown 0.2s ease; }
+    .filter-group { margin-bottom: 12px; }
+    .filter-group label { display: block; font-size: 0.7rem; font-weight: 700; color: var(--p-text-light); text-transform: uppercase; margin-bottom: 5px; }
+    .filter-group select, .filter-group input { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid var(--p-border); font-size: 0.8rem; outline: none; }
+    .filter-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px solid var(--p-border); padding-top: 12px; position: sticky; bottom: 0; background: white; }
+    .btn-apply { background: var(--p-primary); color: white; border: none; padding: 7px 14px; border-radius: 8px; font-size: 0.75rem; font-weight: 600; cursor: pointer; }
+    .btn-link { font-size: 0.75rem; color: var(--p-text-light); text-decoration: none; }
+    .loading-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255, 255, 255, 0.8); display: flex; justify-content: center; align-items: center; z-index: 1000; border-radius: 16px; }
+    .loading-spinner { width: 40px; height: 40px; border: 4px solid rgba(79, 70, 229, 0.1); border-radius: 50%; border-top-color: var(--p-primary); animation: spin 1s ease-in-out infinite; }
+    
+    /* ACORDEÓN */
+    .accordion-container { margin-bottom: 15px; }
+    .accordion-item { border: 1px solid var(--p-border); border-radius: 8px; margin-bottom: 8px; overflow: hidden; }
+    .accordion-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #f8fafc; cursor: pointer; transition: background-color 0.2s; }
+    .accordion-header:hover { background: #f1f5f9; }
+    .accordion-header label { margin: 0; font-size: 0.8rem; font-weight: 600; color: var(--p-text); cursor: pointer; }
+    .accordion-icon { transition: transform 0.2s; color: var(--p-text-light); font-size: 0.7rem; }
+    .accordion-item.active .accordion-icon { transform: rotate(180deg); }
+    .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+    .accordion-item.active .accordion-content { max-height: 200px; }
+    .accordion-content .filter-group { padding: 10px 12px; margin-bottom: 0; }
+    
+    @keyframes spin { to { transform: rotate(360deg); } }
     @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* MEDIA QUERIES PARA CELULAR */
+    @media (max-width: 768px) {
+        .projects-card-container { padding: 15px; border-radius: 0; }
+        .card-header-minimal { flex-direction: column; align-items: flex-start; gap: 10px; }
+        .header-actions { width: 100%; }
+        .btn-new-minimal { width: 100%; justify-content: center; }
+        .card-toolbar-soft { flex-direction: column; gap: 10px; }
+        .search-box-soft { width: 100%; }
+        .filter-dropdown { width: 100%; }
+        .btn-filter-trigger { width: 100%; justify-content: center; }
+        .filter-popover { width: calc(100vw - 30px); right: 0; left: 0; position: fixed; top: auto; bottom: 0; border-radius: 16px 16px 0 0; }
+        
+        /* Desactivar scroll horizontal forzado y pasar a vertical o scroll suave */
+        .projects-grid-soft { flex-wrap: wrap; width: 100%; justify-content: center; }
+        .project-item-card { width: 100%; max-width: 400px; }
+        .horizontal-scroll-wrapper { overflow-x: hidden; }
+    }
 </style>
 
 <script>
@@ -295,76 +341,118 @@
         const workflowsGrid = document.getElementById('workflows-grid');
         const paginationContainer = document.getElementById('pagination-container');
 
-        // DRAG-TO-SCROLL
+        // LOGICA DE DRAG-TO-SCROLL (NUEVO)
         const scrollContainer = document.querySelector('.horizontal-scroll-wrapper');
-        let isDown = false; let startX; let scrollLeft;
+        let isDown = false;
+        let startX;
+        let scrollLeft;
 
-        if (window.innerWidth > 768) {
-            scrollContainer.addEventListener('mousedown', (e) => {
-                isDown = true; scrollContainer.classList.add('active');
-                startX = e.pageX - scrollContainer.offsetLeft;
-                scrollLeft = scrollContainer.scrollLeft;
-            });
-            scrollContainer.addEventListener('mouseleave', () => { isDown = false; });
-            scrollContainer.addEventListener('mouseup', () => { isDown = false; });
-            scrollContainer.addEventListener('mousemove', (e) => {
-                if(!isDown) return;
-                e.preventDefault();
-                const x = e.pageX - scrollContainer.offsetLeft;
-                const walk = (x - startX) * 2; 
-                scrollContainer.scrollLeft = scrollLeft - walk;
-            });
+        scrollContainer.addEventListener('mousedown', (e) => {
+            isDown = true;
+            startX = e.pageX - scrollContainer.offsetLeft;
+            scrollLeft = scrollContainer.scrollLeft;
+        });
+        scrollContainer.addEventListener('mouseleave', () => { isDown = false; });
+        scrollContainer.addEventListener('mouseup', () => { isDown = false; });
+        scrollContainer.addEventListener('mousemove', (e) => {
+            if(!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - scrollContainer.offsetLeft;
+            const walk = (x - startX) * 2; 
+            scrollContainer.scrollLeft = scrollLeft - walk;
+        });
+
+        // FUNCIONES AJAX
+        function showLoading() {
+            const loadingOverlay = document.createElement('div');
+            loadingOverlay.className = 'loading-overlay';
+            loadingOverlay.innerHTML = '<div class="loading-spinner"></div>';
+            workflowsContainer.style.position = 'relative';
+            workflowsContainer.appendChild(loadingOverlay);
         }
 
-        function initializeAccordions() {
-            document.querySelectorAll('.accordion-header').forEach(header => {
-                header.replaceWith(header.cloneNode(true));
-            });
-            document.querySelectorAll('.accordion-header').forEach(header => {
-                header.addEventListener('click', function() {
-                    const item = this.parentElement;
-                    item.classList.toggle('active');
-                    document.querySelectorAll('.accordion-item').forEach(other => {
-                        if (other !== item) other.classList.remove('active');
-                    });
-                });
-            });
+        function hideLoading() {
+            const loadingOverlay = workflowsContainer.querySelector('.loading-overlay');
+            if (loadingOverlay) loadingOverlay.remove();
         }
 
         function updateView(html) {
             const tempDiv = document.createElement('div');
             tempDiv.innerHTML = html;
+            
             const newGrid = tempDiv.querySelector('#workflows-grid');
             if (newGrid) workflowsGrid.innerHTML = newGrid.innerHTML;
+            
             const newPagination = tempDiv.querySelector('#pagination-container');
             if (newPagination) paginationContainer.innerHTML = newPagination.innerHTML;
-            initializeAccordions();
-            const pop = document.getElementById('filterPopover');
-            if (pop) {
-                const newPop = tempDiv.querySelector('#filterPopover');
-                if (newPop) pop.innerHTML = newPop.innerHTML;
+            
+            const newSubtitle = tempDiv.querySelector('.subtitle');
+            if (newSubtitle) document.querySelector('.subtitle').textContent = newSubtitle.textContent;
+            
+            const newFilterPopover = tempDiv.querySelector('#filterPopover');
+            if (newFilterPopover) {
+                popover.innerHTML = newFilterPopover.innerHTML;
+                const newFiltersForm = document.getElementById('filters-form');
+                if (newFiltersForm) {
+                    newFiltersForm.addEventListener('submit', function(e) {
+                        e.preventDefault();
+                        const params = new URLSearchParams();
+                        const formData = new FormData(newFiltersForm);
+                        for (let [key, value] of formData.entries()) {
+                            if (value !== "") {
+                                params.append(key, value);
+                            }
+                        }
+                        fetchWorkflows(params.toString());
+                        popover.classList.remove('active');
+                    });
+                }
+                initializeAccordions();
             }
+            hideLoading();
         }
 
         function fetchWorkflows(params) {
-            workflowsContainer.style.opacity = '0.5';
+            showLoading();
             fetch('{{ route("flujo.workflows.index") }}?' + params, {
-                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                }
             })
-            .then(res => res.json())
+            .then(response => response.json())
             .then(data => {
                 if (data.html) updateView(data.html);
-                workflowsContainer.style.opacity = '1';
             })
-            .catch(() => { workflowsContainer.style.opacity = '1'; });
+            .catch(error => {
+                console.error('Error:', error);
+                hideLoading();
+            });
+        }
+
+        function initializeAccordions() {
+            const accordionHeaders = document.querySelectorAll('.accordion-header');
+            accordionHeaders.forEach(header => {
+                header.addEventListener('click', function() {
+                    const accordionItem = this.parentElement;
+                    accordionItem.classList.toggle('active');
+                    document.querySelectorAll('.accordion-item').forEach(item => {
+                        if (item !== accordionItem) {
+                            item.classList.remove('active');
+                        }
+                    });
+                });
+            });
         }
 
         initializeAccordions();
 
-        trigger?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            popover.classList.toggle('active');
-        });
+        if(trigger) {
+            trigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+                popover.classList.toggle('active');
+            });
+        }
 
         document.addEventListener('click', (e) => {
             if (popover && !popover.contains(e.target) && !trigger.contains(e.target)) {
@@ -373,30 +461,51 @@
         });
 
         let searchTimeout;
-        searchInput?.addEventListener('input', (e) => {
-            clearTimeout(searchTimeout);
-            const searchTerm = e.target.value;
-            document.getElementById('filter-search').value = searchTerm;
-            searchTimeout = setTimeout(() => {
+        if(searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                const searchTerm = e.target.value;
+                document.getElementById('filter-search').value = searchTerm;
+                searchTimeout = setTimeout(() => {
+                    const formData = new FormData(filtersForm);
+                    fetchWorkflows(new URLSearchParams(formData).toString());
+                }, 500);
+            });
+        }
+
+        if(filtersForm) {
+            filtersForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const params = new URLSearchParams();
                 const formData = new FormData(filtersForm);
-                fetchWorkflows(new URLSearchParams(formData).toString());
-            }, 500);
-        });
+                for (let [key, value] of formData.entries()) {
+                    if (value !== "") {
+                        params.append(key, value);
+                    }
+                }
+                fetchWorkflows(params.toString());
+                popover.classList.remove('active');
+            });
+        }
 
-        filtersForm?.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const formData = new FormData(filtersForm);
-            fetchWorkflows(new URLSearchParams(formData).toString());
-            popover.classList.remove('active');
-        });
+        if(clearFiltersBtn) {
+            clearFiltersBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                filtersForm.reset();
+                searchInput.value = '';
+                document.getElementById('filter-search').value = '';
+                fetchWorkflows('');
+                popover.classList.remove('active');
+            });
+        }
 
-        clearFiltersBtn?.addEventListener('click', (e) => {
-            e.preventDefault();
-            filtersForm.reset();
-            searchInput.value = '';
-            document.getElementById('filter-search').value = '';
-            fetchWorkflows('');
-            popover.classList.remove('active');
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.pagination a')) {
+                e.preventDefault();
+                const url = e.target.closest('.pagination a').getAttribute('href');
+                const params = url.split('?')[1];
+                fetchWorkflows(params);
+            }
         });
     });
 </script>
