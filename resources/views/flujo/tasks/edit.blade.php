@@ -3,157 +3,201 @@
         {{-- Encabezado Ejecutivo --}}
         <header class="form-header">
             <div class="header-content">
-                <a href="{{ route('flujo.tasks.index') }}" class="btn-back-minimal">
+                <a href="{{ route('flujo.tasks.index') }}" class="btn-back-minimal" title="Cancelar y volver">
                     <i class="fas fa-arrow-left"></i>
                 </a>
-                <div>
-                    <span class="system-tag">Gobernanza de Unidades</span>
-                    <h1 class="main-title">Edición de Tarea #{{ $task->id }}</h1>
-                    <p class="main-subtitle">Modifique los parámetros operativos o gestione el feedback colaborativo.</p>
+                <div class="header-titles">
+                    <span class="system-tag"><i class="fas fa-shield-alt"></i> Gobernanza de Unidades</span>
+                    <h1 class="main-title">Edición de Tarea <span class="text-accent">#{{ $task->id }}</span></h1>
+                    <p class="main-subtitle">Ajuste parámetros operativos y gestione el hilo de comunicación.</p>
                 </div>
             </div>
             <div class="header-actions">
-                <button type="submit" form="task-update-form" class="btn-corporate-black">
-                    <i class="fas fa-save"></i> Actualizar Registro
+                {{-- Botón que activa el envío del formulario --}}
+                <button type="submit" form="task-update-form" class="btn-update-record">
+                    <i class="fas fa-cloud-upload-alt"></i> <span>Actualizar Registro</span>
                 </button>
             </div>
         </header>
 
+        {{-- Banner de Contexto de Proyecto (Workflow) INTERACTIVO --}}
+        @if($task->workflow)
+            <a href="{{ route('flujo.workflows.show', $task->workflow->id) }}" class="workflow-context-edit-banner clickable-banner" title="Click para ir al Proyecto / Workflow">
+                <div class="wf-edit-icon">
+                    <i class="fas fa-project-diagram"></i>
+                </div>
+                <div class="wf-edit-details">
+                    <span class="wf-edit-label">Proyecto / Workflow de Origen <i class="fas fa-external-link-alt ml-1"></i></span>
+                    <h2 class="wf-edit-title">{{ $task->workflow->nombre }}</h2>
+                </div>
+                <div class="wf-edit-status">
+                    <span class="pulse-indicator"></span>
+                    <span class="wf-status-text">Vinculado</span>
+                </div>
+            </a>
+        @else
+            <div class="workflow-context-edit-banner no-wf">
+                <div class="wf-edit-icon">
+                    <i class="fas fa-project-diagram"></i>
+                </div>
+                <div class="wf-edit-details">
+                    <span class="wf-edit-label">Proyecto / Workflow de Origen</span>
+                    <h2 class="wf-edit-title">Unidad Independiente</h2>
+                </div>
+            </div>
+        @endif
+
         <main class="edit-grid">
             {{-- Columna Izquierda: Formulario Principal --}}
             <section class="form-main-column">
-                <form action="{{ route('flujo.tasks.update', $task) }}" method="POST" id="task-update-form" class="modern-card">
+                <form action="{{ route('flujo.tasks.update', $task) }}" method="POST" id="task-update-form" class="modern-card-edit">
                     @csrf
                     @method('PUT')
 
-                    <div class="form-group">
-                        <label for="titulo">Título de la Unidad</label>
-                        <input type="text" name="titulo" id="titulo" value="{{ old('titulo', $task->titulo) }}" class="form-input" required>
+                    {{-- 
+                        LÓGICA DE REDIRECCIÓN PARA EL CONTROLADOR: 
+                        Se envía la ruta exacta del proyecto/workflow para que el update sepa a dónde regresar.
+                    --}}
+                    @if($task->workflow)
+                        <input type="hidden" name="redirect_to" value="{{ route('flujo.workflows.show', $task->workflow->id) }}">
+                    @endif
+
+                    <div class="form-section-header">
+                        <i class="fas fa-info-circle"></i> Información General
+                    </div>
+
+                    <div class="form-group floating-label">
+                        <label for="titulo">Título de la Unidad de Trabajo</label>
+                        <input type="text" name="titulo" id="titulo" value="{{ old('titulo', $task->titulo) }}" class="form-input-corp" placeholder="Ej: Reporte de facturación mensual" required>
                     </div>
 
                     <div class="form-group">
-                        <label for="descripcion">Especificaciones Técnicas / Descripción</label>
-                        <textarea name="descripcion" id="descripcion" rows="6" class="form-input">{{ old('descripcion', $task->descripcion) }}</textarea>
+                        <label for="descripcion">Especificaciones Técnicas / Hoja de Ruta</label>
+                        <textarea name="descripcion" id="descripcion" rows="6" class="form-input-corp" placeholder="Detalle los pasos o requisitos técnicos...">{{ old('descripcion', $task->descripcion) }}</textarea>
+                    </div>
+
+                    <div class="form-section-header mt-4">
+                        <i class="fas fa-user-cog"></i> Parámetros de Asignación
                     </div>
 
                     <div class="form-row">
                         <div class="form-group flex-1">
-                            <label for="workflow_id">Workflow de Origen</label>
-                            <select name="workflow_id" id="workflow_id" class="form-select">
-                                <option value="">Sin Workflow asignado</option>
-                                @foreach($workflows as $workflow)
-                                    <option value="{{ $workflow->id }}" {{ (old('workflow_id', $task->workflow_id) == $workflow->id) ? 'selected' : '' }}>
-                                        {{ $workflow->nombre }}
-                                    </option>
-                                @endforeach
-                            </select>
+                            <label for="workflow_id">Workflow Destino</label>
+                            <div class="select-wrapper">
+                                <select name="workflow_id" id="workflow_id" class="form-select-corp">
+                                    <option value="">Sin Workflow asignado</option>
+                                    @foreach($workflows as $workflow)
+                                        <option value="{{ $workflow->id }}" {{ (old('workflow_id', $task->workflow_id) == $workflow->id) ? 'selected' : '' }}>
+                                            {{ $workflow->nombre }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
                         </div>
                         <div class="form-group flex-1">
-                            <label for="user_id">Responsable Designado</label>
-                            <select name="user_id" id="user_id" class="form-select" required>
-                                @foreach($users as $user)
-                                    <option value="{{ $user->id }}" {{ (old('user_id', $task->user_id) == $user->id) ? 'selected' : '' }}>
-                                        {{ $user->name }}
-                                    </option>
-                                @endforeach
-                            </select>
+                            <label for="user_id">Responsable de Ejecución</label>
+                            <div class="select-wrapper">
+                                <select name="user_id" id="user_id" class="form-select-corp" required>
+                                    @foreach($users as $user)
+                                        <option value="{{ $user->id }}" {{ (old('user_id', $task->user_id) == $user->id) ? 'selected' : '' }}>
+                                            {{ $user->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
                         </div>
                     </div>
 
                     <div class="form-row">
                         <div class="form-group flex-1">
                             <label for="estado">Estado Operativo</label>
-                            <select name="estado" id="estado" class="form-select">
-                                <option value="pendiente" {{ old('estado', $task->estado) == 'pendiente' ? 'selected' : '' }}>Pendiente</option>
-                                <option value="en_proceso" {{ old('estado', $task->estado) == 'en_proceso' ? 'selected' : '' }}>En Proceso</option>
-                                <option value="revisado" {{ old('estado', $task->estado) == 'revisado' ? 'selected' : '' }}>Revisado</option>
-                                <option value="completado" {{ old('estado', $task->estado) == 'completado' ? 'selected' : '' }}>Completado</option>
-                            </select>
+                            <div class="select-wrapper">
+                                <select name="estado" id="estado" class="form-select-corp st-select-{{ old('estado', $task->estado) }}">
+                                    <option value="pendiente" {{ old('estado', $task->estado) == 'pendiente' ? 'selected' : '' }}>🟡 Pendiente</option>
+                                    <option value="en_proceso" {{ old('estado', $task->estado) == 'en_proceso' ? 'selected' : '' }}>🔵 En Proceso</option>
+                                    <option value="revisado" {{ old('estado', $task->estado) == 'revisado' ? 'selected' : '' }}>🟣 Revisado</option>
+                                    <option value="completado" {{ old('estado', $task->estado) == 'completado' ? 'selected' : '' }}>🟢 Completado</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="form-group flex-1">
                             <label for="prioridad">Nivel de Prioridad</label>
-                            <select name="prioridad" id="prioridad" class="form-select">
-                                <option value="baja" {{ old('prioridad', $task->prioridad) == 'baja' ? 'selected' : '' }}>Baja</option>
-                                <option value="media" {{ old('prioridad', $task->prioridad) == 'media' ? 'selected' : '' }}>Media</option>
-                                <option value="alta" {{ old('prioridad', $task->prioridad) == 'alta' ? 'selected' : '' }}>Alta</option>
-                            </select>
+                            <div class="select-wrapper">
+                                <select name="prioridad" id="prioridad" class="form-select-corp">
+                                    <option value="baja" {{ old('prioridad', $task->prioridad) == 'baja' ? 'selected' : '' }}>Baja</option>
+                                    <option value="media" {{ old('prioridad', $task->prioridad) == 'media' ? 'selected' : '' }}>Media</option>
+                                    <option value="alta" {{ old('prioridad', $task->prioridad) == 'alta' ? 'selected' : '' }}>Alta</option>
+                                </select>
+                            </div>
                         </div>
                         <div class="form-group flex-1">
-                            <label for="fecha_limite">Plazo de Entrega</label>
+                            <label for="fecha_limite">Plazo Límite</label>
                             <input type="date" name="fecha_limite" id="fecha_limite" 
                                    value="{{ old('fecha_limite', $task->fecha_limite ? $task->fecha_limite->format('Y-m-d') : '') }}" 
-                                   class="form-input">
+                                   class="form-input-corp">
                         </div>
                     </div>
                 </form>
             </section>
 
-            {{-- Columna Derecha: Comentarios y Feedback con Lógica de Archivos --}}
+            {{-- Columna Derecha: Canal de Feedback Mejorado --}}
             <section class="form-side-column">
-                <div class="modern-card feedback-section">
-                    <h2 class="side-title"><i class="fas fa-comments"></i> Canal de Feedback</h2>
+                <div class="modern-card-edit feedback-section">
+                    <h2 class="side-title"><i class="fas fa-comment-dots"></i> Canal de Feedback</h2>
                     
-                    {{-- Formulario de Comentario - IMPORTANTE: enctype para subir archivos --}}
-                    <form action="{{ route('flujo.comments.store') }}" method="POST" enctype="multipart/form-data" class="comment-post-box">
+                    <form action="{{ route('flujo.comments.store') }}" method="POST" enctype="multipart/form-data" class="comment-post-box-corp">
                         @csrf
                         <input type="hidden" name="task_id" value="{{ $task->id }}">
-                        <textarea name="comentario" placeholder="Escriba una anotación o feedback..." required></textarea>
+                        <textarea name="comentario" placeholder="Escriba una observación técnica o actualización..." required></textarea>
 
-                        <div class="soporte-container">
-                            <label for="soporte" class="soporte-label">
-                                <i class="fas fa-paperclip"></i> Adjuntar Soporte (PDF o Imagen)
+                        <div class="soporte-dropzone">
+                            <label for="soporte" class="soporte-label-corp">
+                                <i class="fas fa-paperclip"></i> 
+                                <span>Adjuntar Documentación</span>
                             </label>
-                            <input type="file" name="soporte" id="soporte" class="soporte-input" accept=".pdf,image/*">
-                            <span class="soporte-help">Máx 10MB (Formatos: PDF, JPG, PNG)</span>
+                            <input type="file" name="soporte" id="soporte" class="soporte-input-hidden" accept=".pdf,image/*">
+                            <div id="file-name-preview" class="file-name-display">Ningún archivo seleccionado</div>
                         </div>
 
-                        <button type="submit" class="btn-send-comment">Postear Mensaje</button>
+                        <button type="submit" class="btn-post-comment">
+                            Publicar Comentario <i class="fas fa-paper-plane"></i>
+                        </button>
                     </form>
 
-                    <div class="comment-thread">
+                    <div class="comment-thread-corp">
                         @forelse($task->comments->sortByDesc('created_at') as $comment)
-                            <div class="comment-bubble">
-                                <div class="comment-header">
-                                    <span class="comment-user">{{ $comment->user->name ?? 'Sistema' }}</span>
-                                    <span class="comment-date">{{ $comment->created_at->diffForHumans() }}</span>
+                            <div class="comment-bubble-corp">
+                                <div class="comment-head">
+                                    <div class="user-avatar-mini">{{ substr($comment->user->name ?? 'S', 0, 1) }}</div>
+                                    <span class="user-name-mini">{{ $comment->user->name ?? 'Sistema' }}</span>
+                                    <span class="date-mini">{{ $comment->created_at->diffForHumans() }}</span>
                                 </div>
-                                <div class="comment-body">
+                                <div class="comment-body-corp">
                                     {{ $comment->comentario }}
                                 </div>
                                 
-                                {{-- LÓGICA DE SOPORTE INTEGRADA --}}
                                 @if($comment->soporte)
                                     @php
                                         $extension = pathinfo($comment->soporte, PATHINFO_EXTENSION);
                                         $esImagen = in_array(strtolower($extension), ['jpg', 'jpeg', 'png', 'gif', 'webp']);
-                                        // Generar URL temporal de S3 válida por 30 minutos
                                         $urlS3 = Storage::disk('s3')->temporaryUrl($comment->soporte, now()->addMinutes(30));
                                     @endphp
-
-                                    <div class="comment-attachment">
-                                        @if($esImagen)
-                                            {{-- Miniatura si es imagen --}}
-                                            <a href="{{ $urlS3 }}" target="_blank" class="attachment-preview">
-                                                <img src="{{ $urlS3 }}" alt="Vista previa">
-                                            </a>
-                                        @endif
-                                        
-                                        <a href="{{ $urlS3 }}" target="_blank" class="attachment-link">
-                                            <i class="fas {{ $esImagen ? 'fa-image' : 'fa-file-pdf' }}"></i> 
-                                            Ver Soporte ({{ strtoupper($extension) }})
+                                    <div class="comment-attachment-corp">
+                                        <a href="{{ $urlS3 }}" target="_blank" class="attachment-pill">
+                                            <i class="fas {{ $esImagen ? 'fa-image' : 'fa-file-pdf' }}"></i>
+                                            <span>Ver Soporte .{{ strtoupper($extension) }}</span>
                                         </a>
                                     </div>
                                 @endif
                             </div>
                         @empty
-                            <div class="empty-feedback text-center py-4">
-                                <i class="far fa-comment-dots fa-2x mb-2" style="opacity: 0.1;"></i>
-                                <p class="text-muted small">Sin registros de comunicación aún.</p>
+                            <div class="empty-state-feedback">
+                                <p>No hay hilos de conversación activos.</p>
                             </div>
                         @endforelse
                     </div>
                 </div>
-            </section>
+            </aside>
         </main>
     </div>
 
@@ -161,85 +205,121 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
         :root {
-            --corp-dark: #0f172a;
-            --corp-blue: #2563eb;
-            --corp-border: #f1f5f9;
-            --corp-bg: #fafafa;
-            --text-main: #1e293b;
+            --brand-primary: #2563eb;
+            --brand-dark: #0f172a;
+            --bg-body: #f4f7fa;
+            --card-bg: #ffffff;
+            --border-color: #e2e8f0;
+            --text-main: #334155;
             --text-muted: #64748b;
         }
 
-        .task-edit-wrapper { max-width: 1200px; margin: 40px auto; padding: 0 24px; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg-body); font-family: 'Inter', sans-serif; color: var(--text-main); }
+        .task-edit-wrapper { max-width: 1250px; margin: 30px auto; padding: 0 20px; }
 
-        /* Header */
-        .form-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+        /* HEADER UI */
+        .form-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
         .header-content { display: flex; align-items: center; gap: 20px; }
-        .btn-back-minimal { 
-            width: 42px; height: 42px; border-radius: 12px; background: #fff; border: 1px solid var(--corp-border);
-            display: flex; align-items: center; justify-content: center; color: var(--text-muted); text-decoration: none; transition: 0.2s;
-        }
-        .btn-back-minimal:hover { background: var(--corp-dark); color: #fff; }
-        .system-tag { font-size: 0.65rem; font-weight: 800; color: var(--corp-blue); text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-bottom: 4px; }
-        .main-title { font-size: 1.8rem; font-weight: 800; letter-spacing: -0.03em; margin: 0; }
+        .btn-back-minimal { width: 45px; height: 45px; border-radius: 14px; background: white; border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; color: var(--text-muted); text-decoration: none; transition: 0.3s; }
+        .btn-back-minimal:hover { background: var(--brand-dark); color: white; transform: scale(1.05); }
+        
+        .system-tag { font-size: 0.7rem; font-weight: 800; color: var(--brand-primary); text-transform: uppercase; letter-spacing: 0.05em; }
+        .main-title { font-size: 1.85rem; font-weight: 800; color: var(--brand-dark); letter-spacing: -0.04em; margin: 5px 0; }
+        .main-title .text-accent { color: var(--brand-primary); }
         .main-subtitle { font-size: 0.9rem; color: var(--text-muted); }
 
-        .btn-corporate-black {
-            background: var(--corp-dark); color: #fff; border: none; padding: 12px 24px; border-radius: 10px;
-            font-weight: 600; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: 0.2s;
+        .btn-update-record { background: var(--brand-dark); color: white; border: none; padding: 12px 25px; border-radius: 12px; font-weight: 700; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: 0.3s; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .btn-update-record:hover { background: var(--brand-primary); transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3); }
+
+        /* WORKFLOW BANNER INTERACTIVO */
+        .workflow-context-edit-banner { 
+            background: white; 
+            border: 1px solid var(--border-color); 
+            border-left: 6px solid var(--brand-primary); 
+            border-radius: 16px; 
+            padding: 15px 25px; 
+            margin-bottom: 25px; 
+            display: flex; 
+            align-items: center; 
+            gap: 20px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            text-decoration: none;
+            transition: all 0.2s ease;
         }
-        .btn-corporate-black:hover { background: #000; transform: translateY(-1px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
-
-        /* Layout */
-        .edit-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 24px; align-items: start; }
-        @media (max-width: 992px) { .edit-grid { grid-template-columns: 1fr; } }
-
-        .modern-card { background: #fff; border-radius: 16px; border: 1px solid var(--corp-border); padding: 28px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
-
-        /* Form Elements */
-        .form-group { margin-bottom: 24px; }
-        .form-group label { display: block; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 10px; }
-        .form-input, .form-select {
-            width: 100%; padding: 12px 16px; border-radius: 10px; border: 1px solid var(--corp-border);
-            background: #f8fafc; font-size: 0.9rem; outline: none; transition: 0.2s;
+        .clickable-banner:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.05);
+            background: #fafafa;
         }
-        .form-input:focus, .form-select:focus { border-color: var(--corp-blue); background: #fff; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.05); }
-        .form-row { display: flex; gap: 20px; flex-wrap: wrap; }
-        .flex-1 { flex: 1; min-width: 150px; }
+        .clickable-banner:hover .wf-edit-title { color: var(--brand-primary); }
 
-        /* Feedback Section */
-        .comment-post-box { margin-bottom: 30px; }
-        .comment-post-box textarea {
-            width: 100%; min-height: 100px; padding: 16px; border-radius: 12px; border: 1px solid var(--corp-border);
-            background: #f8fafc; font-size: 0.85rem; outline: none; resize: vertical; margin-bottom: 12px;
-        }
-
-        /* Soporte Styles */
-        .soporte-container { margin-bottom: 15px; background: #f1f5f9; padding: 12px; border-radius: 10px; border: 1px dashed #cbd5e1; }
-        .soporte-label { display: block; font-size: 0.7rem; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; }
-        .soporte-input { font-size: 0.8rem; color: var(--text-main); width: 100%; }
-        .soporte-help { display: block; font-size: 0.65rem; color: #94a3b8; margin-top: 5px; }
-
-        .btn-send-comment {
-            background: var(--corp-dark); color: #fff; border: none; padding: 12px 16px;
-            border-radius: 8px; font-weight: 600; font-size: 0.8rem; cursor: pointer; transition: 0.2s; width: 100%;
-        }
-        .btn-send-comment:hover { background: #000; transform: translateY(-1px); }
-
-        /* Comment Bubbles */
-        .comment-thread { display: flex; flex-direction: column; gap: 16px; margin-top: 20px;}
-        .comment-bubble { padding: 16px; border-radius: 12px; background: #f8fafc; border: 1px solid var(--corp-border); }
-        .comment-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
-        .comment-user { font-size: 0.8rem; font-weight: 700; color: var(--corp-dark); }
-        .comment-date { font-size: 0.7rem; color: var(--text-muted); }
-        .comment-body { font-size: 0.85rem; line-height: 1.5; color: var(--text-main); }
+        .wf-edit-icon { width: 45px; height: 45px; background: #eff6ff; color: var(--brand-primary); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
+        .wf-edit-details { flex-grow: 1; }
+        .wf-edit-label { font-size: 0.65rem; font-weight: 800; color: var(--text-muted); text-transform: uppercase; display: flex; align-items: center; gap: 5px; }
+        .wf-edit-title { font-size: 1.2rem; font-weight: 800; color: var(--brand-dark); margin: 0; transition: color 0.2s; }
         
-        /* Attachment Display */
-        .comment-attachment { margin-top: 12px; padding-top: 10px; border-top: 1px solid #e2e8f0; }
-        .attachment-preview { display: block; width: 100%; max-height: 120px; border-radius: 8px; overflow: hidden; margin-bottom: 8px; border: 1px solid #e2e8f0;}
-        .attachment-preview img { width: 100%; height: 100%; object-fit: cover; transition: 0.3s; }
-        .attachment-preview:hover img { transform: scale(1.05); }
+        .wf-edit-status { display: flex; align-items: center; gap: 10px; background: #f0fdf4; padding: 6px 14px; border-radius: 30px; }
+        .wf-status-text { font-size: 0.7rem; font-weight: 800; color: #166534; text-transform: uppercase; }
+        .pulse-indicator { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; box-shadow: 0 0 0 rgba(34, 197, 94, 0.4); animation: pulse 2s infinite; }
         
-        .attachment-link { font-size: 0.75rem; font-weight: 600; color: var(--corp-blue); text-decoration: none; display: inline-flex; align-items: center; gap: 5px; }
-        .attachment-link:hover { text-decoration: underline; }
+        @keyframes pulse {
+          0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+          70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+
+        /* GRID & CARDS */
+        .edit-grid { display: grid; grid-template-columns: 1.7fr 1fr; gap: 25px; }
+        .modern-card-edit { background: white; border-radius: 20px; border: 1px solid var(--border-color); padding: 30px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
+        .form-section-header { font-size: 0.85rem; font-weight: 800; text-transform: uppercase; color: var(--brand-primary); border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+
+        /* FORM INPUTS */
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.02em; }
+        .form-input-corp, .form-select-corp { width: 100%; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border-color); background: #f8fafc; font-size: 0.95rem; font-weight: 500; transition: all 0.3s; outline: none; }
+        .form-input-corp:focus, .form-select-corp:focus { border-color: var(--brand-primary); background: white; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.08); }
+        .form-row { display: flex; gap: 20px; }
+
+        /* FEEDBACK AREA */
+        .comment-post-box-corp { margin-bottom: 25px; }
+        .comment-post-box-corp textarea { width: 100%; min-height: 110px; padding: 15px; border-radius: 14px; border: 1px solid var(--border-color); background: #f8fafc; font-size: 0.9rem; resize: vertical; margin-bottom: 15px; outline: none; transition: 0.3s; }
+        .comment-post-box-corp textarea:focus { border-color: var(--brand-primary); background: white; }
+
+        .soporte-dropzone { border: 2px dashed var(--border-color); padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 15px; transition: 0.3s; background: #fdfdfd; cursor: pointer; }
+        .soporte-dropzone:hover { border-color: var(--brand-primary); background: #eff6ff; }
+        .soporte-label-corp { cursor: pointer; font-size: 0.8rem; font-weight: 700; color: var(--text-muted); display: flex; flex-direction: column; gap: 5px; }
+        .soporte-label-corp i { font-size: 1.2rem; color: var(--brand-primary); }
+        .soporte-input-hidden { display: none; }
+        .file-name-display { font-size: 0.7rem; color: var(--brand-primary); margin-top: 5px; font-weight: 600; }
+
+        .btn-post-comment { width: 100%; background: var(--brand-dark); color: white; border: none; padding: 12px; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn-post-comment:hover { background: #000; transform: translateY(-1px); }
+
+        /* THREAD UX */
+        .comment-thread-corp { display: flex; flex-direction: column; gap: 15px; }
+        .comment-bubble-corp { background: #f8fafc; border: 1px solid var(--border-color); border-radius: 16px; padding: 15px; }
+        .comment-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .user-avatar-mini { width: 25px; height: 25px; background: var(--brand-primary); color: white; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 800; }
+        .user-name-mini { font-size: 0.8rem; font-weight: 700; color: var(--brand-dark); flex-grow: 1; }
+        .date-mini { font-size: 0.7rem; color: var(--text-muted); }
+        .comment-body-corp { font-size: 0.85rem; line-height: 1.5; color: var(--text-main); }
+        .comment-attachment-corp { margin-top: 10px; }
+        .attachment-pill { display: inline-flex; align-items: center; gap: 8px; background: white; border: 1px solid var(--border-color); padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; color: var(--brand-primary); text-decoration: none; transition: 0.2s; }
+        .attachment-pill:hover { background: var(--brand-primary); color: white; }
+
+        @media (max-width: 992px) {
+            .edit-grid { grid-template-columns: 1fr; }
+            .form-row { flex-direction: column; gap: 0; }
+            .form-header { flex-direction: column; align-items: flex-start; gap: 20px; }
+            .header-actions { width: 100%; }
+            .btn-update-record { width: 100%; justify-content: center; }
+        }
     </style>
+
+    <script>
+        document.getElementById('soporte').addEventListener('change', function(e) {
+            const fileName = e.target.files[0] ? e.target.files[0].name : "Ningún archivo seleccionado";
+            document.getElementById('file-name-preview').innerText = fileName;
+        });
+    </script>
 </x-base-layout>

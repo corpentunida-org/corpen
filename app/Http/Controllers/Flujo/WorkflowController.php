@@ -21,7 +21,7 @@ class WorkflowController extends Controller
         // Incluimos la relación 'asignado' para evitar el problema N+1
         $query = Workflow::with(['creator', 'modifier', 'asignado']);
 
-        // Búsqueda por nombre o descripción
+        // 1. Búsqueda Global (Nombre o Descripción) - Mantenida según código original
         if ($request->filled('search')) {
             $query->where(function($q) use ($request) {
                 $q->where('nombre', 'like', '%' . $request->search . '%')
@@ -29,7 +29,21 @@ class WorkflowController extends Controller
             });
         }
 
-        // Filtros dinámicos
+        /**
+         * FILTROS AVANZADOS SUJETOS AL MODELO
+         */
+
+        // 2. Filtro específico por Nombre (Atributo 'nombre' del modelo)
+        if ($request->filled('nombre')) {
+            $query->where('nombre', 'like', '%' . $request->nombre . '%');
+        }
+
+        // 3. Filtro por Usuario Asignado (Atributo 'asignado_a' del modelo)
+        if ($request->filled('asignado_a')) {
+            $query->where('asignado_a', $request->asignado_a);
+        }
+
+        // 4. Filtros dinámicos adicionales existentes
         if ($request->filled('estado')) {
             $query->where('estado', $request->estado);
         }
@@ -39,16 +53,24 @@ class WorkflowController extends Controller
         if ($request->filled('creado_por')) {
             $query->where('creado_por', $request->creado_por);
         }
-        if ($request->filled('asignado_a')) {
-            $query->where('asignado_a', $request->asignado_a);
-        }
 
-        $workflows = $query->latest()->paginate(10);
+        $workflows = $query->latest()->paginate(5);
 
         // Datos para los filtros y selects
-        $users = User::select('id', 'name')->orderBy('name')->get();
+        // CAMBIO: Aseguramos que $users siempre tenga un valor, incluso si es una colección vacía
+        $users = User::select('id', 'name')->orderBy('name')->get() ?? collect([]);
         $estados = $this->getEstadosOptions();
         $prioridades = $this->getPrioridadesOptions();
+
+        // Si es una petición AJAX, devolver solo la vista parcial
+        if ($request->ajax()) {
+            // CAMBIO: Devolvemos la vista completa para asegurar que los filtros se actualicen correctamente
+            $view = view('flujo.componentes.workflows-card', compact('workflows', 'users', 'estados', 'prioridades'))->render();
+            return response()->json([
+                'html' => $view,
+                'pagination' => $workflows->links()->toHtml()
+            ]);
+        }
 
         return view('flujo.workflows.index', compact('workflows', 'users', 'estados', 'prioridades'));
     }
@@ -78,11 +100,10 @@ class WorkflowController extends Controller
             'fecha_inicio'  => 'nullable|date',
             'fecha_fin'     => 'nullable|date|after_or_equal:fecha_inicio',
             'creado_por'    => 'required|exists:users,id',
-            'asignado_a'    => 'nullable|exists:users,id', // Validación para el nuevo campo
+            'asignado_a'    => 'nullable|exists:users,id',
             'configuracion' => 'nullable', 
         ]);
 
-        // Procesar JSON si viene del frontend como string
         if ($request->filled('configuracion') && is_string($request->configuracion)) {
             $data['configuracion'] = json_decode($request->configuracion, true);
         }
@@ -130,7 +151,6 @@ class WorkflowController extends Controller
         try {
             DB::beginTransaction();
             
-            // Validar el campo JSON primero
             $configuracion = $this->procesarConfiguracionJson($request);
             
             $data = $request->validate([
@@ -141,7 +161,7 @@ class WorkflowController extends Controller
                 'fecha_inicio'  => 'nullable|date',
                 'fecha_fin'     => 'nullable|date|after_or_equal:fecha_inicio',
                 'creado_por'    => 'required|exists:users,id',
-                'asignado_a'    => 'nullable|exists:users,id', // Campo actualizado
+                'asignado_a'    => 'nullable|exists:users,id',
             ], [
                 'fecha_fin.after_or_equal' => 'La fecha de fin debe ser posterior o igual a la de inicio.',
                 'asignado_a.exists' => 'El usuario asignado no es válido.'
@@ -169,9 +189,6 @@ class WorkflowController extends Controller
         }
     }
 
-    /**
-     * Procesa y valida el campo JSON.
-     */
     private function procesarConfiguracionJson(Request $request)
     {
         $configuracionJson = $request->input('configuracion');
@@ -180,7 +197,6 @@ class WorkflowController extends Controller
             return null;
         }
 
-        // Si ya es un array (por alguna validación previa o cast), lo devolvemos
         if (is_array($configuracionJson)) return $configuracionJson;
         
         $decodedConfig = json_decode($configuracionJson, true);

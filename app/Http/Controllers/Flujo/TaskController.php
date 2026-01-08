@@ -11,15 +11,55 @@ use Illuminate\Support\Facades\Auth;
 
 class TaskController extends Controller
 {
-   
     /**
-     * Listado de tareas
+     * Listado de tareas con búsqueda y filtros AJAX
      */
-    public function index()
+    public function index(Request $request)
     {
-        $tasks = Task::with('user', 'workflow', 'histories', 'comments')->paginate(4);
+        // 1. Iniciamos la query con relaciones para evitar el problema N+1
+        $query = Task::with(['user', 'workflow', 'histories', 'comments']);
 
-        return view('flujo.tasks.index', compact('tasks'));
+        // 2. BUSCADOR (Título o Descripción)
+        if ($request->filled('search')) {
+            $query->where(function($q) use ($request) {
+                $q->where('titulo', 'like', '%' . $request->search . '%')
+                  ->orWhere('descripcion', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        // 3. FILTROS DINÁMICOS
+        if ($request->filled('estado')) {
+            $query->where('estado', $request->estado);
+        }
+
+        if ($request->filled('prioridad')) {
+            $query->where('prioridad', $request->prioridad);
+        }
+
+        if ($request->filled('user_id')) {
+            $query->where('user_id', $request->user_id);
+        }
+
+        // --- NUEVO FILTRO: Workflow Relacionado ---
+        if ($request->filled('workflow_id')) {
+            $query->where('workflow_id', $request->workflow_id);
+        }
+
+        // 4. Ejecución de la consulta con paginación
+        $tasks = $query->latest()->paginate(10);
+
+        // 5. Datos necesarios para los selects de los filtros
+        $users = User::select('id', 'name')->orderBy('name')->get();
+        // Cargamos los workflows para el nuevo filtro
+        $workflows = Workflow::select('id', 'nombre')->orderBy('nombre')->get();
+
+        // 6. LÓGICA AJAX: Retorna solo el fragmento de la tabla si es una petición asíncrona
+        if ($request->ajax()) {
+            return view('flujo.tasks.index', compact('tasks', 'users', 'workflows'))
+                ->fragment('tasks-list');
+        }
+
+        return view('flujo.tasks.index', compact('tasks', 'users', 'workflows'));
     }
 
     /**
@@ -28,7 +68,7 @@ class TaskController extends Controller
     public function create()
     {
         $workflows = Workflow::all();
-        $users = User::all();
+        $users = User::select('id', 'name')->orderBy('name')->get();
 
         return view('flujo.tasks.create', compact('workflows', 'users'));
     }
@@ -59,20 +99,27 @@ class TaskController extends Controller
      */
     public function show(Task $task)
     {
-        $task->load('user', 'workflow', 'histories', 'comments');
+        $task->load(['user', 'workflow', 'histories.user', 'comments.user']);
 
         return view('flujo.tasks.show', compact('task'));
     }
+
+    /**
+     * Mostrar formulario de edición
+     */
     public function edit(Task $task)
     {
         $workflows = Workflow::all();
-        $users = User::all();
+        $users = User::select('id', 'name')->orderBy('name')->get();
 
-        $task->load('comments.user'); // ⚡ importante
+        $task->load('comments.user');
 
         return view('flujo.tasks.edit', compact('task', 'workflows', 'users'));
     }
 
+    /**
+     * Actualizar una tarea y registrar historial
+     */
     public function update(Request $request, Task $task)
     {
         $data = $request->validate([
@@ -85,13 +132,10 @@ class TaskController extends Controller
             'workflow_id'  => 'nullable|exists:workflows,id',
         ]);
 
-        // Guardar estado anterior
         $estadoAnterior = $task->estado;
-
-        // Actualizar la tarea
         $task->update($data);
 
-        // Si el estado cambió, registrar en el historial
+        // Registro en historial
         if ($estadoAnterior !== $data['estado']) {
             \App\Models\Flujo\TaskHistory::create([
                 'task_id'         => $task->id,
@@ -102,9 +146,17 @@ class TaskController extends Controller
             ]);
         }
 
+        // Lógica de redirección dinámica basada en el input oculto
+        if ($request->has('redirect_to')) {
+            return redirect($request->redirect_to)->with('success', '✏️ Tarea actualizada correctamente.');
+        }
+
         return redirect()->route('flujo.tasks.index')
             ->with('success', '✏️ Tarea actualizada correctamente.');
     }
+    /**
+     * Eliminar una tarea
+     */
     public function destroy(Task $task)
     {
         $task->delete();

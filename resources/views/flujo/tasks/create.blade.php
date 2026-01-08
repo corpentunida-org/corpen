@@ -6,7 +6,7 @@
                 <a href="{{ route('flujo.tasks.index') }}" class="btn-back-minimal">
                     <i class="fas fa-arrow-left"></i>
                 </a>
-                <div>
+                <div class="header-text">
                     <h1 class="main-title">Nueva Unidad de Trabajo</h1>
                     <p class="main-subtitle">Asigne parámetros, responsables y plazos para el cumplimiento del hito.</p>
                 </div>
@@ -37,9 +37,9 @@
                                 @error('titulo') <span class="error-text">{{ $message }}</span> @enderror
                             </div>
 
-                            <div class="form-group">
+                            <div class="form-group mb-0">
                                 <label for="descripcion">Descripción Detallada</label>
-                                <textarea name="descripcion" id="descripcion" rows="5" 
+                                <textarea name="descripcion" id="descripcion" rows="6" 
                                           placeholder="Describa los alcances y criterios de aceptación..."
                                           class="form-input">{{ old('descripcion') }}</textarea>
                             </div>
@@ -93,7 +93,7 @@
                                 </div>
                             </div>
 
-                            <div class="form-group">
+                            <div class="form-group mb-0">
                                 <label for="fecha_limite"><i class="far fa-calendar-alt"></i> Fecha Límite de Entrega</label>
                                 <input type="date" name="fecha_limite" id="fecha_limite" 
                                        value="{{ old('fecha_limite') }}" 
@@ -115,95 +115,125 @@
     </div>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;800&display=swap');
 
         :root {
-            --bg-neutral: #fafafa;
-            --brand-primary: #0f172a; /* Negro Corporativo */
-            --accent-blue: #2563eb;
-            --text-main: #1e293b;
+            --bg-neutral: #f8fafc;
+            --brand-primary: #0f172a; 
+            --accent-blue: #4f46e5;
+            --text-main: #0f172a;
             --text-muted: #64748b;
-            --border-color: #f1f5f9;
+            --border-color: #e2e8f0;
             --white: #ffffff;
+            --radius-xl: 20px;
+            --radius-md: 12px;
         }
+
+        body { background-color: var(--bg-neutral); }
 
         .task-creation-wrapper {
             max-width: 1000px;
             margin: 40px auto;
-            padding: 0 20px;
+            padding: 0 24px;
             font-family: 'Inter', sans-serif;
         }
 
         /* Header */
-        .form-header { margin-bottom: 40px; }
-        .header-content { display: flex; align-items: center; gap: 20px; }
+        .form-header { margin-bottom: 35px; }
+        .header-content { display: flex; align-items: flex-start; gap: 20px; }
         .btn-back-minimal {
-            width: 40px; height: 40px; border-radius: 10px;
+            width: 44px; height: 44px; border-radius: var(--radius-md);
             border: 1px solid var(--border-color); background: var(--white);
             display: flex; align-items: center; justify-content: center;
             color: var(--text-muted); text-decoration: none; transition: 0.2s;
+            flex-shrink: 0;
         }
-        .btn-back-minimal:hover { background: var(--brand-primary); color: var(--white); }
-        .main-title { font-size: 1.75rem; font-weight: 800; letter-spacing: -0.03em; margin: 0; }
-        .main-subtitle { font-size: 0.95rem; color: var(--text-muted); margin-top: 4px; }
+        .btn-back-minimal:hover { background: var(--brand-primary); color: var(--white); border-color: var(--brand-primary); }
+        
+        .main-title { font-family: 'Outfit'; font-size: 1.85rem; font-weight: 800; letter-spacing: -0.03em; margin: 0; color: var(--text-main); }
+        .main-subtitle { font-size: 0.95rem; color: var(--text-muted); margin-top: 6px; line-height: 1.5; }
 
         /* Form Layout */
-        .form-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 24px; }
-        @media (max-width: 768px) { .form-grid { grid-template-columns: 1fr; } }
+        .form-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 24px; align-items: start; }
 
         .card-minimal {
-            background: var(--white); border-radius: 16px; padding: 24px;
-            border: 1px solid var(--border-color); box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+            background: var(--white); border-radius: var(--radius-xl); padding: 28px;
+            border: 1px solid var(--border-color); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+            height: 100%;
         }
 
         /* Inputs */
-        .form-group { margin-bottom: 20px; }
+        .form-group { margin-bottom: 24px; }
+        .form-group.mb-0 { margin-bottom: 0; }
+        
         .form-group label {
-            display: block; font-size: 0.75rem; font-weight: 700;
-            text-transform: uppercase; letter-spacing: 0.05em;
-            color: var(--text-muted); margin-bottom: 8px;
+            display: block; font-size: 11px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.08em;
+            color: var(--text-muted); margin-bottom: 10px;
         }
+        
         .form-input, .form-select {
-            width: 100%; padding: 12px 16px; border-radius: 10px;
-            border: 1px solid var(--border-color); background: #f8fafc;
-            font-size: 0.9rem; color: var(--text-main); outline: none;
-            transition: all 0.2s ease;
+            width: 100%; padding: 12px 16px; border-radius: var(--radius-md);
+            border: 1px solid var(--border-color); background: #fbfcfd;
+            font-size: 14px; color: var(--text-main); outline: none;
+            transition: all 0.25s ease;
+            box-sizing: border-box;
         }
+        
         .form-input:focus, .form-select:focus {
             border-color: var(--accent-blue); background: var(--white);
-            box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.05);
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.08);
         }
-        .form-row-compact { display: flex; gap: 12px; }
+
+        .form-row-compact { display: flex; gap: 16px; }
         .flex-1 { flex: 1; }
 
         /* Alerts */
         .alert-minimal-error {
-            background: #fef2f2; color: #b91c1c; padding: 16px;
-            border-radius: 12px; margin-bottom: 24px; display: flex;
-            align-items: center; gap: 12px; font-size: 0.9rem; font-weight: 500;
+            background: #fff1f2; color: #be123c; padding: 16px 20px;
+            border-radius: var(--radius-md); margin-bottom: 28px; display: flex;
+            align-items: center; gap: 12px; font-size: 14px; font-weight: 600;
+            border: 1px solid #ffe4e6;
         }
 
         /* Footer Actions */
         .form-actions-footer {
-            margin-top: 40px; padding-top: 24px;
+            margin-top: 40px; padding-top: 28px;
             border-top: 1px solid var(--border-color);
-            display: flex; justify-content: flex-end; gap: 16px; align-items: center;
+            display: flex; justify-content: flex-end; gap: 20px; align-items: center;
         }
         .btn-cancel-soft {
             text-decoration: none; color: var(--text-muted);
-            font-size: 0.9rem; font-weight: 600; padding: 10px 20px;
+            font-size: 14px; font-weight: 600; padding: 12px 24px;
+            transition: 0.2s;
         }
+        .btn-cancel-soft:hover { color: var(--brand-primary); }
+
         .btn-save-corporate {
             background: var(--brand-primary); color: var(--white);
-            border: none; padding: 14px 28px; border-radius: 12px;
-            font-size: 0.9rem; font-weight: 700; cursor: pointer;
+            border: none; padding: 16px 32px; border-radius: var(--radius-md);
+            font-size: 14px; font-weight: 700; cursor: pointer;
             transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         .btn-save-corporate:hover {
             background: #000; transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            box-shadow: 0 12px 20px -5px rgba(0,0,0,0.15);
         }
 
-        .error-text { color: #dc2626; font-size: 0.75rem; margin-top: 4px; font-weight: 500; }
+        .error-text { color: #e11d48; font-size: 12px; margin-top: 6px; font-weight: 500; display: block; }
+        .invalid { border-color: #fda4af !important; background: #fff1f2 !important; }
+
+        /* --- MOBILE OPTIMIZATION --- */
+        @media (max-width: 768px) {
+            .task-creation-wrapper { margin: 20px auto; padding: 0 16px; }
+            .form-grid { grid-template-columns: 1fr; gap: 16px; }
+            .card-minimal { padding: 20px; }
+            .form-header { margin-bottom: 25px; }
+            .main-title { font-size: 1.5rem; }
+            .form-row-compact { flex-direction: column; gap: 0; }
+            .form-actions-footer { flex-direction: column-reverse; gap: 12px; }
+            .btn-save-corporate, .btn-cancel-soft { width: 100%; text-align: center; }
+            .btn-save-corporate { padding: 18px; }
+        }
     </style>
 </x-base-layout>
