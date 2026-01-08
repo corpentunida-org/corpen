@@ -40,19 +40,26 @@ class TaskController extends Controller
             $query->where('user_id', $request->user_id);
         }
 
+        // --- NUEVO FILTRO: Workflow Relacionado ---
+        if ($request->filled('workflow_id')) {
+            $query->where('workflow_id', $request->workflow_id);
+        }
+
         // 4. Ejecución de la consulta con paginación
         $tasks = $query->latest()->paginate(10);
 
-        // 5. Datos necesarios para los selects de los filtros (Soluciona el error Undefined variable $users)
+        // 5. Datos necesarios para los selects de los filtros
         $users = User::select('id', 'name')->orderBy('name')->get();
+        // Cargamos los workflows para el nuevo filtro
+        $workflows = Workflow::select('id', 'nombre')->orderBy('nombre')->get();
 
         // 6. LÓGICA AJAX: Retorna solo el fragmento de la tabla si es una petición asíncrona
         if ($request->ajax()) {
-            return view('flujo.tasks.index', compact('tasks', 'users'))
+            return view('flujo.tasks.index', compact('tasks', 'users', 'workflows'))
                 ->fragment('tasks-list');
         }
 
-        return view('flujo.tasks.index', compact('tasks', 'users'));
+        return view('flujo.tasks.index', compact('tasks', 'users', 'workflows'));
     }
 
     /**
@@ -128,7 +135,7 @@ class TaskController extends Controller
         $estadoAnterior = $task->estado;
         $task->update($data);
 
-        // Si el estado cambió, registrar en el historial
+        // Registro en historial
         if ($estadoAnterior !== $data['estado']) {
             \App\Models\Flujo\TaskHistory::create([
                 'task_id'         => $task->id,
@@ -139,10 +146,14 @@ class TaskController extends Controller
             ]);
         }
 
+        // Lógica de redirección dinámica basada en el input oculto
+        if ($request->has('redirect_to')) {
+            return redirect($request->redirect_to)->with('success', '✏️ Tarea actualizada correctamente.');
+        }
+
         return redirect()->route('flujo.tasks.index')
             ->with('success', '✏️ Tarea actualizada correctamente.');
     }
-
     /**
      * Eliminar una tarea
      */

@@ -1,69 +1,109 @@
 <x-base-layout>
     <div class="task-show-wrapper">
-        {{-- Header Ejecutivo con Acciones --}}
+        {{-- Header con Trazabilidad --}}
         <header class="show-header">
             <div class="header-left">
                 <a href="{{ route('flujo.tasks.index') }}" class="btn-back-circle" title="Volver al listado">
-                    <i class="fas fa-chevron-left"></i>
+                    <i class="fas fa-arrow-left"></i>
                 </a>
-                <div>
-                    <span class="system-tag">Expediente de Unidad de Trabajo</span>
+                <div class="title-container">
+                    <nav class="breadcrumb-simple">
+                        <span class="system-tag">Operaciones</span> / 
+                        <span class="system-tag-id">#{{ $task->id }}</span>
+                    </nav>
                     <h1 class="main-title">{{ $task->titulo }}</h1>
-                    <p class="main-subtitle">Registro integral de ejecución, trazabilidad y feedback colaborativo.</p>
+                    <div class="header-meta-info">
+                        <span class="badge-status-pill st-{{ strtolower($task->estado) }}">
+                            <i class="fas fa-sync-alt fa-spin-slow"></i> {{ str_replace('_', ' ', ucfirst($task->estado)) }}
+                        </span>
+                        <span class="divider">|</span>
+                        <span class="meta-date"><i class="far fa-calendar"></i> Creado {{ $task->created_at->format('d M, Y') }}</span>
+                    </div>
                 </div>
             </div>
             <div class="header-right">
-                <a href="{{ route('flujo.tasks.edit', $task) }}" class="btn-corporate-edit">
-                    <i class="fas fa-pen"></i> Gestionar Unidad
+                <a href="{{ route('flujo.tasks.edit', $task) }}" class="btn-corporate-primary">
+                    <i class="fas fa-sliders-h"></i> <span>Gestionar Unidad</span>
                 </a>
             </div>
         </header>
 
+        {{-- INTEGRACIÓN: Banner Resaltado de Contexto (Workflow/Proyecto) --}}
+        <div class="workflow-highlight-banner">
+            <div class="wf-content">
+                <div class="wf-icon-box">
+                    <i class="fas fa-project-diagram"></i>
+                </div>
+                <div class="wf-text-group">
+                    <span class="wf-overtitle">Proyecto / Workflow Vinculado</span>
+                    <h2 class="wf-main-name">{{ $task->workflow->nombre ?? 'Sin Workflow Asignado' }}</h2>
+                </div>
+            </div>
+            @if($task->workflow)
+                <a href="{{ route('flujo.workflows.show', $task->workflow->id) }}" class="btn-wf-link">
+                    Ir al Proyecto <i class="fas fa-chevron-right"></i>
+                </a>
+            @endif
+        </div>
+
         <div class="show-grid">
-            {{-- Columna Principal: Información y Discusión --}}
+            {{-- Columna Principal --}}
             <main class="main-column">
-                {{-- Bloque: Especificaciones --}}
-                <section class="card-corp mb-4">
-                    <h2 class="card-corp-title"><i class="fas fa-align-left"></i> Especificaciones Técnicas</h2>
-                    <div class="content-area">
-                        <p class="description-text">{{ $task->descripcion ?: 'No se han registrado especificaciones detalladas para esta unidad.' }}</p>
+                {{-- Sección: Descripción con mejor tipografía --}}
+                <section class="glass-card mb-4">
+                    <div class="section-header">
+                        <h2 class="section-title"><i class="fas fa-file-alt"></i> Especificaciones</h2>
+                    </div>
+                    <div class="description-content">
+                        {{ $task->descripcion ?: 'No hay descripción técnica registrada para esta unidad.' }}
                     </div>
                 </section>
 
-                {{-- Bloque: Canal de Comunicación (Relación: Comments) --}}
-                <section class="card-corp">
-                    <h2 class="card-corp-title"><i class="fas fa-comments"></i> Canal de Feedback</h2>
-                    <div class="comment-thread">
+                {{-- Sección: Feed de Actividad y Comentarios --}}
+                <section class="glass-card">
+                    <div class="section-header space-between">
+                        <h2 class="section-title"><i class="fas fa-comments"></i> Línea de Tiempo y Feedback</h2>
+                        <span class="comment-count">{{ $task->comments->count() }} Mensajes</span>
+                    </div>
+                    
+                    <div class="comment-timeline">
                         @forelse($task->comments->sortByDesc('created_at') as $comment)
-                            <div class="comment-item">
-                                <div class="comment-avatar">{{ substr($comment->user->name ?? 'S', 0, 1) }}</div>
-                                <div class="comment-content">
-                                    <div class="comment-meta">
+                            <div class="comment-bubble-wrapper">
+                                <div class="comment-avatar-container">
+                                    <div class="avatar-box">{{ substr($comment->user->name ?? 'S', 0, 1) }}</div>
+                                    <div class="timeline-line"></div>
+                                </div>
+                                <div class="comment-body">
+                                    <div class="comment-header">
                                         <span class="user-name">{{ $comment->user->name ?? 'Sistema' }}</span>
-                                        <span class="date-stamp">{{ $comment->created_at->diffForHumans() }}</span>
+                                        <span class="time-ago"><i class="far fa-clock"></i> {{ $comment->created_at->diffForHumans() }}</span>
                                     </div>
-                                    <p class="comment-text">{{ $comment->comentario }}</p>
+                                    <div class="comment-text-box">
+                                        <p>{{ $comment->comentario }}</p>
+                                    </div>
 
-                                    {{-- LÓGICA DE SOPORTES AGREGADA --}}
                                     @if($comment->soporte)
                                         @php
                                             $extension = pathinfo($comment->soporte, PATHINFO_EXTENSION);
                                             $esImagen = in_array(strtolower($extension), ['jpg', 'jpeg', 'png', 'gif', 'webp']);
                                             $urlS3 = Storage::disk('s3')->temporaryUrl($comment->soporte, now()->addMinutes(30));
                                         @endphp
-                                        <div class="comment-attachment-wrapper mt-3">
+                                        <div class="attachment-card">
                                             @if($esImagen)
-                                                <a href="{{ $urlS3 }}" target="_blank" class="attachment-preview-link">
-                                                    <img src="{{ $urlS3 }}" alt="Soporte" class="img-fluid rounded border">
-                                                </a>
+                                                <div class="attachment-image-preview" style="background-image: url('{{ $urlS3 }}')">
+                                                    <a href="{{ $urlS3 }}" target="_blank" class="preview-overlay"><i class="fas fa-search-plus"></i></a>
+                                                </div>
                                             @endif
-                                            <div class="attachment-action-bar">
-                                                <span class="file-info-label">
-                                                    <i class="fas {{ $esImagen ? 'fa-image' : 'fa-file-pdf' }}"></i> 
-                                                    Documento de Soporte (.{{ strtoupper($extension) }})
-                                                </span>
-                                                <a href="{{ $urlS3 }}" target="_blank" class="btn-download-soporte">
-                                                    <i class="fas fa-external-link-alt"></i> Abrir Soporte
+                                            <div class="attachment-info">
+                                                <div class="file-type-icon {{ $esImagen ? 'is-img' : 'is-pdf' }}">
+                                                    <i class="fas {{ $esImagen ? 'fa-image' : 'fa-file-pdf' }}"></i>
+                                                </div>
+                                                <div class="file-details">
+                                                    <span class="file-name">Documento de Soporte</span>
+                                                    <span class="file-meta">Formato: .{{ strtoupper($extension) }}</span>
+                                                </div>
+                                                <a href="{{ $urlS3 }}" target="_blank" class="btn-open-file">
+                                                    <i class="fas fa-external-link-alt"></i>
                                                 </a>
                                             </div>
                                         </div>
@@ -71,71 +111,74 @@
                                 </div>
                             </div>
                         @empty
-                            <div class="empty-state-simple">
-                                <p>No existen registros de comunicación en esta unidad.</p>
+                            <div class="empty-feed">
+                                <i class="fas fa-comment-slash"></i>
+                                <p>Aún no hay feedback registrado.</p>
                             </div>
                         @endforelse
                     </div>
                 </section>
             </main>
 
-            {{-- Columna Lateral: Atributos y Auditoría --}}
+            {{-- Columna Lateral --}}
             <aside class="side-column">
-                {{-- Bloque: Atributos Operativos --}}
-                <section class="card-corp mb-4">
-                    <h2 class="card-corp-title"><i class="fas fa-info-circle"></i> Atributos Operativos</h2>
-                    <div class="attribute-list">
-                        <div class="attr-item">
-                            <label>Estado Actual</label>
-                            <span class="badge-status-corp st-{{ strtolower($task->estado) }}">
-                                {{ str_replace('_', ' ', ucfirst($task->estado)) }}
-                            </span>
+                <section class="glass-card mb-4 highlight-border">
+                    <h2 class="section-title"><i class="fas fa-fingerprint"></i> Estatus Operativo</h2>
+                    <div class="status-panel">
+                        <div class="status-item">
+                            <span class="label">Prioridad</span>
+                            <div class="priority-box p-{{ strtolower($task->prioridad) }}">
+                                <span class="p-dot"></span>
+                                <span class="p-label">{{ ucfirst($task->prioridad) }}</span>
+                            </div>
                         </div>
-                        <div class="attr-item">
-                            <label>Prioridad Asignada</label>
-                            <p class="prio-text prio-{{ strtolower($task->prioridad) }}">
-                                <i class="fas fa-circle"></i> {{ ucfirst($task->prioridad) }}
-                            </p>
-                        </div>
-                        <div class="attr-item">
-                            <label>Responsable Ejecutivo</label>
-                            <p class="val-text"><i class="far fa-user-circle"></i> {{ $task->user->name ?? 'Sin asignar' }}</p>
-                        </div>
-                        <div class="attr-item">
-                            <label>Workflow de Origen</label>
-                            <p class="val-text"><i class="fas fa-project-diagram"></i> {{ $task->workflow->nombre ?? 'N/A' }}</p>
-                        </div>
-                        <div class="attr-item">
-                            <label>Fecha Límite</label>
-                            <p class="val-text"><i class="far fa-calendar-times"></i> {{ $task->fecha_limite ? $task->fecha_limite->format('d M, Y') : 'Sin definir' }}</p>
+                        
+                        <div class="data-grid-side">
+                            <div class="data-row">
+                                <i class="fas fa-user-tie icon-val"></i>
+                                <div>
+                                    <span class="data-label">Responsable</span>
+                                    <span class="data-value">{{ $task->user->name ?? 'Sin asignar' }}</span>
+                                </div>
+                            </div>
+                            <div class="data-row">
+                                <i class="fas fa-project-diagram icon-val"></i>
+                                <div>
+                                    <span class="data-label">Workflow</span>
+                                    <span class="data-value">{{ $task->workflow->nombre ?? 'N/A' }}</span>
+                                </div>
+                            </div>
+                            <div class="data-row {{ $task->fecha_limite && $task->fecha_limite->isPast() ? 'alert-danger' : '' }}">
+                                <i class="fas fa-calendar-check icon-val"></i>
+                                <div>
+                                    <span class="data-label">Vencimiento</span>
+                                    <span class="data-value">{{ $task->fecha_limite ? $task->fecha_limite->format('d M, Y') : 'Indefinido' }}</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </section>
 
-                {{-- Bloque: Historial de Auditoría (Relación: Histories) --}}
-                <section class="card-corp">
-                    <h2 class="card-corp-title"><i class="fas fa-history"></i> Log de Auditoría</h2>
-                    <div class="audit-log">
-                        @forelse($task->histories->sortByDesc('created_at') as $history)
-                            <div class="log-item">
-                                <span class="log-time">{{ $history->created_at->format('d/m H:i') }}</span>
-                                <p class="log-desc">
-                                    <strong>{{ $history->user->name ?? 'User' }}</strong> transicionó de 
-                                    <span class="state-label">{{ $history->estado_anterior }}</span> a 
-                                    <span class="state-label">{{ $history->estado_nuevo }}</span>
-                                </p>
+                <section class="glass-card">
+                    <h2 class="section-title"><i class="fas fa-stream"></i> Auditoría de Estados</h2>
+                    <div class="audit-timeline">
+                        @forelse($task->histories->sortByDesc('created_at')->take(5) as $history)
+                            <div class="audit-node">
+                                <div class="node-circle"></div>
+                                <div class="node-content">
+                                    <span class="node-date">{{ $history->created_at->diffForHumans() }}</span>
+                                    <p class="node-text"><strong>{{ explode(' ', $history->user->name ?? 'User')[0] }}</strong> cambió a <span class="node-status">{{ $history->estado_nuevo }}</span></p>
+                                </div>
                             </div>
                         @empty
-                            <p class="empty-log">Sin cambios de estado registrados.</p>
+                            <p class="empty-txt-small">Sin historial de cambios.</p>
                         @endforelse
                     </div>
                 </section>
-
-                {{-- Metadatos del Registro --}}
-                <div class="meta-footer">
-                    <p>Creado: {{ $task->created_at->format('d/m/Y H:i') }}</p>
-                    <p>Última actualización: {{ $task->updated_at->format('d/m/Y H:i') }}</p>
-                    <p>ID Referencia: UUID-{{ $task->id }}</p>
+                
+                <div class="system-footprint">
+                    <p><i class="fas fa-code-branch"></i> ID: UUID-{{ substr($task->id, 0, 8) }}</p>
+                    <p><i class="fas fa-history"></i> Actualizado: {{ $task->updated_at->format('d/m H:i') }}</p>
                 </div>
             </aside>
         </div>
@@ -145,86 +188,128 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
         :root {
-            --corp-dark: #0f172a;
-            --corp-blue: #2563eb;
-            --corp-border: #f1f5f9;
-            --text-main: #1e293b;
-            --text-muted: #64748b;
-            --bg-page: #fafafa;
+            --primary: #2563eb;
+            --dark: #0f172a;
+            --slate-50: #f8fafc;
+            --slate-100: #f1f5f9;
+            --slate-200: #e2e8f0;
+            --slate-500: #64748b;
+            --slate-900: #0f172a;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
         }
 
-        body { background-color: var(--bg-page); font-family: 'Inter', sans-serif; color: var(--text-main); }
-        .task-show-wrapper { max-width: 1200px; margin: 40px auto; padding: 0 24px; }
+        body { background-color: #f4f7fa; font-family: 'Inter', sans-serif; color: var(--slate-900); }
+        .task-show-wrapper { max-width: 1200px; margin: 30px auto; padding: 0 20px; }
 
-        /* HEADER */
-        .show-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
+        /* HEADER UI */
+        .show-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
         .header-left { display: flex; align-items: center; gap: 20px; }
-        .btn-back-circle { 
-            width: 40px; height: 40px; border-radius: 50%; background: #fff; border: 1px solid var(--corp-border);
-            display: flex; align-items: center; justify-content: center; color: var(--text-muted); text-decoration: none; transition: 0.2s;
+        .btn-back-circle { width: 42px; height: 42px; border-radius: 12px; background: white; border: 1px solid var(--slate-200); display: flex; align-items: center; justify-content: center; color: var(--slate-500); transition: all 0.2s; text-decoration: none; }
+        .btn-back-circle:hover { background: var(--dark); color: white; transform: translateX(-3px); }
+        
+        .breadcrumb-simple { font-size: 0.75rem; font-weight: 700; color: var(--slate-500); margin-bottom: 5px; }
+        .system-tag { color: var(--primary); text-transform: uppercase; }
+        .main-title { font-size: 1.85rem; font-weight: 800; letter-spacing: -0.03em; color: var(--slate-900); margin: 0; line-height: 1.1; }
+        
+        .header-meta-info { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+        .badge-status-pill { padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; border: 1px solid rgba(0,0,0,0.05); display: flex; align-items: center; gap: 6px; }
+        .st-pendiente { background: #fffbeb; color: #b45309; }
+        .st-en_proceso { background: #eff6ff; color: #1e40af; }
+        .st-completado { background: #f0fdf4; color: #166534; }
+        .meta-date { font-size: 0.8rem; color: var(--slate-500); font-weight: 500; }
+
+        .btn-corporate-primary { background: var(--dark); color: white; padding: 12px 20px; border-radius: 12px; font-weight: 600; font-size: 0.85rem; text-decoration: none; display: flex; align-items: center; gap: 8px; transition: 0.3s; }
+        .btn-corporate-primary:hover { background: var(--primary); box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.2); transform: translateY(-2px); }
+
+        /* ESTILOS DEL BANNER DE WORKFLOW (NUEVO) */
+        .workflow-highlight-banner {
+            background: white;
+            border-radius: 18px;
+            border: 1px solid var(--slate-200);
+            border-left: 6px solid var(--primary);
+            padding: 18px 25px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
         }
-        .btn-back-circle:hover { background: var(--corp-dark); color: #fff; }
-        .system-tag { font-size: 0.65rem; font-weight: 800; color: var(--corp-blue); text-transform: uppercase; letter-spacing: 0.1em; display: block; margin-bottom: 4px; }
-        .main-title { font-size: 2.25rem; font-weight: 800; letter-spacing: -0.04em; margin: 0; color: var(--corp-dark); }
-        .main-subtitle { font-size: 0.95rem; color: var(--text-muted); margin-top: 4px; }
+        .wf-content { display: flex; align-items: center; gap: 20px; }
+        .wf-icon-box { width: 45px; height: 45px; background: #eff6ff; color: var(--primary); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; }
+        .wf-text-group { display: flex; flex-direction: column; }
+        .wf-overtitle { font-size: 0.65rem; font-weight: 800; color: var(--slate-500); text-transform: uppercase; letter-spacing: 0.05em; }
+        .wf-main-name { font-size: 1.15rem; font-weight: 800; color: var(--dark); margin: 0; }
+        .btn-wf-link { background: #f8fafc; border: 1px solid var(--slate-200); padding: 8px 16px; border-radius: 10px; font-size: 0.8rem; font-weight: 700; color: var(--slate-700); text-decoration: none; transition: 0.2s; }
+        .btn-wf-link:hover { background: var(--primary); color: white; border-color: var(--primary); }
 
-        .btn-corporate-edit {
-            background: var(--corp-dark); color: #fff; padding: 12px 24px; border-radius: 10px;
-            font-weight: 600; font-size: 0.85rem; text-decoration: none; display: flex; align-items: center; gap: 10px; transition: 0.2s;
-        }
-        .btn-corporate-edit:hover { background: #000; transform: translateY(-1px); }
+        /* LAYOUT */
+        .show-grid { display: grid; grid-template-columns: 1.8fr 1fr; gap: 25px; }
+        @media (max-width: 992px) { .show-grid { grid-template-columns: 1fr; } .workflow-highlight-banner { flex-direction: column; align-items: flex-start; gap: 15px; } .btn-wf-link { width: 100%; text-align: center; justify-content: center; } }
 
-        /* GRID LAYOUT */
-        .show-grid { display: grid; grid-template-columns: 1.8fr 1fr; gap: 30px; align-items: start; }
-        @media (max-width: 992px) { .show-grid { grid-template-columns: 1fr; } }
+        .glass-card { background: white; border-radius: 20px; border: 1px solid var(--slate-200); padding: 25px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
+        .section-header { margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--slate-100); display: flex; align-items: center; }
+        .section-header.space-between { justify-content: space-between; }
+        .section-title { font-size: 0.95rem; font-weight: 700; display: flex; align-items: center; gap: 10px; color: var(--slate-900); margin: 0; }
+        .section-title i { color: var(--primary); }
 
-        .card-corp { background: #fff; border-radius: 16px; border: 1px solid var(--corp-border); padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.02); }
-        .card-corp-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; color: var(--corp-dark); border-bottom: 1px solid var(--corp-border); padding-bottom: 12px; }
-        .mb-4 { margin-bottom: 24px; }
+        /* COMMENTS TIMELINE */
+        .comment-timeline { display: flex; flex-direction: column; gap: 5px; }
+        .comment-bubble-wrapper { display: flex; gap: 15px; }
+        .comment-avatar-container { display: flex; flex-direction: column; align-items: center; width: 35px; }
+        .avatar-box { width: 35px; height: 35px; background: var(--slate-100); color: var(--primary); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 800; border: 1px solid var(--slate-200); }
+        .timeline-line { width: 2px; flex-grow: 1; background: var(--slate-100); margin: 5px 0; }
+        
+        .comment-body { flex: 1; padding-bottom: 25px; }
+        .comment-header { display: flex; justify-content: space-between; margin-bottom: 6px; }
+        .user-name { font-size: 0.85rem; font-weight: 700; color: var(--slate-900); }
+        .time-ago { font-size: 0.75rem; color: var(--slate-500); }
+        .comment-text-box { background: var(--slate-50); border-radius: 0 15px 15px 15px; padding: 15px; border: 1px solid var(--slate-100); }
+        .comment-text-box p { margin: 0; font-size: 0.9rem; line-height: 1.5; color: #334155; }
 
-        /* CONTENT AREA */
-        .description-text { font-size: 0.95rem; line-height: 1.6; color: var(--text-main); }
+        /* ATTACHMENT CARD */
+        .attachment-card { margin-top: 12px; border: 1px solid var(--slate-200); border-radius: 15px; overflow: hidden; background: white; }
+        .attachment-image-preview { height: 140px; background-size: cover; background-position: center; position: relative; }
+        .preview-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: white; opacity: 0; transition: 0.2s; text-decoration: none; }
+        .attachment-image-preview:hover .preview-overlay { opacity: 1; }
+        
+        .attachment-info { padding: 12px; display: flex; align-items: center; gap: 12px; }
+        .file-type-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+        .is-img { background: #eff6ff; color: #3b82f6; }
+        .is-pdf { background: #fff1f2; color: #e11d48; }
+        .file-details { flex: 1; display: flex; flex-direction: column; }
+        .file-name { font-size: 0.8rem; font-weight: 700; color: var(--slate-900); }
+        .file-meta { font-size: 0.7rem; color: var(--slate-500); }
+        .btn-open-file { color: var(--slate-400); font-size: 1.1rem; transition: 0.2s; }
+        .btn-open-file:hover { color: var(--primary); }
 
-        /* COMMENTS & ATTACHMENTS */
-        .comment-thread { display: flex; flex-direction: column; gap: 20px; }
-        .comment-item { display: flex; gap: 15px; }
-        .comment-avatar { width: 32px; height: 32px; background: #e0e7ff; color: #4338ca; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 800; flex-shrink: 0; }
-        .comment-meta { display: flex; justify-content: space-between; margin-bottom: 4px; }
-        .user-name { font-size: 0.85rem; font-weight: 700; }
-        .date-stamp { font-size: 0.7rem; color: var(--text-muted); }
-        .comment-text { font-size: 0.9rem; line-height: 1.5; color: var(--text-main); }
+        /* SIDEBAR COMPONENTS */
+        .priority-box { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 10px; font-weight: 700; font-size: 0.8rem; width: 100%; }
+        .p-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .p-alta { background: #fef2f2; color: #b91c1c; } .p-alta .p-dot { background: #ef4444; }
+        .p-media { background: #fffbeb; color: #b45309; } .p-media .p-dot { background: #f59e0b; }
+        .p-baja { background: #f0fdf4; color: #15803d; } .p-baja .p-dot { background: #10b981; }
 
-        /* SOPORTE STYLES */
-        .comment-attachment-wrapper { background: #f8fafc; border: 1px solid var(--corp-border); border-radius: 12px; padding: 12px; }
-        .attachment-preview-link { display: block; max-width: 200px; margin-bottom: 10px; }
-        .attachment-action-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-        .file-info-label { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; display: flex; align-items: center; gap: 6px; }
-        .btn-download-soporte { font-size: 0.75rem; color: var(--corp-blue); text-decoration: none; font-weight: 700; border: 1px solid var(--corp-blue); padding: 4px 10px; border-radius: 6px; transition: 0.2s; }
-        .btn-download-soporte:hover { background: var(--corp-blue); color: #fff; }
+        .data-grid-side { margin-top: 20px; display: flex; flex-direction: column; gap: 18px; }
+        .data-row { display: flex; align-items: center; gap: 15px; }
+        .icon-val { font-size: 1rem; color: var(--slate-400); width: 20px; text-align: center; }
+        .data-label { display: block; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; color: var(--slate-500); letter-spacing: 0.05em; }
+        .data-value { font-size: 0.9rem; font-weight: 600; color: var(--slate-900); }
+        .alert-danger .data-value { color: var(--danger); }
 
-        /* ATTRIBUTES */
-        .attribute-list { display: flex; flex-direction: column; gap: 16px; }
-        .attr-item label { display: block; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; letter-spacing: 0.05em; }
-        .val-text { font-size: 0.9rem; font-weight: 500; display: flex; align-items: center; gap: 8px; }
+        /* AUDIT TIMELINE */
+        .audit-timeline { position: relative; padding-left: 10px; }
+        .audit-node { position: relative; padding-left: 20px; padding-bottom: 20px; }
+        .node-circle { position: absolute; left: -5px; top: 5px; width: 10px; height: 10px; background: var(--slate-200); border-radius: 50%; border: 2px solid white; z-index: 2; }
+        .audit-node::before { content: ''; position: absolute; left: -1px; top: 15px; width: 2px; height: 100%; background: var(--slate-100); }
+        .audit-node:last-child::before { display: none; }
+        .node-date { font-size: 0.7rem; color: var(--slate-400); display: block; }
+        .node-text { font-size: 0.8rem; margin: 2px 0 0; color: var(--slate-700); }
+        .node-status { font-weight: 700; color: var(--primary); }
 
-        .badge-status-corp { padding: 4px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; display: inline-block; }
-        .st-pendiente { background: #fef3c7; color: #b45309; }
-        .st-en_proceso { background: #e0f2fe; color: #0369a1; }
-        .st-completado { background: #dcfce7; color: #15803d; }
-
-        .prio-text { font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 8px; }
-        .prio-alta { color: #ef4444; }
-        .prio-media { color: #f59e0b; }
-        .prio-baja { color: #10b981; }
-
-        /* AUDIT LOG */
-        .audit-log { display: flex; flex-direction: column; gap: 12px; }
-        .log-item { font-size: 0.8rem; border-left: 2px solid var(--corp-border); padding-left: 15px; }
-        .log-time { font-size: 0.7rem; color: var(--text-muted); font-weight: 600; }
-        .log-desc { margin-top: 2px; }
-        .state-label { font-family: monospace; padding: 2px 4px; background: #f1f5f9; border-radius: 4px; font-size: 0.75rem; }
-
-        .meta-footer { margin-top: 30px; padding: 20px; border-top: 1px dashed var(--corp-border); font-size: 0.75rem; color: var(--text-muted); line-height: 1.8; }
-        .empty-state-simple { text-align: center; padding: 20px; color: var(--text-muted); font-size: 0.85rem; font-style: italic; }
+        .system-footprint { font-size: 0.7rem; color: var(--slate-400); text-align: center; display: flex; gap: 15px; justify-content: center; }
+        .highlight-border { border-top: 4px solid var(--primary); }
+        .fa-spin-slow { animation: fa-spin 3s infinite linear; }
     </style>
 </x-base-layout>
