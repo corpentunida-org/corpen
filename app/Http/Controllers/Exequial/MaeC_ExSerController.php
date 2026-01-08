@@ -69,6 +69,7 @@ class MaeC_ExSerController extends Controller
             ComaeExCli::where('cod_cli', $request->cedulaTitular)->update(['estado' => false]);
             $request->parentesco = 'TITULAR';
         } else {
+            dd("here iam" . $request->all());
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $token,
                 'Accept' => '*/*',
