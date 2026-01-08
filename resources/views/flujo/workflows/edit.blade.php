@@ -1,5 +1,7 @@
 <x-base-layout>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap');
+
         :root {
             --primary: #4f46e5;
             --primary-hover: #4338ca;
@@ -13,15 +15,35 @@
             --text-main: #1e293b;
             --text-muted: #64748b;
             --json-bg: #1e293b;
+            --ring-color: rgba(79, 70, 229, 0.2);
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
         }
 
         .form-container {
             max-width: 1150px;
-            margin: 2rem auto;
+            margin: 3rem auto;
             background: var(--bg-card);
-            padding: 2.5rem;
-            border-radius: 20px;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+            padding: 3rem;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08);
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Línea decorativa superior */
+        .form-container::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 6px;
+            background: linear-gradient(90deg, var(--primary), var(--success));
         }
 
         .form-header {
@@ -29,93 +51,100 @@
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid var(--border-color);
-            padding-bottom: 1.5rem;
-            margin-bottom: 2rem;
+            padding-bottom: 2rem;
+            margin-bottom: 2.5rem;
         }
 
         .form-header h1 {
-            font-size: 1.75rem;
+            font-size: 2rem;
             font-weight: 800;
             color: var(--text-main);
             margin: 0;
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 1rem;
+            letter-spacing: -0.04em;
         }
 
         .form-grid {
             display: grid;
             grid-template-columns: 1.4fr 1fr;
-            gap: 3rem;
+            gap: 3.5rem;
         }
 
         @media (max-width: 1000px) {
-            .form-grid { grid-template-columns: 1fr; }
+            .form-grid { grid-template-columns: 1fr; gap: 2rem; }
         }
 
-        .form-group { margin-bottom: 1.5rem; }
+        .form-group { margin-bottom: 1.8rem; position: relative; }
 
         .form-group label {
             display: block;
             font-weight: 700;
-            font-size: 0.9rem;
-            margin-bottom: 0.6rem;
+            font-size: 0.85rem;
+            margin-bottom: 0.7rem;
             color: var(--text-main);
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
         }
 
+        /* Mejora de Inputs */
         .form-group input, .form-group select, .form-group textarea {
             width: 100%;
-            padding: 0.75rem 1rem;
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
+            padding: 0.85rem 1.25rem;
+            border: 2px solid var(--border-color);
+            border-radius: 14px;
             background-color: #fcfcfd;
-            font-size: 0.95rem;
-            transition: all 0.2s ease;
+            font-size: 1rem;
+            color: var(--text-main);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
             outline: none;
             border-color: var(--primary);
             background-color: #fff;
-            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+            box-shadow: 0 0 0 4px var(--ring-color);
+            transform: translateY(-1px);
         }
 
         /* Tabs de Configuración */
         .config-tabs { 
             display: flex; 
-            gap: 10px;
-            margin-bottom: 1.5rem; 
+            gap: 8px;
+            margin-bottom: 1.8rem; 
             background: #f1f5f9;
             padding: 6px;
-            border-radius: 14px;
+            border-radius: 16px;
             width: fit-content;
         }
         
         .config-tab {
-            padding: 0.6rem 1.2rem;
+            padding: 0.7rem 1.4rem;
             background: transparent;
             border: none;
-            border-radius: 10px;
+            border-radius: 12px;
             font-weight: 700;
             color: var(--text-muted);
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.2s ease;
             display: flex;
             align-items: center;
             gap: 8px;
+            font-size: 0.9rem;
         }
         
         .config-tab.active { 
             background: white; 
             color: var(--primary); 
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         }
 
         .config-content { display: none; }
-        .config-content.active { display: block; animation: fadeIn 0.3s ease; }
+        .config-content.active { display: block; animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
+            from { opacity: 0; transform: translateY(15px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
@@ -123,31 +152,35 @@
         .template-card {
             cursor: pointer;
             border: 2px solid var(--border-color);
-            padding: 1.25rem;
-            border-radius: 16px;
+            padding: 1.5rem;
+            border-radius: 18px;
             background: white;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
             text-align: left;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
 
         .template-card:hover {
             border-color: var(--primary);
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(79, 70, 229, 0.08);
+            transform: translateY(-6px) scale(1.02);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
         }
 
         .template-card i {
-            font-size: 1.8rem;
-            margin-bottom: 0.75rem;
-            display: block;
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            transition: transform 0.3s ease;
         }
+        .template-card:hover i { transform: rotate(-5deg) scale(1.1); }
 
         /* Editor JSON */
         .json-editor-container { 
-            border-radius: 14px; 
+            border-radius: 18px; 
             overflow: hidden; 
             border: 2px solid var(--border-color);
-            transition: all 0.5s;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
         }
         
         .json-editor { 
@@ -155,76 +188,154 @@
             background: var(--json-bg); 
             color: #a5f3fc; 
             border: none; 
-            padding: 1.25rem; 
-            font-size: 0.85rem; 
+            padding: 1.5rem; 
+            font-size: 0.9rem; 
             width: 100%; 
-            line-height: 1.6;
+            line-height: 1.7;
+            resize: vertical;
         }
         
-        .json-editor-actions { background: #0f172a; padding: 0.75rem 1rem; display: flex; gap: 0.75rem; }
+        .json-editor-actions { 
+            background: #0f172a; 
+            padding: 1rem 1.5rem; 
+            display: flex; 
+            gap: 1rem;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
         
         .btn-small { 
-            background: rgba(255, 255, 255, 0.1); 
+            background: rgba(255, 255, 255, 0.08); 
             color: white; 
-            border: none; 
-            padding: 0.4rem 0.8rem; 
-            border-radius: 8px; 
-            font-size: 0.75rem; 
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 0.5rem 1rem; 
+            border-radius: 10px; 
+            font-size: 0.8rem; 
             cursor: pointer;
             font-weight: 600;
+            transition: all 0.2s;
         }
 
-        .btn-small:hover { background: rgba(255, 255, 255, 0.2); }
-
-        /* Efectos Visuales */
-        .flash-success { animation: flash-green 1s ease-out; }
-        @keyframes flash-green {
-            0% { border-color: var(--border-color); }
-            50% { border-color: var(--success); box-shadow: 0 0 20px rgba(16, 185, 129, 0.3); }
-            100% { border-color: var(--border-color); }
+        .btn-small:hover { 
+            background: var(--primary); 
+            border-color: var(--primary);
         }
 
+        /* Checkbox Cards UX */
         .checkbox-card {
             background: #f8fafc;
-            padding: 1.25rem;
-            border-radius: 14px;
+            padding: 1.5rem;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+        
+        .checkbox-card:hover { 
+            border-color: var(--primary); 
+            background: #f1f5f9;
+            transform: scale(1.01);
+        }
+
+        .checkbox-card input[type="checkbox"] {
+            accent-color: var(--primary);
+            width: 22px;
+            height: 22px;
+            margin: 0;
+        }
+
+        /* Footer y Acciones */
+        .form-actions { 
+            margin-top: 4rem; 
+            padding-top: 2rem; 
+            border-top: 2px solid var(--border-color); 
+            display: flex; 
+            justify-content: flex-end; 
+            gap: 1.5rem; 
+        }
+
+        .btn { 
+            padding: 0.9rem 2.2rem; 
+            border-radius: 14px; 
+            font-weight: 700; 
+            cursor: pointer; 
+            display: flex; 
+            align-items: center; 
+            gap: 0.75rem; 
+            border: none; 
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-size: 0.95rem;
+        }
+
+        .btn-primary { 
+            background: var(--primary); 
+            color: white; 
+            box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
+        }
+
+        .btn-primary:hover { 
+            background: var(--primary-hover); 
+            transform: translateY(-3px); 
+            box-shadow: 0 20px 25px -5px rgba(79, 70, 229, 0.4);
+        }
+
+        .btn-secondary {
+            background: white;
+            border: 2px solid var(--border-color);
+            color: var(--text-muted);
+        }
+
+        .btn-secondary:hover {
+            background: #f1f5f9;
+            color: var(--text-main);
+            border-color: var(--secondary);
+        }
+        
+        /* Notificaciones */
+        .notification { 
+            position: fixed; top: 2rem; right: 2rem; 
+            padding: 1.2rem 2rem; 
+            border-radius: 18px; 
+            background: #0f172a; 
+            color: white; 
+            z-index: 9999; 
             display: flex;
             align-items: center;
             gap: 1rem;
-            cursor: pointer;
-            border: 1px solid transparent;
-            transition: 0.2s;
+            transform: translateX(150%); 
+            transition: 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55); 
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);
+            border-left: 5px solid var(--primary);
         }
-        
-        .checkbox-card:hover { border-color: var(--primary); background: #f1f5f9; }
+        .notification.show { transform: translateX(0); }
 
-        .form-actions { 
-            margin-top: 3rem; 
-            padding-top: 2rem; 
-            border-top: 1px solid var(--border-color); 
-            display: flex; 
-            justify-content: flex-end; 
-            gap: 1rem; 
-        }
+        /* Helpers */
+        .date-error { border-color: var(--danger) !important; color: var(--danger); }
+        .text-accent { color: var(--primary); }
+        .mt-4 { margin-top: 1rem; }
 
-        .btn { padding: 0.8rem 1.8rem; border-radius: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 0.6rem; border: none; transition: 0.2s; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:hover { background: var(--primary-hover); transform: translateY(-2px); }
-        
-        .notification { 
-            position: fixed; bottom: 2rem; right: 2rem; padding: 1rem 1.5rem; 
-            border-radius: 14px; background: #1e293b; color: white; z-index: 9999; 
-            transform: translateY(150px); transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        .btn-ghost-modern {
+            padding: 10px 15px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #f1f5f9;
+            transition: 0.3s;
         }
-        .notification.show { transform: translateY(0); }
+        .btn-ghost-modern:hover {
+            background: var(--primary-light);
+            color: var(--primary) !important;
+        }
     </style>
 
     <div class="form-container">
         <header class="form-header">
-            <h1><i class="fas fa-edit" style="color: var(--primary)"></i> Editar Proyecto</h1>
-            <a href="{{ route('flujo.workflows.index') }}" style="text-decoration:none; color: var(--secondary); font-weight: 600;">
-                <i class="fas fa-times"></i> Cancelar
+            <h1><i class="fas fa-project-diagram" style="color: var(--primary)"></i> Editar Proyecto</h1>
+            <a href="{{ route('flujo.workflows.show', $workflow) }}" class="btn-ghost-modern" style="text-decoration:none; color: var(--secondary); font-weight: 700;">
+                <i class="fas fa-eye"></i> Ver Expediente
             </a>
         </header>
 
@@ -232,60 +343,71 @@
             @csrf
             @method('PUT')
 
+            {{-- CAMPO DE REDIRECCIÓN PERSONALIZADA AL SHOW DEL PROYECTO --}}
+            <input type="hidden" name="redirect_to" value="{{ route('flujo.workflows.show', $workflow) }}">
+
             <div class="form-grid">
                 <div class="form-column">
                     <div class="form-group">
-                        <label for="nombre">Nombre del Proyecto <span style="color:var(--danger)">*</span></label>
-                        <input type="text" id="nombre" name="nombre" value="{{ old('nombre', $workflow->nombre) }}" required>
+                        <label for="nombre">Nombre Identificador <span style="color:var(--danger)">*</span></label>
+                        <input type="text" id="nombre" name="nombre" value="{{ old('nombre', $workflow->nombre) }}" placeholder="Ej: Pipeline de Ventas v2" required>
                     </div>
 
                     <div class="form-group">
-                        <label for="descripcion">Descripción</label>
-                        <textarea id="descripcion" name="descripcion" rows="4">{{ old('descripcion', $workflow->descripcion) }}</textarea>
+                        <label for="descripcion">Descripción Operativa</label>
+                        <textarea id="descripcion" name="descripcion" rows="4" placeholder="Breve resumen de los objetivos de este flujo...">{{ old('descripcion', $workflow->descripcion) }}</textarea>
                     </div>
 
                     <div class="form-group">
-                        <label>Configuración de Comportamiento</label>
+                        <label>Configuración Técnica / Metadata</label>
                         <div class="config-tabs">
                             <button type="button" class="config-tab active" data-tab="easy">
-                                <i class="fas fa-wand-magic-sparkles"></i> Modo Fácil
+                                <i class="fas fa-magic"></i> Wizard
                             </button>
                             <button type="button" class="config-tab" data-tab="json">
-                                <i class="fas fa-code"></i> Modo Experto
+                                <i class="fas fa-brackets-curly"></i> Código JSON
                             </button>
                         </div>
 
                         <div class="config-content active" id="easy-tab">
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.25rem;">
                                 <div class="template-card" onclick="applyTemplate('notif')">
-                                    <i class="fas fa-envelope-open-text" style="color: var(--primary)"></i>
-                                    <strong>Notificaciones</strong>
-                                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">Activa emails automáticos y alertas diarias.</p>
+                                    <i class="fas fa-bell" style="color: var(--primary)"></i>
+                                    <div>
+                                        <strong>Sistema Alertas</strong>
+                                        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px; line-height: 1.4;">Habilita canales de correo y notificaciones push.</p>
+                                    </div>
                                 </div>
                                 <div class="template-card" onclick="applyTemplate('high_prio')">
-                                    <i class="fas fa-bolt-lightning" style="color: var(--warning)"></i>
-                                    <strong>Prioridad Crítica</strong>
-                                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">Modo de alta urgencia con aviso a jefes.</p>
+                                    <i class="fas fa-fire-flame-curved" style="color: var(--warning)"></i>
+                                    <div>
+                                        <strong>Misión Crítica</strong>
+                                        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px; line-height: 1.4;">Escalamiento automático y tiempos de respuesta cortos.</p>
+                                    </div>
                                 </div>
                                 <div class="template-card" onclick="applyTemplate('approval')">
-                                    <i class="fas fa-user-check" style="color: var(--success)"></i>
-                                    <strong>Aprobaciones</strong>
-                                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">Añade cadena de mando obligatoria.</p>
+                                    <i class="fas fa-stamp" style="color: var(--success)"></i>
+                                    <div>
+                                        <strong>Flujo Aprobación</strong>
+                                        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px; line-height: 1.4;">Requiere validación de superiores antes de cerrar.</p>
+                                    </div>
                                 </div>
                                 <div class="template-card" onclick="applyTemplate('clear')">
-                                    <i class="fas fa-eraser" style="color: var(--secondary)"></i>
-                                    <strong>Limpiar</strong>
-                                    <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 5px;">Borra todos los ajustes técnicos.</p>
+                                    <i class="fas fa-broom" style="color: var(--secondary)"></i>
+                                    <div>
+                                        <strong>Restablecer</strong>
+                                        <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px; line-height: 1.4;">Limpiar todos los objetos de configuración JSON.</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
                         <div class="config-content" id="json-tab">
                             <div class="json-editor-container" id="json-container">
-                                <textarea id="configuracion" name="configuracion" rows="10" class="json-editor">{{ old('configuracion', $workflow->configuracion ? json_encode($workflow->configuracion, JSON_PRETTY_PRINT) : '') }}</textarea>
+                                <textarea id="configuracion" name="configuracion" rows="12" class="json-editor" spellcheck="false">{{ old('configuracion', $workflow->configuracion ? json_encode($workflow->configuracion, JSON_PRETTY_PRINT) : '') }}</textarea>
                                 <div class="json-editor-actions">
-                                    <button type="button" class="btn-small" onclick="formatJson()"><i class="fas fa-align-left"></i> Formatear</button>
-                                    <button type="button" class="btn-small" onclick="validateJson()"><i class="fas fa-check"></i> Validar</button>
+                                    <button type="button" class="btn-small" onclick="formatJson()"><i class="fas fa-wand-sparkles"></i> Auto-formato</button>
+                                    <button type="button" class="btn-small" onclick="validateJson()"><i class="fas fa-shield-check"></i> Validar Sintaxis</button>
                                 </div>
                             </div>
                         </div>
@@ -294,7 +416,7 @@
 
                 <div class="form-column">
                     <div class="form-group">
-                        <label for="creado_por">Autor Original <span style="color:var(--danger)">*</span></label>
+                        <label for="creado_por"><i class="fas fa-user-pen"></i> Autor Original</label>
                         <select name="creado_por" required>
                             @foreach($users as $user)
                                 <option value="{{ $user->id }}" {{ old('creado_por', $workflow->creado_por) == $user->id ? 'selected' : '' }}>{{ $user->name }}</option>
@@ -303,7 +425,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="asignado_a">Responsable Asignado</label>
+                        <label for="asignado_a"><i class="fas fa-user-shield"></i> Responsable Asignado</label>
                         <select name="asignado_a">
                             <option value="">-- Sin asignar --</option>
                             @foreach($users as $user)
@@ -312,9 +434,9 @@
                         </select>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
                         <div class="form-group">
-                            <label>Estado</label>
+                            <label>Estado Global</label>
                             <select name="estado" required>
                                 @foreach($estados as $val => $lab)
                                     <option value="{{ $val }}" {{ old('estado', $workflow->estado) == $val ? 'selected' : '' }}>{{ $lab }}</option>
@@ -322,7 +444,7 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label>Prioridad</label>
+                            <label>Nivel Prioridad</label>
                             <select name="prioridad" required>
                                 @foreach($prioridades as $val => $lab)
                                     <option value="{{ $val }}" {{ old('prioridad', $workflow->prioridad) == $val ? 'selected' : '' }}>{{ $lab }}</option>
@@ -331,42 +453,53 @@
                         </div>
                     </div>
 
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
                         <div class="form-group">
-                            <label>Fecha Inicio</label>
+                            <label>Fecha Lanzamiento</label>
                             <input type="date" name="fecha_inicio" id="fecha_inicio" value="{{ old('fecha_inicio', $workflow->fecha_inicio?->format('Y-m-d')) }}">
                         </div>
                         <div class="form-group">
-                            <label>Fecha Cierre</label>
+                            <label>Fecha Compromiso</label>
                             <input type="date" name="fecha_fin" id="fecha_fin" value="{{ old('fecha_fin', $workflow->fecha_fin?->format('Y-m-d')) }}">
                         </div>
                     </div>
 
-                    <div style="display: flex; flex-direction: column; gap: 0.8rem; margin-top: 1rem;">
+                    <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem;">
                         <label class="checkbox-card">
-                            <input type="checkbox" name="activo" value="1" {{ old('activo', $workflow->activo) ? 'checked' : '' }} style="width: 20px; height: 20px;">
-                            <div><strong>Activo</strong><br><small>Habilitado para ejecución</small></div>
+                            <input type="checkbox" name="activo" value="1" {{ old('activo', $workflow->activo) ? 'checked' : '' }}>
+                            <div>
+                                <strong style="font-size: 1rem;">Flujo Activo</strong><br>
+                                <small style="color: var(--text-muted);">Permitir el procesamiento de tareas en este flujo.</small>
+                            </div>
                         </label>
                         <label class="checkbox-card">
-                            <input type="checkbox" name="es_plantilla" value="1" {{ old('es_plantilla', $workflow->es_plantilla) ? 'checked' : '' }} style="width: 20px; height: 20px;">
-                            <div><strong>Es Plantilla</strong><br><small>Disponible para clonación</small></div>
+                            <input type="checkbox" name="es_plantilla" value="1" {{ old('es_plantilla', $workflow->es_plantilla) ? 'checked' : '' }}>
+                            <div>
+                                <strong style="font-size: 1rem;">Definir como Plantilla</strong><br>
+                                <small style="color: var(--text-muted);">Hacer que este diseño sea clonable para futuros flujos.</small>
+                            </div>
                         </label>
                     </div>
 
-                    <div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 16px; padding: 1.25rem; margin-top: 2rem;">
-                        <h4 style="margin:0 0 0.5rem 0; color:#1e40af; font-size: 0.9rem;"><i class="fas fa-history"></i> Trazabilidad</h4>
-                        <div style="font-size: 0.8rem; color: #1e40af;">
-                            <p style="margin: 4px 0;"><strong>Creado:</strong> {{ $workflow->created_at->format('d/m/Y H:i') }}</p>
-                            <p style="margin: 4px 0;"><strong>Modificado:</strong> {{ $workflow->updated_at->diffForHumans() }}</p>
+                    <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 1px solid #bfdbfe; border-radius: 20px; padding: 1.5rem; margin-top: 2.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                        <h4 style="margin:0 0 0.75rem 0; color:#1e40af; font-size: 1rem; font-weight: 800; display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-fingerprint"></i> Auditoría
+                        </h4>
+                        <div style="font-size: 0.85rem; color: #1e40af; display: flex; flex-direction: column; gap: 0.5rem;">
+                            <p style="margin: 0; display: flex; justify-content: space-between;"><strong>Registro:</strong> <span>{{ $workflow->created_at->format('d/m/Y H:i') }}</span></p>
+                            <p style="margin: 0; display: flex; justify-content: space-between;"><strong>Último Cambio:</strong> <span>{{ $workflow->updated_at->diffForHumans() }}</span></p>
+                            <p style="margin: 0; display: flex; justify-content: space-between;"><strong>Versión ID:</strong> <span>{{ strtoupper(substr(md5($workflow->id), 0, 8)) }}</span></p>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div class="form-actions">
-                <button type="button" class="btn btn-secondary" onclick="history.back()">Descartar</button>
+                <button type="button" class="btn btn-secondary" onclick="window.location.href='{{ route('flujo.workflows.show', $workflow) }}'">
+                    <i class="fas fa-times"></i> Cancelar cambios
+                </button>
                 <button type="submit" class="btn btn-primary" id="btn-submit">
-                    <i class="fas fa-save"></i> Actualizar Proyecto
+                    <i class="fas fa-save"></i> Guardar y Sincronizar
                 </button>
             </div>
         </form>
@@ -374,7 +507,7 @@
 
     <div id="toast" class="notification">
         <i id="toast-icon" class="fas fa-info-circle"></i>
-        <span id="toast-message"></span>
+        <span id="toast-message" style="font-weight: 600;"></span>
     </div>
 
     <script>
@@ -384,7 +517,7 @@
             const area = document.getElementById('configuracion');
             const jsonContainer = document.getElementById('json-container');
 
-            // --- Pestañas ---
+            // --- Switch de Pestañas ---
             function switchTab(target) {
                 tabs.forEach(t => t.classList.remove('active'));
                 contents.forEach(c => c.classList.remove('active'));
@@ -396,63 +529,93 @@
                 tab.addEventListener('click', () => switchTab(tab.dataset.tab));
             });
 
-            // --- Plantillas ---
+            // --- Plantillas Predeterminadas ---
             window.applyTemplate = function(type) {
                 const templates = {
-                    notif: { "email": true, "avisos": "diarios", "urgencia": "media" },
-                    high_prio: { "modo_critico": true, "notificar_ceo": true, "timeout": "1h" },
-                    approval: { "requiere_firma": true, "pasos": ["Jefe Area", "Gerente"] },
+                    notif: { "canales": ["email", "browser"], "frecuencia": "real-time", "logs": true },
+                    high_prio: { "escalamiento": "inmediato", "notificar_admin": true, "sla": "2h" },
+                    approval: { "steps": 2, "required_roles": ["manager", "director"], "blocking": true },
                     clear: {}
                 };
 
-                area.value = JSON.stringify(templates[type], null, 4);
-
-                // Feedback visual
+                // Pequeño delay para UX
+                showToast('🚀 Cargando configuración...', 'success');
+                
                 setTimeout(() => {
+                    area.value = JSON.stringify(templates[type], null, 4);
                     switchTab('json');
                     jsonContainer.classList.add('flash-success');
                     setTimeout(() => jsonContainer.classList.remove('flash-success'), 1000);
-                    showToast('✅ Ajustes aplicados correctamente', 'success');
-                }, 200);
+                    showToast('✅ Módulo técnico actualizado', 'success');
+                }, 300);
             };
 
-            // --- Utilidades JSON ---
+            // --- Herramientas JSON ---
             window.formatJson = function() {
                 try {
-                    if(!area.value.trim()) return;
+                    if(!area.value.trim()){
+                        showToast('ℹ️ El editor está vacío', 'secondary');
+                        return;
+                    }
                     area.value = JSON.stringify(JSON.parse(area.value), null, 4);
-                    showToast('✨ Código ordenado', 'success');
-                } catch(e) { showToast('❌ El código tiene errores', 'danger'); }
+                    showToast('✨ Código indentado correctamente', 'success');
+                } catch(e) { 
+                    showToast('❌ Error de sintaxis en el JSON', 'danger'); 
+                }
             };
 
             window.validateJson = function() {
                 try {
                     JSON.parse(area.value);
-                    showToast('✅ JSON listo y válido', 'success');
-                } catch(e) { showToast('❌ Error: ' + e.message, 'danger'); }
+                    showToast('💎 Estructura JSON perfecta', 'success');
+                } catch(e) { 
+                    showToast('❌ JSON Inválido: ' + e.message, 'danger'); 
+                }
             };
 
+            // --- Toast Notification System ---
             function showToast(msg, type) {
                 const toast = document.getElementById('toast');
                 const icon = document.getElementById('toast-icon');
                 document.getElementById('toast-message').textContent = msg;
                 
-                icon.className = type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle';
+                toast.style.borderLeftColor = type === 'success' ? '#10b981' : (type === 'danger' ? '#ef4444' : '#64748b');
+                icon.className = type === 'success' ? 'fas fa-check-circle' : 'fas fa-info-circle';
                 icon.style.color = type === 'success' ? '#10b981' : '#ef4444';
                 
                 toast.classList.add('show');
                 setTimeout(() => toast.classList.remove('show'), 3500);
             }
 
-            // --- Validación Global ---
+            // --- Validaciones de Fecha en Tiempo Real ---
+            const startDate = document.getElementById('fecha_inicio');
+            const endDate = document.getElementById('fecha_fin');
+
+            function checkDates() {
+                if (startDate.value && endDate.value && endDate.value < startDate.value) {
+                    endDate.classList.add('date-error');
+                } else {
+                    endDate.classList.remove('date-error');
+                }
+            }
+
+            startDate.addEventListener('change', checkDates);
+            endDate.addEventListener('change', checkDates);
+
+            // --- Envió de Formulario ---
             document.getElementById('workflow-form').onsubmit = function() {
-                const start = document.getElementById('fecha_inicio').value;
-                const end = document.getElementById('fecha_fin').value;
+                const start = startDate.value;
+                const end = endDate.value;
+                
                 if(start && end && end < start) {
-                    showToast('La fecha de cierre debe ser posterior al inicio', 'danger');
+                    showToast('⚠️ Error: El cierre es anterior al inicio', 'danger');
+                    endDate.focus();
                     return false;
                 }
-                document.getElementById('btn-submit').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+                
+                const btn = document.getElementById('btn-submit');
+                btn.style.opacity = '0.7';
+                btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Procesando cambios...';
                 return true;
             };
         });

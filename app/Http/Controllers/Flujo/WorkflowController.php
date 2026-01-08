@@ -54,15 +54,17 @@ class WorkflowController extends Controller
             $query->where('creado_por', $request->creado_por);
         }
 
-        $workflows = $query->latest()->paginate(10);
+        $workflows = $query->latest()->paginate(5);
 
         // Datos para los filtros y selects
-        $users = User::select('id', 'name')->orderBy('name')->get();
+        // CAMBIO: Aseguramos que $users siempre tenga un valor, incluso si es una colección vacía
+        $users = User::select('id', 'name')->orderBy('name')->get() ?? collect([]);
         $estados = $this->getEstadosOptions();
         $prioridades = $this->getPrioridadesOptions();
 
         // Si es una petición AJAX, devolver solo la vista parcial
         if ($request->ajax()) {
+            // CAMBIO: Devolvemos la vista completa para asegurar que los filtros se actualicen correctamente
             $view = view('flujo.componentes.workflows-card', compact('workflows', 'users', 'estados', 'prioridades'))->render();
             return response()->json([
                 'html' => $view,
