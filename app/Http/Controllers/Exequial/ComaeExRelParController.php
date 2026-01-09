@@ -80,13 +80,10 @@ class ComaeExRelParController extends Controller
             ]);
             $accion = 'add beneficiario ' . $request->documentid;
             $this->auditoria($accion, 'EXEQUIALES');
-            //return response()->json(['message' => 'Se agrego beneficiario correctamente', 'data' => $response->json()], $response->status());
             $url = route('exequial.asociados.show', ['asociado' => 'ID']) . '?id=' . $request->cedulaAsociado;
             return redirect()->to($url)->with('success', 'Beneficiario agregado exitosamente');
         } else {
-            return redirect()
-                ->back()
-                ->with('error', $response->json() . $response->status());
+            return redirect()->back()->with('error', json_encode($response->json()) . ' | Estado: ' . $response->status());
         }
     }
 

@@ -672,7 +672,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             
             lastSyncTimestamp.textContent = `Última sincronización: ${timeString}`;
-            console.log('Timestamp de sincronización actualizado:', timeString); // Para depuración
         } catch (error) {
             console.error('Error al actualizar el timestamp de sincronización:', error);
         }

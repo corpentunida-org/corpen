@@ -33,39 +33,58 @@ use Illuminate\Support\Facades\Cache;
 class ScpSoporteController extends Controller
 {
     public function index()
-    {       
+    {
+        $this->cerrarTicketAutomatico();
         $categoriaActivaPorDefecto = 'SinAsignar'; // Puedes cambiar esto a 'Pendiente', 'Cerrado', etc.
 
-        $soportes = ScpSoporte::with([
-            'tipo',
-            'subTipo',
-            'prioridad',
-            'maeTercero',
-            'usuario',
-            'cargo.gdoArea',
-            'lineaCredito',
-            'scpUsuarioAsignado.maeTercero',
-            'estadoSoporte'
-        ])
+        $soportes = ScpSoporte::with(['tipo', 'subTipo', 'prioridad', 'maeTercero', 'usuario', 'cargo.gdoArea', 'lineaCredito', 'scpUsuarioAsignado.maeTercero', 'estadoSoporte'])
             ->orderBy('created_at', 'desc')
             ->get();
 
-        $categorias = $soportes
-            ->sortBy('id')
-            ->groupBy(function ($soporte) {
-                return $soporte->estadoSoporte->nombre ?? 'Sin Categoría';
-            });
-        
-        //dd($categorias);
-            
-            //dd($categorias);
-            if (!$categorias->has($categoriaActivaPorDefecto)) {
+        $categorias = $soportes->sortBy('id')->groupBy(function ($soporte) {
+            return $soporte->estadoSoporte->nombre ?? 'Sin Categoría';
+        });
+
+
+        if (!$categorias->has($categoriaActivaPorDefecto)) {
             $categoriaActivaPorDefecto = $categorias->keys()->first();
         }
-        
+
         return view('soportes.soportes.index', compact('categorias', 'categoriaActivaPorDefecto', 'soportes'));
     }
-
+    public function cerrarTicketAutomatico()
+    {
+        $fechaLimite = Carbon::now()->subDays(5);
+        $soportes = ScpSoporte::where('scp_soportes.estado', 3)
+            ->whereExists(function ($query) use ($fechaLimite) {
+                $query
+                    ->selectRaw(1)
+                    ->from('scp_observaciones as obs')
+                    ->whereColumn('obs.id_scp_soporte', 'scp_soportes.id')
+                    ->where('obs.id_scp_estados', 3)
+                    ->whereRaw(
+                        'obs.created_at = (
+                SELECT MAX(created_at)
+                FROM scp_observaciones
+                WHERE id_scp_soporte = scp_soportes.id
+                AND id_scp_estados = 3
+            )',)->whereDate('obs.created_at', '<=', $fechaLimite);
+            })
+            ->get();
+        foreach ($soportes as $soporte) {
+            $soporte->estado = 4;
+            $soporte->save();
+            $observacionData = [
+                'observacion' => 'Cierre automático del soporte después de 5 días en estado "En Revisión".',
+                'timestam' => now(),
+                'id_scp_soporte' => $soporte->id,
+                'id_scp_estados' => 4,
+                'id_tipo_observacion' => 1,
+                'calcification' => 5,
+            ];
+            ScpObservacion::create($observacionData);
+        }
+    }
     public function create()
     {
         $categorias = ScpCategoria::all();
@@ -83,19 +102,21 @@ class ScpSoporteController extends Controller
         $proximoId = $ultimo ? $ultimo + 1 : 1;
 
         // 🔹 Enviar $proximoId a la vista
-        return view('soportes.soportes.create', compact(
-            'categorias',
-            'tipos',
-            'prioridades',
-            'terceros',
-            'usuarios',
-            'cargos',
-            'lineas',
-            'usuario',
-            'proximoId' // 👈 este es nuevo
-        ));
+        return view(
+            'soportes.soportes.create',
+            compact(
+                'categorias',
+                'tipos',
+                'prioridades',
+                'terceros',
+                'usuarios',
+                'cargos',
+                'lineas',
+                'usuario',
+                'proximoId', // 👈 este es nuevo
+            ),
+        );
     }
-
 
     // ==========================
     // VER SOPORTE (form)
@@ -103,32 +124,32 @@ class ScpSoporteController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'detalles_soporte'       => 'required|string',
-            'id_gdo_cargo'           => 'nullable|integer|exists:gdo_cargo,id',
+            'detalles_soporte' => 'required|string',
+            'id_gdo_cargo' => 'nullable|integer|exists:gdo_cargo,id',
             'id_cre_lineas_creditos' => 'nullable|integer|exists:cre_lineas_creditos,id',
-            'cod_ter_maeTercero'     => ['nullable', 'string', 'max:20', Rule::exists('MaeTerceros', 'cod_ter')],
-            'id_categoria'           => 'required|exists:scp_categorias,id',
-            'id_scp_tipo'            => 'required|exists:scp_tipos,id',
-            'id_scp_prioridad'       => 'required|exists:scp_prioridads,id',
-            'id_users'               => 'required|exists:users,id',
-            'id_scp_sub_tipo'        => 'required|exists:scp_sub_tipos,id',
-            'soporte'                => 'nullable|file|mimes:pdf,jpeg,jpg,png|max:10240',
-            'usuario_escalado'       => 'nullable|string|max:100',
+            'cod_ter_maeTercero' => ['nullable', 'string', 'max:20', Rule::exists('MaeTerceros', 'cod_ter')],
+            'id_categoria' => 'required|exists:scp_categorias,id',
+            'id_scp_tipo' => 'required|exists:scp_tipos,id',
+            'id_scp_prioridad' => 'required|exists:scp_prioridads,id',
+            'id_users' => 'required|exists:users,id',
+            'id_scp_sub_tipo' => 'required|exists:scp_sub_tipos,id',
+            'soporte' => 'nullable|file|mimes:pdf,jpeg,jpg,png|max:10240',
+            'usuario_escalado' => 'nullable|string|max:100',
         ]);
 
         $data = [
-            'detalles_soporte'       => $request->detalles_soporte,
-            'timestam'               => now(),
-            'id_gdo_cargo'           => $request->id_gdo_cargo,
+            'detalles_soporte' => $request->detalles_soporte,
+            'timestam' => now(),
+            'id_gdo_cargo' => $request->id_gdo_cargo,
             'id_cre_lineas_creditos' => $request->id_cre_lineas_creditos,
-            'cod_ter_maeTercero'     => $request->cod_ter_maeTercero,
-            'id_categoria'           => $request->id_categoria,
-            'id_scp_tipo'            => $request->id_scp_tipo,
-            'id_scp_prioridad'       => $request->id_scp_prioridad,
-            'id_users'               => $request->id_users,
-            'id_scp_sub_tipo'        => $request->id_scp_sub_tipo,
-            'estado'                 => 1,
-            'usuario_escalado'       => $request->usuario_escalado,
+            'cod_ter_maeTercero' => $request->cod_ter_maeTercero,
+            'id_categoria' => $request->id_categoria,
+            'id_scp_tipo' => $request->id_scp_tipo,
+            'id_scp_prioridad' => $request->id_scp_prioridad,
+            'id_users' => $request->id_users,
+            'id_scp_sub_tipo' => $request->id_scp_sub_tipo,
+            'estado' => 1,
+            'usuario_escalado' => $request->usuario_escalado,
         ];
 
         // ✅ Subir archivo directamente a S3 con ruta estructurada
@@ -174,11 +195,7 @@ class ScpSoporteController extends Controller
             /** @var \Illuminate\Filesystem\AwsS3V3Adapter|\Illuminate\Filesystem\FilesystemAdapter $disk */
             $disk = Storage::disk('s3');
 
-            $urlTemporal = $disk->temporaryUrl(
-                $soporte->soporte,
-                now()->addMinutes(5)
-            );
-
+            $urlTemporal = $disk->temporaryUrl($soporte->soporte, now()->addMinutes(5));
 
             return redirect($urlTemporal);
         } catch (\Exception $e) {
@@ -201,7 +218,6 @@ class ScpSoporteController extends Controller
         /** @var \Illuminate\Filesystem\AwsS3V3Adapter|\Illuminate\Filesystem\FilesystemAdapter $disk */
         $disk = Storage::disk('s3');
 
-
         if (!$disk->exists($soporte->soporte)) {
             return back()->with('error', 'Archivo no disponible.');
         }
@@ -223,17 +239,9 @@ class ScpSoporteController extends Controller
             'cargo',
             'lineaCredito',
             'observaciones' => function ($query) {
-                $query
-                    ->with([
-                        'estado',
-                        'usuario',
-                        'tipoObservacion',
-                        'scpUsuarioAsignado.maeTercero',
-                    ])
-                    ->orderBy('timestam', 'desc'); // 👈 asegúrate que el campo exista
+                $query->with(['estado', 'usuario', 'tipoObservacion', 'scpUsuarioAsignado.maeTercero'])->orderBy('timestam', 'desc'); // 👈 asegúrate que el campo exista
             },
         ]);
-        
 
         $estados = ScpEstado::all();
         $tiposObservacion = ScpTipoObservacion::all();
@@ -268,12 +276,9 @@ class ScpSoporteController extends Controller
 
         $usuario = User::find(Auth::id());
 
-        return view('soportes.soportes.edit', compact(
-            'scpSoporte', 'categorias', 'tipos', 'prioridades', 'terceros', 
-            'usuarios', 'cargos', 'lineas', 'estados', 'tiposObservacion', 'usuario'
-        ));
+        return view('soportes.soportes.edit', compact('scpSoporte', 'categorias', 'tipos', 'prioridades', 'terceros', 'usuarios', 'cargos', 'lineas', 'estados', 'tiposObservacion', 'usuario'));
     }
-    
+
     public function update(Request $request, $id)
     {
         // Validar únicamente la prioridad
@@ -289,9 +294,7 @@ class ScpSoporteController extends Controller
         $soporte->save();
 
         // Redirigir con mensaje
-        return redirect()
-            ->route('soportes.soportes.index')
-            ->with('success', 'Prioridad del soporte actualizada correctamente.');
+        return redirect()->route('soportes.soportes.index')->with('success', 'Prioridad del soporte actualizada correctamente.');
     }
 
     /* REVISAR - dd($request->all()); */
@@ -331,10 +334,10 @@ class ScpSoporteController extends Controller
         }
 
         $scpSoporte->update($updateData);
-        
+
         // Verificar si es un escalamiento (tipo de observación = 3 según el código JavaScript)
         $esEscalamiento = $request->id_tipo_observacion == 3;
-        
+
         // ================================
         //   LÓGICA DE ENVÍO DE CORREOS (COMENTADA)
         // ================================
@@ -364,10 +367,8 @@ class ScpSoporteController extends Controller
         */
         // ================================
 
-        return redirect()->route('soportes.soportes.show', $scpSoporte)
-            ->with('success', 'Observación añadida y soporte actualizado exitosamente.');
+        return redirect()->route('soportes.soportes.show', $scpSoporte)->with('success', 'Observación añadida y soporte actualizado exitosamente.');
     }
-
 
     public function destroyObservacion(ScpSoporte $scpSoporte, ScpObservacion $scpObservacion)
     {
@@ -404,7 +405,7 @@ class ScpSoporteController extends Controller
 
     // ==========================
     // NOTIFICACIONES
-    // ==========================    
+    // ==========================
     public function getNotificaciones()
     {
         $userId = Auth::id();
@@ -413,12 +414,15 @@ class ScpSoporteController extends Controller
         // Solo contar soportes que no están cerrados para la campana
         $total = ScpSoporte::query()
             ->where('estado', '!=', '4') // Excluir cerrados (ID=4)
-            ->when($usuarioEscalado, function ($q) use ($usuarioEscalado, $userId) {
-                $q->where('id_users', $userId)
-                ->orWhere('usuario_escalado', $usuarioEscalado->id);
-            }, function ($q) use ($userId) {
-                $q->where('id_users', $userId);
-            })
+            ->when(
+                $usuarioEscalado,
+                function ($q) use ($usuarioEscalado, $userId) {
+                    $q->where('id_users', $userId)->orWhere('usuario_escalado', $usuarioEscalado->id);
+                },
+                function ($q) use ($userId) {
+                    $q->where('id_users', $userId);
+                },
+            )
             ->count();
 
         return response()->json(['total' => $total]);
@@ -428,7 +432,7 @@ class ScpSoporteController extends Controller
     {
         $userId = Auth::id();
         $usuarioEscalado = ScpUsuario::where('usuario', $userId)->first();
-        
+
         // Construir la condición base para el usuario
         $condicionUsuario = function ($q) use ($userId, $usuarioEscalado) {
             $q->where('id_users', $userId);
@@ -436,16 +440,16 @@ class ScpSoporteController extends Controller
                 $q->orWhere('usuario_escalado', $usuarioEscalado->id);
             }
         };
-        
+
         // Obtener todos los soportes del usuario con una sola consulta
         $soportes = ScpSoporte::with('estadoSoporte', 'prioridad', 'usuario')
             ->where($condicionUsuario)
             ->orderByDesc('updated_at')
             ->get(['id', 'id_users', 'detalles_soporte', 'estado', 'id_scp_prioridad', 'updated_at']);
-        
+
         // Agrupar por estado
         $agrupados = $soportes->groupBy('estado');
-        
+
         // Preparar datos de respuesta
         $respuesta = [
             'sinAsignar_count' => $agrupados->has('1') ? $agrupados->get('1')->count() : 0,
@@ -458,35 +462,35 @@ class ScpSoporteController extends Controller
             'revision' => [],
             'cerrados' => [],
         ];
-        
+
         // Calcular total (excluyendo cerrados)
         $respuesta['total'] = $respuesta['sinAsignar_count'] + $respuesta['enProceso_count'] + $respuesta['revision_count'];
-        
+
         // Formatear y asignar detalles por categoría
         if ($agrupados->has('1')) {
             $respuesta['sinAsignar'] = $agrupados->get('1')->map(function ($soporte) {
                 return $this->formatearSoporte($soporte);
             });
         }
-        
+
         if ($agrupados->has('2')) {
             $respuesta['enProceso'] = $agrupados->get('2')->map(function ($soporte) {
                 return $this->formatearSoporte($soporte);
             });
         }
-        
+
         if ($agrupados->has('3')) {
             $respuesta['revision'] = $agrupados->get('3')->map(function ($soporte) {
                 return $this->formatearSoporte($soporte);
             });
         }
-        
+
         if ($agrupados->has('4')) {
             $respuesta['cerrados'] = $agrupados->get('4')->map(function ($soporte) {
                 return $this->formatearSoporte($soporte);
             });
         }
-        
+
         return response()->json($respuesta);
     }
 
@@ -500,7 +504,7 @@ class ScpSoporteController extends Controller
             'Baja' => 'primary',
             default => 'gray',
         };
-        
+
         // Determinar el nombre del estado según el ID
         $estadoNombre = match ($soporte->estado) {
             '1' => 'Sin Asignar',
@@ -509,7 +513,7 @@ class ScpSoporteController extends Controller
             '4' => 'Cerrado',
             default => $soporte->estadoSoporte->nombre ?? 'Sin Estado',
         };
-        
+
         return [
             'id' => $soporte->id,
             'usuario_nombre' => $soporte->usuario->nombre_corto ?? '',
@@ -523,24 +527,13 @@ class ScpSoporteController extends Controller
         ];
     }
 
-
     // ==========================
     // POR REVISAR
     // ==========================
 
     public function pendientes()
     {
-        $soportesPendientes = ScpSoporte::with([
-            'tipo',
-            'subTipo',
-            'prioridad',
-            'maeTercero',
-            'usuario',
-            'cargo.gdoArea',
-            'lineaCredito',
-            'scpUsuarioAsignado.maeTercero',
-            'estadoSoporte'
-        ])
+        $soportesPendientes = ScpSoporte::with(['tipo', 'subTipo', 'prioridad', 'maeTercero', 'usuario', 'cargo.gdoArea', 'lineaCredito', 'scpUsuarioAsignado.maeTercero', 'estadoSoporte'])
             ->whereHas('estadoSoporte', function ($q) {
                 $q->where('nombre', 'Pendiente');
             })
@@ -551,18 +544,7 @@ class ScpSoporteController extends Controller
     }
     public function sinAsignar()
     {
-        $soportesSinAsignar = ScpSoporte::with([
-            'tipo',
-            'subTipo',
-            'prioridad',
-            'maeTercero',
-            'usuario',
-            'cargo.gdoArea',
-            'lineaCredito',
-            'scpUsuarioAsignado.maeTercero',
-            'estadoSoporte',
-            'categoria'
-        ])
+        $soportesSinAsignar = ScpSoporte::with(['tipo', 'subTipo', 'prioridad', 'maeTercero', 'usuario', 'cargo.gdoArea', 'lineaCredito', 'scpUsuarioAsignado.maeTercero', 'estadoSoporte', 'categoria'])
             ->whereHas('categoria', function ($q) {
                 $q->where('nombre', 'SinAsignar');
             })
