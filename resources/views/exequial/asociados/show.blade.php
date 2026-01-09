@@ -1,4 +1,6 @@
 <x-base-layout>
+    <x-success />
+    <x-error />
     @section('titlepage', 'Titular y Beneficiarios')
     @if(!$maeter)
         <div class="col-lg-12 alert alert-danger alert-dismissible fade show" role="alert">
@@ -34,7 +36,6 @@
             </div>
         </div>
     </div>
-    <x-success />
     <div class="col-xxl-12 col-xl-12">
         <div class="card border-top-0">
             <div class="card-header p-0">
@@ -165,7 +166,7 @@
     </div>
 
 
-    <div class="offcanvas offcanvas-end" tabindex="-1" id="proposalSent2">
+    <div class="offcanvas offcanvas-end modal-dialog-scrollable" tabindex="-1" id="proposalSent2">
         <div class="offcanvas-header d-flex justify-content-between border-bottom border-gray-5">
             <h2 class="fs-16 fw-bold pt-2">PRESTAR SERVICIO</h2>
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
@@ -173,8 +174,7 @@
         <form method="POST"
             action="{{ route('exequial.prestarServicio.store') }}"id="FormularioPrestarServicioTitular" novalidate>
             @csrf
-            <div
-                class="py-3 px-4 d-flex justify-content-between align-items-center border-bottom border-bottom-dashed border-gray-5 bg-gray-100">
+            <div class="py-3 px-4 d-flex justify-content-between align-items-center border-bottom border-bottom-dashed border-gray-5 bg-gray-100">
                 <div>
                     <input class="fw-bold text-dark p-0 m-0 border border-0 bg-gray-100" id="nameTitular"
                         style="width: 100%;" name="nameBeneficiary" value="{{ $asociado['name'] }}" readonly>
@@ -243,7 +243,7 @@
                 </div>               
             </div>
             <div class="px-4 gap-2 d-flex align-items-center ht-80 border border-end-0 border-gray-2">
-                <a href="" class="btn btn-danger w-50" data-bs-dismiss="offcanvas">Cancelar</a>
+                <a class="btn btn-danger w-50" data-bs-dismiss="offcanvas">Cancelar</a>
                 <button type="submit" class="btn btn-success w-50">Prestar Servicio</button>
             </div>
         </form>
