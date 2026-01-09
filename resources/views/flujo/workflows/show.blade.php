@@ -206,6 +206,22 @@
         .btn-edit { background: var(--text-main); color: white; border: none; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
         .btn-edit:hover { background: #000; transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
 
+        .btn-success-modern { 
+            background: var(--success); 
+            color: white; 
+            border: none; 
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: 0.2s;
+        }
+        .btn-success-modern:hover { background: #059669; transform: translateY(-1px); }
+
         .btn-ghost-modern { 
             display: inline-flex; 
             align-items: center; 
@@ -253,7 +269,7 @@
                     <span class="badge-pill {{ $workflow->activo ? 'badge-active' : 'badge-inactive' }}">
                         <i class="fas {{ $workflow->activo ? 'fa-check-circle' : 'fa-pause-circle' }}"></i> {{ $workflow->activo ? 'Flujo Activo' : 'Flujo En Pausa' }}
                     </span>
-                    <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; margin-left: 8px;">REF: #{{ $task->id ?? $workflow->id }}</span>
+                    <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600; margin-left: 8px;">REF: #{{ $workflow->id }}</span>
                 </div>
             </div>
             <div class="btn-actions">
@@ -275,7 +291,13 @@
                 <div class="card">
                     <div class="card-title">
                         <i class="fas fa-list-check" style="color: var(--success)"></i> Unidades de Trabajo
-                        <span style="margin-left:auto; font-size: 0.65rem; background: var(--primary-light); color: var(--primary); padding: 4px 10px; border-radius: 99px; font-weight: 800;">{{ $workflow->tasks->count() }} ASIGNADAS</span>
+                        <div style="margin-left:auto; display: flex; align-items: center; gap: 15px;">
+                            {{-- BOTÓN SOLICITADO: Crear tarea para este proyecto --}}
+                            <a href="{{ route('flujo.tasks.create', ['workflow_id' => $workflow->id]) }}" class="btn-success-modern">
+                                <i class="fas fa-plus"></i> Crear tarea a este proyecto
+                            </a>
+                            <span style="font-size: 0.65rem; background: var(--primary-light); color: var(--primary); padding: 4px 10px; border-radius: 99px; font-weight: 800;">{{ $workflow->tasks->count() }} ASIGNADAS</span>
+                        </div>
                     </div>
                     <div class="tasks-list">
                         @forelse($workflow->tasks as $task)
