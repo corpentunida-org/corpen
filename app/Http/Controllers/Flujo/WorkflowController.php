@@ -10,18 +10,19 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Carbon\Carbon;
 
 class WorkflowController extends Controller
 {
     /**
-     * Listado de workflows con búsqueda y filtros mejorados.
+     * Listado de workflows con búsqueda, filtros y estadísticas para gráficos.
      */
     public function index(Request $request)
     {
-        // Incluimos la relación 'asignado' para evitar el problema N+1
+        // 1. Iniciamos la query con relaciones para evitar N+1
         $query = Workflow::with(['creator', 'modifier', 'asignado']);
 
-        // 1. Búsqueda Global (Nombre o Descripción) - Mantenida según código original
+        // 2. Aplicamos Búsqueda Global (Nombre o Descripción)
         if ($request->filled('search')) {
             $query->where(function($q) use ($request) {
                 $q->where('nombre', 'like', '%' . $request->search . '%')
@@ -29,42 +30,67 @@ class WorkflowController extends Controller
             });
         }
 
-        /**
-         * FILTROS AVANZADOS SUJETOS AL MODELO
-         */
-
-        // 2. Filtro específico por Nombre (Atributo 'nombre' del modelo)
+        // 3. Aplicamos Filtros Avanzados
         if ($request->filled('nombre')) {
             $query->where('nombre', 'like', '%' . $request->nombre . '%');
         }
 
-        // 3. Filtro por Usuario Asignado (Atributo 'asignado_a' del modelo)
         if ($request->filled('asignado_a')) {
             $query->where('asignado_a', $request->asignado_a);
         }
 
-        // 4. Filtros dinámicos adicionales existentes
         if ($request->filled('estado')) {
             $query->where('estado', $request->estado);
         }
+
         if ($request->filled('prioridad')) {
             $query->where('prioridad', $request->prioridad);
         }
+
         if ($request->filled('creado_por')) {
             $query->where('creado_por', $request->creado_por);
         }
 
-        $workflows = $query->latest()->paginate(5);
+        // 4. Ejecutamos la paginación
+        $workflows = $query->latest()->paginate(10);
 
-        // Datos para los filtros y selects
-        // CAMBIO: Aseguramos que $users siempre tenga un valor, incluso si es una colección vacía
+        /**
+         * LÓGICA DE ESTADÍSTICAS Y MÉTRICAS (Para los Widgets y Gráficos)
+         */
+        
+        // Conteo por estados (Utilizado para las "Metric Pills" y Gráfico Circular)
+        $counts = Workflow::selectRaw('estado, count(*) as total')
+            ->groupBy('estado')
+            ->pluck('total', 'estado');
+        
+        // Variable $total requerida por la vista
+        $total = $counts->sum();
+
+        // Variable $statsData formateada para Chart.js
+        $statsData = $counts->toArray();
+
+        // Lógica de Cumplimiento (Basada en fechas)
+        $hoy = Carbon::now();
+        $cumplimiento = [
+            'a_tiempo' => Workflow::where('estado', '!=', 'completado')
+                            ->where(function($q) use ($hoy) {
+                                $q->whereNull('fecha_fin')
+                                  ->orWhere('fecha_fin', '>=', $hoy);
+                            })->count(),
+            'atrasados' => Workflow::where('estado', '!=', 'completado')
+                            ->whereNotNull('fecha_fin')
+                            ->where('fecha_fin', '<', $hoy)
+                            ->count(),
+            'completados' => Workflow::where('estado', 'completado')->count()
+        ];
+
+        // Datos para los Selects del Filtro
         $users = User::select('id', 'name')->orderBy('name')->get() ?? collect([]);
         $estados = $this->getEstadosOptions();
         $prioridades = $this->getPrioridadesOptions();
 
-        // Si es una petición AJAX, devolver solo la vista parcial
+        // 5. Gestión de respuesta AJAX (Para filtrado sin recarga si se implementa)
         if ($request->ajax()) {
-            // CAMBIO: Devolvemos la vista completa para asegurar que los filtros se actualicen correctamente
             $view = view('flujo.componentes.workflows-card', compact('workflows', 'users', 'estados', 'prioridades'))->render();
             return response()->json([
                 'html' => $view,
@@ -72,7 +98,17 @@ class WorkflowController extends Controller
             ]);
         }
 
-        return view('flujo.workflows.index', compact('workflows', 'users', 'estados', 'prioridades'));
+        // 6. Retorno de vista con todas las variables requeridas
+        return view('flujo.workflows.index', compact(
+            'workflows', 
+            'users', 
+            'estados', 
+            'prioridades', 
+            'counts', 
+            'total', 
+            'statsData', 
+            'cumplimiento'
+        ));
     }
 
     /**
@@ -213,20 +249,20 @@ class WorkflowController extends Controller
     private function getEstadosOptions()
     {
         return [
-            'borrador' => 'Borrador',
-            'activo' => 'Activo',
-            'pausado' => 'Pausado',
+            'borrador'   => 'Borrador',
+            'activo'     => 'Activo',
+            'pausado'    => 'Pausado',
             'completado' => 'Completado',
-            'archivado' => 'Archivado'
+            'archivado'  => 'Archivado'
         ];
     }
 
     private function getPrioridadesOptions()
     {
         return [
-            'baja' => 'Baja',
-            'media' => 'Media',
-            'alta' => 'Alta',
+            'baja'    => 'Baja',
+            'media'   => 'Media',
+            'alta'    => 'Alta',
             'crítica' => 'Crítica'
         ];
     }
