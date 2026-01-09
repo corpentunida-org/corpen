@@ -120,7 +120,7 @@
             @forelse ($workflows as $workflow)
                 @php
                     $totalTasks = $workflow->tasks->count();
-                    $completedTasks = $workflow->tasks->where('estado', 'completada')->count();
+                    $completedTasks = $workflow->completed_tasks;
                     $progress = $totalTasks > 0 ? round(($completedTasks / $totalTasks) * 100) : ($workflow->estado === 'completado' ? 100 : 0);
                     
                     $barColor = match($workflow->estado) {
