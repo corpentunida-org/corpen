@@ -54,7 +54,8 @@
                                 <select name="workflow_id" id="workflow_id" class="form-select">
                                     <option value="">Seleccione el flujo de origen</option>
                                     @foreach($workflows as $workflow)
-                                        <option value="{{ $workflow->id }}" {{ old('workflow_id') == $workflow->id ? 'selected' : '' }}>
+                                        <option value="{{ $workflow->id }}"
+                                            {{ (old('workflow_id', request('workflow_id')) == $workflow->id) ? 'selected' : '' }}>
                                             {{ $workflow->nombre }}
                                         </option>
                                     @endforeach

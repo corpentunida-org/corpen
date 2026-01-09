@@ -5,6 +5,7 @@ namespace App\Models\Flujo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\User;
+use App\Models\Flujo\Task;
 
 class Workflow extends Model
 {
@@ -68,7 +69,9 @@ class Workflow extends Model
     /**
      * Relación con las tareas del flujo.
      */
-    public function tasks() {
-        return $this->hasMany(Task::class);
+    public function tasks()
+    {
+        return $this->hasMany(Task::class, 'workflow_id', 'id');
     }
+
 }

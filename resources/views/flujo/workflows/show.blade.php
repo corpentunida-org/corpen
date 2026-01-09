@@ -259,7 +259,7 @@
                         <i class="fas fa-chevron-left"></i> Listado General
                     </a>
                     <a href="{{ route('flujo.tablero') }}" class="btn-ghost-modern">
-                        <i class="fas fa-th-large"></i> <span>Tablero Operativo</span>
+                        <i class="fas fa-th-large"></i> <span>Tablero Principal</span>
                     </a>
                 </div>
                 <span class="system-tag" style="color: var(--primary); font-weight: 800; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em;">Expediente de Proyecto</span>

@@ -13,7 +13,13 @@ class TableroController extends Controller
     public function index()
     {
         // Tu lógica original, que funciona perfectamente
-        $workflows = Workflow::with('creator')->paginate(15);
+        $workflows = Workflow::with('creator')
+            ->withCount([
+                'tasks as completed_tasks' => function ($q) {
+                    $q->where('estado', 'completado');
+                }
+            ])
+            ->paginate(15);
         $tasks     = Task::with('user', 'workflow')->paginate(3);
         $histories = TaskHistory::with('task', 'user')->latest()->paginate(4);
         $comments  = TaskComment::with('task','user')->latest()->paginate(4);
