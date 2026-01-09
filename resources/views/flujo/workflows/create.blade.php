@@ -84,6 +84,29 @@
             letter-spacing: 0.05em;
         }
 
+        /* --- MEJORA: ESTADOS REQUERIDOS --- */
+        .required-label::after {
+            content: " *";
+            color: var(--danger);
+            font-weight: bold;
+        }
+
+        .form-group input:required, 
+        .form-group select:required, 
+        .form-group textarea:required {
+            border-left: 4px solid var(--danger);
+        }
+
+        /* Efecto al intentar enviar sin completar */
+        .was-validated .form-group input:invalid,
+        .was-validated .form-group select:invalid {
+            border-color: var(--danger);
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23ef4444'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23ef4444' stroke='none'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right calc(0.375em + 0.1875rem) center;
+            background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+        }
+
         .form-group input, .form-group select, .form-group textarea {
             width: 100%;
             padding: 12px 16px;
@@ -255,8 +278,8 @@
     <div class="app-container">
         <div class="form-container">
             <header class="form-header">
-                <h1><i class="fas fa-rocket" style="color: var(--primary)"></i> Nuevo Workflow</h1>
-                <a href="{{ route('flujo.workflows.index') }}" class="exit-link">
+                <h1><i class="fas fa-tasks" style="color: var(--primary)"></i> Nueva Unidad de Trabajo</h1>
+                <a href="{{ route('flujo.tasks.index') }}" class="exit-link">
                     <i class="fas fa-times-circle"></i> <span>Cerrar</span>
                 </a>
             </header>
@@ -271,20 +294,35 @@
                 </div>
             @endif
 
-            <form action="{{ route('flujo.workflows.store') }}" method="POST" id="workflow-create-form">
+            {{-- Añadimos la clase 'needs-validation' y el atributo 'novalidate' para manejar el rojo dinámico --}}
+            <form action="{{ route('flujo.tasks.store') }}" method="POST" id="task-create-form" class="needs-validation" novalidate>
                 @csrf
 
                 <div class="form-grid">
                     {{-- Columna Izquierda --}}
                     <div class="form-column">
                         <div class="form-group">
-                            <label for="nombre">Nombre del Proyecto <span style="color:var(--danger)">*</span></label>
-                            <input type="text" id="nombre" name="nombre" value="{{ old('nombre') }}" placeholder="Ej: Control de Operaciones Q1" required>
+                            <label for="titulo" class="required-label">Título de la Tarea</label>
+                            <input type="text" id="titulo" name="titulo" value="{{ old('titulo') }}" placeholder="Ej: Revisión de contrato legal" required>
                         </div>
 
                         <div class="form-group">
-                            <label for="descripcion">Descripción Estratégica</label>
-                            <textarea id="descripcion" name="descripcion" rows="4" placeholder="Define el propósito de este flujo...">{{ old('descripcion') }}</textarea>
+                            <label for="workflow_id" class="required-label">Workflow al que pertenece</label>
+                            <select name="workflow_id" id="workflow_id" required>
+                                <option value="">-- Seleccionar Proyecto --</option>
+                                @foreach($workflows as $wf)
+                                    {{-- MEJORA: Auto-select basado en URL --}}
+                                    <option value="{{ $wf->id }}" 
+                                        {{ (old('workflow_id') == $wf->id || request('workflow_id') == $wf->id) ? 'selected' : '' }}>
+                                        {{ $wf->nombre }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="descripcion">Instrucciones de Tarea</label>
+                            <textarea id="descripcion" name="descripcion" rows="4" placeholder="Describe detalladamente qué se debe hacer...">{{ old('descripcion') }}</textarea>
                         </div>
 
                         <div class="form-group">
@@ -319,71 +357,59 @@
                     {{-- Columna Derecha --}}
                     <div class="form-column">
                         <div class="form-group">
-                            <label for="creado_por">Líder del Flujo (Autor) <span style="color:var(--danger)">*</span></label>
-                            <select name="creado_por" required>
+                            <label for="user_id" class="required-label">Ejecutor Asignado</label>
+                            <select name="user_id" id="user_id" required>
+                                <option value="">-- Seleccionar Responsable --</option>
                                 @foreach($users as $user)
-                                    <option value="{{ $user->id }}" {{ old('creado_por', auth()->id()) == $user->id ? 'selected' : '' }}>{{ $user->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div class="form-group">
-                            <label for="asignado_a">Responsable Ejecutivo</label>
-                            <select name="asignado_a">
-                                <option value="">-- Sin asignar --</option>
-                                @foreach($users as $user)
-                                    <option value="{{ $user->id }}" {{ old('asignado_a') == $user->id ? 'selected' : '' }}>{{ $user->name }}</option>
+                                    <option value="{{ $user->id }}" {{ old('user_id') == $user->id ? 'selected' : '' }}>{{ $user->name }}</option>
                                 @endforeach
                             </select>
                         </div>
 
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;" class="grid-2-mobile">
                             <div class="form-group">
-                                <label>Estado Inicial</label>
+                                <label class="required-label">Estado Inicial</label>
                                 <select name="estado" required>
-                                    @foreach($estados as $val => $lab)
-                                        <option value="{{ $val }}" {{ old('estado') == $val ? 'selected' : '' }}>{{ $lab }}</option>
-                                    @endforeach
+                                    <option value="pendiente" {{ old('estado') == 'pendiente' ? 'selected' : '' }}>Pendiente</option>
+                                    <option value="en_proceso" {{ old('estado') == 'en_proceso' ? 'selected' : '' }}>En Proceso</option>
+                                    <option value="completado" {{ old('estado') == 'completado' ? 'selected' : '' }}>Completado</option>
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label>Prioridad</label>
+                                <label class="required-label">Prioridad</label>
                                 <select name="prioridad" required>
-                                    @foreach($prioridades as $val => $lab)
-                                        <option value="{{ $val }}" {{ old('prioridad', 'media') == $val ? 'selected' : '' }}>{{ $lab }}</option>
-                                    @endforeach
+                                    <option value="baja" {{ old('prioridad') == 'baja' ? 'selected' : '' }}>Baja</option>
+                                    <option value="media" {{ old('prioridad', 'media') == 'media' ? 'selected' : '' }}>Media</option>
+                                    <option value="alta" {{ old('prioridad') == 'alta' ? 'selected' : '' }}>Alta</option>
+                                    <option value="crítica" {{ old('prioridad') == 'crítica' ? 'selected' : '' }}>Crítica</option>
                                 </select>
                             </div>
                         </div>
 
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;" class="grid-2-mobile">
+                        <div style="display: grid; grid-template-columns: 1fr; gap: 15px;" class="grid-2-mobile">
                             <div class="form-group">
-                                <label>Fecha de Inicio</label>
-                                <input type="date" name="fecha_inicio" id="fecha_inicio" value="{{ old('fecha_inicio', date('Y-m-d')) }}">
-                            </div>
-                            <div class="form-group">
-                                <label>Fecha de Cierre</label>
-                                <input type="date" name="fecha_fin" id="fecha_fin" value="{{ old('fecha_fin') }}">
+                                <label>Fecha Límite (Entrega)</label>
+                                <input type="date" name="fecha_limite" id="fecha_limite" value="{{ old('fecha_limite') }}">
                             </div>
                         </div>
 
                         <div class="checkbox-container">
                             <label class="checkbox-card">
-                                <input type="checkbox" name="activo" value="1" {{ old('activo', '1') ? 'checked' : '' }}>
-                                <div><strong>Activar Flujo</strong><small>El proyecto estará visible y operativo tras guardar.</small></div>
+                                <input type="checkbox" name="notificar" value="1" {{ old('notificar', '1') ? 'checked' : '' }}>
+                                <div><strong>Notificar Ejecutor</strong><small>Enviar un aviso automático al responsable.</small></div>
                             </label>
                             <label class="checkbox-card">
                                 <input type="checkbox" name="es_plantilla" value="1" {{ old('es_plantilla') ? 'checked' : '' }}>
-                                <div><strong>Convertir en Plantilla</strong><small>Se guardará como estructura base para otros flujos.</small></div>
+                                <div><strong>Marcar como Tarea Patrón</strong><small>Guardar para futuras réplicas.</small></div>
                             </label>
                         </div>
                     </div>
                 </div>
 
                 <div class="form-actions">
-                    <a href="{{ route('flujo.workflows.index') }}" class="btn btn-secondary">Descartar</a>
+                    <a href="{{ url()->previous() }}" class="btn btn-secondary">Descartar</a>
                     <button type="submit" class="btn btn-primary" id="btn-submit">
-                        <i class="fas fa-check-circle"></i> Iniciar Workflow
+                        <i class="fas fa-check-circle"></i> Registrar Tarea
                     </button>
                 </div>
             </form>
@@ -391,6 +417,16 @@
     </div>
 
     <script>
+        // --- MEJORA: VALIDACIÓN VISUAL DE CAMPOS VACÍOS ---
+        const form = document.getElementById('task-create-form');
+        form.addEventListener('submit', function (event) {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        }, false);
+
         function toggleConfigMode(mode) {
             const isEasy = mode === 'easy';
             document.getElementById('panel-easy').style.display = isEasy ? 'block' : 'none';
@@ -402,8 +438,8 @@
         function applyTemplate(type) {
             const area = document.getElementById('configuracion');
             const templates = {
-                notif: { "email_alerts": true, "push_notifications": true, "frequency": "immediate" },
-                fast: { "approval_steps": 1, "auto_skip_holidays": true, "priority_bypass": true },
+                notif: { "email_alerts": true, "push_notifications": true, "priority_escalation": false },
+                fast: { "approval_required": false, "auto_complete": true, "bypass_validation": true },
                 empty: {}
             };
             area.value = JSON.stringify(templates[type], null, 4);
@@ -419,19 +455,17 @@
                 const obj = JSON.parse(area.value);
                 if(action === 'format') area.value = JSON.stringify(obj, null, 4);
                 if(action === 'validate') alert("✅ JSON Estructurado Correctamente.");
-            } catch(e) { alert("❌ Error en el JSON: " + e.message); }
+            } catch(e) { 
+                alert("❌ Error en el JSON: " + e.message); 
+            }
         }
 
-        document.getElementById('workflow-create-form').onsubmit = function() {
-            const start = document.getElementById('fecha_inicio').value;
-            const end = document.getElementById('fecha_fin').value;
-            if(start && end && end < start) {
-                alert("La fecha de cierre no puede ser anterior al inicio.");
-                return false;
+        form.onsubmit = function() {
+            if (form.checkValidity()) {
+                document.getElementById('btn-submit').innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Guardando...';
+                document.getElementById('btn-submit').disabled = true;
+                return true;
             }
-            document.getElementById('btn-submit').innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Procesando...';
-            document.getElementById('btn-submit').disabled = true;
-            return true;
         };
     </script>
 </x-base-layout>

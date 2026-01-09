@@ -23,7 +23,7 @@ class TaskController extends Controller
         if ($request->filled('search')) {
             $query->where(function($q) use ($request) {
                 $q->where('titulo', 'like', '%' . $request->search . '%')
-                  ->orWhere('descripcion', 'like', '%' . $request->search . '%');
+                 ->orWhere('descripcion', 'like', '%' . $request->search . '%');
             });
         }
 
@@ -40,7 +40,7 @@ class TaskController extends Controller
             $query->where('user_id', $request->user_id);
         }
 
-        // --- NUEVO FILTRO: Workflow Relacionado ---
+        // --- FILTRO: Workflow Relacionado ---
         if ($request->filled('workflow_id')) {
             $query->where('workflow_id', $request->workflow_id);
         }
@@ -50,10 +50,9 @@ class TaskController extends Controller
 
         // 5. Datos necesarios para los selects de los filtros
         $users = User::select('id', 'name')->orderBy('name')->get();
-        // Cargamos los workflows para el nuevo filtro
         $workflows = Workflow::select('id', 'nombre')->orderBy('nombre')->get();
 
-        // 6. LÓGICA AJAX: Retorna solo el fragmento de la tabla si es una petición asíncrona
+        // 6. LÓGICA AJAX
         if ($request->ajax()) {
             return view('flujo.tasks.index', compact('tasks', 'users', 'workflows'))
                 ->fragment('tasks-list');
@@ -65,14 +64,16 @@ class TaskController extends Controller
     /**
      * Mostrar formulario para crear una nueva tarea
      */
-    public function create()
+    public function create(Request $request)
     {
-        $workflows = Workflow::all();
+        // Capturamos el workflow_id si viene por parámetro GET
+        $workflow_id = $request->get('workflow_id');
+        
+        $workflows = Workflow::orderBy('nombre')->get();
         $users = User::select('id', 'name')->orderBy('name')->get();
 
-        return view('flujo.tasks.create', compact('workflows', 'users'));
+        return view('flujo.tasks.create', compact('workflows', 'users', 'workflow_id'));
     }
-
     /**
      * Guardar una nueva tarea
      */
@@ -82,13 +83,25 @@ class TaskController extends Controller
             'titulo'       => 'required|string|max:255',
             'descripcion'  => 'nullable|string',
             'estado'       => 'required|in:pendiente,en_proceso,revisado,completado',
-            'prioridad'    => 'required|in:baja,media,alta',
+            'prioridad'    => 'required|in:baja,media,alta,crítica',
             'fecha_limite' => 'nullable|date',
             'user_id'      => 'required|exists:users,id',
-            'workflow_id'  => 'nullable|exists:workflows,id',
+            'workflow_id'  => 'required|exists:workflows,id', // Cambiado de nullable a required
+            'configuracion'=> 'nullable' // Se asume que se guarda como JSON o string
         ]);
 
-        Task::create($data);
+        // Procesar configuración JSON si es necesario
+        if ($request->filled('configuracion') && is_string($request->configuracion)) {
+            $data['configuracion'] = json_decode($request->configuracion, true);
+        }
+
+        $task = Task::create($data);
+
+        // Si la tarea se creó desde un proyecto específico, regresamos al expediente del proyecto
+        if ($request->filled('workflow_id')) {
+            return redirect()->route('flujo.workflows.show', $request->workflow_id)
+                ->with('success', '✅ Tarea vinculada al proyecto correctamente.');
+        }
 
         return redirect()->route('flujo.tasks.index')
             ->with('success', '✅ Tarea creada correctamente.');
@@ -109,7 +122,7 @@ class TaskController extends Controller
      */
     public function edit(Task $task)
     {
-        $workflows = Workflow::all();
+        $workflows = Workflow::orderBy('nombre')->get();
         $users = User::select('id', 'name')->orderBy('name')->get();
 
         $task->load('comments.user');
@@ -126,7 +139,7 @@ class TaskController extends Controller
             'titulo'       => 'required|string|max:255',
             'descripcion'  => 'nullable|string',
             'estado'       => 'required|in:pendiente,en_proceso,revisado,completado',
-            'prioridad'    => 'required|in:baja,media,alta',
+            'prioridad'    => 'required|in:baja,media,alta,crítica',
             'fecha_limite' => 'nullable|date',
             'user_id'      => 'required|exists:users,id',
             'workflow_id'  => 'nullable|exists:workflows,id',
@@ -146,7 +159,7 @@ class TaskController extends Controller
             ]);
         }
 
-        // Lógica de redirección dinámica basada en el input oculto
+        // Lógica de redirección dinámica basada en el input oculto o el flujo
         if ($request->has('redirect_to')) {
             return redirect($request->redirect_to)->with('success', '✏️ Tarea actualizada correctamente.');
         }
@@ -154,6 +167,7 @@ class TaskController extends Controller
         return redirect()->route('flujo.tasks.index')
             ->with('success', '✏️ Tarea actualizada correctamente.');
     }
+
     /**
      * Eliminar una tarea
      */
