@@ -191,7 +191,7 @@
                     @endphp
                     @candirect($permiso)   
                     <li class="nav-item" role="presentation">                  
-                        <button class="nav-link pastel-tab @if($loop->first) active @endif"
+                        <button class="nav-link pastel-tab  @if($loop->index === 2)active @endif"
                                 id="tab-{{ $indice }}-tab"
                                 data-bs-toggle="tab"
                                 data-bs-target="#tab-{{ $indice }}"
@@ -397,7 +397,6 @@
                                                 </button>
                                             </div>
                                         </td>
-
                                     </tr>
                                     @endif
                                 @empty
@@ -432,7 +431,7 @@
                     };
                 @endphp
                 @candirect($permiso)   
-                    <div class="tab-pane fade @if($loop->first) show active @endif" 
+                    <div class="tab-pane fade @if($loop->index === 2)show active @endif" 
                          id="tab-{{ $loop->index + 2 }}" 
                          role="tabpanel" 
                          aria-labelledby="tab-{{ $loop->index + 2 }}-tab">
