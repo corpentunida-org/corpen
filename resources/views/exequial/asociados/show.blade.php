@@ -1,4 +1,6 @@
 <x-base-layout>
+    <x-success />
+    <x-error />
     @section('titlepage', 'Titular y Beneficiarios')
     @if(!$maeter)
         <div class="col-lg-12 alert alert-danger alert-dismissible fade show" role="alert">
@@ -34,7 +36,6 @@
             </div>
         </div>
     </div>
-    <x-success />
     <div class="col-xxl-12 col-xl-12">
         <div class="card border-top-0">
             <div class="card-header p-0">

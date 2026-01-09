@@ -13,6 +13,7 @@ use Carbon\Carbon;
 use App\Http\Controllers\AuditoriaController;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\ExcelExport;
+use App\Models\Exequiales\ComaeExRelPar;
 
 class MaeC_ExSerController extends Controller
 {
@@ -69,7 +70,6 @@ class MaeC_ExSerController extends Controller
             ComaeExCli::where('cod_cli', $request->cedulaTitular)->update(['estado' => false]);
             $request->parentesco = 'TITULAR';
         } else {
-            dd("here iam" . $request->all());
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $token,
                 'Accept' => '*/*',
@@ -107,7 +107,9 @@ class MaeC_ExSerController extends Controller
             ]);
             $accion = 'prestar servicio a ' . $request->cedulaFallecido;
             $this->auditoria($accion, 'EXEQUIALES');
-            return $this->index();
+
+            $url = route('exequial.asociados.show', ['asociado' => 'ID']) . '?id=' . $request->cedulaTitular;
+            return redirect()->to($url)->with('success', 'Se registro existosamente el servicio.');
         } else {
             return 'error ' . response()->json(['error' => $response->json()], $response->status());
         }
@@ -146,21 +148,7 @@ class MaeC_ExSerController extends Controller
         $controllerparentesco = app()->make(ParentescosController::class);
         foreach ($registros as $reg) {
             $reg->parentesco = $controllerparentesco->showName($reg->parentesco);
-            $data[] = [
-                $i++,
-                $reg->fechaFallecimiento,
-                Carbon::parse($reg->fechaFallecimiento)->translatedFormat('l'),
-                $reg->horaFallecimiento,
-                $reg->cedulaTitular,
-                $reg->nombreTitular,
-                $reg->cedulaFallecido,
-                $reg->nombreFallecido,
-                $reg->lugarFallecimiento,
-                $reg->parentesco,
-                $reg->contacto,
-                $reg->telefonoContacto,
-                $reg->estado == 1 ? 'PENDIENTE' : ($reg->estado == 2 ? 'EN PROCESO' : 'CERRADO'),
-            ];
+            $data[] = [$i++, $reg->fechaFallecimiento, Carbon::parse($reg->fechaFallecimiento)->translatedFormat('l'), $reg->horaFallecimiento, $reg->cedulaTitular, $reg->nombreTitular, $reg->cedulaFallecido, $reg->nombreFallecido, $reg->lugarFallecimiento, $reg->parentesco, $reg->contacto, $reg->telefonoContacto, $reg->estado == 1 ? 'PENDIENTE' : ($reg->estado == 2 ? 'EN PROCESO' : 'CERRADO')];
         }
 
         $headings = ['Nº', 'Fecha Fallecimiento', 'Día', 'Hora', 'Cédula Titular', 'Nombre Titular', 'Cédula Fallecido', 'Nombre Fallecido', 'Lugar Fallecimiento', 'Parentesco', 'Contacto', 'Teléfono', 'Estado'];
