@@ -116,11 +116,15 @@ class WorkflowController extends Controller
      */
     public function create()
     {
+        // 1. Obtener los workflows existentes
+        $workflows = Workflow::select('id', 'nombre')->orderBy('nombre')->get(); 
+
         $users = User::select('id', 'name')->orderBy('name')->get();
         $estados = ['borrador' => 'Borrador', 'activo' => 'Activo'];
         $prioridades = $this->getPrioridadesOptions();
 
-        return view('flujo.workflows.create', compact('users', 'estados', 'prioridades'));
+        // 2. Agregar 'workflows' al compact
+        return view('flujo.workflows.create', compact('users', 'estados', 'prioridades', 'workflows'));
     }
 
     /**
