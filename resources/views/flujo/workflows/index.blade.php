@@ -1,4 +1,7 @@
 <x-base-layout>
+    {{-- 1. Librería Tom Select (CSS) --}}
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+
     {{-- Cálculo de seguridad inicial con búsqueda por palabras --}}
     @php
         // Búsqueda por palabras clave
@@ -224,8 +227,9 @@
                         </div>
                         <div class="acc-item active">
                             <div class="acc-header"><span>Responsable</span><i class="fas fa-chevron-down"></i></div>
-                            <div class="acc-content">
-                                <select class="filter-select-neo" id="user-opt">
+                            <div class="acc-content" style="overflow: visible;"> {{-- Importante para que el dropdown salga --}}
+                                {{-- 2. Select con placeholder para Tom Select --}}
+                                <select class="filter-select-neo" id="user-opt" placeholder="Buscar líder...">
                                     <option value="">Todos los líderes</option>
                                     @foreach($users as $user)
                                         <option value="{{ $user->id }}" {{ request('asignado_a') == $user->id ? 'selected' : '' }}>{{ $user->name }}</option>
@@ -329,7 +333,6 @@
                         </div>
                     </div>
 
-                    {{-- RESTAURADA: BARRA DE PROGRESO --}}
                     <div class="p-col-progress">
                         @php
                             $progColor = $isOverdue ? '#ef4444' : match($workflow->estado) {
@@ -691,7 +694,7 @@
             z-index: 1000; 
             border: 1px solid var(--border-color); 
             display: none; 
-            overflow: hidden;
+            /* overflow: hidden;  <-- ELIMINADO para que el dropdown de Tom Select salga del popover si es necesario */
             transform: translateY(-10px);
             opacity: 0;
             transition: all 0.3s ease;
@@ -709,6 +712,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            border-radius: var(--radius-md) var(--radius-md) 0 0;
         }
         
         .popover-title {
@@ -780,21 +784,35 @@
             box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
         }
         
-        .filter-select-neo { 
-            width: 100%; 
-            padding: 10px 12px; 
-            border-radius: var(--radius-sm); 
-            border: 1px solid #ddd; 
-            font-size: 13px; 
-            outline: none; 
-            background: #f9fafb;
-            transition: all 0.2s ease;
+        /* --- ESTILOS PERSONALIZADOS PARA TOM SELECT (Buscador en Filtro) --- */
+        .ts-wrapper { width: 100%; }
+        /* Hacemos que el input del buscador coincida con el tema del filtro (fondo gris claro) */
+        .ts-control {
+            border: 1px solid #ddd !important;
+            border-radius: var(--radius-sm) !important;
+            padding: 10px 12px !important;
+            font-size: 13px !important;
+            color: var(--text-main) !important;
+            background: #f9fafb !important; /* Fondo gris para coincidir con el diseño */
+            box-shadow: none !important;
+            min-height: auto !important;
         }
-        
-        .filter-select-neo:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        /* Color cuando está seleccionado/enfocado */
+        .ts-control.focus {
+            border-color: var(--primary) !important;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1) !important;
         }
+        /* El menú desplegable */
+        .ts-dropdown {
+            border-radius: var(--radius-sm) !important;
+            border: 1px solid var(--border-color) !important;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1) !important;
+            margin-top: 5px !important;
+            overflow: hidden;
+            z-index: 1050 !important; /* Asegurar que quede por encima del popover */
+        }
+        .ts-dropdown .option { padding: 8px 12px; font-size: 13px; }
+        .ts-dropdown .active { background-color: var(--primary-light); color: var(--primary); font-weight: 600; }
         
         .popover-footer {
             padding: 16px 20px;
@@ -803,6 +821,7 @@
             display: flex;
             justify-content: space-between;
             gap: 10px;
+            border-radius: 0 0 var(--radius-md) var(--radius-md);
         }
         
         .btn-reset-filters {
@@ -909,8 +928,20 @@
     </style>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    {{-- 3. Librería Tom Select JS --}}
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // --- INICIALIZAR TOM SELECT EN EL FILTRO ---
+            // Importante: create: false y dropdownParent: 'body' para que no se corte en el popover
+            let userSelect = new TomSelect('#user-opt', {
+                create: false,
+                sortField: { field: "text", direction: "asc" },
+                plugins: ['dropdown_input'],
+                dropdownParent: 'body' // Truco clave para popovers
+            });
+
             // --- Datos dinámicos desde PHP ---
             const globalData = {
                 status: {
@@ -1076,25 +1107,27 @@
                 statsContainer.innerHTML = '';
                 
                 const maxIndex = data.data.indexOf(Math.max(...data.data));
-                const avgValue = (total / data.data.length).toFixed(1);
+                const avgValue = (total / (data.data.length || 1)).toFixed(1);
                 
-                statsContainer.innerHTML = `
-                    <div class="stat-item">
-                        <div class="stat-value">${data.data[maxIndex]}</div>
-                        <div class="stat-label">Máximo</div>
-                        <div class="stat-percentage">${data.labels[maxIndex]}</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value">${avgValue}</div>
-                        <div class="stat-label">Promedio</div>
-                        <div class="stat-percentage">por líder</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-value">${data.labels.length}</div>
-                        <div class="stat-label">Líderes</div>
-                        <div class="stat-percentage">activos</div>
-                    </div>
-                `;
+                if (data.data.length > 0) {
+                    statsContainer.innerHTML = `
+                        <div class="stat-item">
+                            <div class="stat-value">${data.data[maxIndex]}</div>
+                            <div class="stat-label">Máximo</div>
+                            <div class="stat-percentage">${data.labels[maxIndex]}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${avgValue}</div>
+                            <div class="stat-label">Promedio</div>
+                            <div class="stat-percentage">por líder</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value">${data.labels.length}</div>
+                            <div class="stat-label">Líderes</div>
+                            <div class="stat-percentage">activos</div>
+                        </div>
+                    `;
+                }
                 
                 return new Chart(ctx, {
                     type: 'bar',
@@ -1235,8 +1268,11 @@
             
             document.addEventListener('click', (e) => { 
                 if (!popover.contains(e.target) && e.target !== trigger) {
-                    popover.classList.remove('show');
-                    trigger.classList.remove('active');
+                    // Verificamos si el clic fue en el dropdown de Tom Select (que está en body)
+                    if (!e.target.closest('.ts-dropdown') && !e.target.closest('.ts-wrapper')) {
+                        popover.classList.remove('show');
+                        trigger.classList.remove('active');
+                    }
                 }
             });
 
@@ -1267,7 +1303,10 @@
                 document.getElementById('hidden-user').value = '';
                 document.getElementById('live-search').value = '';
                 document.querySelector('input[name="prio_opt"][value=""]').checked = true;
-                document.getElementById('user-opt').value = '';
+                
+                // Limpiar Tom Select
+                if(userSelect) userSelect.clear();
+                
                 searchForm.submit();
             });
         });
