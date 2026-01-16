@@ -1,4 +1,7 @@
 <x-base-layout>
+    {{-- 1. Librería Tom Select (CSS) para búsqueda en selectores --}}
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;800&family=Fira+Code&display=swap');
 
@@ -241,9 +244,9 @@
             cursor: pointer; 
             text-decoration: none; 
             border: none; 
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
+            display: inline-flex; 
+            align-items: center; 
+            gap: 10px; 
             transition: 0.2s;
         }
         .btn-primary { background: var(--text-main); color: white; }
@@ -260,6 +263,36 @@
             margin-bottom: 30px;
         }
         .error-list { margin: 0; color: #b91c1c; font-size: 0.85rem; list-style: none; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+
+        /* --- ESTILOS PERSONALIZADOS PARA TOM SELECT (Buscador) --- */
+        .ts-wrapper { width: 100%; }
+        /* Hacemos que el input del buscador se vea igual a tus inputs normales */
+        .ts-control {
+            border: 1.5px solid var(--border-color) !important;
+            border-radius: var(--radius-md) !important;
+            padding: 12px 16px !important;
+            font-size: 0.95rem !important;
+            color: var(--text-main) !important;
+            background: #fff !important;
+            box-shadow: none !important;
+            min-height: auto !important;
+        }
+        /* Color cuando está seleccionado/enfocado */
+        .ts-control.focus {
+            border-color: var(--primary) !important;
+            box-shadow: 0 0 0 4px var(--primary-soft) !important;
+        }
+        /* El menú desplegable */
+        .ts-dropdown {
+            border-radius: var(--radius-md) !important;
+            border: 1px solid var(--border-color) !important;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1) !important;
+            margin-top: 5px !important;
+            overflow: hidden;
+        }
+        .ts-dropdown .option { padding: 10px 16px; }
+        .ts-dropdown .active { background-color: var(--primary-soft); color: var(--primary); font-weight: 600; }
+
 
         /* --- RESPONSIVE / MÓVIL --- */
         @media (max-width: 900px) {
@@ -278,8 +311,8 @@
     <div class="app-container">
         <div class="form-container">
             <header class="form-header">
-                <h1><i class="fas fa-tasks" style="color: var(--primary)"></i> Nueva Unidad de Trabajo</h1>
-                <a href="{{ route('flujo.tasks.index') }}" class="exit-link">
+                <h1><i class="fas fa-project-diagram" style="color: var(--primary)"></i> Nuevo Workflow</h1>
+                <a href="{{ route('flujo.workflows.index') }}" class="exit-link">
                     <i class="fas fa-times-circle"></i> <span>Cerrar</span>
                 </a>
             </header>
@@ -294,39 +327,24 @@
                 </div>
             @endif
 
-            {{-- Añadimos la clase 'needs-validation' y el atributo 'novalidate' para manejar el rojo dinámico --}}
-            <form action="{{ route('flujo.tasks.store') }}" method="POST" id="task-create-form" class="needs-validation" novalidate>
+            <form action="{{ route('flujo.workflows.store') }}" method="POST" id="workflow-create-form" class="needs-validation" novalidate>
                 @csrf
 
                 <div class="form-grid">
                     {{-- Columna Izquierda --}}
                     <div class="form-column">
                         <div class="form-group">
-                            <label for="titulo" class="required-label">Título de la Tarea</label>
-                            <input type="text" id="titulo" name="titulo" value="{{ old('titulo') }}" placeholder="Ej: Revisión de contrato legal" required>
+                            <label for="nombre" class="required-label">Nombre del Proyecto</label>
+                            <input type="text" id="nombre" name="nombre" value="{{ old('nombre') }}" placeholder="Ej: Implementación de ERP" required>
                         </div>
 
                         <div class="form-group">
-                            <label for="workflow_id" class="required-label">Workflow al que pertenece</label>
-                            <select name="workflow_id" id="workflow_id" required>
-                                <option value="">-- Seleccionar Proyecto --</option>
-                                @foreach($workflows as $wf)
-                                    {{-- MEJORA: Auto-select basado en URL --}}
-                                    <option value="{{ $wf->id }}" 
-                                        {{ (old('workflow_id') == $wf->id || request('workflow_id') == $wf->id) ? 'selected' : '' }}>
-                                        {{ $wf->nombre }}
-                                    </option>
-                                @endforeach
-                            </select>
+                            <label for="descripcion">Descripción General</label>
+                            <textarea id="descripcion" name="descripcion" rows="4" placeholder="Describe el objetivo de este flujo de trabajo...">{{ old('descripcion') }}</textarea>
                         </div>
 
                         <div class="form-group">
-                            <label for="descripcion">Instrucciones de Tarea</label>
-                            <textarea id="descripcion" name="descripcion" rows="4" placeholder="Describe detalladamente qué se debe hacer...">{{ old('descripcion') }}</textarea>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Configuración de Motor (JSON)</label>
+                            <label>Configuración Avanzada (JSON)</label>
                             
                             <div class="config-mode-selector">
                                 <button type="button" class="mode-btn active" id="btn-easy" onclick="toggleConfigMode('easy')">Asistido</button>
@@ -334,17 +352,17 @@
                             </div>
 
                             <div id="panel-easy">
-                                <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px;">Selecciona una configuración predefinida:</p>
+                                <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px;">Pre-configuraciones:</p>
                                 <div class="template-grid">
-                                    <button type="button" class="template-btn" onclick="applyTemplate('notif')"><i class="fas fa-envelope-open-text"></i> Notificaciones</button>
-                                    <button type="button" class="template-btn" onclick="applyTemplate('fast')"><i class="fas fa-tachometer-alt"></i> Vía Rápida</button>
-                                    <button type="button" class="template-btn" onclick="applyTemplate('empty')"><i class="fas fa-undo"></i> Borrar Todo</button>
+                                    <button type="button" class="template-btn" onclick="applyTemplate('notif')"><i class="fas fa-bell"></i> Alertas Email</button>
+                                    <button type="button" class="template-btn" onclick="applyTemplate('fast')"><i class="fas fa-rocket"></i> Aprobación Rápida</button>
+                                    <button type="button" class="template-btn" onclick="applyTemplate('empty')"><i class="fas fa-eraser"></i> Limpiar</button>
                                 </div>
                             </div>
 
                             <div id="panel-expert" style="display: none;">
                                 <div class="json-editor-container">
-                                    <textarea id="configuracion" name="configuracion" rows="10" class="json-editor" placeholder='{ "config": "value" }'>{{ old('configuracion') }}</textarea>
+                                    <textarea id="configuracion" name="configuracion" rows="10" class="json-editor" placeholder='{ "setting": true }'>{{ old('configuracion') }}</textarea>
                                     <div class="json-actions">
                                         <button type="button" class="btn-small" onclick="processJson('format')"><i class="fas fa-align-left"></i> Formatear</button>
                                         <button type="button" class="btn-small" onclick="processJson('validate')"><i class="fas fa-check-double"></i> Validar</button>
@@ -356,51 +374,73 @@
 
                     {{-- Columna Derecha --}}
                     <div class="form-column">
+                        
+                        {{-- SECCIÓN DE SELECTORES CON BÚSQUEDA --}}
                         <div class="form-group">
-                            <label for="user_id" class="required-label">Ejecutor Asignado</label>
-                            <select name="user_id" id="user_id" required>
-                                <option value="">-- Seleccionar Responsable --</option>
+                            <label for="creado_por" class="required-label">Dueño del Proyecto</label>
+                            {{-- Se añade el placeholder para el buscador --}}
+                            <select name="creado_por" id="creado_por" required placeholder="Escribe para buscar...">
+                                <option value="">Seleccionar Dueño...</option>
                                 @foreach($users as $user)
-                                    <option value="{{ $user->id }}" {{ old('user_id') == $user->id ? 'selected' : '' }}>{{ $user->name }}</option>
+                                    <option value="{{ $user->id }}" {{ (old('creado_por') == $user->id || auth()->id() == $user->id) ? 'selected' : '' }}>
+                                        {{ $user->name }}
+                                    </option>
                                 @endforeach
                             </select>
                         </div>
 
+                        <div class="form-group">
+                            <label for="asignado_a">Asignado Principal (Ejecutor)</label>
+                            {{-- Se añade el placeholder para el buscador --}}
+                            <select name="asignado_a" id="asignado_a" placeholder="Escribe para buscar...">
+                                <option value="">Sin asignar...</option>
+                                @foreach($users as $user)
+                                    <option value="{{ $user->id }}" {{ old('asignado_a') == $user->id ? 'selected' : '' }}>
+                                        {{ $user->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        {{-- FIN SECCIÓN SELECTORES --}}
+
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;" class="grid-2-mobile">
                             <div class="form-group">
-                                <label class="required-label">Estado Inicial</label>
+                                <label class="required-label">Estado</label>
                                 <select name="estado" required>
-                                    <option value="pendiente" {{ old('estado') == 'pendiente' ? 'selected' : '' }}>Pendiente</option>
-                                    <option value="en_proceso" {{ old('estado') == 'en_proceso' ? 'selected' : '' }}>En Proceso</option>
-                                    <option value="completado" {{ old('estado') == 'completado' ? 'selected' : '' }}>Completado</option>
+                                    @foreach($estados as $key => $val)
+                                        <option value="{{ $key }}" {{ old('estado') == $key ? 'selected' : '' }}>{{ $val }}</option>
+                                    @endforeach
                                 </select>
                             </div>
                             <div class="form-group">
                                 <label class="required-label">Prioridad</label>
                                 <select name="prioridad" required>
-                                    <option value="baja" {{ old('prioridad') == 'baja' ? 'selected' : '' }}>Baja</option>
-                                    <option value="media" {{ old('prioridad', 'media') == 'media' ? 'selected' : '' }}>Media</option>
-                                    <option value="alta" {{ old('prioridad') == 'alta' ? 'selected' : '' }}>Alta</option>
-                                    <option value="crítica" {{ old('prioridad') == 'crítica' ? 'selected' : '' }}>Crítica</option>
+                                    @foreach($prioridades as $key => $val)
+                                        <option value="{{ $key }}" {{ old('prioridad') == $key ? 'selected' : '' }}>{{ $val }}</option>
+                                    @endforeach
                                 </select>
                             </div>
                         </div>
 
-                        <div style="display: grid; grid-template-columns: 1fr; gap: 15px;" class="grid-2-mobile">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;" class="grid-2-mobile">
                             <div class="form-group">
-                                <label>Fecha Límite (Entrega)</label>
-                                <input type="date" name="fecha_limite" id="fecha_limite" value="{{ old('fecha_limite') }}">
+                                <label>Fecha Inicio</label>
+                                <input type="date" name="fecha_inicio" value="{{ old('fecha_inicio', date('Y-m-d')) }}">
+                            </div>
+                            <div class="form-group">
+                                <label>Fecha Fin</label>
+                                <input type="date" name="fecha_fin" value="{{ old('fecha_fin') }}">
                             </div>
                         </div>
 
                         <div class="checkbox-container">
                             <label class="checkbox-card">
-                                <input type="checkbox" name="notificar" value="1" {{ old('notificar', '1') ? 'checked' : '' }}>
-                                <div><strong>Notificar Ejecutor</strong><small>Enviar un aviso automático al responsable.</small></div>
+                                <input type="checkbox" name="activo" value="1" {{ old('activo', '1') ? 'checked' : '' }}>
+                                <div><strong>Proyecto Activo</strong><small>Visible para todos los usuarios asignados.</small></div>
                             </label>
                             <label class="checkbox-card">
                                 <input type="checkbox" name="es_plantilla" value="1" {{ old('es_plantilla') ? 'checked' : '' }}>
-                                <div><strong>Marcar como Tarea Patrón</strong><small>Guardar para futuras réplicas.</small></div>
+                                <div><strong>Marcar como Plantilla</strong><small>Guardar estructura para futuros proyectos.</small></div>
                             </label>
                         </div>
                     </div>
@@ -409,16 +449,36 @@
                 <div class="form-actions">
                     <a href="{{ url()->previous() }}" class="btn btn-secondary">Descartar</a>
                     <button type="submit" class="btn btn-primary" id="btn-submit">
-                        <i class="fas fa-check-circle"></i> Registrar Tarea
+                        <i class="fas fa-save"></i> Crear Workflow
                     </button>
                 </div>
             </form>
         </div>
     </div>
 
+    {{-- 2. Script de la librería Tom Select --}}
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+
     <script>
-        // --- MEJORA: VALIDACIÓN VISUAL DE CAMPOS VACÍOS ---
-        const form = document.getElementById('task-create-form');
+        // --- INICIALIZAR LOS BUSCADORES ---
+        document.addEventListener("DOMContentLoaded", function() {
+            // Aplicar búsqueda al selector de Dueño
+            new TomSelect('#creado_por', {
+                create: false, // No permite crear nuevos usuarios, solo buscar
+                sortField: { field: "text", direction: "asc" },
+                plugins: ['dropdown_input']
+            });
+
+            // Aplicar búsqueda al selector de Ejecutor
+            new TomSelect('#asignado_a', {
+                create: false,
+                sortField: { field: "text", direction: "asc" },
+                plugins: ['dropdown_input']
+            });
+        });
+
+        // --- VALIDACIÓN VISUAL ---
+        const form = document.getElementById('workflow-create-form');
         form.addEventListener('submit', function (event) {
             if (!form.checkValidity()) {
                 event.preventDefault();
@@ -438,8 +498,8 @@
         function applyTemplate(type) {
             const area = document.getElementById('configuracion');
             const templates = {
-                notif: { "email_alerts": true, "push_notifications": true, "priority_escalation": false },
-                fast: { "approval_required": false, "auto_complete": true, "bypass_validation": true },
+                notif: { "email_alerts": true, "push_notifications": true, "deadline_warnings": true },
+                fast: { "auto_approve": true, "skip_review": true },
                 empty: {}
             };
             area.value = JSON.stringify(templates[type], null, 4);
