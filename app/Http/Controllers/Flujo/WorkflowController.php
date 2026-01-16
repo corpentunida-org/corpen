@@ -19,7 +19,6 @@ class WorkflowController extends Controller
      */
     public function index(Request $request)
     {
-        
         // 1. Iniciamos la query con relaciones para evitar N+1
         $query = Workflow::with(['creator', 'modifier', 'asignado']);
 
@@ -53,17 +52,8 @@ class WorkflowController extends Controller
         }
 
         // 4. Ejecutamos la paginación
-        //$workflows = $query->latest()->paginate(10);
-        $workflows = $query
-            ->withCount([
-                'tasks as completed_tasks' => function ($q) {
-                    $q->where('estado', 'completada');
-                }
-            ])
-            ->latest()
-            ->paginate(10);
+        $workflows = $query->latest()->paginate(10);
 
-        
         /**
          * LÓGICA DE ESTADÍSTICAS Y MÉTRICAS (Para los Widgets y Gráficos)
          */
