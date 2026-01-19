@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Soportes;
 
 use App\Http\Controllers\Controller;
-use App\Mail\SoporteEscaladoMail;
 use App\Models\Archivo\GdoCargo;
 use App\Models\Creditos\LineaCredito;
 use App\Models\Maestras\maeTerceros;
@@ -21,7 +20,6 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -29,6 +27,9 @@ use Illuminate\Validation\Rule;
 
 use App\Models\Cinco\Terceros;
 use Illuminate\Support\Facades\Cache;
+
+use Illuminate\Support\Facades\Mail;
+use App\Mail\SoporteEscaladoMail;
 
 class ScpSoporteController extends Controller
 {
@@ -44,7 +45,6 @@ class ScpSoporteController extends Controller
         $categorias = $soportes->sortBy('id')->groupBy(function ($soporte) {
             return $soporte->estadoSoporte->nombre ?? 'Sin Categoría';
         });
-
 
         if (!$categorias->has($categoriaActivaPorDefecto)) {
             $categoriaActivaPorDefecto = $categorias->keys()->first();
@@ -68,7 +68,9 @@ class ScpSoporteController extends Controller
                 FROM scp_observaciones
                 WHERE id_scp_soporte = scp_soportes.id
                 AND id_scp_estados = 3
-            )',)->whereDate('obs.created_at', '<=', $fechaLimite);
+            )',
+                    )
+                    ->whereDate('obs.created_at', '<=', $fechaLimite);
             })
             ->get();
         foreach ($soportes as $soporte) {
@@ -300,7 +302,7 @@ class ScpSoporteController extends Controller
     /* REVISAR - dd($request->all()); */
     public function storeObservacion(Request $request, ScpSoporte $scpSoporte)
     {
-        $request->validate([
+        /*$request->validate([
             'observacion' => 'required|string',
             'id_scp_estados' => 'required|exists:scp_estados,id',
             'id_tipo_observacion' => 'required|exists:scp_tipo_observacions,id',
@@ -318,7 +320,6 @@ class ScpSoporteController extends Controller
             'id_tipo_observacion' => $request->id_tipo_observacion,
         ];
 
-        // Agregar calificación solo si se proporcionó
         if ($request->has('calcification')) {
             $observacionData['calcification'] = $request->calcification;
         }
@@ -333,38 +334,27 @@ class ScpSoporteController extends Controller
             $updateData['usuario_escalado'] = $request->input('id_scp_usuario_asignado');
         }
 
-        $scpSoporte->update($updateData);
-
-        // Verificar si es un escalamiento (tipo de observación = 3 según el código JavaScript)
+        $scpSoporte->update($updateData);*/
         $esEscalamiento = $request->id_tipo_observacion == 3;
 
         // ================================
-        //   LÓGICA DE ENVÍO DE CORREOS (COMENTADA)
-        // ================================
-        /*
-        if ($esEscalamiento) {
-            // Obtener el tipo de observación para confirmar que es "Escalamiento"
+        //   LÓGICA DE ENVÍO DE CORREOS
+        // ================================c
+
+        if ($esEscalamiento) {                   
             $tipoObservacion = ScpTipoObservacion::find($request->id_tipo_observacion);
-            
-            if ($tipoObservacion && strtolower($tipoObservacion->nombre) === 'escalamiento') {
-                // Enviar correo al usuario escalado
-                if ($request->filled('id_scp_usuario_asignado') && $request->input('id_scp_usuario_asignado') != '0') {
-                    $usuarioEscalado = ScpUsuario::find($request->input('id_scp_usuario_asignado'));
-                    
-                    if ($usuarioEscalado && $usuarioEscalado->maeTercero && $usuarioEscalado->maeTercero->email) {
-                        Mail::to($usuarioEscalado->maeTercero->email)
-                            ->send(new SoporteEscaladoMail($scpSoporte, $observacion, 'escalado'));
+            if ($tipoObservacion && strtolower(trim($tipoObservacion->nombre)) === 'escalamiento') {
+                if ($request->filled('id_scp_usuario_asignado') && $request->id_scp_usuario_asignado != 0) {
+                    $usuarioEscalado = ScpUsuario::with('UserApp')->find($request->id_scp_usuario_asignado);                
+                    if ($usuarioEscalado && $usuarioEscalado->maeTercero && !empty($usuarioEscalado->maeTercero->email)) {                       
+                        //Mail::to($usuarioEscalado->maeTercero->email)->send(new SoporteEscaladoMail($scpSoporte, 'escalado'));
                     }
                 }
-                
-                // Enviar correo al creador del soporte
-                if ($scpSoporte->usuario && $scpSoporte->usuario->email) {
-                    Mail::to($scpSoporte->usuario->email)
-                        ->send(new SoporteEscaladoMail($scpSoporte, $observacion, 'creador'));
+                if ($scpSoporte->usuario && !empty($scpSoporte->usuario->email)) {
+                    //Mail::to($scpSoporte->usuario->email)->send(new SoporteEscaladoMail($scpSoporte, 'creador'));
                 }
             }
         }
-        */
         // ================================
 
         return redirect()->route('soportes.soportes.show', $scpSoporte)->with('success', 'Observación añadida y soporte actualizado exitosamente.');

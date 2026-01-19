@@ -5,6 +5,7 @@ namespace App\Models\Soportes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Maestras\maeTerceros;
+use App\Models\User;
 
 class ScpUsuario extends Model
 {
@@ -28,5 +29,10 @@ class ScpUsuario extends Model
     public function maeTercero()
     {
         return $this->belongsTo(maeTerceros::class, 'cod_ter', 'cod_ter');
+    }
+
+    public function UserApp()
+    {
+        return $this->belongsTo(User::class, 'usuario', 'id');
     }
 }

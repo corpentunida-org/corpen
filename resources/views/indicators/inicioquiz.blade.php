@@ -52,8 +52,8 @@
                                     <div class="text-center">
                                         <h2 class="fs-16 fw-semibold">Inducción y Reinducción Seguridad Informática</h2>
                                         <p class="fs-12 text-muted">De click en el siguiente botón para iniciar el quiz.
-                                        </p>
-                                        <a href={{ route('indicators.quiz.preguntas') }}
+                                        </p>                                       
+                                        <a href={{ route('indicators.quiz.preguntas', 1) }}
                                             class="btn bg-soft-primary text-primary" id="btnPresentarQuiz"><i
                                                 class="feather-plus me-2"></i>
                                             Presentar Quiz </a>
@@ -94,10 +94,10 @@
                 }
             }).then((result) => {
                 if (result.isConfirmed) {
-                    window.location.href = "{{ route('indicators.quiz.preguntas') }}";
+                    window.location.href = "{{ route('indicators.quiz.preguntas',1) }}";
                 } else if (result.dismiss === Swal.DismissReason.timer) {
                     // Si se acaba el tiempo también inicia el quiz
-                    window.location.href = "{{ route('indicators.quiz.preguntas') }}";
+                    window.location.href = "{{ route('indicators.quiz.preguntas', 1) }}";
                 }
             });
         });

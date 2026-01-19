@@ -2,14 +2,15 @@
 
 namespace App\Http\Controllers\Exequial;
 
-use App\Http\Controllers\AuditoriaController;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use App\Http\Controllers\AuditoriaController;
 use App\Models\Exequiales\ComaeExRelPar;
 use App\Models\Exequiales\ComaeExCli;
 use App\Models\Exequiales\ComaeTer;
 use App\Models\Maestras\maeTerceros;
-use Illuminate\Support\Facades\Http;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -29,7 +30,6 @@ class ComaeExCliController extends Controller
     public function index()
     {
         $token = env('TOKEN_ADMIN');
-
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
         ])->get(env('API_PRODUCCION') . '/api/District');
@@ -37,7 +37,17 @@ class ComaeExCliController extends Controller
             session()->flash('warning', 'Debe cambiar el token de la API para poder usar la aplicación.');
             return view('exequial.asociados.index');
         }
-        return view('exequial.asociados.index');
+
+        $totalExequiales = DB::table('Auditoria')->where('area', 'EXEQUIALES')->count();
+        $totalAddBeneficiario = DB::table('Auditoria')->where('area', 'EXEQUIALES')->where('accion', 'like', 'add beneficiario%')->count();
+        $porAddBeneficiario = $totalExequiales > 0 ? round(($totalAddBeneficiario / $totalExequiales) * 100, 1) : 0;
+        $totalUpBeneficiario = DB::table('Auditoria')->where('area', 'EXEQUIALES')->where('accion', 'like', 'update beneficiario%')->count();
+        $porUpBeneficiario = $totalExequiales > 0 ? round(($totalUpBeneficiario / $totalExequiales) * 100, 1) : 0;
+        dd($porAddBeneficiario);
+        return view('exequial.asociados.index', [
+            'porAddBeneficiario' => $porAddBeneficiario,
+            'porUpBeneficiario' => $porUpBeneficiario,
+        ]);
     }
 
     //Datos solo del titular
@@ -74,7 +84,7 @@ class ComaeExCliController extends Controller
         $token = env('TOKEN_ADMIN');
         $id = $request->input('id');
         $maeter = maeTerceros::where('cod_ter', $id)->exists();
-    
+
         $titular = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
         ])->get(env('API_PRODUCCION') . '/api/Exequiales/Tercero', [
