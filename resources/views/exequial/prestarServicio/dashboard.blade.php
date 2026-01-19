@@ -1,29 +1,22 @@
 <x-base-layout>
     @section('titlepage', 'Dashboard reclamaciones')
-    <style>
-        .dataTables_wrapper .row:first-child {
-            display: none;
-        }
-    </style>
-
-    <div class="col-lg-12">
+    {{-- <div class="col-lg-12">
         <div class="card stretch stretch-full">
             <div class="card-body lead-status">
                 <div class="mb-3 d-flex align-items-center justify-content-between">
                     <h5 class="fw-bold mb-0 me-4">
                         <span class="d-block mb-2">Generar Informe:</span>
                         <span class="fs-12 fw-normal text-muted text-truncate-1-line">
-                            Exportar todo el listado de reclamaciones en formato PDF o Excel, según las opciones
-                            seleccionadas.</span>
+                            Exportar todo el listado de reclamaciones en formato PDF o Excel, según las opciones seleccionadas.</span>
                     </h5>
                 </div>
-                <form class="row" method="post" action="{{ route('seguros.reclamacion.generarpdf') }}">
+                <form class="row" method="post">
                     @csrf
                     <div class="col-xxl-3 col-md-6">
                         <div class="form-check">
                             <label class="form-label">Año<span class="text-danger">*</span></label>
                             <select class="form-select" name="anio">
-                                @for ($i = date('Y'); $i >= 2020; $i--)
+                                @for ($i = date('Y'); $i >= 2024; $i--)
                                     <option value="{{ $i }}">{{ $i }}</option>
                                 @endfor
                             </select>
@@ -49,19 +42,19 @@
                 </form>
             </div>
         </div>
-    </div>
+    </div> --}}
 
     <div class="col-md-3">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0">Reclamaciones por Estado:</h5>
+                <h5 class="mb-0">Servicios por Distrito:</h5>
             </div>
             <div class="card-body">
                 <canvas id="pieChart" height="100"></canvas>
             </div>
             <div class="card-footer hstack justify-content-around">
                 <div class="text-center">
-                    <a href="javascript:void(0);" class="fs-16 fw-bold">{{ $totalreclamaciones }}</a>
+                    <a href="javascript:void(0);" class="fs-16 fw-bold">{{ $totalservicios }}</a>
                     <div class="fs-11 text-muted">Numero Total</div>
                 </div>
                 <span class="vr"></span>
@@ -75,7 +68,7 @@
         </div>
     </div>
 
-    <div class="col-md-9">
+    {{-- <div class="col-md-9">
         <div class="card border-top-0">
             <div class="card-header p-0">
                 <ul class="nav nav-tabs flex-wrap w-100 text-center customers-nav-tabs" id="myTab" role="tablist">
@@ -181,7 +174,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> --}}
 
 
     <script>
@@ -195,19 +188,7 @@
                 labels: labels,
                 datasets: [{
                     label: 'Cantidad',
-                    data: dataValues,
-                    backgroundColor: [
-                        '#39C666', // verde
-                        '#3454D1', // azul
-                        '#FFA21D', // amarillo
-                        '#E94D4D' // rojo
-                    ],
-                    hoverBackgroundColor: [
-                        '#39C666', // verde
-                        '#3454D1', // azul
-                        '#FFA21D', // amarillo
-                        '#E94D4D' // rojo
-                    ],
+                    data: dataValues,                    
                     borderWidth: 1
                 }]
             },
@@ -226,19 +207,5 @@
                 }
             }
         });
-
-        $(document).ready(function() {
-            $('.tablasporestado').DataTable({
-                pageLength: 5,
-                lengthChange: false,
-                searching: false,
-                language: {
-                    url: "//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json"
-                }
-            });
-        });
     </script>
-
-
-
 </x-base-layout>

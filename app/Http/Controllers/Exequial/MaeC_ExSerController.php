@@ -14,6 +14,7 @@ use App\Http\Controllers\AuditoriaController;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\ExcelExport;
 use App\Models\Exequiales\ComaeExRelPar;
+use Illuminate\Support\Facades\DB;
 
 class MaeC_ExSerController extends Controller
 {
@@ -243,5 +244,19 @@ class MaeC_ExSerController extends Controller
         } else {
             return redirect()->route('exequial.prestarServicio.edit', $id)->with('error', 'Error al agregar el comentario.');
         }
+    }
+
+    public function dashboard()
+    {
+        $resultado = DB::table('EXE_MAEC_EXSER as s')->join('MaeTerceros as t', 't.cod_ter', '=', 's.cedulaTitular')->join('MaeDistritos as d', 'd.COD_DIST', '=', 't.cod_dist')->select('d.NOM_DIST', DB::raw('COUNT(*) as total'))->groupBy('d.NOM_DIST')->orderBy('d.NOM_DIST')->get();
+
+        $arraydata = [
+            'labels' => $resultado->pluck('NOM_DIST')->toArray(),
+            'valores' => $resultado->pluck('total')->toArray(),
+        ];
+
+        $totalservicios = ExMonitoria::count();
+
+        return view('exequial.prestarServicio.dashboard', compact('arraydata','totalservicios'));
     }
 }
