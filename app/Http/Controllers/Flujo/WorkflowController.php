@@ -19,8 +19,9 @@ class WorkflowController extends Controller
      */
     public function index(Request $request)
     {
-        // 1. Iniciamos la query con relaciones para evitar N+1
-        $query = Workflow::with(['creator', 'modifier', 'asignado']);
+        // 1. Iniciamos la query base. 
+        // Nota: Movemos el 'with' al momento de obtener la data paginada para no cargar relaciones en los conteos de gráficas.
+        $query = Workflow::query();
 
         // 2. Aplicamos Búsqueda Global (Nombre o Descripción)
         if ($request->filled('search')) {
@@ -51,15 +52,19 @@ class WorkflowController extends Controller
             $query->where('creado_por', $request->creado_por);
         }
 
-        // 4. Ejecutamos la paginación
-        $workflows = $query->latest()->paginate(10);
+        // 4. Ejecutamos la paginación para la tabla
+        // Usamos (clone $query) para no "gastar" la consulta y poder reusarla en las gráficas
+        $workflows = (clone $query)->with(['creator', 'modifier', 'asignado'])
+                                   ->latest()
+                                   ->paginate(10);
 
         /**
-         * LÓGICA DE ESTADÍSTICAS Y MÉTRICAS (Para los Widgets y Gráficos)
+         * LÓGICA DE ESTADÍSTICAS Y MÉTRICAS (CORREGIDO)
+         * Usamos (clone $query) en lugar de Workflow::where... para heredar los filtros.
          */
         
         // Conteo por estados (Utilizado para las "Metric Pills" y Gráfico Circular)
-        $counts = Workflow::selectRaw('estado, count(*) as total')
+        $counts = (clone $query)->selectRaw('estado, count(*) as total')
             ->groupBy('estado')
             ->pluck('total', 'estado');
         
@@ -69,19 +74,22 @@ class WorkflowController extends Controller
         // Variable $statsData formateada para Chart.js
         $statsData = $counts->toArray();
 
-        // Lógica de Cumplimiento (Basada en fechas)
+        // Lógica de Cumplimiento (Basada en fechas y respetando filtros)
         $hoy = Carbon::now();
+        
         $cumplimiento = [
-            'a_tiempo' => Workflow::where('estado', '!=', 'completado')
+            'a_tiempo' => (clone $query)->where('estado', '!=', 'completado')
                             ->where(function($q) use ($hoy) {
                                 $q->whereNull('fecha_fin')
                                   ->orWhere('fecha_fin', '>=', $hoy);
                             })->count(),
-            'atrasados' => Workflow::where('estado', '!=', 'completado')
+
+            'atrasados' => (clone $query)->where('estado', '!=', 'completado')
                             ->whereNotNull('fecha_fin')
                             ->where('fecha_fin', '<', $hoy)
                             ->count(),
-            'completados' => Workflow::where('estado', 'completado')->count()
+
+            'completados' => (clone $query)->where('estado', 'completado')->count()
         ];
 
         // Datos para los Selects del Filtro
@@ -120,6 +128,8 @@ class WorkflowController extends Controller
         $workflows = Workflow::select('id', 'nombre')->orderBy('nombre')->get(); 
 
         $users = User::select('id', 'name')->orderBy('name')->get();
+        // Nota: Aquí se mantienen hardcodeados para limitar la creación inicial, 
+        // pero puedes cambiarlo a $this->getEstadosOptions() si deseas todas las opciones.
         $estados = ['borrador' => 'Borrador', 'activo' => 'Activo'];
         $prioridades = $this->getPrioridadesOptions();
 
@@ -250,14 +260,31 @@ class WorkflowController extends Controller
         return $decodedConfig;
     }
 
+    /**
+     * Define los estados disponibles para el workflow.
+     */
     private function getEstadosOptions()
     {
         return [
-            'borrador'   => 'Borrador',
-            'activo'     => 'Activo',
-            'pausado'    => 'Pausado',
-            'completado' => 'Completado',
-            'archivado'  => 'Archivado'
+            // Tu definición: Idea / Novedoso
+            // Técnico: El proceso ha nacido pero no ha arrancado.
+            'borrador'   => 'Inicialización',
+
+            // Tu definición: En desarrollo / Activo
+            // Técnico: El proceso está consumiendo CPU.
+            'activo'     => 'Ejecución',
+
+            // Tu definición: Momentáneo, esperando a otros
+            // Técnico: Está en la cola esperando recursos.
+            'pausado'    => 'En Cola',
+
+            // Tu definición: Completo
+            // Técnico: El proceso finalizó con código de éxito.
+            'completado' => 'Terminado',
+
+            // Tu definición: Guardado para futuro
+            // Técnico: Guardado en disco para recuperar estado después.
+            'archivado'  => 'Rechazado'
         ];
     }
 

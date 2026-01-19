@@ -30,7 +30,7 @@
 
         <li class="nxl-item {{ request()->routeIs('flujo.workflows.index') ? 'active' : '' }}">
             <a class="nxl-link" href="{{ route('flujo.workflows.index') }}">
-                <i class="bi bi-folder2-open me-2"></i> Proyectos Activos
+                <i class="bi bi-folder2-open me-2"></i> Centro de Proyectos
             </a>
         </li>
 
