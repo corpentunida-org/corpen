@@ -302,7 +302,7 @@ class ScpSoporteController extends Controller
     /* REVISAR - dd($request->all()); */
     public function storeObservacion(Request $request, ScpSoporte $scpSoporte)
     {
-        /*$request->validate([
+        $request->validate([
             'observacion' => 'required|string',
             'id_scp_estados' => 'required|exists:scp_estados,id',
             'id_tipo_observacion' => 'required|exists:scp_tipo_observacions,id',
@@ -334,7 +334,7 @@ class ScpSoporteController extends Controller
             $updateData['usuario_escalado'] = $request->input('id_scp_usuario_asignado');
         }
 
-        $scpSoporte->update($updateData);*/
+        $scpSoporte->update($updateData);
         $esEscalamiento = $request->id_tipo_observacion == 3;
 
         // ================================
@@ -345,7 +345,8 @@ class ScpSoporteController extends Controller
             $tipoObservacion = ScpTipoObservacion::find($request->id_tipo_observacion);
             if ($tipoObservacion && strtolower(trim($tipoObservacion->nombre)) === 'escalamiento') {
                 if ($request->filled('id_scp_usuario_asignado') && $request->id_scp_usuario_asignado != 0) {
-                    $usuarioEscalado = ScpUsuario::with('UserApp')->find($request->id_scp_usuario_asignado);                
+                    $usuarioEscalado = ScpUsuario::with('UserApp')->find($request->id_scp_usuario_asignado);    
+                    dd($usuarioEscalado);            
                     if ($usuarioEscalado && $usuarioEscalado->maeTercero && !empty($usuarioEscalado->maeTercero->email)) {                       
                         //Mail::to($usuarioEscalado->maeTercero->email)->send(new SoporteEscaladoMail($scpSoporte, 'escalado'));
                     }
