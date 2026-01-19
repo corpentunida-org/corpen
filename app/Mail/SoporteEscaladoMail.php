@@ -8,50 +8,29 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Mail\Mailables\Envelope;
+use Illuminate\Mail\Mailables\Content;
+use Illuminate\Mail\Mailables\Address;
 
 class SoporteEscaladoMail extends Mailable
 {
-    use Queueable, SerializesModels;
-    public $soporte;
-    public $observacion;
-    public $destinatarioTipo; // 'escalado' o 'creador'
+    public ScpSoporte $soporte;
+    public ScpObservacion $observacion;
+    public string $destinatarioTipo;
 
-    /**
-     * Create a new message instance.
-     *
-     * @param ScpSoporte $soporte
-     * @param ScpObservacion $observacion
-     * @param string $destinatarioTipo
-     * @return void
-     */
-    public function __construct(ScpSoporte $soporte, ScpObservacion $observacion, $destinatarioTipo = 'escalado')
+    public function __construct(ScpSoporte $soporte, string $destinatarioTipo = 'escalado')
     {
         $this->soporte = $soporte;
-        $this->observacion = $observacion;
         $this->destinatarioTipo = $destinatarioTipo;
     }
 
-    /**
-     * Build the message.
-     *
-     * @return $this
-     */
-    public function build()
+    public function envelope(): Envelope
     {
-        if ($this->destinatarioTipo === 'escalado') {
-            $subject = "Nuevo soporte escalado: #{$this->soporte->id}";
-            $view = 'emails.soportes.escalado_usuario';
-        } else {
-            $subject = "Su soporte ha sido escalado: #{$this->soporte->id}";
-            $view = 'emails.soportes.escalado_creador';
-        }
+        return new Envelope(from: new Address(config('mail.from.address'), config('mail.from.name')), subject: 'Soporte escalado #' . $this->soporte->id);
+    }
 
-        return $this->subject($subject)
-                    ->view($view)
-                    ->with([
-                        'soporte' => $this->soporte,
-                        'observacion' => $this->observacion,
-                        'destinatarioTipo' => $this->destinatarioTipo,
-                    ]);
+    public function content(): Content
+    {
+        return new Content(view: 'emails.soportes.escalado_usuario');
     }
 }

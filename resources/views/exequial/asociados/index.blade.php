@@ -125,20 +125,18 @@
         </div>
     </div>
     <script>
+    console.log(@json($porAddBeneficiario));
         $(document).ready(function() {
-            // Cambia este valor por el porcentaje que quieras (0 a 100)
-            let porcentaje = 10;
-
             $('#circle').circleProgress({
                 max: 100,
-                value: 65,
+                value: @json($porAddBeneficiario),
                 textFormat: "percent",
                 thickness: 6,
                 lineCap: "round",
                 valueColor: "#4B49AC",
             }).on('circle-animation-progress', function(event, progress) {
                 $(this).html(
-                    '<strong>' + Math.round(porcentaje * progress) + '%</strong>'
+                    '<strong>' + Math.round(@json($porAddBeneficiario)                                         * progress) + '%</strong>'
                 );
             });
         });
