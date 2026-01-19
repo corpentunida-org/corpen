@@ -55,7 +55,7 @@
 </head>
 <body>
     <div class="header">
-        <h1>Nuevo Soporte Escalado</h1>
+        <h1>Se le ha asignado un nuevo soporte</h1>
     </div>
     
     <div class="content">
@@ -74,11 +74,7 @@
         <p><strong>Descripción del soporte:</strong></p>
         <p>{{ $soporte->detalles_soporte }}</p>
         
-        @if($observacion)
-            <p><strong>Observación de escalamiento:</strong></p>
-            <p>{{ $observacion->observacion }}</p>
-        @endif
-        
+        {{-- Historial comentarios del soporte --}}
         <p>Por favor, ingrese al sistema para revisar y gestionar este soporte a la brevedad posible.</p>
         
         <a href="{{ route('soportes.soportes.show', $soporte->id) }}" class="button">Ver Soporte</a>
