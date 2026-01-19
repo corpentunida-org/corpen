@@ -216,7 +216,7 @@
         @endif
 
         {{-- SECCIÓN 2: DETALLE DE OPERACIONES --}}
-        <div class="section-title" style="margin-top: 15px;">DETALLE DE TRANSACCIONES</div>
+        <div class="section-title" style="margin-top: 15px;">DETALLES</div>
         
         <table class="data-table">
             <thead>
