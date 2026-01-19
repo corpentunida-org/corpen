@@ -125,18 +125,19 @@ Route::resource('permisos', PermissionsController::class)->names('admin.permisos
 
 //RUTAS DE EXEQUIALES
 Route::prefix('exequiales')->group(function () {
-Route::get('asociados/{id}/generarpdf/{active}', [ComaeExCliController::class, 'generarpdf'])->name('asociados.generarpdf');
-Route::resource('asociados', ComaeExCliController::class)->names('exequial.asociados')->middleware(['auth', 'can:exequial.asociados.index']);
-Route::get('/prestarServicio/generarpdf', [MaeC_ExSerController::class, 'generarpdf'])->middleware('auth')->name('prestarServicio.generarpdf');
-Route::get('prestarServicio/excel', [MaeC_ExSerController::class, 'generarExcelPrestarServicio'])->name('prestarServicio.generate.excel');
-Route::resource('prestarServicio', MaeC_ExSerController::class)->names('exequial.prestarServicio')->middleware(['auth', 'can:exequial.prestarServicio.index']);
-Route::get('/prestarServicio/{id}/generarpdf', [MaeC_ExSerController::class, 'reporteIndividual'])->name('prestarServicio.repIndividual');
-Route::get('/exportar-datos', [MaeC_ExSerController::class, 'exportData']);
-Route::resource('beneficiarios', ComaeExRelParController::class)->middleware('auth')->names('exequial.beneficiarios');
-Route::resource('terceros', ComaeTerController::class)->middleware('auth')->names('exequial.terceros');
-Route::get('/parentescosall', [ParentescosController::class, 'index'])->name('exequial.parentescosall');
-Route::get('/plansall', [PlanController::class, 'index'])->name('exequial.plansall');
-Route::post('/prestarServicio/{id}/comentario', [MaeC_ExSerController::class, 'addComment'])->name('prestarServicio.comentario.store');
+    Route::get('asociados/{id}/generarpdf/{active}', [ComaeExCliController::class, 'generarpdf'])->name('asociados.generarpdf');
+    Route::resource('asociados', ComaeExCliController::class)->names('exequial.asociados')->middleware(['auth', 'can:exequial.asociados.index']);
+    Route::get('/prestarServicio/generarpdf', [MaeC_ExSerController::class, 'generarpdf'])->middleware('auth')->name('prestarServicio.generarpdf');
+    Route::get('prestarServicio/dashboard', [MaeC_ExSerController::class, 'dashboard'])->name('exequial.prestarServicio.dashboard');
+    Route::get('prestarServicio/excel', [MaeC_ExSerController::class, 'generarExcelPrestarServicio'])->name('prestarServicio.generate.excel');
+    Route::resource('prestarServicio', MaeC_ExSerController::class)->names('exequial.prestarServicio')->middleware(['auth', 'can:exequial.prestarServicio.index']);
+    Route::get('/prestarServicio/{id}/generarpdf', [MaeC_ExSerController::class, 'reporteIndividual'])->name('prestarServicio.repIndividual');
+    Route::get('/exportar-datos', [MaeC_ExSerController::class, 'exportData']);
+    Route::resource('beneficiarios', ComaeExRelParController::class)->middleware('auth')->names('exequial.beneficiarios');
+    Route::resource('terceros', ComaeTerController::class)->middleware('auth')->names('exequial.terceros');
+    Route::get('/parentescosall', [ParentescosController::class, 'index'])->name('exequial.parentescosall');
+    Route::get('/plansall', [PlanController::class, 'index'])->name('exequial.plansall');
+    Route::post('/prestarServicio/{id}/comentario', [MaeC_ExSerController::class, 'addComment'])->name('prestarServicio.comentario.store');
 });
 
 //RUTAS SEGUROS
@@ -154,11 +155,9 @@ Route::prefix('seguros')->group(function () {
     Route::get('/reclamacion/informe/excel', [SegReclamacionesController::class, 'exportexcel'])->middleware('auth')->name('seguros.reclamacion.download');
     Route::post('poliza/upload', [SegPolizaController::class, 'upload'])->name('seguros.poliza.upload');
     Route::post('poliza/create/upload', [SegPolizaController::class, 'uploadCreate'])->name('seguros.poliza.createupload');
-    Route::get('/poliza/create/upload', function () {
-        return view('seguros.polizas.upload');
-    })->name('seguros.poliza.viewupload');
+    Route::get('/poliza/create/upload', function () {return view('seguros.polizas.upload');})->name('seguros.poliza.viewupload');
     Route::get('/seguros/cxc', [SegPolizaController::class, 'exportcxc'])->name('seguros.poliza.download');
-    Route::prefix('seguros')->get('/dashboard/reclamaciones', [SegReclamacionesController::class, 'dashboard'])->name('seguros.reclamaciones.dashboard');
+    Route::get('/dashboard/reclamaciones', [SegReclamacionesController::class, 'dashboard'])->name('seguros.reclamaciones.dashboard');
     Route::get('/planes/{edad}', [SegPlanController::class, 'getPlanes'])->name('seguros.planes.getplanes');
     Route::resource('beneficios', SegBeneficiosController::class)->names('seguros.beneficios')->middleware(['auth', 'candirect:seguros.beneficios.index']);
     Route::post('beneficios/list', [SegBeneficiosController::class, 'listFilter'])->name('seguros.beneficios.list');
