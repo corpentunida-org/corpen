@@ -6,12 +6,14 @@
     </a>
 
     <ul class="nxl-submenu">
+        {{-- TABLERO --}}
         <li class="nxl-item {{ request()->routeIs('flujo.tablero') ? 'active' : '' }}">
             <a class="nxl-link" href="{{ route('flujo.tablero') }}">
                 <i class="bi bi-speedometer2 me-2"></i> Tablero Principal
             </a>
         </li>
 
+        {{-- SECCIÓN: CREACIÓN --}}
         <li class="nxl-item-separator" style="height: 1px; background: rgba(0,0,0,0.04); margin: 5px 20px;"></li>
 
         <li class="nxl-item {{ request()->routeIs('flujo.workflows.create') ? 'active' : '' }}">
@@ -26,6 +28,7 @@
             </a>
         </li>
 
+        {{-- SECCIÓN: GESTIÓN --}}
         <li class="nxl-item-separator" style="height: 1px; background: rgba(0,0,0,0.04); margin: 10px 20px;"></li>
 
         <li class="nxl-item {{ request()->routeIs('flujo.workflows.index') ? 'active' : '' }}">
@@ -37,6 +40,13 @@
         <li class="nxl-item {{ request()->routeIs('flujo.tasks.index') ? 'active' : '' }}">
             <a class="nxl-link" href="{{ route('flujo.tasks.index') }}">
                 <i class="bi bi-check2-square me-2"></i> Centro de Tareas
+            </a>
+        </li>
+
+        {{-- NUEVA SECCIÓN: REPORTES / AUDITORÍA --}}
+        <li class="nxl-item {{ request()->routeIs('flujo.auditoria.index') ? 'active' : '' }}">
+            <a class="nxl-link" href="{{ route('flujo.auditoria.index') }}">
+                <i class="bi bi-clock-history me-2"></i> Auditoría Global
             </a>
         </li>
     </ul>

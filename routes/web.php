@@ -65,6 +65,7 @@ use App\Http\Controllers\Flujo\TaskController;
 use App\Http\Controllers\Flujo\TaskHistoryController;
 use App\Http\Controllers\Flujo\TaskCommentController;
 use App\Http\Controllers\Flujo\TableroController;
+use App\Http\Controllers\Flujo\AuditoriaProyectosController;
 use App\Models\Flujo\Workflow;
 use App\Models\Flujo\Task;
 
@@ -424,6 +425,13 @@ Route::middleware('auth')->prefix('flujo')->name('flujo.')->group(function () {
         ->names('comments')
         ->parameters(['comments' => 'comment']);
 
+// En tu grupo de rutas 'flujo'
+Route::get('/auditoria/pdf', [AuditoriaProyectosController::class, 'exportPdf'])
+    ->name('auditoria.pdf'); // Nueva ruta
+
+Route::get('/auditoria', [AuditoriaProyectosController::class, 'index'])
+    ->name('auditoria.index');
+    
     // Nuevo tablero principal
     Route::get('/tablero', [TableroController::class, 'index'])
         ->name('tablero');
