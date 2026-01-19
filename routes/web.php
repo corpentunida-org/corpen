@@ -118,7 +118,7 @@ Route::get('/probar-middleware-alias', function () {
 
 //ADMIN
 Route::resource('users', UserController::class)->names('admin.users')->middleware(['auth', 'can:admin.users.index']);
-Route::resource('admin', AuditoriaController::class)->names('admin.auditoria')->middleware(['auth', 'can:admin.auditoria.index']);
+Route::resource('admin', AuditoriaController::class)->names('admin.auditoria')->middleware(['auth', 'candirect:admin.auditoria.index']);
 Route::resource('roles', RoleController::class)->names('admin.roles')->middleware(['auth']);
 Route::resource('permisos', PermissionsController::class)->names('admin.permisos')->middleware(['auth']);
 
@@ -557,10 +557,7 @@ Route::middleware('auth')->prefix('visitas')->name('visitas.')->group(function (
 
 //QUIZ TI
 Route::get('/indicators/quiz', [QuizController::class, 'index'])->name('indicators.quiz.inicio');
-Route::get('/indicators/quiz/preguntas', [QuizController::class, 'generarpreguntas'])->name('indicators.quiz.preguntas');
-Route::post('/indicators/validarcorreo', function (Illuminate\Http\Request $request) {
-    $existe = \DB::table('gdo_cargo')->where('correo_corporativo', $request->correoUsuario)->exists();
-    $respondido  = \DB::table('Ind_usuarios')->where('id_correo', $request->correoUsuario)->exists();
-    return response()->json(['existe' => $existe,'respondido' => $respondido ]);
-})->name('indicators.validar.correo');
+//Route::get('/indicators/quiz/preguntas', [QuizController::class, 'generarpreguntas'])->name('indicators.quiz.preguntas');
+Route::get('/indicators/quiz/{prueba}/preguntas',[QuizController::class, 'generarpreguntas'])->name('indicators.quiz.preguntas');
+Route::post('/indicators/validarcorreo', [QuizController::class, 'validar'])->name('indicators.validar.correo');
 Route::post('/indicators/quiz/store', [QuizController::class, 'store'])->name('indicators.quiz.store');
