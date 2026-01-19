@@ -4,6 +4,15 @@
 
     {{-- Cálculo de seguridad inicial con búsqueda por palabras --}}
     @php
+        // DEFINICIÓN DE ETIQUETAS DE ESTADO (Nueva estructura)
+        $estadoLabels = [
+            'borrador'   => 'Inicialización',
+            'activo'     => 'Ejecución',
+            'pausado'    => 'En Cola',
+            'completado' => 'Terminado',
+            'archivado'  => 'Rechazado'
+        ];
+
         // Búsqueda por palabras clave
         $searchWords = [];
         if (request()->filled('search')) {
@@ -111,7 +120,8 @@
                 @foreach(['borrador', 'activo', 'pausado', 'completado', 'archivado'] as $est)
                 <div class="metric-pill {{ $est }} filter-pill {{ request('estado') == $est ? 'active' : '' }}" data-status="{{ $est }}">
                     <span class="m-dot dot-{{ $est }}"></span>
-                    <span class="m-label">{{ $est == 'completado' ? 'Hechos' : ucfirst($est) }}</span>
+                    {{-- USO DE LA NUEVA ETIQUETA --}}
+                    <span class="m-label">{{ $estadoLabels[$est] ?? ucfirst($est) }}</span>
                     <span class="m-value">{{ $counts[$est] ?? 0 }}</span>
                 </div>
                 @endforeach
@@ -135,7 +145,7 @@
             <div class="insight-card chart-container-wrapper" data-chart="distribution">
                 <div class="card-head">
                     <h3>Distribución</h3>
-                    <p class="chart-subtitle">Estados de los flujos</p>
+                    <p class="chart-subtitle">Estados (Click para filtrar)</p>
                     <div class="chart-legend-custom" id="distribution-legend"></div>
                 </div>
                 <div class="chart-container">
@@ -159,7 +169,7 @@
             <div class="insight-card chart-container-wrapper" data-chart="workload">
                 <div class="card-head">
                     <h3>Carga de Trabajo</h3>
-                    <p class="chart-subtitle">Proyectos por Líder</p>
+                    <p class="chart-subtitle">Proyectos por Líder (Click para filtrar)</p>
                     <div class="chart-stats" id="workload-stats"></div>
                 </div>
                 <div class="chart-container">
@@ -314,7 +324,8 @@
 
                     <div class="p-col-status">
                         <div class="status-pill-neo status-{{ $workflow->estado }}">
-                            {{ ucfirst($workflow->estado) }}
+                            {{-- USO DE LA NUEVA ETIQUETA --}}
+                            {{ $estadoLabels[$workflow->estado] ?? ucfirst($workflow->estado) }}
                         </div>
                     </div>
 
@@ -941,38 +952,65 @@
                 plugins: ['dropdown_input'],
                 dropdownParent: 'body' // Truco clave para popovers
             });
+            
+            // Función Helper para aplicar filtros desde gráficas
+            function triggerFilter(type, value) {
+                if(!value) return;
+                
+                if(type === 'status') {
+                    document.getElementById('hidden-status').value = value;
+                } else if (type === 'user') {
+                    document.getElementById('hidden-user').value = value;
+                } else if (type === 'compliance') {
+                    // Mapeo simple para la demostración: si click en completado, filtra por estado completado
+                    if(value === 'completado') {
+                        document.getElementById('hidden-status').value = 'completado';
+                    }
+                    // Para 'atrasado' requeriría lógica extra, pero mantenemos la estructura
+                }
+                
+                document.getElementById('main-search-form').submit();
+            }
 
             // --- Datos dinámicos desde PHP ---
             const globalData = {
                 status: {
-                    labels: ['Borrador', 'Activo', 'Pausado', 'Hecho', 'Archivado'],
+                    // USO DE LAS NUEVAS ETIQUETAS EN JS
+                    labels: ['Inicialización', 'Ejecución', 'En Cola', 'Terminado', 'Rechazado'],
+                    keys: ['borrador', 'activo', 'pausado', 'completado', 'archivado'], // IDs para filtrar
                     data: [{{ $counts['borrador'] ?? 0 }}, {{ $counts['activo'] ?? 0 }}, {{ $counts['pausado'] ?? 0 }}, {{ $counts['completado'] ?? 0 }}, {{ $counts['archivado'] ?? 0 }}],
                     colors: ['#94a3b8', '#10b981', '#f59e0b', '#6366f1', '#475569']
                 },
                 compliance: {
                     labels: ['A Tiempo', 'Atrasados', 'Hechos'],
+                    keys: ['a_tiempo', 'atrasado', 'completado'],
                     data: [{{ $cumplimiento['a_tiempo'] }}, {{ $cumplimiento['atrasados'] }}, {{ $cumplimiento['completados'] }}],
                     colors: ['#10b981', '#ef4444', '#6366f1']
                 },
                 workload: {
                     labels: {!! json_encode($leadersData->map(fn($ld) => explode(' ', $ld->asignado->name)[0])) !!},
+                    ids: {!! json_encode($leadersData->pluck('asignado_a')) !!}, // IDs de usuarios para filtrar
                     data: {!! json_encode($leadersData->pluck('total')) !!}
                 }
             };
             
             const filteredData = {
                 status: {
-                    labels: ['Borrador', 'Activo', 'Pausado', 'Hecho', 'Archivado'],
+                    // USO DE LAS NUEVAS ETIQUETAS EN JS
+                    labels: ['Inicialización', 'Ejecución', 'En Cola', 'Terminado', 'Rechazado'],
+                    keys: ['borrador', 'activo', 'pausado', 'completado', 'archivado'],
                     data: [{{ $filteredCounts['borrador'] ?? 0 }}, {{ $filteredCounts['activo'] ?? 0 }}, {{ $filteredCounts['pausado'] ?? 0 }}, {{ $filteredCounts['completado'] ?? 0 }}, {{ $filteredCounts['archivado'] ?? 0 }}],
                     colors: ['#94a3b8', '#10b981', '#f59e0b', '#6366f1', '#475569']
                 },
                 compliance: {
                     labels: ['A Tiempo', 'Atrasados', 'Hechos'],
+                    keys: ['a_tiempo', 'atrasado', 'completado'],
                     data: [{{ $cumplimiento['a_tiempo'] }}, {{ $cumplimiento['atrasados'] }}, {{ $cumplimiento['completados'] }}],
                     colors: ['#10b981', '#ef4444', '#6366f1']
                 },
                 workload: {
                     labels: {!! json_encode($leadersData->map(fn($ld) => explode(' ', $ld->asignado->name)[0])) !!},
+                    ids: {!! json_encode($leadersData->pluck('asignado_a')) !!},
                     data: {!! json_encode($leadersData->pluck('total')) !!}
                 }
             };
@@ -982,7 +1020,7 @@
             let charts = {};
 
             // --- Funciones para crear gráficas ---
-            function createDoughnutChart(ctx, data, legendId) {
+            function createDoughnutChart(ctx, data, legendId, filterType) {
                 const total = data.data.reduce((a, b) => a + b, 0);
                 const percentages = data.data.map(value => total > 0 ? ((value / total) * 100).toFixed(1) : '0.0');
                 
@@ -1015,6 +1053,19 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        // CAMBIO: Cursor pointer al hacer hover
+                        onHover: (event, chartElement) => {
+                            event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
+                        },
+                        // CAMBIO: Evento Click para filtrar
+                        onClick: (evt, elements) => {
+                            if (elements.length > 0) {
+                                const index = elements[0].index;
+                                // Obtenemos la key real (borrador, activo...) en lugar del label
+                                const filterValue = data.keys ? data.keys[index] : null;
+                                triggerFilter(filterType, filterValue);
+                            }
+                        },
                         plugins: {
                             legend: { display: false },
                             tooltip: {
@@ -1032,7 +1083,7 @@
                 });
             }
             
-            function createBarChart(ctx, data, statsId) {
+            function createBarChart(ctx, data, statsId, filterType) {
                 const total = data.data.reduce((a, b) => a + b, 0);
                 const percentages = data.data.map(value => total > 0 ? ((value / total) * 100).toFixed(1) : '0.0');
                 
@@ -1065,6 +1116,16 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
+                        onHover: (event, chartElement) => {
+                            event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
+                        },
+                        onClick: (evt, elements) => {
+                            if (elements.length > 0) {
+                                const index = elements[0].index;
+                                const filterValue = data.keys ? data.keys[index] : null;
+                                triggerFilter(filterType, filterValue);
+                            }
+                        },
                         plugins: {
                             legend: { display: false },
                             tooltip: {
@@ -1098,7 +1159,7 @@
                 });
             }
             
-            function createHorizontalBarChart(ctx, data, statsId) {
+            function createHorizontalBarChart(ctx, data, statsId, filterType) {
                 const total = data.data.reduce((a, b) => a + b, 0);
                 const percentages = data.data.map(value => total > 0 ? ((value / total) * 100).toFixed(1) : '0.0');
                 
@@ -1144,6 +1205,17 @@
                         indexAxis: 'y',
                         responsive: true,
                         maintainAspectRatio: false,
+                        onHover: (event, chartElement) => {
+                            event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
+                        },
+                        onClick: (evt, elements) => {
+                            if (elements.length > 0) {
+                                const index = elements[0].index;
+                                // Aquí usamos IDs de usuarios
+                                const filterValue = data.ids ? data.ids[index] : null;
+                                triggerFilter(filterType, filterValue);
+                            }
+                        },
                         plugins: {
                             legend: { display: false },
                             tooltip: {
@@ -1186,23 +1258,26 @@
                     if (chart) chart.destroy();
                 });
                 
-                // Crear nuevas gráficas
+                // Crear nuevas gráficas con tipo de filtro asignado
                 charts.status = createDoughnutChart(
                     document.getElementById('statusChart').getContext('2d'),
                     currentData.status,
-                    'distribution-legend'
+                    'distribution-legend',
+                    'status' // Tipo de filtro
                 );
                 
                 charts.compliance = createBarChart(
                     document.getElementById('complianceChart').getContext('2d'),
                     currentData.compliance,
-                    'compliance-stats'
+                    'compliance-stats',
+                    'compliance' // Tipo de filtro
                 );
                 
                 charts.workload = createHorizontalBarChart(
                     document.getElementById('workloadChart').getContext('2d'),
                     currentData.workload,
-                    'workload-stats'
+                    'workload-stats',
+                    'user' // Tipo de filtro
                 );
             }
             
