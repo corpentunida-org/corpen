@@ -345,8 +345,7 @@ class ScpSoporteController extends Controller
             $tipoObservacion = ScpTipoObservacion::find($request->id_tipo_observacion);
             if ($tipoObservacion && strtolower(trim($tipoObservacion->nombre)) === 'escalamiento') {
                 if ($request->filled('id_scp_usuario_asignado') && $request->id_scp_usuario_asignado != 0) {
-                    $usuarioEscalado = ScpUsuario::with('UserApp')->find($request->id_scp_usuario_asignado);    
-                    dd($usuarioEscalado);            
+                    $usuarioEscalado = ScpUsuario::with('UserApp')->find($request->id_scp_usuario_asignado);            
                     if ($usuarioEscalado && $usuarioEscalado->maeTercero && !empty($usuarioEscalado->maeTercero->email)) {                       
                         //Mail::to($usuarioEscalado->maeTercero->email)->send(new SoporteEscaladoMail($scpSoporte, 'escalado'));
                     }
