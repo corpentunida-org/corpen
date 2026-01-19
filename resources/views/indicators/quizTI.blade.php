@@ -245,6 +245,7 @@
             <div class="col-lg-9">
                 <form method="POST" action="{{ route('indicators.quiz.store') }}" id="quizForm">
                     @csrf
+                    <input type="hidden" id="inputpruebaid" name="pruebaid" value="{{ $pruebaid }}">
                     <div class="card border-top-0 mt-5">
                         <div class="wizard-steps">
                             <div class="wizard-step active">USUARIO</div>
@@ -290,12 +291,10 @@
                                 </div>
                             @endforeach
                         </div>
-
                         <div class="wizard-footer">
                             <button type="button" class="wizard-btn prev-btn" disabled>ATRÁS</button>
                             <button type="button" class="wizard-btn next-btn">SIGUIENTE</button>
                         </div>
-
                     </div>
                 </form>
             </div>
@@ -315,19 +314,16 @@
                 }
             });
 
-            // 2️⃣ Bloquear botón ATRÁS del navegador
             history.pushState(null, null, location.href);
             window.onpopstate = function() {
                 history.pushState(null, null, location.href);
                 alert("No puedes retroceder mientras realizas el cuestionario.");
             };
 
-            // 3️⃣ Evitar recargar con clic derecho → recargar
             document.addEventListener("contextmenu", function(e) {
                 e.preventDefault();
             });
 
-            // 4️⃣ Avisar si intenta cerrar o recargar ventana
             window.onbeforeunload = function() {
                 return "El progreso del cuestionario se perderá si sales o recargas la página.";
             };
@@ -393,20 +389,21 @@
 
                 // Validación especial del correo (primer paso)
                 if (currentStep === 0) {
-                    const $correoInput = $('#correoUsuario');
+                    const $correoInput = $('#correoUsuario');                    
                     const correo = $correoInput.val().trim();
-
+                    inputpruebaid = $('#inputpruebaid').val().trim();
                     $.ajax({
                         url: '{{ route('indicators.validar.correo') }}',
                         method: 'POST',
                         data: {
-                            correoUsuario: correo
+                            correoUsuario: correo,
+                            pruebaid: inputpruebaid
                         },
                         headers: {
                             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                         },
                         success: function(response) {
-
+                            console.log(response);
                             if (!response.existe) {
                                 $correoInput.addClass('is-invalid');
                                 $correoInput.siblings('.invalid-feedback')
@@ -431,7 +428,8 @@
                             attemptedNext = false;
                             showStep(currentStep);
                         },
-                        error: function() {
+                        error: function() {        
+                            console.log(response);                   
                             $correoInput.addClass('is-invalid');
                             $correoInput.siblings('.invalid-feedback')
                                 .text('Error al validar el correo.')
