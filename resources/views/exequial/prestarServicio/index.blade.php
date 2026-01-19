@@ -78,6 +78,13 @@
 
     <div class="col-lg-12">
         <div class="card stretch stretch-full">
+            <div class="card-header">
+                <h5 class="card-title">Lista total de servicios prestados</h5>
+                <a href="{{ route('exequial.prestarServicio.dashboard') }}" class="d-flex me-1 btn btn-primary">
+                    <i class="feather-plus me-2"></i>
+                    <span>Abrir dashboard informe</span>
+                </a>
+            </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-hover" id="customerList">
@@ -152,10 +159,12 @@
                             @endforeach
                         </tbody>
                     </table>
-                    <div class="d-flex justify-content-end gap-2 m-3 ">                    
-                        <a href={{ route('prestarServicio.generarpdf') }} class="btn btn-md btn-primary">Descargar PDF</a>
-                        <a href={{ route('prestarServicio.generate.excel') }} class="btn btn-md btn-warning">Descargar Excel</a>
-                    </div>                    
+                    <div class="d-flex justify-content-end gap-2 m-3 ">
+                        <a href={{ route('prestarServicio.generarpdf') }} class="btn btn-md btn-primary">Descargar
+                            PDF</a>
+                        <a href={{ route('prestarServicio.generate.excel') }} class="btn btn-md btn-warning">Descargar
+                            Excel</a>
+                    </div>
                 </div>
             </div>
         </div>
