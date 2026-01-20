@@ -43,11 +43,14 @@ class MaeC_ExSerController extends Controller
         $registro = ExMonitoria::with('comments')->findOrFail($id);
 
         $controllerparentesco = app()->make(ParentescosController::class);
-
         $nomPar = $controllerparentesco->showName($registro->parentesco);
         $registro->parentesco = $nomPar;
 
-        return view('exequial.prestarServicio.edit', compact('registro'));
+        $regiones = DB::table('MaeRegiones')->orderBy('nombre')->get();
+        $municipio = DB::table('MaeMunicipios')->where('id', $registro->municipio)->first();
+        $departamento = $municipio ? DB::table('MaeDepartamentos')->where('codigo_Dane', $municipio->id_departamento)->first() : null;
+        $regionsel = $departamento ? DB::table('MaeRegiones')->where('id', $departamento->id_region)->first() : null;
+        return view('exequial.prestarServicio.edit', compact('registro', 'regiones', 'municipio', 'departamento', 'regionsel'));
     }
 
     public function store(Request $request)
@@ -178,13 +181,11 @@ class MaeC_ExSerController extends Controller
             'horaFallecimiento' => $request->horaFallecimiento,
             'fechaFallecimiento' => $request->fechaFallecimiento,
             'lugarFallecimiento' => $request->lugarFallecimiento,
-            'traslado' => $request->traslado,
             'contacto' => $request->contacto,
             'telefonoContacto' => $request->telefonoContacto,
             'Contacto2' => $request->contacto2,
             'telefonoContacto2' => $request->telefonoContacto2,
-            'factura' => $request->factura,
-            'valor' => $request->valor,
+            'municipio' => $request->municipioid,
         ]);
         if ($updated > 0) {
             $accion = 'actualizar prestar servicio a ' . $request->cedulaFallecido;
@@ -248,15 +249,50 @@ class MaeC_ExSerController extends Controller
 
     public function dashboard()
     {
-        $resultado = DB::table('EXE_MAEC_EXSER as s')->join('MaeTerceros as t', 't.cod_ter', '=', 's.cedulaTitular')->join('MaeDistritos as d', 'd.COD_DIST', '=', 't.cod_dist')->select('d.NOM_DIST', DB::raw('COUNT(*) as total'))->groupBy('d.NOM_DIST')->orderBy('d.NOM_DIST')->get();
-
+        $resultado = DB::table('EXE_MAEC_EXSER as s')->join('MaeTerceros as t', 't.cod_ter', '=', 's.cedulaTitular')->join('MaeDistritos as d', 'd.COD_DIST', '=', 't.cod_dist')->select('d.COD_DIST', 'd.NOM_DIST', DB::raw('COUNT(*) as total'))->groupBy('d.COD_DIST', 'd.NOM_DIST')->orderBy('d.COD_DIST')->get();
         $arraydata = [
             'labels' => $resultado->pluck('NOM_DIST')->toArray(),
             'valores' => $resultado->pluck('total')->toArray(),
         ];
-
         $totalservicios = ExMonitoria::count();
 
-        return view('exequial.prestarServicio.dashboard', compact('arraydata','totalservicios'));
+        $datamunicipios = DB::table('EXE_MAEC_EXSER as s')->join('MaeMunicipios as m', 'm.id', '=', 's.municipio')->select('m.nombre as municipio', DB::raw('COUNT(*) as total'))->groupBy('m.id', 'm.nombre')->orderByDesc('total')->limit(15)->get();
+        $arraydatamunicipios = [
+            'labels' => $datamunicipios->pluck('municipio')->toArray(),
+            'valores' => $datamunicipios->pluck('total')->toArray(),
+        ];
+        $total = DB::table('Auditoria')->where('area', 'EXEQUIALES')->count();
+        $add = DB::table('Auditoria')->where('area', 'EXEQUIALES')->where('accion', 'like', 'add beneficiario%')->count();
+        $update = DB::table('Auditoria')->where('area', 'EXEQUIALES')->where('accion', 'like', 'update beneficiario%')->count();
+        $delete = DB::table('Auditoria')->where('area', 'EXEQUIALES')->where('accion', 'like', 'delete beneficiario%')->count();
+        $presser = DB::table('Auditoria')->where('area', 'EXEQUIALES')->where('accion', 'like', 'prestar servicio%')->count();
+        $kpis = [
+            [
+                'label' => 'Agregar beneficiario',
+                'value' => $add,
+                'percent' => $total > 0 ? round(($add / $total) * 100) : 0,
+                'color' => '#39C666',
+            ],
+            [
+                'label' => 'Actualizar beneficiario',
+                'value' => $update,
+                'percent' => $total > 0 ? round(($update / $total) * 100) : 0,
+                'color' => '#FFA21D',
+            ],
+            [
+                'label' => 'Eliminar beneficiario',
+                'value' => $delete,
+                'percent' => $total > 0 ? round(($delete / $total) * 100) : 0,
+                'color' => '#EA4D4D',
+            ],
+            [
+                'label' => 'Prestar servicio',
+                'value' => $presser,
+                'percent' => $total > 0 ? round(($presser / $total) * 100) : 0,
+                'color' => '#3454D1',
+            ],
+        ];
+
+        return view('exequial.prestarServicio.dashboard', compact('arraydata', 'totalservicios', 'arraydatamunicipios', 'kpis'));
     }
 }

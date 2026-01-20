@@ -37,17 +37,7 @@ class ComaeExCliController extends Controller
             session()->flash('warning', 'Debe cambiar el token de la API para poder usar la aplicación.');
             return view('exequial.asociados.index');
         }
-
-        $totalExequiales = DB::table('Auditoria')->where('area', 'EXEQUIALES')->count();
-        $totalAddBeneficiario = DB::table('Auditoria')->where('area', 'EXEQUIALES')->where('accion', 'like', 'add beneficiario%')->count();
-        $porAddBeneficiario = $totalExequiales > 0 ? round(($totalAddBeneficiario / $totalExequiales) * 100, 1) : 0;
-        $totalUpBeneficiario = DB::table('Auditoria')->where('area', 'EXEQUIALES')->where('accion', 'like', 'update beneficiario%')->count();
-        $porUpBeneficiario = $totalExequiales > 0 ? round(($totalUpBeneficiario / $totalExequiales) * 100, 1) : 0;
-        dd($porAddBeneficiario);
-        return view('exequial.asociados.index', [
-            'porAddBeneficiario' => $porAddBeneficiario,
-            'porUpBeneficiario' => $porUpBeneficiario,
-        ]);
+        return view('exequial.asociados.index');
     }
 
     //Datos solo del titular
