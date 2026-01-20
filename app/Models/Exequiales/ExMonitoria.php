@@ -11,7 +11,7 @@ class ExMonitoria extends Model
     use HasFactory;
     protected $table = 'EXE_MAEC_EXSER';
     //protected $table = 'pruebaServicios';
-    protected $fillable = ['fechaRegistro', 'horaFallecimiento', 'cedulaTitular', 'nombreTitular', 'cedulaFallecido', 'nombreFallecido', 'fechaFallecimiento', 'lugarFallecimiento', 'parentesco', 'traslado', 'contacto', 'telefonoContacto', 'Contacto2', 'telefonoContacto2', 'factura', 'valor'];
+    protected $fillable = ['fechaRegistro', 'horaFallecimiento', 'cedulaTitular', 'nombreTitular', 'cedulaFallecido', 'nombreFallecido', 'fechaFallecimiento', 'lugarFallecimiento', 'parentesco', 'traslado', 'contacto', 'telefonoContacto', 'Contacto2', 'telefonoContacto2', 'municipio'];
     public function asociado()
     {
         return $this->belongsTo(ComaeExCli::class, 'cedulaTitular', 'cedula');
