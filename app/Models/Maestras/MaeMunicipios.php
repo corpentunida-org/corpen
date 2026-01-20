@@ -4,8 +4,6 @@ namespace App\Models\Maestras;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-
-
 use App\Models\Maestras\Congregacion;
 
 class MaeMunicipios extends Model
