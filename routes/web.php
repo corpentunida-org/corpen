@@ -442,38 +442,30 @@ Route::get('/auditoria', [AuditoriaProyectosController::class, 'index'])
 // =============================
 Route::middleware('auth')->prefix('soportes')->name('soportes.')->group(function () {
 
+    // ---------------------------------------------------
+    // 1. DASHBOARD Y ESTADÍSTICAS
+    // ---------------------------------------------------
+    
     // Tablero principal
     Route::get('tablero', [ScpTableroParametroController::class, 'index'])
-        ->name('tablero')->middleware('candirect:soporte.lista.administrador');
+        ->name('tablero')
+        ->middleware('candirect:soporte.lista.administrador');
     
-    // Estadisticas de Soprte (Ruta Actualizada)
+    // Vista de Estadísticas
     Route::get('estadisticas', [ScpEstadisticaController::class, 'index'])
-        ->name('estadisticas')->middleware('candirect:soporte.lista.administrador');
+        ->name('estadisticas')
+        ->middleware('candirect:soporte.lista.administrador');
     
-    // Ruta para obtener datos del dashboard via AJAX
-    /*Route::get('estadisticas/data', [ScpEstadisticaController::class, 'getDashboardData'])
-        ->name('estadisticas.data')->middleware('candirect:soporte.lista.administrador');*/
-        Route::get('estadisticas/data', [ScpEstadisticaController::class, 'getDashboardData'])
+    // API AJAX para los gráficos (Sin middleware restrictivo para evitar bloqueos en fetch)
+    Route::get('estadisticas/data', [ScpEstadisticaController::class, 'getDashboardData'])
         ->name('estadisticas.data');
 
-    // Recursos base
+
+    // ---------------------------------------------------
+    // 2. CONFIGURACIÓN Y PARAMÉTRICAS (RESOURCES)
+    // ---------------------------------------------------
     Route::resource('categorias', ScpCategoriaController::class)
         ->parameters(['categorias' => 'scpCategoria']);
-
-    // Ruta edit con hash
-    Route::get('usuarios/{hash}/edit', [ScpUsuarioController::class, 'edit'])
-        ->name('usuarios.edit');
-
-    // Ruta update con hash
-    Route::put('usuarios/{hash}', [ScpUsuarioController::class, 'update'])
-        ->name('usuarios.update');
-
-    // Rutas REST de usuarios (index, show, create, store, destroy)
-    // Excluimos edit y update para no chocar con las rutas hash
-    Route::resource('usuarios', ScpUsuarioController::class)
-        ->parameters(['usuarios' => 'scpUsuario'])
-        ->except(['edit', 'update']);
-
 
     Route::resource('estados', ScpEstadoController::class)
         ->parameters(['estados' => 'scpEstado']);
@@ -484,56 +476,108 @@ Route::middleware('auth')->prefix('soportes')->name('soportes.')->group(function
     Route::resource('tipos', ScpTipoController::class)
         ->parameters(['tipos' => 'scpTipo']);
 
+    Route::resource('subtipos', ScpSubTipoController::class)
+        ->parameters(['subtipos' => 'scpSubtipo']); 
+
     Route::resource('tipoObservaciones', ScpTipoObservacionController::class)
         ->parameters(['tipoObservaciones' => 'scpTipoObservacion']);
 
-    // --- CONTROLADOR DE SOPORTES PRINCIPAL ---
+
+    // ---------------------------------------------------
+    // 3. GESTIÓN DE USUARIOS (AGENTES)
+    // ---------------------------------------------------
+    // Rutas con Hash (Edit/Update) - IMPORTANTE: Deben ir antes del resource estándar
+    Route::get('usuarios/{hash}/edit', [ScpUsuarioController::class, 'edit'])
+        ->name('usuarios.edit');
+
+    Route::put('usuarios/{hash}', [ScpUsuarioController::class, 'update'])
+        ->name('usuarios.update');
+
+    // CRUD Base de usuarios (Excluyendo lo que manejan las rutas Hash)
+    Route::resource('usuarios', ScpUsuarioController::class)
+        ->parameters(['usuarios' => 'scpUsuario'])
+        ->except(['edit', 'update']);
+
+
+    // ---------------------------------------------------
+    // 4. GESTIÓN PRINCIPAL DE SOPORTES
+    // ---------------------------------------------------
+
+    // --- Rutas Específicas (Deben ir ANTES del Resource 'soportes' para evitar conflictos) ---
+
+    // 🔍 Buscador Rápido (Autocompletado JS)
+    Route::get('buscar-rapido', [ScpSoporteController::class, 'quickSearch'])
+        ->name('buscar.rapido');
+
+    // 📂 Vistas filtradas predefinidas
+    Route::get('pendientes', [ScpSoporteController::class, 'pendientes'])
+        ->name('pendientes');
+
+    Route::get('mis-soportes', [ScpSoporteController::class, 'misSoportes']) // Ver tickets asignados a mí
+        ->name('mis-soportes');
+
+    Route::get('sin-asignar', [ScpSoporteController::class, 'sinAsignar'])
+        ->name('sinAsignar');
+
+    // ⚙️ Acciones sobre el soporte
+    Route::get('descargar/{id}', [ScpSoporteController::class, 'descargarSoporte'])
+        ->name('descargar');
+        
+    Route::get('ver/{id}', [ScpSoporteController::class, 'verSoporte'])
+        ->name('ver');
+    
+    // Asignar agente y Cambiar Estado (Acciones específicas)
+    Route::post('{scpSoporte}/asignar', [ScpSoporteController::class, 'asignarAgente'])
+        ->name('asignar');
+        
+    Route::post('{scpSoporte}/cambiar-estado', [ScpSoporteController::class, 'cambiarEstado'])
+        ->name('cambiarEstado');
+
+    // --- Resource Principal (CRUD Completo) ---
     Route::resource('soportes', ScpSoporteController::class)
         ->parameters(['soportes' => 'scpSoporte']);
-    // ✅ Descargar soporte
-    Route::get('soportes/descargar/{id}', [ScpSoporteController::class, 'descargarSoporte'])
-        ->name('descargar');
-    // ✅ Ver soporte (abrir temporalmente)
-    Route::get('soportes/ver/{id}', [ScpSoporteController::class, 'verSoporte'])
-        ->name('ver');
 
 
-        // Rutas de Observaciones Anidadas
-        Route::post('soportes/{scpSoporte}/observaciones', [ScpSoporteController::class, 'storeObservacion'])
-            ->name('observaciones.store');
+    // ---------------------------------------------------
+    // 5. OBSERVACIONES Y ADJUNTOS
+    // ---------------------------------------------------
+    Route::post('soportes/{scpSoporte}/observaciones', [ScpSoporteController::class, 'storeObservacion'])
+        ->name('observaciones.store');
 
-        Route::delete('soportes/{scpSoporte}/observaciones/{scpObservacion}', [ScpSoporteController::class, 'destroyObservacion'])
-            ->name('observaciones.destroy');
+    Route::delete('soportes/{scpSoporte}/observaciones/{scpObservacion}', [ScpSoporteController::class, 'destroyObservacion'])
+        ->name('observaciones.destroy');
 
-        // Subtipos
-        Route::resource('subtipos', ScpSubTipoController::class);
+    // Descarga de adjuntos de observaciones
+    Route::get('observaciones/adjunto/{id}', [ScpSoporteController::class, 'descargarAdjuntoObservacion'])
+        ->name('observaciones.adjunto');
 
-        // Filtros dinámicos
-        Route::get('tipos/filtro/{categoria}', [ScpSoporteController::class, 'getTiposByCategoria'])
-            ->name('tipos.byCategoria');
 
-        Route::get('subtipos/filtro/{tipo}', [ScpSoporteController::class, 'getSubTipos'])
-            ->name('subtipos.byTipo');
+    // ---------------------------------------------------
+    // 6. FILTROS DINÁMICOS (AJAX SELECTS)
+    // ---------------------------------------------------
+    Route::get('tipos/filtro/{categoria}', [ScpSoporteController::class, 'getTiposByCategoria'])
+        ->name('tipos.byCategoria');
 
-        // Vista solo de Pendientes
-        Route::get('pendientes', [ScpSoporteController::class, 'pendientes'])
-            ->name('pendientes');
+    Route::get('subtipos/filtro/{tipo}', [ScpSoporteController::class, 'getSubTipos'])
+        ->name('subtipos.byTipo');
 
-        // Vista solo SinAsignar
-        /*     Route::get('sin-asignar', [ScpSoporteController::class, 'sinAsignar'])
-            ->name('soportes.sinAsignar'); */
 
-        // 🔔 Notificaciones simples (contador rápido)
-        Route::get('notificaciones', [ScpSoporteController::class, 'getNotificaciones'])
-            ->name('notificaciones');
+    // ---------------------------------------------------
+    // 7. NOTIFICACIONES Y CORREOS
+    // ---------------------------------------------------
+    // Notificaciones (JSON para la campana del navbar)
+    Route::get('notificaciones', [ScpSoporteController::class, 'getNotificaciones'])
+        ->name('notificaciones');
 
-        // 🔔 Notificaciones detalladas (con estados y redirección)
-        Route::get('notificaciones/detalladas', [ScpSoporteController::class, 'getNotificacionesDetalladas'])
-            ->name('notificaciones.detalladas');
+    // Vista completa de notificaciones
+    Route::get('notificaciones/detalladas', [ScpSoporteController::class, 'getNotificacionesDetalladas'])
+        ->name('notificaciones.detalladas');
 
-        Route::get('soportes/enviar-correo-escalado/{id}', [ScpNotificacionController::class, 'enviarCorreoEscalado'])
-            ->name('soportes.enviarCorreoEscalado');  
-    });
+    // Acción manual de reenvío de correo
+    Route::get('enviar-correo-escalado/{id}', [ScpNotificacionController::class, 'enviarCorreoEscalado'])
+        ->name('enviarCorreoEscalado');
+
+});
 //FIN SOPORTE
 
 
