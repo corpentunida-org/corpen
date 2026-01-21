@@ -17,6 +17,7 @@
                 <i class="bi bi-list-check me-2"></i> Listado de Interacciones
             </a>
         </li>
+        <!-- 
         <li class="nxl-item">
             <a class="nxl-link" href="#">
                 <i class="bi bi-bar-chart-line me-2"></i> Reportes
@@ -32,7 +33,7 @@
                 <i class="bi bi-gear me-2"></i> Administración
             </a>
         </li>
-
+         -->
         <li class="nxl-item nxl-hasmenu">
             <a class="nxl-link" href="javascript:void(0)">
                 <i class="bi bi-sliders me-2"></i>
