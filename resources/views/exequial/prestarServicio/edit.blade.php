@@ -47,6 +47,31 @@
                                 value="{{ $registro->horaFallecimiento }}" required>
                         </div>
                     </div>
+                    <div class="row">
+                        <div class="col-lg-4 mb-4">
+                            <label class="form-label">Region<span class="text-danger">*</span></label>
+                            <select id="region" class="form-select" required>
+                                <option value="">Seleccione región</option>
+                                @foreach ($regiones as $region)
+                                    <option value="{{ $region->id }}"
+                                        {{ optional($regionsel)->id == $region->id ? 'selected' : '' }}>{{ $region->nombre }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-lg-4 mb-4">
+                            <label class="form-label">Departamento<span class="text-danger">*</span></label>
+                            <select id="departamento" class="form-select" disabled required>                                
+                                <option value="">Seleccione departamento</option>
+                            </select>
+                        </div>
+                        <div class="col-lg-4 mb-4">
+                            <label class="form-label">Municipio <span class="text-danger">*</span></label>
+                            <select id="municipio" name="municipioid" class="form-select" disabled required>
+                                <option value="">Seleccione municipio</option>
+                            </select>
+                        </div>
+                    </div>
                     <div class="mb-4">
                         <label class="form-label">Lugar Fallecimiento<span class="text-danger">*</span></label>
                         <input type="text" class="form-control" name="lugarFallecimiento"
@@ -142,12 +167,13 @@
                                             @endforeach
                                         </tbody>
                                     </table>
-                                </div>                                
+                                </div>
                             @endif
-                            <button type="button" id="btnCardComentarios" class="btn btn-primary mt-3" title="Agregar Comentario">
+                            <button type="button" id="btnCardComentarios" class="btn btn-primary mt-3"
+                                title="Agregar Comentario">
                                 <i class="feather-plus me-2"></i>
                                 <span>Agregar comentario</span>
-                            </a>
+                                </a>
                         </div>
                     </div>
                 </div>
@@ -163,7 +189,8 @@
                 </h5>
             </div>
             <div class="card-body p-4">
-                <form method="POST" action="{{route('prestarServicio.comentario.store', $registro->id)}}" id="formAddComentarios" novalidate>
+                <form method="POST" action="{{ route('prestarServicio.comentario.store', $registro->id) }}"
+                    id="formAddComentarios" novalidate>
                     @csrf
                     @method('POST')
                     <div class="row">
@@ -188,7 +215,7 @@
                             <span>Agregar comentario</span>
                         </button>
                     </div>
-                </form>                
+                </form>
             </div>
         </div>
     </div>
@@ -212,6 +239,84 @@
                     scrollTop: $('#CardAddComentarios').offset().top
                 }, 500);
             });
+        });
+
+        $(document).ready(function() {
+            const urlDepartamentos = "{{ route('maestras.departamentos.listar', ':id') }}";
+            const urlMunicipios = "{{ route('maestras.municipios.listar', ':id') }}";
+
+            const regionSeleccionada = "{{ $regionsel->id ?? '' }}";
+            const departamentoSeleccionado = "{{ $departamento->codigo_Dane ?? '' }}";
+            const municipioSeleccionado = "{{ $municipio->id ?? '' }}";
+
+            function cargarDepartamentos(regionId, departamentoPreseleccionado = null) {
+
+                if (!regionId) return;
+
+                $('#departamento')
+                    .prop('disabled', true)
+                    .html('<option>Cargando...</option>');
+
+                $('#municipio')
+                    .prop('disabled', true)
+                    .html('<option></option>');
+
+                const url = urlDepartamentos.replace(':id', regionId);
+
+                $.get(url, function(data) {
+                    let options = '<option value=""></option>';
+
+                    data.forEach(dep => {
+                        const selected = dep.codigo_Dane == departamentoPreseleccionado ?
+                            'selected' : '';
+                        options +=
+                            `<option value="${dep.codigo_Dane}" ${selected}>${dep.nombre}</option>`;
+                    });
+
+                    $('#departamento').html(options).prop('disabled', false);
+
+                    
+                    if (departamentoPreseleccionado) {
+                        cargarMunicipios(departamentoPreseleccionado, municipioSeleccionado);
+                    }
+                });
+            }
+
+
+            function cargarMunicipios(departamentoId, municipioPreseleccionado = null) {
+
+                if (!departamentoId) return;
+
+                $('#municipio')
+                    .prop('disabled', true)
+                    .html('<option>Cargando...</option>');
+
+                const url = urlMunicipios.replace(':id', departamentoId);
+
+                $.get(url, function(data) {
+                    let options = '<option value=""></option>';
+
+                    data.forEach(mun => {
+                        const selected = mun.id == municipioPreseleccionado ? 'selected' : '';
+                        options += `<option value="${mun.id}" ${selected}>${mun.nombre}</option>`;
+                    });
+
+                    $('#municipio').html(options).prop('disabled', false);
+                });
+            }
+
+            $('#region').on('change', function() {
+                cargarDepartamentos($(this).val());
+            });
+
+            $('#departamento').on('change', function() {
+                cargarMunicipios($(this).val());
+            });
+
+            if (regionSeleccionada) {
+                $('#region').val(regionSeleccionada);
+                cargarDepartamentos(regionSeleccionada, departamentoSeleccionado);
+            }
         });
     </script>
 </x-base-layout>
