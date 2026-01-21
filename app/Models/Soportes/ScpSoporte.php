@@ -136,5 +136,32 @@ class ScpSoporte extends Model
     {
         return $this->belongsTo(User::class, 'usuario_escalado', 'id');
     }
+    // MEJORA 1: Casting de fechas y booleanos
+    // Esto convierte automáticamente 'timestam' a objeto Carbon para no tener que parsearlo manualmente.
+    protected $casts = [
+        'timestam' => 'datetime',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
 
+    // MEJORA 2: Scopes (Filtros Reutilizables)
+    // Permite escribir ScpSoporte::enRango(...) en lugar de repetir whereBetween cada vez
+    public function scopeEnRango($query, $start, $end)
+    {
+        return $query->whereBetween('scp_soportes.created_at', [$start, $end]);
+    }
+
+    public function scopePrioridad($query, $prioridad)
+    {
+        if ($prioridad) {
+            return $query->where('scp_soportes.id_scp_prioridad', $prioridad);
+        }
+    }
+
+    public function scopeEstado($query, $status)
+    {
+        if ($status) {
+            return $query->where('scp_soportes.estado', $status);
+        }
+    }
 }

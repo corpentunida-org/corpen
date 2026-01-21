@@ -1,60 +1,362 @@
 <x-base-layout>
-    {{-- Título Principal del Dashboard --}}
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-light text-primary mb-0">
-            <i class="feather-bar-chart-2 me-2"></i>Dashboard de Soportes
-        </h2>
-        <div class="d-flex gap-2">
-            <button type="button" class="btn btn-sm btn-outline-secondary" id="exportDashboard">
-                <i class="feather-download"></i> <span class="d-none d-md-inline">Exportar PDF</span>
-            </button>
-            <button type="button" class="btn btn-sm btn-outline-secondary" id="refreshDashboard">
-                <i class="feather-refresh-cw"></i> <span class="d-none d-md-inline">Actualizar</span>
-            </button>
-            <div class="dropdown">
-                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="viewOptions" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="feather-settings"></i> <span class="d-none d-md-inline">Vista</span>
+    {{-- 🎨 ESTILOS VISUALES "MODERN SAAS PROFESSIONAL" --}}
+    <style>
+        :root {
+            /* --- Paleta Corporativa Moderna --- */
+            --bg-body: #f3f4f6;          /* Gris muy suave para fondo */
+            --bg-card: #ffffff;          /* Blanco puro */
+            --bg-panel: #f9fafb;         /* Blanco humo para paneles */
+            
+            --text-main: #111827;        /* Negro suave casi gris */
+            --text-muted: #6b7280;       /* Gris medio */
+            --text-light: #9ca3af;       /* Gris claro */
+
+            /* Colores de Marca (Serios) */
+            --primary: #2563eb;          /* Azul Real - Acción principal */
+            --primary-dark: #1d4ed8;     /* Azul oscuro - Hover */
+            --primary-light: #eff6ff;    /* Fondo azul muy claro */
+            
+            /* Estados Semánticos Refinados */
+            --success: #10b981;          /* Esmeralda */
+            --warning: #f59e0b;          /* Ámbar */
+            --danger: #ef4444;           /* Rojo Corporativo */
+            --info: #3b82f6;             /* Azul información */
+            --purple: #8b5cf6;           /* Violeta moderno */
+            --dark: #1f2937;             /* Gris oscuro */
+            
+            /* UI Elements */
+            --radius: 8px;               /* Bordes menos redondeados = más serio */
+            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --border-color: #e5e7eb;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* --- CONTENEDORES & TARJETAS --- */
+        .card-box {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+            height: 100%;
+            transition: box-shadow 0.3s ease, transform 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .card-box:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+        /* --- HEADER & TITULOS --- */
+        h2, h5, h6 { letter-spacing: -0.025em; }
+        .page-header-title { font-size: 1.5rem; font-weight: 700; color: var(--text-main); }
+        .section-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); font-weight: 600; margin-bottom: 1rem; display: block; }
+
+        /* --- FILTROS (BARRA DE CONTROL) --- */
+        .filter-panel {
+            background: var(--bg-card);
+            padding: 1.25rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-color);
+            margin-bottom: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .input-group-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 0.35rem;
+            display: block;
+        }
+
+        .form-control-modern {
+            background-color: #fff;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            padding: 0.6rem 0.8rem;
+            width: 100%;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            color: var(--text-main);
+        }
+        .form-control-modern:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+            outline: none;
+        }
+
+        /* --- BOTONES DE FECHA (PRESETS) --- */
+        .preset-container {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+            padding-top: 0.5rem;
+            border-top: 1px dashed var(--border-color);
+            margin-top: 0.5rem;
+        }
+        .btn-date-preset {
+            background: transparent;
+            border: 1px solid #e5e7eb;
+            color: var(--text-muted);
+            padding: 0.3rem 0.8rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-date-preset:hover { background: #f3f4f6; color: var(--text-main); }
+        .btn-date-preset.active {
+            background: var(--primary-light);
+            color: var(--primary);
+            border-color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* --- KPIS (Innovadores & Limpios) --- */
+        .kpi-box {
+            background: white;
+            padding: 1.25rem;
+            border-radius: var(--radius);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
+            position: relative;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .kpi-box:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--primary);
+        }
+        .kpi-box.active-filter {
+            background: linear-gradient(to bottom right, #ffffff, #f0f7ff);
+            border: 1px solid var(--primary);
+            box-shadow: 0 0 0 1px var(--primary);
+        }
+        
+        .kpi-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; }
+        .kpi-title { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.02em; }
+        .kpi-icon { font-size: 1.2rem; color: var(--text-light); transition: color 0.3s; }
+        .kpi-box:hover .kpi-icon { color: var(--primary); }
+        
+        .kpi-number { font-size: 1.75rem; font-weight: 700; color: var(--text-main); line-height: 1.2; letter-spacing: -0.03em; }
+        .kpi-trend { font-size: 0.75rem; margin-top: 5px; display: inline-flex; align-items: center; gap: 4px; }
+        
+        /* Variaciones KPI sutiles */
+        .kpi-highlight .kpi-number { color: var(--primary); }
+        
+        /* --- TABLA (Clean Corporate) --- */
+        .table-container {
+            max-height: 550px;
+            overflow-y: auto;
+            border-radius: 0 0 var(--radius) var(--radius);
+        }
+        .easy-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+        .easy-table th { 
+            background: #f9fafb; 
+            color: var(--text-muted); 
+            font-weight: 600; 
+            font-size: 0.75rem; 
+            text-transform: uppercase; 
+            padding: 0.85rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky; top: 0; z-index: 10;
+            backdrop-filter: blur(8px);
+            background: rgba(249, 250, 251, 0.95);
+        }
+        .easy-table td { 
+            padding: 0.85rem 1rem; 
+            border-bottom: 1px solid var(--border-color); 
+            font-size: 0.875rem; 
+            color: var(--text-main); 
+            vertical-align: middle; 
+            background: white;
+        }
+        .easy-table tr:last-child td { border-bottom: none; }
+        .easy-table tr:hover td { background-color: #f9fafb; }
+
+        /* --- BOTONES ACCIÓN --- */
+        .btn-action {
+            display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+            padding: 0.5rem 1rem; border-radius: 6px; font-weight: 500; font-size: 0.875rem;
+            cursor: pointer; transition: all 0.2s; border: 1px solid transparent;
+        }
+        .btn-primary-action {
+            background: var(--primary); color: white;
+            box-shadow: 0 1px 2px rgba(37, 99, 235, 0.3);
+        }
+        .btn-primary-action:hover { background: var(--primary-dark); transform: translateY(-1px); }
+        
+        .btn-secondary-action {
+            background: white; border-color: #d1d5db; color: var(--text-main);
+        }
+        .btn-secondary-action:hover { background: #f9fafb; border-color: #9ca3af; }
+
+        .btn-icon-only { padding: 0.4rem; border-radius: 4px; color: var(--text-muted); }
+        .btn-icon-only:hover { background: #f3f4f6; color: var(--primary); }
+
+        /* --- NAV TABS (Underline Style) --- */
+        .nav-tabs-simple {
+            display: flex; gap: 2rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0;
+        }
+        .tab-btn {
+            background: transparent; border: none; 
+            padding: 0.75rem 0; 
+            font-weight: 500; color: var(--text-muted); 
+            cursor: pointer; transition: all 0.3s;
+            border-bottom: 2px solid transparent;
+            font-size: 0.9rem;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .tab-btn:hover { color: var(--primary); }
+        .tab-btn.active { 
+            color: var(--primary); 
+            border-bottom-color: var(--primary); 
+            font-weight: 600;
+        }
+        
+        .content-area { display: none; animation: fadeIn 0.3s ease-out; }
+        .content-area.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Badges & Status */
+        .badge-status { 
+            padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em;
+            display: inline-block;
+        }
+        .badge-gray { background: #f3f4f6; color: #4b5563; border: 1px solid #e5e7eb; }
+        
+        /* Loader */
+        .loader-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.8); z-index: 9999; display: none; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
+        
+        /* Toast */
+        .toast-container { position: fixed; top: 1rem; right: 1rem; z-index: 9990; display: flex; flex-direction: column; gap: 0.5rem; }
+        .toast-alert { 
+            background: white; padding: 1rem; border-radius: 6px; box-shadow: var(--shadow-lg); 
+            border-left: 4px solid var(--dark); min-width: 320px; animation: slideInRight 0.3s;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .toast-success { border-left-color: var(--success); }
+        .toast-error { border-left-color: var(--danger); }
+        @keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* Avatar */
+        .avatar-circle {
+            width: 24px; height: 24px; border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; 
+            font-size: 0.7rem; font-weight: 700; color: white;
+        }
+
+        /* --- 🖨️ ESTILOS EXCLUSIVOS MODO PDF/REPORTE --- */
+        body.printing-mode {
+            background-color: white !important;
+            padding: 0 !important;
+        }
+        body.printing-mode .filter-panel,
+        body.printing-mode .nav-tabs-simple,
+        body.printing-mode .btn-action,
+        body.printing-mode .toast-container,
+        body.printing-mode .btn-icon-only {
+            display: none !important;
+        }
+        body.printing-mode .content-area {
+            display: block !important; /* Muestra todas las pestañas */
+            margin-bottom: 3rem;
+            animation: none !important;
+        }
+        body.printing-mode .table-container {
+            max-height: none !important; /* Expande la tabla */
+            overflow: visible !important;
+        }
+        body.printing-mode .card-box, 
+        body.printing-mode .kpi-box {
+            box-shadow: none !important;
+            border: 1px solid #ddd !important;
+            break-inside: avoid; /* Evita que las tarjetas se corten entre páginas */
+        }
+        body.printing-mode .page-header-title {
+            margin-bottom: 0.5rem;
+            color: var(--primary);
+        }
+    </style>
+
+    {{-- WRAPPER PRINCIPAL PARA PDF --}}
+    <div id="dashboard-container">
+
+        {{-- HEADER --}}
+        <div class="d-flex justify-content-between align-items-end mb-5">
+            <div>
+                <h2 class="page-header-title mb-2">Informe de Soportes</h2>
+                <div class="d-flex align-items-center gap-2 text-muted small">
+                    <i class="feather-activity text-success"></i>
+                    <span>Datos actualizados en tiempo real</span>
+                    <span class="mx-1">•</span>
+                    <span id="dateRangeLabel">Periodo Actual</span>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn-action btn-secondary-action" id="refreshDashboard">
+                    <i class="feather-refresh-cw"></i> Actualizar
                 </button>
-                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="viewOptions">
-                    <li><a class="dropdown-item active" href="#" data-view="standard">Estándar</a></li>
-                    <li><a class="dropdown-item" href="#" data-view="compact">Compacta</a></li>
-                    <li><a class="dropdown-item" href="#" data-view="detailed">Detallada</a></li>
-                </ul>
+                <button class="btn-action btn-primary-action" id="exportDashboard">
+                    <i class="feather-download-cloud"></i> Exportar Reporte
+                </button>
             </div>
         </div>
-    </div>
 
-    {{-- Alertas mejoradas con diseño y un ícono más llamativo --}}
-    @if (session('success'))
-        <div class="alert alert-success alert-dismissible fade show d-flex align-items-center glassmorphism-alert" role="alert">
-            <i class="feather-check-circle me-2 fs-5"></i>
-            <strong class="me-2">¡Éxito!</strong>
-            <div>{{ session('success') }}</div>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        {{-- NAVEGACIÓN (TABS) --}}
+        <div class="nav-tabs-simple">
+            <button class="tab-btn active" data-target="graficos">
+                <i class="feather-pie-chart"></i> Vista General
+            </button>
+            <button class="tab-btn" data-target="listado">
+                <i class="feather-database"></i> Registros Detallados
+            </button>
+            <button class="tab-btn" data-target="rendimiento">
+                <i class="feather-trending-up"></i> Métricas de Equipo
+            </button>
         </div>
-    @endif
 
-    {{-- Buscador rápido de soportes con Autocompletado --}}
-    <div class="card shadow-sm mb-4 glassmorphism-card fade-in-up sticky-top" style="top: 70px; z-index: 1020;">
-        <div class="card-body p-3">
-            <div class="row g-3 align-items-center">
-                <div class="col-md-6 position-relative">
-                    <div class="input-group">
-                        <span class="input-group-text pastel-input"><i class="feather-search"></i></span>
-                        <input type="text" class="form-control pastel-input" id="quickSearch" placeholder="Buscar soporte por ID, descripción o cliente...">
-                        <div id="searchResults" class="position-absolute w-100 bg-white rounded shadow-sm mt-1" style="z-index: 1050; display: none;"></div>
-                    </div>
+        {{-- 🔍 FILTROS (BARRA DE CONTROL) --}}
+        <div class="filter-panel">
+            <div class="row g-3">
+                <div class="col-lg-3 col-md-6">
+                    <label class="input-group-label">Desde</label>
+                    <input type="date" id="filterStartDate" class="form-control-modern" value="{{ $startDate->format('Y-m-d') }}" data-default="{{ $startDate->format('Y-m-d') }}">
                 </div>
-                <div class="col-md-3">
-                    <select class="form-select pastel-input" id="priorityFilter">
+                <div class="col-lg-3 col-md-6">
+                    <label class="input-group-label">Hasta</label>
+                    <input type="date" id="filterEndDate" class="form-control-modern" value="{{ $endDate->format('Y-m-d') }}" data-default="{{ $endDate->format('Y-m-d') }}">
+                </div>
+                <div class="col-lg-2 col-md-6">
+                    <label class="input-group-label">Prioridad</label>
+                    <select id="priorityFilter" class="form-control-modern">
                         <option value="">Todas las prioridades</option>
-                        <option value="1">Alta</option>
-                        <option value="2">Media</option>
-                        <option value="3">Baja</option>
+                        @foreach($labelsPrioridad as $key => $label)
+                            <option value="{{ $key + 1 }}">{{ $label }}</option>
+                        @endforeach
                     </select>
                 </div>
-                <div class="col-md-3">
-                    <select class="form-select pastel-input" id="statusFilter">
+                <div class="col-lg-2 col-md-6">
+                    <label class="input-group-label">Estado</label>
+                    <select id="statusFilter" class="form-control-modern">
                         <option value="">Todos los estados</option>
                         <option value="1">Sin Asignar</option>
                         <option value="2">En Proceso</option>
@@ -62,2116 +364,581 @@
                         <option value="4">Cerrado</option>
                     </select>
                 </div>
+                <div class="col-lg-2 col-md-12 d-flex align-items-end gap-2">
+                    <button id="applyDateFilters" class="btn-action btn-primary-action w-100">Filtrar</button>
+                    <button id="clearFiltersBtn" class="btn-action btn-secondary-action" title="Limpiar"><i class="feather-x"></i></button>
+                </div>
+            </div>
+
+            <div class="preset-container">
+                <span class="text-muted small me-2" style="font-size: 0.75rem;">Accesos rápidos:</span>
+                <button class="btn-date-preset" data-days="7">7 Días</button>
+                <button class="btn-date-preset" data-days="30">Este Mes</button>
+                <button class="btn-date-preset" data-days="90">Este Trimestre</button>
+                <button class="btn-date-preset" data-days="365">Año Actual</button>
             </div>
         </div>
-    </div>
 
-    {{-- 🌟 Filtros de Fechas Mejorados (Date Range Picker Style) 🌟 --}}
-    <div class="card shadow-sm mb-4 glassmorphism-card fade-in-up sticky-top" style="top: 150px; z-index: 1019;">
-        <div class="card-header border-bottom p-3 bg-light bg-opacity-50">
-            <h6 class="mb-0 fw-semibold">
-                <i class="feather-calendar me-2 text-primary"></i>Selección de Rango
-                <small class="text-muted fw-normal ms-3 d-none d-md-inline">Estadísticas filtradas por fecha</small>
-            </h6>
+        {{-- SECCIÓN 1: GRÁFICOS Y KPIS --}}
+        <div id="section-graficos" class="content-area active">
+            
+            {{-- FILA 1: KPIs PRINCIPALES (Diseño Limpio) --}}
+            <span class="section-label">Métricas de Volumen</span>
+            <div class="row g-3 mb-5">
+                <div class="col-lg-2 col-md-4 col-6">
+                    <div class="kpi-box active-filter" onclick="filterKpi('')" id="card-total">
+                        <div class="kpi-header">
+                            <span class="kpi-title">Total</span>
+                            <i class="feather-layers kpi-icon"></i>
+                        </div>
+                        <div class="kpi-number" id="totalTicketsMetric">{{ $totalTickets }}</div>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-4 col-6">
+                    <div class="kpi-box" onclick="filterKpi('1')" id="card-status-1">
+                        <div class="kpi-header">
+                            <span class="kpi-title">Pendientes</span>
+                            <i class="feather-alert-circle kpi-icon text-warning"></i>
+                        </div>
+                        <div class="kpi-number" id="openTicketsMetric">{{ $openTickets }}</div>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-4 col-6">
+                    <div class="kpi-box" onclick="filterKpi('2')" id="card-status-2">
+                        <div class="kpi-header">
+                            <span class="kpi-title">En Proceso</span>
+                            <i class="feather-loader kpi-icon text-info"></i>
+                        </div>
+                        <div class="kpi-number" id="inProgressTicketsMetric">{{ $inProgressTickets }}</div>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-4 col-6">
+                    <div class="kpi-box" onclick="filterKpi('3')" id="card-status-3">
+                        <div class="kpi-header">
+                            <span class="kpi-title">Revisión</span>
+                            <i class="feather-eye kpi-icon text-purple"></i>
+                        </div>
+                        <div class="kpi-number" id="revisionTicketsMetric">{{ $revisionTickets ?? 0 }}</div>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-4 col-6">
+                    <div class="kpi-box" onclick="filterKpi('4')" id="card-status-4">
+                        <div class="kpi-header">
+                            <span class="kpi-title">Cerrados</span>
+                            <i class="feather-check-circle kpi-icon text-success"></i>
+                        </div>
+                        <div class="kpi-number" id="closedTicketsMetric">{{ $closedTickets }}</div>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-md-4 col-6">
+                    <div class="kpi-box kpi-highlight">
+                        <div class="kpi-header">
+                            <span class="kpi-title">Efectividad</span>
+                            <i class="feather-zap kpi-icon"></i>
+                        </div>
+                        <div class="kpi-number"><span id="firstResponseRateMetric">{{ $firstResponseRate ?? 0 }}</span><small style="font-size: 1rem;">%</small></div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- FILA 2: CALIDAD Y TIEMPOS --}}
+            <span class="section-label">Indicadores de Calidad (SLA & Tiempos)</span>
+            <div class="row g-3 mb-4">
+                <div class="col-lg-2 col-6">
+                    <div class="card-box p-3 text-center">
+                        <div class="text-muted small fw-bold mb-1">TIEMPO RESOLUCIÓN</div>
+                        <div class="fs-4 fw-bold text-dark" id="avgResolutionTimeMetric">{{ $avgResolutionTime }}</div>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-6">
+                    <div class="card-box p-3 text-center">
+                        <div class="text-muted small fw-bold mb-1">SLA CUMPLIDO</div>
+                        <div class="fs-4 fw-bold text-success"><span id="slaComplianceMetric">{{ $slaCompliance ?? 0 }}</span>%</div>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-6">
+                    <div class="card-box p-3 text-center">
+                        <div class="text-muted small fw-bold mb-1">1RA RESPUESTA</div>
+                        <div class="fs-4 fw-bold text-dark" id="avgFirstResponseTimeMetric">{{ $avgFirstResponseTime ?? '0 hrs' }}</div>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-6">
+                    <div class="card-box p-3 text-center">
+                        <div class="text-muted small fw-bold mb-1">REAPERTURAS</div>
+                        <div class="fs-4 fw-bold text-warning"><span id="reopenRateMetric">{{ $reopenRate ?? 0 }}</span>%</div>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-6">
+                    <div class="card-box p-3 text-center">
+                        <div class="text-muted small fw-bold mb-1">CSAT (1-5)</div>
+                        <div class="fs-4 fw-bold text-primary"><span id="csatScoreMetric">{{ $csatScore ?? 0 }}</span></div>
+                    </div>
+                </div>
+                <div class="col-lg-2 col-6">
+                    <div class="card-box p-3 text-center">
+                        <div class="text-muted small fw-bold mb-1">ESCALACIÓN</div>
+                        <div class="fs-4 fw-bold text-danger"><span id="escalationRateMetric">{{ $escalationRate ?? 0 }}</span>%</div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- GRÁFICOS PRINCIPALES --}}
+            <div class="row g-4 mb-4">
+                <div class="col-lg-8">
+                    <div class="card-box p-4">
+                        <div class="d-flex justify-content-between mb-4">
+                            <h5 class="fw-bold m-0 text-dark">Tendencia de Tickets</h5>
+                            <button class="btn-icon-only"><i class="feather-more-horizontal"></i></button>
+                        </div>
+                        <div style="height: 320px;"><canvas id="ticketsPorMesChart"></canvas></div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card-box p-4">
+                        <h5 class="fw-bold mb-4 text-dark">Distribución por Estado</h5>
+                        <div style="height: 250px; display: flex; justify-content: center;"><canvas id="ticketsPorEstadoChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- 📊 CATEGORIZACIÓN --}}
+            <div class="row g-4 mb-4">
+                <div class="col-lg-4">
+                    <div class="card-box p-4">
+                        <h6 class="section-label text-center">Por Tipo</h6>
+                        <div style="height: 200px;"><canvas id="ticketsPorTipoChart"></canvas></div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card-box p-4">
+                        <h6 class="section-label text-center">Por Prioridad</h6>
+                        <div style="height: 200px;"><canvas id="ticketsPorPrioridadChart"></canvas></div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card-box p-4">
+                        <h6 class="section-label text-center">Por Área Funcional</h6>
+                        <div style="height: 200px;"><canvas id="ticketsPorAreaChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="card-body p-3">
-            <div class="row g-3 align-items-end">
-                <div class="col-sm-5 col-md-3">
-                    <label class="form-label fw-semibold text-muted small mb-1">Fecha Inicio</label>
-                    <input type="date" id="filterStartDate" class="form-control form-control-sm pastel-input" value="{{ request('start_date') ?? now()->subMonths(6)->format('Y-m-d') }}">
-                </div>
-                <div class="col-sm-5 col-md-3">
-                    <label class="form-label fw-semibold text-muted small mb-1">Fecha Fin</label>
-                    <input type="date" id="filterEndDate" class="form-control form-control-sm pastel-input" value="{{ request('end_date') ?? now()->format('Y-m-d') }}">
-                </div>
-                <div class="col-sm-2 col-md-2">
-                    <button type="button" class="btn btn-sm btn-primary w-100 pastel-btn-gradient" id="applyDateFilters">
-                        <i class="feather-search"></i> <span class="d-none d-lg-inline">Aplicar</span>
+
+        {{-- SECCIÓN 2: LISTADO COMPLETO (CRUD) --}}
+        <div id="section-listado" class="content-area">
+            <div class="card-box">
+                <div class="p-3 border-bottom d-flex justify-content-between align-items-center bg-white">
+                    <div>
+                        <h5 class="fw-bold mb-1">Bitácora de Soportes</h5>
+                        <p class="text-muted small m-0">Visualizando registros detallados</p>
+                    </div>
+                    <button class="btn-action btn-secondary-action btn-sm" onclick="exportTableToCSV('actividad-table')">
+                        <i class="feather-file-text me-1"></i> CSV
                     </button>
                 </div>
-                <div class="col-sm-2 col-md-2">
-                    <button type="button" class="btn btn-sm btn-outline-secondary w-100 pastel-btn-light" id="clearDateFilters">
-                        <i class="feather-refresh-cw"></i> <span class="d-none d-lg-inline">Restablecer</span>
-                    </button>
+                <div class="table-container">
+                    <table class="easy-table" id="actividad-table">
+                        <thead>
+                            <tr>
+                                <th class="ps-4">Folio</th>
+                                <th>Descripción / Asunto</th>
+                                <th>Estado</th>
+                                <th>Prioridad</th>
+                                <th>Asignado A</th>
+                                <th>Fecha Creación</th>
+                                <th class="text-end pe-4">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="table-body-soportes">
+                            @foreach($actividadReciente as $soporte)
+                            <tr>
+                                <td class="ps-4 fw-bold font-monospace text-primary">#{{ $soporte->id }}</td>
+                                <td>
+                                    <div class="fw-bold text-dark mb-1">{{ Str::limit($soporte->detalles_soporte, 50) }}</div>
+                                </td>
+                                <td>
+                                    <span class="badge-status badge-gray">{{ $soporte->estadoSoporte->nombre ?? 'N/A' }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge-status badge-gray">{{ $soporte->prioridad->nombre ?? 'N/A' }}</span>
+                                </td>
+                                <td>
+                                    @if($soporte->scpUsuarioAsignado)
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="avatar-circle" style="background-color: var(--primary);">
+                                                {{ substr($soporte->scpUsuarioAsignado->name ?? ($soporte->scpUsuarioAsignado->maeTercero->nom_ter ?? 'U'), 0, 1) }}
+                                            </div>
+                                            <span class="small fw-medium">{{ $soporte->scpUsuarioAsignado->name ?? ($soporte->scpUsuarioAsignado->maeTercero->nom_ter ?? 'Usuario') }}</span>
+                                        </div>
+                                    @else
+                                        <span class="text-muted small fst-italic">-- Sin Asignar --</span>
+                                    @endif
+                                </td>
+                                <td class="text-muted small">{{ $soporte->created_at->format('d M, Y H:i') }}</td>
+                                <td class="text-end pe-4">
+                                    <a href="{{ route('soportes.soportes.show', $soporte->id) }}" class="btn-icon-only" title="Ver Detalles">
+                                        <i class="feather-arrow-right"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
                 </div>
-                <div class="col-sm-12 col-md-2">
-                    <div class="dropdown">
-                        <button class="btn btn-sm btn-outline-secondary w-100 dropdown-toggle" type="button" id="presetDates" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="feather-clock"></i> <span class="d-none d-md-inline">Períodos</span>
-                        </button>
-                        <ul class="dropdown-menu" aria-labelledby="presetDates">
-                            <li><a class="dropdown-item preset-date" href="#" data-days="7">Últimos 7 días</a></li>
-                            <li><a class="dropdown-item preset-date" href="#" data-days="30">Últimos 30 días</a></li>
-                            <li><a class="dropdown-item preset-date" href="#" data-days="90">Últimos 3 meses</a></li>
-                            <li><a class="dropdown-item preset-date" href="#" data-days="365">Último año</a></li>
-                        </ul>
+                <div class="p-2 text-center text-muted small bg-light border-top" id="table-footer-info">
+                    Registros mostrados: {{ count($actividadReciente) }}
+                </div>
+            </div>
+        </div>
+
+        {{-- SECCIÓN 3: RENDIMIENTO --}}
+        <div id="section-rendimiento" class="content-area">
+            <div class="row g-4">
+                <div class="col-lg-6">
+                    <div class="card-box p-4">
+                        <h5 class="fw-bold mb-4">Métricas de Calidad (Radar)</h5>
+                        <div style="height: 350px;"><canvas id="kpiCalidadChart"></canvas></div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card-box h-100">
+                        <div class="p-4 border-bottom bg-light">
+                            <h5 class="fw-bold mb-0">Top Agentes (Resolución)</h5>
+                        </div>
+                        <div class="table-responsive p-0">
+                            <table class="easy-table">
+                                <thead>
+                                    <tr>
+                                        <th class="ps-4">Agente</th>
+                                        <th class="text-center">Resueltos</th>
+                                        <th class="pe-4">Rendimiento Relativo</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($topAgentes as $agente)
+                                    <tr>
+                                        <td class="ps-4 fw-medium">{{ $agente->name ?? $agente->nom_ter }}</td>
+                                        <td class="text-center fw-bold">{{ $agente->total_cerrados }}</td>
+                                        <td class="pe-4">
+                                            <div class="progress" style="height: 6px;">
+                                                <div class="progress-bar bg-primary" role="progressbar" style="width: {{ min(100, $agente->total_cerrados * 2) }}%;"></div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card-box p-4">
+                        <h5 class="fw-bold mb-4">Rendimiento Comparativo por Área</h5>
+                        <div style="height: 300px;"><canvas id="rendimientoAreaChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div> {{-- End Dashboard Container --}}
+
+    {{-- LOADER --}}
+    <div class="loader-overlay" id="loadingOverlay">
+        <div class="text-center">
+            <div class="spinner-border text-primary mb-3" role="status"></div>
+            <h6 class="fw-bold" id="loaderText">Procesando datos...</h6>
         </div>
     </div>
 
-    {{-- Inicio Tarjetas Dashboard: Diseño Zen / Glassmorphism Mejorado --}}
-    <style>
-        /* 1. Estilos Base y Glassmorphism - Extra Pequeño (XS) */
-        .zen-card-xs {
-            background-color: rgba(255, 255, 255, 0.08); 
-            backdrop-filter: blur(8px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 0.75rem;
-            transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease; 
-            overflow: hidden; 
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            cursor: pointer;
-        }
+    {{-- TOAST CONTAINER --}}
+    <div class="toast-container" id="toastContainer"></div>
 
-        /* Efecto Hover */
-        .zen-card-xs:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2), 0 0 15px -3px var(--hover-color, #8c8c8c); 
-            background-color: rgba(255, 255, 255, 0.15);
-        }
-
-        /* 2. Micro-interacción: Porcentaje en Círculo (Neumorphism) - Extra Pequeño */
-        .circular-progress-xs {
-            width: 36px;
-            height: 36px;
-            background: conic-gradient(
-                var(--progress-color, #007bff) var(--progress-value, 0%),
-                rgba(150, 150, 150, 0.2) var(--progress-value, 0%)
-            );
-            padding: 2px; 
-        }
-
-        .circular-progress-inner-xs {
-            width: 32px;
-            height: 32px;
-            background-color: var(--card-bg, #ffffff);
-            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1); 
-        }
-
-        /* 4. Estilos de Texto */
-        .zen-title-xs {
-            font-weight: 600;
-            opacity: 0.8;
-            letter-spacing: 0.5px; 
-            font-size: 0.65rem;
-            white-space: nowrap; 
-        }
-
-        .zen-metric-xs {
-            font-size: 1.6rem;
-            font-weight: 800;
-            line-height: 1;
-            margin-top: 0; 
-            margin-bottom: 0.25rem;
-        }
-        
-        /* Pequeños textos de tendencia */
-        .zen-trend-xs {
-            font-size: 0.65rem !important;
-            white-space: nowrap;
-        }
-        
-        /* Configuración de color de fondo */
-        :root {
-            --card-bg: #f8f9fa;
-        }
-    </style>
-
-    <div class="row mb-0"> 
-        
-        {{-- Tarjeta 1: Volumen Total "TODOS"--}}
-        <div class="col-lg col-md-6 mb-3"> 
-            <div class="zen-card-xs shadow-sm fade-in-up" 
-                style="animation-delay: 0.1s; --hover-color: rgba(0, 123, 255, 0.7);"
-                data-bs-toggle="tooltip" data-bs-placement="top"
-                data-bs-title="Cantidad total de tickets de soporte registrados durante el periodo seleccionado.">
-                <div class="card-body p-3"> 
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <p class="text-primary text-uppercase mb-1 zen-title-xs">
-                                <i class="feather-life-buoy me-1"></i> Volumen Total
-                            </p>
-                            <h2 class="text-dark zen-metric-xs">{{ $totalTickets ?? 0 }}</h2>
-                            <div class="d-flex align-items-center">
-                                <small class="text-success me-1 zen-trend-xs">
-                                    <i class="feather-trending-up"></i> +12%
-                                </small>
-                                <small class="text-muted zen-trend-xs">vs. mes anterior</small>
-                            </div>
-                        </div>
-                        <i class="feather-message-square text-primary opacity-25" style="font-size: 2rem;"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        {{-- Tarjeta 2: Tareas Pendientes (Tickets Abiertos) --}}
-        <div class="col-lg col-md-6 mb-3">
-            @php
-                $total = ($totalTickets ?? 0) > 0 ? $totalTickets : 1;
-                $openTicketsValue = $openTickets ?? 0;
-                $openPercent = ($openTicketsValue / $total) * 100;
-                $openProgressColor = ($openPercent > 20) ? '#dc3545' : (($openPercent > 5) ? '#ffc107' : '#007bff'); 
-                $openTrendPercent = 5;
-            @endphp
-            <div class="zen-card-xs shadow-sm fade-in-up" 
-                style="animation-delay: 0.2s; --hover-color: {{ $openProgressColor }};"
-                data-bs-toggle="tooltip" data-bs-placement="top"
-                data-bs-title="Número de tickets que están actualmente Abiertos o en Progreso. Representa la carga de trabajo inmediata del equipo.">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <p class="text-warning text-uppercase mb-1 zen-title-xs">
-                                <i class="feather-clock me-1"></i> Sin asignación
-                            </p>
-                            <h2 class="text-dark zen-metric-xs">{{ $openTicketsValue }}</h2>
-                            <div class="d-flex align-items-center">
-                                <small class="text-danger me-1 zen-trend-xs">
-                                    <i class="feather-trending-up"></i> +{{ $openTrendPercent }}%
-                                </small>
-                                <small class="text-muted zen-trend-xs">vs. mes anterior</small>
-                            </div>
-                        </div>
-                        
-                        <div class="circular-progress-xs rounded-circle d-flex align-items-center justify-content-center" 
-                            style="--progress-color: {{ $openProgressColor }}; --progress-value: {{ $openPercent }}%;">
-                            <div class="circular-progress-inner-xs rounded-circle d-flex align-items-center justify-content-center">
-                                <span class="fw-bold" style="font-size: 0.55rem; color: {{ $openProgressColor }};">{{ round($openPercent) }}%</span> 
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        {{-- Tarjeta 3: Tickets En Proceso --}}
-        <div class="col-lg col-md-6 mb-3">
-            @php
-                $inProgressTicketsValue = $inProgressTickets ?? 0;
-                $inProgressPercent = ($inProgressTicketsValue / $total) * 100;
-                $inProgressProgressColor = ($inProgressPercent > 30) ? '#dc3545' : (($inProgressPercent > 15) ? '#ffc107' : '#007bff'); 
-                $inProgressTrendPercent = -2;
-            @endphp
-            <div class="zen-card-xs shadow-sm fade-in-up" 
-                style="animation-delay: 0.25s; --hover-color: {{ $inProgressProgressColor }};"
-                data-bs-toggle="tooltip" data-bs-placement="top"
-                data-bs-title="Número de tickets que están actualmente en proceso de resolución.">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <p class="text-info text-uppercase mb-1 zen-title-xs">
-                                <i class="feather-loader me-1"></i> En Proceso
-                            </p>
-                            <h2 class="text-dark zen-metric-xs">{{ $inProgressTicketsValue }}</h2>
-                            <div class="d-flex align-items-center">
-                                <small class="text-success me-1 zen-trend-xs">
-                                    <i class="feather-trending-down"></i> {{ abs($inProgressTrendPercent) }}%
-                                </small>
-                                <small class="text-muted zen-trend-xs">vs. mes anterior</small>
-                            </div>
-                        </div>
-                        
-                        <div class="circular-progress-xs rounded-circle d-flex align-items-center justify-content-center" 
-                            style="--progress-color: {{ $inProgressProgressColor }}; --progress-value: {{ $inProgressPercent }}%;">
-                            <div class="circular-progress-inner-xs rounded-circle d-flex align-items-center justify-content-center">
-                                <span class="fw-bold" style="font-size: 0.55rem; color: {{ $inProgressProgressColor }};">{{ round($inProgressPercent) }}%</span> 
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        {{-- Tarjeta 4: Tickets Revision --}}
-        <div class="col-lg col-md-6 mb-3"> 
-            @php
-                $closedTicketsValue = $closedTickets ?? 0;
-            @endphp
-            <div class="zen-card-xs shadow-sm fade-in-up" 
-                style="animation-delay: 0.3s; --hover-color: rgba(40, 167, 69, 0.7);"
-                data-bs-toggle="tooltip" data-bs-placement="top"
-                data-bs-title="Cantidad de tickets que fueron marcados como Resueltos o Cerrados en el periodo, indicando la productividad.">
-                <div class="card-body p-3"> 
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <p class="text-success text-uppercase mb-1 zen-title-xs">
-                                <i class="feather-check-square me-1"></i> Revisión
-                            </p>
-                            <h2 class="text-dark zen-metric-xs">{{ $closedTicketsValue }}</h2>
-                            <div class="d-flex align-items-center">
-                                <small class="text-success me-1 zen-trend-xs">
-                                    <i class="feather-trending-up"></i> +18%
-                                </small>
-                                <small class="text-muted zen-trend-xs">vs. mes anterior</small>
-                            </div>
-                        </div>
-                        <i class="feather-check-circle text-success opacity-25" style="font-size: 2rem;"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {{-- Tarjeta 5: Tiempo Medio de Resolución (TMR) --}}
-        <div class="col-lg col-md-6 mb-3">
-            @php
-                $avgTime = $avgResolutionTime ?? 'N/A';
-                $avgResolutionTimeTrend = -8;
-                $trendIcon = ($avgResolutionTimeTrend < 0) ? 'feather-trending-down' : 'feather-trending-up'; 
-                $trendColor = ($avgResolutionTimeTrend < 0) ? 'text-success' : 'text-danger'; 
-            @endphp
-            <div class="zen-card-xs shadow-sm fade-in-up" 
-                style="animation-delay: 0.4s; --hover-color: rgba(23, 162, 184, 0.7);"
-                data-bs-toggle="tooltip" data-bs-placement="top"
-                data-bs-title="Tiempo promedio que toma cerrar un ticket, desde su creación hasta su resolución final. Una métrica más baja es mejor.">
-                <div class="card-body p-3"> 
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <p class="text-info text-uppercase mb-1 zen-title-xs">
-                                <i class="feather-activity me-1"></i> TMR (Cierre)
-                            </p>
-                            <h2 class="text-dark zen-metric-xs">{{ $avgTime }}</h2>
-                            <div class="d-flex align-items-center">
-                                <small class="{{ $trendColor }} me-1 zen-trend-xs">
-                                    <i class="{{ $trendIcon }}"></i> {{ abs($avgResolutionTimeTrend) }}%
-                                </small>
-                                <small class="text-muted zen-trend-xs">mejora vs. mes anterior</small>
-                            </div>
-                        </div>
-                        <i class="feather-zap text-info opacity-25" style="font-size: 2rem;"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        {{-- Tarjeta 6: Tiempo de Primera Respuesta --}}
-        <div class="col-lg col-md-6 mb-3">
-            @php
-                $firstResponseTime = $avgFirstResponseTime ?? 'N/A';
-                $firstResponseTimeTrend = -5;
-                $trendIcon = ($firstResponseTimeTrend < 0) ? 'feather-trending-down' : 'feather-trending-up'; 
-                $trendColor = ($firstResponseTimeTrend < 0) ? 'text-success' : 'text-danger'; 
-            @endphp
-            <div class="zen-card-xs shadow-sm fade-in-up" 
-                style="animation-delay: 0.45s; --hover-color: rgba(23, 162, 184, 0.7);"
-                data-bs-toggle="tooltip" data-bs-placement="top"
-                data-bs-title="Tiempo promedio que toma dar la primera respuesta a un ticket, desde su creación. Una métrica más baja es mejor.">
-                <div class="card-body p-3"> 
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <p class="text-info text-uppercase mb-1 zen-title-xs">
-                                <i class="feather-message-circle me-1"></i> T. Primera Respuesta
-                            </p>
-                            <h2 class="text-dark zen-metric-xs">{{ $firstResponseTime }}</h2>
-                            <div class="d-flex align-items-center">
-                                <small class="{{ $trendColor }} me-1 zen-trend-xs">
-                                    <i class="{{ $trendIcon }}"></i> {{ abs($firstResponseTimeTrend) }}%
-                                </small>
-                                <small class="text-muted zen-trend-xs">mejora vs. mes anterior</small>
-                            </div>
-                        </div>
-                        <i class="feather-message-circle text-info opacity-25" style="font-size: 2rem;"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        {{-- Tarjeta 7: Tickets Escalados --}}
-        <div class="col-lg col-md-6 mb-3">
-            @php
-                $escalatedTicketsValue = $escalatedTickets ?? 0;
-                $escalatedPercent = ($escalatedTicketsValue / $total) * 100;
-                $escalatedProgressColor = ($escalatedPercent > 15) ? '#dc3545' : (($escalatedPercent > 5) ? '#ffc107' : '#007bff'); 
-                $escalatedTrendPercent = 3;
-            @endphp
-            <div class="zen-card-xs shadow-sm fade-in-up" 
-                style="animation-delay: 0.5s; --hover-color: {{ $escalatedProgressColor }};"
-                data-bs-toggle="tooltip" data-bs-placement="top"
-                data-bs-title="Número de tickets que han sido escalados a un nivel superior de soporte.">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <p class="text-warning text-uppercase mb-1 zen-title-xs">
-                                <i class="feather-arrow-up-circle me-1"></i> Escalados
-                            </p>
-                            <h2 class="text-dark zen-metric-xs">{{ $escalatedTicketsValue }}</h2>
-                            <div class="d-flex align-items-center">
-                                <small class="text-danger me-1 zen-trend-xs">
-                                    <i class="feather-trending-up"></i> +{{ $escalatedTrendPercent }}%
-                                </small>
-                                <small class="text-muted zen-trend-xs">vs. mes anterior</small>
-                            </div>
-                        </div>
-                        
-                        <div class="circular-progress-xs rounded-circle d-flex align-items-center justify-content-center" 
-                            style="--progress-color: {{ $escalatedProgressColor }}; --progress-value: {{ $escalatedPercent }}%;">
-                            <div class="circular-progress-inner-xs rounded-circle d-flex align-items-center justify-content-center">
-                                <span class="fw-bold" style="font-size: 0.55rem; color: {{ $escalatedProgressColor }};">{{ round($escalatedPercent) }}%</span> 
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        {{-- Tarjeta 8: Tasa de Escalado --}}
-        <div class="col-lg col-md-6 mb-3">
-            @php
-                $escalationRateValue = $escalationRate ?? 0;
-                $escalationRateTrend = -2;
-                $trendIcon = ($escalationRateTrend < 0) ? 'feather-trending-down' : 'feather-trending-up'; 
-                $trendColor = ($escalationRateTrend < 0) ? 'text-success' : 'text-danger'; 
-            @endphp
-            <div class="zen-card-xs shadow-sm fade-in-up" 
-                style="animation-delay: 0.55s; --hover-color: rgba(23, 162, 184, 0.7);"
-                data-bs-toggle="tooltip" data-bs-placement="top"
-                data-bs-title="Porcentaje de tickets que han sido escalados respecto al total. Una métrica más baja es mejor.">
-                <div class="card-body p-3"> 
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <p class="text-info text-uppercase mb-1 zen-title-xs">
-                                <i class="feather-percent me-1"></i> Tasa de Escalado
-                            </p>
-                            <h2 class="text-dark zen-metric-xs">{{ $escalationRateValue }}%</h2>
-                            <div class="d-flex align-items-center">
-                                <small class="{{ $trendColor }} me-1 zen-trend-xs">
-                                    <i class="{{ $trendIcon }}"></i> {{ abs($escalationRateTrend) }}%
-                                </small>
-                                <small class="text-muted zen-trend-xs">mejora vs. mes anterior</small>
-                            </div>
-                        </div>
-                        <i class="feather-trending-down text-info opacity-25" style="font-size: 2rem;"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        {{-- Tarjeta 9: Tickets Resueltos sin Escalado --}}
-        <div class="col-lg col-md-6 mb-3">
-            @php
-                $resolvedWithoutEscalationValue = $resolvedWithoutEscalation ?? 0;
-                $resolvedWithoutEscalationPercent = ($resolvedWithoutEscalationValue / $total) * 100;
-                $resolvedWithoutEscalationTrend = 8;
-            @endphp
-            <div class="zen-card-xs shadow-sm fade-in-up" 
-                style="animation-delay: 0.6s; --hover-color: rgba(40, 167, 69, 0.7);"
-                data-bs-toggle="tooltip" data-bs-placement="top"
-                data-bs-title="Número de tickets que fueron resueltos sin necesidad de escalar. Una métrica más alta es mejor.">
-                <div class="card-body p-3"> 
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <p class="text-success text-uppercase mb-1 zen-title-xs">
-                                <i class="feather-check-circle me-1"></i> Resueltos sin Escalado
-                            </p>
-                            <h2 class="text-dark zen-metric-xs">{{ $resolvedWithoutEscalationValue }}</h2>
-                            <div class="d-flex align-items-center">
-                                <small class="text-success me-1 zen-trend-xs">
-                                    <i class="feather-trending-up"></i> +{{ $resolvedWithoutEscalationTrend }}%
-                                </small>
-                                <small class="text-muted zen-trend-xs">vs. mes anterior</small>
-                            </div>
-                        </div>
-                        <i class="feather-check-circle text-success opacity-25" style="font-size: 2rem;"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        {{-- Tarjeta 10: Cumplimiento SLA (Acuerdo de Nivel de Servicio) --}}
-        <div class="col-lg col-md-6 mb-3"> 
-            @php
-                $slaCompliance = 98.5;
-                $slaColor = ($slaCompliance < 95) ? '#dc3545' : '#28a745'; 
-                $borderColorClass = $slaCompliance < 95 ? 'border-danger' : 'border-success';
-            @endphp
-            <div class="zen-card-xs shadow-sm fade-in-up border-start border-3 {{ $borderColorClass }}" 
-                style="animation-delay: 0.65s; --hover-color: rgba(40, 167, 69, 0.7);"
-                data-bs-toggle="tooltip" data-bs-placement="top"
-                data-bs-title="Porcentaje de tickets resueltos dentro del tiempo límite establecido por el Acuerdo de Nivel de Servicio (SLA). Mide la calidad del servicio.">
-                <div class="card-body p-3">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <p class="text-{{ $slaColor == '#dc3545' ? 'danger' : 'success' }} text-uppercase mb-1 zen-title-xs">
-                                <i class="feather-target me-1"></i> Cumplimiento SLA
-                            </p>
-                            <h2 class="text-dark zen-metric-xs" style="color: {{ $slaColor }}!important;">{{ number_format($slaCompliance, 1) }}%</h2>
-                            <div class="d-flex align-items-center">
-                                <small class="text-muted zen-trend-xs">Tasa de resolución a tiempo</small>
-                            </div>
-                        </div>
-                        <i class="feather-shield text-{{ $slaColor == '#dc3545' ? 'danger' : 'success' }} opacity-25" style="font-size: 2rem;"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    @push('scripts')
+    {{-- LIBRERÍAS EXTERNAS: Chart.js y html2pdf.js --}}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-                if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
-                    return new bootstrap.Tooltip(tooltipTriggerEl);
+        let updateDashboard, filterKpi, exportTableToCSV;
+
+        document.addEventListener('DOMContentLoaded', function () {
+            
+            // --- Configuración Profesional Chart.js ---
+            Chart.defaults.font.family = "'Inter', sans-serif";
+            Chart.defaults.color = '#6b7280';
+            Chart.defaults.scale.grid.color = '#f3f4f6';
+            Chart.defaults.plugins.tooltip.backgroundColor = '#1f2937';
+            Chart.defaults.plugins.tooltip.padding = 10;
+            Chart.defaults.plugins.tooltip.cornerRadius = 6;
+            
+            const colors = { 
+                primary: '#2563eb', secondary: '#64748b', info: '#3b82f6', 
+                success: '#10b981', warning: '#f59e0b', danger: '#ef4444', purple: '#8b5cf6'
+            };
+
+            let chartMes, chartEstado, chartTipo, chartPrioridad, chartArea, chartKPI, chartRadarArea;
+
+            function renderCharts(data) {
+                [chartMes, chartEstado, chartTipo, chartPrioridad, chartArea, chartKPI, chartRadarArea].forEach(c => c && c.destroy());
+
+                // 1. Line Chart
+                chartMes = new Chart(document.getElementById('ticketsPorMesChart'), {
+                    type: 'line',
+                    data: { 
+                        labels: data.labelsMes, 
+                        datasets: [{ 
+                            label: 'Tickets Nuevos', 
+                            data: data.dataMes, 
+                            borderColor: colors.primary, 
+                            backgroundColor: 'rgba(37, 99, 235, 0.05)', 
+                            fill: true, tension: 0.4, borderWidth: 2, pointRadius: 3
+                        }] 
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true }, x: { grid: { display: false } } } }
+                });
+
+                // 2. Doughnut Chart (Estados)
+                chartEstado = new Chart(document.getElementById('ticketsPorEstadoChart'), {
+                    type: 'doughnut',
+                    data: { 
+                        labels: data.labelsEstado, 
+                        datasets: [{ 
+                            data: data.dataEstado, 
+                            backgroundColor: [colors.warning, colors.info, colors.purple, colors.success], 
+                            borderWidth: 0, hoverOffset: 4
+                        }] 
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'right', labels: { usePointStyle: true, boxWidth: 8, padding: 20 } } } }
+                });
+
+                // 3. Tipo
+                if(document.getElementById('ticketsPorTipoChart') && data.ticketsByType) {
+                    chartTipo = new Chart(document.getElementById('ticketsPorTipoChart'), {
+                        type: 'doughnut',
+                        data: { labels: data.ticketsByType.map(i=>i.label), datasets: [{ data: data.ticketsByType.map(i=>i.data), backgroundColor: [colors.primary, colors.info, colors.success, colors.warning, colors.danger], borderWidth: 0 }] },
+                        options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { display: false } } }
+                    });
                 }
+                
+                // 4. Prioridad
+                if(document.getElementById('ticketsPorPrioridadChart') && data.ticketsByPriority) {
+                    chartPrioridad = new Chart(document.getElementById('ticketsPorPrioridadChart'), {
+                        type: 'bar',
+                        data: { labels: data.ticketsByPriority.map(i=>i.label), datasets: [{ label:'Volumen', data: data.ticketsByPriority.map(i=>i.data), backgroundColor: [colors.danger, colors.warning, colors.success], borderRadius: 4, barThickness: 20 }] },
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { display: false } } }
+                    });
+                }
+
+                // 5. Area
+                if(document.getElementById('ticketsPorAreaChart') && data.labelsArea) {
+                    chartArea = new Chart(document.getElementById('ticketsPorAreaChart'), {
+                        type: 'bar',
+                        data: { labels: data.labelsArea, datasets: [{ label:'Total', data: data.dataArea, backgroundColor: colors.secondary, borderRadius: 4, barThickness: 15 }] },
+                        options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { display: false }, y: { grid: { display: false } } } }
+                    });
+                }
+
+                // 6. Radar KPIs
+                if(document.getElementById('kpiCalidadChart')) {
+                    chartKPI = new Chart(document.getElementById('kpiCalidadChart'), {
+                        type: 'radar',
+                        data: {
+                            labels: ['SLA %', 'CSAT', 'Resp. 1er Cont.', 'Sin Reapertura', 'Sin Escalación'],
+                            datasets: [{ label: 'Desempeño', data: [ data.slaCompliance||0, (data.csatScore||0)*20, data.firstResponseRate||0, Math.max(0,100-(data.reopenRate||0)), Math.max(0,100-(data.escalationRate||0)) ], backgroundColor: 'rgba(37, 99, 235, 0.2)', borderColor: colors.primary, borderWidth: 2 }]
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, scales: { r: { beginAtZero: true, max: 100, ticks: { display: false }, grid: { color: '#e5e7eb' } } } }
+                    });
+                }
+
+                // 7. Radar Area
+                if(document.getElementById('rendimientoAreaChart') && data.labelsArea) {
+                    chartRadarArea = new Chart(document.getElementById('rendimientoAreaChart'), {
+                        type: 'radar',
+                        data: { labels: data.labelsArea, datasets: [{ label: 'Resueltos', data: data.dataArea, backgroundColor: 'rgba(16, 185, 129, 0.2)', borderColor: colors.success }] },
+                        options: { responsive: true, maintainAspectRatio: false, scales: { r: { grid: { color: '#e5e7eb' }, ticks: { display: false } } } }
+                    });
+                }
+            }
+
+            // Datos Iniciales
+            const initialData = {
+                labelsMes: {!! json_encode($labelsMes) !!}, dataMes: {!! json_encode($dataMes) !!},
+                labelsEstado: {!! json_encode($labelsEstado) !!}, dataEstado: {!! json_encode($dataEstado) !!},
+                labelsArea: {!! json_encode($labelsArea) !!}, dataArea: {!! json_encode($dataArea) !!},
+                ticketsByType: {!! json_encode($ticketsByType ?? []) !!},
+                ticketsByPriority: {!! json_encode($ticketsByPriority ?? []) !!},
+                slaCompliance: {{ $slaCompliance ?? 0 }}, csatScore: {{ $csatScore ?? 0 }}, firstResponseRate: {{ $firstResponseRate ?? 0 }},
+                reopenRate: {{ $reopenRate ?? 0 }}, escalationRate: {{ $escalationRate ?? 0 }}
+            };
+            renderCharts(initialData);
+
+            // --- Lógica de Interfaz ---
+            
+            // Tabs
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    document.querySelectorAll('.content-area').forEach(s => s.classList.remove('active'));
+                    document.getElementById('section-'+this.dataset.target).classList.add('active');
+                });
+            });
+
+            // Toast
+            function showToast(msg, type='success') {
+                const id = 't-'+Date.now();
+                const icon = type === 'success' ? 'check-circle text-success' : 'alert-triangle text-danger';
+                const html = `<div id="${id}" class="toast-alert toast-${type}"><i class="feather-${icon} fs-5"></i><div><div class="fw-bold text-dark" style="font-size:0.9rem;">${type==='success'?'Operación Exitosa':'Atención'}</div><div class="small text-muted">${msg}</div></div></div>`;
+                document.getElementById('toastContainer').insertAdjacentHTML('beforeend', html);
+                setTimeout(()=>{ const el=document.getElementById(id); if(el) { el.style.opacity='0'; setTimeout(()=>el.remove(),300); } }, 4000);
+            }
+
+            // --- Lógica de Datos ---
+            const loader = document.getElementById('loadingOverlay');
+            
+            updateDashboard = function() {
+                const start = document.getElementById('filterStartDate').value;
+                const end = document.getElementById('filterEndDate').value;
+                if(start > end) return showToast("La fecha de inicio no puede ser mayor al final", "error");
+
+                document.getElementById('loaderText').innerText = "Procesando datos...";
+                loader.style.display = 'flex';
+                const params = new URLSearchParams({
+                    start_date: start, end_date: end,
+                    priority: document.getElementById('priorityFilter').value,
+                    status: document.getElementById('statusFilter').value
+                });
+
+                fetch("{{ route('soportes.estadisticas.data') }}?" + params.toString())
+                    .then(res => res.json())
+                    .then(data => {
+                        const kpiMap = {
+                            'totalTicketsMetric': data.totalTickets, 'openTicketsMetric': data.openTickets,
+                            'inProgressTicketsMetric': data.inProgressTickets, 'revisionTicketsMetric': data.revisionTickets,
+                            'closedTicketsMetric': data.closedTickets, 'firstResponseRateMetric': data.firstResponseRate,
+                            'avgResolutionTimeMetric': data.avgResolutionTime, 'slaComplianceMetric': data.slaCompliance,
+                            'avgFirstResponseTimeMetric': data.avgFirstResponseTime, 'reopenRateMetric': data.reopenRate,
+                            'csatScoreMetric': data.csatScore, 'escalationRateMetric': data.escalationRate
+                        };
+                        for (const [id, val] of Object.entries(kpiMap)) {
+                            const el = document.getElementById(id); if(el) el.innerText = val !== undefined ? val : 0;
+                        }
+
+                        const tbody = document.getElementById('table-body-soportes');
+                        tbody.innerHTML = '';
+                        if(data.actividadReciente && data.actividadReciente.length) {
+                            data.actividadReciente.forEach(item => {
+                                const initial = item.asignado_nombre ? item.asignado_nombre.charAt(0) : 'U';
+                                const row = `<tr><td class="ps-4 fw-bold font-monospace text-primary">#${item.id}</td><td><div class="fw-bold text-dark mb-1">${(item.detalles_soporte||'').substring(0,50)}...</div></td><td><span class="badge-status badge-gray">${item.estado_nombre}</span></td><td><span class="badge-status badge-gray">${item.prioridad_nombre}</span></td><td><div class="d-flex align-items-center gap-2"><div class="avatar-circle" style="background-color: var(--primary);">${initial}</div><span class="small fw-medium">${item.asignado_nombre || 'Sin asignar'}</span></div></td><td class="text-muted small">${item.created_at_formatted}</td><td class="text-end pe-4"><a href="/soportes/soportes/${item.id}" class="btn-icon-only"><i class="feather-arrow-right"></i></a></td></tr>`;
+                                tbody.insertAdjacentHTML('beforeend', row);
+                            });
+                            document.getElementById('table-footer-info').innerText = `Registros mostrados: ${data.actividadReciente.length}`;
+                        } else {
+                            tbody.innerHTML = `<tr><td colspan="7" class="text-center py-5 text-muted">No se encontraron datos en este periodo</td></tr>`;
+                            document.getElementById('table-footer-info').innerText = `Registros mostrados: 0`;
+                        }
+
+                        renderCharts(data);
+                        showToast('Dashboard actualizado correctamente');
+                    })
+                    .catch(err => { console.error(err); showToast('Error de conexión al servidor', 'error'); })
+                    .finally(() => loader.style.display = 'none');
+            };
+
+            filterKpi = function(status) {
+                document.getElementById('statusFilter').value = status;
+                document.querySelectorAll('.kpi-box').forEach(c => c.classList.remove('active-filter'));
+                const map = {'':'card-total', '1':'card-status-1', '2':'card-status-2', '3':'card-status-3', '4':'card-status-4'};
+                if(map[status]) document.getElementById(map[status]).classList.add('active-filter');
+                updateDashboard();
+            }
+
+            document.getElementById('applyDateFilters').addEventListener('click', updateDashboard);
+            document.getElementById('refreshDashboard').addEventListener('click', updateDashboard);
+            
+            document.getElementById('clearFiltersBtn').addEventListener('click', () => {
+                document.getElementById('priorityFilter').value = "";
+                document.getElementById('statusFilter').value = "";
+                const s = document.getElementById('filterStartDate'); s.value = s.dataset.default;
+                const e = document.getElementById('filterEndDate'); e.value = e.dataset.default;
+                filterKpi('');
+            });
+
+            document.querySelectorAll('.btn-date-preset').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const d = this.dataset.days;
+                    const end = new Date();
+                    const start = new Date();
+                    start.setDate(end.getDate() - d);
+                    document.getElementById('filterEndDate').value = end.toISOString().split('T')[0];
+                    document.getElementById('filterStartDate').value = start.toISOString().split('T')[0];
+                    document.querySelectorAll('.btn-date-preset').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    updateDashboard();
+                });
+            });
+
+            // Exportar CSV
+            exportTableToCSV = function(id) {
+                let csv = [];
+                let rows = document.querySelectorAll('#'+id+' tr');
+                for (let i=0; i<rows.length; i++) {
+                    let row = [], cols = rows[i].querySelectorAll("td, th");
+                    for (let j=0; j<cols.length-1; j++) { 
+                        let txt = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, " ").trim();
+                        row.push('"' + txt.replace(/"/g, '""') + '"');
+                    }
+                    csv.push(row.join(","));
+                }
+                const blob = new Blob([csv.join("\n")], {type: "text/csv"});
+                const link = document.createElement("a");
+                link.download = "reporte_soportes_" + new Date().toISOString().slice(0,10) + ".csv";
+                link.href = window.URL.createObjectURL(blob);
+                link.click();
+            }
+
+            // -------------------------------------------------------------
+            // 🖨️ LÓGICA DE EXPORTACIÓN A PDF (HTML2PDF)
+            // -------------------------------------------------------------
+            document.getElementById('exportDashboard').addEventListener('click', function() {
+                const element = document.body; // Tomamos todo el body para simplificar la estructura
+                const loader = document.getElementById('loadingOverlay');
+                const loaderText = document.getElementById('loaderText');
+                
+                // 1. Mostrar Loader
+                loaderText.innerText = "Generando PDF Profesional...";
+                loader.style.display = 'flex';
+
+                // 2. Activar "Modo Reporte" (CSS se encarga de mostrar todo y ocultar filtros)
+                element.classList.add('printing-mode');
+
+                // Pequeña pausa para que Chart.js o el DOM se estabilicen antes de la foto
+                setTimeout(() => {
+                    const opt = {
+                        margin:       [5, 5], // Márgenes pequeños (mm)
+                        filename:     'Reporte_Gestion_Soportes.pdf',
+                        image:        { type: 'jpeg', quality: 0.98 }, // Alta calidad
+                        html2canvas:  { scale: 2, useCORS: true, scrollY: 0 }, // Escala x2 para nitidez
+                        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }, // Landscape para que quepan las tablas
+                        pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+                    };
+
+                    // 3. Generar PDF
+                    html2pdf().set(opt).from(document.getElementById('dashboard-container')).save().then(() => {
+                        // 4. Restaurar vista normal
+                        element.classList.remove('printing-mode');
+                        loader.style.display = 'none';
+                        showToast('Reporte PDF descargado con éxito');
+                        
+                        // Truco para redibujar la vista correcta de pestañas
+                        const activeTab = document.querySelector('.tab-btn.active');
+                        if(activeTab) activeTab.click(); 
+                    });
+                }, 500);
             });
         });
     </script>
-
-    {{-- Fin Tarjetas --}}
-
-    {{-- Tabs para organizar mejor la información --}}
-    <ul class="nav nav-tabs mb-4 fade-in-up sticky-top" id="dashboardTabs" role="tablist" style="animation-delay: 0.7s; top: 230px; z-index: 1018;">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="charts-tab" data-bs-toggle="tab" data-bs-target="#charts" type="button" role="tab" aria-controls="charts" aria-selected="true">
-                <i class="feather-bar-chart me-2"></i>Gráficos
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="recent-tab" data-bs-toggle="tab" data-bs-target="#recent" type="button" role="tab" aria-controls="recent" aria-selected="false">
-                <i class="feather-clock me-2"></i>Actividad Reciente
-            </button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link" id="performance-tab" data-bs-toggle="tab" data-bs-target="#performance" type="button" role="tab" aria-controls="performance" aria-selected="false">
-                <i class="feather-users me-2"></i>Rendimiento
-            </button>
-        </li>
-    </ul>
-    
-    <div class="tab-content" id="dashboardTabsContent">
-        {{-- Tab de Gráficos --}}
-        <div class="tab-pane fade show active" id="charts" role="tabpanel" aria-labelledby="charts-tab">
-            {{-- Gráficos con Altura Fija para Control de UX --}}
-            <div class="row">
-                
-                {{-- Gráfico 1: Soportes Creados por Mes (Línea) --}}
-                <div class="col-lg-6 mb-4">
-                    <div class="card shadow-sm glassmorphism-card chart-container fade-in-up" style="animation-delay: 0.7s;">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="card-title fw-semibold text-primary mb-0"><i class="feather-trending-up me-2"></i>Soportes Creados por Mes</h5>
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="chart1Options" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <i class="feather-more-vertical"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="chart1Options">
-                                        <li><a class="dropdown-item chart-type" href="#" data-chart="ticketsPorMesChart" data-type="line">Línea</a></li>
-                                        <li><a class="dropdown-item chart-type" href="#" data-chart="ticketsPorMesChart" data-type="bar">Barras</a></li>
-                                        <li><a class="dropdown-item chart-type" href="#" data-chart="ticketsPorMesChart" data-type="area">Área</a></li>
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li><a class="dropdown-item export-chart" href="#" data-chart="ticketsPorMesChart">Exportar</a></li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <div class="chart-canvas-wrapper" style="height: 300px;">
-                                   <canvas id="ticketsPorMesChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Gráfico 2: Distribución por Estado (Doughnut) --}}
-                <div class="col-lg-6 mb-4">
-                    <div class="card shadow-sm glassmorphism-card chart-container fade-in-up" style="animation-delay: 0.8s;">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="card-title fw-semibold text-primary mb-0"><i class="feather-pie-chart me-2"></i>Distribución por Estado</h5>
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="chart2Options" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <i class="feather-more-vertical"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="chart2Options">
-                                        <li><a class="dropdown-item chart-type" href="#" data-chart="ticketsPorEstadoChart" data-type="doughnut">Donut</a></li>
-                                        <li><a class="dropdown-item chart-type" href="#" data-chart="ticketsPorEstadoChart" data-type="pie">Pastel</a></li>
-                                        <li><a class="dropdown-item chart-type" href="#" data-chart="ticketsPorEstadoChart" data-type="polarArea">Polar</a></li>
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li><a class="dropdown-item export-chart" href="#" data-chart="ticketsPorEstadoChart">Exportar</a></li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <div class="chart-canvas-wrapper" style="height: 300px;">
-                                <canvas id="ticketsPorEstadoChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Gráfico 3: Soportes por Tipo --}}
-                <div class="col-lg-6 mb-4">
-                    <div class="card shadow-sm glassmorphism-card chart-container fade-in-up" style="animation-delay: 0.9s;">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="card-title fw-semibold text-primary mb-0"><i class="feather-list me-2"></i>Soportes por Tipo</h5>
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="chart3Options" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <i class="feather-more-vertical"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="chart3Options">
-                                        <li><a class="dropdown-item chart-type" href="#" data-chart="ticketsPorTipoChart" data-type="bar">Barras</a></li>
-                                        <li><a class="dropdown-item chart-type" href="#" data-chart="ticketsPorTipoChart" data-type="horizontalBar">Barras Horizontales</a></li>
-                                        <li><a class="dropdown-item chart-type" href="#" data-chart="ticketsPorTipoChart" data-type="radar">Radar</a></li>
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li><a class="dropdown-item export-chart" href="#" data-chart="ticketsPorTipoChart">Exportar</a></li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <div class="chart-canvas-wrapper" style="height: 300px;">
-                                <canvas id="ticketsPorTipoChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Gráfico 4: Soportes por Prioridad --}}
-                <div class="col-lg-6 mb-4">
-                    <div class="card shadow-sm glassmorphism-card chart-container fade-in-up" style="animation-delay: 1.0s;">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="card-title fw-semibold text-primary mb-0"><i class="feather-alert-circle me-2"></i>Soportes por Prioridad</h5>
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="chart4Options" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <i class="feather-more-vertical"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="chart4Options">
-                                        <li><a class="dropdown-item chart-type" href="#" data-chart="ticketsPorPrioridadChart" data-type="bar">Barras</a></li>
-                                        <li><a class="dropdown-item chart-type" href="#" data-chart="ticketsPorPrioridadChart" data-type="horizontalBar">Barras Horizontales</a></li>
-                                        <li><a class="dropdown-item chart-type" href="#" data-chart="ticketsPorPrioridadChart" data-type="pie">Pastel</a></li>
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li><a class="dropdown-item export-chart" href="#" data-chart="ticketsPorPrioridadChart">Exportar</a></li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <div class="chart-canvas-wrapper" style="height: 300px;">
-                                <canvas id="ticketsPorPrioridadChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Gráfico 5: Soportes por Área --}}
-                <div class="col-lg-6 mb-4">
-                    <div class="card shadow-sm glassmorphism-card chart-container fade-in-up" style="animation-delay: 1.1s;">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="card-title fw-semibold text-primary mb-0"><i class="feather-grid me-2"></i>Soportes por Área</h5>
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="chart5Options" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <i class="feather-more-vertical"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="chart5Options">
-                                        <li><a class="dropdown-item chart-type" href="#" data-chart="ticketsPorAreaChart" data-type="bar">Barras</a></li>
-                                        <li><a class="dropdown-item chart-type" href="#" data-chart="ticketsPorAreaChart" data-type="horizontalBar">Barras Horizontales</a></li>
-                                        <li><a class="dropdown-item chart-type" href="#" data-chart="ticketsPorAreaChart" data-type="radar">Radar</a></li>
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li><a class="dropdown-item export-chart" href="#" data-chart="ticketsPorAreaChart">Exportar</a></li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <div class="chart-canvas-wrapper" style="height: 300px;">
-                                <canvas id="ticketsPorAreaChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Gráfico 6: Distribución por Día de la Semana --}}
-                <div class="col-lg-6 mb-4">
-                    <div class="card shadow-sm glassmorphism-card chart-container fade-in-up" style="animation-delay: 1.2s;">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="card-title fw-semibold text-primary mb-0"><i class="feather-calendar me-2"></i>Distribución por Día de la Semana</h5>
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="chart6Options" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <i class="feather-more-vertical"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="chart6Options">
-                                        <li><a class="dropdown-item chart-type" href="#" data-chart="ticketsPorDiaSemanaChart" data-type="bar">Barras</a></li>
-                                        <li><a class="dropdown-item chart-type" href="#" data-chart="ticketsPorDiaSemanaChart" data-type="line">Línea</a></li>
-                                        <li><a class="dropdown-item chart-type" href="#" data-chart="ticketsPorDiaSemanaChart" data-type="radar">Radar</a></li>
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li><a class="dropdown-item export-chart" href="#" data-chart="ticketsPorDiaSemanaChart">Exportar</a></li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <div class="chart-canvas-wrapper" style="height: 300px;">
-                                <canvas id="ticketsPorDiaSemanaChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Gráfico 7: Tiempo de Resolución por Prioridad --}}
-                <div class="col-lg-6 mb-4">
-                    <div class="card shadow-sm glassmorphism-card chart-container fade-in-up" style="animation-delay: 1.3s;">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="card-title fw-semibold text-primary mb-0"><i class="feather-clock me-2"></i>Tiempo de Resolución por Prioridad</h5>
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="chart7Options" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <i class="feather-more-vertical"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="chart7Options">
-                                        <li><a class="dropdown-item chart-type" href="#" data-chart="tiempoResolucionPrioridadChart" data-type="bar">Barras</a></li>
-                                        <li><a class="dropdown-item chart-type" href="#" data-chart="tiempoResolucionPrioridadChart" data-type="horizontalBar">Barras Horizontales</a></li>
-                                        <li><a class="dropdown-item chart-type" href="#" data-chart="tiempoResolucionPrioridadChart" data-type="line">Línea</a></li>
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li><a class="dropdown-item export-chart" href="#" data-chart="tiempoResolucionPrioridadChart">Exportar</a></li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <div class="chart-canvas-wrapper" style="height: 300px;">
-                                <canvas id="tiempoResolucionPrioridadChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Gráfico 8: Tasa de Cumplimiento SLA por Prioridad --}}
-                <div class="col-lg-6 mb-4">
-                    <div class="card shadow-sm glassmorphism-card chart-container fade-in-up" style="animation-delay: 1.4s;">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="card-title fw-semibold text-primary mb-0"><i class="feather-target me-2"></i>Cumplimiento SLA por Prioridad</h5>
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="chart8Options" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <i class="feather-more-vertical"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="chart8Options">
-                                        <li><a class="dropdown-item chart-type" href="#" data-chart="slaPrioridadChart" data-type="bar">Barras</a></li>
-                                        <li><a class="dropdown-item chart-type" href="#" data-chart="slaPrioridadChart" data-type="line">Línea</a></li>
-                                        <li><a class="dropdown-item chart-type" href="#" data-chart="slaPrioridadChart" data-type="radar">Radar</a></li>
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li><a class="dropdown-item export-chart" href="#" data-chart="slaPrioridadChart">Exportar</a></li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <div class="chart-canvas-wrapper" style="height: 300px;">
-                                <canvas id="slaPrioridadChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Gráfico 9: Rendimiento por Agente --}}
-                <div class="col-lg-12 mb-4">
-                    <div class="card shadow-sm glassmorphism-card chart-container fade-in-up" style="animation-delay: 1.5s;">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <h5 class="card-title fw-semibold text-primary mb-0"><i class="feather-users me-2"></i>Top Agentes por Soportes Cerrados</h5>
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="chart9Options" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <i class="feather-more-vertical"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="chart9Options">
-                                        <li><a class="dropdown-item chart-type" href="#" data-chart="rendimientoAgenteChart" data-type="bar">Barras Verticales</a></li>
-                                        <li><a class="dropdown-item chart-type" href="#" data-chart="rendimientoAgenteChart" data-type="horizontalBar">Barras Horizontales</a></li>
-                                        <li><a class="dropdown-item chart-type" href="#" data-chart="rendimientoAgenteChart" data-type="radar">Radar</a></li>
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li><a class="dropdown-item export-chart" href="#" data-chart="rendimientoAgenteChart">Exportar</a></li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <div class="chart-canvas-wrapper" style="height: 300px;">
-                                <canvas id="rendimientoAgenteChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        {{-- Tab de Actividad Reciente --}}
-        <div class="tab-pane fade" id="recent" role="tabpanel" aria-labelledby="recent-tab">
-            <div class="card shadow-sm glassmorphism-card fade-in-up" style="animation-delay: 0.7s;">
-                <div class="card-body">
-                    <h5 class="card-title fw-semibold text-primary mb-4"><i class="feather-activity me-2"></i>Actividad Reciente</h5>
-                    <div class="table-responsive">
-                        <table class="table table-hover">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Descripción</th>
-                                    <th>Estado</th>
-                                    <th>Creado por</th>
-                                    <th>Asignado a</th>
-                                    <th>Fecha</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($actividadReciente as $soporte)
-                                    <tr>
-                                        <td>{{ $soporte->id }}</td>
-                                        <td>{{ Str::limit($soporte->detalles_soporte, 50) }}</td>
-                                        <td>
-                                            <span class="badge bg-{{ $soporte->estadoSoporte->color ?? 'secondary' }}">
-                                                {{ $soporte->estadoSoporte->nombre ?? 'N/A' }}
-                                            </span>
-                                        </td>
-                                        <td>{{ $soporte->usuario->name ?? 'N/A' }}</td>
-                                        <td>{{ $soporte->maeTercero->nombre ?? 'N/A' }}</td>
-                                        <td>{{ $soporte->created_at->format('d/m/Y H:i') }}</td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        {{-- Tab de Rendimiento --}}
-        <div class="tab-pane fade" id="performance" role="tabpanel" aria-labelledby="performance-tab">
-            <div class="row">
-                <div class="col-lg-12 mb-4">
-                    <div class="card shadow-sm glassmorphism-card fade-in-up" style="animation-delay: 0.7s;">
-                        <div class="card-body">
-                            <h5 class="card-title fw-semibold text-primary mb-4"><i class="feather-award me-2"></i>Top Agentes del Mes</h5>
-                            <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th>Agente</th>
-                                            <th class="text-center">Tickets Cerrados</th>
-                                            <th class="text-center">Tiempo Promedio de Resolución</th>
-                                            <th class="text-center">Tasa de Cumplimiento SLA</th>
-                                            <th class="text-center">Satisfacción</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>                                        
-                                        @foreach($topAgentes as $agente)
-                                            <tr>
-                                                <td>
-                                                    <div class="d-flex align-items-center">
-                                                        <div class="avatar-xs bg-primary bg-opacity-10 rounded-circle me-2">
-                                                            <span class="avatar-title bg-primary bg-opacity-10 text-primary fw-bold">
-                                                                {{ substr($agente->name, 0, 2) }}
-                                                            </span>
-                                                        </div>
-                                                        <div>{{ $agente->nom_ter }}</div>
-                                                    </div>
-                                                </td>
-                                                <td class="text-center">{{ $agente->total_cerrados }}</td>
-                                                <td class="text-center">{{ round($agente->tiempo_promedio, 1) }} hrs</td>
-                                                <td class="text-center">
-                                                    <div class="d-flex justify-content-center align-items-center">
-                                                        <div class="progress me-2" style="width: 100px; height: 10px;">
-                                                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ min(100, round((100 - ($agente->tiempo_promedio / 24) * 100), 1)) }}%"></div>
-                                                        </div>
-                                                        <span>{{ min(100, round((100 - ($agente->tiempo_promedio / 24) * 100), 1)) }}%</span>
-                                                    </div>
-                                                </td>
-                                                <td class="text-center">
-                                                    <div class="d-flex justify-content-center">
-                                                        @for($i = 1; $i <= 5; $i++)
-                                                            <i class="feather-star {{ $i <= 4 ? 'text-warning' : 'text-muted' }}"></i>
-                                                        @endfor
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    {{-- Panel de actividad reciente (collapsible) --}}
-    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 5">
-        <div class="toast-container">
-            <div id="activityToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-                <div class="toast-header glassmorphism-card">
-                    <i class="feather-bell text-primary me-2"></i>
-                    <strong class="me-auto">Nueva Actividad</strong>
-                    <small>Hace un momento</small>
-                    <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-                </div>
-                <div class="toast-body glassmorphism-card" id="toastBody">
-                    <!-- El contenido se llenará dinámicamente -->
-                </div>
-            </div>
-        </div>
-    </div>
-
-    @push('styles')
-        <style>
-            /* COLORES PASTELES SUAVES Y HERMOSOS */
-            body {
-                /* Fondo un poco más vibrante para el glassmorphism */
-                background: linear-gradient(135deg, #f0f4f8 0%, #dce4ee 100%);
-                min-height: 100vh;
-                font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                transition: all 0.3s ease;
-                color: #2c3e50; /* Color principal más oscuro para contraste */
-            }
-            
-            /* Glassmorphism */
-            .glassmorphism-card {
-                background: rgba(255, 255, 255, 0.5); /* Más transparencia para más "vidrio" */
-                backdrop-filter: blur(15px); /* Más blur */
-                border-radius: 16px; /* Más redondeado */
-                border: 1px solid rgba(255, 255, 255, 0.3); /* Borde más visible */
-                box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15); /* Sombra más pronunciada */
-            }
-            
-            .glassmorphism-alert {
-                background: rgba(255, 255, 255, 0.8);
-                backdrop-filter: blur(8px);
-                border-radius: 10px;
-                border: 1px solid rgba(255, 255, 255, 0.5);
-                color: #155724; /* Color de texto específico para éxito */
-            }
-            
-            /* Botones pasteles SUAVES (Añadido un ligero degradado) */
-            .pastel-btn-gradient {
-                background: linear-gradient(135deg, #a8dadc, #457b9d) !important; /* Degradado de colores pastel más frescos */
-                color: white !important;
-                border: none;
-                border-radius: 25px; /* Más redondo */
-                padding: 8px 20px;
-                font-weight: 600;
-                transition: all 0.3s ease;
-                box-shadow: 0 4px 10px rgba(69, 123, 157, 0.3);
-            }
-            
-            .pastel-btn-gradient:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 6px 15px rgba(69, 123, 157, 0.4);
-            }
-
-            .pastel-btn-light {
-                background: rgba(255, 255, 255, 0.7) !important;
-                color: #495057 !important;
-                border: 1px solid #ced4da;
-                border-radius: 18px;
-                padding: 6px 14px;
-                transition: all 0.3s ease;
-            }
-
-            /* Selects e inputs pasteles SUAVES */
-            .pastel-input {
-                background: rgba(255, 255, 255, 0.9) !important; /* Más opaco para mejor legibilidad */
-                border: 1px solid #ced4da;
-                border-radius: 10px;
-                transition: all 0.3s ease;
-                color: #2c3e50 !important;
-                font-size: 0.9rem;
-            }
-            
-            .pastel-input:focus {
-                background: #ffffff !important;
-                border-color: #a8dadc;
-                box-shadow: 0 0 0 0.2rem rgba(168, 218, 220, 0.5);
-            }
-
-            /* Contenedor de Gráfico con Altura Fija */
-            .chart-canvas-wrapper {
-                position: relative;
-                width: 100%;
-                /* Altura controlada, elimina el style="height:..." del canvas */
-            }
-
-            /* Mejoras visuales para las KPI Cards */
-            .kpi-card {
-                transition: transform 0.3s ease, box-shadow 0.3s ease;
-                cursor: default;
-            }
-            .kpi-card:hover {
-                transform: translateY(-3px);
-                box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-            }
-            .avatar-sm {
-                width: 40px;
-                height: 40px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-            
-            .avatar-xs {
-                width: 32px;
-                height: 32px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 0.75rem;
-            }
-
-            /* Efectos de entrada */
-            @keyframes fadeInUp {
-                from {
-                    opacity: 0;
-                    transform: translateY(20px);
-                }
-                to {
-                    opacity: 1;
-                    transform: translateY(0);
-                }
-            }
-            
-            .fade-in-up {
-                animation: fadeInUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; /* Curva más dinámica */
-                opacity: 0; /* Asegurar que inicie oculto */
-            }
-            
-            /* Estilos para la tabla de actividad reciente */
-            .timeline {
-                position: relative;
-                padding-left: 30px;
-            }
-            
-            .timeline::before {
-                content: '';
-                position: absolute;
-                left: 7px;
-                top: 0;
-                height: 100%;
-                width: 2px;
-                background: rgba(0, 0, 0, 0.1);
-            }
-            
-            .timeline-item {
-                position: relative;
-                padding-bottom: 20px;
-            }
-            
-            .timeline-item::before {
-                content: '';
-                position: absolute;
-                left: -23px;
-                top: 5px;
-                width: 12px;
-                height: 12px;
-                border-radius: 50%;
-                background: white;
-                border: 2px solid #a8dadc;
-            }
-            
-            .timeline-item-icon {
-                position: absolute;
-                left: -30px;
-                top: 0;
-                width: 24px;
-                height: 24px;
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                font-size: 12px;
-            }
-            
-            /* Estilos para las pestañas */
-            .nav-tabs {
-                border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-            }
-            
-            .nav-tabs .nav-link {
-                border: none;
-                color: #6c757d;
-                background: transparent;
-                border-radius: 10px 10px 0 0;
-                padding: 8px 16px;
-                margin-right: 5px;
-                transition: all 0.3s ease;
-            }
-            
-            .nav-tabs .nav-link:hover {
-                color: #457b9d;
-                background: rgba(255, 255, 255, 0.5);
-            }
-            
-            .nav-tabs .nav-link.active {
-                color: #457b9d;
-                background: rgba(255, 255, 255, 0.7);
-                border-bottom: 3px solid #457b9d;
-            }
-            
-            /* Estilos para el indicador de carga */
-            .loader {
-                display: inline-block;
-                width: 20px;
-                height: 20px;
-                border: 3px solid rgba(255,255,255,.3);
-                border-radius: 50%;
-                border-top-color: #457b9d;
-                animation: spin 1s ease-in-out infinite;
-            }
-            
-            @keyframes spin {
-                to { transform: rotate(360deg); }
-            }
-            
-            /* Estilos para las vistas */
-            .view-compact .card-body {
-                padding: 1rem;
-            }
-            
-            .view-detailed .card-body {
-                padding: 1.5rem;
-            }
-            
-            /* Estilos para los badges de estado */
-            .status-badge {
-                display: inline-block;
-                padding: 0.25rem 0.5rem;
-                font-size: 0.75rem;
-                font-weight: 600;
-                border-radius: 1rem;
-            }
-            
-            .status-open {
-                background-color: rgba(255, 184, 108, 0.2);
-                color: #e67e22;
-            }
-            
-            .status-in-progress {
-                background-color: rgba(168, 218, 220, 0.2);
-                color: #457b9d;
-            }
-            
-            .status-closed {
-                background-color: rgba(152, 216, 200, 0.2);
-                color: #27ae60;
-            }
-
-            /* MEJORA: Estilos para el autocompletado */
-            #searchResults {
-                max-height: 200px;
-                overflow-y: auto;
-            }
-            #searchResults .search-result-item {
-                padding: 10px 15px;
-                cursor: pointer;
-                border-bottom: 1px solid #eee;
-            }
-            #searchResults .search-result-item:hover {
-                background-color: #f8f9fa;
-            }
-            #searchResults .search-result-item:last-child {
-                border-bottom: none;
-            }
-        </style>
-    @endpush
-
-    @push('scripts')
-        {{-- MEJORA: Añadimos librerías para exportación a PDF --}}
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                
-                // Configuración global para Chart.js
-                Chart.defaults.font.family = 'Inter, sans-serif';
-                Chart.defaults.color = '#495057';
-                
-                // Paleta de colores pastel más sofisticada
-                const pastelColors = {
-                    primary: 'rgba(69, 123, 157, 0.8)',  // Azul-Gris suave
-                    secondary: 'rgba(168, 218, 220, 0.8)', // Azul Celeste
-                    warning: 'rgba(255, 184, 108, 0.8)',   // Naranja suave
-                    success: 'rgba(152, 216, 200, 0.8)',   // Verde Menta
-                    info: 'rgba(29, 53, 87, 0.8)', // Azul Marino suave
-                    danger: 'rgba(231, 76, 60, 0.8)' // Rojo para contrastar
-                };
-
-                // --- Gráfico 1: Soportes por Mes (Línea para tendencia, más dinámico) ---
-                const ctx1 = document.getElementById('ticketsPorMesChart');
-                if (ctx1) {
-                    const ticketsPorMesChart = new Chart(ctx1.getContext('2d'), {
-                        type: 'line', 
-                        data: {
-                            labels: {!! json_encode($labelsMes ?? []) !!},
-                            datasets: [{
-                                label: 'Soportes Creados',
-                                data: {!! json_encode($dataMes ?? []) !!},
-                                backgroundColor: pastelColors.primary.replace('0.8', '0.2'), // Fondo suave
-                                borderColor: pastelColors.primary.replace('0.8', '1'),
-                                pointBackgroundColor: pastelColors.primary.replace('0.8', '1'),
-                                pointBorderColor: '#fff',
-                                borderWidth: 2,
-                                tension: 0.4, // Curva suave
-                                fill: true // Relleno de área
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false, // CLAVE para controlar la altura
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    grid: { color: 'rgba(0, 0, 0, 0.05)', drawBorder: false },
-                                    ticks: { stepSize: 1 }
-                                },
-                                x: { grid: { display: false } }
-                            },
-                            plugins: {
-                                legend: { display: false },
-                                tooltip: {
-                                    padding: 10, borderWidth: 1, backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                                    titleColor: '#2c3e50', bodyColor: '#2c3e50',
-                                    borderColor: pastelColors.primary.replace('0.8', '0.5'),
-                                }
-                            }
-                        }
-                    });
-                }
-
-                // --- Gráfico 2: Soportes por Estado (Doughnut) ---
-                const ctx2 = document.getElementById('ticketsPorEstadoChart');
-                if (ctx2) {
-                    const ticketsPorEstadoChart = new Chart(ctx2.getContext('2d'), {
-                        type: 'doughnut',
-                        data: {
-                            labels: {!! json_encode($labelsEstado ?? []) !!},
-                            datasets: [{
-                                label: 'Cantidad',
-                                data: {!! json_encode($dataEstado ?? []) !!},
-                                backgroundColor: [
-                                    pastelColors.warning.replace('0.8', '0.9'), // Abiertos (Advertencia)
-                                    pastelColors.success.replace('0.8', '0.9'), // Cerrados (Éxito)
-                                    pastelColors.secondary.replace('0.8', '0.9'), // Otros
-                                    pastelColors.info.replace('0.8', '0.9'), // Otros
-                                    pastelColors.danger.replace('0.8', '0.9'), // Otros
-                                ],
-                                borderColor: '#fff',
-                                borderWidth: 3, // Borde más grueso para separar
-                                hoverOffset: 10
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false, // CLAVE para controlar la altura
-                            plugins: {
-                                legend: {
-                                    position: 'bottom',
-                                    labels: { padding: 20, usePointStyle: true }
-                                },
-                                tooltip: {
-                                    padding: 10, borderWidth: 1, backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                                    titleColor: '#2c3e50', bodyColor: '#2c3e50',
-                                    borderColor: 'rgba(0, 0, 0, 0.1)',
-                                }
-                            }
-                        }
-                    });
-                }
-
-                // --- Gráfico 3: Soportes por Tipo ---
-                const ctx3 = document.getElementById('ticketsPorTipoChart');
-                if (ctx3) {
-                    const ticketsPorTipoChart = new Chart(ctx3.getContext('2d'), {
-                        type: 'bar',
-                        data: {
-                            labels: {!! json_encode($labelsTipo ?? []) !!},
-                            datasets: [{
-                                label: 'Cantidad',
-                                data: {!! json_encode($dataTipo ?? []) !!},
-                                backgroundColor: pastelColors.primary, 
-                                borderColor: '#fff',
-                                borderWidth: 1,
-                                borderRadius: 4,
-                                borderSkipped: false,
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    grid: { color: 'rgba(0, 0, 0, 0.05)', drawBorder: false },
-                                    ticks: { stepSize: 1 }
-                                },
-                                x: { grid: { display: false } }
-                            },
-                            plugins: {
-                                legend: { display: false },
-                                tooltip: {
-                                    padding: 10, borderWidth: 1, backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                                    titleColor: '#2c3e50', bodyColor: '#2c3e50',
-                                    borderColor: 'rgba(0, 0, 0, 0.1)',
-                                }
-                            }
-                        }
-                    });
-                }
-
-                // --- Gráfico 4: Soportes por Prioridad ---
-                const ctx4 = document.getElementById('ticketsPorPrioridadChart');
-                if (ctx4) {
-                    const ticketsPorPrioridadChart = new Chart(ctx4.getContext('2d'), {
-                        type: 'bar',
-                        data: {
-                            labels: {!! json_encode($labelsPrioridad ?? []) !!},
-                            datasets: [{
-                                label: 'Cantidad',
-                                data: {!! json_encode($dataPrioridad ?? []) !!},
-                                backgroundColor: [
-                                    pastelColors.danger, // Alta
-                                    pastelColors.warning, // Media
-                                    pastelColors.success, // Baja
-                                ], 
-                                borderColor: '#fff',
-                                borderWidth: 1,
-                                borderRadius: 4,
-                                borderSkipped: false,
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    grid: { color: 'rgba(0, 0, 0, 0.05)', drawBorder: false },
-                                    ticks: { stepSize: 1 }
-                                },
-                                x: { grid: { display: false } }
-                            },
-                            plugins: {
-                                legend: { display: false },
-                                tooltip: {
-                                    padding: 10, borderWidth: 1, backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                                    titleColor: '#2c3e50', bodyColor: '#2c3e50',
-                                    borderColor: 'rgba(0, 0, 0, 0.1)',
-                                }
-                            }
-                        }
-                    });
-                }
-
-                // --- Gráfico 5: Soportes por Área ---
-                const ctx5 = document.getElementById('ticketsPorAreaChart');
-                if (ctx5) {
-                    const ticketsPorAreaChart = new Chart(ctx5.getContext('2d'), {
-                        type: 'bar',
-                        data: {
-                            labels: {!! json_encode($labelsArea ?? []) !!},
-                            datasets: [{
-                                label: 'Cantidad',
-                                data: {!! json_encode($dataArea ?? []) !!},
-                                backgroundColor: pastelColors.info, 
-                                borderColor: '#fff',
-                                borderWidth: 1,
-                                borderRadius: 4,
-                                borderSkipped: false,
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    grid: { color: 'rgba(0, 0, 0, 0.05)', drawBorder: false },
-                                    ticks: { stepSize: 1 }
-                                },
-                                x: { grid: { display: false } }
-                            },
-                            plugins: {
-                                legend: { display: false },
-                                tooltip: {
-                                    padding: 10, borderWidth: 1, backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                                    titleColor: '#2c3e50', bodyColor: '#2c3e50',
-                                    borderColor: 'rgba(0, 0, 0, 0.1)',
-                                }
-                            }
-                        }
-                    });
-                }
-
-                // --- Gráfico 6: Distribución por Día de la Semana ---
-                const ctx6 = document.getElementById('ticketsPorDiaSemanaChart');
-                if (ctx6) {
-                    const ticketsPorDiaSemanaChart = new Chart(ctx6.getContext('2d'), {
-                        type: 'bar',
-                        data: {
-                            labels: {!! json_encode($labelsDiaSemana ?? []) !!},
-                            datasets: [{
-                                label: 'Cantidad',
-                                data: {!! json_encode($dataDiaSemana ?? []) !!},
-                                backgroundColor: pastelColors.secondary, 
-                                borderColor: '#fff',
-                                borderWidth: 1,
-                                borderRadius: 4,
-                                borderSkipped: false,
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    grid: { color: 'rgba(0, 0, 0, 0.05)', drawBorder: false },
-                                    ticks: { stepSize: 1 }
-                                },
-                                x: { grid: { display: false } }
-                            },
-                            plugins: {
-                                legend: { display: false },
-                                tooltip: {
-                                    padding: 10, borderWidth: 1, backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                                    titleColor: '#2c3e50', bodyColor: '#2c3e50',
-                                    borderColor: 'rgba(0, 0, 0, 0.1)',
-                                }
-                            }
-                        }
-                    });
-                }
-
-                // --- Gráfico 7: Tiempo de Resolución por Prioridad ---
-                const ctx7 = document.getElementById('tiempoResolucionPrioridadChart');
-                if (ctx7) {
-                    const tiempoResolucionPrioridadChart = new Chart(ctx7.getContext('2d'), {
-                        type: 'bar',
-                        data: {
-                            labels: {!! json_encode($labelsTiempoPrioridad ?? []) !!},
-                            datasets: [{
-                                label: 'Tiempo Promedio (horas)',
-                                data: {!! json_encode($dataTiempoPrioridad ?? []) !!},
-                                backgroundColor: [
-                                    pastelColors.danger, // Alta
-                                    pastelColors.warning, // Media
-                                    pastelColors.success, // Baja
-                                ], 
-                                borderColor: '#fff',
-                                borderWidth: 1,
-                                borderRadius: 4,
-                                borderSkipped: false,
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    grid: { color: 'rgba(0, 0, 0, 0.05)', drawBorder: false },
-                                    ticks: { stepSize: 1 }
-                                },
-                                x: { grid: { display: false } }
-                            },
-                            plugins: {
-                                legend: { display: false },
-                                tooltip: {
-                                    padding: 10, borderWidth: 1, backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                                    titleColor: '#2c3e50', bodyColor: '#2c3e50',
-                                    borderColor: 'rgba(0, 0, 0, 0.1)',
-                                }
-                            }
-                        }
-                    });
-                }
-
-                // --- Gráfico 8: Tasa de Cumplimiento SLA por Prioridad ---
-                const ctx8 = document.getElementById('slaPrioridadChart');
-                if (ctx8) {
-                    const slaPrioridadChart = new Chart(ctx8.getContext('2d'), {
-                        type: 'bar',
-                        data: {
-                            labels: {!! json_encode($labelsSlaPrioridad ?? []) !!},
-                            datasets: [{
-                                label: 'Cumplimiento SLA (%)',
-                                data: {!! json_encode($dataSlaPrioridad ?? []) !!},
-                                backgroundColor: [
-                                    pastelColors.danger, // Alta
-                                    pastelColors.warning, // Media
-                                    pastelColors.success, // Baja
-                                ], 
-                                borderColor: '#fff',
-                                borderWidth: 1,
-                                borderRadius: 4,
-                                borderSkipped: false,
-                            }]
-                        },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    max: 100,
-                                    grid: { color: 'rgba(0, 0, 0, 0.05)', drawBorder: false },
-                                    ticks: { stepSize: 10 }
-                                },
-                                x: { grid: { display: false } }
-                            },
-                            plugins: {
-                                legend: { display: false },
-                                tooltip: {
-                                    padding: 10, borderWidth: 1, backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                                    titleColor: '#2c3e50', bodyColor: '#2c3e50',
-                                    borderColor: 'rgba(0, 0, 0, 0.1)',
-                                }
-                            }
-                        }
-                    });
-                }
-
-                // --- Gráfico 9: Rendimiento por Agente (Barras Horizontales) ---
-                const ctx9 = document.getElementById('rendimientoAgenteChart');
-                if (ctx9) {
-                    const rendimientoAgenteChart = new Chart(ctx9.getContext('2d'), {
-                        type: 'bar',
-                        data: {
-                            labels: {!! json_encode($labelsAgente ?? []) !!},
-                            datasets: [{
-                                label: 'Tickets Cerrados',
-                                data: {!! json_encode($dataAgente ?? []) !!},
-                                backgroundColor: [
-                                    pastelColors.primary, 
-                                    pastelColors.success, 
-                                    pastelColors.info, 
-                                    pastelColors.warning, 
-                                    pastelColors.secondary
-                                ], 
-                                borderColor: '#fff',
-                                borderWidth: 1,
-                                borderRadius: 4,
-                                borderSkipped: false,
-                            }]
-                        },
-                        options: {
-                            indexAxis: 'y', // Hace las barras horizontales
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            scales: {
-                                x: {
-                                    beginAtZero: true,
-                                    grid: { color: 'rgba(0, 0, 0, 0.05)', drawBorder: false },
-                                    ticks: { stepSize: 1 }
-                                },
-                                y: { grid: { display: false } }
-                            },
-                            plugins: {
-                                legend: { display: false },
-                                tooltip: {
-                                    padding: 10, borderWidth: 1, backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                                    titleColor: '#2c3e50', bodyColor: '#2c3e50',
-                                    borderColor: 'rgba(0, 0, 0, 0.1)',
-                                }
-                            }
-                        }
-                    });
-                }
-
-                // Almacenar referencias a los gráficos para actualizarlos más tarde
-                const charts = {
-                    ticketsPorMesChart,
-                    ticketsPorEstadoChart,
-                    ticketsPorTipoChart,
-                    ticketsPorPrioridadChart,
-                    ticketsPorAreaChart,
-                    ticketsPorDiaSemanaChart,
-                    tiempoResolucionPrioridadChart,
-                    slaPrioridadChart,
-                    rendimientoAgenteChart
-                };
-
-                // --- MEJORA: Función para actualizar gráficos dinámicamente ---
-                function updateCharts() {
-                    const startDate = document.getElementById('filterStartDate').value;
-                    const endDate = document.getElementById('filterEndDate').value;
-                    const priority = document.getElementById('priorityFilter').value;
-                    const status = document.getElementById('statusFilter').value;
-
-                    // Mostrar indicador de carga
-                    const refreshBtn = document.getElementById('refreshDashboard');
-                    const applyBtn = document.getElementById('applyDateFilters');
-                    const originalContent = refreshBtn.innerHTML;
-                    const originalApplyContent = applyBtn.innerHTML;
-                    
-                    refreshBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Actualizando...';
-                    refreshBtn.disabled = true;
-                    
-                    applyBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Aplicando...';
-                    applyBtn.disabled = true;
-
-                    // Construir URL con parámetros - CORREGIDO
-                    let url = "{{ route('soportes.estadisticas.data') }}";
-                    const params = new URLSearchParams();
-                    
-                    if (startDate) params.append('start_date', startDate);
-                    if (endDate) params.append('end_date', endDate);
-                    if (priority) params.append('priority', priority);
-                    if (status) params.append('status', status);
-                    
-                    if (params.toString()) {
-                        url += '?' + params.toString();
-                    }
-
-                    console.log('URL de solicitud:', url); // Para depuración
-
-                    // Hacer llamada a la API
-                    fetch(url)
-                    .then(async response => {
-                            
-                        })
-                        .then(response => {
-                            if (!response.ok) {
-                                throw new Error('Error en la respuesta del servidor: ' + response.status);
-                            }
-                            console.log('Respuesta recibida:', response); // Para depuración
-                            return response.json();
-                        })
-                        .then(data => {
-                            console.log('Datos recibidos:', data); // Para depuración
-                            
-                            // Actualizar datos de los gráficos
-                            if (charts.ticketsPorMesChart) {
-                                charts.ticketsPorMesChart.data.labels = data.labelsMes || [];
-                                charts.ticketsPorMesChart.data.datasets[0].data = data.dataMes || [];
-                                charts.ticketsPorMesChart.update();
-                            }
-
-                            if (charts.ticketsPorEstadoChart) {
-                                charts.ticketsPorEstadoChart.data.labels = data.labelsEstado || [];
-                                charts.ticketsPorEstadoChart.data.datasets[0].data = data.dataEstado || [];
-                                charts.ticketsPorEstadoChart.update();
-                            }
-
-                            if (charts.ticketsPorTipoChart) {
-                                charts.ticketsPorTipoChart.data.labels = data.labelsTipo || [];
-                                charts.ticketsPorTipoChart.data.datasets[0].data = data.dataTipo || [];
-                                charts.ticketsPorTipoChart.update();
-                            }
-
-                            if (charts.ticketsPorPrioridadChart) {
-                                charts.ticketsPorPrioridadChart.data.labels = data.labelsPrioridad || [];
-                                charts.ticketsPorPrioridadChart.data.datasets[0].data = data.dataPrioridad || [];
-                                charts.ticketsPorPrioridadChart.update();
-                            }
-
-                            if (charts.ticketsPorAreaChart) {
-                                charts.ticketsPorAreaChart.data.labels = data.labelsArea || [];
-                                charts.ticketsPorAreaChart.data.datasets[0].data = data.dataArea || [];
-                                charts.ticketsPorAreaChart.update();
-                            }
-
-                            if (charts.ticketsPorDiaSemanaChart) {
-                                charts.ticketsPorDiaSemanaChart.data.labels = data.labelsDiaSemana || [];
-                                charts.ticketsPorDiaSemanaChart.data.datasets[0].data = data.dataDiaSemana || [];
-                                charts.ticketsPorDiaSemanaChart.update();
-                            }
-
-                            if (charts.tiempoResolucionPrioridadChart) {
-                                charts.tiempoResolucionPrioridadChart.data.labels = data.labelsTiempoPrioridad || [];
-                                charts.tiempoResolucionPrioridadChart.data.datasets[0].data = data.dataTiempoPrioridad || [];
-                                charts.tiempoResolucionPrioridadChart.update();
-                            }
-
-                            if (charts.slaPrioridadChart) {
-                                charts.slaPrioridadChart.data.labels = data.labelsSlaPrioridad || [];
-                                charts.slaPrioridadChart.data.datasets[0].data = data.dataSlaPrioridad || [];
-                                charts.slaPrioridadChart.update();
-                            }
-
-                            if (charts.rendimientoAgenteChart) {
-                                charts.rendimientoAgenteChart.data.labels = data.labelsAgente || [];
-                                charts.rendimientoAgenteChart.data.datasets[0].data = data.dataAgente || [];
-                                charts.rendimientoAgenteChart.update();
-                            }
-                            
-                            // Actualizar KPIs
-                            updateKPIs(data);
-                            
-                            // Restaurar los botones
-                            refreshBtn.innerHTML = originalContent;
-                            refreshBtn.disabled = false;
-                            
-                            applyBtn.innerHTML = originalApplyContent;
-                            applyBtn.disabled = false;
-                            
-                            // Mostrar notificación de éxito
-                            showToast(
-                                'Datos actualizados',
-                                'Los filtros se han aplicado correctamente.',
-                                'bg-success text-white'
-                            );
-                        })
-                        .catch(error => {
-                            console.error('Error en get dashboard los datos:', error.message);
-                            // Mostrar mensaje de error
-                            showToast(
-                                'Error al actualizar',
-                                'No se pudieron cargar los datos filtrados. Por favor, inténtalo de nuevo.',
-                                'bg-danger text-white'
-                            );
-                            
-                            // Restaurar los botones
-                            refreshBtn.innerHTML = originalContent;
-                            refreshBtn.disabled = false;
-                            
-                            applyBtn.innerHTML = originalApplyContent;
-                            applyBtn.disabled = false;
-                        });
-                }
-
-                // Función para actualizar los KPIs
-                function updateKPIs(data) {
-                    // Actualizar KPIs con los nuevos datos
-                    const totalTicketsElement = document.querySelector('[data-bs-title="Cantidad total de tickets de soporte registrados durante el periodo seleccionado."] .zen-metric-xs');
-                    if (totalTicketsElement) totalTicketsElement.textContent = data.totalTickets || 0;
-                    
-                    const openTicketsElement = document.querySelector('[data-bs-title="Número de tickets que están actualmente Abiertos o en Progreso. Representa la carga de trabajo inmediata del equipo."] .zen-metric-xs');
-                    if (openTicketsElement) openTicketsElement.textContent = data.openTickets || 0;
-                    
-                    const inProgressTicketsElement = document.querySelector('[data-bs-title="Número de tickets que están actualmente en proceso de resolución."] .zen-metric-xs');
-                    if (inProgressTicketsElement) inProgressTicketsElement.textContent = data.inProgressTickets || 0;
-                    
-                    const closedTicketsElement = document.querySelector('[data-bs-title="Cantidad de tickets que fueron marcados como Resueltos o Cerrados en el periodo, indicando la productividad."] .zen-metric-xs');
-                    if (closedTicketsElement) closedTicketsElement.textContent = data.closedTickets || 0;
-                    
-                    const avgResolutionTimeElement = document.querySelector('[data-bs-title="Tiempo promedio que toma cerrar un ticket, desde su creación hasta su resolución final. Una métrica más baja es mejor."] .zen-metric-xs');
-                    if (avgResolutionTimeElement) avgResolutionTimeElement.textContent = data.avgResolutionTime || 'N/A';
-                    
-                    const avgFirstResponseTimeElement = document.querySelector('[data-bs-title="Tiempo promedio que toma dar la primera respuesta a un ticket, desde su creación. Una métrica más baja es mejor."] .zen-metric-xs');
-                    if (avgFirstResponseTimeElement) avgFirstResponseTimeElement.textContent = data.avgFirstResponseTime || 'N/A';
-                    
-                    const escalatedTicketsElement = document.querySelector('[data-bs-title="Número de tickets que han sido escalados a un nivel superior de soporte."] .zen-metric-xs');
-                    if (escalatedTicketsElement) escalatedTicketsElement.textContent = data.escalatedTickets || 0;
-                    
-                    const escalationRateElement = document.querySelector('[data-bs-title="Porcentaje de tickets que han sido escalados respecto al total. Una métrica más baja es mejor."] .zen-metric-xs');
-                    if (escalationRateElement) escalationRateElement.textContent = (data.escalationRate || 0) + '%';
-                    
-                    const resolvedWithoutEscalationElement = document.querySelector('[data-bs-title="Número de tickets que fueron resueltos sin necesidad de escalar. Una métrica más alta es mejor."] .zen-metric-xs');
-                    if (resolvedWithoutEscalationElement) resolvedWithoutEscalationElement.textContent = data.resolvedWithoutEscalation || 0;
-                    
-                    // Actualizar porcentajes en los círculos de progreso
-                    updateProgressCircles(data);
-                }
-
-                // Función para actualizar los círculos de progreso
-                function updateProgressCircles(data) {
-                    const total = data.totalTickets > 0 ? data.totalTickets : 1;
-                    
-                    // Actualizar círculo de tickets abiertos
-                    const openPercent = (data.openTickets / total) * 100;
-                    const openProgressCircle = document.querySelector('[data-bs-title="Número de tickets que están actualmente Abiertos o en Progreso. Representa la carga de trabajo inmediata del equipo."] .circular-progress-xs');
-                    if (openProgressCircle) {
-                        openProgressCircle.style.setProperty('--progress-value', openPercent + '%');
-                        const openProgressInner = openProgressCircle.querySelector('.circular-progress-inner-xs span');
-                        if (openProgressInner) {
-                            openProgressInner.textContent = Math.round(openPercent) + '%';
-                        }
-                    }
-                    
-                    // Actualizar círculo de tickets en proceso
-                    const inProgressPercent = (data.inProgressTickets / total) * 100;
-                    const inProgressProgressCircle = document.querySelector('[data-bs-title="Número de tickets que están actualmente en proceso de resolución."] .circular-progress-xs');
-                    if (inProgressProgressCircle) {
-                        inProgressProgressCircle.style.setProperty('--progress-value', inProgressPercent + '%');
-                        const inProgressInner = inProgressProgressCircle.querySelector('.circular-progress-inner-xs span');
-                        if (inProgressInner) {
-                            inProgressInner.textContent = Math.round(inProgressPercent) + '%';
-                        }
-                    }
-                    
-                    // Actualizar círculo de tickets escalados
-                    const escalatedPercent = (data.escalatedTickets / total) * 100;
-                    const escalatedProgressCircle = document.querySelector('[data-bs-title="Número de tickets que han sido escalados a un nivel superior de soporte."] .circular-progress-xs');
-                    if (escalatedProgressCircle) {
-                        escalatedProgressCircle.style.setProperty('--progress-value', escalatedPercent + '%');
-                        const escalatedInner = escalatedProgressCircle.querySelector('.circular-progress-inner-xs span');
-                        if (escalatedInner) {
-                            escalatedInner.textContent = Math.round(escalatedPercent) + '%';
-                        }
-                    }
-                }
-
-                // --- Lógica para filtros de fecha ---
-                function applyDateFilters() {
-                    updateCharts(); // Usamos la nueva función para actualizar
-                }
-
-                // Asignar eventos a los botones
-                const applyDateFiltersBtn = document.getElementById('applyDateFilters');
-                if (applyDateFiltersBtn) {
-                    applyDateFiltersBtn.addEventListener('click', applyDateFilters);
-                }
-
-                const clearDateFiltersBtn = document.getElementById('clearDateFilters');
-                if (clearDateFiltersBtn) {
-                    clearDateFiltersBtn.addEventListener('click', () => {
-                        // Limpiar filtros y actualizar
-                        document.getElementById('filterStartDate').value = '';
-                        document.getElementById('filterEndDate').value = '';
-                        document.getElementById('priorityFilter').value = '';
-                        document.getElementById('statusFilter').value = '';
-                        updateCharts();
-                    });
-                }
-                
-                // --- Lógica para fechas predefinidas ---
-                document.querySelectorAll('.preset-date').forEach(item => {
-                    item.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        const days = parseInt(this.getAttribute('data-days'));
-                        const endDate = new Date();
-                        const startDate = new Date();
-                        startDate.setDate(endDate.getDate() - days);
-                        
-                        document.getElementById('filterStartDate').value = startDate.toISOString().split('T')[0];
-                        document.getElementById('filterEndDate').value = endDate.toISOString().split('T')[0];
-                        
-                        applyDateFilters();
-                    });
-                });
-                
-                // --- Lógica para cambiar tipo de gráfico ---
-                document.querySelectorAll('.chart-type').forEach(item => {
-                    item.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        const chartId = this.getAttribute('data-chart');
-                        const newType = this.getAttribute('data-type');
-                        
-                        let chart;
-                        switch(chartId) {
-                            case 'ticketsPorMesChart':
-                                chart = charts.ticketsPorMesChart;
-                                break;
-                            case 'ticketsPorEstadoChart':
-                                chart = charts.ticketsPorEstadoChart;
-                                break;
-                            case 'ticketsPorTipoChart':
-                                chart = charts.ticketsPorTipoChart;
-                                break;
-                            case 'ticketsPorPrioridadChart':
-                                chart = charts.ticketsPorPrioridadChart;
-                                break;
-                            case 'ticketsPorAreaChart':
-                                chart = charts.ticketsPorAreaChart;
-                                break;
-                            case 'ticketsPorDiaSemanaChart':
-                                chart = charts.ticketsPorDiaSemanaChart;
-                                break;
-                            case 'tiempoResolucionPrioridadChart':
-                                chart = charts.tiempoResolucionPrioridadChart;
-                                break;
-                            case 'slaPrioridadChart':
-                                chart = charts.slaPrioridadChart;
-                                break;
-                            case 'rendimientoAgenteChart':
-                                chart = charts.rendimientoAgenteChart;
-                                break;
-                        }
-                        
-                        if (chart) {
-                            chart.config.type = newType;
-                            chart.update();
-                        }
-                    });
-                });
-                
-                // --- Lógica para exportar gráfico ---
-                document.querySelectorAll('.export-chart').forEach(item => {
-                    item.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        const chartId = this.getAttribute('data-chart');
-                        
-                        let chart;
-                        switch(chartId) {
-                            case 'ticketsPorMesChart':
-                                chart = charts.ticketsPorMesChart;
-                                break;
-                            case 'ticketsPorEstadoChart':
-                                chart = charts.ticketsPorEstadoChart;
-                                break;
-                            case 'ticketsPorTipoChart':
-                                chart = charts.ticketsPorTipoChart;
-                                break;
-                            case 'ticketsPorPrioridadChart':
-                                chart = charts.ticketsPorPrioridadChart;
-                                break;
-                            case 'ticketsPorAreaChart':
-                                chart = charts.ticketsPorAreaChart;
-                                break;
-                            case 'ticketsPorDiaSemanaChart':
-                                chart = charts.ticketsPorDiaSemanaChart;
-                                break;
-                            case 'tiempoResolucionPrioridadChart':
-                                chart = charts.tiempoResolucionPrioridadChart;
-                                break;
-                            case 'slaPrioridadChart':
-                                chart = charts.slaPrioridadChart;
-                                break;
-                            case 'rendimientoAgenteChart':
-                                chart = charts.rendimientoAgenteChart;
-                                break;
-                        }
-                        
-                        if (chart) {
-                            const url = chart.toBase64Image();
-                            const link = document.createElement('a');
-                            link.download = chartId + '.png';
-                            link.href = url;
-                            link.click();
-                        }
-                    });
-                });
-                
-                // --- Lógica para cambiar vista ---
-                document.querySelectorAll('[data-view]').forEach(item => {
-                    item.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        const view = this.getAttribute('data-view');
-                        
-                        // Actualizar clases activas
-                        document.querySelectorAll('[data-view]').forEach(el => {
-                            el.classList.remove('active');
-                        });
-                        this.classList.add('active');
-                        
-                        // Actualizar vista
-                        document.body.classList.remove('view-compact', 'view-detailed');
-                        if (view === 'compact') {
-                            document.body.classList.add('view-compact');
-                        } else if (view === 'detailed') {
-                            document.body.classList.add('view-detailed');
-                        }
-                    });
-                });
-                
-                // --- MEJORA: Lógica para el buscador rápido con autocompletado y debouncing ---
-                const searchInput = document.getElementById('quickSearch');
-                const searchResults = document.getElementById('searchResults');
-                let debounceTimer;
-
-                if (searchInput && searchResults) {
-                    searchInput.addEventListener('input', function(e) {
-                        const searchTerm = e.target.value.toLowerCase();
-                        
-                        // Limpiar el temporizador anterior
-                        clearTimeout(debounceTimer);
-                        
-                        if (searchTerm.length > 2) {
-                            // Establecer un nuevo temporizador
-                            debounceTimer = setTimeout(() => {
-                                // Aquí harías una llamada fetch a tu backend para obtener sugerencias
-                                // Ejemplo:
-                                fetch(`/api/search?q=${searchTerm}`)
-                                    .then(response => response.json())
-                                    .then(data => {
-                                        // Limpiar resultados anteriores
-                                        searchResults.innerHTML = '';
-                                        
-                                        if (data.length > 0) {
-                                            // Mostrar contenedor de resultados
-                                            searchResults.style.display = 'block';
-                                            
-                                            // Añadir nuevos resultados
-                                            data.forEach(item => {
-                                                const resultItem = document.createElement('div');
-                                                resultItem.className = 'search-result-item';
-                                                resultItem.innerHTML = `
-                                                    <strong>${item.id}</strong> - ${item.description} (${item.client})
-                                                `;
-                                                resultItem.addEventListener('click', () => {
-                                                    // Redirigir a la página del ticket o hacer lo que necesites
-                                                    window.location.href = `/soportes/${item.id}`;
-                                                });
-                                                searchResults.appendChild(resultItem);
-                                            });
-                                        } else {
-                                            searchResults.style.display = 'none';
-                                        }
-                                    });
-                            }, 300); // Esperar 300ms después de que el usuario deje de escribir
-                        } else {
-                            searchResults.style.display = 'none';
-                        }
-                    });
-
-                    // Ocultar resultados al hacer clic fuera del buscador
-                    document.addEventListener('click', function(e) {
-                        if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
-                            searchResults.style.display = 'none';
-                        }
-                    });
-                }
-                
-                // --- Lógica para filtros adicionales ---
-                const priorityFilter = document.getElementById('priorityFilter');
-                if (priorityFilter) {
-                    priorityFilter.addEventListener('change', function(e) {
-                        updateCharts(); // Usamos la nueva función para actualizar
-                    });
-                }
-                
-                const statusFilter = document.getElementById('statusFilter');
-                if (statusFilter) {
-                    statusFilter.addEventListener('change', function(e) {
-                        updateCharts(); // Usamos la nueva función para actualizar
-                    });
-                }
-                
-                // --- Lógica para actualizar dashboard ---
-                const refreshDashboardBtn = document.getElementById('refreshDashboard');
-                if (refreshDashboardBtn) {
-                    refreshDashboardBtn.addEventListener('click', function() {
-                        updateCharts();
-                    });
-                }
-                
-                // --- MEJORA: Lógica para exportar el dashboard a PDF ---
-                const exportDashboardBtn = document.getElementById('exportDashboard');
-                if (exportDashboardBtn) {
-                    exportDashboardBtn.addEventListener('click', function() {
-                        const { jsPDF } = window.jspdf;
-                        
-                        // Mostrar indicador de carga
-                        this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Exportando...';
-                        this.disabled = true;
-                        
-                        // Usar html2canvas para capturar el dashboard
-                        html2canvas(document.getElementById('dashboardTabsContent'), {
-                            scale: 0.5, // Reducir la escala para que el PDF no sea demasiado grande
-                            useCORS: true, // Permitir cargar imágenes de otros dominios
-                            logging: false // Desactivar logs para mejorar el rendimiento
-                        }).then(canvas => {
-                            const imgData = canvas.toDataURL('image/png');
-                            const pdf = new jsPDF('l', 'mm', 'a4'); // Orientación horizontal, tamaño A4
-                            
-                            const imgWidth = 280; // Ancho de la imagen en el PDF
-                            const pageHeight = 200; // Altura de la página en el PDF
-                            let imgHeight = canvas.height * imgWidth / canvas.width;
-                            let heightLeft = imgHeight;
-                            let position = 10; // Posición inicial en el PDF
-                            
-                            // Añadir la imagen al PDF
-                            pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-                            heightLeft -= pageHeight;
-                            
-                            // Si la imagen es más alta que la página, añadir nuevas páginas
-                            while (heightLeft >= 0) {
-                                position = heightLeft - imgHeight;
-                                pdf.addPage();
-                                pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
-                                heightLeft -= pageHeight;
-                            }
-                            
-                            // Guardar el PDF
-                            pdf.save('dashboard.pdf');
-                            
-                            // Restaurar el botón
-                            this.innerHTML = '<i class="feather-download"></i> <span class="d-none d-md-inline">Exportar PDF</span>';
-                            this.disabled = false;
-                        });
-                    });
-                }
-                
-                // --- Lógica para la actividad reciente ---
-                function loadRecentActivity() {
-                    const timeline = document.getElementById('recentActivity');
-                    
-                    if (!timeline) return;
-                    
-                    // Simulación de datos de actividad reciente
-                    const activities = [
-                        {
-                            icon: 'feather-plus-circle',
-                            iconBg: 'bg-success bg-opacity-10',
-                            iconColor: 'text-success',
-                            title: 'Nuevo soporte creado',
-                            description: 'Ticket #1234 - Problema con la impresora',
-                            time: 'Hace 5 minutos',
-                            user: 'Juan Pérez'
-                        },
-                        {
-                            icon: 'feather-check-circle',
-                            iconBg: 'bg-primary bg-opacity-10',
-                            iconColor: 'text-primary',
-                            title: 'Soporte cerrado',
-                            description: 'Ticket #1232 - Error de conexión',
-                            time: 'Hace 15 minutos',
-                            user: 'María García'
-                        },
-                        {
-                            icon: 'feather-user-plus',
-                            iconBg: 'bg-warning bg-opacity-10',
-                            iconColor: 'text-warning',
-                            title: 'Soporte escalado',
-                            description: 'Ticket #1230 - Requiere intervención técnica',
-                            time: 'Hace 30 minutos',
-                            user: 'Pedro López'
-                        },
-                        {
-                            icon: 'feather-message-circle',
-                            iconBg: 'bg-info bg-opacity-10',
-                            iconColor: 'text-info',
-                            title: 'Nueva observación',
-                            description: 'Ticket #1228 - Cliente solicita actualización',
-                            time: 'Hace 1 hora',
-                            user: 'Ana Martínez'
-                        }
-                    ];
-                    
-                    timeline.innerHTML = '';
-                    
-                    activities.forEach(activity => {
-                        const item = document.createElement('div');
-                        item.className = 'timeline-item';
-                        item.innerHTML = `
-                            <div class="timeline-item-icon ${activity.iconBg}">
-                                <i class="feather ${activity.icon} ${activity.iconColor}"></i>
-                            </div>
-                            <div class="ms-3">
-                                <h6 class="mb-1">${activity.title}</h6>
-                                <p class="text-muted mb-1">${activity.description}</p>
-                                <small class="text-muted">${activity.time} - ${activity.user}</small>
-                            </div>
-                        `;
-                        timeline.appendChild(item);
-                    });
-                }
-                
-                // Cargar actividad reciente cuando se cambia a la pestaña correspondiente
-                const recentTab = document.getElementById('recent-tab');
-                if (recentTab) {
-                    recentTab.addEventListener('shown.bs.tab', function() {
-                        loadRecentActivity();
-                    });
-                }
-                
-                // --- Lógica para notificaciones toast ---
-                function showToast(title, message, type = 'info') {
-                    const toastEl = document.getElementById('activityToast');
-                    const toastBody = document.getElementById('toastBody');
-                    
-                    if (!toastEl || !toastBody) return;
-                    
-                    // Actualizar contenido
-                    toastBody.innerHTML = `<strong>${title}</strong><p class="mb-0">${message}</p>`;
-                    
-                    // Actualizar tipo
-                    toastEl.className = `toast ${type}`;
-                    
-                    // Mostrar toast
-                    const toast = new bootstrap.Toast(toastEl);
-                    toast.show();
-                }
-                
-                // Simulación de notificación después de 5 segundos
-                setTimeout(() => {
-                    showToast(
-                        'Nuevo soporte asignado',
-                        'Ticket #1235 ha sido asignado a ti',
-                        'bg-info text-white'
-                    );
-                }, 5000);
-                
-                // Inicializar efectos de entrada después de que el DOM esté listo
-                document.querySelectorAll('.fade-in-up').forEach(function(element) { 
-                    element.style.opacity = '1'; // El CSS lo maneja, solo para asegurar que se muestre después de la animación
-                });
-            });
-        </script>
     @endpush
 </x-base-layout>
