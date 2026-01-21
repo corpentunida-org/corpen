@@ -47,6 +47,7 @@ use App\Http\Controllers\Archivo\GdoCategoriaDocumentoController;
 use App\Http\Controllers\Maestras\CongregacionController;
 use App\Http\Controllers\Maestras\MaeTercerosController;
 use App\Http\Controllers\Maestras\MaeTiposController;
+use App\Http\Controllers\Maestras\MaeMunicipiosController;
 
 //CREDITOS
 use App\Http\Controllers\Creditos\CreditoController;
@@ -234,6 +235,9 @@ Route::prefix('maestras')->middleware('auth')->name('maestras.')->group(function
 
     Route::get('buscar-pastor', [CongregacionController::class, 'buscarPastor'])
         ->name('buscar.pastor');
+
+    Route::get('departamentos/{region}', [MaeMunicipiosController::class, 'listadepartamentos'])->name('departamentos.listar');
+    Route::get('municipios/{departamento}', [MaeMunicipiosController::class, 'listamunicipios'])->name('municipios.listar');
 });
 //
 
