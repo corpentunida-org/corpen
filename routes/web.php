@@ -52,7 +52,7 @@ use App\Http\Controllers\Maestras\MaeMunicipiosController;
 //CREDITOS
 use App\Http\Controllers\Creditos\CreditoController;
 
-//CARTERA
+//INTERACCIONES
 use App\Models\Maestras\maeTerceros;
 use App\Http\Controllers\Interacciones\InteractionController;
 use App\Http\Controllers\Interacciones\IntChannelController;
@@ -83,6 +83,18 @@ use App\Http\Controllers\Soportes\ScpCategoriaController;
 use App\Http\Controllers\Soportes\ScpUsuarioController;
 use App\Http\Controllers\Soportes\ScpNotificacionController;
 use App\Http\Controllers\Soportes\ScpEstadisticaController;
+
+//INVENTARIO
+use App\Http\Controllers\Inventario\TableroInventarioController; 
+use App\Http\Controllers\Inventario\ActivoController;
+use App\Http\Controllers\Inventario\CompraController;
+use App\Http\Controllers\Inventario\MovimientoController;
+use App\Http\Controllers\Inventario\MantenimientoController;
+use App\Http\Controllers\Inventario\MarcaController;
+use App\Http\Controllers\Inventario\BodegaController;
+use App\Http\Controllers\Inventario\EstadoController;
+use App\Http\Controllers\Inventario\MetodoPagoController;
+use App\Http\Controllers\Inventario\ClasificacionController;
 
 //VISITAS
 use App\Http\Controllers\Vistas\VisitaCorpenController;
@@ -259,331 +271,464 @@ Route::prefix('creditos')->middleware('auth')->group(function () {
 });
 
 
-// GESTION DOCUMENTAL
-Route::prefix('archivo')->middleware('auth')->group(function () {
+// =============================
+//   MÓDULO DE GESTION DOCUMENTAL
+// =============================
+    Route::prefix('archivo')->middleware('auth')->group(function () {
 
-    // <-- CAMBIO CLAVE: Ruta segura para ver/descargar los manuales.
-    Route::get('cargos/{cargo}/ver-manual', [GdoCargoController::class, 'verManual'])
-        ->name('archivo.cargo.verManual');
+        // <-- CAMBIO CLAVE: Ruta segura para ver/descargar los manuales.
+        Route::get('cargos/{cargo}/ver-manual', [GdoCargoController::class, 'verManual'])
+            ->name('archivo.cargo.verManual');
 
-    // Recursos
-    Route::resource('cargos', GdoCargoController::class)
-        ->names('archivo.cargo')
-        ->parameters(['cargos' => 'cargo']);
+        // Recursos
+        Route::resource('cargos', GdoCargoController::class)
+            ->names('archivo.cargo')
+            ->parameters(['cargos' => 'cargo']);
 
-    Route::resource('areas', GdoAreaController::class)
-        ->names('archivo.area')
-        ->parameters(['areas' => 'area']);
+        Route::resource('areas', GdoAreaController::class)
+            ->names('archivo.area')
+            ->parameters(['areas' => 'area']);
 
-    // Empleados - Modificado para manejar la vista unificada
-    Route::get('empleados', [GdoEmpleadoController::class, 'index'])
-        ->name('archivo.empleado.index');
-    
-    Route::get('empleados/create', [GdoEmpleadoController::class, 'create'])
-        ->name('archivo.empleado.create');
-    
-    Route::post('empleados', [GdoEmpleadoController::class, 'store'])
-        ->name('archivo.empleado.store');
-    
-    Route::get('empleados/{empleado}', [GdoEmpleadoController::class, 'show'])
-        ->name('archivo.empleado.show');
-    
-    Route::get('empleados/{empleado}/edit', [GdoEmpleadoController::class, 'edit'])
-        ->name('archivo.empleado.edit');
-    
-    Route::put('empleados/{empleado}', [GdoEmpleadoController::class, 'update'])
-        ->name('archivo.empleado.update');
-    
-    Route::delete('empleados/{empleado}', [GdoEmpleadoController::class, 'destroy'])
-        ->name('archivo.empleado.destroy');
-    
-    Route::get('empleados/{empleado}/foto', [GdoEmpleadoController::class, 'verFoto'])
-        ->name('archivo.empleado.verFoto')
-        ->middleware('auth');
+        // Empleados - Modificado para manejar la vista unificada
+        Route::get('empleados', [GdoEmpleadoController::class, 'index'])
+            ->name('archivo.empleado.index');
+        
+        Route::get('empleados/create', [GdoEmpleadoController::class, 'create'])
+            ->name('archivo.empleado.create');
+        
+        Route::post('empleados', [GdoEmpleadoController::class, 'store'])
+            ->name('archivo.empleado.store');
+        
+        Route::get('empleados/{empleado}', [GdoEmpleadoController::class, 'show'])
+            ->name('archivo.empleado.show');
+        
+        Route::get('empleados/{empleado}/edit', [GdoEmpleadoController::class, 'edit'])
+            ->name('archivo.empleado.edit');
+        
+        Route::put('empleados/{empleado}', [GdoEmpleadoController::class, 'update'])
+            ->name('archivo.empleado.update');
+        
+        Route::delete('empleados/{empleado}', [GdoEmpleadoController::class, 'destroy'])
+            ->name('archivo.empleado.destroy');
+        
+        Route::get('empleados/{empleado}/foto', [GdoEmpleadoController::class, 'verFoto'])
+            ->name('archivo.empleado.verFoto')
+            ->middleware('auth');
 
-    Route::resource('gdotipodocumento', GdoTipoDocumentoController::class)
-        ->names('archivo.gdotipodocumento')
-        ->parameters(['gdotipodocumento' => 'tipoDocumento']);
+        Route::resource('gdotipodocumento', GdoTipoDocumentoController::class)
+            ->names('archivo.gdotipodocumento')
+            ->parameters(['gdotipodocumento' => 'tipoDocumento']);
 
-    Route::resource('categorias', GdoCategoriaDocumentoController::class)
-        ->names('archivo.categorias')
-        ->parameters(['categorias' => 'categoria']);
+        Route::resource('categorias', GdoCategoriaDocumentoController::class)
+            ->names('archivo.categorias')
+            ->parameters(['categorias' => 'categoria']);
 
-    Route::resource('gdodocsempleados', GdoDocsEmpleadosController::class)
-        ->names('archivo.gdodocsempleados')
-        ->parameters(['gdodocsempleados' => 'gdodocsempleado']);
+        Route::resource('gdodocsempleados', GdoDocsEmpleadosController::class)
+            ->names('archivo.gdodocsempleados')
+            ->parameters(['gdodocsempleados' => 'gdodocsempleado']);
 
-    Route::get('gdodocsempleados/ver/{id}', [GdoDocsEmpleadosController::class, 'verArchivo'])
-        ->name('gdodocsempleados.ver')
-        ->middleware('auth');
+        Route::get('gdodocsempleados/ver/{id}', [GdoDocsEmpleadosController::class, 'verArchivo'])
+            ->name('gdodocsempleados.ver')
+            ->middleware('auth');
 
-    Route::get('gdodocsempleados/download/{id}', [GdoDocsEmpleadosController::class, 'download'])
-        ->name('gdodocsempleados.download')
-        ->middleware('auth');
-});
-
-
-// --- GRUPO DE RUTAS PARA INTERACCIONES ---
-Route::prefix('interactions')
-    ->middleware(['auth'])
-    ->name('interactions.')
-    ->group(function () {
-
-    // 📄 Página principal (lista de interacciones)
-    Route::get('/', [InteractionController::class, 'index'])->name('index');
-
-    // ➕ Crear nueva interacción
-    Route::get('/create', [InteractionController::class, 'create'])->name('create');
-    Route::post('/', [InteractionController::class, 'store'])->name('store');
-
-    // 👁️ Mostrar detalle
-    Route::get('/{interaction}/show', [InteractionController::class, 'show'])->name('show');
-
-    // ✏️ Editar / actualizar
-    Route::get('/{interaction}/edit', [InteractionController::class, 'edit'])->name('edit');
-    Route::put('/{interaction}', [InteractionController::class, 'update'])->name('update');
-
-    // 🗑️ Eliminar
-    Route::delete('/{interaction}', [InteractionController::class, 'destroy'])->name('destroy');
-
-    // 📎 Archivos adjuntos
-    Route::get('/attachment/download/{fileName}', [InteractionController::class, 'downloadAttachment'])->name('download');
-    Route::get('/attachment/view/{fileName}', [InteractionController::class, 'viewAttachment'])->name('view');
-
-    // 📌 AJAX: Obtener datos del cliente por cod_ter
-    Route::get('/cliente/{cod_ter}', [InteractionController::class, 'getCliente'])->name('cliente.show');
-    
-    // 📌 AJAX: Buscar clientes para Select2
-    Route::get('/search-clients', [InteractionController::class, 'searchClients'])->name('search-clients');
-    // 🆕 NUEVA RUTA: Obtener el distrito de un cliente
-    Route::get('/clientes/{client_id}/distrito', [InteractionController::class, 'getClientDistrict'])->name('clientes.distrito');
-    // 🆕 NUEVA RUTA: Actualizar el distrito de un cliente
-    Route::put('/clientes/{client_id}/actualizar-distrito', [InteractionController::class, 'updateClientDistrict'])->name('clientes.actualizar-distrito');
-    // --- 📡 GRUPO DE RUTAS PARA CANALES DE INTERACCIÓN ---
-    Route::prefix('channels')->name('channels.')->group(function () {
-        Route::get('/', [IntChannelController::class, 'index'])->name('index');
-        Route::get('/create', [IntChannelController::class, 'create'])->name('create');
-        Route::post('/', [IntChannelController::class, 'store'])->name('store');
-        Route::get('/{channel}', [IntChannelController::class, 'show'])->name('show');
-        Route::get('/{channel}/edit', [IntChannelController::class, 'edit'])->name('edit');
-        Route::put('/{channel}', [IntChannelController::class, 'update'])->name('update');
-        Route::delete('/{channel}', [IntChannelController::class, 'destroy'])->name('destroy');
+        Route::get('gdodocsempleados/download/{id}', [GdoDocsEmpleadosController::class, 'download'])
+            ->name('gdodocsempleados.download')
+            ->middleware('auth');
     });
+//FIN GESTION DOCUMENTAL
 
-    // --- 📡 GRUPO DE RUTAS PARA TIPOS DE INTERACCIÓN ---
-    Route::prefix('types')->name('types.')->group(function () {
-        Route::get('/', [IntTypeController::class, 'index'])->name('index');
-        Route::get('/create', [IntTypeController::class, 'create'])->name('create');
-        Route::post('/', [IntTypeController::class, 'store'])->name('store');
-        Route::get('/{type}', [IntTypeController::class, 'show'])->name('show');
-        Route::get('/{type}/edit', [IntTypeController::class, 'edit'])->name('edit');
-        Route::put('/{type}', [IntTypeController::class, 'update'])->name('update');
-        Route::delete('/{type}', [IntTypeController::class, 'destroy'])->name('destroy');
+// =============================
+//   MÓDULO DE INTERACCIONES
+// =============================
+    Route::prefix('interactions')
+        ->middleware(['auth'])
+        ->name('interactions.')
+        ->group(function () {
+
+        // 📄 Página principal (lista de interacciones)
+        Route::get('/', [InteractionController::class, 'index'])->name('index');
+
+        // ➕ Crear nueva interacción
+        Route::get('/create', [InteractionController::class, 'create'])->name('create');
+        Route::post('/', [InteractionController::class, 'store'])->name('store');
+
+        // 👁️ Mostrar detalle
+        Route::get('/{interaction}/show', [InteractionController::class, 'show'])->name('show');
+
+        // ✏️ Editar / actualizar
+        Route::get('/{interaction}/edit', [InteractionController::class, 'edit'])->name('edit');
+        Route::put('/{interaction}', [InteractionController::class, 'update'])->name('update');
+
+        // 🗑️ Eliminar
+        Route::delete('/{interaction}', [InteractionController::class, 'destroy'])->name('destroy');
+
+        // 📎 Archivos adjuntos
+        Route::get('/attachment/download/{fileName}', [InteractionController::class, 'downloadAttachment'])->name('download');
+        Route::get('/attachment/view/{fileName}', [InteractionController::class, 'viewAttachment'])->name('view');
+
+        // 📌 AJAX: Obtener datos del cliente por cod_ter
+        Route::get('/cliente/{cod_ter}', [InteractionController::class, 'getCliente'])->name('cliente.show');
+        
+        // 📌 AJAX: Buscar clientes para Select2
+        Route::get('/search-clients', [InteractionController::class, 'searchClients'])->name('search-clients');
+        // 🆕 NUEVA RUTA: Obtener el distrito de un cliente
+        Route::get('/clientes/{client_id}/distrito', [InteractionController::class, 'getClientDistrict'])->name('clientes.distrito');
+        // 🆕 NUEVA RUTA: Actualizar el distrito de un cliente
+        Route::put('/clientes/{client_id}/actualizar-distrito', [InteractionController::class, 'updateClientDistrict'])->name('clientes.actualizar-distrito');
+        // --- 📡 GRUPO DE RUTAS PARA CANALES DE INTERACCIÓN ---
+        Route::prefix('channels')->name('channels.')->group(function () {
+            Route::get('/', [IntChannelController::class, 'index'])->name('index');
+            Route::get('/create', [IntChannelController::class, 'create'])->name('create');
+            Route::post('/', [IntChannelController::class, 'store'])->name('store');
+            Route::get('/{channel}', [IntChannelController::class, 'show'])->name('show');
+            Route::get('/{channel}/edit', [IntChannelController::class, 'edit'])->name('edit');
+            Route::put('/{channel}', [IntChannelController::class, 'update'])->name('update');
+            Route::delete('/{channel}', [IntChannelController::class, 'destroy'])->name('destroy');
+        });
+
+        // --- 📡 GRUPO DE RUTAS PARA TIPOS DE INTERACCIÓN ---
+        Route::prefix('types')->name('types.')->group(function () {
+            Route::get('/', [IntTypeController::class, 'index'])->name('index');
+            Route::get('/create', [IntTypeController::class, 'create'])->name('create');
+            Route::post('/', [IntTypeController::class, 'store'])->name('store');
+            Route::get('/{type}', [IntTypeController::class, 'show'])->name('show');
+            Route::get('/{type}/edit', [IntTypeController::class, 'edit'])->name('edit');
+            Route::put('/{type}', [IntTypeController::class, 'update'])->name('update');
+            Route::delete('/{type}', [IntTypeController::class, 'destroy'])->name('destroy');
+        });
+
+        // --- 📡 GRUPO DE RUTAS PARA RESULTADOS DE INTERACCIÓN ---
+        Route::prefix('outcomes')->name('outcomes.')->group(function () {
+            Route::get('/', [IntOutcomeController::class, 'index'])->name('index');
+            Route::get('/create', [IntOutcomeController::class, 'create'])->name('create');
+            Route::post('/', [IntOutcomeController::class, 'store'])->name('store');
+            Route::get('/{outcome}', [IntOutcomeController::class, 'show'])->name('show');
+            Route::get('/{outcome}/edit', [IntOutcomeController::class, 'edit'])->name('edit');
+            Route::put('/{outcome}', [IntOutcomeController::class, 'update'])->name('update');
+            Route::delete('/{outcome}', [IntOutcomeController::class, 'destroy'])->name('destroy');
+        });
+
+
+        // --- 📡 GRUPO DE RUTAS PARA PRÓXIMAS ACCIONES ---
+        Route::prefix('next_actions')->name('next_actions.')->group(function () {
+            Route::get('/', [IntNextActionController::class, 'index'])->name('index');
+            Route::get('/create', [IntNextActionController::class, 'create'])->name('create');
+            Route::post('/', [IntNextActionController::class, 'store'])->name('store');
+            Route::get('/{action}', [IntNextActionController::class, 'show'])->name('show');
+            Route::get('/{action}/edit', [IntNextActionController::class, 'edit'])->name('edit');
+            Route::put('/{action}', [IntNextActionController::class, 'update'])->name('update');
+            Route::delete('/{action}', [IntNextActionController::class, 'destroy'])->name('destroy');
+        });
     });
+//FIN INTERACCIONES
 
-    // --- 📡 GRUPO DE RUTAS PARA RESULTADOS DE INTERACCIÓN ---
-    Route::prefix('outcomes')->name('outcomes.')->group(function () {
-        Route::get('/', [IntOutcomeController::class, 'index'])->name('index');
-        Route::get('/create', [IntOutcomeController::class, 'create'])->name('create');
-        Route::post('/', [IntOutcomeController::class, 'store'])->name('store');
-        Route::get('/{outcome}', [IntOutcomeController::class, 'show'])->name('show');
-        Route::get('/{outcome}/edit', [IntOutcomeController::class, 'edit'])->name('edit');
-        Route::put('/{outcome}', [IntOutcomeController::class, 'update'])->name('update');
-        Route::delete('/{outcome}', [IntOutcomeController::class, 'destroy'])->name('destroy');
+// =============================
+//   MÓDULO DE PROYECTOS
+// =============================
+    Route::middleware('auth')->prefix('flujo')->name('flujo.')->group(function () {
+        // Workflows
+        Route::resource('workflows', WorkflowController::class)
+            ->names('workflows')
+            ->parameters(['workflows' => 'workflow']);
+
+        // Tasks
+        Route::resource('tasks', TaskController::class)
+            ->names('tasks')
+            ->parameters(['tasks' => 'task']);
+
+        // Histories (index, show, store, destroy)
+        Route::resource('histories', TaskHistoryController::class)
+            ->only(['index', 'show', 'store', 'destroy'])
+            ->names('histories')
+            ->parameters(['histories' => 'taskHistory']);
+
+        // Comments
+        Route::resource('comments', TaskCommentController::class)
+            ->names('comments')
+            ->parameters(['comments' => 'comment']);
+
+        // En tu grupo de rutas 'flujo'
+        Route::get('/auditoria/pdf', [AuditoriaProyectosController::class, 'exportPdf'])
+            ->name('auditoria.pdf'); // Nueva ruta
+
+        Route::get('/auditoria', [AuditoriaProyectosController::class, 'index'])
+            ->name('auditoria.index');
+            
+            // Nuevo tablero principal
+            Route::get('/tablero', [TableroController::class, 'index'])
+                ->name('tablero');
     });
-
-
-    // --- 📡 GRUPO DE RUTAS PARA PRÓXIMAS ACCIONES ---
-    Route::prefix('next_actions')->name('next_actions.')->group(function () {
-        Route::get('/', [IntNextActionController::class, 'index'])->name('index');
-        Route::get('/create', [IntNextActionController::class, 'create'])->name('create');
-        Route::post('/', [IntNextActionController::class, 'store'])->name('store');
-        Route::get('/{action}', [IntNextActionController::class, 'show'])->name('show');
-        Route::get('/{action}/edit', [IntNextActionController::class, 'edit'])->name('edit');
-        Route::put('/{action}', [IntNextActionController::class, 'update'])->name('update');
-        Route::delete('/{action}', [IntNextActionController::class, 'destroy'])->name('destroy');
-    });
-});
-
-// FLUJO DE TRABAJO
-Route::middleware('auth')->prefix('flujo')->name('flujo.')->group(function () {
-    // Workflows
-    Route::resource('workflows', WorkflowController::class)
-        ->names('workflows')
-        ->parameters(['workflows' => 'workflow']);
-
-    // Tasks
-    Route::resource('tasks', TaskController::class)
-        ->names('tasks')
-        ->parameters(['tasks' => 'task']);
-
-    // Histories (index, show, store, destroy)
-    Route::resource('histories', TaskHistoryController::class)
-        ->only(['index', 'show', 'store', 'destroy'])
-        ->names('histories')
-        ->parameters(['histories' => 'taskHistory']);
-
-    // Comments
-    Route::resource('comments', TaskCommentController::class)
-        ->names('comments')
-        ->parameters(['comments' => 'comment']);
-
-// En tu grupo de rutas 'flujo'
-Route::get('/auditoria/pdf', [AuditoriaProyectosController::class, 'exportPdf'])
-    ->name('auditoria.pdf'); // Nueva ruta
-
-Route::get('/auditoria', [AuditoriaProyectosController::class, 'index'])
-    ->name('auditoria.index');
-    
-    // Nuevo tablero principal
-    Route::get('/tablero', [TableroController::class, 'index'])
-        ->name('tablero');
-});
-
+//FIN PROYECTOS
 
 // =============================
 //   MÓDULO DE SOPORTES
 // =============================
-Route::middleware('auth')->prefix('soportes')->name('soportes.')->group(function () {
+    Route::middleware('auth')->prefix('soportes')->name('soportes.')->group(function () {
 
-    // ---------------------------------------------------
-    // 1. DASHBOARD Y ESTADÍSTICAS
-    // ---------------------------------------------------
-    
-    // Tablero principal
-    Route::get('tablero', [ScpTableroParametroController::class, 'index'])
-        ->name('tablero')
-        ->middleware('candirect:soporte.lista.administrador');
-    
-    // Vista de Estadísticas
-    Route::get('estadisticas', [ScpEstadisticaController::class, 'index'])
-        ->name('estadisticas')
-        ->middleware('candirect:soporte.lista.administrador');
-    
-    // API AJAX para los gráficos (Sin middleware restrictivo para evitar bloqueos en fetch)
-    Route::get('estadisticas/data', [ScpEstadisticaController::class, 'getDashboardData'])
-        ->name('estadisticas.data');
-
-
-    // ---------------------------------------------------
-    // 2. CONFIGURACIÓN Y PARAMÉTRICAS (RESOURCES)
-    // ---------------------------------------------------
-    Route::resource('categorias', ScpCategoriaController::class)
-        ->parameters(['categorias' => 'scpCategoria']);
-
-    Route::resource('estados', ScpEstadoController::class)
-        ->parameters(['estados' => 'scpEstado']);
-
-    Route::resource('prioridades', ScpPrioridadController::class)
-        ->parameters(['prioridades' => 'scpPrioridad']);
-
-    Route::resource('tipos', ScpTipoController::class)
-        ->parameters(['tipos' => 'scpTipo']);
-
-    Route::resource('subtipos', ScpSubTipoController::class)
-        ->parameters(['subtipos' => 'scpSubtipo']); 
-
-    Route::resource('tipoObservaciones', ScpTipoObservacionController::class)
-        ->parameters(['tipoObservaciones' => 'scpTipoObservacion']);
-
-
-    // ---------------------------------------------------
-    // 3. GESTIÓN DE USUARIOS (AGENTES)
-    // ---------------------------------------------------
-    // Rutas con Hash (Edit/Update) - IMPORTANTE: Deben ir antes del resource estándar
-    Route::get('usuarios/{hash}/edit', [ScpUsuarioController::class, 'edit'])
-        ->name('usuarios.edit');
-
-    Route::put('usuarios/{hash}', [ScpUsuarioController::class, 'update'])
-        ->name('usuarios.update');
-
-    // CRUD Base de usuarios (Excluyendo lo que manejan las rutas Hash)
-    Route::resource('usuarios', ScpUsuarioController::class)
-        ->parameters(['usuarios' => 'scpUsuario'])
-        ->except(['edit', 'update']);
-
-
-    // ---------------------------------------------------
-    // 4. GESTIÓN PRINCIPAL DE SOPORTES
-    // ---------------------------------------------------
-
-    // --- Rutas Específicas (Deben ir ANTES del Resource 'soportes' para evitar conflictos) ---
-
-    // 🔍 Buscador Rápido (Autocompletado JS)
-    Route::get('buscar-rapido', [ScpSoporteController::class, 'quickSearch'])
-        ->name('buscar.rapido');
-
-    // 📂 Vistas filtradas predefinidas
-    Route::get('pendientes', [ScpSoporteController::class, 'pendientes'])
-        ->name('pendientes');
-
-    Route::get('mis-soportes', [ScpSoporteController::class, 'misSoportes']) // Ver tickets asignados a mí
-        ->name('mis-soportes');
-
-    Route::get('sin-asignar', [ScpSoporteController::class, 'sinAsignar'])
-        ->name('sinAsignar');
-
-    // ⚙️ Acciones sobre el soporte
-    Route::get('descargar/{id}', [ScpSoporteController::class, 'descargarSoporte'])
-        ->name('descargar');
+        // ---------------------------------------------------
+        // 1. DASHBOARD Y ESTADÍSTICAS
+        // ---------------------------------------------------
         
-    Route::get('ver/{id}', [ScpSoporteController::class, 'verSoporte'])
-        ->name('ver');
-    
-    // Asignar agente y Cambiar Estado (Acciones específicas)
-    Route::post('{scpSoporte}/asignar', [ScpSoporteController::class, 'asignarAgente'])
-        ->name('asignar');
+        // Tablero principal
+        Route::get('tablero', [ScpTableroParametroController::class, 'index'])
+            ->name('tablero')
+            ->middleware('candirect:soporte.lista.administrador');
         
-    Route::post('{scpSoporte}/cambiar-estado', [ScpSoporteController::class, 'cambiarEstado'])
-        ->name('cambiarEstado');
-
-    // --- Resource Principal (CRUD Completo) ---
-    Route::resource('soportes', ScpSoporteController::class)
-        ->parameters(['soportes' => 'scpSoporte']);
-
-
-    // ---------------------------------------------------
-    // 5. OBSERVACIONES Y ADJUNTOS
-    // ---------------------------------------------------
-    Route::post('soportes/{scpSoporte}/observaciones', [ScpSoporteController::class, 'storeObservacion'])
-        ->name('observaciones.store');
-
-    Route::delete('soportes/{scpSoporte}/observaciones/{scpObservacion}', [ScpSoporteController::class, 'destroyObservacion'])
-        ->name('observaciones.destroy');
-
-    // Descarga de adjuntos de observaciones
-    Route::get('observaciones/adjunto/{id}', [ScpSoporteController::class, 'descargarAdjuntoObservacion'])
-        ->name('observaciones.adjunto');
+        // Vista de Estadísticas
+        Route::get('estadisticas', [ScpEstadisticaController::class, 'index'])
+            ->name('estadisticas')
+            ->middleware('candirect:soporte.lista.administrador');
+        
+        // API AJAX para los gráficos (Sin middleware restrictivo para evitar bloqueos en fetch)
+        Route::get('estadisticas/data', [ScpEstadisticaController::class, 'getDashboardData'])
+            ->name('estadisticas.data');
 
 
-    // ---------------------------------------------------
-    // 6. FILTROS DINÁMICOS (AJAX SELECTS)
-    // ---------------------------------------------------
-    Route::get('tipos/filtro/{categoria}', [ScpSoporteController::class, 'getTiposByCategoria'])
-        ->name('tipos.byCategoria');
+        // ---------------------------------------------------
+        // 2. CONFIGURACIÓN Y PARAMÉTRICAS (RESOURCES)
+        // ---------------------------------------------------
+        Route::resource('categorias', ScpCategoriaController::class)
+            ->parameters(['categorias' => 'scpCategoria']);
 
-    Route::get('subtipos/filtro/{tipo}', [ScpSoporteController::class, 'getSubTipos'])
-        ->name('subtipos.byTipo');
+        Route::resource('estados', ScpEstadoController::class)
+            ->parameters(['estados' => 'scpEstado']);
+
+        Route::resource('prioridades', ScpPrioridadController::class)
+            ->parameters(['prioridades' => 'scpPrioridad']);
+
+        Route::resource('tipos', ScpTipoController::class)
+            ->parameters(['tipos' => 'scpTipo']);
+
+        Route::resource('subtipos', ScpSubTipoController::class)
+            ->parameters(['subtipos' => 'scpSubtipo']); 
+
+        Route::resource('tipoObservaciones', ScpTipoObservacionController::class)
+            ->parameters(['tipoObservaciones' => 'scpTipoObservacion']);
 
 
-    // ---------------------------------------------------
-    // 7. NOTIFICACIONES Y CORREOS
-    // ---------------------------------------------------
-    // Notificaciones (JSON para la campana del navbar)
-    Route::get('notificaciones', [ScpSoporteController::class, 'getNotificaciones'])
-        ->name('notificaciones');
+        // ---------------------------------------------------
+        // 3. GESTIÓN DE USUARIOS (AGENTES)
+        // ---------------------------------------------------
+        // Rutas con Hash (Edit/Update) - IMPORTANTE: Deben ir antes del resource estándar
+        Route::get('usuarios/{hash}/edit', [ScpUsuarioController::class, 'edit'])
+            ->name('usuarios.edit');
 
-    // Vista completa de notificaciones
-    Route::get('notificaciones/detalladas', [ScpSoporteController::class, 'getNotificacionesDetalladas'])
-        ->name('notificaciones.detalladas');
+        Route::put('usuarios/{hash}', [ScpUsuarioController::class, 'update'])
+            ->name('usuarios.update');
 
-    // Acción manual de reenvío de correo
-    Route::get('enviar-correo-escalado/{id}', [ScpNotificacionController::class, 'enviarCorreoEscalado'])
-        ->name('enviarCorreoEscalado');
+        // CRUD Base de usuarios (Excluyendo lo que manejan las rutas Hash)
+        Route::resource('usuarios', ScpUsuarioController::class)
+            ->parameters(['usuarios' => 'scpUsuario'])
+            ->except(['edit', 'update']);
 
-});
+
+        // ---------------------------------------------------
+        // 4. GESTIÓN PRINCIPAL DE SOPORTES
+        // ---------------------------------------------------
+
+        // --- Rutas Específicas (Deben ir ANTES del Resource 'soportes' para evitar conflictos) ---
+
+        // 🔍 Buscador Rápido (Autocompletado JS)
+        Route::get('buscar-rapido', [ScpSoporteController::class, 'quickSearch'])
+            ->name('buscar.rapido');
+
+        // 📂 Vistas filtradas predefinidas
+        Route::get('pendientes', [ScpSoporteController::class, 'pendientes'])
+            ->name('pendientes');
+
+        Route::get('mis-soportes', [ScpSoporteController::class, 'misSoportes']) // Ver tickets asignados a mí
+            ->name('mis-soportes');
+
+        Route::get('sin-asignar', [ScpSoporteController::class, 'sinAsignar'])
+            ->name('sinAsignar');
+
+        // ⚙️ Acciones sobre el soporte
+        Route::get('descargar/{id}', [ScpSoporteController::class, 'descargarSoporte'])
+            ->name('descargar');
+            
+        Route::get('ver/{id}', [ScpSoporteController::class, 'verSoporte'])
+            ->name('ver');
+        
+        // Asignar agente y Cambiar Estado (Acciones específicas)
+        Route::post('{scpSoporte}/asignar', [ScpSoporteController::class, 'asignarAgente'])
+            ->name('asignar');
+            
+        Route::post('{scpSoporte}/cambiar-estado', [ScpSoporteController::class, 'cambiarEstado'])
+            ->name('cambiarEstado');
+
+        // --- Resource Principal (CRUD Completo) ---
+        Route::resource('soportes', ScpSoporteController::class)
+            ->parameters(['soportes' => 'scpSoporte']);
+
+
+        // ---------------------------------------------------
+        // 5. OBSERVACIONES Y ADJUNTOS
+        // ---------------------------------------------------
+        Route::post('soportes/{scpSoporte}/observaciones', [ScpSoporteController::class, 'storeObservacion'])
+            ->name('observaciones.store');
+
+        Route::delete('soportes/{scpSoporte}/observaciones/{scpObservacion}', [ScpSoporteController::class, 'destroyObservacion'])
+            ->name('observaciones.destroy');
+
+        // Descarga de adjuntos de observaciones
+        Route::get('observaciones/adjunto/{id}', [ScpSoporteController::class, 'descargarAdjuntoObservacion'])
+            ->name('observaciones.adjunto');
+
+
+        // ---------------------------------------------------
+        // 6. FILTROS DINÁMICOS (AJAX SELECTS)
+        // ---------------------------------------------------
+        Route::get('tipos/filtro/{categoria}', [ScpSoporteController::class, 'getTiposByCategoria'])
+            ->name('tipos.byCategoria');
+
+        Route::get('subtipos/filtro/{tipo}', [ScpSoporteController::class, 'getSubTipos'])
+            ->name('subtipos.byTipo');
+
+
+        // ---------------------------------------------------
+        // 7. NOTIFICACIONES Y CORREOS
+        // ---------------------------------------------------
+        // Notificaciones (JSON para la campana del navbar)
+        Route::get('notificaciones', [ScpSoporteController::class, 'getNotificaciones'])
+            ->name('notificaciones');
+
+        // Vista completa de notificaciones
+        Route::get('notificaciones/detalladas', [ScpSoporteController::class, 'getNotificacionesDetalladas'])
+            ->name('notificaciones.detalladas');
+
+        // Acción manual de reenvío de correo
+        Route::get('enviar-correo-escalado/{id}', [ScpNotificacionController::class, 'enviarCorreoEscalado'])
+            ->name('enviarCorreoEscalado');
+
+    });
 //FIN SOPORTE
 
+// ==========================================
+//   MÓDULO DE INVENTARIOS
+// ==========================================
+    Route::middleware(['auth'])->prefix('inventario')->name('inventario.')->group(function () {
+
+        // ---------------------------------------------------
+        // 1. DASHBOARD Y ESTADÍSTICAS
+        // ---------------------------------------------------
+        
+        // Tablero Principal
+        Route::get('tablero', [TableroInventarioController::class, 'index'])
+            ->name('tablero');
+
+        // API para datos de gráficos (AJAX)
+        Route::get('tablero/data', [TableroInventarioController::class, 'getChartData'])
+            ->name('tablero.data');
+
+
+        // ---------------------------------------------------
+        // 2. GESTIÓN DE COMPRAS (Entradas)
+        // ---------------------------------------------------
+        
+        // Descargar Factura PDF
+        Route::get('compras/{id}/descargar-factura', [CompraController::class, 'descargarFactura'])
+            ->name('compras.descargar');
+
+        // CRUD Completo de Compras
+        Route::resource('compras', CompraController::class)
+            ->parameters(['compras' => 'invCompra']);
+
+
+        // ---------------------------------------------------
+        // 3. OPERACIONES DE MOVIMIENTOS (Actas)
+        // ---------------------------------------------------
+
+        // Generar PDF del Acta (Entrega/Devolución)
+        Route::get('movimientos/{id}/pdf', [MovimientoController::class, 'generarPdf'])
+            ->name('movimientos.pdf');
+
+        // CRUD Completo de Movimientos
+        Route::resource('movimientos', MovimientoController::class)
+            ->parameters(['movimientos' => 'invMovimiento']);
+
+
+        // ---------------------------------------------------
+        // 4. MANTENIMIENTOS Y REPARACIONES
+        // ---------------------------------------------------
+        
+        Route::resource('mantenimientos', MantenimientoController::class)
+            ->parameters(['mantenimientos' => 'invMantenimiento']);
+
+
+        // ---------------------------------------------------
+        // 5. ALMACÉN DE ACTIVOS (Núcleo)
+        // ---------------------------------------------------
+
+        // --- Rutas Específicas ---
+        
+        // Vista de Alertas (Garantías por vencer)
+        Route::get('activos/alertas', [ActivoController::class, 'alertas'])
+            ->name('activos.alertas');
+
+        // Hoja de Vida (Vista detallada para imprimir)
+        Route::get('activos/{id}/hoja-vida', [ActivoController::class, 'hojaVida'])
+            ->name('activos.hoja_vida');
+
+        // Buscador AJAX para autocompletado
+        Route::get('activos/buscar', [ActivoController::class, 'buscarAjax'])
+            ->name('activos.buscar');
+
+        // --- CRUD Principal ---
+        Route::resource('activos', ActivoController::class)
+            ->parameters(['activos' => 'invActivo']);
+
+
+        // ---------------------------------------------------
+        // 6. CATÁLOGOS Y CONFIGURACIÓN
+        // ---------------------------------------------------
+
+        // Catálogos Simples
+        Route::resource('marcas', MarcaController::class)
+            ->parameters(['marcas' => 'invMarca']);
+
+        Route::resource('bodegas', BodegaController::class)
+            ->parameters(['bodegas' => 'invBodega']);
+
+        Route::resource('estados', EstadoController::class)
+            ->parameters(['estados' => 'invEstado']);
+
+        Route::resource('metodos-pago', MetodoPagoController::class)
+            ->parameters(['metodos-pago' => 'invMetodo']);
+
+
+        // --- GESTIÓN AVANZADA DE CLASIFICACIÓN (Jerarquía) ---
+
+        // 1. Rutas para CREAR Catálogos Base (POST)
+        Route::post('clasificacion/store-grupo', [ClasificacionController::class, 'storeGrupo'])->name('clasificacion.grupo.store');
+        Route::post('clasificacion/store-linea', [ClasificacionController::class, 'storeLinea'])->name('clasificacion.linea.store');
+        Route::post('clasificacion/store-tipo', [ClasificacionController::class, 'storeTipo'])->name('clasificacion.tipo.store');
+
+        // 2. Rutas para ACTUALIZAR Catálogos Base (PUT) - ¡NUEVO!
+        Route::put('clasificacion/update-grupo/{id}', [ClasificacionController::class, 'updateGrupo'])->name('clasificacion.grupo.update');
+        Route::put('clasificacion/update-linea/{id}', [ClasificacionController::class, 'updateLinea'])->name('clasificacion.linea.update');
+        Route::put('clasificacion/update-tipo/{id}', [ClasificacionController::class, 'updateTipo'])->name('clasificacion.tipo.update');
+
+        // 3. Ruta para ELIMINAR Paramétricos
+        Route::delete('clasificacion/destroy-parametro/{id}/{tipo}', [ClasificacionController::class, 'destroyParametro'])->name('clasificacion.parametro.destroy');
+
+        // 4. Resource Principal (Subgrupos - Tabla final)
+        Route::resource('clasificacion', ClasificacionController::class)
+            ->parameters(['clasificacion' => 'invSubgrupo']);
+
+
+        // ---------------------------------------------------
+        // 7. FILTROS DINÁMICOS (AJAX)
+        // ---------------------------------------------------
+        
+        // Rutas para llenar selects dependientes vía JS
+        Route::get('clasificacion/lineas/{grupo_id}', [ClasificacionController::class, 'getLineasByGrupo'])
+            ->name('ajax.lineas');
+
+        Route::get('clasificacion/subgrupos/{linea_id}', [ClasificacionController::class, 'getSubgruposByLinea'])
+            ->name('ajax.subgrupos');
+
+    });
+// FIN MÓDULO INVENTARIOS
 
 //VISITAS
 Route::middleware('auth')->prefix('visitas')->name('visitas.')->group(function () {
