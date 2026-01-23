@@ -73,5 +73,10 @@ class Workflow extends Model
     {
         return $this->hasMany(Task::class, 'workflow_id', 'id');
     }
-
+    public function participantes()
+    {
+        return $this->belongsToMany(User::class, 'wor_usuarios', 'workflow_id', 'user_id')
+                    ->using(\App\Models\Flujo\WorUsuario::class)
+                    ->withTimestamps();
+    }
 }
