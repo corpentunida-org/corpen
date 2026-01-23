@@ -426,10 +426,17 @@ Route::prefix('creditos')->middleware('auth')->group(function () {
 //   MÓDULO DE PROYECTOS
 // =============================
     Route::middleware('auth')->prefix('flujo')->name('flujo.')->group(function () {
-        // Esto genera la ruta: flujo.workflows.pdf
+        
+        // Rutas personalizadas de Workflows
+        // 1. Generar PDF
         Route::get('workflows/{workflow}/pdf', [WorkflowController::class, 'generatePdf'])
             ->name('workflows.pdf');
-        // Workflows
+            
+        // 2. ACTUALIZAR EQUIPO (AJAX) - ESTA ES LA RUTA NUEVA
+        Route::put('workflows/{workflow}/update-team', [WorkflowController::class, 'updateTeam'])
+            ->name('workflows.updateTeam');
+
+        // Workflows (Resource estándar)
         Route::resource('workflows', WorkflowController::class)
             ->names('workflows')
             ->parameters(['workflows' => 'workflow']);
@@ -450,18 +457,18 @@ Route::prefix('creditos')->middleware('auth')->group(function () {
             ->names('comments')
             ->parameters(['comments' => 'comment']);
 
-        // En tu grupo de rutas 'flujo'
+        // Auditoría
         Route::get('/auditoria/pdf', [AuditoriaProyectosController::class, 'exportPdf'])
-            ->name('auditoria.pdf'); // Nueva ruta
+            ->name('auditoria.pdf'); 
 
         Route::get('/auditoria', [AuditoriaProyectosController::class, 'index'])
             ->name('auditoria.index');
             
-            // Nuevo tablero principal
-            Route::get('/tablero', [TableroController::class, 'index'])
-                ->name('tablero');
+        // Nuevo tablero principal
+        Route::get('/tablero', [TableroController::class, 'index'])
+            ->name('tablero');
     });
-//FIN PROYECTOS
+// FIN PROYECTOS
 
 // =============================
 //   MÓDULO DE SOPORTES

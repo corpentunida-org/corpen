@@ -116,7 +116,12 @@ class User extends Authenticatable
         return $this->hasMany(\App\Models\Soportes\ScpSoporte::class, 'usuario_escalado', 'id');
     }
 
-
+    public function workflows()
+    {
+        return $this->belongsToMany(Workflow::class, 'wor_usuarios', 'user_id', 'workflow_id')
+                    ->using(\App\Models\Flujo\WorUsuario::class) 
+                    ->withTimestamps();
+    }
     /*
     protected $appends = [
         'profile_photo_url',
