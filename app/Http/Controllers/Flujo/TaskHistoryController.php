@@ -38,7 +38,7 @@ class TaskHistoryController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'task_id'         => 'required|exists:tasks,id',
+            'task_id'         => 'required|exists:wor_tasks,id',
             'estado_anterior' => 'nullable|string',
             'estado_nuevo'    => 'nullable|string',
             'cambiado_por'    => 'required|exists:users,id',

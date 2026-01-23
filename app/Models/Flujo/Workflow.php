@@ -10,7 +10,7 @@ use App\Models\Flujo\Task;
 class Workflow extends Model
 {
     use HasFactory;
-
+    protected $table = 'wor_workflows';
     /**
      * Campos que se pueden asignar masivamente.
      * Se han añadido todas las nuevas columnas de la tabla.

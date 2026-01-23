@@ -33,7 +33,7 @@ class TaskCommentController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'task_id'    => 'required|exists:tasks,id',
+            'task_id'    => 'required|exists:wor_tasks,id',
             'comentario' => 'required|string|min:3',
             'soporte'    => 'nullable|file|mimes:pdf,jpeg,jpg,png|max:10240', // 10MB Máx
         ]);
