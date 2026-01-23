@@ -86,7 +86,7 @@ class TaskController extends Controller
             'prioridad'    => 'required|in:baja,media,alta,crítica',
             'fecha_limite' => 'nullable|date',
             'user_id'      => 'required|exists:users,id',
-            'workflow_id'  => 'required|exists:workflows,id', // Cambiado de nullable a required
+            'workflow_id'  => 'required|exists:wor_workflows,id', // Cambiado de nullable a required
             'configuracion'=> 'nullable' // Se asume que se guarda como JSON o string
         ]);
 
@@ -142,7 +142,7 @@ class TaskController extends Controller
             'prioridad'    => 'required|in:baja,media,alta,crítica',
             'fecha_limite' => 'nullable|date',
             'user_id'      => 'required|exists:users,id',
-            'workflow_id'  => 'nullable|exists:workflows,id',
+            'workflow_id'  => 'nullable|exists:wor_workflows,id',
         ]);
 
         $estadoAnterior = $task->estado;
