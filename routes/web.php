@@ -426,6 +426,9 @@ Route::prefix('creditos')->middleware('auth')->group(function () {
 //   MÓDULO DE PROYECTOS
 // =============================
     Route::middleware('auth')->prefix('flujo')->name('flujo.')->group(function () {
+        // Esto genera la ruta: flujo.workflows.pdf
+        Route::get('workflows/{workflow}/pdf', [WorkflowController::class, 'generatePdf'])
+            ->name('workflows.pdf');
         // Workflows
         Route::resource('workflows', WorkflowController::class)
             ->names('workflows')

@@ -26,16 +26,24 @@ class Task extends Model
      * Esto soluciona el error de format() en la vista.
      */
     protected $casts = [
-        'fecha_limite' => 'date', // Laravel convertirá el string a Carbon automáticamente
+        'fecha_limite' => 'date', 
         'created_at'   => 'datetime',
         'updated_at'   => 'datetime',
     ];
 
     /**
-     * Usuario responsable de la tarea (Responsable Ejecutivo)
+     * RELACIÓN AGREGADA (Soluciona el error "undefined relationship asignado")
+     * Apunta al modelo User usando la clave foránea 'user_id'.
+     */
+    public function asignado() {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * Relación estándar (alias de asignado, por si se usa en otras partes)
      */
     public function user() {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     /**

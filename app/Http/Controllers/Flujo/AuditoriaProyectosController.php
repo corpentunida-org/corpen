@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Flujo\TaskComment;
 use App\Models\Flujo\TaskHistory;
 use App\Models\Flujo\Workflow;
+use App\Models\Flujo\Task; // Agregado para los KPIs de Tareas
 use App\Models\User;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
@@ -17,7 +18,6 @@ class AuditoriaProyectosController extends Controller
 {
     /**
      * Función privada para obtener y filtrar eventos.
-     * Se usa tanto en la vista web como en la exportación PDF.
      */
     private function getMergedEvents(Request $request, $limit = 100)
     {
@@ -77,7 +77,7 @@ class AuditoriaProyectosController extends Controller
 
     public function index(Request $request)
     {
-        // Usamos la función compartida para la vista web (limitado a 150 para rendimiento)
+        // 1. Obtener Eventos de Auditoría (Tu lógica original)
         $merged = $this->getMergedEvents($request, 150);
 
         // Paginación Manual
@@ -91,10 +91,7 @@ class AuditoriaProyectosController extends Controller
             ['path' => $request->url(), 'query' => $request->query()]
         );
 
-        // --- ESTADÍSTICAS PARA GRÁFICAS WEB ---
-        // (Nota: Aquí no aplicamos filtros complejos para las gráficas generales, 
-        //  pero podrías replicar la lógica de filtros si lo deseas)
-        
+        // --- 2. ESTADÍSTICAS PARA GRÁFICAS DE AUDITORÍA (Tu lógica original) ---
         $commentsQuery = TaskComment::query();
         $historyQuery = TaskHistory::query();
         
@@ -102,7 +99,7 @@ class AuditoriaProyectosController extends Controller
         $totalHistory = $historyQuery->count();
         $totalEvents = $totalComments + $totalHistory;
 
-        // Top Usuarios (Normalizando columnas)
+        // Top Usuarios
         $usersC = $commentsQuery->select('user_id', DB::raw('count(*) as total'))
             ->groupBy('user_id')->get();
             
@@ -129,10 +126,47 @@ class AuditoriaProyectosController extends Controller
             }
         }
 
+        // --- 3. CÁLCULO DE INDICADORES MATRIZ TIC (AGREGADO) ---
+        
+        // A. Uso de herramientas colaborativas (Usuarios activos últimos 30 días)
+        $totalUsuarios = User::count();
+        $usuariosActivos = TaskHistory::where('created_at', '>=', now()->subDays(30))
+            ->whereNotNull('cambiado_por') // Corrección aplicada: cambiado_por en lugar de user_id
+            ->distinct('cambiado_por')
+            ->count('cambiado_por');
+        
+        $kpiColaboracion = $totalUsuarios > 0 ? round(($usuariosActivos / $totalUsuarios) * 100, 1) : 0;
+
+        // B. Cumplimiento del plan estratégico
+        $totalProyectos = Workflow::count();
+        $proyectosEjecutados = Workflow::where('estado', 'completado')->count();
+        $kpiCumplimiento = $totalProyectos > 0 ? round(($proyectosEjecutados / $totalProyectos) * 100, 1) : 0;
+
+        // C. Digitalización de procesos
+        $proyectosDigitalizados = Workflow::whereIn('estado', ['activo', 'completado'])->count();
+        $kpiDigitalizacion = $totalProyectos > 0 ? round(($proyectosDigitalizados / $totalProyectos) * 100, 1) : 0;
+
+        // D. Tasa de incidentes/tareas resueltos
+        $totalTareas = Task::count();
+        $tareasResueltas = Task::where('estado', 'completado')->count();
+        $kpiResolucion = $totalTareas > 0 ? round(($tareasResueltas / $totalTareas) * 100, 1) : 0;
+
+        // E. Tiempos promedio de respuesta
+        $tiempos = Task::select('prioridad', DB::raw('AVG(TIMESTAMPDIFF(HOUR, created_at, updated_at)) as horas_promedio'))
+            ->where('estado', 'completado')
+            ->groupBy('prioridad')
+            ->pluck('horas_promedio', 'prioridad');
+
+        $kpiTiempoAlta  = round($tiempos['alta'] ?? 0, 1);
+        $kpiTiempoMedia = round($tiempos['media'] ?? 0, 1);
+        $kpiTiempoBaja  = round($tiempos['baja'] ?? 0, 1);
+
+        // Datos para selects
         $users = User::orderBy('name')->get();
         $workflows = Workflow::select('id', 'nombre')->orderBy('nombre')->get();
 
         return view('flujo.auditoria.index', [
+            // Datos de Auditoría
             'events' => $paginatedItems,
             'users' => $users,
             'workflows' => $workflows,
@@ -141,7 +175,15 @@ class AuditoriaProyectosController extends Controller
                 'comments' => $totalComments,
                 'history' => $totalHistory,
                 'usersData' => $chartUserData
-            ]
+            ],
+            // Datos de Matriz TIC (Nuevos)
+            'kpiColaboracion' => $kpiColaboracion,
+            'kpiCumplimiento' => $kpiCumplimiento,
+            'kpiDigitalizacion' => $kpiDigitalizacion,
+            'kpiResolucion' => $kpiResolucion,
+            'kpiTiempoAlta' => $kpiTiempoAlta,
+            'kpiTiempoMedia' => $kpiTiempoMedia,
+            'kpiTiempoBaja' => $kpiTiempoBaja
         ]);
     }
 
@@ -150,86 +192,103 @@ class AuditoriaProyectosController extends Controller
      */
     public function exportPdf(Request $request)
     {
-        // 1. Obtener eventos detallados
-        $events = $this->getMergedEvents($request, 500);
+        // 1. Obtener eventos (Aumentamos el límite para el reporte)
+        $events = $this->getMergedEvents($request, 1000);
 
-        // 2. LÓGICA DE ESTADÍSTICAS MENSUALES (AÑO ACTUAL)
-        $currentYear = now()->year;
+        // ---------------------------------------------------------
+        // CORRECCIÓN: CALCULAR ESTADÍSTICAS BASADAS EN LOS EVENTOS REALES
+        // (Esto asegura que si hay 41 eventos, la suma de usuarios sea 41)
+        // ---------------------------------------------------------
         
-        // Comentarios por Mes
-        $commentsByMonth = TaskComment::selectRaw('user_id, MONTH(created_at) as mes, COUNT(*) as total')
-            ->whereYear('created_at', $currentYear)
-            ->groupBy('user_id', 'mes')
-            ->get();
-
-        // Historial por Mes (usando cambiado_por)
-        $historyByMonth = TaskHistory::selectRaw('cambiado_por as user_id, MONTH(created_at) as mes, COUNT(*) as total')
-            ->whereYear('created_at', $currentYear)
-            ->whereNotNull('cambiado_por')
-            ->groupBy('cambiado_por', 'mes')
-            ->get();
-
-        // Unificar datos en matriz [Usuario => [Meses => Total]]
         $monthlyStats = [];
-        $allUserIds = $commentsByMonth->pluck('user_id')
-                        ->merge($historyByMonth->pluck('user_id'))
-                        ->unique();
-        
-        $usersMap = User::whereIn('id', $allUserIds)->pluck('name', 'id');
+        $currentYear = now()->year;
 
-        foreach ($usersMap as $id => $name) {
-            $monthlyStats[$id] = [
-                'name' => $name,
-                'months' => array_fill(1, 12, 0), // Inicializar 12 meses en 0
-                'total' => 0
-            ];
-        }
+        foreach ($events as $event) {
+            // Validar que el evento tenga usuario y fecha
+            if (!$event->user || !$event->created_at) continue;
 
-        // Llenar matriz con comentarios
-        foreach ($commentsByMonth as $c) {
-            if (isset($monthlyStats[$c->user_id])) {
-                $monthlyStats[$c->user_id]['months'][$c->mes] += $c->total;
-                $monthlyStats[$c->user_id]['total'] += $c->total;
+            // Solo graficamos en la matriz el año actual (o puedes quitar este if si quieres todo)
+            if ($event->created_at->year != $currentYear) continue;
+
+            $uid = $event->user->id;
+            $month = $event->created_at->month; // 1 al 12
+
+            // Inicializar usuario si no existe en el array
+            if (!isset($monthlyStats[$uid])) {
+                $monthlyStats[$uid] = [
+                    'name'   => $event->user->name,
+                    'months' => array_fill(1, 12, 0), // Inicializa meses en 0
+                    'total'  => 0
+                ];
             }
+
+            // Sumar al mes correspondiente y al total
+            $monthlyStats[$uid]['months'][$month]++;
+            $monthlyStats[$uid]['total']++;
         }
 
-        // Llenar matriz con historial
-        foreach ($historyByMonth as $h) {
-            if (isset($monthlyStats[$h->user_id])) {
-                $monthlyStats[$h->user_id]['months'][$h->mes] += $h->total;
-                $monthlyStats[$h->user_id]['total'] += $h->total;
-            }
-        }
-
-        // Ordenar por actividad total descendente
+        // Ordenar usuarios por actividad (Mayor a menor)
         uasort($monthlyStats, fn($a, $b) => $b['total'] <=> $a['total']);
+        
+        // ---------------------------------------------------------
+        // FIN CORRECCIÓN
+        // ---------------------------------------------------------
 
-        // 3. Preparar filtros para mostrar en el header del PDF
+        // --- CÁLCULO DE KPIS PARA EL PDF ---
+        $totalUsuarios = User::count();
+        // Corrección KPI Colaboración: Usar la colección de usuarios encontrados en los eventos
+        $usuariosEnReporte = count($monthlyStats);
+        $kpiColaboracion = $totalUsuarios > 0 ? round(($usuariosEnReporte / $totalUsuarios) * 100, 1) : 0;
+
+        $totalProyectos = Workflow::count();
+        $proyectosEjecutados = Workflow::where('estado', 'completado')->count();
+        $kpiCumplimiento = $totalProyectos > 0 ? round(($proyectosEjecutados / $totalProyectos) * 100, 1) : 0;
+
+        $proyectosDigitalizados = Workflow::whereIn('estado', ['activo', 'completado'])->count();
+        $kpiDigitalizacion = $totalProyectos > 0 ? round(($proyectosDigitalizados / $totalProyectos) * 100, 1) : 0;
+
+        $totalTareas = Task::count();
+        $tareasResueltas = Task::where('estado', 'completado')->count();
+        $kpiResolucion = $totalTareas > 0 ? round(($tareasResueltas / $totalTareas) * 100, 1) : 0;
+
+        $tiempos = Task::select('prioridad', DB::raw('AVG(TIMESTAMPDIFF(HOUR, created_at, updated_at)) as horas_promedio'))
+            ->where('estado', 'completado')->groupBy('prioridad')->pluck('horas_promedio', 'prioridad');
+        
+        $kpiTiempoAlta  = round($tiempos['alta'] ?? 0, 1);
+        $kpiTiempoMedia = round($tiempos['media'] ?? 0, 1);
+        $kpiTiempoBaja  = round($tiempos['baja'] ?? 0, 1);
+
+        // Preparar filtros visuales
         $filtersApplied = [];
         if($request->filled('search')) $filtersApplied[] = "Búsqueda: " . $request->search;
         if($request->filled('tipo_evento')) $filtersApplied[] = "Tipo: " . ucfirst($request->tipo_evento);
-        
         if($request->filled('user_id')) {
-            $u = User::find($request->user_id);
-            if($u) $filtersApplied[] = "Usuario: " . $u->name;
+            $u = User::find($request->user_id); if($u) $filtersApplied[] = "Usuario: " . $u->name;
         }
         if($request->filled('workflow_id')) {
-            $w = Workflow::find($request->workflow_id);
-            if($w) $filtersApplied[] = "Proyecto: " . $w->nombre;
+            $w = Workflow::find($request->workflow_id); if($w) $filtersApplied[] = "Proyecto: " . $w->nombre;
         }
 
-        // 4. Generar PDF
+        // Generar PDF
         $pdf = Pdf::loadView('flujo.auditoria.pdf', [
             'events' => $events,
             'filters' => $filtersApplied,
             'date' => now()->format('d/m/Y H:i'),
             'user' => auth()->user()->name,
-            'monthlyStats' => $monthlyStats, // <-- Datos mensuales enviados a la vista
-            'year' => $currentYear
+            'monthlyStats' => $monthlyStats, // Ahora sí lleva datos reales
+            'year' => $currentYear,
+            
+            // KPIs
+            'kpiColaboracion' => $kpiColaboracion,
+            'kpiCumplimiento' => $kpiCumplimiento,
+            'kpiDigitalizacion' => $kpiDigitalizacion,
+            'kpiResolucion' => $kpiResolucion,
+            'kpiTiempoAlta' => $kpiTiempoAlta,
+            'kpiTiempoMedia' => $kpiTiempoMedia,
+            'kpiTiempoBaja' => $kpiTiempoBaja
         ]);
 
         $pdf->setPaper('A4', 'portrait');
-
-        return $pdf->download('Reporte_Auditoria_Global_' . now()->format('Ymd_Hi') . '.pdf');
+        return $pdf->download('Reporte_Auditoria_Global.pdf');
     }
 }
