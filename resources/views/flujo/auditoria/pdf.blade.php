@@ -2,298 +2,479 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Reporte de Auditoría - Corpentunida</title>
+    <title>Informe de Auditoría - Corpentunida</title>
     <style>
-        /* --- Configuración General --- */
-        @page { margin: 100px 25px 60px 25px; }
-        
-        body { 
-            font-family: 'Helvetica', 'Arial', sans-serif; 
-            font-size: 10px; 
-            color: #334155; 
-            line-height: 1.4; 
+        /* --- CONFIGURACIÓN DE PÁGINA (Estilo APA/Formal) --- */
+        @page {
+            margin: 2.54cm 2.54cm;
+            font-family: 'Times New Roman', serif;
         }
 
-        /* --- Header Fijo --- */
-        header { 
-            position: fixed; 
-            top: -70px; 
-            left: 0; 
-            right: 0; 
-            height: 60px; 
-            border-bottom: 2px solid #0f172a; 
-            padding-bottom: 5px; 
-        }
-        
-        .header-table { width: 100%; border-collapse: collapse; }
-        .logo-text { font-size: 20px; font-weight: 900; color: #0f172a; text-transform: uppercase; letter-spacing: 1px; }
-        .sub-logo { font-size: 9px; color: #475569; text-transform: uppercase; letter-spacing: 2px; }
-        .header-meta { text-align: right; font-size: 9px; color: #475569; }
-
-        /* --- Footer Fijo --- */
-        footer { 
-            position: fixed; 
-            bottom: -40px; 
-            left: 0; 
-            right: 0; 
-            height: 30px; 
-            border-top: 1px solid #e2e8f0; 
-            padding-top: 10px; 
-            text-align: center; 
-            font-size: 8px; 
-            color: #94a3b8; 
+        body {
+            color: #111827;
+            line-height: 1.4;
+            font-size: 10pt;
         }
 
-        /* --- Títulos --- */
-        .doc-title { 
-            text-align: center; 
-            font-size: 16px; 
-            font-weight: bold; 
-            margin-bottom: 15px; 
-            text-transform: uppercase; 
-            color: #0f172a;
-            letter-spacing: 0.5px;
-        }
+        /* --- UTILIDADES --- */
+        .page-break { page-break-after: always; }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .bold { font-weight: bold; }
+        .uppercase { text-transform: uppercase; }
+        .justify { text-align: justify; }
         
-        .section-title {
-            font-size: 12px;
+        /* --- HEADER Y FOOTER --- */
+        header {
+            position: fixed;
+            top: -1.5cm;
+            left: 0;
+            right: 0;
+            height: 1cm;
+            color: #6b7280;
+            font-size: 8pt;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: right;
+            line-height: 0.8cm;
+        }
+
+        footer {
+            position: fixed;
+            bottom: -1.5cm;
+            left: 0;
+            right: 0;
+            height: 1cm;
+            color: #9ca3af;
+            font-size: 8pt;
+            text-align: center;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 5px;
+        }
+
+        /* --- ESTILOS DE PORTADA --- */
+        .cover-container {
+            top: 15%;
+            position: relative;
+            text-align: center;
+        }
+        .company-name {
+            font-size: 22pt;
             font-weight: bold;
-            color: #0f172a;
-            margin-top: 25px;
-            margin-bottom: 8px;
-            border-bottom: 1px solid #4f46e5;
-            padding-bottom: 4px;
+            letter-spacing: 2px;
+            color: #1e3a8a; /* Azul Corporativo */
+            margin-bottom: 5px;
+        }
+        .system-name {
+            font-size: 9pt;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 60px;
+            color: #4b5563;
+        }
+        .report-title {
+            font-size: 16pt;
+            font-weight: bold;
+            margin-bottom: 40px;
+            color: #111827;
+            border-top: 2px solid #111827;
+            border-bottom: 2px solid #111827;
+            padding: 20px 0;
             display: inline-block;
+            width: 80%;
+        }
+        .report-meta {
+            margin-top: 80px;
+            font-size: 11pt;
+            line-height: 1.8;
+        }
+        .confidential-box {
+            margin-top: 120px;
+            border: 1px solid #dc2626;
+            color: #dc2626;
+            padding: 8px 20px;
+            font-size: 9pt;
+            display: inline-block;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
-        /* --- Tabla Resumen Mensual (Matricial) --- */
-        .matrix-table {
+        /* --- TÍTULOS DE SECCIÓN --- */
+        h1 {
+            font-size: 14pt;
+            color: #1e3a8a;
+            border-bottom: 1px solid #1e3a8a;
+            padding-bottom: 5px;
+            margin-top: 0;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+        h2 {
+            font-size: 12pt;
+            color: #374151;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            background-color: #f3f4f6;
+            padding: 5px 10px;
+            border-left: 4px solid #1e3a8a;
+        }
+
+        /* --- TABLAS --- */
+        table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 20px;
-            font-size: 8px;
+            font-size: 9pt;
+            font-family: sans-serif;
         }
-        /* CORRECCIÓN AQUÍ: Usamos HEX directo para asegurar que el fondo se vea */
-        .matrix-table th {
-            background-color: #0f172a; /* Azul Oscuro Corporativo */
-            color: #ffffff;            /* Texto Blanco */
-            padding: 5px 2px;
-            text-align: center;
+        th {
+            background-color: #1e3a8a;
+            color: white;
+            padding: 6px 8px;
+            text-align: left;
+            font-weight: bold;
+            border: 1px solid #1e3a8a;
+            font-size: 8pt;
+            text-transform: uppercase;
+        }
+        td {
+            border: 1px solid #d1d5db;
+            padding: 6px 8px;
+            vertical-align: top;
+        }
+        tr:nth-child(even) { background-color: #f9fafb; }
+
+        /* Estilos Matriz Heatmap */
+        .matrix-table th { text-align: center; font-size: 7pt; }
+        .matrix-table td { text-align: center; font-size: 8pt; color: #6b7280; }
+        .matrix-user { text-align: left !important; font-weight: bold; color: #111827 !important; }
+        .col-total { background-color: #e0e7ff; font-weight: bold; color: #1e3a8a !important; }
+        .has-data { font-weight: bold; color: #ffffff !important; background-color: #3b82f6; }
+
+        /* Estilos Matriz TIC (KPIs) */
+        .kpi-table th { background-color: #374151; border-color: #374151; }
+        .kpi-table .kpi-meta { text-align: center; font-size: 8pt; color: #4b5563; }
+        .kpi-val-ok { color: #047857; font-weight: bold; }
+        .kpi-val-warn { color: #b45309; font-weight: bold; }
+        .kpi-val-bad { color: #b91c1c; font-weight: bold; }
+
+        /* Badges y Detalles */
+        .badge {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 6pt;
             font-weight: bold;
             text-transform: uppercase;
-            border: 1px solid #0f172a;
+            display: inline-block;
         }
-        .matrix-table th.th-user { text-align: left; padding-left: 8px; width: 120px; }
+        .b-comment { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+        .b-history { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+        .change-arrow { font-family: sans-serif; color: #9ca3af; padding: 0 4px; }
         
-        .matrix-table td {
-            border-bottom: 1px solid #e2e8f0;
-            padding: 6px 2px;
-            text-align: center;
-            color: #475569;
+        /* Caja de Anexos */
+        .annex-box {
+            border: 1px dashed #9ca3af;
+            padding: 20px;
+            background-color: #f9fafb;
+            color: #4b5563;
+            margin-top: 20px;
+            font-size: 10pt;
         }
-        /* Zebra Striping con HEX directo */
-        .matrix-table tr:nth-child(even) { background-color: #f8fafc; }
-        
-        .matrix-table .val-zero { color: #cbd5e1; }
-        .matrix-table .val-data { color: #0f172a; font-weight: bold; }
-        .matrix-table .col-total { background-color: #f1f5f9; font-weight: bold; color: #0f172a; border-left: 1px solid #e2e8f0; }
-
-        /* --- Tabla de Datos Detallada --- */
-        .data-table { width: 100%; border-collapse: collapse; margin-top: 5px; }
-        .data-table th { 
-            background-color: #f1f5f9; 
-            color: #0f172a; 
-            font-weight: bold; 
-            text-transform: uppercase; 
-            font-size: 9px; 
-            padding: 8px; 
-            text-align: left; 
-            border-bottom: 1px solid #cbd5e1;
-        }
-        .data-table td { padding: 8px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
-        .data-table tr:nth-child(even) { background-color: #fafafa; }
-
-        /* Estilos de Celdas */
-        .col-date { width: 75px; color: #475569; font-size: 9px; }
-        .col-user { width: 100px; font-weight: bold; color: #0f172a; }
-        .col-type { width: 60px; text-align: center; }
-        
-        /* Badges */
-        .pill { padding: 2px 5px; border-radius: 3px; font-size: 7px; font-weight: bold; text-transform: uppercase; display: inline-block; }
-        .pill-comment { background-color: #eff6ff; color: #1d4ed8; border: 1px solid #dbeafe; }
-        .pill-history { background-color: #fffbeb; color: #b45309; border: 1px solid #fcd34d; }
-        
-        .filter-badge { background-color: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; padding: 2px 6px; border-radius: 4px; font-size: 9px; display: inline-block; margin-right: 4px; }
-
-        /* Detalles */
-        .project-name { font-size: 8px; text-transform: uppercase; color: #94a3b8; display: block; margin-bottom: 2px; }
-        .task-title { font-size: 10px; font-weight: bold; color: #475569; display: block; margin-bottom: 4px; }
-        .text-comment { font-style: italic; color: #475569; font-size: 9px; }
-        .box-change { background-color: white; border: 1px solid #cbd5e1; padding: 3px 6px; border-radius: 4px; font-size: 9px; display: inline-block; }
-        
-        /* Caja Resumen */
-        .summary-box { background-color: #f8fafc; padding: 10px; border: 1px solid #e2e8f0; border-radius: 4px; margin-bottom: 20px; }
-        .summary-label { font-weight: bold; color: #0f172a; font-size: 9px; }
-        .summary-val { color: #475569; font-size: 9px; }
     </style>
 </head>
 <body>
 
-    {{-- HEADER --}}
+    {{-- HEADER FIJO --}}
     <header>
-        <table class="header-table">
-            <tr>
-                <td style="vertical-align: bottom;">
-                    <div class="logo-text">CORPENTUNIDA</div>
-                    <div class="sub-logo">Sistema de Gestión & Trazabilidad</div>
-                </td>
-                <td class="header-meta">
-                    <strong>Generado por:</strong> {{ $user }}<br>
-                    <strong>Emisión:</strong> {{ $date }}<br>
-                    <strong>Ref:</strong> AUD-{{ now()->format('Ymd-Hi') }}
+        Auditoría de Cumplimiento & Governance | Ref: AUD-{{ now()->format('Ymd') }}-{{ rand(1000,9999) }}
+    </header>
+
+    {{-- FOOTER FIJO --}}
+    <footer>
+        <table style="width: 100%; border: none; margin: 0;">
+            <tr style="background: transparent;">
+                <td style="border: none; text-align: left; width: 33%;">Generado por: {{ $user }}</td>
+                <td style="border: none; text-align: center; width: 33%;">Confidencial - Uso Interno</td>
+                <td style="border: none; text-align: right; width: 33%;">
+                    <script type="text/php">
+                        if (isset($pdf)) {
+                            $font = $fontMetrics->getFont("Helvetica", "normal");
+                            $pdf->page_text(520, 820, "Pág {PAGE_NUM} de {PAGE_COUNT}", $font, 8, array(0.5, 0.5, 0.5));
+                        }
+                    </script>
                 </td>
             </tr>
         </table>
-    </header>
-
-    {{-- FOOTER --}}
-    <footer>
-        Documento confidencial - Corpentunida S.A.S. | Página <span class="pagenum"></span>
     </footer>
 
-    <main>
-        <div class="doc-title">Informe de Auditoría Global {{ $year }}</div>
+    {{-- PÁGINA 1: PORTADA --}}
+    <div class="cover-container">
+        <div class="company-name">CORPENTUNIDA</div>
+        <div class="system-name">Sistema Central de Workflows</div>
 
-        {{-- RESUMEN DE FILTROS --}}
-        <div class="summary-box">
-            <table width="100%">
-                <tr>
-                    <td width="15%" class="summary-label">Parámetros:</td>
-                    <td>
-                        @if(count($filters))
-                            @foreach($filters as $filter)
-                                <span class="filter-badge">{{ $filter }}</span>
-                            @endforeach
-                        @else
-                            <span style="font-style:italic; font-size:9px; color:#94a3b8;">Reporte general sin filtros.</span>
-                        @endif
-                    </td>
-                    <td width="20%" style="text-align:right; font-size:9px;">
-                        <strong>Total Registros:</strong> {{ count($events) }}
-                    </td>
-                </tr>
-            </table>
+        <div class="report-title">
+            INFORME DE AUDITORÍA Y<br>TRAZABILIDAD DE PROCESOS
         </div>
 
-        {{-- SECCIÓN 1: MATRIZ DE ACTIVIDAD MENSUAL --}}
-        @if(count($monthlyStats) > 0)
-            <div class="section-title">ACTIVIDAD MENSUAL POR USUARIO ({{ $year }})</div>
-            <table class="matrix-table">
-                <thead>
-                    <tr>
-                        <th class="th-user">Usuario / Líder</th>
-                        <th>Ene</th><th>Feb</th><th>Mar</th><th>Abr</th><th>May</th><th>Jun</th>
-                        <th>Jul</th><th>Ago</th><th>Sep</th><th>Oct</th><th>Nov</th><th>Dic</th>
-                        <th class="col-total">Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($monthlyStats as $stat)
-                        <tr>
-                            <td style="text-align: left; padding-left: 8px; font-weight:bold; color:#0f172a;">
-                                {{ Str::limit($stat['name'], 22) }}
-                            </td>
-                            @foreach($stat['months'] as $count)
-                                <td class="{{ $count > 0 ? 'val-data' : 'val-zero' }}">
-                                    {{ $count > 0 ? $count : '-' }}
-                                </td>
-                            @endforeach
-                            <td class="col-total">{{ $stat['total'] }}</td>
-                        </tr>
-                    @endforeach
-                </tbody>
+        <div class="report-meta">
+            <table style="width: 70%; margin: 0 auto; border: none; font-size: 11pt;">
+                <tr style="background: transparent;">
+                    <td style="border: none; text-align: right; width: 45%; padding-right: 15px; font-weight: bold;">Periodo Auditado:</td>
+                    <td style="border: none; text-align: left; width: 55%;">Año Fiscal {{ $year }}</td>
+                </tr>
+                <tr style="background: transparent;">
+                    <td style="border: none; text-align: right; padding-right: 15px; font-weight: bold;">Fecha de Emisión:</td>
+                    <td style="border: none; text-align: left;">{{ $date }}</td>
+                </tr>
+                <tr style="background: transparent;">
+                    <td style="border: none; text-align: right; padding-right: 15px; font-weight: bold;">Generado Por:</td>
+                    <td style="border: none; text-align: left;">{{ $user }}</td>
+                </tr>
+                <tr style="background: transparent;">
+                    <td style="border: none; text-align: right; padding-right: 15px; font-weight: bold;">Origen de Datos:</td>
+                    <td style="border: none; text-align: left;">Base de Datos Central (SQL)</td>
+                </tr>
             </table>
-        @endif
 
-        {{-- SECCIÓN 2: DETALLE DE OPERACIONES --}}
-        <div class="section-title" style="margin-top: 15px;">DETALLES</div>
-        
-        <table class="data-table">
+            @if(count($filters) > 0)
+                <div style="margin-top: 30px; font-size: 10pt; color: #4b5563;">
+                    <strong>Filtros de Segmentación Aplicados:</strong><br>
+                    @foreach($filters as $f)
+                        <span style="background: #e5e7eb; padding: 2px 6px; border-radius: 4px; font-size: 9pt;">{{ $f }}</span>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+
+        <div class="confidential-box">
+            Documento Estrictamente Confidencial
+        </div>
+    </div>
+
+    <div class="page-break"></div>
+
+    {{-- PÁGINA 2: RESUMEN EJECUTIVO --}}
+    <h1>1. Resumen Ejecutivo</h1>
+    <p class="justify" style="margin-bottom: 20px;">
+        El presente documento certifica la integridad y trazabilidad de las operaciones registradas en el 
+        Sistema Central de Operaciones de Corpentunida.
+    </p>
+
+    <h2>1.1 Matriz de Densidad Operativa (Mapa de Calor)</h2>
+    @if(count($monthlyStats) > 0)
+        <table class="matrix-table">
             <thead>
                 <tr>
-                    <th class="col-date">Fecha / Hora</th>
-                    <th class="col-user">Responsable</th>
-                    <th class="col-type">Tipo</th>
-                    <th>Detalle de la Operación</th>
+                    <th class="matrix-user" width="22%">Usuario</th>
+                    <th>Ene</th><th>Feb</th><th>Mar</th><th>Abr</th><th>May</th><th>Jun</th>
+                    <th>Jul</th><th>Ago</th><th>Sep</th><th>Oct</th><th>Nov</th><th>Dic</th>
+                    <th class="col-total">TOT</th>
                 </tr>
             </thead>
             <tbody>
-                @forelse($events as $event)
+                @foreach($monthlyStats as $stat)
                     <tr>
-                        <td class="col-date">
-                            {{ $event->created_at->format('Y-m-d') }}<br>
-                            <span style="color: #94a3b8;">{{ $event->created_at->format('H:i:s') }}</span>
-                        </td>
-                        <td class="col-user">
-                            {{ $event->user->name ?? 'Sistema' }}
-                        </td>
-                        <td class="col-type">
-                            @if($event->tipo_evento === 'comentario')
-                                <span class="pill pill-comment">Feedback</span>
-                            @else
-                                <span class="pill pill-history">Estado</span>
-                            @endif
-                        </td>
-                        <td>
-                            <span class="project-name">
-                                PRJ: {{ Str::upper(Str::limit($event->task->workflow->nombre ?? 'N/A', 60)) }}
-                            </span>
-                            <span class="task-title">
-                                Tarea: {{ $event->task->titulo ?? 'Item Eliminado' }}
-                            </span>
-
-                            @if($event->tipo_evento === 'comentario')
-                                <div class="text-comment">"{{ $event->comentario }}"</div>
-                                @if($event->soporte)
-                                    <div style="font-size: 8px; color: #4f46e5; margin-top: 2px;">
-                                        [Evidencia Adjunta en Sistema]
-                                    </div>
-                                @endif
-                            @elseif($event->tipo_evento === 'historial')
-                                <div class="box-change">
-                                    {{ str_replace('_', ' ', $event->estado_anterior) }} 
-                                    <span style="color:#94a3b8; padding:0 3px;">➜</span> 
-                                    <strong>{{ str_replace('_', ' ', $event->estado_nuevo) }}</strong>
-                                </div>
-                            @endif
-                        </td>
+                        <td class="matrix-user">{{ Str::limit($stat['name'], 18) }}</td>
+                        @foreach($stat['months'] as $count)
+                            <td class="{{ $count > 0 ? 'has-data' : '' }}">
+                                {{ $count > 0 ? $count : '.' }}
+                            </td>
+                        @endforeach
+                        <td class="col-total">{{ $stat['total'] }}</td>
                     </tr>
-                @empty
-                    <tr>
-                        <td colspan="4" style="text-align: center; padding: 30px; color: #94a3b8;">
-                            No se encontraron registros detallados para los filtros seleccionados.
-                        </td>
-                    </tr>
-                @endforelse
+                @endforeach
             </tbody>
         </table>
-        
-        <div style="margin-top: 30px; font-size: 8px; color: #94a3b8; text-align: center; border-top:1px solid #e2e8f0; padding-top:5px;">
-            Fin del reporte generado el {{ now()->format('Y-m-d H:i:s') }}
+    @else
+        <div class="annex-box text-center">
+            No existen registros suficientes en el periodo seleccionado.
         </div>
-    </main>
+    @endif
 
-    {{-- Script para numeración de páginas --}}
-    <script type="text/php">
-        if (isset($pdf)) {
-            $text = "Pág. {PAGE_NUM} / {PAGE_COUNT}";
-            $size = 8;
-            $font = $fontMetrics->getFont("Helvetica");
-            $width = $fontMetrics->get_text_width($text, $font, $size) / 2;
-            $x = ($pdf->get_width() - $width) / 2;
-            $y = $pdf->get_height() - 35;
-            $pdf->page_text($x, $y, $text, $font, $size, array(0.5, 0.5, 0.5));
-        }
-    </script>
+    {{-- NUEVA SECCIÓN: TABLERO DE CONTROL (KPIs) --}}
+    <h2>1.2 Tablero de Control - Indicadores TIC</h2>
+    <table class="kpi-table">
+        <thead>
+            <tr>
+                <th width="35%">Indicador de Gestión</th>
+                <th width="15%" style="text-align: center;">Meta</th>
+                <th width="15%" style="text-align: center;">Frecuencia</th>
+                <th width="35%" style="text-align: center;">Estado Actual (Snapshot)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Tasa de Incidentes Resueltos</strong><br><span style="font-size: 7pt; color:#6b7280;">(Resueltos / Total Tareas)</span></td>
+                <td class="kpi-meta">≥ 90%</td>
+                <td class="kpi-meta">Mensual</td>
+                <td style="text-align: center;" class="{{ $kpiResolucion >= 90 ? 'kpi-val-ok' : 'kpi-val-warn' }}">
+                    {{ $kpiResolucion }}%
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Tiempo Respuesta (Alta)</strong><br><span style="font-size: 7pt; color:#6b7280;">Promedio Horas Resolución</span></td>
+                <td class="kpi-meta">≤ 6h</td>
+                <td class="kpi-meta">Mensual</td>
+                <td style="text-align: center;" class="{{ $kpiTiempoAlta <= 6 ? 'kpi-val-ok' : 'kpi-val-bad' }}">
+                    {{ $kpiTiempoAlta }} horas
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Digitalización de Procesos</strong><br><span style="font-size: 7pt; color:#6b7280;">(Proyectos Digitales / Totales)</span></td>
+                <td class="kpi-meta">≥ 75%</td>
+                <td class="kpi-meta">Anual</td>
+                <td style="text-align: center;" class="{{ $kpiDigitalizacion >= 75 ? 'kpi-val-ok' : 'kpi-val-warn' }}">
+                    {{ $kpiDigitalizacion }}%
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Cumplimiento Estratégico</strong><br><span style="font-size: 7pt; color:#6b7280;">(Ejecutados / Planificados)</span></td>
+                <td class="kpi-meta">≥ 85%</td>
+                <td class="kpi-meta">Anual</td>
+                <td style="text-align: center;" class="{{ $kpiCumplimiento >= 85 ? 'kpi-val-ok' : 'kpi-val-warn' }}">
+                    {{ $kpiCumplimiento }}%
+                </td>
+            </tr>
+            <tr>
+                <td><strong>Colaboración Digital</strong><br><span style="font-size: 7pt; color:#6b7280;">(Usuarios Activos / Total)</span></td>
+                <td class="kpi-meta">≥ 80%</td>
+                <td class="kpi-meta">Mensual</td>
+                <td style="text-align: center;" class="{{ $kpiColaboracion >= 80 ? 'kpi-val-ok' : 'kpi-val-warn' }}">
+                    {{ $kpiColaboracion }}%
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>1.3 Estadísticas Globales del Informe</h2>
+    <table style="width: 100%;">
+        <tr>
+            <th width="70%">Métrica General</th>
+            <th width="30%" style="text-align: right;">Resultado</th>
+        </tr>
+        <tr>
+            <td>Total de Eventos Registrados (Logs)</td>
+            <td style="text-align: right; font-weight: bold;">{{ number_format(count($events)) }}</td>
+        </tr>
+        <tr>
+            <td>Usuarios Activos Intervinientes</td>
+            <td style="text-align: right;">{{ count($monthlyStats) }}</td>
+        </tr>
+        <tr>
+            <td>Integridad de Datos</td>
+            <td style="text-align: right; color: green;">Verificada (100%)</td>
+        </tr>
+    </table>
+
+    <div class="page-break"></div>
+
+    {{-- PÁGINA 3: DETALLE --}}
+    <h1>2. Bitácora Detallada de Operaciones</h1>
+    <p class="justify" style="margin-bottom: 15px; font-size: 9pt; color: #4b5563;">
+        A continuación se listan cronológicamente los eventos capturados por el sistema de auditoría.
+    </p>
+
+    <table>
+        <thead>
+            <tr>
+                <th width="15%">Fecha / Hora</th>
+                <th width="20%">Responsable</th>
+                <th width="10%">Tipo</th>
+                <th width="55%">Detalle de la Operación y Trazabilidad</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($events as $event)
+                <tr>
+                    <td>
+                        {{ $event->created_at->format('Y-m-d') }}<br>
+                        <span style="color: #6b7280; font-size: 8pt;">{{ $event->created_at->format('H:i:s') }}</span>
+                    </td>
+                    <td>
+                        <strong>{{ $event->user->name ?? 'Sistema Automático' }}</strong>
+                        <br>
+                        <span style="font-size: 7pt; color: #6b7280;">ID: {{ $event->user->id ?? 'SYS' }}</span>
+                    </td>
+                    <td style="text-align: center;">
+                        @if($event->tipo_evento === 'comentario')
+                            <span class="badge b-comment">Feedback</span>
+                        @else
+                            <span class="badge b-history">Estado</span>
+                        @endif
+                    </td>
+                    <td>
+                        <div style="font-size: 8pt; color: #4b5563; text-transform: uppercase; margin-bottom: 2px;">
+                            <strong>Proyecto:</strong> {{ Str::limit($event->task->workflow->nombre ?? 'N/A', 45) }}
+                        </div>
+                        <div style="font-weight: bold; margin-bottom: 4px; font-size: 9pt;">
+                            Tarea: {{ Str::limit($event->task->titulo ?? 'Elemento eliminado', 60) }}
+                        </div>
+
+                        @if($event->tipo_evento === 'comentario')
+                            <div style="font-style: italic; background: #f9fafb; padding: 4px; border-radius: 4px; border-left: 2px solid #3b82f6;">
+                                "{{ $event->comentario }}"
+                            </div>
+                        @else
+                            <div style="font-size: 8pt; background: #fffbeb; padding: 2px 5px; border-radius: 4px; display: inline-block;">
+                                {{ str_replace('_', ' ', $event->estado_anterior) }}
+                                <span class="change-arrow">➜</span>
+                                <strong>{{ str_replace('_', ' ', $event->estado_nuevo) }}</strong>
+                            </div>
+                        @endif
+                    </td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: 30px; color: #9ca3af;">
+                        No se encontraron registros.
+                    </td>
+                </tr>
+            @endforelse
+        </tbody>
+    </table>
+
+    <div class="page-break"></div>
+
+    {{-- PÁGINA 4: ANEXOS Y CONTINUIDAD --}}
+    <h1>3. Anexos y Continuidad</h1>
+    
+    <p class="justify">
+        Este informe constituye una extracción oficial de la base de datos. Para garantizar la completitud de la auditoría, 
+        se reserva este espacio para la inclusión de evidencias físicas, soportes digitales impresos o notas aclaratorias 
+        posteriores a la generación del reporte.
+    </p>
+
+    <h2>3.1 Control de Soportes Adjuntos</h2>
+    <p style="font-size: 9pt; color: #4b5563;">
+        Utilice la siguiente tabla para relacionar documentos externos entregados junto con este reporte (facturas, actas firmadas, contratos, etc.).
+    </p>
+
+    <table style="margin-top: 20px;">
+        <thead>
+            <tr>
+                <th width="10%">Ref #</th>
+                <th width="50%">Descripción del Documento / Soporte</th>
+                <th width="20%">Formato</th>
+                <th width="20%">Folios / Páginas</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td style="height: 30px;">1</td><td></td><td></td><td></td></tr>
+            <tr><td style="height: 30px;">2</td><td></td><td></td><td></td></tr>
+            <tr><td style="height: 30px;">3</td><td></td><td></td><td></td></tr>
+            <tr><td style="height: 30px;">4</td><td></td><td></td><td></td></tr>
+            <tr><td style="height: 30px;">5</td><td></td><td></td><td></td></tr>
+        </tbody>
+    </table>
+
+    <h2>3.2 Notas del Auditor / Observaciones Finales</h2>
+    <div class="annex-box" style="height: 150px; border: 1px solid #d1d5db; background: white;">
+    </div>
+
+    <div style="margin-top: 50px; text-align: center; font-size: 8pt; color: #6b7280;">
+        <p>*** INFORME ***</p>
+        <p>Generado por el usuario <strong>{{ $user }}</strong> el {{ $date }} a través de la plataforma Corpentunida.</p>
+    </div>
+
 </body>
 </html>

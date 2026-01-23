@@ -14,7 +14,7 @@ class TaskHistory extends Model
      * Definición de la tabla (opcional si sigue la convención, 
      * pero útil para claridad en flujos complejos)
      */
-    protected $table = 'task_histories';
+    protected $table = 'wor_task_histories';
 
     protected $fillable = [
         'task_id',
