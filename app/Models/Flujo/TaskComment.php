@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Storage;
 class TaskComment extends Model
 {
     use HasFactory;
+    protected $table = 'wor_task_comments';
 
     protected $fillable = [
         'task_id',

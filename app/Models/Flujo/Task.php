@@ -10,6 +10,7 @@ use Carbon\Carbon;
 class Task extends Model
 {
     use HasFactory;
+    protected $table = 'wor_tasks';
 
     protected $fillable = [
         'titulo',
