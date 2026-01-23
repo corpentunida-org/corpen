@@ -11,7 +11,7 @@ class IndUsuarios extends Model
 
     protected $table = 'Ind_usuarios';
 
-    protected $fillable = ['id_correo', 'nombre', 'preguntas', 'respuestas', 'puntaje', 'fecha','prueba'];
+    protected $fillable = ['id_correo', 'nombre', 'preguntas', 'respuestas', 'puntaje', 'fecha','tiempo','prueba'];
 
     protected $casts = [
         'preguntas' => 'array',
