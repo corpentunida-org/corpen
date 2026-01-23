@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Indicators\IndPreguntas;
 use App\Models\Indicators\IndRespuestas;
 use App\Models\Indicators\IndUsuarios;
+use App\Models\Indicators\IndQuiz;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
@@ -18,11 +19,13 @@ class QuizController extends Controller
 
     public function generarpreguntas(int $pruebaid)
     {
-        $idsPreguntas = IndPreguntas::where('ref_quiz', $pruebaid)
-            ->inRandomOrder()
-            ->limit(5)
-            ->pluck('id')
-            ->toArray();
+        $activeQuiz = IndQuiz::where('id', $pruebaid)->where('estado', 1)->exists();
+        if (!$activeQuiz) {
+            return view('indicators.quizTI', ['quizActivo' => false]);
+        }
+        $idsEspeciales = [1, 2];
+        $idsPreguntas = IndPreguntas::where('ref_quiz', $pruebaid)->whereNotIn('id', $idsEspeciales)->inRandomOrder()->limit(5)->pluck('id')->toArray();
+        $idsPreguntas = array_merge($idsPreguntas, $idsEspeciales);
         $preguntas = [];
 
         foreach ($idsPreguntas as $idPregunta) {
@@ -37,9 +40,14 @@ class QuizController extends Controller
             $preguntas[] = [
                 'pregunta' => $pregunta,
                 'respuestas' => $respuestas,
+                'indicador' => in_array($idPregunta, $idsEspeciales),
             ];
         }
-        return view('indicators.quizTI', compact('preguntas','pruebaid'));
+        return view('indicators.quizTI', [
+            'quizActivo' => true,
+            'preguntas' => $preguntas,
+            'pruebaid' => $pruebaid,
+        ]);
     }
 
     public function store(Request $request)
@@ -56,28 +64,31 @@ class QuizController extends Controller
             $respuestaCorrecta = IndRespuestas::where('pregunta_id', $idPregunta)->where('correcta', 1)->first();
             $respuestaUsuario = IndRespuestas::find($idRespuesta);
 
-            $acertada = $respuestaCorrecta && $respuestaCorrecta->id == $idRespuesta;
-            if ($acertada) {
-                $puntaje++;
-            }
+            if ($respuestaCorrecta) {
+                $acertada = $respuestaCorrecta->id == $idRespuesta;
 
-            $resultado[] = [
-                'pregunta' => $pregunta?->texto,
-                'idrespuesta' => $idRespuesta,
-                'respuesta_usuario' => $respuestaUsuario?->texto,
-                'idrespuesta_correcta' => $respuestaCorrecta?->id,
-                'respuesta_correcta' => $respuestaCorrecta?->texto,
-                'acertada' => $acertada,
-            ];
+                if ($acertada) {
+                    $puntaje++;
+                }
+                $resultado[] = [
+                    'pregunta' => $pregunta?->texto,
+                    'idrespuesta' => $idRespuesta,
+                    'respuesta_usuario' => $respuestaUsuario?->texto,
+                    'idrespuesta_correcta' => $respuestaCorrecta->id,
+                    'respuesta_correcta' => $respuestaCorrecta->texto,
+                    'acertada' => $acertada,
+                ];
+            }
         }
 
         $quizuser = IndUsuarios::create([
             'id_correo' => $request->correoUsuario,
             'nombre' => strtoupper($request->nombreUsuario),
-            'preguntas' => collect($preguntas)->pluck('idpregunta')->toArray(), 
+            'preguntas' => collect($preguntas)->pluck('idpregunta')->toArray(),
             'respuestas' => collect($preguntas)->pluck('idrespuesta')->toArray(),
-            'puntaje' => $puntaje . '/' . count($preguntas),
+            'puntaje' => $puntaje . '/' . (count($preguntas) - 2),
             'fecha' => now(),
+            'tiempo' => $request->tiempo_transcurrido,
             'prueba' => $request->pruebaid,
         ]);
 
@@ -93,23 +104,18 @@ class QuizController extends Controller
     public function validar(Request $request)
     {
         $request->validate([
-            'correoUsuario' => 'required|email'
+            'correoUsuario' => 'required|email',
         ]);
 
         $correo = $request->correoUsuario;
 
-        $existe = DB::table('gdo_cargo')
-            ->where('correo_corporativo', $correo)
-            ->exists();
+        $existe = DB::table('gdo_cargo')->where('correo_corporativo', $correo)->exists();
 
-        $respondido = DB::table('Ind_usuarios')
-            ->where('id_correo', $correo)
-            ->where('prueba', $request->pruebaid)
-            ->exists();
+        $respondido = DB::table('Ind_usuarios')->where('id_correo', $correo)->where('prueba', $request->pruebaid)->exists();
 
         return response()->json([
             'existe' => $existe,
-            'respondido' => $respondido
+            'respondido' => $respondido,
         ]);
     }
 }
