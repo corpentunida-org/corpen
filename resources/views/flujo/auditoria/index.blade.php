@@ -13,18 +13,13 @@
                 <p class="subtitle">Centro de control y trazabilidad de operaciones</p>
             </div>
             
-            {{-- Botones de Acción (Estilo Píldora Flotante) --}}
+            {{-- Botones de Acción --}}
             <div class="header-actions-group">
-                {{-- Botón PDF --}}
                 <a href="{{ route('flujo.auditoria.pdf', request()->query()) }}" target="_blank" class="action-btn btn-pdf" title="Descargar reporte filtrado">
                     <span class="icon-wrapper"><i class="fas fa-file-pdf"></i></span>
                     <span class="text">Exportar Informe</span>
                 </a>
-
-                {{-- Separador Vertical --}}
                 <div class="v-separator"></div>
-
-                {{-- Botón Volver --}}
                 <a href="{{ route('flujo.workflows.index') }}" class="action-btn btn-back" title="Volver al listado">
                     <i class="fas fa-chevron-left"></i>
                     <span class="text">Proyectos</span>
@@ -40,14 +35,12 @@
                     <span class="m-label">Actividad Total</span>
                     <span class="m-value">{{ $stats['total'] }}</span>
                 </div>
-                
                 {{-- Comentarios --}}
                 <div class="metric-pill comentario filter-pill {{ request('tipo_evento') == 'comentario' ? 'active' : '' }}" onclick="setTypeFilter('comentario')">
                     <span class="m-dot dot-comentario"></span>
                     <span class="m-label">Feedback & Notas</span>
                     <span class="m-value">{{ $stats['comments'] }}</span>
                 </div>
-
                 {{-- Historial --}}
                 <div class="metric-pill historial filter-pill {{ request('tipo_evento') == 'historial' ? 'active' : '' }}" onclick="setTypeFilter('historial')">
                     <span class="m-dot dot-historial"></span>
@@ -64,7 +57,7 @@
                 <span class="insight-badge">Interactúa con las gráficas para filtrar</span>
             </div>
             
-            {{-- Gráfica 1: Distribución de Eventos --}}
+            {{-- Gráfica 1: Distribución --}}
             <div class="insight-card chart-container-wrapper">
                 <div class="card-head">
                     <h3>Distribución</h3>
@@ -88,11 +81,107 @@
             </div>
         </div>
 
+        {{-- ================================================================================= --}}
+        {{-- NUEVA SECCIÓN: MATRIZ DE INDICADORES DE GESTIÓN TIC (Integrada al estilo visual) --}}
+        {{-- ================================================================================= --}}
+        <div class="insight-card" style="margin-bottom: 40px; padding: 0; overflow: hidden; border: 1px solid var(--border-color);">
+            <div class="card-head" style="padding: 20px 24px; border-bottom: 1px solid var(--border-color); background: #fafafa;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h3 style="margin:0; font-size: 1.1rem;">Matriz de Indicadores de Gestión TIC</h3>
+                        <p style="margin: 4px 0 0 0; font-size: 0.85rem; color: var(--text-muted);">Cumplimiento de SLAs y metas estratégicas (Tiempo Real)</p>
+                    </div>
+                    <div class="insight-badge" style="background: white; border: 1px solid var(--border-color);">
+                        <i class="fas fa-server"></i> KPIs Activos
+                    </div>
+                </div>
+            </div>
+            
+            <div style="overflow-x: auto;">
+                <table class="tic-audit-table">
+                    <thead>
+                        <tr>
+                            <th width="30%">Indicador</th>
+                            <th width="20%">Fórmula</th>
+                            <th width="10%">Meta</th>
+                            <th width="10%">Freq.</th>
+                            <th width="30%">Estado Actual</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="fw-bold">Incidentes resueltos en tiempo</td>
+                            <td class="code-cell">(Resueltos / Total) × 100</td>
+                            <td>≥ 90%</td>
+                            <td>Mensual</td>
+                            <td>
+                                <div class="kpi-flex {{ ($kpiResolucion ?? 0) >= 90 ? 'text-ok' : 'text-warn' }}">
+                                    <span class="kpi-val">{{ $kpiResolucion ?? 0 }}%</span>
+                                    <span class="status-pill pill-live">Automático</span>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Tiempo respuesta (Alta / Media / Baja)</td>
+                            <td class="code-cell">Promedio Horas</td>
+                            <td>SLA Var.</td>
+                            <td>Mensual</td>
+                            <td>
+                                <div style="display: flex; gap: 8px;">
+                                    <span class="sla-badge {{ ($kpiTiempoAlta ?? 0) <= 6 ? 'sla-ok' : 'sla-bad' }}" title="Meta: <= 6h">
+                                        Alta: {{ $kpiTiempoAlta ?? 0 }}h
+                                    </span>
+                                    <span class="sla-badge {{ ($kpiTiempoMedia ?? 0) <= 48 ? 'sla-ok' : 'sla-bad' }}" title="Meta: <= 48h">
+                                        Med: {{ $kpiTiempoMedia ?? 0 }}h
+                                    </span>
+                                    <span class="sla-badge {{ ($kpiTiempoBaja ?? 0) <= 120 ? 'sla-ok' : 'sla-bad' }}" title="Meta: <= 120h">
+                                        Baj: {{ $kpiTiempoBaja ?? 0 }}h
+                                    </span>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Digitalización de procesos</td>
+                            <td class="code-cell">(Digital / Clave) × 100</td>
+                            <td>≥ 75%</td>
+                            <td>Anual</td>
+                            <td>
+                                <div class="kpi-flex {{ ($kpiDigitalizacion ?? 0) >= 75 ? 'text-ok' : 'text-warn' }}">
+                                    <span class="kpi-val">{{ $kpiDigitalizacion ?? 0 }}%</span>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="fw-bold">Uso de herramientas colaborativas</td>
+                            <td class="code-cell">(Activos / Total) × 100</td>
+                            <td>≥ 80%</td>
+                            <td>Mensual</td>
+                            <td>
+                                <div class="kpi-flex {{ ($kpiColaboracion ?? 0) >= 80 ? 'text-ok' : 'text-warn' }}">
+                                    <span class="kpi-val">{{ $kpiColaboracion ?? 0 }}%</span>
+                                    <span class="status-pill pill-gray">Usuarios</span>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr style="background: #fdfdfd;">
+                            <td>Nivel de satisfacción / Hardware</td>
+                            <td class="code-cell">Encuesta / Inventario</td>
+                            <td>Var.</td>
+                            <td>Sem.</td>
+                            <td>
+                                <span class="status-pill pill-gray" style="font-weight: 500;">Datos Pendientes (Manual)</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         {{-- Toolbar con Buscador y Filtros Avanzados --}}
         <div class="toolbar-area">
             <div class="search-and-filter-wrapper">
                 <form action="{{ route('flujo.auditoria.index') }}" method="GET" class="neo-search-form" id="main-search-form">
-                    {{-- Inputs Ocultos controlados por JS/Gráficas --}}
+                    {{-- Inputs Ocultos --}}
                     <input type="hidden" name="tipo_evento" id="hidden-type" value="{{ request('tipo_evento') }}">
                     <input type="hidden" name="user_id" id="hidden-user" value="{{ request('user_id') }}">
                     <input type="hidden" name="workflow_id" id="hidden-workflow" value="{{ request('workflow_id') }}">
@@ -125,7 +214,6 @@
                         </button>
                     </div>
                     <div class="accordion-container">
-                        
                         {{-- Filtro: Usuario --}}
                         <div class="acc-item active">
                             <div class="acc-header"><span>Usuario</span><i class="fas fa-chevron-down"></i></div>
@@ -138,7 +226,6 @@
                                 </select>
                             </div>
                         </div>
-
                         {{-- Filtro: Proyecto --}}
                         <div class="acc-item active">
                             <div class="acc-header"><span>Proyecto</span><i class="fas fa-chevron-down"></i></div>
@@ -151,7 +238,6 @@
                                 </select>
                             </div>
                         </div>
-
                     </div>
                     <div class="popover-footer">
                         <button type="button" class="btn-reset-filters" id="reset-filters">
@@ -163,7 +249,6 @@
                     </div>
                 </div>
 
-                {{-- Indicador de búsqueda activa --}}
                 @if(request()->anyFilled(['search', 'user_id', 'workflow_id', 'tipo_evento']))
                     <div class="search-indicator">
                         <div class="search-info">
@@ -178,12 +263,11 @@
             </div>
         </div>
 
-        {{-- Timeline Minimalista (Lista de Resultados) --}}
+        {{-- Timeline Minimalista --}}
         <div class="timeline-clean">
             @forelse($events as $index => $event)
                 <div class="t-row {{ $event->tipo_evento == 'historial' ? 'type-historial' : 'type-comentario' }}" style="animation-delay: {{ $index * 0.05 }}s">
                     <div class="t-dot"></div>
-                    
                     <div class="t-card-neo">
                         <div class="t-head">
                             <div class="user-info">
@@ -192,18 +276,13 @@
                                 </div>
                                 <div class="meta-text">
                                     <span class="u-name">{{ $event->user->name ?? 'Sistema' }}</span>
-                                    
-                                    {{-- CONTEXTO: PROYECTO > TAREA --}}
                                     <div class="u-context">
                                         @if($event->tipo_evento === 'comentario') comentó @else actualizó @endif en:
-                                        
                                         <a href="{{ route('flujo.workflows.show', $event->task->workflow_id ?? 0) }}" class="project-badge">
                                             <i class="fas fa-folder-open" style="font-size: 0.7rem;"></i>
                                             {{ Str::limit($event->task->workflow->nombre ?? 'Sin Proyecto', 20) }}
                                         </a>
-                                        
                                         <i class="fas fa-chevron-right" style="font-size: 0.6rem; color:#cbd5e1;"></i>
-                                        
                                         <span class="task-link">
                                             {{ Str::limit($event->task->titulo ?? 'Tarea eliminada', 30) }}
                                         </span>
@@ -219,30 +298,21 @@
                         @if($event->tipo_evento === 'comentario')
                             <div class="content-comment">
                                 {!! nl2br(e($event->comentario)) !!}
-                                
-                                {{-- LÓGICA DE SOPORTE INTEGRADA --}}
                                 @if($event->soporte)
                                     <div style="margin-top: 15px;">
-                                        {{-- 1. Si es Imagen --}}
                                         @if($event->es_imagen)
-                                            <a href="{{ $event->soporte_url }}" target="_blank" class="media-preview" title="Clic para ampliar imagen">
+                                            <a href="{{ $event->soporte_url }}" target="_blank" class="media-preview">
                                                 <img src="{{ $event->soporte_url }}" alt="Soporte visual">
-                                                <div class="media-overlay">
-                                                    <i class="fas fa-search-plus"></i> Ver Imagen
-                                                </div>
+                                                <div class="media-overlay"><i class="fas fa-search-plus"></i> Ver Imagen</div>
                                             </a>
-                                        
-                                        {{-- 2. Si es Documento --}}
                                         @else
                                             <a href="{{ $event->soporte_url }}" target="_blank" class="attach-chip">
-                                                <i class="fas fa-paperclip"></i> 
-                                                <span>Ver Archivo Adjunto</span>
+                                                <i class="fas fa-paperclip"></i> <span>Ver Archivo Adjunto</span>
                                             </a>
                                         @endif
                                     </div>
                                 @endif
                             </div>
-
                         @elseif($event->tipo_evento === 'historial')
                             <div class="status-flow">
                                 <span class="pill-status ps-old">{{ str_replace('_', ' ', $event->estado_anterior) }}</span>
@@ -291,7 +361,7 @@
         .header-pretitle { font-size: 10px; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.1em; }
         .subtitle { color: var(--text-muted); font-size: 0.95rem; margin-top: 5px; }
 
-        /* --- Actions Group (New!) --- */
+        /* --- Actions Group --- */
         .header-actions-group {
             display: flex; align-items: center; background: white; padding: 6px; border-radius: 14px;
             border: 1px solid #e2e8f0; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03); gap: 4px;
@@ -301,16 +371,13 @@
             text-decoration: none; font-size: 0.85rem; font-weight: 600; color: #475569;
             transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
         }
-        /* Botón PDF */
         .btn-pdf .icon-wrapper {
             display: flex; align-items: center; justify-content: center; width: 24px; height: 24px;
             background-color: #fef2f2; border-radius: 6px; color: #ef4444; font-size: 0.8rem; transition: 0.2s;
         }
         .btn-pdf:hover { background-color: #f8fafc; color: #0f172a; }
         .btn-pdf:hover .icon-wrapper { background-color: #ef4444; color: white; transform: scale(1.1); }
-        /* Botón Back */
         .btn-back:hover { background-color: #f1f5f9; color: #0f172a; transform: translateX(-2px); }
-        /* Separador */
         .v-separator { width: 1px; height: 20px; background-color: #e2e8f0; margin: 0 4px; }
 
         /* --- Métricas (Pills) --- */
@@ -330,7 +397,7 @@
         .dot-comentario { background: #3b82f6; } 
         .dot-historial { background: #f59e0b; }
 
-        /* --- Charts Section --- */
+        /* --- Charts & Matrix Section --- */
         .insights-section { display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 40px; }
         .insights-header { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
         .insights-header h2 { font-family: 'Outfit'; font-size: 1.3rem; font-weight: 700; margin: 0; }
@@ -343,6 +410,30 @@
         .chart-container { height: 200px; width: 100%; position: relative; }
         .card-head h3 { margin: 0 0 5px 0; font-size: 1rem; font-weight: 700; }
         .chart-subtitle { margin: 0 0 15px 0; font-size: 0.8rem; color: var(--text-muted); }
+
+        /* --- STYLES MATRIZ TIC (NEW) --- */
+        .tic-audit-table { width: 100%; border-collapse: collapse; min-width: 800px; font-family: 'Inter', sans-serif; }
+        .tic-audit-table th { 
+            text-align: left; padding: 14px 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; 
+            color: #64748b; border-bottom: 1px solid #e2e8f0; letter-spacing: 0.03em;
+        }
+        .tic-audit-table td { padding: 16px 20px; border-bottom: 1px solid #f8fafc; font-size: 0.9rem; color: #334155; vertical-align: middle; }
+        .tic-audit-table tr:hover td { background-color: #fcfcfd; }
+        
+        .code-cell { font-family: 'Menlo', 'Monaco', monospace; font-size: 0.75rem; color: #64748b; background: #f1f5f9; padding: 4px 8px; border-radius: 6px; }
+        .fw-bold { font-weight: 600; color: #0f172a; }
+        
+        .kpi-flex { display: flex; align-items: center; gap: 10px; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1rem; }
+        .text-ok { color: #10b981; }
+        .text-warn { color: #f59e0b; }
+        
+        .status-pill { font-size: 0.65rem; padding: 3px 8px; border-radius: 99px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.02em; }
+        .pill-live { background: #ecfdf5; color: #059669; border: 1px solid #d1fae5; }
+        .pill-gray { background: #f1f5f9; color: #94a3b8; border: 1px solid #e2e8f0; }
+
+        .sla-badge { display: inline-flex; font-size: 0.75rem; padding: 4px 8px; border-radius: 6px; font-weight: 600; border: 1px solid transparent; }
+        .sla-ok { background: #f0fdf4; color: #15803d; border-color: #bbf7d0; }
+        .sla-bad { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
 
         /* --- Toolbar & Filters --- */
         .toolbar-area { position: sticky; top: 10px; z-index: 90; margin-bottom: 40px; }
@@ -404,8 +495,6 @@
             position: relative; background: #fafafa; padding: 15px 20px; border-radius: 12px; 
             color: #334155; line-height: 1.6; font-size: 0.95rem; margin-left: 52px; border-left: 3px solid var(--c-accent);
         }
-        
-        /* ESTILOS NUEVOS PARA SOPORTES */
         .attach-chip { 
             display: inline-flex; align-items: center; gap: 8px; 
             background: white; border: 1px solid #e2e8f0; padding: 8px 16px; border-radius: 8px;

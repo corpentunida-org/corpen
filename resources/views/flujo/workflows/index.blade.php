@@ -1,10 +1,12 @@
 <x-base-layout>
-    {{-- 1. Librería Tom Select (CSS) --}}
+    {{-- 1. Librerías Externas --}}
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 
-    {{-- Cálculo de seguridad inicial con búsqueda por palabras --}}
+    {{-- Lógica PHP --}}
     @php
-        // DEFINICIÓN DE ETIQUETAS DE ESTADO (Nueva estructura)
+        // Etiquetas semánticas
         $estadoLabels = [
             'borrador'   => 'Inicialización',
             'activo'     => 'Ejecución',
@@ -13,1377 +15,738 @@
             'archivado'  => 'Rechazado'
         ];
 
-        // Búsqueda por palabras clave
-        $searchWords = [];
-        if (request()->filled('search')) {
-            $searchWords = array_filter(explode(' ', request('search')));
-        }
+        // Lógica de búsqueda y Pestaña Activa
+        $searchWords = request()->filled('search') ? array_filter(explode(' ', request('search'))) : [];
         
-        // Consulta base con búsqueda por palabras
-        $workflowQuery = App\Models\Flujo\Workflow::with('asignado');
-        
-        // Aplicar búsqueda por cada palabra
+        // Detectar filtros activos
+        $hasActiveFilters = request()->filled('search') || request()->filled('page') || request()->filled('estado') || request()->filled('condicion') || request()->filled('asignado_a');
+        $activeTab = $hasActiveFilters ? 'gestion' : 'dashboard';
+
+        // Consulta Base
+        $query = App\Models\Flujo\Workflow::with('asignado');
+
+        // 1. Filtro por Palabras
         if (!empty($searchWords)) {
-            $workflowQuery->where(function($query) use ($searchWords) {
+            $query->where(function($q) use ($searchWords) {
                 foreach ($searchWords as $word) {
-                    $query->orWhere('nombre', 'LIKE', '%' . $word . '%')
-                          ->orWhere('descripcion', 'LIKE', '%' . $word . '%');
+                    $q->orWhere('nombre', 'LIKE', '%' . $word . '%')
+                      ->orWhere('descripcion', 'LIKE', '%' . $word . '%');
                 }
             });
         }
-        
-        // Aplicar filtros adicionales
-        if (request()->filled('estado')) {
-            $workflowQuery->where('estado', request('estado'));
+
+        // 2. Filtros Estándar
+        if (request()->filled('estado')) $query->where('estado', request('estado'));
+        if (request()->filled('prioridad')) $query->where('prioridad', request('prioridad'));
+        if (request()->filled('asignado_a')) $query->where('asignado_a', request('asignado_a'));
+
+        // 3. Filtro Especial de Condición
+        if (request('condicion') == 'atrasado') {
+            $query->where('fecha_fin', '<', now())->where('estado', '!=', 'completado');
+        } elseif (request('condicion') == 'a_tiempo') {
+            $query->where('fecha_fin', '>=', now())->where('estado', '!=', 'completado');
         }
-        if (request()->filled('prioridad')) {
-            $workflowQuery->where('prioridad', request('prioridad'));
-        }
-        if (request()->filled('asignado_a')) {
-            $workflowQuery->where('asignado_a', request('asignado_a'));
-        }
-        
-        // Obtener resultados
-        $workflows = $workflowQuery->orderBy('created_at', 'desc')->paginate(10);
-        
-        // Conteos para métricas
-        $counts = App\Models\Flujo\Workflow::selectRaw('estado, count(*) as total')->groupBy('estado')->pluck('total', 'estado');
-        $total = $counts->sum();
-        $users = App\Models\User::orderBy('name')->get();
-        
-        // Datos para gráficos - Dinámicos según filtros
-        $baseQuery = App\Models\Flujo\Workflow::query();
-        
-        // Aplicar mismos filtros a las gráficas
-        if (!empty($searchWords)) {
-            $baseQuery->where(function($query) use ($searchWords) {
-                foreach ($searchWords as $word) {
-                    $query->orWhere('nombre', 'LIKE', '%' . $word . '%')
-                          ->orWhere('descripcion', 'LIKE', '%' . $word . '%');
-                }
-            });
-        }
-        if (request()->filled('estado')) {
-            $baseQuery->where('estado', request('estado'));
-        }
-        if (request()->filled('prioridad')) {
-            $baseQuery->where('prioridad', request('prioridad'));
-        }
-        if (request()->filled('asignado_a')) {
-            $baseQuery->where('asignado_a', request('asignado_a'));
-        }
-        
-        // Datos de cumplimiento filtrados
+
+        // Resultados Paginados
+        $workflows = $query->orderBy('created_at', 'desc')->paginate(10);
+
+        // --- DATOS PARA DASHBOARD ---
+        $rawCounts = App\Models\Flujo\Workflow::selectRaw('estado, count(*) as total')->groupBy('estado')->pluck('total', 'estado');
+        $total = $rawCounts->sum();
+
+        // Datos Gráficas
+        $baseMetrics = App\Models\Flujo\Workflow::query();
         $cumplimiento = [
-            'a_tiempo' => (clone $baseQuery)->where('fecha_fin', '>=', now())->where('estado', '!=', 'completado')->count(),
-            'atrasados' => (clone $baseQuery)->where('fecha_fin', '<', now())->where('estado', '!=', 'completado')->count(),
-            'completados' => (clone $baseQuery)->where('estado', 'completado')->count(),
+            'a_tiempo' => (clone $baseMetrics)->where('fecha_fin', '>=', now())->where('estado', '!=', 'completado')->count(),
+            'atrasado' => (clone $baseMetrics)->where('fecha_fin', '<', now())->where('estado', '!=', 'completado')->count(),
+            'completado' => (clone $baseMetrics)->where('estado', 'completado')->count(),
         ];
-        
-        // Datos de carga por líder filtrados
-        $leadersData = (clone $baseQuery)->with('asignado')
+
+        $leadersData = (clone $baseMetrics)->with('asignado')
             ->select('asignado_a', DB::raw('count(*) as total'))
             ->whereNotNull('asignado_a')
             ->groupBy('asignado_a')
             ->get();
             
-        // Datos de estados filtrados
-        $filteredCounts = (clone $baseQuery)->selectRaw('estado, count(*) as total')->groupBy('estado')->pluck('total', 'estado');
+        $users = App\Models\User::orderBy('name')->get();
     @endphp
 
-    <div class="app-container" id="workflows-container">
-        {{-- Header Ejecutivo --}}
+    <div class="app-container">
+        
+        {{-- BREADCRUMBS --}}
+        <nav class="breadcrumbs">
+            <a href="#" class="crumb-link">Inicio</a>
+            <span class="crumb-separator">/</span>
+            <span class="crumb-current">Workflows</span>
+        </nav>
+
+        {{-- HEADER PRINCIPAL --}}
         <header class="main-header">
-            <div class="header-info">
-                <div class="header-pretitle">Operational Control</div>
-                <h1 class="text-title">Workflows</h1>
-                <p class="subtitle">Supervisión estratégica de flujos y procesos</p>
+            <div class="header-content">
+                <h1 class="page-title">Centro de Control de Flujos</h1>
+                <p class="page-subtitle">Visión estratégica y gestión operativa de proyectos.</p>
             </div>
             <div class="header-actions">
-                <a href="{{ route('flujo.tablero') }}" class="btn-neo-ghost d-none-mobile">
-                    <i class="fas fa-th-large"></i>
-                    <span>Tablero</span>
-                </a>
-                <a href="{{ route('flujo.workflows.create') }}" class="btn-neo-primary">
-                    <i class="fas fa-plus"></i> <span class="d-none-mobile">Crear Proyecto</span>
+                <a href="{{ route('flujo.workflows.create') }}" class="btn-primary-neo">
+                    <i class="fas fa-plus"></i> <span>Nuevo Proyecto</span>
                 </a>
             </div>
         </header>
 
-        {{-- Dashboard de Estados --}}
-        <div class="metrics-grid-wrapper">
-            <div class="metrics-grid">
-                <div class="metric-pill total filter-pill {{ !request('estado') ? 'active' : '' }}" data-status="">
-                    <span class="m-label">Todos</span>
-                    <span class="m-value">{{ $total }}</span>
+        {{-- MENÚ HORIZONTAL (TABS) --}}
+        <div class="tabs-header">
+            <button class="tab-btn {{ $activeTab === 'dashboard' ? 'active' : '' }}" onclick="switchTab('dashboard')">
+                <i class="fas fa-chart-pie"></i>
+                <span>Tablero de Mando</span>
+            </button>
+            <button class="tab-btn {{ $activeTab === 'gestion' ? 'active' : '' }}" onclick="switchTab('gestion')">
+                <i class="fas fa-tasks"></i>
+                <span>Listado y Gestión</span>
+                @if($total > 0)
+                    <span class="tab-badge">{{ $total }}</span>
+                @endif
+            </button>
+            {{-- NUEVO BOTÓN AGREGADO --}}
+            <button class="tab-btn" onclick="switchTab('cronograma')">
+                <i class="fas fa-hourglass-half"></i>
+                <span>Cronograma de Tiempos</span>
+            </button>
+        </div>
+
+        {{-- VISTA 1: DASHBOARD --}}
+        <div id="view-dashboard" class="tab-content {{ $activeTab === 'dashboard' ? 'active' : '' }}">
+            
+            <div class="section-title">
+                <h3>Indicadores Clave</h3>
+            </div>
+
+            {{-- KPI STRIP (DISEÑO HORIZONTAL) --}}
+            <div class="kpi-strip">
+                {{-- 1. Total (Limpia filtros) --}}
+                <div class="kpi-box total clickable" onclick="resetFilters()">
+                    <div class="kpi-inner">
+                        <span class="kpi-label">Total Proyectos</span>
+                        <span class="kpi-number">{{ $total }}</span>
+                    </div>
+                    <div class="kpi-decor"><i class="fas fa-layer-group"></i></div>
                 </div>
+
+                {{-- Tarjetas interactivas por estado --}}
                 @foreach(['borrador', 'activo', 'pausado', 'completado', 'archivado'] as $est)
-                <div class="metric-pill {{ $est }} filter-pill {{ request('estado') == $est ? 'active' : '' }}" data-status="{{ $est }}">
-                    <span class="m-dot dot-{{ $est }}"></span>
-                    {{-- USO DE LA NUEVA ETIQUETA --}}
-                    <span class="m-label">{{ $estadoLabels[$est] ?? ucfirst($est) }}</span>
-                    <span class="m-value">{{ $counts[$est] ?? 0 }}</span>
-                </div>
+                    @php
+                        $color = match($est) {
+                            'borrador' => '#94a3b8', // Gris
+                            'activo' => '#10b981',   // Verde
+                            'pausado' => '#f59e0b',  // Naranja
+                            'completado' => '#6366f1', // Indigo
+                            'archivado' => '#475569', // Slate
+                        };
+                        $label = match($est) {
+                            'borrador' => 'Inicialización',
+                            'activo' => 'Ejecución',
+                            'pausado' => 'En Cola',
+                            'completado' => 'Terminado',
+                            'archivado' => 'Rechazado',
+                        };
+                    @endphp
+                    <div class="kpi-box clickable" onclick="applyFilter('estado', '{{ $est }}')" style="border-top-color: {{ $color }};">
+                        <div class="kpi-inner">
+                            <span class="kpi-label" style="color: {{ $color }};">{{ $label }}</span>
+                            <span class="kpi-number">{{ $rawCounts[$est] ?? 0 }}</span>
+                        </div>
+                    </div>
                 @endforeach
             </div>
-        </div>
 
-        {{-- SECCIÓN DE INSIGHTS CON SELECTOR DINÁMICO --}}
-        <div class="insights-section">
-            <div class="insights-header">
-                <h2>Panel de Análisis</h2>
-                <div class="chart-view-selector">
-                    <label for="chart-view-select">Vista:</label>
-                    <select id="chart-view-select" class="chart-selector">
-                        <option value="global">Global</option>
-                        <option value="leader">Por Líder</option>
-                    </select>
-                </div>
+            {{-- GRÁFICAS --}}
+            <div class="section-title" style="margin-top: 30px;">
+                <h3>Análisis Gráfico</h3>
             </div>
             
-            {{-- Gráfica de Distribución --}}
-            <div class="insight-card chart-container-wrapper" data-chart="distribution">
-                <div class="card-head">
-                    <h3>Distribución</h3>
-                    <p class="chart-subtitle">Estados (Click para filtrar)</p>
-                    <div class="chart-legend-custom" id="distribution-legend"></div>
+            <div class="charts-grid">
+                {{-- 1. Distribución --}}
+                <div class="chart-box">
+                    <div class="chart-header">
+                        <h4>Distribución por Estado</h4>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="chartDistribution"></canvas>
+                    </div>
                 </div>
-                <div class="chart-container">
-                    <canvas id="statusChart"></canvas>
+
+                {{-- 2. Cumplimiento --}}
+                <div class="chart-box">
+                    <div class="chart-header">
+                        <h4>Cumplimiento (Vigencia vs Atrasos)</h4>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="chartCompliance"></canvas>
+                    </div>
                 </div>
-            </div>
-            
-            {{-- Gráfica de Cumplimiento --}}
-            <div class="insight-card chart-container-wrapper" data-chart="compliance">
-                <div class="card-head">
-                    <h3>Cumplimiento</h3>
-                    <p class="chart-subtitle">Vigencia vs Atrasos</p>
-                    <div class="chart-stats" id="compliance-stats"></div>
-                </div>
-                <div class="chart-container">
-                    <canvas id="complianceChart"></canvas>
-                </div>
-            </div>
-            
-            {{-- Gráfica de Carga de Trabajo --}}
-            <div class="insight-card chart-container-wrapper" data-chart="workload">
-                <div class="card-head">
-                    <h3>Carga de Trabajo</h3>
-                    <p class="chart-subtitle">Proyectos por Líder (Click para filtrar)</p>
-                    <div class="chart-stats" id="workload-stats"></div>
-                </div>
-                <div class="chart-container">
-                    <canvas id="workloadChart"></canvas>
+
+                {{-- 3. Carga --}}
+                <div class="chart-box">
+                    <div class="chart-header">
+                        <h4>Carga Operativa por Líder</h4>
+                    </div>
+                    <div class="chart-body">
+                        <canvas id="chartWorkload"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
 
-        {{-- Toolbar con Buscador Mejorado --}}
-        <div class="toolbar-area">
-            <div class="search-and-filter-wrapper">
-                <form action="{{ route('flujo.workflows.index') }}" method="GET" class="neo-search-form" id="main-search-form">
-                    <input type="hidden" name="estado" id="hidden-status" value="{{ request('estado') }}">
-                    <input type="hidden" name="prioridad" id="hidden-prio" value="{{ request('prioridad') }}">
-                    <input type="hidden" name="asignado_a" id="hidden-user" value="{{ request('asignado_a') }}">
+        {{-- VISTA 2: GESTIÓN --}}
+        <div id="view-gestion" class="tab-content {{ $activeTab === 'gestion' ? 'active' : '' }}">
+            
+            {{-- TOOLBAR --}}
+            <div class="toolbar-panel">
+                <form action="{{ route('flujo.workflows.index') }}" method="GET" id="main-filter-form" class="toolbar-form">
+                    <input type="hidden" name="estado" id="input-estado" value="{{ request('estado') }}">
+                    <input type="hidden" name="condicion" id="input-condicion" value="{{ request('condicion') }}">
+                    <input type="hidden" name="asignado_a" id="input-user" value="{{ request('asignado_a') }}">
                     
-                    <div class="search-inner">
-                        <div class="search-input-group">
-                            <i class="fas fa-search search-icon"></i>
-                            <input type="text" name="search" id="live-search" placeholder="Buscar por palabras clave..." value="{{ request('search') }}" autocomplete="off" />
-                            @if(request()->filled('search'))
-                                <button type="button" class="search-clear-btn" id="clear-search">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            @endif
-                        </div>
-                        <div class="v-divider"></div>
-                        <button type="button" class="btn-filter-toggle" id="advance-filter-trigger">
-                            <i class="fas fa-sliders-h"></i>
-                            <span class="d-none-mobile">Filtros</span>
-                            <span class="filter-badge" id="active-filters-count">0</span>
-                        </button>
-                    </div>
-                </form>
-
-                {{-- Popover de Filtros --}}
-                <div class="advanced-filter-popover" id="advanced-popover">
-                    <div class="popover-header">
-                        <div class="popover-title">Filtrado Avanzado</div>
-                        <button type="button" class="popover-close" id="close-popover">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    <div class="accordion-container">
-                        <div class="acc-item active">
-                            <div class="acc-header"><span>Prioridad</span><i class="fas fa-chevron-down"></i></div>
-                            <div class="acc-content">
-                                <div class="filter-options-grid">
-                                    <label class="custom-radio">
-                                        <input type="radio" name="prio_opt" value="" {{ !request('prioridad') ? 'checked' : '' }}>
-                                        <span class="radio-box">Todas</span>
-                                    </label>
-                                    @foreach(['baja', 'media', 'alta'] as $p)
-                                    <label class="custom-radio">
-                                        <input type="radio" name="prio_opt" value="{{ $p }}" {{ request('prioridad') == $p ? 'checked' : '' }}>
-                                        <span class="radio-box">{{ ucfirst($p) }}</span>
-                                    </label>
-                                    @endforeach
-                                    <label class="custom-radio">
-                                        <input type="radio" name="prio_opt" value="crítica" {{ request('prioridad') == 'crítica' ? 'checked' : '' }}>
-                                        <span class="radio-box danger">Crítica</span>
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="acc-item active">
-                            <div class="acc-header"><span>Responsable</span><i class="fas fa-chevron-down"></i></div>
-                            <div class="acc-content" style="overflow: visible;"> {{-- Importante para que el dropdown salga --}}
-                                {{-- 2. Select con placeholder para Tom Select --}}
-                                <select class="filter-select-neo" id="user-opt" placeholder="Buscar líder...">
-                                    <option value="">Todos los líderes</option>
-                                    @foreach($users as $user)
-                                        <option value="{{ $user->id }}" {{ request('asignado_a') == $user->id ? 'selected' : '' }}>{{ $user->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="popover-footer">
-                        <button type="button" class="btn-reset-filters" id="reset-filters">
-                            <i class="fas fa-undo"></i> Restablecer
-                        </button>
-                        <button type="button" class="btn-apply-filters" id="apply-advanced">
-                            <i class="fas fa-check"></i> Aplicar Filtros
-                        </button>
-                    </div>
-                </div>
-
-                {{-- Indicador de búsqueda activa --}}
-                @if(request()->filled('search'))
-                    <div class="search-indicator">
-                        <div class="search-info">
-                            <i class="fas fa-info-circle"></i>
-                            <span>Mostrando resultados para: 
-                                @foreach($searchWords as $word)
-                                    <strong>{{ $word }}</strong>{{ !$loop->last ? ', ' : '' }}
-                                @endforeach
-                            </span>
-                        </div>
-                        <a href="{{ route('flujo.workflows.index') }}" class="clear-all-filters">
-                            <i class="fas fa-times"></i> Limpiar búsqueda
-                        </a>
-                    </div>
-                @endif
-            </div>
-        </div>
-
-        {{-- Listado de Proyectos --}}
-        <div class="list-wrapper">
-            <div class="list-legend d-none-mobile">
-                <span class="leg-id">Ref.</span>
-                <span class="leg-project">Proyecto</span>
-                <span class="leg-status">Estado</span>
-                <span class="leg-priority">Prioridad</span>
-                <span class="leg-lead">Líder</span>
-                <span class="leg-progress">Salud Operativa</span>
-                <span class="leg-actions text-right">Acción</span>
-            </div>
-
-            @forelse($workflows as $workflow)
-                @php
-                    $isOverdue = $workflow->fecha_fin && $workflow->fecha_fin->isPast() && $workflow->estado !== 'completado';
-                    
-                    // Resaltar palabras de búsqueda
-                    $highlightedName = $workflow->nombre;
-                    $highlightedDesc = $workflow->descripcion ?? '';
-                    if (!empty($searchWords)) {
-                        foreach ($searchWords as $word) {
-                            $highlightedName = preg_replace('/(' . preg_quote($word, '/') . ')/i', '<mark>$1</mark>', $highlightedName);
-                            $highlightedDesc = preg_replace('/(' . preg_quote($word, '/') . ')/i', '<mark>$1</mark>', $highlightedDesc);
-                        }
-                    }
-                @endphp
-                <div class="project-card {{ $isOverdue ? 'overdue-alert' : '' }}">
-                    <div class="p-col-id d-none-mobile">
-                        <span class="id-tag">#{{ $workflow->id }}</span>
-                    </div>
-
-                    <div class="p-col-main">
-                        <div class="name-block">
-                            <a href="{{ route('flujo.workflows.show', $workflow) }}" class="project-name-link">{!! $highlightedName !!}</a>
-                        </div>
-                        <div class="date-sub">
-                             <i class="far fa-calendar-alt"></i> {{ $workflow->fecha_inicio?->format('d M') ?? '--' }} — {{ $workflow->fecha_fin?->format('d M, Y') ?? '--' }}
-                        </div>
-                        @if(!empty($searchWords) && !empty($workflow->descripcion))
-                            <div class="search-snippet d-none-mobile">
-                                {!! Str::limit($highlightedDesc, 100) !!}
-                            </div>
+                    <div class="search-group">
+                        <i class="fas fa-search"></i>
+                        <input type="text" name="search" value="{{ request('search') }}" placeholder="Buscar proyecto..." autocomplete="off">
+                        @if(request()->filled('search'))
+                            <a href="{{ route('flujo.workflows.index') }}" class="clear-search"><i class="fas fa-times"></i></a>
                         @endif
                     </div>
 
-                    <div class="p-col-status">
-                        <div class="status-pill-neo status-{{ $workflow->estado }}">
-                            {{-- USO DE LA NUEVA ETIQUETA --}}
-                            {{ $estadoLabels[$workflow->estado] ?? ucfirst($workflow->estado) }}
+                    <div class="filters-group">
+                        <div class="status-legend">
+                            @if(request('estado'))
+                                <span class="active-filter-badge">
+                                    Estado: {{ $estadoLabels[request('estado')] ?? request('estado') }}
+                                    <a href="#" onclick="applyFilter('estado', ''); return false;"><i class="fas fa-times"></i></a>
+                                </span>
+                            @endif
+                            @if(request('condicion'))
+                                <span class="active-filter-badge warning">
+                                    Filtro: {{ ucfirst(str_replace('_', ' ', request('condicion'))) }}
+                                    <a href="#" onclick="applyFilter('condicion', ''); return false;"><i class="fas fa-times"></i></a>
+                                </span>
+                            @endif
                         </div>
-                    </div>
 
-                    <div class="p-col-prio">
-                        <div class="prio-tag-neo prio-{{ strtolower($workflow->prioridad) }}">
-                            <span class="prio-indicator"></span> {{ ucfirst($workflow->prioridad) }}
+                        <div class="leader-select-wrapper">
+                            <select id="leader-select" onchange="applyFilter('user', this.value)" placeholder="Filtrar por Líder...">
+                                <option value="">Todos los líderes</option>
+                                @foreach($users as $u)
+                                    <option value="{{ $u->id }}" {{ request('asignado_a') == $u->id ? 'selected' : '' }}>{{ $u->name }}</option>
+                                @endforeach
+                            </select>
                         </div>
+                        
+                        <button type="button" class="btn-reset" onclick="resetFilters()">
+                            <i class="fas fa-undo"></i>
+                        </button>
                     </div>
+                </form>
+            </div>
 
-                    <div class="p-col-lead">
-                        <div class="lead-avatar-group">
-                            <div class="lead-avatar" title="{{ $workflow->asignado?->name ?? 'Sin asignar' }}">
-                                {{ substr($workflow->asignado?->name ?? 'S', 0, 1) }}
-                            </div>
-                            <span class="d-only-mobile lead-name">{{ $workflow->asignado?->name ?? 'Sin asignar' }}</span>
-                        </div>
-                    </div>
-
-                    <div class="p-col-progress">
-                        @php
-                            $progColor = $isOverdue ? '#ef4444' : match($workflow->estado) {
-                                'completado' => '#6366f1',
-                                'activo' => '#10b981',
-                                'pausado' => '#f59e0b',
-                                'archivado' => '#475569',
-                                default => '#94a3b8'
-                            };
-                            $progWidth = in_array($workflow->estado, ['completado', 'archivado']) ? '100%' : ($workflow->estado == 'activo' ? '65%' : '20%');
-                        @endphp
-                        <div class="progress-container-neo">
-                            <div class="progress-track">
-                                <div class="progress-fill" style="width: {{ $progWidth }}; background: {{ $progColor }};"></div>
-                            </div>
-                            <span class="progress-val">{{ $progWidth }}</span>
-                        </div>
-                    </div>
-
-                    <div class="p-col-actions">
-                        <div class="action-set">
-                            <a href="{{ route('flujo.workflows.show', $workflow) }}" class="act-btn">Ver <i class="fas fa-chevron-right"></i></a>
-                        </div>
-                    </div>
+            {{-- LISTADO --}}
+            <div class="projects-list">
+                <div class="list-header d-none-mobile">
+                    <div class="col-main">Proyecto</div>
+                    <div class="col-status">Estado</div>
+                    <div class="col-progress">Progreso Estimado</div>
+                    <div class="col-meta">Detalles</div>
+                    <div class="col-action"></div>
                 </div>
-            @empty
-                <div class="neo-empty-state">
-                    <div class="empty-art"><i class="fas fa-search"></i></div>
-                    <h3>No hay resultados</h3>
-                    <p>Intenta con otras palabras clave o ajusta los filtros</p>
-                </div>
-            @endforelse
+
+                @forelse($workflows as $wf)
+                    @php
+                        $isOverdue = $wf->fecha_fin && $wf->fecha_fin->isPast() && $wf->estado !== 'completado';
+                        
+                        $progColor = $isOverdue ? '#ef4444' : match($wf->estado) {
+                            'completado' => '#6366f1',
+                            'activo'     => '#10b981',
+                            'pausado'    => '#f59e0b',
+                            'archivado'  => '#475569',
+                            default      => '#94a3b8'
+                        };
+                        
+                        $progWidth = in_array($wf->estado, ['completado', 'archivado']) ? '100%' : ($wf->estado == 'activo' ? '65%' : '20%');
+                    @endphp
+
+                    <div class="project-row {{ $isOverdue ? 'row-overdue' : '' }}">
+                        <div class="col-main">
+                            <div class="row-title">
+                                <a href="{{ route('flujo.workflows.show', $wf) }}">{{ $wf->nombre }}</a>
+                                <span class="row-ref">#{{ $wf->id }}</span>
+                            </div>
+                            <div class="row-desc">
+                                {{ Str::limit($wf->descripcion, 80) }}
+                            </div>
+                        </div>
+
+                        <div class="col-status">
+                            <span class="badge-status {{ $wf->estado }}">
+                                {{ $estadoLabels[$wf->estado] ?? $wf->estado }}
+                            </span>
+                        </div>
+
+                        <div class="col-progress">
+                            <div class="progress-container-neo">
+                                <div class="progress-track">
+                                    <div class="progress-fill" style="width: {{ $progWidth }}; background: {{ $progColor }};"></div>
+                                </div>
+                                <span class="progress-val">{{ $progWidth }}</span>
+                            </div>
+                            @if($isOverdue)
+                                <span class="overdue-text">Vencido</span>
+                            @endif
+                        </div>
+
+                        <div class="col-meta">
+                            <div class="meta-item">
+                                <div class="mini-avatar" title="{{ $wf->asignado?->name ?? 'Sin asignar' }}">{{ substr($wf->asignado?->name ?? '?', 0, 1) }}</div>
+                                <span class="d-none-desktop">{{ $wf->asignado?->name ?? 'Sin Asignar' }}</span>
+                            </div>
+                            <div class="meta-item">
+                                <i class="far fa-calendar"></i> {{ $wf->fecha_fin?->format('d M') ?? '--' }}
+                            </div>
+                        </div>
+
+                        <div class="col-action">
+                            <a href="{{ route('flujo.workflows.show', $wf) }}" class="btn-icon">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                @empty
+                    <div class="empty-state-simple">
+                        <div class="empty-icon"><i class="fas fa-search"></i></div>
+                        <p>No se encontraron resultados para los filtros seleccionados.</p>
+                        <button onclick="resetFilters()" class="btn-text">Limpiar todo</button>
+                    </div>
+                @endforelse
+            </div>
+
+            <div class="pagination-wrapper">
+                {{ $workflows->appends(request()->query())->links() }}
+            </div>
         </div>
 
-        <div class="pagination-container">
-            {{ $workflows->links() }}
-        </div>
+        {{-- VISTA 3: CRONOGRAMA DE TIEMPOS (NUEVO) --}}
+        <div id="view-cronograma" class="tab-content">
+            <div class="section-title">
+                <h3>Seguimiento Temporal</h3>
+            </div>
+
+            {{-- Tabla estilo Excel para visualización rápida de fechas --}}
+            <div class="chart-box" style="padding: 0; overflow: hidden;">
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; min-width: 800px;">
+                        <thead>
+                            <tr style="background: #f8fafc; border-bottom: 2px solid var(--border); text-align: left;">
+                                <th style="padding: 15px 20px; font-size: 12px; font-weight: 700; color: var(--text-gray);">PROYECTO</th>
+                                <th style="padding: 15px 20px; font-size: 12px; font-weight: 700; color: var(--text-gray);">FECHA INICIO</th>
+                                <th style="padding: 15px 20px; font-size: 12px; font-weight: 700; color: var(--text-gray);">FECHA FINAL</th>
+                                <th style="padding: 15px 20px; font-size: 12px; font-weight: 700; color: var(--text-gray);">PROGRESO EST.</th>
+                                <th style="padding: 15px 20px; font-size: 12px; font-weight: 700; color: var(--text-gray);">ESTADO DE TIEMPO</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($workflows as $wf)
+                                @php
+                                    // Lógica de progreso visual (Misma que en gestión)
+                                    $progWidth = in_array($wf->estado, ['completado', 'archivado']) ? 100 : ($wf->estado == 'activo' ? 65 : 20);
+                                    $progColor = match($wf->estado) {
+                                        'completado' => '#10b981', // Verde
+                                        'archivado' => '#94a3b8',  // Gris
+                                        'activo' => '#4f46e5',     // Azul
+                                        default => '#f59e0b'       // Naranja
+                                    };
+
+                                    // LÓGICA DE TIEMPO SOLICITADA
+                                    $timeStatus = '';
+                                    $timeColor = '';
+                                    $timeIcon = '';
+
+                                    if ($wf->estado === 'completado') {
+                                        // CASO 1: YA TERMINÓ -> CUÁNDO LO TERMINÓ
+                                        $timeStatus = 'Finalizado hace ' . $wf->updated_at->diffForHumans(null, true);
+                                        $timeColor = '#10b981'; // Verde
+                                        $timeIcon = 'fa-check-circle';
+                                    } elseif ($wf->fecha_fin && $wf->fecha_fin->isPast() && $wf->estado !== 'archivado') {
+                                        // CASO 2: SE PASÓ DE LA FECHA -> TIEMPO DE RETRASO
+                                        $timeStatus = 'Vencido hace ' . $wf->fecha_fin->diffForHumans(null, true);
+                                        $timeColor = '#ef4444'; // Rojo
+                                        $timeIcon = 'fa-exclamation-circle';
+                                    } elseif ($wf->fecha_fin) {
+                                        // CASO 3: AÚN A TIEMPO -> CUÁNTO FALTA
+                                        $timeStatus = 'Vence en ' . $wf->fecha_fin->diffForHumans(null, true);
+                                        $timeColor = '#3b82f6'; // Azul
+                                        $timeIcon = 'fa-clock';
+                                    } else {
+                                        $timeStatus = 'Sin fecha límite';
+                                        $timeColor = '#94a3b8';
+                                        $timeIcon = 'fa-infinity';
+                                    }
+                                @endphp
+                                <tr style="border-bottom: 1px solid var(--border);">
+                                    <td style="padding: 15px 20px;">
+                                        <div style="font-weight: 600; color: var(--text-dark);">{{ $wf->nombre }}</div>
+                                        <div style="font-size: 11px; color: var(--text-gray);">{{ $estadoLabels[$wf->estado] ?? $wf->estado }}</div>
+                                    </td>
+                                    <td style="padding: 15px 20px; color: var(--text-gray); font-size: 13px;">
+                                        {{ $wf->fecha_inicio ? $wf->fecha_inicio->format('d M, Y') : '--' }}
+                                    </td>
+                                    <td style="padding: 15px 20px; color: var(--text-gray); font-size: 13px;">
+                                        {{ $wf->fecha_fin ? $wf->fecha_fin->format('d M, Y') : 'Indefinido' }}
+                                    </td>
+                                    <td style="padding: 15px 20px;">
+                                        <div style="display: flex; align-items: center; gap: 10px;">
+                                            <div style="flex: 1; height: 6px; background: #f1f5f9; border-radius: 4px; overflow: hidden; width: 80px;">
+                                                <div style="height: 100%; width: {{ $progWidth }}%; background: {{ $progColor }};"></div>
+                                            </div>
+                                            <span style="font-size: 12px; font-weight: 700; color: {{ $progColor }};">{{ $progWidth }}%</span>
+                                        </div>
+                                    </td>
+                                    <td style="padding: 15px 20px;">
+                                        <span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; background-color: {{ $timeColor }}15; color: {{ $timeColor }}; border: 1px solid {{ $timeColor }}30;">
+                                            <i class="fas {{ $timeIcon }}"></i>
+                                            {{ $timeStatus }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="5" style="padding: 40px; text-align: center; color: var(--text-gray);">
+                                        No hay proyectos para mostrar en el cronograma.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+                {{-- Paginación compartida --}}
+                <div class="pagination-wrapper" style="padding: 15px;">
+                    {{ $workflows->appends(request()->query())->links() }}
+                </div>
+            </div>
+        </div>        
     </div>
 
+    {{-- ESTILOS CSS --}}
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;800&display=swap');
-
         :root {
-            --primary: #4f46e5;
-            --primary-light: #eef2ff;
-            --bg-body: #f8fafc;
-            --card-bg: #ffffff;
-            --text-main: #0f172a;
-            --text-muted: #64748b;
-            --border-color: #e2e8f0;
-            --radius-md: 16px;
-            --radius-sm: 8px;
-            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --brand: #4f46e5;
+            --bg-page: #f8fafc;
+            --bg-card: #ffffff;
+            --text-dark: #0f172a;
+            --text-gray: #64748b;
+            --border: #e2e8f0;
+            --radius: 12px;
         }
 
-        body { background-color: var(--bg-body); color: var(--text-main); font-family: 'Inter', sans-serif; margin: 0; }
+        body { background: var(--bg-page); font-family: 'Inter', sans-serif; color: var(--text-dark); margin: 0; }
         .app-container { max-width: 1250px; margin: 20px auto; padding: 0 20px; }
 
-        /* --- Header --- */
-        .main-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-        .text-title { font-family: 'Outfit'; font-size: 2.2rem; font-weight: 800; letter-spacing: -0.02em; margin: 0; }
-        .header-pretitle { font-size: 10px; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.1em; }
+        /* HEADER & BREADCRUMBS */
+        .breadcrumbs { font-size: 13px; color: var(--text-gray); margin-bottom: 20px; display: flex; gap: 8px; }
+        .crumb-link { text-decoration: none; color: var(--text-gray); }
+        .crumb-current { font-weight: 600; color: var(--text-dark); }
+        
+        .main-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 25px; }
+        .page-title { font-size: 28px; font-weight: 800; margin: 0; font-family: 'Outfit', sans-serif; letter-spacing: -0.02em; }
+        .page-subtitle { margin: 5px 0 0; color: var(--text-gray); font-size: 14px; }
+        
+        .btn-primary-neo { background: var(--brand); color: white; padding: 10px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s; box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2); }
+        .btn-primary-neo:hover { background: #4338ca; transform: translateY(-1px); }
 
-        /* --- Métricas Superior --- */
-        .metrics-grid-wrapper { margin: 0 -20px 30px; padding: 0 20px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-        .metrics-grid-wrapper::-webkit-scrollbar { display: none; }
-        .metrics-grid { display: flex; gap: 12px; min-width: max-content; padding-bottom: 5px; }
-        .metric-pill { 
-            background: white; padding: 12px 18px; border-radius: var(--radius-md); border: 1px solid var(--border-color);
-            cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; gap: 4px; min-width: 120px;
-        }
-        .metric-pill.active { background: var(--primary); border-color: var(--primary); color: white; }
-        .metric-pill.active .m-label, .metric-pill.active .m-value { color: white; }
-        .m-label { font-size: 10px; font-weight: 600; text-transform: uppercase; color: var(--text-muted); }
-        .m-value { font-family: 'Outfit'; font-size: 1.3rem; font-weight: 700; }
-        .m-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
-        .dot-activo { background: #10b981; } .dot-pausado { background: #f59e0b; } .dot-borrador { background: #94a3b8; } .dot-completado { background: #6366f1; } .dot-archivado { background: #475569; }
+        /* TABS */
+        .tabs-container { border-bottom: 1px solid var(--border); margin-bottom: 30px; }
+        .tabs-header { display: flex; gap: 30px; }
+        .tab-btn { background: none; border: none; padding: 12px 0; font-size: 14px; font-weight: 600; color: var(--text-gray); cursor: pointer; border-bottom: 2px solid transparent; display: flex; align-items: center; gap: 8px; transition: 0.2s; }
+        .tab-btn:hover { color: var(--brand); }
+        .tab-btn.active { color: var(--brand); border-bottom-color: var(--brand); }
+        .tab-badge { background: #eff6ff; color: var(--brand); padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 700; }
+        .tab-content { display: none; animation: fadeIn 0.3s ease; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from{opacity:0;transform:translateY(5px);} to{opacity:1;transform:translateY(0);} }
 
-        /* --- Insights Sección con Selector --- */
-        .insights-section { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
-            gap: 20px; 
-            margin-bottom: 30px; 
+        /* --- NUEVO DISEÑO KPI HORIZONTAL (STRIP) --- */
+        .section-title { margin-bottom: 15px; }
+        .section-title h3 { font-size: 18px; font-weight: 700; margin: 0; }
+
+        .kpi-strip {
+            display: grid;
+            /* Aquí forzamos 6 columnas iguales para que abarque todo el horizontal */
+            grid-template-columns: repeat(6, 1fr);
+            gap: 12px;
+            margin-bottom: 30px;
         }
-        
-        .insights-header {
-            grid-column: 1 / -1;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        
-        .insights-header h2 {
-            font-family: 'Outfit';
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin: 0;
-            color: var(--text-main);
-        }
-        
-        .chart-view-selector {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .chart-view-selector label {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-muted);
-        }
-        
-        .chart-selector {
-            padding: 8px 12px;
-            border-radius: var(--radius-sm);
-            border: 1px solid var(--border-color);
+
+        .kpi-box {
             background: white;
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-main);
-            cursor: pointer;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            border-top: 3px solid transparent; /* Para el color superior */
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
             transition: all 0.2s ease;
-        }
-        
-        .chart-selector:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-        }
-        
-        .insight-card { 
-            background: white; 
-            border: 1px solid var(--border-color); 
-            border-radius: var(--radius-md); 
-            padding: 20px; 
-            transition: all 0.3s ease;
+            cursor: pointer;
             position: relative;
             overflow: hidden;
         }
-        
-        .insight-card:hover { 
-            border-color: var(--primary); 
-            box-shadow: 0 8px 15px rgba(0,0,0,0.05);
+
+        .kpi-box:hover {
             transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
         }
-        
-        .insight-card h3 { margin: 0; font-family: 'Outfit'; font-size: 16px; font-weight: 700; }
-        .insight-card p { margin: 2px 0 15px; font-size: 12px; color: var(--text-muted); }
-        .chart-container { height: 180px; position: relative; width: 100%; }
-        
-        /* --- Leyendas y Estadísticas Personalizadas --- */
-        .chart-legend-custom {
+
+        .kpi-inner {
             display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 10px;
+            flex-direction: column;
         }
-        
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
+
+        .kpi-label {
             font-size: 11px;
-            font-weight: 600;
-            color: var(--text-muted);
-        }
-        
-        .legend-color {
-            width: 10px;
-            height: 10px;
-            border-radius: 2px;
-        }
-        
-        .legend-value {
-            color: var(--text-main);
             font-weight: 700;
-        }
-        
-        .chart-stats {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 10px;
-            padding-top: 10px;
-            border-top: 1px solid #f1f5f9;
-        }
-        
-        .stat-item {
-            text-align: center;
-        }
-        
-        .stat-value {
-            font-family: 'Outfit';
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--text-main);
-            line-height: 1;
-        }
-        
-        .stat-label {
-            font-size: 10px;
-            color: var(--text-muted);
             text-transform: uppercase;
-            font-weight: 600;
-            margin-top: 2px;
-        }
-        
-        .stat-percentage {
-            font-size: 9px;
-            color: var(--text-muted);
-            opacity: 0.7;
-            font-weight: 500;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
         }
 
-        /* --- Toolbar Buscador --- */
-        .search-and-filter-wrapper { max-width: 550px; margin-bottom: 25px; position: relative; }
-        .search-inner { display: flex; align-items: stretch; background: white; border-radius: 14px; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm); overflow: hidden; height: 48px; }
-        .search-input-group { display: flex; align-items: center; flex: 1; padding: 0 15px; position: relative; }
-        .search-input-group input { border: none; padding: 10px; flex: 1; outline: none; font-size: 14px; background: transparent; width: 100%; }
-        .search-clear-btn {
-            background: none;
+        .kpi-number {
+            font-size: 22px;
+            font-weight: 800;
+            font-family: 'Outfit';
+            line-height: 1;
+            color: var(--text-dark);
+        }
+
+        /* Estilos específicos para la tarjeta TOTAL */
+        .kpi-box.total {
+            background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
             border: none;
-            color: var(--text-muted);
-            cursor: pointer;
-            padding: 5px;
-            margin-left: 5px;
-            border-radius: 50%;
-            transition: all 0.2s ease;
+            border-top: 3px solid #4f46e5;
         }
-        .search-clear-btn:hover {
-            background: rgba(0, 0, 0, 0.05);
-            color: var(--text-main);
-        }
-        .v-divider { width: 1px; background: #f1f5f9; margin: 10px 0; }
-        
-        /* --- BOTÓN DE FILTRO MEJORADO --- */
-        .btn-filter-toggle { 
-            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); 
-            border: none; 
-            padding: 0 20px; 
-            font-weight: 600; 
-            color: var(--text-main); 
-            cursor: pointer; 
-            display: flex; 
-            align-items: center; 
-            gap: 8px; 
-            font-size: 13px; 
-            position: relative;
-            transition: all 0.3s ease;
-            border-left: 1px solid var(--border-color);
-        }
-        
-        .btn-filter-toggle:hover {
-            background: linear-gradient(135deg, var(--primary-light) 0%, #e0e7ff 100%);
-            color: var(--primary);
-        }
-        
-        .btn-filter-toggle i {
-            font-size: 14px;
-            transition: transform 0.3s ease;
-        }
-        
-        .btn-filter-toggle:hover i {
-            transform: rotate(90deg);
-        }
-        
-        .btn-filter-toggle.active {
-            background: var(--primary);
+        .kpi-box.total .kpi-label { color: rgba(255,255,255,0.8); }
+        .kpi-box.total .kpi-number { color: white; }
+        .kpi-decor {
             color: white;
-        }
-        
-        .filter-badge {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 18px;
-            height: 18px;
-            background: var(--primary);
-            color: white;
-            border-radius: 50%;
-            font-size: 10px;
-            font-weight: 700;
-            margin-left: 4px;
-            opacity: 0;
-            transform: scale(0.8);
-            transition: all 0.3s ease;
-        }
-        
-        .btn-filter-toggle:hover .filter-badge,
-        .btn-filter-toggle.active .filter-badge {
-            opacity: 1;
-            transform: scale(1);
-        }
-        
-        .btn-filter-toggle.active .filter-badge {
-            background: white;
-            color: var(--primary);
+            opacity: 0.15;
+            font-size: 24px;
+            position: absolute;
+            right: 10px;
+            bottom: -5px;
         }
 
-        /* --- INDICADOR DE BÚSQUEDA --- */
-        .search-indicator {
-            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-            border: 1px solid #bae6fd;
-            border-radius: var(--radius-sm);
-            padding: 12px 16px;
-            margin-top: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 13px;
-        }
-        
-        .search-info {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: #0369a1;
-        }
-        
-        .search-info i {
-            color: #0284c7;
-        }
-        
-        .search-info strong {
-            background: white;
-            padding: 2px 6px;
-            border-radius: 4px;
-            margin: 0 2px;
-            font-weight: 600;
-        }
-        
-        .clear-all-filters {
-            color: #0369a1;
-            text-decoration: none;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            transition: all 0.2s ease;
-        }
-        
-        .clear-all-filters:hover {
-            color: #0c4a6e;
+        /* CHART GRID */
+        .charts-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
+        .chart-box { background: white; padding: 20px; border-radius: var(--radius); border: 1px solid var(--border); }
+        .chart-header { margin-bottom: 15px; font-weight: 700; font-size: 15px; }
+        .chart-body { height: 250px; position: relative; }
+
+        /* TOOLBAR */
+        .toolbar-panel { background: white; padding: 15px; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 20px; }
+        .toolbar-form { display: flex; flex-wrap: wrap; gap: 15px; justify-content: space-between; align-items: center; }
+        .search-group { background: #f1f5f9; border-radius: 8px; padding: 0 12px; height: 40px; display: flex; align-items: center; flex: 1; min-width: 200px; }
+        .search-group input { border: none; background: transparent; width: 100%; outline: none; font-size: 14px; margin-left: 8px; }
+        .search-group i { color: var(--text-gray); }
+        .clear-search { color: #ef4444; }
+        .filters-group { display: flex; gap: 10px; align-items: center; }
+        .active-filter-badge { background: #e0e7ff; color: var(--brand); padding: 5px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; display: flex; gap: 5px; align-items: center; }
+        .active-filter-badge.warning { background: #fee2e2; color: #b91c1c; }
+        .active-filter-badge a { color: inherit; text-decoration: none; opacity: 0.6; }
+        .btn-reset { width: 40px; height: 40px; border: 1px solid var(--border); background: white; border-radius: 8px; cursor: pointer; color: var(--text-gray); transition: 0.2s; }
+        .leader-select-wrapper { width: 220px; }
+        .ts-control { border-radius: 8px !important; border-color: var(--border) !important; height: 40px !important; display: flex !important; align-items: center !important; }
+
+        /* LISTADO */
+        .list-header { display: flex; padding: 0 20px 10px; font-size: 11px; font-weight: 700; color: var(--text-gray); text-transform: uppercase; letter-spacing: 0.5px; }
+        .project-row { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; display: flex; align-items: center; margin-bottom: 8px; transition: 0.2s; }
+        .project-row:hover { border-color: var(--brand); box-shadow: 0 4px 10px rgba(0,0,0,0.03); transform: translateY(-1px); }
+        .row-overdue { border-left: 4px solid #ef4444; }
+        .col-main { flex: 2; padding-right: 15px; }
+        .col-status { flex: 1; }
+        .col-progress { flex: 1.5; padding-right: 20px; }
+        .col-meta { flex: 1; display: flex; gap: 15px; align-items: center; font-size: 12px; color: var(--text-gray); }
+        .col-action { width: 40px; text-align: right; }
+        .row-title { margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+        .row-title a { font-weight: 700; color: var(--text-dark); text-decoration: none; font-size: 15px; }
+        .row-ref { background: #f1f5f9; font-size: 10px; padding: 2px 6px; border-radius: 4px; color: var(--text-gray); font-weight: 600; }
+        .row-desc { font-size: 13px; color: var(--text-gray); }
+        .progress-container-neo { display: flex; align-items: center; gap: 10px; width: 100%; }
+        .progress-track { flex: 1; height: 6px; background: #f1f5f9; border-radius: 10px; overflow: hidden; }
+        .progress-fill { height: 100%; border-radius: 10px; }
+        .progress-val { font-size: 12px; font-weight: 700; color: var(--text-gray); min-width: 35px; text-align: right; }
+        .overdue-text { font-size: 10px; color: #ef4444; font-weight: 700; display: block; margin-top: 4px; }
+        .badge-status { font-size: 10px; font-weight: 800; text-transform: uppercase; padding: 4px 10px; border-radius: 6px; }
+        .badge-status.borrador { background: #f1f5f9; color: #64748b; }
+        .badge-status.activo { background: #dcfce7; color: #16a34a; }
+        .badge-status.pausado { background: #ffedd5; color: #c2410c; }
+        .badge-status.completado { background: #e0e7ff; color: #4f46e5; }
+        .badge-status.archivado { background: #f1f5f9; color: #475569; }
+        .mini-avatar { width: 26px; height: 26px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: var(--brand); border: 1px solid var(--border); }
+        .btn-icon { color: var(--text-gray); transition: 0.2s; }
+        .btn-icon:hover { color: var(--brand); }
+        .btn-text { background: none; border: none; color: var(--brand); font-weight: 600; cursor: pointer; text-decoration: underline; margin-top: 10px; }
+        .empty-state-simple { text-align: center; padding: 40px; color: var(--text-gray); }
+        .empty-icon { font-size: 24px; margin-bottom: 10px; opacity: 0.5; }
+
+        @media (max-width: 1024px) {
+            /* En pantallas medianas, dividir en 2 filas de 3 */
+            .kpi-strip { grid-template-columns: repeat(3, 1fr); }
         }
 
-        /* --- POPOVER DE FILTROS MEJORADO --- */
-        .advanced-filter-popover { 
-            position: absolute; 
-            top: calc(100% + 10px); 
-            left: 0; 
-            width: 330px; 
-            background: white; 
-            border-radius: var(--radius-md); 
-            box-shadow: var(--shadow-xl); 
-            z-index: 1000; 
-            border: 1px solid var(--border-color); 
-            display: none; 
-            /* overflow: hidden;  <-- ELIMINADO para que el dropdown de Tom Select salga del popover si es necesario */
-            transform: translateY(-10px);
-            opacity: 0;
-            transition: all 0.3s ease;
-        }
-        
-        .advanced-filter-popover.show { 
-            display: block; 
-            animation: slideUp 0.3s ease-out forwards;
-        }
-        
-        .popover-header {
-            padding: 16px 20px;
-            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-radius: var(--radius-md) var(--radius-md) 0 0;
-        }
-        
-        .popover-title {
-            font-weight: 700;
-            font-size: 14px;
-            color: var(--text-main);
-        }
-        
-        .popover-close {
-            background: none;
-            border: none;
-            color: var(--text-muted);
-            cursor: pointer;
-            font-size: 14px;
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease;
-        }
-        
-        .popover-close:hover {
-            background: rgba(0, 0, 0, 0.05);
-            color: var(--text-main);
-        }
-        
-        .acc-header { 
-            padding: 14px 20px; 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            cursor: pointer; 
-            font-size: 13px; 
-            font-weight: 600;
-            transition: background-color 0.2s ease;
-        }
-        
-        .acc-header:hover {
-            background-color: rgba(79, 70, 229, 0.05);
-        }
-        
-        .acc-content { padding: 0 20px 15px; display: none; }
-        .acc-item.active .acc-content { display: block; }
-        .filter-options-grid { display: flex; flex-wrap: wrap; gap: 8px; }
-        .radio-box { 
-            display: inline-block; 
-            padding: 8px 14px; 
-            background: #f8fafc; 
-            border-radius: var(--radius-sm); 
-            font-size: 11px; 
-            font-weight: 600; 
-            cursor: pointer; 
-            border: 1px solid transparent;
-            transition: all 0.2s ease;
-        }
-        
-        .radio-box:hover {
-            background: var(--primary-light);
-            border-color: var(--primary);
-        }
-        
-        .custom-radio input { display: none; }
-        .custom-radio input:checked + .radio-box { 
-            background: var(--primary); 
-            border-color: var(--primary); 
-            color: white;
-            box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
-        }
-        
-        /* --- ESTILOS PERSONALIZADOS PARA TOM SELECT (Buscador en Filtro) --- */
-        .ts-wrapper { width: 100%; }
-        /* Hacemos que el input del buscador coincida con el tema del filtro (fondo gris claro) */
-        .ts-control {
-            border: 1px solid #ddd !important;
-            border-radius: var(--radius-sm) !important;
-            padding: 10px 12px !important;
-            font-size: 13px !important;
-            color: var(--text-main) !important;
-            background: #f9fafb !important; /* Fondo gris para coincidir con el diseño */
-            box-shadow: none !important;
-            min-height: auto !important;
-        }
-        /* Color cuando está seleccionado/enfocado */
-        .ts-control.focus {
-            border-color: var(--primary) !important;
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1) !important;
-        }
-        /* El menú desplegable */
-        .ts-dropdown {
-            border-radius: var(--radius-sm) !important;
-            border: 1px solid var(--border-color) !important;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1) !important;
-            margin-top: 5px !important;
-            overflow: hidden;
-            z-index: 1050 !important; /* Asegurar que quede por encima del popover */
-        }
-        .ts-dropdown .option { padding: 8px 12px; font-size: 13px; }
-        .ts-dropdown .active { background-color: var(--primary-light); color: var(--primary); font-weight: 600; }
-        
-        .popover-footer {
-            padding: 16px 20px;
-            background: #f8fafc;
-            border-top: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            gap: 10px;
-            border-radius: 0 0 var(--radius-md) var(--radius-md);
-        }
-        
-        .btn-reset-filters {
-            background: white;
-            border: 1px solid var(--border-color);
-            padding: 8px 16px;
-            border-radius: var(--radius-sm);
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-muted);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.2s ease;
-        }
-        
-        .btn-reset-filters:hover {
-            background: #f1f5f9;
-            color: var(--text-main);
-        }
-        
-        .btn-apply-filters {
-            background: var(--primary);
-            border: none;
-            padding: 8px 16px;
-            border-radius: var(--radius-sm);
-            font-size: 13px;
-            font-weight: 600;
-            color: white;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.2s ease;
-        }
-        
-        .btn-apply-filters:hover {
-            background: #4338ca;
-            transform: translateY(-1px);
-            box-shadow: var(--shadow-md);
-        }
-
-        /* --- Listado --- */
-        .list-legend { display: grid; grid-template-columns: 50px 2.5fr 1fr 1fr 120px 1.2fr 80px; padding: 0 20px 12px; font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
-        .project-card { display: grid; grid-template-columns: 50px 2.5fr 1fr 1fr 120px 1.2fr 80px; align-items: center; background: white; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 18px 20px; margin-bottom: 12px; transition: 0.2s; }
-        .project-card:hover { border-color: var(--primary); transform: translateY(-2px); }
-        .overdue-alert { border-left: 4px solid #ef4444; }
-        .project-name-link { font-weight: 700; color: var(--text-main); text-decoration: none; font-size: 15px; }
-        .date-sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
-        .search-snippet {
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-top: 6px;
-            line-height: 1.4;
-        }
-        mark {
-            background: #fef08a;
-            color: #713f12;
-            padding: 1px 3px;
-            border-radius: 3px;
-            font-weight: 600;
-        }
-        .status-pill-neo { font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 7px; width: fit-content; text-transform: uppercase; }
-        .status-activo { background: #dcfce7; color: #15803d; }
-        .status-pausado { background: #fef3c7; color: #b45309; }
-        .status-completado { background: #e0e7ff; color: #4338ca; }
-        .status-archivado { background: #f1f5f9; color: #475569; }
-
-        /* Barra de Progreso Restaurada */
-        .progress-container-neo { display: flex; align-items: center; gap: 10px; }
-        .progress-track { flex: 1; height: 7px; background: #f1f5f9; border-radius: 10px; overflow: hidden; }
-        .progress-fill { height: 100%; border-radius: 10px; transition: width 1s ease; }
-        .progress-val { font-size: 11px; font-weight: 700; color: var(--text-muted); min-width: 30px; }
-
-        .lead-avatar { width: 30px; height: 30px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: var(--primary); border: 1px solid #e2e8f0; }
-
-        /* --- Mobile Styles --- */
         @media (max-width: 900px) {
-            .insights-section { grid-template-columns: 1fr; }
-            .insights-header { flex-direction: column; align-items: flex-start; gap: 10px; }
-            .list-legend { display: none; }
-            .project-card { grid-template-columns: 1fr 1fr; gap: 15px; padding: 18px; }
-            .p-col-main { grid-column: span 2; }
-            .p-col-status { grid-column: span 1; }
-            .p-col-prio { grid-column: span 1; justify-self: end; }
-            .p-col-lead { grid-column: span 2; border-top: 1px solid #f1f5f9; padding-top: 10px; }
-            .p-col-progress { grid-column: span 2; }
-            .p-col-actions { grid-column: span 2; }
-            .advanced-filter-popover { position: fixed; top: auto; bottom: 10px; left: 10px; right: 10px; width: auto; }
-            .search-indicator { flex-direction: column; align-items: flex-start; gap: 8px; }
+            .charts-grid { grid-template-columns: 1fr; }
+            .toolbar-form { flex-direction: column; align-items: stretch; }
+            .list-header { display: none; }
+            .project-row { flex-direction: column; align-items: flex-start; gap: 15px; }
+            .col-main, .col-progress, .col-meta { width: 100%; padding: 0; }
+            .col-action { position: absolute; top: 15px; right: 15px; }
+            .d-none-desktop { display: inline; margin-left: 8px; }
         }
-
-        @keyframes slideUp { 
-            from { 
-                opacity: 0; 
-                transform: translateY(15px); 
-            } 
-            to { 
-                opacity: 1; 
-                transform: translateY(0); 
-            } 
+        
+        @media (max-width: 600px) {
+            /* En móvil, 2 columnas */
+            .kpi-strip { grid-template-columns: repeat(2, 1fr); }
         }
     </style>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    {{-- 3. Librería Tom Select JS --}}
-    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
-
     <script>
+        // --- 1. Control de Pestañas (ACTUALIZADO) ---
+        function switchTab(tabName) {
+            // Ocultar todos los contenidos
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            // Desactivar todos los botones
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            
+            // Activar el contenido seleccionado
+            const targetView = document.getElementById('view-' + tabName);
+            if(targetView) targetView.classList.add('active');
+            
+            // Activar el botón correspondiente (lógica por índice)
+            const btns = document.querySelectorAll('.tab-btn');
+            if(tabName === 'dashboard' && btns[0]) btns[0].classList.add('active');
+            if(tabName === 'gestion' && btns[1]) btns[1].classList.add('active');
+            if(tabName === 'cronograma' && btns[2]) btns[2].classList.add('active');
+        }
+
+        // --- 2. Lógica de Filtrado Interactivo ---
+        function applyFilter(type, value) {
+            if(type === 'estado') document.getElementById('input-estado').value = value;
+            if(type === 'condicion') document.getElementById('input-condicion').value = value;
+            if(type === 'user') document.getElementById('input-user').value = value;
+            
+            if(type === 'estado') document.getElementById('input-condicion').value = '';
+            if(type === 'condicion') document.getElementById('input-estado').value = '';
+
+            document.getElementById('main-filter-form').submit();
+        }
+
+        function resetFilters() {
+            document.getElementById('input-estado').value = '';
+            document.getElementById('input-condicion').value = '';
+            document.getElementById('input-user').value = '';
+            document.querySelector('input[name="search"]').value = '';
+            document.getElementById('main-filter-form').submit();
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
-            // --- INICIALIZAR TOM SELECT EN EL FILTRO ---
-            // Importante: create: false y dropdownParent: 'body' para que no se corte en el popover
-            let userSelect = new TomSelect('#user-opt', {
-                create: false,
-                sortField: { field: "text", direction: "asc" },
-                plugins: ['dropdown_input'],
-                dropdownParent: 'body' // Truco clave para popovers
-            });
-            
-            // Función Helper para aplicar filtros desde gráficas
-            function triggerFilter(type, value) {
-                if(!value) return;
-                
-                if(type === 'status') {
-                    document.getElementById('hidden-status').value = value;
-                } else if (type === 'user') {
-                    document.getElementById('hidden-user').value = value;
-                } else if (type === 'compliance') {
-                    // Mapeo simple para la demostración: si click en completado, filtra por estado completado
-                    if(value === 'completado') {
-                        document.getElementById('hidden-status').value = 'completado';
-                    }
-                    // Para 'atrasado' requeriría lógica extra, pero mantenemos la estructura
-                }
-                
-                document.getElementById('main-search-form').submit();
-            }
+            new TomSelect("#leader-select",{ create: false, sortField: { field: "text", direction: "asc" } });
 
-            // --- Datos dinámicos desde PHP ---
-            const globalData = {
-                status: {
-                    // USO DE LAS NUEVAS ETIQUETAS EN JS
-                    labels: ['Inicialización', 'Ejecución', 'En Cola', 'Terminado', 'Rechazado'],
-                    keys: ['borrador', 'activo', 'pausado', 'completado', 'archivado'], // IDs para filtrar
-                    data: [{{ $counts['borrador'] ?? 0 }}, {{ $counts['activo'] ?? 0 }}, {{ $counts['pausado'] ?? 0 }}, {{ $counts['completado'] ?? 0 }}, {{ $counts['archivado'] ?? 0 }}],
-                    colors: ['#94a3b8', '#10b981', '#f59e0b', '#6366f1', '#475569']
-                },
-                compliance: {
-                    labels: ['A Tiempo', 'Atrasados', 'Hechos'],
-                    keys: ['a_tiempo', 'atrasado', 'completado'],
-                    data: [{{ $cumplimiento['a_tiempo'] }}, {{ $cumplimiento['atrasados'] }}, {{ $cumplimiento['completados'] }}],
-                    colors: ['#10b981', '#ef4444', '#6366f1']
-                },
-                workload: {
-                    labels: {!! json_encode($leadersData->map(fn($ld) => explode(' ', $ld->asignado->name)[0])) !!},
-                    ids: {!! json_encode($leadersData->pluck('asignado_a')) !!}, // IDs de usuarios para filtrar
-                    data: {!! json_encode($leadersData->pluck('total')) !!}
-                }
-            };
-            
-            const filteredData = {
-                status: {
-                    // USO DE LAS NUEVAS ETIQUETAS EN JS
-                    labels: ['Inicialización', 'Ejecución', 'En Cola', 'Terminado', 'Rechazado'],
-                    keys: ['borrador', 'activo', 'pausado', 'completado', 'archivado'],
-                    data: [{{ $filteredCounts['borrador'] ?? 0 }}, {{ $filteredCounts['activo'] ?? 0 }}, {{ $filteredCounts['pausado'] ?? 0 }}, {{ $filteredCounts['completado'] ?? 0 }}, {{ $filteredCounts['archivado'] ?? 0 }}],
-                    colors: ['#94a3b8', '#10b981', '#f59e0b', '#6366f1', '#475569']
-                },
-                compliance: {
-                    labels: ['A Tiempo', 'Atrasados', 'Hechos'],
-                    keys: ['a_tiempo', 'atrasado', 'completado'],
-                    data: [{{ $cumplimiento['a_tiempo'] }}, {{ $cumplimiento['atrasados'] }}, {{ $cumplimiento['completados'] }}],
-                    colors: ['#10b981', '#ef4444', '#6366f1']
-                },
-                workload: {
-                    labels: {!! json_encode($leadersData->map(fn($ld) => explode(' ', $ld->asignado->name)[0])) !!},
-                    ids: {!! json_encode($leadersData->pluck('asignado_a')) !!},
-                    data: {!! json_encode($leadersData->pluck('total')) !!}
-                }
-            };
-            
-            let currentView = 'global';
-            let currentData = currentView === 'global' ? globalData : filteredData;
-            let charts = {};
-
-            // --- Funciones para crear gráficas ---
-            function createDoughnutChart(ctx, data, legendId, filterType) {
-                const total = data.data.reduce((a, b) => a + b, 0);
-                const percentages = data.data.map(value => total > 0 ? ((value / total) * 100).toFixed(1) : '0.0');
-                
-                // Crear leyenda personalizada
-                const legendContainer = document.getElementById(legendId);
-                legendContainer.innerHTML = '';
-                
-                data.labels.forEach((label, index) => {
-                    const legendItem = document.createElement('div');
-                    legendItem.className = 'legend-item';
-                    legendItem.innerHTML = `
-                        <div class="legend-color" style="background: ${data.colors[index]}"></div>
-                        <span>${label}</span>
-                        <span class="legend-value">${data.data[index]} (${percentages[index]}%)</span>
-                    `;
-                    legendContainer.appendChild(legendItem);
-                });
-                
-                return new Chart(ctx, {
+            // --- 3. Gráficas Interactivas ---
+            const ctxDist = document.getElementById('chartDistribution');
+            if(ctxDist) {
+                new Chart(ctxDist, {
                     type: 'doughnut',
                     data: {
-                        labels: data.labels,
+                        labels: {!! json_encode(array_values($estadoLabels)) !!},
+                        keys: {!! json_encode(array_keys($estadoLabels)) !!},
                         datasets: [{
-                            data: data.data,
-                            backgroundColor: data.colors,
-                            borderWidth: 0,
-                            cutout: '75%'
+                            data: [{{ $rawCounts['borrador']??0 }}, {{ $rawCounts['activo']??0 }}, {{ $rawCounts['pausado']??0 }}, {{ $rawCounts['completado']??0 }}, {{ $rawCounts['archivado']??0 }}],
+                            backgroundColor: ['#94a3b8', '#10b981', '#f59e0b', '#6366f1', '#475569'],
+                            borderWidth: 0
                         }]
                     },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        // CAMBIO: Cursor pointer al hacer hover
-                        onHover: (event, chartElement) => {
-                            event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
-                        },
-                        // CAMBIO: Evento Click para filtrar
+                    options: { 
+                        responsive: true, 
+                        maintainAspectRatio: false, 
+                        plugins: { legend: { position: 'right' } }, 
+                        cutout: '70%',
+                        onHover: (event, chartElement) => { event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default'; },
                         onClick: (evt, elements) => {
-                            if (elements.length > 0) {
+                            if(elements.length > 0) {
                                 const index = elements[0].index;
-                                // Obtenemos la key real (borrador, activo...) en lugar del label
-                                const filterValue = data.keys ? data.keys[index] : null;
-                                triggerFilter(filterType, filterValue);
-                            }
-                        },
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        const label = context.label || '';
-                                        const value = context.parsed || 0;
-                                        const percentage = percentages[context.dataIndex];
-                                        return `${label}: ${value} (${percentage}%)`;
-                                    }
-                                }
+                                const key = evt.chart.data.keys[index];
+                                applyFilter('estado', key);
                             }
                         }
                     }
                 });
             }
-            
-            function createBarChart(ctx, data, statsId, filterType) {
-                const total = data.data.reduce((a, b) => a + b, 0);
-                const percentages = data.data.map(value => total > 0 ? ((value / total) * 100).toFixed(1) : '0.0');
-                
-                // Crear estadísticas
-                const statsContainer = document.getElementById(statsId);
-                statsContainer.innerHTML = '';
-                
-                data.labels.forEach((label, index) => {
-                    const statItem = document.createElement('div');
-                    statItem.className = 'stat-item';
-                    statItem.innerHTML = `
-                        <div class="stat-value">${data.data[index]}</div>
-                        <div class="stat-label">${label}</div>
-                        <div class="stat-percentage">${percentages[index]}%</div>
-                    `;
-                    statsContainer.appendChild(statItem);
-                });
-                
-                return new Chart(ctx, {
+
+            const ctxComp = document.getElementById('chartCompliance');
+            if(ctxComp) {
+                new Chart(ctxComp, {
                     type: 'bar',
                     data: {
-                        labels: data.labels,
+                        labels: ['A Tiempo', 'Atrasados', 'Completados'],
+                        keys: ['a_tiempo', 'atrasado', 'completado'],
                         datasets: [{
-                            data: data.data,
-                            backgroundColor: data.colors,
-                            borderRadius: 6,
-                            barPercentage: 0.7
+                            data: [{{ $cumplimiento['a_tiempo'] }}, {{ $cumplimiento['atrasado'] }}, {{ $cumplimiento['completado'] }}],
+                            backgroundColor: ['#10b981', '#ef4444', '#6366f1'],
+                            borderRadius: 6
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        onHover: (event, chartElement) => {
-                            event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
-                        },
+                        plugins: { legend: { display: false } },
+                        scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } },
+                        onHover: (event, chartElement) => { event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default'; },
                         onClick: (evt, elements) => {
-                            if (elements.length > 0) {
+                            if(elements.length > 0) {
                                 const index = elements[0].index;
-                                const filterValue = data.keys ? data.keys[index] : null;
-                                triggerFilter(filterType, filterValue);
+                                const key = evt.chart.data.keys[index];
+                                if(key === 'completado') { applyFilter('estado', 'completado'); } 
+                                else { applyFilter('condicion', key); }
                             }
-                        },
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        const label = context.label || '';
-                                        const value = context.parsed.y || 0;
-                                        const percentage = percentages[context.dataIndex];
-                                        return `${label}: ${value} (${percentage}%)`;
-                                    }
-                                }
-                            }
-                        },
-                        scales: {
-                            y: { 
-                                beginAtZero: true, 
-                                grid: { display: false },
-                                ticks: {
-                                    stepSize: 1,
-                                    font: { size: 10 }
-                                }
-                            }, 
-                            x: { 
-                                grid: { display: false },
-                                ticks: {
-                                    font: { size: 10 }
-                                }
-                            } 
                         }
                     }
                 });
             }
-            
-            function createHorizontalBarChart(ctx, data, statsId, filterType) {
-                const total = data.data.reduce((a, b) => a + b, 0);
-                const percentages = data.data.map(value => total > 0 ? ((value / total) * 100).toFixed(1) : '0.0');
-                
-                // Crear estadísticas
-                const statsContainer = document.getElementById(statsId);
-                statsContainer.innerHTML = '';
-                
-                const maxIndex = data.data.indexOf(Math.max(...data.data));
-                const avgValue = (total / (data.data.length || 1)).toFixed(1);
-                
-                if (data.data.length > 0) {
-                    statsContainer.innerHTML = `
-                        <div class="stat-item">
-                            <div class="stat-value">${data.data[maxIndex]}</div>
-                            <div class="stat-label">Máximo</div>
-                            <div class="stat-percentage">${data.labels[maxIndex]}</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-value">${avgValue}</div>
-                            <div class="stat-label">Promedio</div>
-                            <div class="stat-percentage">por líder</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-value">${data.labels.length}</div>
-                            <div class="stat-label">Líderes</div>
-                            <div class="stat-percentage">activos</div>
-                        </div>
-                    `;
-                }
-                
-                return new Chart(ctx, {
+
+            const ctxWork = document.getElementById('chartWorkload');
+            if(ctxWork) {
+                new Chart(ctxWork, {
                     type: 'bar',
                     data: {
-                        labels: data.labels,
+                        labels: {!! json_encode($leadersData->map(fn($l) => explode(' ', $l->asignado->name)[0])) !!},
+                        ids: {!! json_encode($leadersData->pluck('asignado_a')) !!},
                         datasets: [{
-                            data: data.data,
+                            label: 'Proyectos',
+                            data: {!! json_encode($leadersData->pluck('total')) !!},
                             backgroundColor: '#4f46e5',
-                            borderRadius: 4,
-                            barPercentage: 0.6
+                            borderRadius: 6
                         }]
                     },
-                    options: {
-                        indexAxis: 'y',
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        onHover: (event, chartElement) => {
-                            event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
-                        },
+                    options: { 
+                        responsive: true, 
+                        maintainAspectRatio: false, 
+                        scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } },
+                        onHover: (event, chartElement) => { event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default'; },
                         onClick: (evt, elements) => {
-                            if (elements.length > 0) {
+                            if(elements.length > 0) {
                                 const index = elements[0].index;
-                                // Aquí usamos IDs de usuarios
-                                const filterValue = data.ids ? data.ids[index] : null;
-                                triggerFilter(filterType, filterValue);
+                                const userId = evt.chart.data.ids[index];
+                                applyFilter('user', userId);
                             }
-                        },
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                callbacks: {
-                                    label: function(context) {
-                                        const label = context.label || '';
-                                        const value = context.parsed.x || 0;
-                                        const percentage = percentages[context.dataIndex];
-                                        return `${label}: ${value} proyectos (${percentage}%)`;
-                                    }
-                                }
-                            }
-                        },
-                        scales: { 
-                            x: { 
-                                beginAtZero: true, 
-                                ticks: { 
-                                    stepSize: 1,
-                                    font: { size: 10 }
-                                },
-                                grid: { display: false }
-                            }, 
-                            y: { 
-                                grid: { display: false },
-                                ticks: {
-                                    font: { size: 10 }
-                                }
-                            } 
                         }
                     }
                 });
             }
-            
-            // --- Función para actualizar todas las gráficas ---
-            function updateCharts() {
-                currentData = currentView === 'global' ? globalData : filteredData;
-                
-                // Destruir gráficas existentes
-                Object.values(charts).forEach(chart => {
-                    if (chart) chart.destroy();
-                });
-                
-                // Crear nuevas gráficas con tipo de filtro asignado
-                charts.status = createDoughnutChart(
-                    document.getElementById('statusChart').getContext('2d'),
-                    currentData.status,
-                    'distribution-legend',
-                    'status' // Tipo de filtro
-                );
-                
-                charts.compliance = createBarChart(
-                    document.getElementById('complianceChart').getContext('2d'),
-                    currentData.compliance,
-                    'compliance-stats',
-                    'compliance' // Tipo de filtro
-                );
-                
-                charts.workload = createHorizontalBarChart(
-                    document.getElementById('workloadChart').getContext('2d'),
-                    currentData.workload,
-                    'workload-stats',
-                    'user' // Tipo de filtro
-                );
-            }
-            
-            // --- Inicializar gráficas ---
-            updateCharts();
-            
-            // --- Selector de vista ---
-            document.getElementById('chart-view-select').addEventListener('change', function() {
-                currentView = this.value;
-                updateCharts();
-            });
-            
-            // --- JS UI ORIGINAL MEJORADO ---
-            const popover = document.getElementById('advanced-popover');
-            const trigger = document.getElementById('advance-filter-trigger');
-            const searchForm = document.getElementById('main-search-form');
-            const closeBtn = document.getElementById('close-popover');
-            const resetBtn = document.getElementById('reset-filters');
-            const filterBadge = document.getElementById('active-filters-count');
-            const clearSearchBtn = document.getElementById('clear-search');
-            const searchInput = document.getElementById('live-search');
-
-            // Función para contar filtros activos
-            function updateFilterBadge() {
-                let count = 0;
-                if (document.getElementById('hidden-status').value) count++;
-                if (document.getElementById('hidden-prio').value) count++;
-                if (document.getElementById('hidden-user').value) count++;
-                if (document.getElementById('live-search').value) count++;
-                
-                filterBadge.textContent = count;
-                if (count > 0) {
-                    filterBadge.style.opacity = '1';
-                    filterBadge.style.transform = 'scale(1)';
-                } else {
-                    filterBadge.style.opacity = '0';
-                    filterBadge.style.transform = 'scale(0.8)';
-                }
-            }
-
-            // Inicializar contador de filtros
-            updateFilterBadge();
-
-            // Botón de limpiar búsqueda
-            if (clearSearchBtn) {
-                clearSearchBtn.addEventListener('click', function() {
-                    searchInput.value = '';
-                    searchForm.submit();
-                });
-            }
-
-            trigger.addEventListener('click', (e) => { 
-                e.stopPropagation(); 
-                popover.classList.toggle('show'); 
-                trigger.classList.toggle('active');
-            });
-            
-            closeBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                popover.classList.remove('show');
-                trigger.classList.remove('active');
-            });
-            
-            document.addEventListener('click', (e) => { 
-                if (!popover.contains(e.target) && e.target !== trigger) {
-                    // Verificamos si el clic fue en el dropdown de Tom Select (que está en body)
-                    if (!e.target.closest('.ts-dropdown') && !e.target.closest('.ts-wrapper')) {
-                        popover.classList.remove('show');
-                        trigger.classList.remove('active');
-                    }
-                }
-            });
-
-            document.querySelectorAll('.acc-header').forEach(header => {
-                header.addEventListener('click', function() { 
-                    this.parentElement.classList.toggle('active'); 
-                });
-            });
-
-            document.querySelectorAll('.filter-pill').forEach(pill => {
-                pill.addEventListener('click', function() {
-                    document.getElementById('hidden-status').value = this.dataset.status;
-                    searchForm.submit();
-                });
-            });
-
-            document.getElementById('apply-advanced').addEventListener('click', () => {
-                const prio = document.querySelector('input[name="prio_opt"]:checked').value;
-                document.getElementById('hidden-prio').value = prio;
-                document.getElementById('hidden-user').value = document.getElementById('user-opt').value;
-                searchForm.submit();
-            });
-            
-            // Funcionalidad de restablecer filtros
-            resetBtn.addEventListener('click', () => {
-                document.getElementById('hidden-status').value = '';
-                document.getElementById('hidden-prio').value = '';
-                document.getElementById('hidden-user').value = '';
-                document.getElementById('live-search').value = '';
-                document.querySelector('input[name="prio_opt"][value=""]').checked = true;
-                
-                // Limpiar Tom Select
-                if(userSelect) userSelect.clear();
-                
-                searchForm.submit();
-            });
         });
     </script>
 </x-base-layout>
