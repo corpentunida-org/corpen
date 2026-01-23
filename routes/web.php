@@ -570,8 +570,8 @@ Route::prefix('creditos')->middleware('auth')->group(function () {
         Route::post('soportes/{scpSoporte}/observaciones', [ScpSoporteController::class, 'storeObservacion'])
             ->name('observaciones.store');
 
-        Route::delete('soportes/{scpSoporte}/observaciones/{scpObservacion}', [ScpSoporteController::class, 'destroyObservacion'])
-            ->name('observaciones.destroy');
+    Route::delete('soportes/{scpSoporte}/observaciones/{scpObservacion}', [ScpSoporteController::class, 'destroyObservacion'])
+        ->name('observaciones.destroy');
 
         // Descarga de adjuntos de observaciones
         Route::get('observaciones/adjunto/{id}', [ScpSoporteController::class, 'descargarAdjuntoObservacion'])
@@ -584,8 +584,11 @@ Route::prefix('creditos')->middleware('auth')->group(function () {
         Route::get('tipos/filtro/{categoria}', [ScpSoporteController::class, 'getTiposByCategoria'])
             ->name('tipos.byCategoria');
 
-        Route::get('subtipos/filtro/{tipo}', [ScpSoporteController::class, 'getSubTipos'])
-            ->name('subtipos.byTipo');
+    // ---------------------------------------------------
+    // 6. FILTROS DINÁMICOS (AJAX SELECTS)
+    // ---------------------------------------------------
+    Route::get('tipos/filtro/{categoria}', [ScpSoporteController::class, 'getTiposByCategoria'])
+        ->name('tipos.byCategoria');
 
 
         // ---------------------------------------------------
