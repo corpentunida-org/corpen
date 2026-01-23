@@ -252,7 +252,31 @@ class WorkflowController extends Controller
             return redirect()->back()->withInput()->withErrors(['general' => 'Error crítico.']);
         }
     }
+    /**
+     * Actualiza exclusivamente los integrantes del equipo vía AJAX.
+     */
+    public function updateTeam(Request $request, Workflow $workflow)
+    {
+        try {
+            // Validamos que sea un array de IDs
+            $ids = $request->input('participantes', []);
+            
+            // Sincronizamos (agrega nuevos, quita los desmarcados)
+            $workflow->participantes()->sync($ids);
+            
+            return response()->json([
+                'success' => true,
+                'message' => '👥 Equipo de proyecto actualizado correctamente.'
+            ]);
 
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al actualizar equipo: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    
     public function destroy(Workflow $workflow)
     {
         $workflow->delete();
