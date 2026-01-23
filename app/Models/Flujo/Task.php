@@ -32,7 +32,17 @@ class Task extends Model
     ];
 
     /**
-     * RELACIÓN AGREGADA (Soluciona el error "undefined relationship asignado")
+     * RELACIÓN AGREGADA (Soluciona el error "undefined relationship creator")
+     * Esta es la función que te faltaba.
+     * * NOTA: Actualmente apunta a 'user_id' (el asignado) para que el código no falle.
+     * Si tienes una columna 'creado_por' en la tabla tasks, cambia 'user_id' por 'creado_por'.
+     */
+    public function creator() {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * RELACIÓN DE ASIGNACIÓN
      * Apunta al modelo User usando la clave foránea 'user_id'.
      */
     public function asignado() {
