@@ -1,5 +1,6 @@
 @php
-    // Detectar si estamos en modo edición
+    // Detectar si estamos en modo edición o creación de interacción
+    // Esta variable controla el comportamiento del formulario y el título de la página
     $modoEdicion = isset($interaction) && $interaction->id;
 @endphp
 
@@ -8,909 +9,444 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Título dinámico según el modo (edición o creación) -->
     <title>{{ $modoEdicion ? 'Editar Interacción' : 'Registro de Seguimiento Diario' }}</title>
+    
+    <!-- Librerías externas: Iconos Bootstrap, Select2 para selects mejorados, y Toastr para notificaciones -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet">
 
-    <style>
-        /* ===== COLORES PASTELES CORPORATIVOS MINIMALISTAS ===== */
-        :root {
-            --primary-color: #6B9BD1;
-            --primary-light: #E6F3FF;
-            --secondary-color: #F5F0FF;
-            --accent-color: #E8F5E8;
-            --text-primary: #374151;
-            --text-secondary: #6B7280;
-            --border-color: #E5E7EB;
-            --background-color: #FAFBFC;
-            --card-background: #FFFFFF;
-            --input-background: #F8F9FA;
-            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
-            --border-radius: 8px;
-            --transition: all 0.2s ease;
-        }
+<style>
+    /* ===== COLORES PASTELES CORPORATIVOS MINIMALISTAS ===== */
+    :root {
+        --primary-color: #6B9BD1;
+        --primary-light: #E6F3FF;
+        --secondary-color: #F5F0FF;
+        --accent-color: #E8F5E8;
+        --text-primary: #374151;
+        --text-secondary: #6B7280;
+        --border-color: #E5E7EB;
+        --background-color: #FAFBFC;
+        --card-background: #FFFFFF;
+        --input-background: #F8F9FA;
+        /* Sombras suavizadas para mejor profundidad */
+        --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.04);
+        --shadow-md: 0 8px 16px rgba(0, 0, 0, 0.06);
+        --border-radius: 12px; /* Ligeramente más redondeado para aspecto moderno */
+        --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); /* Transición más natural */
+    }
 
-        /* ===== ESTILOS GENERALES ===== */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+    /* ===== ESTILOS GENERALES ===== */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        /* Mejora la renderización de fuentes */
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
 
+    body {
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        background-color: var(--background-color);
+        color: var(--text-primary);
+        line-height: 1.6;
+    }
+
+    /* SOLICITUD: ANCHO COMPLETO */
+    .container-fluid {
+        width: 100%;
+        max-width: 100%; /* Elimina la restricción de 1200px */
+        margin: 0;
+        padding: 0 20px; /* Padding lateral de seguridad para que no pegue al borde */
+    }
+
+    /* ===== TARJETA PRINCIPAL ===== */
+    .card {
+        width: 100%;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-md);
+        border: 1px solid var(--border-color);
+        background-color: var(--card-background);
+        transition: var(--transition);
+        margin-bottom: 2rem; /* Espacio inferior asegurado */
+    }
+
+    /* Header más limpio */
+    .card-header {
+        background-color: var(--primary-light);
+        color: var(--text-primary);
+        padding: 1.75rem 2rem; /* Más aire */
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .card-body {
+        padding: 0;
+    }
+
+    /* ===== BARRA DE PROGRESO ===== */
+    .progress-section {
+        background-color: #ffffff; /* Fondo blanco para mejor contraste */
+        padding: 24px 32px;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .progress-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    .progress-title {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+
+    .progress-percentage {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--primary-color);
+        background: var(--primary-light);
+        padding: 2px 8px;
+        border-radius: 12px;
+    }
+
+    .progress-bar-container {
+        height: 8px; /* Un poco más visible */
+        background: #EDF2F7;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-bottom: 8px;
+    }
+
+    .progress-bar-fill {
+        height: 100%;
+        background: var(--primary-color);
+        border-radius: 4px;
+        transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .progress-message {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        text-align: right;
+    }
+
+    /* ===== NAVEGACIÓN POR PESTAÑAS (UX MEJORADO) ===== */
+    .tab-navigation {
+        display: flex;
+        background-color: #fff;
+        border-bottom: 1px solid var(--border-color);
+        overflow-x: auto; /* Permite scroll horizontal en móviles pequeños */
+        scrollbar-width: none; /* Oculta scrollbar en Firefox */
+    }
+    
+    .tab-navigation::-webkit-scrollbar {
+        display: none; /* Oculta scrollbar en Chrome/Safari */
+    }
+
+    .tab-button {
+        flex: 1;
+        min-width: 120px; /* Asegura ancho mínimo legible */
+        padding: 20px 16px;
+        background: transparent;
+        border: none;
+        border-bottom: 3px solid transparent;
+        cursor: pointer;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        color: var(--text-secondary);
+        transition: var(--transition);
+        position: relative;
+    }
+
+    /* Efecto hover suave */
+    .tab-button::after {
+        content: '';
+        position: absolute;
+        bottom: -3px;
+        left: 0;
+        width: 0%;
+        height: 3px;
+        background-color: var(--primary-color);
+        transition: width 0.3s ease;
+        opacity: 0.5;
+    }
+
+    .tab-button:hover:not(.active)::after {
+        width: 100%;
+    }
+
+    .tab-button.active {
+        color: var(--primary-color);
+        background: linear-gradient(to bottom, transparent 90%, var(--primary-light) 100%);
+        border-bottom-color: var(--primary-color);
+    }
+
+    .tab-button i { font-size: 20px; margin-bottom: 2px; }
+    .tab-button span { font-size: 0.85rem; font-weight: 600; letter-spacing: 0.3px; }
+
+    /* ===== CONTENIDO DEL FORMULARIO ===== */
+    .form-content { 
+        padding: 2rem; 
+    }
+    
+    .tab-panel { 
+        display: none; 
+        animation: slideIn 0.3s ease; /* Cambiado a slide sutil */
+    }
+    
+    .tab-panel.active { 
+        display: block; 
+    }
+
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateY(5px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ===== CATEGORÍAS ===== */
+    .category-container {
+        margin-bottom: 2.5rem;
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        overflow: hidden;
+        background: var(--card-background);
+        box-shadow: var(--shadow-sm);
+        transition: var(--transition);
+    }
+
+    .category-container:hover {
+        box-shadow: var(--shadow-md);
+        transform: translateY(-2px); /* Elevación sutil */
+    }
+
+    .category-header {
+        background-color: #fafbfc;
+        padding: 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .category-title {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+    }
+
+    .category-icon {
+        width: 40px; /* Icono un poco más grande */
+        height: 40px;
+        background-color: var(--primary-light); /* Fondo suave en vez de sólido fuerte */
+        color: var(--primary-color); /* Icono con color primario */
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 16px;
+        font-size: 18px;
+        transition: var(--transition);
+    }
+    
+    /* Inversión de color al hover de la categoría */
+    .category-container:hover .category-icon {
+        background-color: var(--primary-color);
+        color: white;
+    }
+
+    .category-content { 
+        padding: 2rem; 
+    }
+
+    /* ===== FORMULARIOS (UX CRÍTICO) ===== */
+    .form-group {
+        margin-bottom: 1.75rem; /* Más espacio entre campos */
+        position: relative;
+    }
+    
+    .form-label {
+        display: block;
+        margin-bottom: 0.6rem;
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: var(--text-primary);
+    }
+    
+    /* Campos de entrada mejorados */
+    .form-control, .form-select {
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 0.8rem 1rem; /* Padding más cómodo */
+        transition: var(--transition);
+        font-size: 16px; /* CRÍTICO: 16px previene zoom en iOS */
+        width: 100%;
+        background-color: var(--card-background);
+        color: var(--text-primary);
+        min-height: 48px; /* Altura mínima táctil accesible */
+    }
+
+    .form-control::placeholder {
+        color: #9CA3AF;
+    }
+
+    /* Estado Focus ultra claro */
+    .form-control:focus, .form-select:focus {
+        border-color: var(--primary-color);
+        background-color: #fff;
+        box-shadow: 0 0 0 4px rgba(107, 155, 209, 0.15); /* Anillo de foco accesible */
+        outline: none;
+    }
+    
+    /* Hover sobre inputs */
+    .form-control:hover, .form-select:hover {
+        border-color: #b0c4de;
+    }
+
+    /* ===== BOTONES (INTERACCIÓN MEJORADA) ===== */
+    .btn-primary {
+        background-color: var(--primary-color);
+        border: none; 
+        color: white;
+        font-weight: 600;
+        padding: 0.75rem 1.5rem; /* Botones más grandes */
+        border-radius: 8px;
+        transition: var(--transition);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        box-shadow: 0 2px 4px rgba(107, 155, 209, 0.3);
+    }
+    
+    .btn-primary:hover {
+        background-color: #5A8AC1;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(107, 155, 209, 0.4);
+    }
+    
+    .btn-primary:active {
+        transform: translateY(0); /* Efecto click */
+        box-shadow: 0 1px 2px rgba(107, 155, 209, 0.3);
+    }
+
+    .btn-light {
+        background-color: #fff;
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        font-weight: 600;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        transition: var(--transition);
+        cursor: pointer;
+    }
+    
+    .btn-light:hover {
+        background-color: var(--input-background);
+        border-color: #d1d5db;
+        color: #111827;
+    }
+
+    /* Estilos Select2 Integrados */
+    .select2-container--bootstrap-5 .select2-selection {
+        min-height: 48px !important; /* Igualar inputs */
+        border: 1px solid var(--border-color) !important;
+        border-radius: 8px !important;
+        padding-top: 8px !important;
+    }
+
+    /* ===== VALIDACIÓN VISUAL ===== */
+    .required-field::after {
+        content: "*";
+        color: #EF4444;
+        margin-left: 4px;
+        font-weight: bold;
+    }
+    
+    .invalid-feedback {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 6px;
+        font-size: 0.85rem;
+    }
+
+    /* ===== ACCIONES DEL FORMULARIO ===== */
+    .form-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 3rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--border-color);
+        background: #fff; /* Asegura legibilidad sobre fondo */
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 12px;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
         .container-fluid {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0;
+            padding: 0 10px; /* Menos padding lateral en móvil */
         }
-
-        /* ===== TARJETA PRINCIPAL ===== */
-        .card {
-            width: 100%;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow-md);
-            border: 1px solid var(--border-color);
-            overflow: hidden;
-            background-color: var(--card-background);
-            transition: var(--transition);
-        }
-
-        .card:hover {
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
-        }
-
+        
         .card-header {
-            background-color: var(--primary-light);
-            color: var(--text-primary);
-            padding: 1.5rem;
-            border-bottom: 1px solid var(--border-color);
+            padding: 1.25rem;
         }
 
-        .card-body {
-            padding: 0;
+        .form-content, .category-content { 
+            padding: 1.25rem; 
         }
 
-        /* ===== BARRA DE PROGRESO ===== */
-        .progress-section {
-            background-color: var(--input-background);
-            padding: 20px 32px;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .progress-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-        }
-
-        .progress-title {
-            font-size: 14px;
-            font-weight: 500;
-            color: var(--text-secondary);
-        }
-
-        .progress-percentage {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--primary-color);
-        }
-
-        .progress-bar-container {
-            height: 6px;
-            background: rgba(107, 155, 209, 0.2);
-            border-radius: 3px;
-            overflow: hidden;
-            margin-bottom: 12px;
-        }
-
-        .progress-bar-fill {
-            height: 100%;
-            background: var(--primary-color);
-            border-radius: 3px;
-            transition: width 0.5s ease;
-        }
-
-        .progress-message {
-            font-size: 12px;
-            color: var(--text-secondary);
-            text-align: center;
-        }
-
-        /* ===== NAVEGACIÓN POR PESTAÑAS ===== */
-        .tab-navigation {
-            display: flex;
-            background-color: var(--input-background);
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .tab-button {
-            flex: 1;
-            padding: 18px;
-            background: transparent;
-            border: none;
-            border-bottom: 3px solid transparent;
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
-            color: var(--text-secondary);
-            transition: var(--transition);
-        }
-
-        .tab-button i { 
-            font-size: 18px; 
-        }
-        
+        /* Pestañas estilo scroll horizontal en móvil */
         .tab-button span { 
-            font-size: 12px; 
-            font-weight: 500; 
-        }
-
-        .tab-button.active {
-            color: var(--primary-color);
-            background: var(--card-background);
-            border-bottom-color: var(--primary-color);
-        }
-
-        .tab-button:hover:not(.active) {
-            color: var(--text-primary);
-            background-color: rgba(107, 155, 209, 0.05);
-        }
-
-        /* ===== CONTENIDO DEL FORMULARIO ===== */
-        .form-content { 
-            padding: 1.5rem; 
-        }
-        
-        .tab-panel { 
-            display: none; 
-            animation: fadeIn 0.3s ease; 
-        }
-        
-        .tab-panel.active { 
-            display: block; 
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        /* ===== CATEGORÍAS ===== */
-        .category-container {
-            margin-bottom: 2rem;
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius);
-            overflow: hidden;
-            background: var(--card-background);
-            box-shadow: var(--shadow-sm);
-            transition: var(--transition);
-        }
-
-        .category-container:hover {
-            box-shadow: var(--shadow-md);
-        }
-
-        .category-header {
-            background-color: var(--input-background);
-            padding: 1.2rem 1.5rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .category-title {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin: 0;
-            display: flex;
-            align-items: center;
-        }
-
-        .category-icon {
-            width: 36px;
-            height: 36px;
-            background-color: var(--primary-color);
-            color: white;
-            border-radius: var(--border-radius);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 12px;
-            font-size: 16px;
-        }
-
-        .category-description {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            margin: 4px 0 0 48px;
-        }
-
-        .category-content { 
-            padding: 1.5rem; 
-        }
-
-        /* ===== SECCIONES INTERNAS ===== */
-        .section-divider {
-            position: relative;
-            padding-top: 1rem;
-            margin-top: 1rem;
-            border-top: 1px solid var(--border-color);
-        }
-
-        .section-title {
-            font-size: 0.95rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 0.5rem;
-            display: flex;
-            align-items: center;
-        }
-
-        .section-description {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            margin-bottom: 1rem;
-        }
-
-        /* ===== FORMULARIOS ===== */
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-        
-        .form-label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: var(--text-primary);
-        }
-        
-        .form-control, .form-select {
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius);
-            padding: 0.75rem;
-            transition: var(--transition);
-            font-size: 0.95rem;
-            width: 100%;
-            background-color: var(--card-background);
-        }
-
-        .form-control:focus, .form-select:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(107, 155, 209, 0.1);
-            outline: none;
-        }
-
-        /* ===== BOTONES ===== */
-        .btn-primary {
-            background-color: var(--primary-color);
-            border: none; 
-            color: white;
-            font-weight: 500;
-            padding: 0.6rem 1.25rem;
-            border-radius: var(--border-radius);
-            transition: var(--transition);
-            cursor: pointer;
-        }
-        
-        .btn-primary:hover {
-            background-color: #5A8AC1;
-            transform: translateY(-1px);
-            box-shadow: var(--shadow-sm);
-        }
-
-        .btn-light {
-            background-color: var(--card-background);
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-            font-weight: 500;
-            padding: 0.6rem 1.25rem;
-            border-radius: var(--border-radius);
-            transition: var(--transition);
-            cursor: pointer;
-        }
-        
-        .btn-light:hover {
-            background-color: var(--input-background);
-            transform: translateY(-1px);
-        }
-
-        .btn-outline-primary {
-            border: 1px solid var(--primary-color);
-            color: var(--primary-color);
-            font-weight: 500;
-            padding: 0.6rem 1.25rem;
-            border-radius: var(--border-radius);
-            background: transparent;
-            transition: var(--transition);
-            cursor: pointer;
-        }
-        
-        .btn-outline-primary:hover {
-            background-color: var(--primary-light);
-            transform: translateY(-1px);
-        }
-
-        .btn-outline-secondary {
-            border: 1px solid var(--border-color);
-            color: var(--text-secondary);
-            font-weight: 500;
-            padding: 0.6rem 1.25rem;
-            border-radius: var(--border-radius);
-            background: transparent;
-            transition: var(--transition);
-            cursor: pointer;
-        }
-        
-        .btn-outline-secondary:hover {
-            background-color: var(--input-background);
-            transform: translateY(-1px);
-        }
-
-        /* ===== TARJETAS ===== */
-        .card.border-0.bg-light {
-            background-color: var(--input-background) !important;
-            border: 1px solid var(--border-color) !important;
-            border-radius: var(--border-radius) !important;
-            margin-bottom: 1rem !important;
-            transition: var(--transition);
-        }
-
-        .card.border-0.bg-light:hover {
-            transform: translateY(-1px);
-            box-shadow: var(--shadow-sm);
-        }
-
-        /* ===== AVATAR ===== */
-        .client-avatar {
-            background-color: var(--primary-color);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            border-radius: 50%;
-            transition: var(--transition);
-        }
-
-        .client-avatar:hover {
-            transform: scale(1.05);
-        }
-
-        /* ===== SELECT2 ===== */
-        .select2-container--bootstrap-5 .select2-selection {
-            min-height: 38px;
-            border: 1px solid var(--border-color);
-            border-radius: var(--border-radius);
-        }
-        
-        .select2-container--bootstrap-5.select2-container--focus .select2-selection {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(107, 155, 209, 0.1);
-        }
-
-        /* ===== VALIDACIÓN ===== */
-        .is-invalid { 
-            border-color: #EF4444; 
-        }
-        
-        .is-valid { 
-            border-color: #10B981; 
-        }
-        
-        .invalid-feedback { 
-            color: #EF4444; 
-            font-size: 0.875rem; 
-            margin-top: 0.25rem; 
-        }
-
-        /* ===== CAMPO SOLO LECTURA ===== */
-        .form-control[readonly] {
-            background-color: var(--input-background);
-            opacity: 1;
-        }
-
-        /* ===== ACCIONES DEL FORMULARIO ===== */
-        .form-actions {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 2rem;
-            padding-top: 1rem;
-            border-top: 1px solid var(--border-color);
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        /* ===== ESTILOS PARA EL HISTORIAL ===== */
-        .history-item {
-            transition: var(--transition);
-        }
-        
-        .history-item:hover {
-            transform: translateY(-1px);
-            box-shadow: var(--shadow-sm);
-        }
-        
-        .history-list::-webkit-scrollbar { 
-            width: 6px; 
-        }
-        
-        .history-list::-webkit-scrollbar-track { 
-            background: var(--input-background); 
-            border-radius: 3px; 
-        }
-        
-        .history-list::-webkit-scrollbar-thumb { 
-            background: var(--border-color); 
-            border-radius: 3px; 
-        }
-        
-        .history-list::-webkit-scrollbar-thumb:hover { 
-            background: var(--text-secondary); 
-        }
-
-        /* ===== IMÁGENES ===== */
-        .img-thumbnail {
-            max-width: 100%;
-            height: auto;
-            border-radius: var(--border-radius);
-            border: 1px solid var(--border-color);
-            padding: 0.25rem;
-            background-color: var(--card-background);
-            transition: var(--transition);
-        }
-
-        .img-thumbnail:hover {
-            transform: scale(1.02);
-            box-shadow: var(--shadow-sm);
-        }
-
-        .file-preview {
-            max-width: 100%;
-            max-height: 200px;
-            border-radius: var(--border-radius);
-            margin-top: 0.5rem;
-            object-fit: contain;
-        }
-
-        /* ===== UTILIDADES BOOTSTRAP REEMPLAZADAS ===== */
-        .d-flex {
-            display: flex;
-        }
-        
-        .justify-content-between {
-            justify-content: space-between;
-        }
-        
-        .align-items-center {
-            align-items: center;
-        }
-        
-        .align-items-start {
-            align-items: flex-start;
-        }
-        
-        .text-center {
-            text-align: center;
-        }
-        
-        .text-end {
-            text-align: right;
-        }
-        
-        .text-muted {
-            color: var(--text-secondary);
-        }
-        
-        .text-primary {
-            color: var(--primary-color);
-        }
-        
-        .text-danger {
-            color: #EF4444;
-        }
-        
-        .text-white {
-            color: white;
-        }
-        
-        .mb-0 {
-            margin-bottom: 0;
-        }
-        
-        .mb-1 {
-            margin-bottom: 0.25rem;
-        }
-        
-        .mb-2 {
-            margin-bottom: 0.5rem;
-        }
-        
-        .mb-3 {
-            margin-bottom: 1rem;
-        }
-        
-        .mb-4 {
-            margin-bottom: 1.5rem;
-        }
-        
-        .mt-1 {
-            margin-top: 0.25rem;
-        }
-        
-        .mt-2 {
-            margin-top: 0.5rem;
-        }
-        
-        .mt-3 {
-            margin-top: 1rem;
-        }
-        
-        .mt-4 {
-            margin-top: 1.5rem;
-        }
-        
-        .me-1 {
-            margin-right: 0.25rem;
-        }
-        
-        .me-2 {
-            margin-right: 0.5rem;
-        }
-        
-        .me-3 {
-            margin-right: 1rem;
-        }
-        
-        .me-auto {
-            margin-right: auto;
-        }
-        
-        .ms-1 {
-            margin-left: 0.25rem;
-        }
-        
-        .ms-auto {
-            margin-left: auto;
-        }
-        
-        .py-3 {
-            padding-top: 1rem;
-            padding-bottom: 1rem;
-        }
-        
-        .py-5 {
-            padding-top: 3rem;
-            padding-bottom: 3rem;
-        }
-        
-        .p-2 {
-            padding: 0.5rem;
-        }
-        
-        .p-3 {
-            padding: 1rem;
-        }
-        
-        .p-4 {
-            padding: 1.5rem;
-        }
-        
-        .px-4 {
-            padding-left: 1.5rem;
-            padding-right: 1.5rem;
-        }
-        
-        .gap-1 {
-            gap: 0.25rem;
-        }
-        
-        .gap-2 {
-            gap: 0.5rem;
-        }
-        
-        .gap-3 {
-            gap: 1rem;
-        }
-        
-        .g-3 > * {
-            margin-bottom: 1rem;
-        }
-        
-        .row {
-            display: flex;
-            flex-wrap: wrap;
-            margin-right: -15px;
-            margin-left: -15px;
-        }
-        
-        .col-md-3, .col-md-4, .col-md-6, .col-md-8, .col-md-12 {
-            position: relative;
-            width: 100%;
-            padding-right: 15px;
-            padding-left: 15px;
-        }
-        
-        @media (min-width: 768px) {
-            .col-md-3 {
-                flex: 0 0 25%;
-                max-width: 25%;
-            }
-            
-            .col-md-4 {
-                flex: 0 0 33.333333%;
-                max-width: 33.333333%;
-            }
-            
-            .col-md-6 {
-                flex: 0 0 50%;
-                max-width: 50%;
-            }
-            
-            .col-md-8 {
-                flex: 0 0 66.666667%;
-                max-width: 66.666667%;
-            }
-            
-            .col-md-12 {
-                flex: 0 0 100%;
-                max-width: 100%;
-            }
-        }
-        
-        .flex-grow-1 {
-            flex-grow: 1;
-        }
-        
-        .flex-shrink-0 {
-            flex-shrink: 0;
-        }
-        
-        .small {
-            font-size: 0.875em;
-        }
-        
-        .fw-bold {
-            font-weight: 700;
-        }
-        
-        .fw-semibold {
-            font-weight: 600;
-        }
-        
-        .rounded-3 {
-            border-radius: var(--border-radius);
-        }
-        
-        .border {
-            border: 1px solid var(--border-color);
-        }
-        
-        .border-0 {
-            border: 0;
-        }
-        
-        .rounded {
-            border-radius: var(--border-radius);
-        }
-        
-        .bg-light {
-            background-color: var(--input-background);
-        }
-        
-        .bg-gradient-primary {
-            background: var(--primary-light);
-        }
-        
-        .opacity-75 {
-            opacity: 0.75;
-        }
-        
-        .overflow-hidden {
-            overflow: hidden;
-        }
-        
-        .shadow-lg {
-            box-shadow: var(--shadow-md);
-        }
-        
-        .btn-sm {
-            padding: 0.25rem 0.5rem;
-            font-size: 0.875rem;
-            border-radius: calc(var(--border-radius) - 2px);
-        }
-        
-        .badge {
-            display: inline-block;
-            padding: 0.35em 0.65em;
-            font-size: 0.75em;
-            font-weight: 500;
-            line-height: 1;
-            text-align: center;
-            white-space: nowrap;
-            vertical-align: baseline;
-            border-radius: calc(var(--border-radius) - 2px);
-        }
-        
-        .bg-primary {
-            background-color: var(--primary-color);
-        }
-        
-        .bg-success {
-            background-color: #10B981;
-        }
-        
-        .spinner-border {
-            display: inline-block;
-            width: 2rem;
-            height: 2rem;
-            vertical-align: -0.125em;
-            border: 0.25em solid currentColor;
-            border-right-color: transparent;
-            border-radius: 50%;
-            animation: spinner-border 0.75s linear infinite;
-        }
-        
-        .spinner-border-sm {
-            width: 1rem;
-            height: 1rem;
-            border-width: 0.125em;
-        }
-        
-        @keyframes spinner-border {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-        
-        .visually-hidden {
-            position: absolute !important;
-            width: 1px !important;
-            height: 1px !important;
-            padding: 0 !important;
-            margin: -1px !important;
-            overflow: hidden !important;
-            clip: rect(0, 0, 0, 0) !important;
-            white-space: nowrap !important;
-            border: 0 !important;
-        }
-        
-        .form-text {
-            margin-top: 0.25rem;
-            font-size: 0.875em;
-            color: var(--text-secondary);
-        }
-        
-        .position-fixed {
-            position: fixed;
-        }
-        
-        .z-index-9999 {
-            z-index: 9999;
-        }
-        
-        .top-0 {
-            top: 0;
-        }
-        
-        .start-0 {
-            left: 0;
-        }
-        
-        .end-0 {
-            right: 0;
-        }
-        
-        .bottom-0 {
-            bottom: 0;
-        }
-        
-        .display-1 {
-            font-size: 6rem;
-            font-weight: 300;
-            line-height: 1.2;
-        }
-
-        /* ===== RESPONSIVE ===== */
-        @media (max-width: 768px) {
-            body { 
-                padding: 10px; 
-            }
-            
-            .form-content { 
-                padding: 1rem; 
-            }
-            
-            .category-content { 
-                padding: 1rem; 
-            }
-            
-            .tab-button span { 
-                display: none; 
-            }
-            
-            .tab-button { 
-                padding: 16px; 
-            }
-            
-            .d-flex.justify-content-between.mt-4 { 
-                flex-direction: column; 
-                gap: 1rem; 
-            }
-            
-            .d-flex.justify-content-between.mt-4>div { 
-                width: 100%; 
-            }
-            
-            .d-flex.justify-content-between.mt-4>div>button { 
-                width: 100%; 
-            }
-
-            .form-actions {
-                flex-direction: column;
-                gap: 1rem;
-            }
-
-            .action-buttons {
-                width: 100%;
-                justify-content: space-between;
-            }
-        }
-
-        /* ===== MEJORAS VISUALES ===== */
-        .badge {
+            display: block; /* Mostrar texto si es posible */
             font-size: 0.75rem;
-            padding: 0.35em 0.65em;
-            font-weight: 500;
+        }
+        
+        .tab-button { 
+            min-width: auto;
+            flex: 0 0 auto; /* No encoger */
+            padding: 12px 16px;
         }
 
-        .spinner-border {
-            width: 1rem;
-            height: 1rem;
+        .form-actions {
+            flex-direction: column-reverse; /* Guardar arriba en móvil es más fácil */
+            gap: 1.5rem;
         }
 
-        .dropdown-menu {
-            border: 1px solid var(--border-color);
-            box-shadow: var(--shadow-sm);
-            border-radius: var(--border-radius);
+        .action-buttons, .form-actions > button {
+            width: 100%;
         }
-
-        .dropdown-item {
-            padding: 0.5rem 1rem;
-            transition: background-color 0.2s ease;
+        
+        .action-buttons .btn {
+            flex: 1;
         }
-
-        .dropdown-item:hover {
-            background-color: var(--input-background);
-        }
-
-        /* ===== ESTADOS ESPECIALES ===== */
-        .highlight {
-            background-color: var(--primary-light);
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            transition: background-color 0.3s ease;
-        }
-
-        .highlight:hover {
-            background-color: #D1E9FF;
-        }
-
-        .required-field::after {
-            content: " *";
-            color: #EF4444;
-        }
-    </style>
+    }
+    
+    /* Utilidades de espaciado mejoradas */
+    .mb-3 { margin-bottom: 1.25rem !important; }
+    .mb-4 { margin-bottom: 2rem !important; }
+    
+    /* Clases helpers */
+    .d-none { display: none !important; }
+    .w-100 { width: 100% !important; }
+</style>
 </head>
 <body>
     <div class="container-fluid">
+        <!-- Tarjeta principal que contiene todo el formulario -->
         <div class="card shadow-lg border-0 rounded-3 overflow-hidden">
-            <!-- Header del formulario -->
+            <!-- Header del formulario con título dinámico según modo -->
             <div class="card-header bg-gradient-primary text-white">
                 <div class="d-flex align-items-center">
                     <div class="flex-shrink-0">
@@ -919,11 +455,13 @@
                         </div>
                     </div>
                     <div class="flex-grow-1">
+                        <!-- Título dinámico según si estamos en modo edición o creación -->
                         <h4 class="mb-1 fw-bold">{{ $modoEdicion ? 'Editar Interacción' : 'Registro de Seguimiento Diario' }}</h4>
                         <p class="mb-0 opacity-75 small">
                             {{ $modoEdicion ? 'Modifica la información de la interacción existente' : 'Completa el formulario para registrar una nueva interacción' }}
                         </p>
                     </div>
+                    <!-- En modo edición, mostrar botón para ver detalles de la interacción -->
                     @if ($modoEdicion && $interaction->id)
                         <div class="flex-shrink-0">
                             <a href="{{ route('interactions.show', $interaction->id) }}" class="btn btn-light btn-sm">
@@ -934,7 +472,7 @@
                 </div>
             </div>
 
-            <!-- Barra de progreso -->
+            <!-- Barra de progreso que muestra el estado de completitud del formulario -->
             <div class="progress-section">
                 <div class="progress-header">
                     <span class="progress-title">Progreso del formulario</span>
@@ -946,7 +484,7 @@
                 <div class="progress-message" id="progress-message">Comienza seleccionando un cliente</div>
             </div>
 
-            <!-- Navegación por pestañas -->
+            <!-- Navegación por pestañas para organizar el formulario en secciones -->
             <div class="tab-navigation">
                 <button type="button" class="tab-button active" data-tab="principal">
                     <i class="bi bi-info-circle"></i>
@@ -970,6 +508,7 @@
                 </button>
             </div>
 
+            <!-- Contenedor principal del formulario -->
             <div class="form-content">
                 <form id="interaction-form"
                     action="{{ $modoEdicion ? route('interactions.update', $interaction->id) : route('interactions.store') }}"
@@ -979,83 +518,154 @@
                         @method('PUT')
                     @endif
 
-                    <!-- PESTAÑA 1: INFORMACIÓN PRINCIPAL -->
-                    <div class="tab-panel active" id="principal-tab">
-                        <div class="category-container">
-                            <!-- ================================================================= -->
-                            <!-- INICIO: BLOQUE DE "QUIEN LLAMA" (SOLUCIÓN DEFINITIVA) -->
-                            <!-- ================================================================= -->
-                            <div class="category-container mb-4">
-                                <div class="category-header">
-                                    <h5 class="category-title">
-                                        <div class="category-icon">
-                                            <i class="bi bi-person-check"></i>
-                                        </div>
-                                        Información de Quien Llama
-                                    </h5>
-                                    <p class="category-description">Especifica si la llamada es realizada por el asociado o un tercero.</p>
-                                </div>
-                                <div class="category-content">
-                                    <div class="form-group">
-                                        <label class="form-label required-field">¿Quién realiza la llamada?</label>
-                                        <style>
-                                            /* ESTOS ESTILOS EVITAN QUE EL BOTÓN SE PIERDA CON EL FONDO AL PASAR EL MOUSE */
-                                            .btn-soft-choice:hover {
-                                                /* Fuerza a que el botón mantenga su color de fondo por defecto al pasar el mouse */
-                                                background-color: #f8f9fa !important;
-                                                border-color: #dee2e6 !important;
-                                                color: #212529 !important;
-                                            }
-                                        </style>
+                    <!-- PESTAÑA 1 -->
+                    <!-- INICIO -->
+                    <!-- INFORMACIÓN PRINCIPAL -->
+                        <div class="tab-panel active" id="principal-tab">
 
-                                        <div class="d-flex gap-2 mb-3">
-                                            <input type="radio" class="btn-check" name="caller_type" id="caller_is_client" value="client" autocomplete="off" checked>
-                                            <label class="btn btn-soft-choice flex-grow-1" for="caller_is_client">
-                                                <i class="bi bi-person me-2"></i>Es el cliente
+                            <style>
+                                /* TARJETAS VISUALES (SIN LISTAS) */
+                                .visual-card {
+                                    position: relative;
+                                    background: #fff;
+                                    border: 2px solid #eaecf0;
+                                    border-radius: 12px;
+                                    padding: 1rem;
+                                    cursor: pointer;
+                                    transition: all 0.2s ease-in-out;
+                                    display: flex;
+                                    flex-direction: column;
+                                    align-items: center;
+                                    justify-content: center;
+                                    height: 100%;
+                                    min-height: 110px;
+                                }
+                                .visual-card:hover {
+                                    border-color: #b0c4de;
+                                    background-color: #f8fbff;
+                                    transform: translateY(-3px);
+                                    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+                                }
+                                .btn-check:checked + .visual-card {
+                                    border-color: var(--primary-color);
+                                    background-color: #eff6ff;
+                                    box-shadow: 0 0 0 2px rgba(107, 155, 209, 0.3);
+                                }
+                                .btn-check:checked + .visual-card .card-icon {
+                                    color: var(--primary-color);
+                                    transform: scale(1.1);
+                                }
+                                .btn-check:checked + .visual-card .card-title {
+                                    color: var(--primary-color);
+                                    font-weight: 700;
+                                }
+                                
+                                /* ICONO CHECK */
+                                .check-badge {
+                                    position: absolute;
+                                    top: 10px;
+                                    right: 10px;
+                                    color: var(--primary-color);
+                                    opacity: 0;
+                                    transform: scale(0);
+                                    transition: all 0.2s ease;
+                                }
+                                .btn-check:checked + .visual-card .check-badge { opacity: 1; transform: scale(1); }
+
+                                /* CHIPS (TIPIFICACIÓN) */
+                                .smart-tag {
+                                    display: inline-flex;
+                                    align-items: center;
+                                    padding: 10px 20px;
+                                    background: #fff;
+                                    border: 1px solid #d0d5dd;
+                                    border-radius: 50px;
+                                    color: #475467;
+                                    cursor: pointer;
+                                    transition: all 0.2s ease;
+                                    font-weight: 500;
+                                    user-select: none;
+                                }
+                                .smart-tag:hover { background-color: #f9fafb; border-color: #98a2b3; }
+                                .btn-check:checked + .smart-tag {
+                                    background-color: var(--primary-color);
+                                    color: white;
+                                    border-color: var(--primary-color);
+                                    padding-left: 14px;
+                                    box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+                                }
+                                .tag-icon { width: 0; overflow: hidden; opacity: 0; transition: all 0.2s ease; margin-right: 0; }
+                                .btn-check:checked + .smart-tag .tag-icon { width: 20px; opacity: 1; margin-right: 8px; }
+
+                                /* GRIDS */
+                                .grid-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; }
+                                .card-icon { font-size: 2rem; color: #98a2b3; margin-bottom: 0.5rem; transition: color 0.2s ease; }
+
+                                /* ANIMACIÓN RELOJ */
+                                .live-indicator {
+                                    width: 8px; height: 8px; background-color: #10B981; border-radius: 50%; display: inline-block; margin-right: 6px;
+                                    animation: pulse-green 1.5s infinite;
+                                }
+                                @keyframes pulse-green {
+                                    0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+                                    70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+                                    100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+                                }
+                            </style>
+
+                            <div class="category-container mb-4">
+                                <div class="category-header pb-2">
+                                    <h5 class="category-title"><i class="bi bi-telephone-inbound me-2 text-primary"></i>Origen del Contacto</h5>
+                                </div>
+                                <div class="category-content pt-4">
+                                    <label class="form-label small fw-bold text-muted text-uppercase mb-3">¿Quién inicia la interacción?</label>
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <input type="radio" class="btn-check" name="caller_type" id="caller_client" value="client" checked>
+                                            <label class="visual-card flex-row justify-content-start p-3 gap-3" for="caller_client" style="min-height: auto;">
+                                                <i class="bi bi-person-circle card-icon mb-0 fs-3"></i>
+                                                <div class="text-start">
+                                                    <div class="card-title fw-bold">Es el Titular</div>
+                                                    <small class="text-muted">Cliente registrado</small>
+                                                </div>
+                                                <i class="bi bi-check-circle-fill check-badge fs-5" style="top: 50%; transform: translateY(-50%);"></i>
                                             </label>
-                                            
-                                            <input type="radio" class="btn-check" name="caller_type" id="caller_is_third_party" value="third_party" autocomplete="off">
-                                            <label class="btn btn-soft-choice flex-grow-1" for="caller_is_third_party">
-                                                <i class="bi bi-people me-2"></i>Es un tercero
+                                        </div>
+                                        <div class="col-md-6">
+                                            <input type="radio" class="btn-check" name="caller_type" id="caller_third" value="third_party">
+                                            <label class="visual-card flex-row justify-content-start p-3 gap-3" for="caller_third" style="min-height: auto;">
+                                                <i class="bi bi-people-fill card-icon mb-0 fs-3"></i>
+                                                <div class="text-start">
+                                                    <div class="card-title fw-bold">Es un Tercero</div>
+                                                    <small class="text-muted">Familiar o autorizado</small>
+                                                </div>
+                                                <i class="bi bi-check-circle-fill check-badge fs-5" style="top: 50%; transform: translateY(-50%);"></i>
                                             </label>
                                         </div>
                                     </div>
-                                    
-                                    <!-- Campos para cuando es un tercero quien llama -->
-                                    <div id="third-party-fields" style="display: none;">
+
+                                    <div id="third-party-fields" class="mt-3 p-4 bg-light rounded-3 border border-dashed" style="display: none;">
+                                        <h6 class="text-primary fw-bold small text-uppercase mb-3"><i class="bi bi-pencil-square me-2"></i>Datos de quien llama</h6>
                                         <div class="row g-3">
                                             <div class="col-md-4">
-                                                <div class="form-group">
-                                                    <label for="nombre_quien_llama" class="form-label">Nombre del Tercero</label>
-                                                    <input type="text" class="form-control" id="nombre_quien_llama" name="nombre_quien_llama" 
-                                                        placeholder="Nombre completo de quien llama">
-                                                </div>
+                                                <label class="form-label small fw-bold">Nombre Completo</label>
+                                                <input type="text" class="form-control" id="nombre_quien_llama" name="nombre_quien_llama">
                                             </div>
                                             <div class="col-md-4">
-                                                <div class="form-group">
-                                                    <label for="cedula_quien_llama" class="form-label">Identificación</label>
-                                                    <input type="text" class="form-control" id="cedula_quien_llama" name="cedula_quien_llama" 
-                                                        placeholder="Cédula o documento de identidad">
-                                                </div>
+                                                <label class="form-label small fw-bold">Identificación</label>
+                                                <input type="text" class="form-control" id="cedula_quien_llama" name="cedula_quien_llama">
                                             </div>
                                             <div class="col-md-4">
-                                                <div class="form-group">
-                                                    <label for="celular_quien_llama" class="form-label">Teléfono</label>
-                                                    <input type="text" class="form-control" id="celular_quien_llama" name="celular_quien_llama" 
-                                                        placeholder="Número de contacto">
-                                                </div>
+                                                <label class="form-label small fw-bold">Teléfono</label>
+                                                <input type="text" class="form-control" id="celular_quien_llama" name="celular_quien_llama">
                                             </div>
-                                            <div class="col-md-12">
-                                                <div class="form-group">
-                                                    <label for="parentezco_quien_llama" class="form-label">Relación con el Cliente</label>
-                                                    <select class="form-select" id="parentezco_quien_llama" name="parentezco_quien_llama">
-                                                        <option value="">Selecciona una opción</option>
-                                                        <option value="familiar">Familiar</option>
-                                                        <option value="amigo">Amigo</option>
-                                                        <option value="representante">Representante legal</option>
-                                                        <option value="conocido">Conocido</option>
-                                                        <option value="otro">Otro</option>
-                                                    </select>
+                                            <div class="col-12 pt-2">
+                                                <label class="form-label small fw-bold mb-2">Relación con el titular:</label>
+                                                <div class="d-flex flex-wrap gap-2">
+                                                    @foreach(['familiar'=>'Familiar', 'amigo'=>'Amigo', 'representante'=>'Representante', 'otro'=>'Otro'] as $v => $l)
+                                                        <input type="radio" class="btn-check" name="parentezco_quien_llama" id="rel_{{$v}}" value="{{$v}}">
+                                                        <label class="smart-tag py-1 px-3 small" style="font-size: 0.8rem;" for="rel_{{$v}}">{{$l}}</label>
+                                                    @endforeach
                                                 </div>
                                             </div>
                                         </div>
@@ -1063,990 +673,959 @@
                                 </div>
                             </div>
 
-                            <!-- SCRIPT PARA CONTROLAR LA VISIBILIDAD Y AUTOCOMPLETADO -->
+                            <div class="category-container mb-4">
+                                <div class="category-content">
+                                    <div class="row align-items-end g-3">
+                                        <div class="col-md-8">
+                                            <label for="client_id" class="form-label required-field text-uppercase small fw-bold text-muted">Buscar Cliente</label>
+                                            <div class="input-group shadow-sm">
+                                                <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                                                <select class="form-select border-start-0 select2" id="client_id" name="client_id" required>
+                                                    <option value="">Buscar por nombre, documento o código...</option>
+                                                    @if ($modoEdicion && $interaction->client_id)
+                                                        <option value="{{ $interaction->client_id }}" selected>{{ $interaction->client->nom_ter }}</option>
+                                                    @endif
+                                                </select>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-4">
+                                            <div class="bg-white border rounded p-2 d-flex align-items-center justify-content-between shadow-sm">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="bg-primary bg-opacity-10 text-primary rounded p-2 me-2"><i class="bi bi-headset"></i></div>
+                                                    <div class="lh-1">
+                                                        <div class="small text-muted fw-bold" style="font-size: 0.7rem;">AGENTE</div>
+                                                        <div class="fw-bold text-dark">{{ auth()->user()->name }}</div>
+                                                    </div>
+                                                </div>
+                                                <div class="text-end">
+                                                    <div class="d-flex align-items-center justify-content-end">
+                                                        <span class="live-indicator"></span>
+                                                        <div class="fw-bold text-primary font-monospace fs-5" id="timer">00:00</div>
+                                                    </div>
+                                                    <small class="text-muted" style="font-size: 0.7rem;">DURACIÓN</small>
+                                                </div>
+                                            </div>
+                                            <input type="hidden" name="agent_id" value="{{ auth()->user()->id }}">
+                                            <input type="hidden" name="interaction_date" value="{{ now()->toDateTimeString() }}">
+                                            <input type="hidden" name="duration" id="duration" value="0"> </div>
+                                    </div>
+
+                                    <div id="client-info-card" class="mt-4" style="display:none;">
+                                        <div class="card border-0 shadow-sm" style="border-radius: 12px; border-left: 5px solid var(--primary-color) !important;">
+                                            <div class="card-body p-4">
+                                                <div class="row" id="client-info-content">
+                                                    <div class="col-md-5 border-end">
+                                                        <div class="d-flex align-items-center mb-4">
+                                                            <div class="client-avatar me-3 shadow-sm" id="info-avatar" 
+                                                                style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg, var(--primary-color), #818cf8);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:1.5rem;">-</div>
+                                                            <div>
+                                                                <h5 class="fw-bold text-dark mb-0" id="info-nombre">Nombre Cliente</h5>
+                                                                <div class="text-muted small">ID: <span id="info-id" class="fw-medium text-dark">-</span></div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="d-flex gap-2 mb-3">
+                                                            <span class="badge bg-light text-dark border px-3 py-2 rounded-pill"><i class="bi bi-tag me-1"></i> <span id="info-categoria">Cat</span></span>
+                                                            <span class="badge bg-light text-dark border px-3 py-2 rounded-pill"><i class="bi bi-geo-alt me-1"></i> <span id="info-distrito">Zona</span></span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-7 ps-md-4">
+                                                        <div class="row g-3">
+                                                            <div class="col-6">
+                                                                <label class="small text-muted fw-bold d-block">Correo</label>
+                                                                <span class="text-dark d-flex align-items-center"><i class="bi bi-envelope text-primary me-2"></i> <span id="info-email" class="text-truncate">...</span></span>
+                                                            </div>
+                                                            <div class="col-6">
+                                                                <label class="small text-muted fw-bold d-block">Teléfono</label>
+                                                                <span class="text-dark d-flex align-items-center"><i class="bi bi-telephone text-primary me-2"></i> <span id="info-telefono">...</span></span>
+                                                            </div>
+                                                            <div class="col-12">
+                                                                <label class="small text-muted fw-bold d-block">Dirección</label>
+                                                                <span class="text-dark d-flex align-items-center"><i class="bi bi-geo text-primary me-2"></i> <span id="info-direccion">...</span></span>
+                                                            </div>
+                                                        </div>
+                                                        <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                                                            <a id="btn-editar-cliente" href="#" target="_blank" class="btn btn-sm btn-light border fw-medium"><i class="bi bi-pencil me-1"></i> Editar</a>
+                                                            <a id="btn-ver-cliente" href="#" target="_blank" class="btn btn-sm btn-outline-primary fw-medium"><i class="bi bi-eye me-1"></i> Ver Ficha</a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="category-container mb-4">
+                                <div class="category-header pb-2">
+                                    <h5 class="category-title"><i class="bi bi-ui-checks-grid me-2 text-primary"></i>Parametrización</h5>
+                                </div>
+                                <div class="category-content pt-4">
+                                    
+                                    <div class="mb-5">
+                                        <label class="form-label required-field text-uppercase small fw-bold text-muted mb-3 d-block">1. Canal de Entrada</label>
+                                        <div class="grid-gallery">
+                                            @foreach ($channels as $channel)
+                                                <div class="position-relative">
+                                                    <input type="radio" class="btn-check" name="interaction_channel" id="ch_{{ $channel->id }}" value="{{ $channel->id }}" 
+                                                        {{ old('interaction_channel', $interaction->interaction_channel ?? '') == $channel->id ? 'checked' : '' }} required>
+                                                    
+                                                    <label class="visual-card p-2" for="ch_{{ $channel->id }}">
+                                                        <i class="bi bi-check-circle-fill check-badge"></i>
+                                                        <div class="card-icon">
+                                                            @if(stripos($channel->name, 'tel') !== false) <i class="bi bi-telephone"></i>
+                                                            @elseif(stripos($channel->name, 'mail') !== false || stripos($channel->name, 'correo') !== false) <i class="bi bi-envelope"></i>
+                                                            @elseif(stripos($channel->name, 'what') !== false) <i class="bi bi-whatsapp"></i>
+                                                            @elseif(stripos($channel->name, 'chat') !== false) <i class="bi bi-chat-dots"></i>
+                                                            @elseif(stripos($channel->name, 'pres') !== false) <i class="bi bi-shop"></i>
+                                                            @else <i class="bi bi-broadcast"></i>
+                                                            @endif
+                                                        </div>
+                                                        <span class="card-title fw-semibold small text-center lh-sm">{{ $channel->name }}</span>
+                                                    </label>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                        @error('interaction_channel') <div class="text-danger small mt-2 fw-bold">{{ $message }}</div> @enderror
+                                    </div>
+
+                                    <div class="mb-4">
+                                        <label class="form-label required-field text-uppercase small fw-bold text-muted mb-3 d-block">2. Motivo / Tipificación</label>
+                                        <div class="p-4 bg-light rounded-3 border">
+                                            <div class="d-flex flex-wrap gap-3">
+                                                @foreach ($types as $type)
+                                                    <input type="radio" class="btn-check" name="interaction_type" id="tp_{{ $type->id }}" value="{{ $type->id }}"
+                                                        {{ old('interaction_type', $interaction->interaction_type ?? '') == $type->id ? 'checked' : '' }} required>
+                                                    
+                                                    <label class="smart-tag" for="tp_{{ $type->id }}">
+                                                        <span class="tag-icon"><i class="bi bi-check-lg"></i></span>
+                                                        {{ $type->name }}
+                                                    </label>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                        @error('interaction_type') <div class="text-danger small mt-2 fw-bold">{{ $message }}</div> @enderror
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <label class="form-label required-field text-uppercase small fw-bold text-muted mb-2">3. Notas Finales</label>
+                                            <textarea class="form-control" name="notes" rows="3" placeholder="Resume los puntos clave..." 
+                                                style="border-left: 4px solid var(--primary-color);" required>{{ old('notes', $interaction->notes ?? '') }}</textarea>
+                                            @error('notes') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-actions sticky-bottom bg-white border-top pt-3 pb-2">
+                                <div class="text-end w-100">
+                                    <button type="button" class="btn btn-primary px-5 rounded-pill shadow fw-bold" onclick="showTab('adicional')">
+                                        Siguiente <i class="bi bi-arrow-right ms-2"></i>
+                                    </button>
+                                </div>
+                            </div>
+
                             <script>
                             document.addEventListener("DOMContentLoaded", function() {
                                 const clientSelect = document.getElementById('client_id');
-                                const radioButtons = document.querySelectorAll('input[name="caller_type"]');
                                 const thirdPartyFields = document.getElementById('third-party-fields');
+                                const clientCard = document.getElementById('client-info-card');
+                                const timerDisplay = document.getElementById('timer');
+                                const durationInput = document.getElementById('duration');
+                                
+                                // --- LÓGICA DEL CRONÓMETRO ---
+                                let seconds = 0;
+                                function startTimer() {
+                                    setInterval(function() {
+                                        seconds++;
+                                        const mins = Math.floor(seconds / 60);
+                                        const secs = seconds % 60;
+                                        // Formato 00:00
+                                        timerDisplay.textContent = 
+                                            (mins < 10 ? "0" + mins : mins) + ":" + 
+                                            (secs < 10 ? "0" + secs : secs);
+                                        
+                                        // Actualizar input oculto para backend
+                                        if(durationInput) durationInput.value = seconds;
+                                    }, 1000);
+                                }
+                                startTimer(); // Iniciar inmediatamente
 
-                                // Variable para guardar los datos del cliente seleccionado
-                                let currentClientData = null;
-
-                                // Función para obtener los detalles del cliente desde el servidor
+                                // --- FETCH DATOS ---
                                 async function fetchClientDetails(clientId) {
-                                    if (!clientId) {
-                                        currentClientData = null;
-                                        return;
-                                    }
+                                    if (!clientId) return null;
                                     try {
                                         const response = await fetch(`/clientes/${clientId}/detalles`);
-                                        if (!response.ok) {
-                                            throw new Error('Network response was not ok');
-                                        }
-                                        currentClientData = await response.json();
-                                    } catch (error) {
-                                        console.error('Error fetching client details:', error);
-                                        currentClientData = null;
-                                    }
+                                        return response.ok ? await response.json() : null;
+                                    } catch (e) { return null; }
                                 }
 
-                                // Función principal que maneja los cambios en quién llama
+                                // --- MANEJO QUIEN LLAMA ---
                                 function handleCallerChange() {
-                                    const selectedButton = document.querySelector('input[name="caller_type"]:checked');
+                                    const isThird = document.getElementById('caller_third').checked;
+                                    thirdPartyFields.style.display = isThird ? 'block' : 'none';
                                     
-                                    if (selectedButton.value === 'third_party') {
-                                        thirdPartyFields.style.display = 'block';
-                                        // Limpiar campos para que el usuario los llene
+                                    if (!isThird && clientSelect.value) {
+                                        fetchClientDetails(clientSelect.value).then(data => {
+                                            if(data) {
+                                                document.getElementById('nombre_quien_llama').value = data.nom_ter || '';
+                                                document.getElementById('cedula_quien_llama').value = clientSelect.value;
+                                                document.getElementById('celular_quien_llama').value = data.tel || '';
+                                                const rep = document.getElementById('rel_representante');
+                                                if(rep) rep.checked = true;
+                                            }
+                                        });
+                                    } else if (isThird) {
                                         document.getElementById('nombre_quien_llama').value = '';
                                         document.getElementById('cedula_quien_llama').value = '';
                                         document.getElementById('celular_quien_llama').value = '';
-                                        document.getElementById('parentezgo_quien_llama').value = '';
-                                    } else { // 'client'
-                                        thirdPartyFields.style.display = 'none';
-                                        // Autocompletar campos si hay datos de cliente disponibles
-                                        if (currentClientData) {
-                                            document.getElementById('nombre_quien_llama').value = currentClientData.nom_ter;
-                                            document.getElementById('cedula_quien_llama').value = clientSelect.value; // Usa el ID del cliente
-                                            document.getElementById('celular_quien_llama').value = currentClientData.tel;
-                                            document.getElementById('parentezgo_quien_llama').value = 'representante'; // Valor fijo
-                                        } else {
-                                            // Limpiar si no hay cliente seleccionado
-                                            document.getElementById('nombre_quien_llama').value = '';
-                                            document.getElementById('cedula_quien_llama').value = '';
-                                            document.getElementById('celular_quien_llama').value = '';
-                                            document.getElementById('parentezgo_quien_llama').value = '';
-                                        }
                                     }
                                 }
 
-                                // Event Listeners
-                                radioButtons.forEach(radioButton => {
-                                    radioButton.addEventListener('change', handleCallerChange);
-                                });
+                                document.querySelectorAll('input[name="caller_type"]').forEach(btn => btn.addEventListener('change', handleCallerChange));
 
-                                clientSelect.addEventListener('change', function() {
-                                    const selectedClientId = this.value;
-                                    fetchClientDetails(selectedClientId).then(() => {
-                                        // Después de obtener los datos, actualiza el formulario
-                                        handleCallerChange();
-                                    });
-                                });
+                                // --- MANEJO CLIENTE ---
+                                clientSelect.addEventListener('change', async function() {
+                                    const clientId = this.value;
+                                    if(clientId) {
+                                        const data = await fetchClientDetails(clientId);
+                                        if(data) {
+                                            document.getElementById('info-nombre').textContent = data.nom_ter || '--';
+                                            document.getElementById('info-id').textContent = clientId;
+                                            document.getElementById('info-categoria').textContent = data.categoria || 'General';
+                                            document.getElementById('info-distrito').textContent = data.distrito || 'Zona';
+                                            document.getElementById('info-email').textContent = data.email || 'No email';
+                                            document.getElementById('info-telefono').textContent = data.tel || 'No tel';
+                                            document.getElementById('info-direccion').textContent = data.dir || 'No dir';
+                                            
+                                            document.getElementById('info-avatar').textContent = (data.nom_ter || 'C').charAt(0);
+                                            
+                                            const btnVer = document.getElementById('btn-ver-cliente');
+                                            const btnEditar = document.getElementById('btn-editar-cliente');
+                                            if(btnVer) btnVer.href = `/clientes/${clientId}`;
+                                            if(btnEditar) btnEditar.href = `/clientes/${clientId}/editar`;
 
-                                // Establecer el estado inicial al cargar la página
-                                // Si hay un cliente preseleccionado (en modo edición), obtén sus datos
-                                if (clientSelect.value) {
-                                    fetchClientDetails(clientSelect.value).then(() => {
-                                        handleCallerChange();
+                                            clientCard.style.display = 'block';
+                                            handleCallerChange();
+                                        }
+                                    } else {
+                                        clientCard.style.display = 'none';
+                                    }
+                                });
+                                
+                                if(clientSelect.value) { clientSelect.dispatchEvent(new Event('change')); }
+                            });
+                            </script>
+                        </div>
+                    <!-- FINAL -->
+
+                    <!-- PESTAÑA 2 -->
+                    <!-- INICIO -->
+                    <!-- INFORMACIÓN ADICIONAL -->
+                        <div class="tab-panel" id="adicional-tab" 
+                            data-agent-area-id="{{ $idAreaAgente ?? '' }}" 
+                            data-agent-cargo-id="{{ $idCargoAgente ?? '' }}">
+
+                            <style>
+                                /* 1. Toggle Gigante de Responsabilidad */
+                                .segment-control {
+                                    display: flex;
+                                    background: #f1f5f9;
+                                    padding: 6px;
+                                    border-radius: 12px;
+                                    position: relative;
+                                    user-select: none;
+                                }
+                                .segment-option {
+                                    flex: 1;
+                                    text-align: center;
+                                    position: relative;
+                                    z-index: 1;
+                                }
+                                .segment-input {
+                                    display: none;
+                                }
+                                .segment-label {
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    padding: 12px;
+                                    cursor: pointer;
+                                    border-radius: 8px;
+                                    transition: all 0.3s ease;
+                                    font-weight: 600;
+                                    color: #64748b;
+                                    gap: 8px;
+                                }
+                                .segment-input:checked + .segment-label {
+                                    background: #fff;
+                                    color: var(--primary-color);
+                                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+                                    transform: scale(1.02);
+                                }
+
+                                /* 2. Tarjeta de Credencial (Aparece cuando es "Yo") */
+                                .agent-id-card {
+                                    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+                                    border: 1px solid #e2e8f0;
+                                    border-left: 5px solid var(--primary-color);
+                                    border-radius: 10px;
+                                    padding: 20px;
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 15px;
+                                    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+                                    animation: slideInUp 0.3s ease-out;
+                                }
+                                @keyframes slideInUp {
+                                    from { opacity: 0; transform: translateY(10px); }
+                                    to { opacity: 1; transform: translateY(0); }
+                                }
+
+                                /* 3. Panel de Delegación (Aparece cuando es "Otro") */
+                                .delegation-panel {
+                                    background: #fff;
+                                    border: 1px dashed #cbd5e1;
+                                    border-radius: 10px;
+                                    padding: 20px;
+                                    animation: fadeIn 0.3s ease-out;
+                                }
+
+                                /* 4. Sync Control para Distrito */
+                                .sync-wrapper {
+                                    display: flex;
+                                    align-items: stretch;
+                                    border: 1px solid #ced4da;
+                                    border-radius: 8px;
+                                    overflow: hidden;
+                                    transition: all 0.2s;
+                                }
+                                .sync-wrapper:focus-within {
+                                    border-color: var(--primary-color);
+                                    box-shadow: 0 0 0 3px rgba(107, 155, 209, 0.15);
+                                }
+                                .sync-select-container {
+                                    flex-grow: 1;
+                                }
+                                .sync-select-container .select2-container--bootstrap-5 .select2-selection {
+                                    border: none !important;
+                                    border-radius: 0 !important;
+                                    box-shadow: none !important;
+                                }
+                                .sync-btn {
+                                    border: none;
+                                    background: #f8f9fa;
+                                    border-left: 1px solid #dee2e6;
+                                    padding: 0 15px;
+                                    color: #6c757d;
+                                    transition: all 0.2s;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                }
+                                .sync-btn:hover {
+                                    background: #e9ecef;
+                                    color: var(--primary-color);
+                                }
+                                .sync-btn-upload:hover {
+                                    color: #10b981; /* Verde al subir */
+                                }
+                            </style>
+
+                            <div class="category-container">
+                                <div class="category-header pb-3" style="background: linear-gradient(to right, #f8f9fa, #fff);">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <div>
+                                            <h5 class="category-title mb-1 text-primary"><i class="bi bi-briefcase-fill me-2"></i>Asignación y Contexto</h5>
+                                            <p class="category-description mb-0 text-muted" style="margin-left: 0;">Define quién se hace cargo y dónde ocurre.</p>
+                                        </div>
+                                        <div class="text-end d-none d-md-block">
+                                            <span class="badge bg-light text-secondary border">Paso 2 de 3</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="category-content pt-4 px-4 pb-4">
+                                    
+                                    <div class="mb-4">
+                                        <label class="form-label text-uppercase small fw-bold text-muted mb-3 d-block text-center">¿Quién es el responsable?</label>
+                                        
+                                        <div class="segment-control shadow-sm">
+                                            <div class="segment-option">
+                                                <input type="radio" name="handled_by_agent" id="handled_by_me" value="yes" class="segment-input" checked>
+                                                <label for="handled_by_me" class="segment-label">
+                                                    <i class="bi bi-person-check-fill fs-5"></i>
+                                                    <span>Yo me encargo</span>
+                                                </label>
+                                            </div>
+                                            <div class="segment-option">
+                                                <input type="radio" name="handled_by_agent" id="handled_by_other" value="no" class="segment-input">
+                                                <label for="handled_by_other" class="segment-label">
+                                                    <i class="bi bi-arrow-right-circle-fill fs-5"></i>
+                                                    <span>Delegar a otro</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-5">
+                                        <div id="panel-me">
+                                            <div class="agent-id-card">
+                                                <div class="rounded-circle bg-primary bg-opacity-10 p-3 text-primary">
+                                                    <i class="bi bi-shield-check fs-2"></i>
+                                                </div>
+                                                <div class="flex-grow-1">
+                                                    <h6 class="fw-bold text-dark mb-1">Asignación Automática</h6>
+                                                    <div class="text-muted small">La interacción quedará registrada bajo tus credenciales:</div>
+                                                    <div class="d-flex gap-3 mt-2">
+                                                        <span class="badge bg-white text-secondary border px-3 py-2">
+                                                            <i class="bi bi-building me-1"></i> {{ $idAreaAgente ? $areas[$idAreaAgente] : 'Sin Área' }}
+                                                        </span>
+                                                        <span class="badge bg-white text-secondary border px-3 py-2">
+                                                            <i class="bi bi-person-badge me-1"></i> {{ $idCargoAgente ? $cargos[$idCargoAgente] : 'Sin Cargo' }}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <i class="bi bi-check-lg text-success fs-1"></i>
+                                            </div>
+                                        </div>
+
+                                        <div id="panel-other" class="delegation-panel" style="display: none;">
+                                            <h6 class="text-secondary small fw-bold text-uppercase mb-3"><i class="bi bi-diagram-3 me-2"></i>Selecciona el Destino</h6>
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <label for="id_area_de_asignacion" class="form-label small fw-bold">Área Responsable</label>
+                                                    <select class="form-select select2" id="id_area_de_asignacion" name="id_area_de_asignacion">
+                                                        <option value="">Buscar área...</option>
+                                                        @if (isset($areas))
+                                                            @foreach ($areas as $id => $nombre)
+                                                                <option value="{{ $id }}">{{ $nombre }}</option>
+                                                            @endforeach
+                                                        @endif
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label for="id_cargo_asignacion" class="form-label small fw-bold">Cargo Responsable</label>
+                                                    <select class="form-select select2" id="id_cargo_asignacion" name="id_cargo_asignacion">
+                                                        <option value="">Buscar cargo...</option>
+                                                        @if (isset($cargos))
+                                                            @foreach ($cargos as $id => $nombre)
+                                                                <option value="{{ $id }}">{{ $nombre }}</option>
+                                                            @endforeach
+                                                        @endif
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <hr class="text-muted opacity-10">
+
+                                    <div class="row g-4 mt-2">
+                                        <div class="col-md-6">
+                                            <label for="id_linea_de_obligacion" class="form-label required-field text-uppercase small fw-bold text-muted">Línea de Obligación</label>
+                                            <div class="input-group shadow-sm">
+                                                <span class="input-group-text bg-white border-end-0 text-secondary"><i class="bi bi-credit-card-2-front"></i></span>
+                                                <select class="form-select border-start-0 select2" id="id_linea_de_obligacion" name="id_linea_de_obligacion">
+                                                    <option value="">Selecciona la línea...</option>
+                                                    @if (isset($lineasCredito))
+                                                        @foreach ($lineasCredito as $id => $nombre)
+                                                            <option value="{{ $id }}">{{ $nombre }}</option>
+                                                        @endforeach
+                                                    @endif
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-md-6">
+                                            <label for="id_distrito_interaccion" class="form-label text-uppercase small fw-bold text-muted">Distrito / Zona</label>
+                                            
+                                            <div class="sync-wrapper shadow-sm">
+                                                <div class="sync-select-container">
+                                                    <select class="form-select select2" id="id_distrito_interaccion" name="id_distrito_interaccion">
+                                                        <option value="">Selecciona el distrito...</option>
+                                                        @if (isset($distrito))
+                                                            @foreach ($distrito as $id => $nombre)
+                                                                <option value="{{ $id }}">{{ $nombre }}</option>
+                                                            @endforeach
+                                                        @endif
+                                                    </select>
+                                                </div>
+                                                <button type="button" class="sync-btn" id="sync-from-client-btn" 
+                                                    data-bs-toggle="tooltip" data-bs-placement="top" title="Traer distrito del Cliente">
+                                                    <i class="bi bi-cloud-download"></i>
+                                                </button>
+                                                <button type="button" class="sync-btn sync-btn-upload" id="sync-to-client-btn"
+                                                    data-bs-toggle="tooltip" data-bs-placement="top" title="Guardar este distrito en el Cliente">
+                                                    <i class="bi bi-cloud-upload"></i>
+                                                </button>
+                                            </div>
+                                            <div class="d-flex justify-content-end mt-1">
+                                                <span class="badge bg-light text-muted border" style="font-size: 0.65rem;">SYNC TOOLS</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            <div class="form-actions sticky-bottom bg-white border-top pt-3 pb-2 mt-4">
+                                <div class="action-buttons w-100 d-flex justify-content-between">
+                                    <button type="button" class="btn btn-outline-secondary px-4 rounded-pill border-0 hover-shadow" onclick="showTab('principal')">
+                                        <i class="bi bi-arrow-left me-2"></i> Volver
+                                    </button>
+                                    <button type="button" class="btn btn-primary px-5 rounded-pill shadow-lg fw-bold" onclick="showTab('resultado')">
+                                        Siguiente Paso <i class="bi bi-arrow-right ms-2"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <script>
+                            document.addEventListener("DOMContentLoaded", function() {
+                                const infoTab = document.getElementById('adicional-tab');
+                                const handledByMe = document.getElementById('handled_by_me');
+                                const handledByOther = document.getElementById('handled_by_other');
+                                
+                                const panelMe = document.getElementById('panel-me');
+                                const panelOther = document.getElementById('panel-other');
+                                
+                                const areaSelect = document.getElementById('id_area_de_asignacion');
+                                const cargoSelect = document.getElementById('id_cargo_asignacion');
+
+                                // Referencias para Sync
+                                const clientSelect = document.getElementById('client_id');
+                                const districtSelect = document.getElementById('id_distrito_interaccion');
+                                const btnSyncFrom = document.getElementById('sync-from-client-btn');
+                                const btnSyncTo = document.getElementById('sync-to-client-btn');
+
+                                // Inicializar Tooltips de Bootstrap
+                                var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+                                var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                                    return new bootstrap.Tooltip(tooltipTriggerEl)
+                                })
+
+                                // --- 1. LÓGICA DE VISUALIZACIÓN Y ASIGNACIÓN ---
+                                function toggleResponsibility() {
+                                    // Datos del agente (Dataset)
+                                    const myArea = infoTab.dataset.agentAreaId;
+                                    const myCargo = infoTab.dataset.agentCargoId;
+
+                                    if (handledByMe.checked) {
+                                        // Mostrar tarjeta Yo, Ocultar Selectores
+                                        panelMe.style.display = 'block';
+                                        panelOther.style.display = 'none';
+                                        
+                                        // Asignar valores por debajo (Silent Assignment)
+                                        if(areaSelect) $(areaSelect).val(myArea).trigger('change');
+                                        if(cargoSelect) $(cargoSelect).val(myCargo).trigger('change');
+                                    } else {
+                                        // Ocultar tarjeta Yo, Mostrar Selectores con Animación
+                                        panelMe.style.display = 'none';
+                                        panelOther.style.display = 'block';
+                                        
+                                        // Limpiar para obligar a seleccionar
+                                        if(areaSelect) $(areaSelect).val('').trigger('change');
+                                        if(cargoSelect) $(cargoSelect).val('').trigger('change');
+                                    }
+                                }
+
+                                handledByMe.addEventListener('change', toggleResponsibility);
+                                handledByOther.addEventListener('change', toggleResponsibility);
+                                
+                                // Ejecutar al inicio
+                                toggleResponsibility();
+
+                                // --- 2. LÓGICA DE SINCRONIZACIÓN (SYNC) ---
+                                
+                                // Descargar (Client -> Form)
+                                if(btnSyncFrom) {
+                                    btnSyncFrom.addEventListener('click', async () => {
+                                        const clientId = clientSelect ? clientSelect.value : null;
+                                        if(!clientId) return Swal.fire({icon:'warning', title:'¡Espera!', text:'Selecciona un cliente en la pestaña anterior.', confirmButtonColor: 'var(--primary-color)'});
+
+                                        const originalIcon = btnSyncFrom.innerHTML;
+                                        btnSyncFrom.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+                                        
+                                        try {
+                                            const url = "{{ route('interactions.clientes.distrito', ':id') }}".replace(':id', clientId);
+                                            const res = await fetch(url);
+                                            if(res.ok) {
+                                                const data = await res.json();
+                                                if(data.district_id) {
+                                                    $(districtSelect).val(data.district_id).trigger('change');
+                                                    // Feedback visual sutil (Toast)
+                                                    const toast = Swal.mixin({toast: true, position: 'top-end', showConfirmButton: false, timer: 3000});
+                                                    toast.fire({icon: 'success', title: 'Distrito cargado del cliente'});
+                                                } else {
+                                                    Swal.fire({icon:'info', text:'Este cliente no tiene distrito registrado.'});
+                                                }
+                                            }
+                                        } catch(e) { console.error(e); }
+                                        btnSyncFrom.innerHTML = originalIcon;
                                     });
-                                } else {
-                                    handleCallerChange();
+                                }
+
+                                // Subir (Form -> Client)
+                                if(btnSyncTo) {
+                                    btnSyncTo.addEventListener('click', async () => {
+                                        const clientId = clientSelect ? clientSelect.value : null;
+                                        const distId = districtSelect.value;
+
+                                        if(!clientId) return Swal.fire({icon:'warning', text:'Falta seleccionar Cliente'});
+                                        if(!distId) return Swal.fire({icon:'warning', text:'Selecciona un distrito para guardar'});
+
+                                        const confirm = await Swal.fire({
+                                            title: 'Actualizar Cliente',
+                                            text: '¿Asignar este distrito a la ficha permanente del cliente?',
+                                            icon: 'question',
+                                            showCancelButton: true,
+                                            confirmButtonColor: 'var(--primary-color)',
+                                            confirmButtonText: 'Sí, Actualizar'
+                                        });
+
+                                        if(confirm.isConfirmed) {
+                                            const originalIcon = btnSyncTo.innerHTML;
+                                            btnSyncTo.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+                                            
+                                            try {
+                                                const url = `/interactions/clientes/${clientId}/actualizar-distrito`; // Asegúrate que esta ruta exista
+                                                const res = await fetch(url, {
+                                                    method: 'PUT',
+                                                    headers: {
+                                                        'Content-Type': 'application/json',
+                                                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                                    },
+                                                    body: JSON.stringify({ district_id: distId })
+                                                });
+                                                
+                                                if(res.ok) {
+                                                    Swal.fire({icon:'success', title:'Guardado', text:'Distrito del cliente actualizado.', timer:1500, showConfirmButton:false});
+                                                }
+                                            } catch(e) { 
+                                                Swal.fire({icon:'error', title:'Error', text:'No se pudo actualizar.'});
+                                            }
+                                            btnSyncTo.innerHTML = originalIcon;
+                                        }
+                                    });
                                 }
                             });
                             </script>
-                            <!-- ================================================================= -->
-                            <!-- FIN: BLOQUE DE "QUIEN LLAMA" -->
-                            <!-- ================================================================= -->
-                            <div class="category-header">
-                                <h5 class="category-title">
-                                    <div class="category-icon">
-                                        <i class="bi bi-info-circle"></i>
-                                    </div>
-                                    Información Principal
-                                </h5>
-                                <p class="category-description">Datos esenciales de la interacción y el cliente</p>
-                            </div>
-                            <div class="category-content">
-                                <div class="section-divider">
-                                    <h6 class="section-title">
-                                        <i class="bi bi-person-badge me-2 text-primary"></i>Registro del Asociado
-                                    </h6>
-                                </div>
-                                <div class="row g-3 mb-4">
-                                    <div class="col-md-8">
-                                        <div class="form-group">
-                                            <label for="client_id" class="form-label required-field">Cliente</label>
-                                            <select class="form-select select2 @error('client_id') is-invalid @enderror"
-                                                id="client_id" name="client_id" required>
-                                                <option value="">Selecciona un cliente</option>
-                                                @if ($modoEdicion && $interaction->client_id)
-                                                    <option value="{{ $interaction->client_id }}" selected>
-                                                        {{ $interaction->client->nom_ter }} ({{ $interaction->client_id }})
-                                                    </option>
-                                                @endif
-                                            </select>
-                                            @error('client_id')
-                                                <div class="invalid-feedback">{{ $message }}</div>
-                                            @enderror
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="form-group">
-                                            <label for="agent" class="form-label">Agente</label>
-                                            <input type="text" class="form-control bg-light"
-                                                value="{{ auth()->user()->name }}" readonly>
-                                            <input type="hidden" name="agent_id" value="{{ auth()->user()->id }}">
-                                            <input type="hidden" name="interaction_date" value="{{ now()->toDateTimeString() }}">
-                                            <div class="form-text mt-1">
-                                                <i class="bi bi-calendar me-1"></i> {{ now()->format('d/m/Y h:i A') }}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div id="client-info-card" class="card border-0 bg-light mb-4" style="display:none;">
-                                    <div class="card-body p-3">
-                                        <div class="d-flex align-items-center mb-2">
-                                            <i class="bi bi-info-circle text-primary me-2"></i>
-                                            <h6 class="mb-0 fw-semibold">Información del Cliente</h6>
-                                            <div class="ms-auto">
-                                                <button type="button" class="btn btn-sm btn-outline-secondary"
-                                                    id="toggle-client-info">
-                                                    <i class="bi bi-chevron-down"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div id="client-info-content">
-                                            <div class="row">
-                                                <div class="col-md-6">
-                                                    <div class="d-flex align-items-center mb-2">
-                                                        <div class="client-avatar me-2" id="info-avatar"
-                                                            style="width:40px;height:40px;border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:bold;">
-                                                        </div>
-                                                        <div>
-                                                            <div id="info-nombre" class="fw-semibold">—</div>
-                                                            <div id="info-id" class="text-muted small">ID: —</div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="info-item mb-2">
-                                                        <i class="bi bi-geo-alt text-muted me-2"></i>
-                                                        <span id="info-distrito">Cargando...</span>
-                                                    </div>
-                                                    <div class="info-item mb-2">
-                                                        <i class="bi bi-tag text-muted me-2"></i>
-                                                        <span id="info-categoria">Cargando...</span>
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <div class="info-item mb-2">
-                                                        <i class="bi bi-envelope text-muted me-2"></i>
-                                                        <span id="info-email">Cargando...</span>
-                                                    </div>
-                                                    <div class="info-item mb-2">
-                                                        <i class="bi bi-telephone text-muted me-2"></i>
-                                                        <span id="info-telefono">Cargando...</span>
-                                                    </div>
-                                                    <div class="info-item mb-2">
-                                                        <i class="bi bi-geo text-muted me-2"></i>
-                                                        <span id="info-direccion">Cargando...</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div class="text-end mt-2">
-                                                <a id="btn-editar-cliente"
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1">                             
-                                                    <i class="bi bi-pencil-square"></i>
-                                                    <span>Actualizar datos</span>
-                                                </a>
-                                                <a id="btn-ver-cliente"
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1">                             
-                                                    <i class="bi bi-pencil-square"></i>
-                                                    <span>Ver ficha completa</span>
-                                                </a>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="section-divider">
-                                    <h6 class="section-title">
-                                        <i class="bi bi-chat-dots me-2 text-primary"></i>Detalles de la Interacción
-                                    </h6>
-                                </div>
-                                <div class="row g-3 mb-4">
-                                    <div class="col-md-4">
-                                        <div class="form-group">
-                                            <label for="interaction_channel" class="form-label required-field">Canal</label>
-                                            <select
-                                                class="form-select select2 @error('interaction_channel') is-invalid @enderror"
-                                                id="interaction_channel" name="interaction_channel" required>
-                                                <option value="">Selecciona un canal</option>
-                                                @foreach ($channels as $channel)
-                                                    <option value="{{ $channel->id }}"
-                                                        {{ old('interaction_channel', $interaction->interaction_channel ?? '') == $channel->id ? 'selected' : '' }}>
-                                                        {{ $channel->name }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                            @error('interaction_channel')
-                                                <div class="invalid-feedback">{{ $message }}</div>
-                                            @enderror
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="form-group">
-                                            <label for="interaction_type" class="form-label required-field">Tipo</label>
-                                            <select class="form-select select2 @error('interaction_type') is-invalid @enderror"
-                                                id="interaction_type" name="interaction_type" required>
-                                                <option value="">Selecciona un tipo</option>
-                                                @foreach ($types as $type)
-                                                    <option value="{{ $type->id }}"
-                                                        {{ old('interaction_type', $interaction->interaction_type ?? '') == $type->id ? 'selected' : '' }}>
-                                                        {{ $type->name }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                            @error('interaction_type')
-                                                <div class="invalid-feedback">{{ $message }}</div>
-                                            @enderror
-                                        </div>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <div class="form-group">
-                                            <label for="duration-display" class="form-label">Duración</label>
-                                            <input type="text" class="form-control bg-light" id="duration-display"
-                                                readonly
-                                                value="{{ $modoEdicion && $interaction->duration ? $interaction->duration . ' segundos' : '0 segundos' }}">
-                                            <input type="hidden" id="start_time" name="start_time"
-                                                value="{{ old('start_time', $interaction->start_time ?? '') }}">
-                                            <input type="hidden" id="duration" name="duration"
-                                                value="{{ old('duration', $interaction->duration ?? '') }}">
-                                            <div class="form-text mt-1">Se calcula automáticamente al seleccionar un cliente.</div>
-                                            @error('duration')
-                                                <div class="invalid-feedback d-block">{{ $message }}</div>
-                                            @enderror
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="row g-3 mb-4">
-                                    <div class="col-md-12">
-                                        <div class="form-group">
-                                            <label for="notes" class="form-label required-field">Notas</label>
-                                            <textarea class="form-control @error('notes') is-invalid @enderror" id="notes" name="notes" rows="4"
-                                                placeholder="Describe los detalles de la interacción..." required>{{ old('notes', $interaction->notes ?? '') }}</textarea>
-                                            <div class="d-flex justify-content-between">
-                                                <div class="form-text">Añade aquí todos los detalles relevantes de la interacción.</div>
-                                                <div class="form-text text-end" id="notes-counter">0/500 caracteres</div>
-                                            </div>
-                                            @error('notes')
-                                                <div class="invalid-feedback">{{ $message }}</div>
-                                            @enderror
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
-                        <div class="form-actions">
-                            <div></div>
-                            <div class="action-buttons">
-                                <button type="button" class="btn btn-primary" onclick="showTab('adicional')">
-                                    Continuar <i class="bi bi-arrow-right"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                    <!-- FINAL -->
 
-                    <!-- PESTAÑA 2: INFORMACIÓN ADICIONAL -->
-                    <div class="tab-panel" id="adicional-tab" 
-                        data-agent-area-id="{{ $idAreaAgente ?? '' }}" 
-                        data-agent-cargo-id="{{ $idCargoAgente ?? '' }}">
-                        <div class="category-container">
-                            <div class="category-header">
-                                <h5 class="category-title">
-                                    <div class="category-icon">
-                                        <i class="bi bi-briefcase"></i>
-                                    </div>
-                                    Información Adicional
-                                </h5>
-                                <p class="category-description">Datos complementarios del cliente y asignación</p>
-                            </div>
-                            <div class="category-content">
-                                <!-- Fila 1: Pregunta de Asignación -->
-                                <div class="row g-3 mb-4">
-                                    <div class="col-12">
-                                        <label class="form-label fw-semibold text-muted small">
-                                            <i class="bi bi-help-circle me-1"></i>¿Quién gestionará esta interacción?
-                                        </label>
-                                        <div class="btn-group w-100" role="group" aria-label="Gestión de la interacción">
-                                            <input type="radio" class="btn-check" name="handled_by_agent" id="handled_by_me" value="yes" autocomplete="off" checked>
-                                            <label class="btn btn-outline-primary" for="handled_by_me">
-                                                <i class="bi bi-person me-1"></i>Yo la gestionaré
-                                            </label>
-
-                                            <input type="radio" class="btn-check" name="handled_by_agent" id="handled_by_other" value="no" autocomplete="off">
-                                            <label class="btn btn-outline-secondary" for="handled_by_other">
-                                                <i class="bi bi-people me-1"></i>Otro cargo/área la gestionará
-                                            </label>
+                    <!-- PESTAÑA 3 INI: RESULTADO Y PLANIFICACIÓN -->
+                        <div class="tab-panel" id="resultado-tab">
+                            <div class="category-container">
+                                <div class="category-header">
+                                    <h5 class="category-title">
+                                        <div class="category-icon">
+                                            <i class="bi bi-check-circle"></i>
                                         </div>
-                                        <div class="form-text mt-1">Selecciona si tú serás el responsable o si la interacción será asignada a otra área o cargo.</div>
-                                    </div>
+                                        Resultado y Planificación
+                                    </h5>
+                                    <p class="category-description">Resultado de la interacción y próximas acciones</p>
                                 </div>
-
-                                <!-- Fila 2: Datos del Agente (Solo Lectura) -->
-                                <div class="row g-3 mb-4">
-                                    <div class="col-md-6">
-                                        <label for="area-agente-display" class="form-label fw-semibold text-muted small">
-                                            <i class="bi bi-layers me-1"></i>Área del Agente
-                                        </label>
-                                        <div class="input-group">
-                                            <span class="input-group-text"><i class="bi bi-person"></i></span>
-                                            <input type="text" class="form-control bg-light" id="area-agente-display" readonly 
-                                                value="{{ $idAreaAgente ? $areas[$idAreaAgente] : 'No asignada' }}">
-                                            <!-- CORRECCIÓN: ID del campo oculto cambiado para evitar duplicados -->
-                                            <input type="hidden" id="id_area" name="id_area" value="{{ old('id_area', $interaction->id_area ?? $idAreaAgente ?? '') }}">
-                                        </div>
-                                        <div class="form-text mt-1">Tu área actual, asignada automáticamente.</div>
-                                        @error('id_area')
-                                            <div class="invalid-feedback d-block">{{ $message }}</div>
-                                        @enderror
+                                <div class="category-content">
+                                    <!-- Separador visual para la sección de resultado -->
+                                    <div class="section-divider">
+                                        <h6 class="section-title">
+                                            <i class="bi bi-flag me-2 text-primary"></i>Resultado de la Interacción
+                                        </h6>
                                     </div>
-                                    <div class="col-md-6">
-                                        <label for="cargo-agente-display" class="form-label fw-semibold text-muted small">
-                                            <i class="bi bi-briefcase me-1"></i>Cargo del Agente
-                                        </label>
-                                        <div class="input-group">
-                                            <span class="input-group-text"><i class="bi bi-person"></i></span>
-                                            <input type="text" class="form-control bg-light" id="cargo-agente-display" readonly 
-                                                value="{{ $idCargoAgente ? $cargos[$idCargoAgente] : 'No asignado' }}">
-                                            <!-- CORRECCIÓN: ID del campo oculto cambiado para evitar duplicados -->
-                                            <input type="hidden" id="id_cargo_agente" name="id_cargo_agente" value="{{ old('id_cargo_agente', $idCargoAgente ?? '') }}">
-                                        </div>
-                                        <div class="form-text mt-1">Tu cargo actual, asignado automáticamente.</div>
-                                        @error('id_cargo_agente')
-                                            <div class="invalid-feedback d-block">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-                                </div>
-
-                                <!-- Fila 3: Datos de Asignación (Seleccionables) -->
-                                <div class="row g-3 mb-4">
-                                    <div class="col-md-6">
-                                        <label for="id_area_de_asignacion" class="form-label fw-semibold text-muted small">
-                                            <i class="bi bi-target me-1"></i>Área de Asignación
-                                        </label>
-                                        <select class="form-select select2 @error('id_area_de_asignacion') is-invalid @enderror"
-                                                id="id_area_de_asignacion" name="id_area_de_asignacion">
-                                            <option value="">Selecciona un área</option>
-                                            @if (isset($areas))
-                                                @foreach ($areas as $id => $nombre)
-                                                    <option value="{{ $id }}" {{ old('id_area_de_asignacion', $interaction->id_area_de_asignacion ?? '') == $id ? 'selected' : '' }}>
-                                                        {{ $nombre }}
-                                                    </option>
-                                                @endforeach
-                                            @endif
-                                        </select>
-                                        <div class="form-text mt-1">Área responsable de gestionar esta interacción.</div>
-                                        @error('id_area_de_asignacion')
-                                            <div class="invalid-feedback d-block">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label for="id_cargo_asignacion" class="form-label fw-semibold text-muted small">
-                                            <i class="bi bi-user-check me-1"></i>Cargo de Asignación
-                                        </label>
-                                        <!-- CORRECCIÓN: ID del select cambiado para evitar duplicados -->
-                                        <select class="form-select select2 @error('id_cargo_asignacion') is-invalid @enderror"
-                                                id="id_cargo_asignacion" name="id_cargo_asignacion">
-                                            <option value="">Selecciona un cargo</option>
-                                            @if (isset($cargos))
-                                                @foreach ($cargos as $id => $nombre)
-                                                    <option value="{{ $id }}" {{ old('id_cargo_asignacion', $interaction->id_cargo ?? '') == $id ? 'selected' : '' }}>
-                                                        {{ $nombre }}
-                                                    </option>
-                                                @endforeach
-                                            @endif
-                                        </select>
-                                        <div class="form-text mt-1">Cargo específico que atenderá o desarrollará la interacción.</div>
-                                        @error('id_cargo_asignacion')
-                                            <div class="invalid-feedback d-block">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-                                </div>
-
-                                <!-- Fila 4: Detalles Adicionales -->
-                                <div class="row g-3">
-                                    <div class="col-md-6">
-                                        <label for="id_linea_de_obligacion" class="form-label fw-semibold text-muted small">
-                                            <i class="bi bi-credit-card me-1"></i>Línea de Obligación
-                                        </label>
-                                        <select class="form-select select2 @error('id_linea_de_obligacion') is-invalid @enderror"
-                                                id="id_linea_de_obligacion" name="id_linea_de_obligacion">
-                                            <option value="">Selecciona una línea</option>
-                                            @if (isset($lineasCredito))
-                                                @foreach ($lineasCredito as $id => $nombre)
-                                                    <option value="{{ $id }}" {{ old('id_linea_de_obligacion', $interaction->id_linea_de_obligacion ?? '') == $id ? 'selected' : '' }}>
-                                                        {{ $nombre }}
-                                                    </option>
-                                                @endforeach
-                                            @endif
-                                        </select>
-                                        <div class="form-text mt-1">Relaciona la interacción con una línea de crédito o producto específico.</div>
-                                        @error('id_linea_de_obligacion')
-                                            <div class="invalid-feedback d-block">{{ $message }}</div>
-                                        @enderror
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label for="id_distrito_interaccion" class="form-label fw-semibold text-muted small">
-                                            <i class="bi bi-map-pin me-1"></i>Distrito de la Interacción
-                                        </label>
-                                        <div class="input-group">
-                                            <select class="form-select select2 @error('id_distrito_interaccion') is-invalid @enderror"
-                                                    id="id_distrito_interaccion" name="id_distrito_interaccion">
-                                                <option value="">Selecciona un distrito</option>
-                                                @if (isset($distrito))
-                                                    @foreach ($distrito as $id => $nombre)
-                                                        <option value="{{ $id }}" {{ old('id_distrito_interaccion', $interaction->id_distrito_interaccion ?? '') == $id ? 'selected' : '' }}>
-                                                            {{ $nombre }}
+                                    
+                                    <!-- Selector para el resultado de la interacción -->
+                                    <div class="row g-3 mb-4">
+                                        <div class="col-md-12">
+                                            <div class="form-group">
+                                                <label for="outcome" class="form-label required-field">Resultado</label>
+                                                <select class="form-select select2 @error('outcome') is-invalid @enderror"
+                                                    id="outcome" name="outcome" required>
+                                                    <option value="">Selecciona un resultado</option>
+                                                    @foreach ($outcomes as $outcome)
+                                                        <option value="{{ $outcome->id }}"
+                                                            {{ old('outcome', $interaction->outcome ?? '') == $outcome->id ? 'selected' : '' }}>
+                                                            {{ $outcome->name }}
                                                         </option>
                                                     @endforeach
-                                                @endif
-                                            </select>
-                                            <button class="btn btn-outline-secondary" type="button" id="sync-from-client-btn" 
-                                                    title="Sincroniza el campo de distrito con la información del cliente seleccionado.">
-                                                <i class="bi bi-download"></i>
-                                            </button>
-                                            <button class="btn btn-outline-primary" type="button" id="sync-to-client-btn" 
-                                                    title="Actualiza el distrito del cliente con el valor seleccionado en este formulario.">
-                                                <i class="bi bi-upload"></i>
-                                            </button>
+                                                </select>
+                                                @error('outcome')
+                                                    <div class="invalid-feedback">{{ $message }}</div>
+                                                @enderror
+                                            </div>
                                         </div>
-                                        <div class="form-text mt-1">
-                                            Selecciona el distrito, usa el botón de descarga para sincronizar desde el cliente 
-                                            o el botón de subida para actualizar el cliente.
+                                    </div>
+                                    
+                                    <!-- Separador visual para la sección de planificación -->
+                                    <div class="section-divider">
+                                        <h6 class="section-title">
+                                            <i class="bi bi-calendar-check me-2 text-primary"></i>Planificación
+                                        </h6>
+                                    </div>
+                                    
+                                    <!-- Sección de planificación (inicialmente oculta, se muestra según el resultado) -->
+                                    <div class="card border-0 bg-light mb-4" id="planning-section" style="display:none;">
+                                        <div class="card-body p-3">
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <!-- Campo para fecha y hora de la próxima acción -->
+                                                        <label for="next_action_date" class="form-label">Próxima Acción</label>
+                                                        <input type="datetime-local"
+                                                            class="form-control @error('next_action_date') is-invalid @enderror"
+                                                            id="next_action_date" name="next_action_date"
+                                                            value="{{ old('next_action_date', $interaction->next_action_date ?? '') }}">
+                                                        <!-- Botones para establecer fechas rápidas -->
+                                                        <div class="d-flex gap-1 flex-wrap mt-2">
+                                                            <button type="button" class="btn btn-sm btn-outline-secondary quick-date"
+                                                                data-days="1">+1 día</button>
+                                                            <button type="button" class="btn btn-sm btn-outline-secondary quick-date"
+                                                                data-days="3">+3 días</button>
+                                                            <button type="button" class="btn btn-sm btn-outline-secondary quick-date"
+                                                                data-days="7">+1 sem</button>
+                                                            <button type="button" class="btn btn-sm btn-outline-secondary quick-date"
+                                                                data-days="14">+2 sem</button>
+                                                            <button type="button" class="btn btn-sm btn-outline-secondary quick-date"
+                                                                data-days="30">+1 mes</button>
+                                                        </div>
+                                                        @error('next_action_date')
+                                                            <div class="invalid-feedback">{{ $message }}</div>
+                                                        @enderror
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <!-- Selector para el tipo de próxima acción -->
+                                                        <label for="next_action_type" class="form-label">Tipo de Acción</label>
+                                                        <select
+                                                            class="form-select select2 @error('next_action_type') is-invalid @enderror"
+                                                            id="next_action_type" name="next_action_type">
+                                                            <option value="">Selecciona un tipo</option>
+                                                            @foreach ($nextActions as $action)
+                                                                <option value="{{ $action->id }}"
+                                                                    {{ old('next_action_type', $interaction->next_action_type ?? '') == $action->id ? 'selected' : '' }}>
+                                                                    {{ $action->name }}
+                                                                </option>
+                                                            @endforeach
+                                                        </select>
+                                                        @error('next_action_type')
+                                                            <div class="invalid-feedback">{{ $message }}</div>
+                                                        @enderror
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-12">
+                                                    <div class="form-group">
+                                                        <!-- Campo para notas sobre la próxima acción -->
+                                                        <label for="next_action_notes" class="form-label">Notas sobre la Próxima Acción</label>
+                                                        <textarea class="form-control @error('next_action_notes') is-invalid @enderror" id="next_action_notes"
+                                                            name="next_action_notes" rows="3" placeholder="Detalles sobre la próxima acción programada...">{{ old('next_action_notes', $interaction->next_action_notes ?? '') }}</textarea>
+                                                        @error('next_action_notes')
+                                                            <div class="invalid-feedback">{{ $message }}</div>
+                                                        @enderror
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
-                                        @error('id_distrito_interaccion')
-                                            <div class="invalid-feedback d-block">{{ $message }}</div>
-                                        @enderror
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="form-actions">
-                            <div class="action-buttons">
-                                <button type="button" class="btn btn-light" onclick="showTab('principal')">
-                                    <i class="bi bi-arrow-left"></i> Anterior
-                                </button>
-                            </div>
-                            <div class="action-buttons">
-                                <button type="button" class="btn btn-primary" onclick="showTab('resultado')">
-                                    Continuar <i class="bi bi-arrow-right"></i>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Script Unificado para Autocompletado y Sincronización -->
-                        <script>
-                        document.addEventListener("DOMContentLoaded", function() {
-                            // =================================================================
-                            // ELEMENTOS DEL DOM PARA LA LÓGICA DE AUTOCOMPLETADO
-                            // =================================================================
-                            const infoTab = document.getElementById('adicional-tab');
-                            const handledByMeRadio = document.getElementById('handled_by_me');
-                            const handledByOtherRadio = document.getElementById('handled_by_other');
-                            const areaAsignacionSelect = document.getElementById('id_area_de_asignacion');
-                            const cargoAsignacionSelect = document.getElementById('id_cargo_asignacion');
-
-                            // =================================================================
-                            // ELEMENTOS DEL DOM PARA LA LÓGICA DE SINCRONIZACIÓN DE DISTRITO
-                            // =================================================================
-                            const clientSelect = document.getElementById('client_id');
-                            const districtSelect = document.getElementById('id_distrito_interaccion');
-                            const syncFromClientBtn = document.getElementById('sync-from-client-btn'); // Botón para sincronizar desde cliente
-                            const syncToClientBtn = document.getElementById('sync-to-client-btn'); // Botón para actualizar cliente
-
-                            // =================================================================
-                            // LÓGICA DE AUTOCOMPLETADO DE ASIGNACIÓN
-                            // =================================================================
-                            function handleAssignmentChange() {
-                                if (!areaAsignacionSelect || !cargoAsignacionSelect || !infoTab) return;
-
-                                const agentAreaId = infoTab.dataset.agentAreaId;
-                                const agentCargoId = infoTab.dataset.agentCargoId;
-
-                                if (handledByMeRadio.checked) {
-                                    areaAsignacionSelect.value = agentAreaId;
-                                    cargoAsignacionSelect.value = agentCargoId;
-                                } else {
-                                    areaAsignacionSelect.value = '';
-                                    cargoAsignacionSelect.value = '';
-                                }
-
-                                // Notificar a Select2 del cambio para que actualice la visualización
-                                if (typeof jQuery !== 'undefined' && jQuery().select2) {
-                                    jQuery(areaAsignacionSelect).trigger('change');
-                                    jQuery(cargoAsignacionSelect).trigger('change');
-                                }
-                            }
-
-                            // Asignar event listeners a los botones de radio
-                            if (handledByMeRadio) handledByMeRadio.addEventListener('change', handleAssignmentChange);
-                            if (handledByOtherRadio) handledByOtherRadio.addEventListener('change', handleAssignmentChange);
-
-                            // Ejecutar la función una vez al cargar la página para establecer el estado inicial
-                            handleAssignmentChange();
-
-                            // =================================================================
-                            // LÓGICA DE SINCRONIZACIÓN DE DISTRITO DESDE CLIENTE
-                            // =================================================================
-                            async function handleSyncFromClientClick() {
-                                if (!clientSelect || !districtSelect || !syncFromClientBtn) return;
-                                
-                                const selectedClientId = clientSelect.value;
-                                if (!selectedClientId) {
-                                    Swal.fire({ icon: 'warning', title: 'Atención', text: 'Por favor, selecciona un cliente primero.' });
-                                    return;
-                                }
-
-                                syncFromClientBtn.disabled = true;
-                                syncFromClientBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
-
-                                try {
-                                    console.log(`Intentando obtener distrito para cliente ID: ${selectedClientId}`);
-                                    
-                                    // ✅ MEJOR PRÁCTICA: Usar el helper de ruta de Laravel
-                                    const url = "{{ route('interactions.clientes.distrito', ':id') }}".replace(':id', selectedClientId);
-                                    const response = await fetch(url);
-                                    
-                                    console.log('Respuesta del servidor:', response.status, response.statusText);
-                                    
-                                    if (!response.ok) {
-                                        let errorMessage = `Error ${response.status}: ${response.statusText}`;
-                                        try {
-                                            const errorData = await response.json();
-                                            if (errorData.error) {
-                                                errorMessage = errorData.error;
-                                            }
-                                        } catch (e) {
-                                            console.log('No se pudo parsear el error como JSON');
-                                        }
-                                        throw new Error(errorMessage);
-                                    }
-
-                                    const data = await response.json();
-                                    console.log('Datos recibidos:', data);
-                                    
-                                    const newDistrictId = data.district_id;
-
-                                    if (newDistrictId) {
-                                        districtSelect.value = newDistrictId;
-                                        if (typeof jQuery !== 'undefined' && jQuery().select2) {
-                                            jQuery(districtSelect).trigger('change');
-                                        }
-                                        Swal.fire({ 
-                                            icon: 'success', 
-                                            title: 'Actualizado', 
-                                            text: 'El distrito ha sido sincronizado desde el cliente.', 
-                                            timer: 2000, 
-                                            showConfirmButton: false 
-                                        });
-                                    } else {
-                                        Swal.fire({ 
-                                            icon: 'info', 
-                                            title: 'Sin Datos', 
-                                            text: 'El cliente seleccionado no tiene un distrito asignado.' 
-                                        });
-                                    }
-                                } catch (error) {
-                                    console.error('Error al actualizar distrito:', error);
-                                    Swal.fire({ 
-                                        icon: 'error', 
-                                        title: 'Error', 
-                                        text: `No se pudo sincronizar el distrito: ${error.message}` 
-                                    });
-                                } finally {
-                                    syncFromClientBtn.disabled = false;
-                                    syncFromClientBtn.innerHTML = '<i class="bi bi-download"></i>';
-                                }
-                            }
-
-                            // =================================================================
-                            // LÓGICA DE ACTUALIZACIÓN DE DISTRITO EN CLIENTE
-                            // =================================================================
-                            async function handleSyncToClientClick() {
-                                if (!clientSelect || !districtSelect || !syncToClientBtn) return;
-                                
-                                const selectedClientId = clientSelect.value;
-                                const selectedDistrictId = districtSelect.value;
-                                
-                                if (!selectedClientId) {
-                                    Swal.fire({ icon: 'warning', title: 'Atención', text: 'Por favor, selecciona un cliente primero.' });
-                                    return;
-                                }
-                                
-                                if (!selectedDistrictId) {
-                                    Swal.fire({ icon: 'warning', title: 'Atención', text: 'Por favor, selecciona un distrito primero.' });
-                                    return;
-                                }
-
-                                // Confirmar antes de actualizar
-                                const result = await Swal.fire({
-                                    title: '¿Estás seguro?',
-                                    text: `¿Quieres actualizar el distrito del cliente con el valor seleccionado?`,
-                                    icon: 'question',
-                                    showCancelButton: true,
-                                    confirmButtonColor: '#3085d6',
-                                    cancelButtonColor: '#d33',
-                                    confirmButtonText: 'Sí, actualizar',
-                                    cancelButtonText: 'Cancelar'
-                                });
-
-                                if (!result.isConfirmed) {
-                                    return;
-                                }
-
-                                syncToClientBtn.disabled = true;
-                                syncToClientBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
-
-                                try {
-                                    console.log(`Intentando actualizar distrito para cliente ID: ${selectedClientId} con distrito: ${selectedDistrictId}`);
-                                    
-                                    // ✅ CORREGIDO: Usar la URL directa para evitar problemas con las rutas
-                                    const url = `/interactions/clientes/${selectedClientId}/actualizar-distrito`;
-                                    const response = await fetch(url, {
-                                        method: 'PUT',
-                                        headers: {
-                                            'Content-Type': 'application/json',
-                                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                                        },
-                                        body: JSON.stringify({
-                                            district_id: selectedDistrictId
-                                        })
-                                    });
-                                    
-                                    console.log('Respuesta del servidor:', response.status, response.statusText);
-                                    
-                                    if (!response.ok) {
-                                        let errorMessage = `Error ${response.status}: ${response.statusText}`;
-                                        try {
-                                            const errorData = await response.json();
-                                            if (errorData.error) {
-                                                errorMessage = errorData.error;
-                                            }
-                                        } catch (e) {
-                                            console.log('No se pudo parsear el error como JSON');
-                                        }
-                                        throw new Error(errorMessage);
-                                    }
-
-                                    const data = await response.json();
-                                    console.log('Datos recibidos:', data);
-                                    
-                                    Swal.fire({ 
-                                        icon: 'success', 
-                                        title: 'Actualizado', 
-                                        text: 'El distrito del cliente ha sido actualizado correctamente.', 
-                                        timer: 2000, 
-                                        showConfirmButton: false 
-                                    });
-                                } catch (error) {
-                                    console.error('Error al actualizar distrito del cliente:', error);
-                                    Swal.fire({ 
-                                        icon: 'error', 
-                                        title: 'Error', 
-                                        text: `No se pudo actualizar el distrito del cliente: ${error.message}` 
-                                    });
-                                } finally {
-                                    syncToClientBtn.disabled = false;
-                                    syncToClientBtn.innerHTML = '<i class="bi bi-upload"></i>';
-                                }
-                            }
-
-                            // =================================================================
-                            // ASIGNACIÓN DE EVENTOS A LOS BOTONES
-                            // =================================================================
-                            // Asignar evento al botón de sincronización desde cliente
-                            if (syncFromClientBtn) {
-                                syncFromClientBtn.addEventListener('click', handleSyncFromClientClick);
-                            }
                             
-                            // Asignar evento al botón de actualización de cliente
-                            if (syncToClientBtn) {
-                                syncToClientBtn.addEventListener('click', handleSyncToClientClick);
-                            }
-                        });
-                        </script>
-                    </div>
-
-                    <!-- PESTAÑA 3: RESULTADO Y PLANIFICACIÓN -->
-                    <div class="tab-panel" id="resultado-tab">
-                        <div class="category-container">
-                            <div class="category-header">
-                                <h5 class="category-title">
-                                    <div class="category-icon">
-                                        <i class="bi bi-check-circle"></i>
-                                    </div>
-                                    Resultado y Planificación
-                                </h5>
-                                <p class="category-description">Resultado de la interacción y próximas acciones</p>
+                            <!-- Botones de navegación entre pestañas -->
+                            <div class="form-actions">
+                                <div class="action-buttons">
+                                    <button type="button" class="btn btn-light" onclick="showTab('adicional')">
+                                        <i class="bi bi-arrow-left"></i> Anterior
+                                    </button>
+                                </div>
+                                <div class="action-buttons">
+                                    <button type="button" class="btn btn-primary" onclick="showTab('adjuntos')">
+                                        Continuar <i class="bi bi-arrow-right"></i>
+                                    </button>
+                                </div>
                             </div>
-                            <div class="category-content">
-                                <div class="section-divider">
-                                    <h6 class="section-title">
-                                        <i class="bi bi-flag me-2 text-primary"></i>Resultado de la Interacción
-                                    </h6>
-                                </div>
-                                <div class="row g-3 mb-4">
-                                    <div class="col-md-12">
-                                        <div class="form-group">
-                                            <label for="outcome" class="form-label required-field">Resultado</label>
-                                            <select class="form-select select2 @error('outcome') is-invalid @enderror"
-                                                id="outcome" name="outcome" required>
-                                                <option value="">Selecciona un resultado</option>
-                                                @foreach ($outcomes as $outcome)
-                                                    <option value="{{ $outcome->id }}"
-                                                        {{ old('outcome', $interaction->outcome ?? '') == $outcome->id ? 'selected' : '' }}>
-                                                        {{ $outcome->name }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                            @error('outcome')
-                                                <div class="invalid-feedback">{{ $message }}</div>
-                                            @enderror
+                        </div>
+                    <!-- PESTAÑA 3 FIN: RESULTADO Y PLANIFICACIÓN -->
+
+                    <!-- PESTAÑA 4 INI: ADJUNTOS Y REFERENCIAS -->
+                        <div class="tab-panel" id="adjuntos-tab">
+                            <div class="category-container">
+                                <div class="category-header">
+                                    <h5 class="category-title">
+                                        <div class="category-icon">
+                                            <i class="bi bi-paperclip"></i>
                                         </div>
-                                    </div>
+                                        Adjuntos y Referencias
+                                    </h5>
+                                    <p class="category-description">Archivos y enlaces relacionados con la interacción</p>
                                 </div>
-                                <div class="section-divider">
-                                    <h6 class="section-title">
-                                        <i class="bi bi-calendar-check me-2 text-primary"></i>Planificación
-                                    </h6>
-                                </div>
-                                <div class="card border-0 bg-light mb-4" id="planning-section" style="display:none;">
-                                    <div class="card-body p-3">
-                                        <div class="row g-3">
-                                            <div class="col-md-6">
-                                                <div class="form-group">
-                                                    <label for="next_action_date" class="form-label">Próxima Acción</label>
-                                                    <input type="datetime-local"
-                                                        class="form-control @error('next_action_date') is-invalid @enderror"
-                                                        id="next_action_date" name="next_action_date"
-                                                        value="{{ old('next_action_date', $interaction->next_action_date ?? '') }}">
-                                                    <div class="d-flex gap-1 flex-wrap mt-2">
-                                                        <button type="button" class="btn btn-sm btn-outline-secondary quick-date"
-                                                            data-days="1">+1 día</button>
-                                                        <button type="button" class="btn btn-sm btn-outline-secondary quick-date"
-                                                            data-days="3">+3 días</button>
-                                                        <button type="button" class="btn btn-sm btn-outline-secondary quick-date"
-                                                            data-days="7">+1 sem</button>
-                                                        <button type="button" class="btn btn-sm btn-outline-secondary quick-date"
-                                                            data-days="14">+2 sem</button>
-                                                        <button type="button" class="btn btn-sm btn-outline-secondary quick-date"
-                                                            data-days="30">+1 mes</button>
+                                <div class="category-content">
+                                    <!-- Campos para adjuntar archivos y agregar enlaces de referencia -->
+                                    <div class="row g-3 mb-4">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label for="attachment" class="form-label">Archivo Adjunto</label>
+                                                <!-- Campo para subir archivo -->
+                                                <input type="file"
+                                                    class="form-control @error('attachment') is-invalid @enderror"
+                                                    id="attachment" name="attachment" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx">
+                                                <div class="form-text">Puedes adjuntar un archivo (máx. 10MB)</div>
+                                                
+                                                <!-- En modo edición, mostrar archivo existente si hay -->
+                                                @if ($modoEdicion && $interaction->attachment_urls)
+                                                    <div class="mt-3">
+                                                        <div class="small text-muted fw-semibold">Archivo existente:</div>
+                                                        <div class="d-flex align-items-center mt-2 p-2 border rounded bg-light">
+                                                            <i class="bi bi-file-earmark me-2"></i>
+                                                            <span class="me-auto">{{ basename($interaction->attachment_urls) }}</span>
+                                                            <a href="{{ route('interactions.download', basename($interaction->attachment_urls)) }}" 
+                                                            class="btn btn-sm btn-outline-primary me-1" target="_blank">
+                                                                <i class="bi bi-download"></i> Descargar
+                                                            </a>
+                                                            <a href="{{ route('interactions.view', basename($interaction->attachment_urls)) }}" 
+                                                            class="btn btn-sm btn-outline-secondary" target="_blank">
+                                                                <i class="bi bi-eye"></i> Ver
+                                                            </a>
+                                                        </div>
                                                     </div>
-                                                    @error('next_action_date')
-                                                        <div class="invalid-feedback">{{ $message }}</div>
-                                                    @enderror
-                                                </div>
+                                                @endif
+                                                
+                                                @error('attachment')
+                                                    <div class="invalid-feedback">{{ $message }}</div>
+                                                @enderror
                                             </div>
-                                            <div class="col-md-6">
-                                                <div class="form-group">
-                                                    <label for="next_action_type" class="form-label">Tipo de Acción</label>
-                                                    <select
-                                                        class="form-select select2 @error('next_action_type') is-invalid @enderror"
-                                                        id="next_action_type" name="next_action_type">
-                                                        <option value="">Selecciona un tipo</option>
-                                                        @foreach ($nextActions as $action)
-                                                            <option value="{{ $action->id }}"
-                                                                {{ old('next_action_type', $interaction->next_action_type ?? '') == $action->id ? 'selected' : '' }}>
-                                                                {{ $action->name }}
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
-                                                    @error('next_action_type')
-                                                        <div class="invalid-feedback">{{ $message }}</div>
-                                                    @enderror
-                                                </div>
-                                            </div>
-                                            <div class="col-md-12">
-                                                <div class="form-group">
-                                                    <label for="next_action_notes" class="form-label">Notas sobre la Próxima Acción</label>
-                                                    <textarea class="form-control @error('next_action_notes') is-invalid @enderror" id="next_action_notes"
-                                                        name="next_action_notes" rows="3" placeholder="Detalles sobre la próxima acción programada...">{{ old('next_action_notes', $interaction->next_action_notes ?? '') }}</textarea>
-                                                    @error('next_action_notes')
-                                                        <div class="invalid-feedback">{{ $message }}</div>
-                                                    @enderror
-                                                </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <!-- Campo para agregar URL de referencia -->
+                                                <label for="interaction_url" class="form-label">Enlace de Referencia</label>
+                                                <input type="url"
+                                                    class="form-control @error('interaction_url') is-invalid @enderror"
+                                                    id="interaction_url" name="interaction_url" placeholder="https://ejemplo.com"
+                                                    value="{{ old('interaction_url', $interaction->interaction_url ?? '') }}">
+                                                @error('interaction_url')
+                                                    <div class="invalid-feedback">{{ $message }}</div>
+                                                @enderror
                                             </div>
                                         </div>
                                     </div>
+                                    
+                                    <!-- Vista previa de imagen (inicialmente oculta) -->
+                                    <div id="image-preview-container" class="mt-3" style="display: none;">
+                                        <div class="small text-muted fw-semibold mb-2">Vista previa:</div>
+                                        <img id="image-preview" class="img-thumbnail file-preview" alt="Vista previa de la imagen">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Botones de navegación entre pestañas -->
+                            <div class="form-actions">
+                                <div class="action-buttons">
+                                    <button type="button" class="btn btn-light" onclick="showTab('resultado')">
+                                        <i class="bi bi-arrow-left"></i> Anterior
+                                    </button>
+                                </div>
+                                <div class="action-buttons">
+                                    <button type="button" class="btn btn-primary" onclick="showTab('historial')">
+                                        Continuar <i class="bi bi-arrow-right"></i>
+                                    </button>
                                 </div>
                             </div>
                         </div>
-                        <div class="form-actions">
-                            <div class="action-buttons">
-                                <button type="button" class="btn btn-light" onclick="showTab('adicional')">
-                                    <i class="bi bi-arrow-left"></i> Anterior
-                                </button>
-                            </div>
-                            <div class="action-buttons">
-                                <button type="button" class="btn btn-primary" onclick="showTab('adjuntos')">
-                                    Continuar <i class="bi bi-arrow-right"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- PESTAÑA 4: ADJUNTOS Y REFERENCIAS -->
-                    <div class="tab-panel" id="adjuntos-tab">
-                        <div class="category-container">
-                            <div class="category-header">
-                                <h5 class="category-title">
-                                    <div class="category-icon">
-                                        <i class="bi bi-paperclip"></i>
+                    <!-- PESTAÑA 4 FIN: ADJUNTOS Y REFERENCIAS -->
+  
+                    <!-- PESTAÑA 5 -->
+                    <!-- INICIO -->
+                    <!-- HISTORIAL -->
+                        <div class="tab-panel" id="historial-tab">
+                            <div class="category-container">
+                                <div class="category-header">
+                                    <h5 class="category-title">
+                                        <div class="category-icon">
+                                            <i class="bi bi-clock-history"></i>
+                                        </div>
+                                        Historial de Interacciones
+                                    </h5>
+                                    <p class="category-description">Interacciones previas con este cliente. Selecciona una para escalar.</p>
+                                </div>
+                                <div class="category-content">
+                                    <!-- Mensaje cuando no hay cliente seleccionado -->
+                                    <div id="no-client-selected" class="text-center py-5">
+                                        <i class="bi bi-person-x display-1 text-muted"></i>
+                                        <p class="mt-3 text-muted">Selecciona un cliente para ver su historial de interacciones</p>
                                     </div>
-                                    Adjuntos y Referencias
-                                </h5>
-                                <p class="category-description">Archivos y enlaces relacionados con la interacción</p>
-                            </div>
-                            <div class="category-content">
-                                <div class="row g-3 mb-4">
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label for="attachment" class="form-label">Archivo Adjunto</label>
-                                            <input type="file"
-                                                class="form-control @error('attachment') is-invalid @enderror"
-                                                id="attachment" name="attachment" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx">
-                                            <div class="form-text">Puedes adjuntar un archivo (máx. 10MB)</div>
+                                    
+                                    <!-- Campo oculto para almacenar el ID de la interacción padre (para escalamiento) -->
+                                    <input type="hidden" id="parent_interaction_id" name="parent_interaction_id" value="">
+                                    
+                                    <!-- Sección de historial (inicialmente oculta) -->
+                                    <div class="card border-0 bg-light mb-4" id="history-section" style="display:none;">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex align-items-center mb-3">
+                                                <i class="bi bi-clock-history text-primary me-2"></i>
+                                                <h6 class="mb-0 fw-semibold">Historial Reciente</h6>
+                                                <div class="ms-auto">
+                                                    <!-- Botón para actualizar el historial -->
+                                                    <button type="button" class="btn btn-sm btn-outline-primary" id="refresh-history">
+                                                        <i class="bi bi-arrow-clockwise"></i> Actualizar
+                                                    </button>
+                                                    <!-- Botón para expandir/contraer el historial -->
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary ms-1" id="toggle-history">
+                                                        <i class="bi bi-chevron-down"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
                                             
-                                            @if ($modoEdicion && $interaction->attachment_urls)
-                                                <div class="mt-3">
-                                                    <div class="small text-muted fw-semibold">Archivo existente:</div>
-                                                    <div class="d-flex align-items-center mt-2 p-2 border rounded bg-light">
-                                                        <i class="bi bi-file-earmark me-2"></i>
-                                                        <span class="me-auto">{{ basename($interaction->attachment_urls) }}</span>
-                                                        <a href="{{ route('interactions.download', basename($interaction->attachment_urls)) }}" 
-                                                           class="btn btn-sm btn-outline-primary me-1" target="_blank">
-                                                            <i class="bi bi-download"></i> Descargar
-                                                        </a>
-                                                        <a href="{{ route('interactions.view', basename($interaction->attachment_urls)) }}" 
-                                                           class="btn btn-sm btn-outline-secondary" target="_blank">
-                                                            <i class="bi bi-eye"></i> Ver
-                                                        </a>
-                                                    </div>
+                                            <!-- Indicador de interacción padre seleccionada para escalamiento -->
+                                            <div id="selected-parent-info" class="alert alert-info d-flex align-items-center" style="display:none;">
+                                                <i class="bi bi-info-circle me-2"></i>
+                                                <div class="flex-grow-1">
+                                                    <strong>Interacción padre seleccionada:</strong> 
+                                                    <span id="selected-parent-text">Ninguna</span>
                                                 </div>
-                                            @endif
-                                            
-                                            @error('attachment')
-                                                <div class="invalid-feedback">{{ $message }}</div>
-                                            @enderror
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="form-group">
-                                            <label for="interaction_url" class="form-label">Enlace de Referencia</label>
-                                            <input type="url"
-                                                class="form-control @error('interaction_url') is-invalid @enderror"
-                                                id="interaction_url" name="interaction_url" placeholder="https://ejemplo.com"
-                                                value="{{ old('interaction_url', $interaction->interaction_url ?? '') }}">
-                                            @error('interaction_url')
-                                                <div class="invalid-feedback">{{ $message }}</div>
-                                            @enderror
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <!-- Vista previa de imagen -->
-                                <div id="image-preview-container" class="mt-3" style="display: none;">
-                                    <div class="small text-muted fw-semibold mb-2">Vista previa:</div>
-                                    <img id="image-preview" class="img-thumbnail file-preview" alt="Vista previa de la imagen">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-actions">
-                            <div class="action-buttons">
-                                <button type="button" class="btn btn-light" onclick="showTab('resultado')">
-                                    <i class="bi bi-arrow-left"></i> Anterior
-                                </button>
-                            </div>
-                            <div class="action-buttons">
-                                <button type="button" class="btn btn-primary" onclick="showTab('historial')">
-                                    Continuar <i class="bi bi-arrow-right"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- PESTAÑA 5: HISTORIAL -->
-                    <div class="tab-panel" id="historial-tab">
-                        <div class="category-container">
-                            <div class="category-header">
-                                <h5 class="category-title">
-                                    <div class="category-icon">
-                                        <i class="bi bi-clock-history"></i>
-                                    </div>
-                                    Historial de Interacciones
-                                </h5>
-                                <p class="category-description">Interacciones previas con este cliente. Selecciona una para escalar.</p>
-                            </div>
-                            <div class="category-content">
-                                <div id="no-client-selected" class="text-center py-5">
-                                    <i class="bi bi-person-x display-1 text-muted"></i>
-                                    <p class="mt-3 text-muted">Selecciona un cliente para ver su historial de interacciones</p>
-                                </div>
-                                
-                                <!-- Campo oculto para almacenar el ID de la interacción padre -->
-                                <input type="hidden" id="parent_interaction_id" name="parent_interaction_id" value="">
-                                
-                                <div class="card border-0 bg-light mb-4" id="history-section" style="display:none;">
-                                    <div class="card-body p-3">
-                                        <div class="d-flex align-items-center mb-3">
-                                            <i class="bi bi-clock-history text-primary me-2"></i>
-                                            <h6 class="mb-0 fw-semibold">Historial Reciente</h6>
-                                            <div class="ms-auto">
-                                                <button type="button" class="btn btn-sm btn-outline-primary" id="refresh-history">
-                                                    <i class="bi bi-arrow-clockwise"></i> Actualizar
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-outline-secondary ms-1" id="toggle-history">
-                                                    <i class="bi bi-chevron-down"></i>
+                                                <!-- Botón para limpiar la selección de interacción padre -->
+                                                <button type="button" class="btn btn-sm btn-outline-secondary" id="clear-parent-selection">
+                                                    <i class="bi bi-x-circle"></i> Limpiar
                                                 </button>
                                             </div>
-                                        </div>
-                                        
-                                        <!-- Indicador de interacción padre seleccionada -->
-                                        <div id="selected-parent-info" class="alert alert-info d-flex align-items-center" style="display:none;">
-                                            <i class="bi bi-info-circle me-2"></i>
-                                            <div class="flex-grow-1">
-                                                <strong>Interacción padre seleccionada:</strong> 
-                                                <span id="selected-parent-text">Ninguna</span>
-                                            </div>
-                                            <button type="button" class="btn btn-sm btn-outline-secondary" id="clear-parent-selection">
-                                                <i class="bi bi-x-circle"></i> Limpiar
-                                            </button>
-                                        </div>
-                                        
-                                        <div id="history-content">
-                                            <div id="interaction-history-list" class="history-list" style="max-height:400px; overflow-y:auto;">
-                                                <!-- items cargados por JS -->
+                                            
+                                            <!-- Contenedor para la lista de interacciones del historial -->
+                                            <div id="history-content">
+                                                <div id="interaction-history-list" class="history-list" style="max-height:400px; overflow-y:auto;">
+                                                    <!-- Los elementos del historial se cargan dinámicamente con JavaScript -->
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="form-actions">
-                            <div class="action-buttons">
-                                <button type="button" class="btn btn-light" onclick="showTab('adjuntos')">
-                                    <i class="bi bi-arrow-left"></i> Anterior
-                                </button>
+                            
+                            <!-- Botones de acción final del formulario -->
+                            <div class="form-actions">
+                                <div class="action-buttons">
+                                    <button type="button" class="btn btn-light" onclick="showTab('adjuntos')">
+                                        <i class="bi bi-arrow-left"></i> Anterior
+                                    </button>
+                                </div>
+                                <div class="action-buttons">
+                                    <!-- Botón para limpiar borrador guardado -->
+                                    <button id="clear-draft" type="button" class="btn btn-outline-secondary me-2">
+                                        <i class="bi bi-trash me-1"></i> Borrar Borrador
+                                    </button>
+                                    <!-- Botón principal para enviar el formulario -->
+                                    <button type="submit" class="btn btn-primary px-4">
+                                        <i class="bi bi-save me-1"></i>
+                                        {{ $modoEdicion ? 'Actualizar Interacción' : 'Guardar Interacción' }}
+                                    </button>
+                                </div>
                             </div>
-                            <div class="action-buttons">
-                                <button id="clear-draft" type="button" class="btn btn-outline-secondary me-2">
-                                    <i class="bi bi-trash me-1"></i> Borrar Borrador
-                                </button>
-                                <button type="submit" class="btn btn-primary px-4">
-                                    <i class="bi bi-save me-1"></i>
-                                    {{ $modoEdicion ? 'Actualizar Interacción' : 'Guardar Interacción' }}
-                                </button>
-                            </div>
                         </div>
-                    </div>
+                    <!-- FINAL -->
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- AJAX Loader overlay -->
+    <!-- Overlay para mostrar durante operaciones AJAX -->
     <div id="ajax-loader" class="ajax-loader" aria-hidden="true"
         style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;align-items:center;justify-content:center;">
         <div class="card text-center p-4">
@@ -2057,6 +1636,7 @@
         </div>
     </div>
 
+    <!-- Librerías JavaScript externas -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -2068,7 +1648,7 @@
             // INICIALIZACIÓN DE COMPONENTES
             // =================================================================
             
-            // Inicialización de Select2
+            // Inicialización de Select2 para todos los selects con clase select2
             $('.select2').select2({
                 theme: 'bootstrap-5',
                 placeholder: function() {
@@ -2077,7 +1657,7 @@
                 dropdownParent: $('body')
             });
 
-            // Configuración especial para el campo de cliente con AJAX
+            // Configuración especial para el campo de cliente con búsqueda AJAX
             $('#client_id').select2({
                 theme: 'bootstrap-5',
                 placeholder: 'Buscar cliente...',
@@ -2118,7 +1698,7 @@
             const $form = $('#interaction-form');
             const storageKey = 'interaction_form_draft_v1';
 
-            // Variables para el cronómetro
+            // Variables para el cronómetro de duración de la interacción
             let startTimeInterval = null;
             let startTime = null;
 
@@ -2126,15 +1706,17 @@
             // FUNCIONES DE UTILIDAD
             // =================================================================
             
+            // Función para mostrar el overlay de carga
             function showLoader() {
                 $ajaxLoader.show();
             }
 
+            // Función para ocultar el overlay de carga
             function hideLoader() {
                 $ajaxLoader.hide();
             }
 
-            // Configuración de notificaciones
+            // Configuración de notificaciones Toastr
             toastr.options = {
                 "positionClass": "toast-bottom-right",
                 "timeOut": "2500",
@@ -2145,24 +1727,29 @@
             // LÓGICA DE NAVEGACIÓN POR PESTAÑAS
             // =================================================================
             
-            // Navegación por pestañas
+            // Event listener para los botones de navegación por pestañas
             $('.tab-button').on('click', function() {
                 const tabId = $(this).data('tab');
                 showTab(tabId);
                 saveDraft();
             });
 
+            // Función para mostrar una pestaña específica
             window.showTab = function(tabId) {
+                // Actualizar botones de pestaña
                 $('.tab-button').removeClass('active');
                 $(`.tab-button[data-tab="${tabId}"]`).addClass('active');
 
+                // Actualizar paneles de contenido
                 $('.tab-panel').removeClass('active');
                 $(`#${tabId}-tab`).addClass('active');
 
+                // Si es la pestaña de historial, actualizar su visibilidad
                 if (tabId === 'historial') {
                     updateHistoryTabVisibility();
                 }
 
+                // Actualizar barra de progreso
                 updateProgress();
             }
 
@@ -2170,11 +1757,12 @@
             // LÓGICA DE PROGRESO DEL FORMULARIO
             // =================================================================
             
-            // Actualizar progreso
+            // Función para actualizar la barra de progreso según campos completados
             function updateProgress() {
                 const requiredFields = ['client_id', 'interaction_channel', 'interaction_type', 'notes', 'outcome'];
                 let completed = 0;
 
+                // Contar campos obligatorios completados
                 requiredFields.forEach(field => {
                     const value = $(`[name="${field}"]`).val();
                     if (value && value.trim() !== '') {
@@ -2182,12 +1770,14 @@
                     }
                 });
 
+                // Calcular porcentaje de progreso
                 const progress = Math.round((completed / requiredFields.length) * 100);
 
+                // Actualizar barra de progreso visualmente
                 $('#progress-bar').css('width', progress + '%');
                 $('#progress-percentage').text(progress + '%');
 
-                // Actualizar mensaje
+                // Actualizar mensaje según el progreso
                 const messages = [
                     'Comienza seleccionando un cliente',
                     'Agrega los detalles de la interacción',
@@ -2205,14 +1795,15 @@
             // LÓGICA DE GUARDADO Y CARGA DE BORRADOR
             // =================================================================
             
-            // Guardado automático en localStorage
+            // Función para guardar el estado actual del formulario en localStorage
             function saveDraft() {
                 try {
                     const data = {};
+                    // Recopilar datos de todos los campos del formulario
                     $form.find('input,textarea,select').each(function() {
                         const name = this.name;
                         if (!name) return;
-                        if (this.type === 'file') return;
+                        if (this.type === 'file') return; // No guardar archivos
                         if (this.type === 'checkbox' || this.type === 'radio') {
                             if (this.checked) data[name] = this.value;
                         } else {
@@ -2223,6 +1814,7 @@
                             }
                         }
                     });
+                    // Guardar pestaña activa
                     data.activeTab = $('.tab-button.active').data('tab');
                     localStorage.setItem(storageKey, JSON.stringify(data));
                     toastr.success('Borrador guardado automáticamente');
@@ -2231,6 +1823,7 @@
                 }
             }
 
+            // Función de debounce para evitar guardar demasiado frecuentemente
             function debounce(fn, wait) {
                 let t;
                 return function(...args) {
@@ -2241,12 +1834,14 @@
 
             const saveDraftDebounced = debounce(saveDraft, 700);
 
-            // Cargar borrador guardado
+            // Función para cargar un borrador guardado desde localStorage
             function loadDraft() {
                 try {
                     const raw = localStorage.getItem(storageKey);
                     if (!raw) return;
                     const data = JSON.parse(raw);
+                    
+                    // Restaurar valores de campos
                     Object.keys(data).forEach(name => {
                         if (name === 'activeTab') return;
                         const value = data[name];
@@ -2261,7 +1856,7 @@
                         }
                     });
 
-                    // Restaurar el estado del cronómetro
+                    // Restaurar el estado del cronómetro si hay datos
                     if (data.start_time && data.client_id) {
                         $('#start_time').val(data.start_time);
                         if (data.duration) {
@@ -2270,6 +1865,7 @@
 
                         startTime = new Date(data.start_time);
 
+                        // Reiniciar el cronómetro
                         startTimeInterval = setInterval(() => {
                             const now = new Date();
                             const durationSeconds = Math.round((now - startTime) / 1000);
@@ -2278,6 +1874,7 @@
                         }, 1000);
                     }
 
+                    // Restaurar pestaña activa
                     if (data.activeTab) {
                         showTab(data.activeTab);
                     }
@@ -2288,17 +1885,17 @@
                 }
             }
 
-            // Eventos para guardar borrador
+            // Eventos para guardar borrador automáticamente
             $form.on('input change', 'input, textarea, select', function() {
                 updateProgress();
                 saveDraftDebounced();
             });
 
-            // Cargar borrador al iniciar
+            // Cargar borrador al iniciar la página
             loadDraft();
             updateProgress();
 
-            // Botón para limpiar borrador
+            // Botón para limpiar borrador guardado
             $('#clear-draft').on('click', function() {
                 Swal.fire({
                     title: '¿Borrar el borrador guardado?',
@@ -2325,11 +1922,12 @@
             // LÓGICA DE VALIDACIÓN Y ENVÍO DEL FORMULARIO
             // =================================================================
             
-            // Validación de formulario
+            // Función para validar un campo específico
             function validateField(el) {
                 const $el = $(el);
                 const name = $el.attr('name');
 
+                // Si no es obligatorio, solo validar si tiene valor
                 if (!$el.prop('required')) {
                     if ($el.val() && $el.val().toString().trim() !== '') {
                         $el.removeClass('is-invalid').addClass('is-valid');
@@ -2339,12 +1937,14 @@
                     return true;
                 }
 
+                // Validar que tenga valor
                 const val = $el.val();
                 if (!val || val.toString().trim() === '') {
                     $el.removeClass('is-valid').addClass('is-invalid');
                     return false;
                 }
 
+                // Validación específica para URLs
                 if ($el.attr('type') === 'url' && val) {
                     try {
                         new URL(val);
@@ -2354,6 +1954,7 @@
                     }
                 }
 
+                // Validación específica para números
                 if ($el.attr('type') === 'number' && val) {
                     if (isNaN(val) || parseFloat(val) < 0) {
                         $el.removeClass('is-valid').addClass('is-invalid');
@@ -2365,7 +1966,7 @@
                 return true;
             }
 
-            // Envío de formulario con cálculo final
+            // Manejador de envío del formulario
             $form.on('submit', function(e) {
                 e.preventDefault();
 
@@ -2389,6 +1990,7 @@
                     $durationDisplay.val('0 segundos');
                 }
 
+                // Validar todos los campos obligatorios
                 let valid = true;
 
                 $form.find('select[required], textarea[required], input[required]').each(function() {
@@ -2397,6 +1999,7 @@
                 });
 
                 if (!valid) {
+                    // Enfocar el primer campo inválido
                     const $first = $form.find('.is-invalid').first();
                     $('html,body').animate({
                         scrollTop: $first.offset().top - 90
@@ -2409,6 +2012,7 @@
                     return false;
                 }
 
+                // Confirmar envío del formulario
                 Swal.fire({
                     title: 'Confirmar envío',
                     text: "¿Deseas enviar la interacción ahora?",
@@ -2418,6 +2022,7 @@
                     cancelButtonText: 'Cancelar'
                 }).then((result) => {
                     if (result.isConfirmed) {
+                        // Limpiar borrador y enviar formulario
                         localStorage.removeItem(storageKey);
                         showLoader();
                         $form.off('submit');
@@ -2430,10 +2035,10 @@
             // LÓGICA DE ESCALAMIENTO DESDE EL HISTORIAL
             // =================================================================
             
-            // Función para manejar la selección de interacción padre
+            // Función para manejar la selección de interacción padre para escalamiento
             function selectParentInteraction(interactionId, interactionInfo) {
                 console.log('selectParentInteraction llamado con ID:', interactionId); // DEBUG
-                // Actualizar el campo oculto
+                // Actualizar el campo oculto con el ID de la interacción padre
                 $('#parent_interaction_id').val(interactionId);
                 // Agregar esta línea para verificar
                 console.log('Valor de parent_interaction_id después de establecer:', $('#parent_interaction_id').val());
@@ -2606,7 +2211,7 @@
             // LÓGICA DE CARGA DE INFORMACIÓN DEL CLIENTE
             // =================================================================
             
-            // Cargar información del cliente con cronómetro
+            // Event listener para cuando se selecciona un cliente
             $('#client_id').on('change', function() {
                 const cod_ter = $(this).val();
                 const clientCard = $('#client-info-card');
@@ -2622,6 +2227,7 @@
                 }
 
                 if (!cod_ter) {
+                    // Si no hay cliente seleccionado, ocultar información
                     clientCard.fadeOut();
                     historySection.fadeOut();
                     $durationDisplay.val('0 segundos');
@@ -2632,7 +2238,7 @@
                     return;
                 }
 
-                // Registrar hora de inicio y empezar a contar
+                // Registrar hora de inicio y empezar a contar duración
                 startTime = new Date();
                 $startTimeField.val(startTime.toISOString());
                 $durationDisplay.val('0 segundos');
@@ -2645,8 +2251,10 @@
                     $('#duration').val(durationSeconds);
                 }, 1000);
 
+                // Mostrar indicador de carga
                 showLoader();
                 
+                // Obtener información del cliente mediante AJAX
                 $.ajax({
                     url: @json(route('interactions.cliente.show', ['cod_ter' => ':cod_ter'])).replace(':cod_ter', cod_ter),
                     type: 'GET',
@@ -2659,7 +2267,7 @@
                         throw new Error(data.error);
                     }
                     
-                    // Actualizar avatar con iniciales
+                    // Actualizar avatar con iniciales del cliente
                     const initials = ((data.nom1 || '').charAt(0) + (data.apl1 || '').charAt(0))
                         .toUpperCase();
                     $('#info-avatar').text(initials || '—');
@@ -2675,7 +2283,7 @@
                     $('#btn-editar-cliente').attr('href', `/maestras/terceros/${data.cod_ter}/edit`);
                     $('#btn-ver-cliente').attr('href', `/maestras/terceros/${data.cod_ter}`);
 
-                    // Mejora en la carga del historial
+                    // Cargar historial de interacciones del cliente
                     historyList.empty();
                     if (data.history && data.history.length > 0) {
                         console.log(data);
@@ -2718,6 +2326,7 @@
                         historySection.fadeIn();
                     }
 
+                    // Mostrar tarjeta de información del cliente
                     clientCard.fadeIn();
                     updateProgress();
                     toastr.success('Información del cliente cargada correctamente');
@@ -2755,12 +2364,13 @@
             // LÓGICA DE PLANIFICACIÓN
             // =================================================================
             
-            // Lógica para mostrar/ocultar sección de planificación
+            // Lógica para mostrar/ocultar sección de planificación según el resultado seleccionado
             const outcomeSelect = $('#outcome');
             const planningSection = $('#planning-section');
 
             function handleOutcomeChange() {
                 const selectedOutcomeText = outcomeSelect.find("option:selected").text().trim();
+                // Mostrar sección de planificación para resultados que requieren seguimiento
                 if (selectedOutcomeText === 'Pendiente' || selectedOutcomeText === 'No contesta' ||
                     selectedOutcomeText.toLowerCase().includes('pendiente')) {
                     planningSection.slideDown();
@@ -2770,10 +2380,11 @@
                 updateProgress();
             }
 
+            // Event listener para cambios en el selector de resultado
             outcomeSelect.on('change', handleOutcomeChange);
             handleOutcomeChange();
 
-            // Botones de fecha rápida
+            // Botones de fecha rápida para la próxima acción
             $('.quick-date').on('click', function() {
                 const daysToAdd = parseInt($(this).data('days')) || 0;
                 const nextActionInput = $('#next_action_date');
@@ -2803,6 +2414,7 @@
                 const length = $(this).val().length;
                 $notesCounter.text(`${length}/500 caracteres`);
 
+                // Cambiar color si excede el límite
                 if (length > 500) {
                     $notesCounter.addClass('text-danger');
                 } else {
@@ -2909,14 +2521,16 @@
             // ATAJOS DE TECLADO
             // =================================================================
             
-            // Atajos de teclado
+            // Atajos de teclado para mejorar la usabilidad
             $(document).on('keydown', function(e) {
+                // Ctrl+S para guardar borrador
                 if (e.ctrlKey && e.key === 's') {
                     e.preventDefault();
                     saveDraft();
                     toastr.success('Borrador guardado');
                 }
 
+                // Alt+1-5 para navegar entre pestañas
                 if (e.altKey) {
                     switch (e.key) {
                         case '1':
