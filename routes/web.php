@@ -597,6 +597,8 @@ Route::prefix('creditos')->middleware('auth')->group(function () {
     Route::get('tipos/filtro/{categoria}', [ScpSoporteController::class, 'getTiposByCategoria'])
         ->name('tipos.byCategoria');
 
+        Route::get('subtipos/filtro/{tipo}', [ScpSoporteController::class, 'getSubTipos'])
+            ->name('subtipos.byTipo');
 
         // ---------------------------------------------------
         // 7. NOTIFICACIONES Y CORREOS
