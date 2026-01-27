@@ -13,5 +13,20 @@
         @candirect('admin.auditoria.index')
         <li class="nxl-item"><a href="{{route('admin.auditoria.index')}}" class="nxl-link">Auditoria</a></li>
         @endcandirect
+
+        <li class="nxl-item nxl-hasmenu">
+            <a class="nxl-link" href="javascript:void(0)">
+                <span>Indicadores</span>
+                <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
+            </a>
+            <ul class="nxl-submenu">
+                <li class="nxl-item">
+                    <a class="nxl-link" href="{{ route('indicators.indicadores.index') }}">Indicadores</a>
+                </li>
+                <li class="nxl-item">
+                    <a class="nxl-link" href="{{route('indicators.quizes.index')}}">Quizes</a>
+                </li>
+            </ul>
+        </li>
     </ul>
 </li>
