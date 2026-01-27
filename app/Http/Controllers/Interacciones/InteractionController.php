@@ -588,7 +588,7 @@ class InteractionController extends Controller
     public function getCliente($cod_ter)
     {
         try {
-            // Mejoramos la consulta para asegurar que se carguen todas las relaciones necesarias
+            // 1. Cargar datos del Cliente (maeTerceros)
             $cliente = maeTerceros::where('cod_ter', $cod_ter)
                 ->with(['maeTipos', 'distrito', 'congregaciones'])
                 ->first();
@@ -597,29 +597,98 @@ class InteractionController extends Controller
                 return response()->json(['error' => 'Cliente no encontrado'], 404);
             }
 
-            // Obtener historial de interacciones del cliente con más información
-            $history = Interaction::with(['agent', 'channel', 'type', 'outcomeRelation'])
+            // 2. Obtener historial de interacciones con TODAS las relaciones necesarias
+            $history = Interaction::with([
+                    // Relaciones base
+                    'agent', 
+                    'channel', 
+                    'type', 
+                    'outcomeRelation',
+                    // Relaciones organizacionales nuevas (según tu modelo)
+                    'area',                 // public function area()
+                    'cargo',                // public function cargo()
+                    'lineaDeObligacion',    // public function lineaDeObligacion()
+                    'areaDeAsignacion',     // public function areaDeAsignacion()
+                    'DistritoDeObligacion'  // public function DistritoDeObligacion()
+                    // Nota: 'funciones' está comentada en tu modelo, así que solo cargamos el ID
+                ])
                 ->where('client_id', $cod_ter)
                 ->orderByDesc('interaction_date')
                 ->limit(10)
                 ->get()
                 ->map(function ($item) {
                     return [
+                        // --- Identificadores ---
                         'id' => $item->id,
-                        'date' => $item->interaction_date->format('d/m/Y H:i'),
+                        'client_id' => $item->client_id,
                         'agent' => $item->agent ? $item->agent->name : 'No asignado',
-                        'type' => $item->type ? $item->type->name : 'No definido',
-                        'outcome' => $item->outcomeRelation ? $item->outcomeRelation->name : 'No definido',
-                        'notes' => $item->notes ? substr($item->notes, 0, 100) . (strlen($item->notes) > 100 ? '...' : '') : '',
-                        'channel' => $item->channel ? $item->channel->name : 'No definido',
+
+                        // --- Detalles Principales ---
+                        'date' => $item->interaction_date ? $item->interaction_date->format('d/m/Y H:i') : null,
+                        'date_iso' => $item->interaction_date,
                         'duration' => $item->duration ?? 0,
+                        
+                        // --- Categorización ---
+                        'type' => $item->type ? $item->type->name : 'No definido',
+                        'channel' => $item->channel ? $item->channel->name : 'No definido',
+                        'outcome' => $item->outcomeRelation ? $item->outcomeRelation->name : 'No definido',
+
+                        // --- Contenido ---
+                        'notes' => $item->notes,
+                        
+                        // --- Jerarquía y Ubicación ---
+                        'parent_interaction_id' => $item->parent_interaction_id,
+                        
+                        // --- Próxima Acción (Seguimiento) ---
+                        'next_action_date' => $item->next_action_date ? $item->next_action_date->format('d/m/Y H:i') : null,
+                        'next_action_type' => $item->next_action_type,
+                        'next_action_notes' => $item->next_action_notes,
+
+                        // --- Información de "Quien Llama" ---
+                        'parentezco_quien_llama' => $item->parentezco_quien_llama,
+                        'cedula_quien_llama' => $item->cedula_quien_llama,
+                        'nombre_quien_llama' => $item->nombre_quien_llama,
+                        'celular_quien_llama' => $item->celular_quien_llama,
+
+                        // --- Archivos y Enlaces ---
+                        'attachment_urls' => $item->attachment_urls ?? [], 
+                        'interaction_url' => $item->interaction_url,
+
+                        // --- NUEVOS CAMPOS ORGANIZACIONALES (Mapeo Completo) ---
+                        
+                        // 1. Distrito de Interacción
+                        'id_distrito_interaccion' => $item->id_distrito_interaccion,
+                        'distrito' => $item->DistritoDeObligacion ? ($item->DistritoDeObligacion->NOM_DIST ?? $item->DistritoDeObligacion->nombre) : null,
+
+                        // 2. Área
+                        'id_area' => $item->id_area,
+                        'area_name' => $item->area ? ($item->area->nombre ?? $item->area->name) : null, 
+
+                        // 3. Cargo
+                        'id_cargo' => $item->id_cargo,
+                        'cargo_name' => $item->cargo ? ($item->cargo->nombre ?? $item->cargo->name) : null, 
+
+                        // 4. Línea de Obligación
+                        'id_linea_de_obligacion' => $item->id_linea_de_obligacion,
+                        'linea_obligacion_name' => $item->lineaDeObligacion ? ($item->lineaDeObligacion->nombre ?? $item->lineaDeObligacion->name) : null, 
+
+                        // 5. Área de Asignación
+                        'id_area_de_asignacion' => $item->id_area_de_asignacion,
+                        'area_asignacion_name' => $item->areaDeAsignacion ? ($item->areaDeAsignacion->nombre ?? $item->areaDeAsignacion->name) : null,
+
+                        // 6. Funciones
+                        'id_funciones' => $item->id_funciones,
+                        'funciones_name' => null, // Relación comentada en modelo, enviamos null
                     ];
                 });
 
-            // Preparamos la respuesta con todos los datos necesarios
+            // 3. Preparar respuesta final
             $response = [
+                // Datos del Cliente (Cabecera)
                 'cod_ter' => $cliente->cod_ter,
                 'nom_ter' => $cliente->nom_ter ?? 'No registrado',
+                'nom1' => $cliente->nom1, // Necesario para iniciales avatar
+                'apl1' => $cliente->apl1, // Necesario para iniciales avatar
                 'email' => $cliente->email ?? 'No registrado',
                 'dir' => $cliente->dir ?? 'No registrado',
                 'tel1' => $cliente->tel1 ?? 'No registrado',
@@ -631,20 +700,23 @@ class InteractionController extends Controller
                 'barrio' => $cliente->barrio ?? 'No registrado',
                 'cod_est' => $cliente->cod_est ?? 'No registrado',
                 'congrega' => $cliente->congrega ?? 'No registrado',
+                
+                // Historial Completo
                 'history' => $history,
-                // Tipo de cliente
+                
+                // Relaciones del Cliente
                 'maeTipos' => $cliente->maeTipos ? [
                     'id' => $cliente->maeTipos->id,
                     'nombre' => $cliente->maeTipos->nombre ?? 'No definido',
                 ] : null,
-                // Distrito
+                
                 'distrito' => $cliente->distrito ? [
                     'COD_DIST' => $cliente->distrito->COD_DIST,
                     'NOM_DIST' => $cliente->distrito->NOM_DIST ?? 'No definido',
                     'DETALLE' => $cliente->distrito->DETALLE ?? 'No definido',
                     'COMPUEST' => $cliente->distrito->COMPUEST ?? 'No definido',
                 ] : null,
-                // Congregacion
+                
                 'congregaciones' => $cliente->congregaciones ? [
                     'codigo' => $cliente->congregaciones->codigo,
                     'nombre' => $cliente->congregaciones->nombre ?? 'No definido',
@@ -652,9 +724,10 @@ class InteractionController extends Controller
             ];
 
             return response()->json($response);
+
         } catch (\Exception $e) {
-            // Registramos el error para depuración
-            \Log::error('Error al cargar cliente: ' . $e->getMessage());
+            // Log para depuración
+            \Log::error('Error al cargar cliente ' . $cod_ter . ': ' . $e->getMessage());
             return response()->json(['error' => 'Error interno del servidor: ' . $e->getMessage()], 500);
         }
     }
