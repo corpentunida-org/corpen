@@ -1,64 +1,21 @@
 <x-base-layout>
     @section('titlepage', 'Dashboard reclamaciones')
-    {{-- <div class="col-lg-12">
-        <div class="card stretch stretch-full">
-            <div class="card-body lead-status">
-                <div class="mb-3 d-flex align-items-center justify-content-between">
-                    <h5 class="fw-bold mb-0 me-4">
-                        <span class="d-block mb-2">Generar Informe:</span>
-                        <span class="fs-12 fw-normal text-muted text-truncate-1-line">
-                            Exportar todo el listado de reclamaciones en formato PDF o Excel, según las opciones seleccionadas.</span>
-                    </h5>
-                </div>
-                <form class="row" method="post">
-                    @csrf
-                    <div class="col-xxl-3 col-md-6">
-                        <div class="form-check">
-                            <label class="form-label">Año<span class="text-danger">*</span></label>
-                            <select class="form-select" name="anio">
-                                @for ($i = date('Y'); $i >= 2024; $i--)
-                                    <option value="{{ $i }}">{{ $i }}</option>
-                                @endfor
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-xxl-3 col-md-6">
-                        <div class="form-check">
-                            <label class="form-label">Lista Datos<span class="text-danger">*</span></label>
-                            <select class="form-select" name="opcion">
-                                <option value="todos">Todas las reclamaciones</option>
-                                <option value="af">Solo Afiliados Titulares</option>
-                                <option value="co">Conyugues y Mujeres</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="d-flex justify-content-end gap-2">
-                        <button type="submit" class="btn btn-md btn-primary">Descargar PDF</button>
-                        <a href="{{ route('seguros.reclamacion.download') }}" class="btn btn-light-brand">
-                            <i class="feather-folder-plus me-2"></i>
-                            <span>Descargar Excel</span>
-                        </a>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div> --}}
-    <div class="col-12">
+    
+    <div class="col-10">
         <div class="card stretch stretch-full">
             <div class="card-body">
                 <div class="hstack justify-content-between mb-4 pb-">
                     <div>
-                        <h5 class="mb-1">Estadisticas</h5>
-                        <span class="fs-12 text-muted">Beneficiarios</span>
+                        <h5 class="mb-1">Estadisticas Beneficiarios</h5>
+                        <span class="fs-12 text-muted">Sobre el total de acciones en la app Exequiales</span>
                     </div>
-                    <a href="javascript:void(0);" class="btn btn-light-brand">Ver Todos</a>
                 </div>
                 <div class="row g-4">
                     <div class="col-xxl-3 col-md-6">
                         <div class="card-body border border-dashed border-gray-5 rounded-3 position-relative">
                             <div class="hstack justify-content-between gap-4">
                                 <div>
-                                    <h6 class="fs-14 text-truncate-1-line">Beneficiarios Agregados</h6>                                    
+                                    <h6 class="fs-14 text-truncate-1-line">Beneficiarios Agregados</h6>
                                 </div>
                                 <canvas id="kpiChart-1" style="width:70px;height: 70px;"></canvas>
                             </div>
@@ -68,7 +25,7 @@
                         <div class="card-body border border-dashed border-gray-5 rounded-3 position-relative">
                             <div class="hstack justify-content-between gap-4">
                                 <div>
-                                    <h6 class="fs-14 text-truncate-1-line">Beneficiarios Actualizados</h6>                                    
+                                    <h6 class="fs-14 text-truncate-1-line">Beneficiarios Actualizados</h6>
                                 </div>
                                 <canvas id="kpiChart-2" style="width:70px;height: 70px;"></canvas>
                             </div>
@@ -98,6 +55,27 @@
             </div>
         </div>
     </div>
+    <div class="col-2">
+        <div class="d-grid">
+            <div class="card border border-dashed border-gray-5">
+                <div class="card-body rounded-3 text-center">
+                    <div class="fs-4 fw-bolder text-dark">{{number_format($numtotaltitulares)}}</div>
+                    <p class="fw-medium text-muted">
+                        Total Asociados
+                    </p>
+                </div>
+            </div>
+            <div class="card border border-dashed border-gray-5">
+                <div class="card-body rounded-3 text-center">
+                    <div class="fs-4 fw-bolder text-dark">{{number_format($numtotalbeneficiarios)}}</div>
+                    <p class="fw-medium text-muted">
+                        Total Beneficiarios
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="col-6">
         <div class="card">
             <div class="card-header">
