@@ -5,7 +5,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
 
     @php
-        // Lógica de colores (Intacta)
+        // Lógica de colores y configuración visual
         $priorityConfig = match($workflow->prioridad) {
             'crítica' => ['bg' => '#FFE4E6', 'text' => '#BE123C', 'icon_bg' => '#FDA4AF', 'icon' => 'fa-fire'],
             'alta'    => ['bg' => '#FFEDD5', 'text' => '#C2410C', 'icon_bg' => '#FDBA74', 'icon' => 'fa-arrow-trend-up'],
@@ -35,7 +35,7 @@
 
         body { background-color: var(--bg-body); color: var(--text-main); font-family: var(--font-body); }
         
-        /* Contenedor principal responsive */
+        /* Layout Principal */
         .dashboard-container { 
             max-width: 1400px; 
             margin: 0 auto; 
@@ -63,7 +63,7 @@
             border-radius: var(--radius-xl);
             box-shadow: var(--shadow-soft);
             display: grid;
-            grid-template-columns: 1fr 300px; /* PC: 2 columnas */
+            grid-template-columns: 1fr 300px;
             gap: 2rem;
             align-items: center;
         }
@@ -76,13 +76,13 @@
         .hero-content { position: relative; z-index: 1; }
         .hero-title { font-family: var(--font-display); font-size: 2rem; font-weight: 800; color: #1e293b; letter-spacing: -0.03em; margin-bottom: 0.5rem; }
         
-        /* Tags y Badges */
         .badge-pill {
             display: inline-flex; align-items: center; gap: 8px;
             padding: 6px 16px; border-radius: 99px;
             font-size: 0.85rem; font-weight: 700; font-family: var(--font-display);
         }
         
+        /* Usuario Chip Principal */
         .user-chip {
             display: inline-flex; align-items: center; gap: 10px;
             background: #f1f5f9; padding: 6px 16px 6px 6px; border-radius: 99px;
@@ -94,6 +94,37 @@
             color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.8rem;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
+
+        /* --- NUEVOS ESTILOS PARA EQUIPO MINIMALISTA --- */
+        .team-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .user-chip-compact {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #f8fafc;
+            border: 1px solid #f1f5f9;
+            padding: 4px 12px 4px 4px;
+            border-radius: 99px;
+            transition: all 0.2s ease;
+            cursor: default;
+        }
+        .user-chip-compact:hover {
+            background: white;
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .avatar-compact {
+            width: 28px; height: 28px; border-radius: 50%;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white; font-size: 0.7rem; font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+        }
+        /* --------------------------------------------- */
 
         .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; }
         .stat-box {
@@ -150,49 +181,22 @@
         
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .fade-in { animation: slideUp 0.4s ease forwards; }
+        .hidden { display: none; }
 
-        .text-gradient { background: linear-gradient(to right, #6366f1, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-
-        /* NUEVA CLASE PARA EL GRID PRINCIPAL (Antes era inline style) */
+        /* Grid Responsive */
         .content-grid {
             display: grid;
             grid-template-columns: 2fr 1fr;
             gap: 2rem;
         }
 
-        /* =================================================================
-           MAGIA RESPONSIVE (MÓVIL) - AQUÍ ESTÁ LO QUE HACE QUE FUNCIONE
-           ================================================================= */
+        /* RESPONSIVE */
         @media (max-width: 992px) {
-            .dashboard-container { 
-                padding: 1rem; /* Menos margen en celular */
-                gap: 1.5rem; 
-            }
-            
-            /* El Header Hero pasa a una sola columna */
-            .header-hero { 
-                grid-template-columns: 1fr; 
-                padding: 1.5rem; 
-            }
-            
-            /* Los botones y acciones se acomodan (wrap) si no caben */
-            .hero-actions-group {
-                flex-wrap: wrap;
-                margin-top: 1rem;
-                justify-content: flex-start !important;
-                width: 100%;
-            }
-
-            /* El contenido principal pasa a 1 columna (Tareas arriba, Widgets abajo) */
-            .content-grid { 
-                grid-template-columns: 1fr; 
-            }
-
-            /* La tabla se vuelve scrolleable horizontalmente para que no rompa el diseño */
-            .table-responsive-wrapper {
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-            }
+            .dashboard-container { padding: 1rem; gap: 1.5rem; }
+            .header-hero { grid-template-columns: 1fr; padding: 1.5rem; }
+            .hero-actions-group { flex-wrap: wrap; margin-top: 1rem; justify-content: flex-start !important; width: 100%; }
+            .content-grid { grid-template-columns: 1fr; }
+            .table-responsive-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
         }
     </style>
 
@@ -201,7 +205,7 @@
         {{-- HEADER PRINCIPAL --}}
         <div class="header-hero">
             <div class="hero-content">
-                {{-- Breadcrumbs sutiles --}}
+                {{-- Breadcrumbs --}}
                 <div style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 1rem;">
                     <a href="{{ route('flujo.workflows.index') }}" style="text-decoration: none; color: inherit; transition: 0.2s;" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='#94a3b8'">
                         <i class="fas fa-arrow-left"></i> Volver a Workflows
@@ -218,7 +222,7 @@
 
                 <h1 class="hero-title">{{ $workflow->nombre }}</h1>
                 
-                {{-- Contenedor flexible para responsividad --}}
+                {{-- Acciones --}}
                 <div class="hero-actions-group" style="display: flex; gap: 20px; align-items: center; margin-top: 1.5rem;">
                     <div class="user-chip">
                         <div class="avatar-img">{{ substr($workflow->asignado->name ?? '?', 0, 1) }}</div>
@@ -228,7 +232,6 @@
                         </div>
                     </div>
                     
-                    {{-- GRUPO DE ACCIONES (PDF + AJUSTES) --}}
                     <div style="margin-left: auto; display: flex; gap: 10px; flex-wrap: wrap;">
                         <a href="{{ route('flujo.workflows.pdf', $workflow->id) }}" class="btn-soft btn-pdf" target="_blank">
                             <i class="fas fa-file-pdf"></i> Informe PDF
@@ -286,7 +289,7 @@
             </div>
         </div>
 
-        {{-- CONTENIDO PRINCIPAL (Usa clase content-grid para responsive) --}}
+        {{-- CONTENIDO PRINCIPAL --}}
         <div class="content-grid">
             
             {{-- COLUMNA IZQUIERDA: TAREAS --}}
@@ -306,7 +309,6 @@
                             </a>
                         </div>
 
-                        {{-- Buscador --}}
                         <div style="position: relative; margin-bottom: 20px;">
                             <i class="fas fa-search" style="position: absolute; left: 15px; top: 12px; color: #cbd5e1;"></i>
                             <input type="text" id="searchInput" onkeyup="filterTasks()" placeholder="Buscar tarea..." 
@@ -317,7 +319,7 @@
                         <div class="tasks-container">
                             @forelse($workflow->tasks as $task)
                                 <div class="task-item" data-title="{{ strtolower($task->titulo) }}">
-                                    <div style="flex: 1; min-width: 0;"> {{-- min-width: 0 ayuda al flex en movil --}}
+                                    <div style="flex: 1; min-width: 0;"> 
                                         <div style="font-weight: 700; color: #1e293b; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ $task->titulo }}</div>
                                         <div style="display: flex; gap: 10px; font-size: 0.8rem; color: #64748b; align-items: center; flex-wrap: wrap;">
                                             <span style="display: flex; align-items: center;">
@@ -326,7 +328,6 @@
                                             </span>
                                             <span>&bull;</span>
                                             <span><i class="far fa-calendar-alt"></i> {{ $task->created_at->format('d M') }}</span>
-                                            
                                             <span>&bull;</span>
                                             <span style="display: flex; align-items: center; gap: 5px;" title="Asignado a">
                                                 <div style="width: 20px; height: 20px; background: #e0e7ff; border-radius: 50%; color: #6366f1; font-size: 0.65rem; display: flex; align-items: center; justify-content: center; font-weight: bold;">
@@ -350,7 +351,7 @@
                     </div>
                 </div>
 
-                {{-- TAB: AUDIT (Con wrapper responsive) --}}
+                {{-- TAB: AUDIT --}}
                 <div id="audit" class="tab-content" style="display: none;">
                     <div class="card-friendly">
                         <div class="table-responsive-wrapper">
@@ -408,6 +409,45 @@
                     </div>
                 </div>
 
+                {{-- WIDGET: EQUIPO MINIMALISTA (NUEVO) --}}
+                <div class="card-friendly">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem;">
+                        <h4 style="margin: 0; font-family: var(--font-display);">Equipo Asignado</h4>
+                        <span style="background: #e0e7ff; color: #6366f1; padding: 2px 10px; border-radius: 99px; font-size: 0.75rem; font-weight: 700;">
+                            {{ $workflow->participantes->count() }}
+                        </span>
+                    </div>
+
+                    @if($workflow->participantes->count() > 0)
+                        <div class="team-grid">
+                            @foreach($workflow->participantes as $member)
+                                <div class="user-chip-compact" title="{{ $member->email }}">
+                                    <div class="avatar-compact">
+                                        {{ substr($member->name, 0, 1) }}{{ substr(strrchr($member->name, " "), 1, 1) }}
+                                    </div>
+                                    <div style="display: flex; flex-direction: column; line-height: 1;">
+                                        <span style="font-size: 0.85rem; font-weight: 700; color: #334155;">
+                                            {{ explode(' ', $member->name)[0] }}
+                                        </span>
+                                        <span style="font-size: 0.65rem; color: #94a3b8;">Miembro</span>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <div style="text-align: center; padding: 1rem; border: 2px dashed #e2e8f0; border-radius: 12px; color: #94a3b8;">
+                            <i class="fas fa-user-slash" style="margin-bottom: 5px;"></i><br>
+                            <span style="font-size: 0.85rem;">Sin equipo definido</span>
+                        </div>
+                    @endif
+                    
+                    <div style="margin-top: 1rem; text-align: center;">
+                        <a href="{{ route('flujo.workflows.edit', $workflow) }}" style="font-size: 0.8rem; color: #6366f1; text-decoration: none; font-weight: 600;">
+                            Gestión de Miembros &rarr;
+                        </a>
+                    </div>
+                </div>
+
                 {{-- Timeline Reciente --}}
                 <div class="card-friendly">
                     <h4 style="margin-top: 0; font-family: var(--font-display); margin-bottom: 1.5rem;">Últimos Cambios</h4>
@@ -440,10 +480,7 @@
 
             </div>
         </div>
-
     </div>
-
-    <style>.hidden { display: none; }</style>
 
     <script>
         // Lógica de Pestañas

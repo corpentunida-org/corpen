@@ -759,63 +759,63 @@
 
                     <!-- SECCIÓN DE EQUIPO MEJORADA -->
                     <div class="team-section">
+                        
                         <div class="team-header">
                             <h4><i class="fas fa-users"></i> Equipo del Proyecto</h4>
                             <span style="font-size: 0.85rem; color: #166534; font-weight: 600;" id="team-count">
                                 {{ $workflow->participantes->count() }} miembro(s)
                             </span>
                         </div>
-                        
-                        @if($workflow->participantes->count() == 0)
-                            <!-- SI NO HAY MIEMBROS, MOSTRAR BÚSQUEDA -->
-                            <div class="team-empty">
-                                <i class="fas fa-user-plus"></i>
-                                <p>Este proyecto aún no tiene miembros en el equipo</p>
-                                
-                                <div class="search-container">
-                                    <i class="fas fa-search"></i>
-                                    <input type="text" id="user-search" placeholder="Buscar usuario por nombre o email...">
-                                    <div class="search-results" id="search-results"></div>
-                                </div>
-                            </div>
-                        @else
-                            <!-- SI HAY MIEMBROS, MOSTRAR LISTA ACTUAL -->
-                            <div class="add-member-section">
-                                <div class="add-member-header">
-                                    <h5><i class="fas fa-user-plus"></i> Agregar Nuevo Miembro</h5>
-                                    <button type="button" class="toggle-add-member" id="toggle-add-member">
-                                        <i class="fas fa-plus"></i> Agregar
-                                    </button>
-                                </div>
-                                <div class="search-container" id="add-member-search" style="display: none;">
-                                    <i class="fas fa-search"></i>
-                                    <input type="text" id="user-search-2" placeholder="Buscar usuario por nombre o email...">
-                                    <div class="search-results" id="search-results-2"></div>
-                                </div>
-                            </div>
+
+                        @php
+                            $hasMembers = $workflow->participantes->count() > 0;
+                        @endphp
+
+                        <div class="team-empty" style="display: {{ $hasMembers ? 'none' : 'block' }};">
+                            <i class="fas fa-user-plus"></i>
+                            <p>Este proyecto aún no tiene miembros en el equipo</p>
                             
-                            <div class="team-list" id="team-list">
-                                @foreach($workflow->participantes as $participant)
-                                    <div class="team-member" data-user-id="{{ $participant->id }}">
-                                        <div class="user-info">
-                                            <div class="user-name">{{ $participant->name }}</div>
-                                            <div class="user-email">{{ $participant->email }}</div>
-                                        </div>
-                                        <button type="button" class="remove-btn" onclick="removeMember({{ $participant->id }})">
-                                            <i class="fas fa-times"></i> Quitar
-                                        </button>
-                                    </div>
-                                @endforeach
+                            <div class="search-container">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="user-search" placeholder="Buscar usuario por nombre o email...">
+                                <div class="search-results" id="search-results"></div>
                             </div>
-                        @endif
-                        
-                        @if($workflow->participantes->count() > 0)
-                            <div class="team-actions">
-                                <button type="button" id="btn-save-team" class="btn-save-team">
-                                    <i class="fas fa-save"></i> Actualizar Equipo
+                        </div>
+
+                        <div class="add-member-section" style="display: {{ $hasMembers ? 'block' : 'none' }};">
+                            <div class="add-member-header">
+                                <h5><i class="fas fa-user-plus"></i> Agregar Nuevo Miembro</h5>
+                                <button type="button" class="toggle-add-member" id="toggle-add-member">
+                                    <i class="fas fa-plus"></i> Agregar
                                 </button>
                             </div>
-                        @endif
+                            <div class="search-container" id="add-member-search" style="display: none;">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="user-search-2" placeholder="Buscar usuario por nombre o email...">
+                                <div class="search-results" id="search-results-2"></div>
+                            </div>
+                        </div>
+
+                        <div class="team-list" id="team-list" style="display: {{ $hasMembers ? 'block' : 'none' }};">
+                            @foreach($workflow->participantes as $participant)
+                                <div class="team-member" data-user-id="{{ $participant->id }}">
+                                    <div class="user-info">
+                                        <div class="user-name">{{ $participant->name }}</div>
+                                        <div class="user-email">{{ $participant->email }}</div>
+                                    </div>
+                                    <button type="button" class="remove-btn" onclick="removeMember({{ $participant->id }})">
+                                        <i class="fas fa-times"></i> Quitar
+                                    </button>
+                                </div>
+                            @endforeach
+                        </div>
+
+                        <div class="team-actions" style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+                            <button type="button" id="btn-save-team" class="btn-save-team">
+                                <i class="fas fa-save"></i> Actualizar Equipo
+                            </button>
+                        </div>
+
                     </div>
 
                     <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border: 1px solid #bfdbfe; border-radius: 20px; padding: 1.5rem; margin-top: 2.5rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
@@ -849,69 +849,26 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            
+            // ==========================================
+            // CONFIGURACIÓN INICIAL Y TABS
+            // ==========================================
             const tabs = document.querySelectorAll('.config-tab');
             const contents = document.querySelectorAll('.config-content');
             const area = document.getElementById('configuracion');
             const jsonContainer = document.getElementById('json-container');
 
-            // --- Switch de Pestañas ---
+            // Switch de Pestañas
             function switchTab(target) {
                 tabs.forEach(t => t.classList.remove('active'));
                 contents.forEach(c => c.classList.remove('active'));
                 document.querySelector(`[data-tab="${target}"]`).classList.add('active');
                 document.getElementById(`${target}-tab`).classList.add('active');
             }
+            tabs.forEach(tab => tab.addEventListener('click', () => switchTab(tab.dataset.tab)));
 
-            tabs.forEach(tab => {
-                tab.addEventListener('click', () => switchTab(tab.dataset.tab));
-            });
-
-            // --- Plantillas Predeterminadas ---
-            window.applyTemplate = function(type) {
-                const templates = {
-                    notif: { "canales": ["email", "browser"], "frecuencia": "real-time", "logs": true },
-                    high_prio: { "escalamiento": "inmediato", "notificar_admin": true, "sla": "2h" },
-                    approval: { "steps": 2, "required_roles": ["manager", "director"], "blocking": true },
-                    clear: {}
-                };
-
-                // Pequeño delay para UX
-                showToast('🚀 Cargando configuración...', 'success');
-                
-                setTimeout(() => {
-                    area.value = JSON.stringify(templates[type], null, 4);
-                    switchTab('json');
-                    jsonContainer.classList.add('flash-success');
-                    setTimeout(() => jsonContainer.classList.remove('flash-success'), 1000);
-                    showToast('✅ Módulo técnico actualizado', 'success');
-                }, 300);
-            };
-
-            // --- Herramientas JSON ---
-            window.formatJson = function() {
-                try {
-                    if(!area.value.trim()){
-                        showToast('ℹ️ El editor está vacío', 'secondary');
-                        return;
-                    }
-                    area.value = JSON.stringify(JSON.parse(area.value), null, 4);
-                    showToast('✨ Código indentado correctamente', 'success');
-                } catch(e) { 
-                    showToast('❌ Error de sintaxis en el JSON', 'danger'); 
-                }
-            };
-
-            window.validateJson = function() {
-                try {
-                    JSON.parse(area.value);
-                    showToast('💎 Estructura JSON perfecta', 'success');
-                } catch(e) { 
-                    showToast('❌ JSON Inválido: ' + e.message, 'danger'); 
-                }
-            };
-
-            // --- Toast Notification System ---
-            function showToast(msg, type) {
+            // Notificaciones Toast (Global para usarlo en todos lados)
+            window.showToast = function(msg, type) {
                 const toast = document.getElementById('toast');
                 const icon = document.getElementById('toast-icon');
                 document.getElementById('toast-message').textContent = msg;
@@ -924,152 +881,76 @@
                 setTimeout(() => toast.classList.remove('show'), 3500);
             }
 
-            // --- Validaciones de Fecha en Tiempo Real ---
-            const startDate = document.getElementById('fecha_inicio');
-            const endDate = document.getElementById('fecha_fin');
+            // ==========================================
+            // LÓGICA DEL EQUIPO (AQUÍ ESTÁ LA MAGIA)
+            // ==========================================
+            
+            const allUsers = @json($users); 
+            let selectedIds = @json($workflow->participantes->pluck('id')).map(Number);
 
-            function checkDates() {
-                if (startDate.value && endDate.value && endDate.value < startDate.value) {
-                    endDate.classList.add('date-error');
-                } else {
-                    endDate.classList.remove('date-error');
-                }
-            }
-
-            startDate.addEventListener('change', checkDates);
-            endDate.addEventListener('change', checkDates);
-
-            // --- Envió de Formulario ---
-            document.getElementById('workflow-form').onsubmit = function() {
-                const start = startDate.value;
-                const end = endDate.value;
-                
-                if(start && end && end < start) {
-                    showToast('⚠️ Error: El cierre es anterior al inicio', 'danger');
-                    endDate.focus();
-                    return false;
-                }
-                
-                const btn = document.getElementById('btn-submit');
-                btn.style.opacity = '0.7';
-                btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Procesando cambios...';
-                return true;
+            // Referencias al HTML
+            const dom = {
+                emptyState: document.querySelector('.team-empty'),
+                listState: document.querySelector('.team-list'),
+                addSection: document.querySelector('.add-member-section'),
+                countLabel: document.getElementById('team-count'),
+                // Buscadores
+                searchEmpty: document.getElementById('user-search'),
+                searchList: document.getElementById('user-search-2'),
+                resultsEmpty: document.getElementById('search-results'),
+                resultsList: document.getElementById('search-results-2')
             };
-            
-            // --- Funcionalidad para el equipo ---
-            const users = @json($users);
-            const currentTeamMembers = @json($workflow->participantes->pluck('id'));
-            let selectedUsers = [...currentTeamMembers];
-            
-            // Función para buscar usuarios
-            function searchUsers(query, excludeIds = []) {
-                if (!query || query.length < 2) return [];
-                
-                const filtered = users.filter(user => {
-                    const isExcluded = excludeIds.includes(user.id);
-                    const matchesSearch = user.name.toLowerCase().includes(query.toLowerCase()) || 
-                                        user.email.toLowerCase().includes(query.toLowerCase());
-                    return !isExcluded && matchesSearch;
-                });
-                
-                return filtered.slice(0, 5); // Limitar a 5 resultados
-            }
-            
-            // Función para mostrar resultados de búsqueda
-            function showSearchResults(results, containerId) {
-                const container = document.getElementById(containerId);
-                
-                if (results.length === 0) {
-                    container.innerHTML = '<div class="search-result-item">No se encontraron usuarios</div>';
-                } else {
-                    container.innerHTML = results.map(user => {
-                        const initials = user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-                        return `
-                            <div class="search-result-item" onclick="addUserToTeam(${user.id})">
-                                <div class="search-result-avatar">${initials}</div>
-                                <div class="search-result-info">
-                                    <div class="search-result-name">${user.name}</div>
-                                    <div class="search-result-email">${user.email}</div>
-                                </div>
-                            </div>
-                        `;
-                    }).join('');
-                }
-                
-                container.classList.add('active');
-            }
-            
-            // Configurar búsqueda simplificada
-            function setupSimpleSearch(inputId, resultsId) {
-                const searchInput = document.getElementById(inputId);
-                const resultsContainer = document.getElementById(resultsId);
-                
-                if (!searchInput) return;
-                
-                searchInput.addEventListener('input', function() {
-                    const query = this.value.trim();
-                    
-                    if (query.length < 2) {
-                        resultsContainer.classList.remove('active');
-                        return;
-                    }
-                    
-                    // Búsqueda inmediata sin debounce
-                    const results = searchUsers(query, selectedUsers);
-                    showSearchResults(results, resultsId);
-                });
-                
-                // Cerrar resultados al hacer clic fuera
-                document.addEventListener('click', function(e) {
-                    if (!e.target.closest('.search-container')) {
-                        resultsContainer.classList.remove('active');
-                    }
-                });
-            }
-            
-            // Agregar usuario al equipo
+
+            // 1. Agregar Usuario
             window.addUserToTeam = function(userId) {
-                if (!selectedUsers.includes(userId)) {
-                    selectedUsers.push(userId);
-                    updateTeamDisplay();
-                    showToast('✅ Usuario agregado al equipo', 'success');
+                userId = Number(userId);
+                if (!selectedIds.includes(userId)) {
+                    selectedIds.push(userId);
+                    refreshTeamUI();
+                    showToast('✅ Miembro agregado', 'success');
+                } else {
+                    showToast('⚠️ Ya está en el equipo', 'warning');
                 }
-                
-                // Limpiar búsqueda
-                document.getElementById('user-search').value = '';
-                document.getElementById('user-search-2').value = '';
-                document.getElementById('search-results').classList.remove('active');
-                document.getElementById('search-results-2').classList.remove('active');
+                clearSearch();
             };
-            
-            // Quitar usuario del equipo
+
+            // 2. Eliminar Usuario
             window.removeMember = function(userId) {
-                selectedUsers = selectedUsers.filter(id => id !== userId);
-                updateTeamDisplay();
-                showToast('🗑️ Usuario eliminado del equipo', 'success');
+                userId = Number(userId);
+                selectedIds = selectedIds.filter(id => id !== userId);
+                refreshTeamUI();
+                showToast('🗑️ Miembro eliminado', 'secondary');
             };
-            
-            // Actualizar la visualización del equipo
-            function updateTeamDisplay() {
-                const teamList = document.getElementById('team-list');
-                const teamCount = document.getElementById('team-count');
-                
-                if (selectedUsers.length === 0) {
-                    // Si no hay miembros, recargar la página para mostrar la vista vacía
-                    window.location.reload();
-                    return;
+
+            // 3. ACTUALIZAR VISTA (LA CLAVE DEL BOTÓN)
+            function refreshTeamUI() {
+                // Actualizar texto contador
+                if(dom.countLabel) dom.countLabel.textContent = `${selectedIds.length} miembro(s)`;
+
+                if (selectedIds.length === 0) {
+                    // Si está vacío: Mostramos icono grande, ocultamos lista
+                    if(dom.emptyState) dom.emptyState.style.display = 'block';
+                    if(dom.listState) dom.listState.style.display = 'none';
+                    if(dom.addSection) dom.addSection.style.display = 'none';
+                    // NOTA: EL BOTÓN DE GUARDAR YA NO SE OCULTA AQUÍ
+                } else {
+                    // Si hay gente: Ocultamos icono grande, mostramos lista
+                    if(dom.emptyState) dom.emptyState.style.display = 'none';
+                    if(dom.listState) {
+                        dom.listState.style.display = 'block';
+                        renderListHTML();
+                    }
+                    if(dom.addSection) dom.addSection.style.display = 'block';
                 }
-                
-                // Actualizar contador
-                teamCount.textContent = `${selectedUsers.length} miembro(s)`;
-                
-                // Actualizar lista de miembros
-                const membersHtml = selectedUsers.map(userId => {
-                    const user = users.find(u => u.id === userId);
+            }
+
+            // Generar HTML de la lista
+            function renderListHTML() {
+                const html = selectedIds.map(id => {
+                    const user = allUsers.find(u => u.id === id);
                     if (!user) return '';
-                    
                     return `
-                        <div class="team-member" data-user-id="${user.id}">
+                        <div class="team-member">
                             <div class="user-info">
                                 <div class="user-name">${user.name}</div>
                                 <div class="user-email">${user.email}</div>
@@ -1080,68 +961,97 @@
                         </div>
                     `;
                 }).join('');
-                
-                teamList.innerHTML = membersHtml;
+                dom.listState.innerHTML = html;
             }
-            
-            // Configurar búsquedas
-            setupSimpleSearch('user-search', 'search-results');
-            setupSimpleSearch('user-search-2', 'search-results-2');
-            
-            // Toggle para mostrar/ocultar búsqueda de agregar miembros
-            const toggleAddMember = document.getElementById('toggle-add-member');
-            if (toggleAddMember) {
-                toggleAddMember.addEventListener('click', function() {
-                    const searchContainer = document.getElementById('add-member-search');
-                    if (searchContainer.style.display === 'none') {
-                        searchContainer.style.display = 'block';
-                        this.innerHTML = '<i class="fas fa-minus"></i> Cancelar';
-                        // Enfocar el campo de búsqueda
-                        setTimeout(() => {
-                            document.getElementById('user-search-2').focus();
-                        }, 100);
+
+            // Limpiar inputs
+            function clearSearch() {
+                if(dom.searchEmpty) dom.searchEmpty.value = '';
+                if(dom.searchList) dom.searchList.value = '';
+                if(dom.resultsEmpty) dom.resultsEmpty.classList.remove('active');
+                if(dom.resultsList) dom.resultsList.classList.remove('active');
+            }
+
+            // Configuración de Buscadores
+            function setupSearch(inputId, resultsId) {
+                const input = document.getElementById(inputId);
+                const resultsBox = document.getElementById(resultsId);
+                if(!input) return;
+
+                input.addEventListener('input', function(e) {
+                    const query = e.target.value.toLowerCase();
+                    if (query.length < 2) {
+                        resultsBox.classList.remove('active');
+                        return;
+                    }
+                    // Filtro: Coincide texto Y NO está seleccionado
+                    const matches = allUsers.filter(u => {
+                        const alreadyInTeam = selectedIds.includes(u.id);
+                        const matchesText = (u.name && u.name.toLowerCase().includes(query)) || 
+                                            (u.email && u.email.toLowerCase().includes(query));
+                        return !alreadyInTeam && matchesText;
+                    }).slice(0, 5);
+
+                    if (matches.length > 0) {
+                        resultsBox.innerHTML = matches.map(u => {
+                            const initials = u.name.substring(0,2).toUpperCase();
+                            return `
+                                <div class="search-result-item" onclick="addUserToTeam(${u.id})">
+                                    <div class="search-result-avatar">${initials}</div>
+                                    <div class="search-result-info">
+                                        <div class="search-result-name">${u.name}</div>
+                                        <div class="search-result-email">${u.email}</div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+                        resultsBox.classList.add('active');
                     } else {
-                        searchContainer.style.display = 'none';
-                        this.innerHTML = '<i class="fas fa-plus"></i> Agregar';
-                        document.getElementById('user-search-2').value = '';
-                        document.getElementById('search-results-2').classList.remove('active');
+                        resultsBox.innerHTML = '<div class="search-result-item">No encontrado</div>';
+                        resultsBox.classList.add('active');
                     }
                 });
+
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('.search-container')) resultsBox.classList.remove('active');
+                });
             }
-            
-            // Evento para guardar el equipo
+
+            setupSearch('user-search', 'search-results');
+            setupSearch('user-search-2', 'search-results-2');
+            refreshTeamUI(); // Iniciar vista
+
+            // Botón Toggle pequeño
+            const toggleBtn = document.getElementById('toggle-add-member');
+            if(toggleBtn) {
+                toggleBtn.addEventListener('click', function() {
+                    const box = document.getElementById('add-member-search');
+                    const isHidden = box.style.display === 'none';
+                    box.style.display = isHidden ? 'block' : 'none';
+                    this.innerHTML = isHidden ? '<i class="fas fa-minus"></i> Cancelar' : '<i class="fas fa-plus"></i> Agregar';
+                    if(isHidden) document.getElementById('user-search-2').focus();
+                });
+            }
+
+            // Guardar Equipo (AJAX)
             const saveTeamBtn = document.getElementById('btn-save-team');
             if (saveTeamBtn) {
                 saveTeamBtn.addEventListener('click', function() {
-                    // Mostrar estado de carga
                     saveTeamBtn.classList.add('loading');
-                    saveTeamBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Actualizando...';
+                    saveTeamBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Guardando...';
                     
-                    // Enviar petición AJAX
                     fetch(`{{ route('flujo.workflows.updateTeam', $workflow) }}`, {
                         method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json',
                             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
                         },
-                        body: JSON.stringify({
-                            participantes: selectedUsers
-                        })
+                        body: JSON.stringify({ participantes: selectedIds })
                     })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            showToast(data.message, 'success');
-                        } else {
-                            showToast(data.message, 'danger');
-                        }
-                    })
-                    .catch(error => {
-                        showToast('Error de conexión al actualizar el equipo', 'danger');
-                        console.error('Error:', error);
-                    })
+                    .then(r => r.json())
+                    .then(d => showToast(d.message, d.success ? 'success' : 'danger'))
+                    .catch(e => showToast('Error de conexión', 'danger'))
                     .finally(() => {
-                        // Restaurar estado del botón
                         saveTeamBtn.classList.remove('loading');
                         saveTeamBtn.innerHTML = '<i class="fas fa-save"></i> Actualizar Equipo';
                     });

@@ -146,69 +146,95 @@ class WorkflowController extends Controller
         return redirect()->route('flujo.workflows.index')->with('success', '✅ Proceso creado correctamente.');
     }
 
-    public function show(Workflow $workflow)
-    {
-        $workflow->load(['creator', 'modifier', 'asignado', 'tasks.asignado', 'tasks.creator']);
+public function show(Workflow $workflow)
+{
+    // 1. Carga Ansiosa (Eager Loading)
+    // AQUI AGREGAMOS 'participantes' PARA QUE LA VISTA NO HAGA MUCHAS CONSULTAS
+    $workflow->load([
+        'creator', 
+        'modifier', 
+        'asignado', 
+        'participantes', // <--- IMPORTANTE: El equipo
+        'tasks.asignado', 
+        'tasks.creator'
+    ]);
 
-        // KPIs
-        $totalTasks = $workflow->tasks->count();
-        $completedTasks = $workflow->tasks->filter(function($task) {
-            $estado = Str::lower($task->estado);
-            return in_array($estado, ['completada', 'completado', 'finalizada', 'cerrada', 'terminado']);
-        })->count();
-        $progress = $totalTasks > 0 ? round(($completedTasks / $totalTasks) * 100) : 0;
+    // 2. KPIs Generales
+    $totalTasks = $workflow->tasks->count();
+    $completedTasks = $workflow->tasks->filter(function($task) {
+        $estado = Str::lower($task->estado);
+        return in_array($estado, ['completada', 'completado', 'finalizada', 'cerrada', 'terminado']);
+    })->count();
+    
+    $progress = $totalTasks > 0 ? round(($completedTasks / $totalTasks) * 100) : 0;
 
-        // Auditoría
-        $taskIds = $workflow->tasks->pluck('id');
-        
-        // Optimización: Cargar todo en menos consultas
-        $comments = TaskComment::whereIn('task_id', $taskIds)->with('user', 'task')->latest()->get();
-        $history = TaskHistory::whereIn('task_id', $taskIds)->with('user', 'task')->latest()->get();
+    // 3. Auditoría y Gráficos
+    $taskIds = $workflow->tasks->pluck('id');
+    
+    // Consultas optimizadas para historial y comentarios
+    $comments = TaskComment::whereIn('task_id', $taskIds)->with('user', 'task')->latest()->get();
+    $history = TaskHistory::whereIn('task_id', $taskIds)->with('user', 'task')->latest()->get();
 
-        $totalComments = $comments->count();
-        $totalHistory = $history->count();
+    $totalComments = $comments->count();
+    $totalHistory = $history->count();
 
-        // Calcular Top Usuarios (PHP collection logic es más rápida aquí que multiples queries si hay pocos datos)
-        $userActivity = [];
-        foreach($comments as $c) $userActivity[$c->user_id] = ($userActivity[$c->user_id] ?? 0) + 1;
-        foreach($history as $h) {
-            if($h->cambiado_por) $userActivity[$h->cambiado_por] = ($userActivity[$h->cambiado_por] ?? 0) + 1;
-        }
-        arsort($userActivity);
-        $topUserIds = array_slice(array_keys($userActivity), 0, 5);
-        $topUsers = User::whereIn('id', $topUserIds)->pluck('name', 'id');
-
-        $chartUserData = ['labels' => [], 'data' => []];
-        foreach($topUserIds as $uid) {
-            if(isset($topUsers[$uid])) {
-                $chartUserData['labels'][] = explode(' ', $topUsers[$uid])[0];
-                $chartUserData['data'][] = $userActivity[$uid];
-            }
-        }
-
-        // Unificar eventos
-        $mappedComments = $comments->take(50)->map(function ($item) { $item->tipo_evento = 'comentario'; return $item; });
-        $mappedHistory = $history->take(50)->map(function ($item) { $item->tipo_evento = 'historial'; return $item; });
-        $auditEvents = $mappedComments->concat($mappedHistory)->sortByDesc('created_at');
-
-        $workflowHistories = $history->take(10); // Para el sidebar
-
-        $auditStats = [
-            'total' => $totalComments + $totalHistory,
-            'comments' => $totalComments,
-            'history' => $totalHistory,
-            'usersData' => $chartUserData
-        ];
-
-        return view('flujo.workflows.show', compact(
-            'workflow', 'auditEvents', 'auditStats', 'workflowHistories', 
-            'totalTasks', 'completedTasks', 'progress'
-        ));
+    // 4. Lógica para "Top Usuarios" (Gráfico)
+    $userActivity = [];
+    foreach($comments as $c) $userActivity[$c->user_id] = ($userActivity[$c->user_id] ?? 0) + 1;
+    foreach($history as $h) {
+        if($h->cambiado_por) $userActivity[$h->cambiado_por] = ($userActivity[$h->cambiado_por] ?? 0) + 1;
     }
+    
+    // Ordenar y tomar top 5
+    arsort($userActivity);
+    $topUserIds = array_slice(array_keys($userActivity), 0, 5);
+    $topUsers = User::whereIn('id', $topUserIds)->pluck('name', 'id');
+
+    $chartUserData = ['labels' => [], 'data' => []];
+    foreach($topUserIds as $uid) {
+        if(isset($topUsers[$uid])) {
+            // Usamos solo el primer nombre para el gráfico
+            $chartUserData['labels'][] = explode(' ', $topUsers[$uid])[0];
+            $chartUserData['data'][] = $userActivity[$uid];
+        }
+    }
+
+    // 5. Unificar Eventos para la Tabla de Auditoría
+    $mappedComments = $comments->take(50)->map(function ($item) { 
+        $item->tipo_evento = 'comentario'; 
+        return $item; 
+    });
+    $mappedHistory = $history->take(50)->map(function ($item) { 
+        $item->tipo_evento = 'historial'; 
+        return $item; 
+    });
+    
+    $auditEvents = $mappedComments->concat($mappedHistory)->sortByDesc('created_at');
+
+    // 6. Datos para Sidebar (Timeline rápido)
+    $workflowHistories = $history->take(10); 
+
+    $auditStats = [
+        'total' => $totalComments + $totalHistory,
+        'comments' => $totalComments,
+        'history' => $totalHistory,
+        'usersData' => $chartUserData
+    ];
+
+    return view('flujo.workflows.show', compact(
+        'workflow', 
+        'auditEvents', 
+        'auditStats', 
+        'workflowHistories', 
+        'totalTasks', 
+        'completedTasks', 
+        'progress'
+    ));
+}
 
     public function edit(Workflow $workflow)
     {
-        $users = User::select('id', 'name')->orderBy('name')->get();
+        $users = User::select('id', 'name', 'email')->orderBy('name')->get();
         $estados = $this->getEstadosOptions();
         $prioridades = $this->getPrioridadesOptions();
         $workflow->load(['creator', 'modifier', 'asignado']);
