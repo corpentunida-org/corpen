@@ -1314,308 +1314,643 @@
                         </div>
                     <!-- FINAL -->
 
-                    <!-- PESTAÑA 3 INI: RESULTADO Y PLANIFICACIÓN -->
+                    <!-- PESTAÑA 3-->
+                    <!-- INICIO -->
+                    <!-- RESULTADO Y PLANIFICACIÓN -->
                         <div class="tab-panel" id="resultado-tab">
+                            
+                            <style>
+                                /* Tarjeta de Opción (Radio Button estilizado) */
+                                .selection-card {
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    padding: 12px 15px;
+                                    background-color: #fff;
+                                    border: 1px solid #dee2e6;
+                                    border-radius: 8px;
+                                    cursor: pointer;
+                                    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+                                    position: relative;
+                                    height: 100%;
+                                    text-align: center;
+                                }
+                                
+                                .selection-card:hover {
+                                    border-color: #adb5bd;
+                                    background-color: #f8f9fa;
+                                    transform: translateY(-2px);
+                                    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+                                }
+
+                                /* Estado Seleccionado (CHECKED) */
+                                .btn-check:checked + .selection-card {
+                                    background-color: #f0f7ff; /* Azul muy suave */
+                                    border-color: #0d6efd;
+                                    color: #0d6efd;
+                                    box-shadow: 0 0 0 1px #0d6efd;
+                                    font-weight: 600;
+                                }
+
+                                /* Icono de Check que aparece al seleccionar */
+                                .check-icon {
+                                    position: absolute;
+                                    top: -8px;
+                                    right: -8px;
+                                    background: #0d6efd;
+                                    color: white;
+                                    border-radius: 50%;
+                                    width: 20px;
+                                    height: 20px;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    font-size: 12px;
+                                    opacity: 0;
+                                    transform: scale(0);
+                                    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                                }
+                                .btn-check:checked + .selection-card .check-icon {
+                                    opacity: 1;
+                                    transform: scale(1);
+                                }
+
+                                /* Estilos para la sección de Planificación (Amarillo/Gold) */
+                                .selection-card-warning:hover {
+                                    border-color: #ffc107;
+                                    background-color: #fffbf0;
+                                }
+                                .btn-check:checked + .selection-card-warning {
+                                    background-color: #fffbf0;
+                                    border-color: #ffc107;
+                                    color: #856404;
+                                    box-shadow: 0 0 0 1px #ffc107;
+                                }
+                                .btn-check:checked + .selection-card-warning .check-icon {
+                                    background: #ffc107;
+                                    color: #000;
+                                }
+                            </style>
+
                             <div class="category-container">
-                                <div class="category-header">
-                                    <h5 class="category-title">
-                                        <div class="category-icon">
-                                            <i class="bi bi-check-circle"></i>
-                                        </div>
-                                        Resultado y Planificación
-                                    </h5>
-                                    <p class="category-description">Resultado de la interacción y próximas acciones</p>
-                                </div>
-                                <div class="category-content">
-                                    <!-- Separador visual para la sección de resultado -->
-                                    <div class="section-divider">
-                                        <h6 class="section-title">
-                                            <i class="bi bi-flag me-2 text-primary"></i>Resultado de la Interacción
-                                        </h6>
+                                
+                                <div class="d-flex align-items-center mb-4 pb-3 border-bottom">
+                                    <div class="me-3">
+                                        <span class="d-inline-flex align-items-center justify-content-center bg-success bg-opacity-10 text-success rounded-circle" style="width: 42px; height: 42px;">
+                                            <i class="bi bi-check-circle fs-5"></i>
+                                        </span>
                                     </div>
-                                    
-                                    <!-- Selector para el resultado de la interacción -->
-                                    <div class="row g-3 mb-4">
-                                        <div class="col-md-12">
-                                            <div class="form-group">
-                                                <label for="outcome" class="form-label required-field">Resultado</label>
-                                                <select class="form-select select2 @error('outcome') is-invalid @enderror"
-                                                    id="outcome" name="outcome" required>
-                                                    <option value="">Selecciona un resultado</option>
-                                                    @foreach ($outcomes as $outcome)
-                                                        <option value="{{ $outcome->id }}"
-                                                            {{ old('outcome', $interaction->outcome ?? '') == $outcome->id ? 'selected' : '' }}>
-                                                            {{ $outcome->name }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                                @error('outcome')
-                                                    <div class="invalid-feedback">{{ $message }}</div>
-                                                @enderror
+                                    <div>
+                                        <h5 class="fw-bold text-dark mb-0" style="font-size: 1.1rem;">Cierre de Gestión</h5>
+                                        <p class="text-muted small mb-0">Selecciona el resultado final. Si requiere seguimiento, se activará la agenda.</p>
+                                    </div>
+                                </div>
+
+                                <div class="category-content">
+                                    <div class="row g-4">
+                                        
+                                        <div class="col-lg-6">
+                                            <div class="card border-0 shadow-sm h-100" style="background: #f8f9fa;">
+                                                <div class="card-body p-4">
+                                                    
+                                                    <div class="mb-3">
+                                                        <label class="form-label fw-bold small text-muted text-uppercase mb-3">
+                                                            <i class="bi bi-bullseye me-1"></i> ¿Cómo terminó la interacción?
+                                                        </label>
+                                                        
+                                                        <div class="row g-2">
+                                                            @foreach ($outcomes as $outcome)
+                                                                <div class="col-6">
+                                                                    <input type="radio" class="btn-check outcome-radio" 
+                                                                        name="outcome" 
+                                                                        id="outcome_{{ $outcome->id }}" 
+                                                                        value="{{ $outcome->id }}"
+                                                                        data-requires-planning="{{ in_array($outcome->id, [2]) ? 'true' : 'false' }}" 
+                                                                        {{ old('outcome', $interaction->outcome ?? '') == $outcome->id ? 'checked' : '' }}
+                                                                        required>
+                                                                    
+                                                                    <label class="selection-card w-100 shadow-sm" for="outcome_{{ $outcome->id }}">
+                                                                        <div class="check-icon"><i class="bi bi-check"></i></div>
+                                                                        <span class="small fw-medium">{{ $outcome->name }}</span>
+                                                                    </label>
+                                                                </div>
+                                                            @endforeach
+                                                        </div>
+                                                        
+                                                        @error('outcome')
+                                                            <div class="text-danger small mt-2 fw-bold animate__animated animate__fadeIn">
+                                                                <i class="bi bi-exclamation-circle"></i> {{ $message }}
+                                                            </div>
+                                                        @enderror
+                                                    </div>
+
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    
-                                    <!-- Separador visual para la sección de planificación -->
-                                    <div class="section-divider">
-                                        <h6 class="section-title">
-                                            <i class="bi bi-calendar-check me-2 text-primary"></i>Planificación
-                                        </h6>
-                                    </div>
-                                    
-                                    <!-- Sección de planificación (inicialmente oculta, se muestra según el resultado) -->
-                                    <div class="card border-0 bg-light mb-4" id="planning-section" style="display:none;">
-                                        <div class="card-body p-3">
-                                            <div class="row g-3">
-                                                <div class="col-md-6">
-                                                    <div class="form-group">
-                                                        <!-- Campo para fecha y hora de la próxima acción -->
-                                                        <label for="next_action_date" class="form-label">Próxima Acción</label>
-                                                        <input type="datetime-local"
-                                                            class="form-control @error('next_action_date') is-invalid @enderror"
-                                                            id="next_action_date" name="next_action_date"
-                                                            value="{{ old('next_action_date', $interaction->next_action_date ?? '') }}">
-                                                        <!-- Botones para establecer fechas rápidas -->
-                                                        <div class="d-flex gap-1 flex-wrap mt-2">
-                                                            <button type="button" class="btn btn-sm btn-outline-secondary quick-date"
-                                                                data-days="1">+1 día</button>
-                                                            <button type="button" class="btn btn-sm btn-outline-secondary quick-date"
-                                                                data-days="3">+3 días</button>
-                                                            <button type="button" class="btn btn-sm btn-outline-secondary quick-date"
-                                                                data-days="7">+1 sem</button>
-                                                            <button type="button" class="btn btn-sm btn-outline-secondary quick-date"
-                                                                data-days="14">+2 sem</button>
-                                                            <button type="button" class="btn btn-sm btn-outline-secondary quick-date"
-                                                                data-days="30">+1 mes</button>
+
+                                        <div class="col-lg-6" id="planning-section" style="display:none;">
+                                            <div class="card border border-warning border-opacity-25 shadow-sm h-100 animate__animated animate__fadeIn" style="background-color: #fffcf5;">
+                                                <div class="card-body p-4">
+                                                    
+                                                    <div class="d-flex align-items-center mb-4 text-warning">
+                                                        <span class="bg-warning bg-opacity-10 p-2 rounded me-2">
+                                                            <i class="bi bi-calendar-event fs-5"></i>
+                                                        </span>
+                                                        <h6 class="text-uppercase fw-bold mb-0 text-dark small" style="letter-spacing: 1px;">Agenda de Seguimiento</h6>
+                                                    </div>
+
+                                                    <div class="mb-3">
+                                                        <label class="form-label fw-bold small text-muted text-uppercase mb-2">Siguiente Paso</label>
+                                                        <div class="row g-2">
+                                                            @foreach ($nextActions as $action)
+                                                                <div class="col-4">
+                                                                    <input type="radio" class="btn-check" 
+                                                                        name="next_action_type" 
+                                                                        id="action_{{ $action->id }}" 
+                                                                        value="{{ $action->id }}"
+                                                                        {{ old('next_action_type', $interaction->next_action_type ?? '') == $action->id ? 'checked' : '' }}>
+                                                                    
+                                                                    <label class="selection-card selection-card-warning w-100" for="action_{{ $action->id }}">
+                                                                        <div class="check-icon"><i class="bi bi-check"></i></div>
+                                                                        <span class="small" style="font-size: 0.75rem;">{{ $action->name }}</span>
+                                                                    </label>
+                                                                </div>
+                                                            @endforeach
+                                                        </div>
+                                                        @error('next_action_type')
+                                                            <div class="text-danger small mt-1">{{ $message }}</div>
+                                                        @enderror
+                                                    </div>
+
+                                                    <div class="mb-3">
+                                                        <label for="next_action_date" class="form-label fw-bold small text-muted text-uppercase">Fecha Programada</label>
+                                                        <div class="input-group">
+                                                            <span class="input-group-text bg-white border-end-0 text-warning"><i class="bi bi-clock"></i></span>
+                                                            <input type="datetime-local"
+                                                                class="form-control border-start-0 ps-0 text-dark fw-semibold @error('next_action_date') is-invalid @enderror"
+                                                                id="next_action_date" name="next_action_date"
+                                                                value="{{ old('next_action_date', $interaction->next_action_date ?? '') }}">
                                                         </div>
                                                         @error('next_action_date')
-                                                            <div class="invalid-feedback">{{ $message }}</div>
+                                                            <div class="text-danger small mt-1">{{ $message }}</div>
                                                         @enderror
                                                     </div>
-                                                </div>
-                                                <div class="col-md-6">
+
                                                     <div class="form-group">
-                                                        <!-- Selector para el tipo de próxima acción -->
-                                                        <label for="next_action_type" class="form-label">Tipo de Acción</label>
-                                                        <select
-                                                            class="form-select select2 @error('next_action_type') is-invalid @enderror"
-                                                            id="next_action_type" name="next_action_type">
-                                                            <option value="">Selecciona un tipo</option>
-                                                            @foreach ($nextActions as $action)
-                                                                <option value="{{ $action->id }}"
-                                                                    {{ old('next_action_type', $interaction->next_action_type ?? '') == $action->id ? 'selected' : '' }}>
-                                                                    {{ $action->name }}
-                                                                </option>
-                                                            @endforeach
-                                                        </select>
-                                                        @error('next_action_type')
-                                                            <div class="invalid-feedback">{{ $message }}</div>
-                                                        @enderror
+                                                        <label for="next_action_notes" class="form-label fw-bold small text-muted text-uppercase">Instrucciones</label>
+                                                        <textarea class="form-control bg-white border-warning border-opacity-25 @error('next_action_notes') is-invalid @enderror" 
+                                                            id="next_action_notes" name="next_action_notes" rows="2" 
+                                                            style="resize: none; border-radius: 8px;"
+                                                            placeholder="Escribe detalles clave..."></textarea>
                                                     </div>
-                                                </div>
-                                                <div class="col-md-12">
-                                                    <div class="form-group">
-                                                        <!-- Campo para notas sobre la próxima acción -->
-                                                        <label for="next_action_notes" class="form-label">Notas sobre la Próxima Acción</label>
-                                                        <textarea class="form-control @error('next_action_notes') is-invalid @enderror" id="next_action_notes"
-                                                            name="next_action_notes" rows="3" placeholder="Detalles sobre la próxima acción programada...">{{ old('next_action_notes', $interaction->next_action_notes ?? '') }}</textarea>
-                                                        @error('next_action_notes')
-                                                            <div class="invalid-feedback">{{ $message }}</div>
-                                                        @enderror
-                                                    </div>
+
                                                 </div>
                                             </div>
                                         </div>
+
                                     </div>
                                 </div>
                             </div>
                             
-                            <!-- Botones de navegación entre pestañas -->
-                            <div class="form-actions">
-                                <div class="action-buttons">
-                                    <button type="button" class="btn btn-light" onclick="showTab('adicional')">
-                                        <i class="bi bi-arrow-left"></i> Anterior
+                            <div class="form-actions mt-4 pt-3 border-top bg-white sticky-bottom">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <button type="button" class="btn btn-outline-secondary px-3" onclick="showTab('adicional')">
+                                        <i class="bi bi-arrow-left me-2"></i>Anterior
                                     </button>
-                                </div>
-                                <div class="action-buttons">
-                                    <button type="button" class="btn btn-primary" onclick="showTab('adjuntos')">
-                                        Continuar <i class="bi bi-arrow-right"></i>
+                                    <button type="button" class="btn btn-primary px-4 fw-semibold shadow-sm" onclick="showTab('adjuntos')">
+                                        Continuar <i class="bi bi-arrow-right ms-2"></i>
                                     </button>
                                 </div>
                             </div>
-                        </div>
-                    <!-- PESTAÑA 3 FIN: RESULTADO Y PLANIFICACIÓN -->
 
-                    <!-- PESTAÑA 4 INI: ADJUNTOS Y REFERENCIAS -->
+                            <script>
+                                $(document).ready(function() {
+                                    // Escuchar cambios en los Radio Buttons de Resultado
+                                    $('.outcome-radio').on('change', function() {
+                                        // Leer el atributo data-requires-planning
+                                        const requiresPlanning = $(this).data('requires-planning');
+                                        
+                                        if (requiresPlanning === true) {
+                                            $('#planning-section').slideDown(300); // Animación suave
+                                            // Opcional: Hacer scroll automático suave si es móvil
+                                            if(window.innerWidth < 768) {
+                                                $('html, body').animate({
+                                                    scrollTop: $("#planning-section").offset().top - 100
+                                                }, 500);
+                                            }
+                                        } else {
+                                            $('#planning-section').slideUp(200);
+                                            // Opcional: Limpiar campos al ocultar
+                                            $('#next_action_date').val('');
+                                            $('input[name="next_action_type"]').prop('checked', false);
+                                        }
+                                    });
+
+                                    // Trigger inicial por si es una edición
+                                    if ($('.outcome-radio:checked').length > 0) {
+                                        $('.outcome-radio:checked').trigger('change');
+                                    }
+                                });
+                            </script>
+                        </div>
+                    <!-- FINAL -->
+
+                    <!-- PESTAÑA 4  -->
+                    <!-- INICIO -->
+                    <!-- ADJUNTOS Y REFERENCIAS -->
                         <div class="tab-panel" id="adjuntos-tab">
+                            
+                            <style>
+                                /* Zona de Carga Pro */
+                                .drop-zone-pro {
+                                    border: 2px dashed #cbd5e1;
+                                    border-radius: 8px;
+                                    background: #f8fafc;
+                                    padding: 2.5rem 1.5rem;
+                                    text-align: center;
+                                    position: relative;
+                                    transition: all 0.2s ease-in-out;
+                                    cursor: pointer;
+                                }
+                                .drop-zone-pro:hover, .drop-zone-pro.dragover {
+                                    border-color: #3b82f6;
+                                    background: #eff6ff;
+                                }
+                                .drop-zone-input {
+                                    position: absolute;
+                                    width: 100%;
+                                    height: 100%;
+                                    top: 0;
+                                    left: 0;
+                                    opacity: 0;
+                                    cursor: pointer;
+                                    z-index: 10;
+                                }
+                                
+                                /* Tarjeta de Archivo (Estilo Outlook/Gmail) */
+                                .attachment-card {
+                                    background: white;
+                                    border: 1px solid #e2e8f0;
+                                    border-radius: 6px;
+                                    padding: 12px;
+                                    display: flex;
+                                    align-items: center;
+                                    transition: box-shadow 0.2s;
+                                }
+                                .attachment-card:hover {
+                                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                                    border-color: #cbd5e1;
+                                }
+                                .file-icon {
+                                    width: 40px;
+                                    height: 40px;
+                                    background: #f1f5f9;
+                                    border-radius: 6px;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    color: #64748b;
+                                    font-size: 1.25rem;
+                                    margin-right: 12px;
+                                }
+
+                                /* Input URL Corporativo */
+                                .url-card {
+                                    background: #fff;
+                                    border: 1px solid #e2e8f0;
+                                    border-radius: 8px;
+                                    padding: 1.5rem;
+                                    height: 100%;
+                                }
+                                .input-group-text-clean {
+                                    background: transparent;
+                                    border-right: 0;
+                                    color: #64748b;
+                                }
+                                .form-control-clean {
+                                    border-left: 0;
+                                }
+                                .form-control-clean:focus {
+                                    box-shadow: none;
+                                    border-color: #ced4da;
+                                }
+                                .input-group-focus-within {
+                                    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+                                    border-radius: 6px;
+                                    border: 1px solid #3b82f6;
+                                }
+                                .input-group-focus-within .form-control-clean, 
+                                .input-group-focus-within .input-group-text-clean {
+                                    border-color: transparent;
+                                }
+                            </style>
+
                             <div class="category-container">
-                                <div class="category-header">
-                                    <h5 class="category-title">
-                                        <div class="category-icon">
-                                            <i class="bi bi-paperclip"></i>
-                                        </div>
-                                        Adjuntos y Referencias
-                                    </h5>
-                                    <p class="category-description">Archivos y enlaces relacionados con la interacción</p>
+                                
+                                <div class="d-flex align-items-center mb-4 pb-3 border-bottom">
+                                    <div class="me-3">
+                                        <span class="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded-circle" style="width: 42px; height: 42px;">
+                                            <i class="bi bi-paperclip fs-5"></i>
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <h5 class="fw-bold text-dark mb-0" style="font-size: 1.1rem;">Documentación de Soporte</h5>
+                                        <p class="text-muted small mb-0">Gestiona archivos adjuntos y enlaces externos relacionados con esta gestión.</p>
+                                    </div>
                                 </div>
+
                                 <div class="category-content">
-                                    <!-- Campos para adjuntar archivos y agregar enlaces de referencia -->
-                                    <div class="row g-3 mb-4">
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <label for="attachment" class="form-label">Archivo Adjunto</label>
-                                                <!-- Campo para subir archivo -->
-                                                <input type="file"
-                                                    class="form-control @error('attachment') is-invalid @enderror"
-                                                    id="attachment" name="attachment" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx">
-                                                <div class="form-text">Puedes adjuntar un archivo (máx. 10MB)</div>
+                                    <div class="row g-4">
+                                        
+                                        <div class="col-lg-6">
+                                            <div class="form-group h-100">
+                                                <label class="form-label fw-semibold small text-uppercase text-muted mb-2">Archivo Adjunto</label>
                                                 
-                                                <!-- En modo edición, mostrar archivo existente si hay -->
+                                                <div class="drop-zone-pro" id="drop-zone">
+                                                    <input type="file" 
+                                                        id="attachment" 
+                                                        name="attachment" 
+                                                        class="drop-zone-input @error('attachment') is-invalid @enderror"
+                                                        accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
+                                                        onchange="handleFileSelect(this)">
+                                                    
+                                                    <div class="dz-message" id="dz-message-container">
+                                                        <div class="mb-2 text-primary" id="upload-icon-wrapper">
+                                                            <i class="bi bi-cloud-arrow-up fs-2"></i>
+                                                        </div>
+                                                        <h6 class="fw-bold text-dark mb-1" id="file-label">Haz clic o arrastra un archivo aquí</h6>
+                                                        <p class="text-muted small mb-0">Soporta PDF, Word, Excel, Imágenes (Max 10MB)</p>
+                                                    </div>
+                                                </div>
+                                                
+                                                @error('attachment')
+                                                    <div class="text-danger small mt-2 d-flex align-items-center">
+                                                        <i class="bi bi-exclamation-circle-fill me-1"></i> {{ $message }}
+                                                    </div>
+                                                @enderror
+
                                                 @if ($modoEdicion && $interaction->attachment_urls)
                                                     <div class="mt-3">
-                                                        <div class="small text-muted fw-semibold">Archivo existente:</div>
-                                                        <div class="d-flex align-items-center mt-2 p-2 border rounded bg-light">
-                                                            <i class="bi bi-file-earmark me-2"></i>
-                                                            <span class="me-auto">{{ basename($interaction->attachment_urls) }}</span>
-                                                            <a href="{{ route('interactions.download', basename($interaction->attachment_urls)) }}" 
-                                                            class="btn btn-sm btn-outline-primary me-1" target="_blank">
-                                                                <i class="bi bi-download"></i> Descargar
-                                                            </a>
-                                                            <a href="{{ route('interactions.view', basename($interaction->attachment_urls)) }}" 
-                                                            class="btn btn-sm btn-outline-secondary" target="_blank">
-                                                                <i class="bi bi-eye"></i> Ver
-                                                            </a>
+                                                        <label class="form-label fw-semibold small text-uppercase text-muted mb-2">Archivo Actual</label>
+                                                        <div class="attachment-card">
+                                                            <div class="file-icon">
+                                                                <i class="bi bi-file-earmark-text"></i>
+                                                            </div>
+                                                            <div class="flex-grow-1 overflow-hidden me-3">
+                                                                <div class="fw-semibold text-dark text-truncate small" title="{{ basename($interaction->attachment_urls) }}">
+                                                                    {{ basename($interaction->attachment_urls) }}
+                                                                </div>
+                                                                <div class="text-muted" style="font-size: 0.75rem;">Almacenado en servidor</div>
+                                                            </div>
+                                                            <div class="d-flex gap-2">
+                                                                <a href="{{ route('interactions.download', basename($interaction->attachment_urls)) }}" 
+                                                                class="btn btn-sm btn-white border text-secondary hover-primary" 
+                                                                target="_blank" title="Descargar">
+                                                                    <i class="bi bi-download"></i>
+                                                                </a>
+                                                                <a href="{{ route('interactions.view', basename($interaction->attachment_urls)) }}" 
+                                                                class="btn btn-sm btn-white border text-secondary hover-primary" 
+                                                                target="_blank" title="Vista Previa">
+                                                                    <i class="bi bi-eye"></i>
+                                                                </a>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 @endif
+
+                                                <div id="image-preview-wrapper" class="mt-3" style="display: none;">
+                                                    <div class="p-2 border rounded bg-white shadow-sm d-inline-block">
+                                                        <img id="img-preview-element" class="img-fluid rounded" style="max-height: 120px;" alt="Preview">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-lg-6">
+                                            <div class="form-group h-100">
+                                                <label class="form-label fw-semibold small text-uppercase text-muted mb-2">Referencia Externa</label>
                                                 
-                                                @error('attachment')
-                                                    <div class="invalid-feedback">{{ $message }}</div>
-                                                @enderror
+                                                <div class="url-card d-flex flex-column justify-content-center">
+                                                    <div class="mb-3">
+                                                        <label for="interaction_url" class="small text-muted mb-1">Enlace / URL del Recurso</label>
+                                                        <div class="input-group" id="url-input-group">
+                                                            <span class="input-group-text input-group-text-clean bg-light border">
+                                                                <i class="bi bi-link-45deg fs-5"></i>
+                                                            </span>
+                                                            <input type="url" 
+                                                                class="form-control form-control-clean bg-light border @error('interaction_url') is-invalid @enderror"
+                                                                id="interaction_url" 
+                                                                name="interaction_url" 
+                                                                placeholder="https://drive.google.com/..."
+                                                                value="{{ old('interaction_url', $interaction->interaction_url ?? '') }}"
+                                                                onfocus="document.getElementById('url-input-group').classList.add('input-group-focus-within')"
+                                                                onblur="document.getElementById('url-input-group').classList.remove('input-group-focus-within')">
+                                                        </div>
+                                                        @error('interaction_url')
+                                                            <div class="text-danger small mt-1">{{ $message }}</div>
+                                                        @enderror
+                                                    </div>
+                                                    
+                                                    <div class="d-flex align-items-start p-3 rounded bg-primary shadow-sm">
+                                                        <i class="bi bi-info-circle-fill text-white me-2 mt-1 opacity-75"></i>
+                                                        <p class="small mb-0 lh-sm text-white">
+                                                            Utiliza este campo para vincular carpetas de Drive, grabaciones de llamadas, tickets externos o cualquier recurso web que no requiera descarga.
+                                                        </p>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div class="col-md-6">
-                                            <div class="form-group">
-                                                <!-- Campo para agregar URL de referencia -->
-                                                <label for="interaction_url" class="form-label">Enlace de Referencia</label>
-                                                <input type="url"
-                                                    class="form-control @error('interaction_url') is-invalid @enderror"
-                                                    id="interaction_url" name="interaction_url" placeholder="https://ejemplo.com"
-                                                    value="{{ old('interaction_url', $interaction->interaction_url ?? '') }}">
-                                                @error('interaction_url')
-                                                    <div class="invalid-feedback">{{ $message }}</div>
-                                                @enderror
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Vista previa de imagen (inicialmente oculta) -->
-                                    <div id="image-preview-container" class="mt-3" style="display: none;">
-                                        <div class="small text-muted fw-semibold mb-2">Vista previa:</div>
-                                        <img id="image-preview" class="img-thumbnail file-preview" alt="Vista previa de la imagen">
+
                                     </div>
                                 </div>
                             </div>
                             
-                            <!-- Botones de navegación entre pestañas -->
-                            <div class="form-actions">
-                                <div class="action-buttons">
-                                    <button type="button" class="btn btn-light" onclick="showTab('resultado')">
-                                        <i class="bi bi-arrow-left"></i> Anterior
+                            <div class="form-actions mt-4 pt-3 border-top bg-white sticky-bottom">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <button type="button" class="btn btn-outline-secondary px-3" onclick="showTab('resultado')">
+                                        <i class="bi bi-arrow-left me-2"></i>Anterior
                                     </button>
-                                </div>
-                                <div class="action-buttons">
-                                    <button type="button" class="btn btn-primary" onclick="showTab('historial')">
-                                        Continuar <i class="bi bi-arrow-right"></i>
+                                    <button type="button" class="btn btn-primary px-4 fw-semibold shadow-sm" onclick="showTab('historial')">
+                                        Continuar al Historial <i class="bi bi-arrow-right ms-2"></i>
                                     </button>
                                 </div>
                             </div>
+
+                            <script>
+                                function handleFileSelect(input) {
+                                    const label = document.getElementById('file-label');
+                                    const iconWrapper = document.getElementById('upload-icon-wrapper');
+                                    const previewWrapper = document.getElementById('image-preview-wrapper');
+                                    const previewImg = document.getElementById('img-preview-element');
+                                    const dropZone = document.getElementById('drop-zone');
+
+                                    if (input.files && input.files[0]) {
+                                        // Cambio visual al seleccionar
+                                        label.innerText = input.files[0].name;
+                                        label.classList.add('text-success');
+                                        iconWrapper.innerHTML = '<i class="bi bi-check-circle-fill fs-2 text-success"></i>';
+                                        dropZone.style.borderColor = '#198754';
+                                        dropZone.style.backgroundColor = '#f0fff4';
+
+                                        // Preview si es imagen
+                                        if (input.files[0].type.startsWith('image/')) {
+                                            const reader = new FileReader();
+                                            reader.onload = function(e) {
+                                                previewImg.src = e.target.result;
+                                                previewWrapper.style.display = 'block';
+                                            }
+                                            reader.readAsDataURL(input.files[0]);
+                                        } else {
+                                            previewWrapper.style.display = 'none';
+                                        }
+                                    } else {
+                                        // Reset si cancelan
+                                        label.innerText = 'Haz clic o arrastra un archivo aquí';
+                                        label.classList.remove('text-success');
+                                        iconWrapper.innerHTML = '<i class="bi bi-cloud-arrow-up fs-2"></i>';
+                                        dropZone.style.borderColor = '#cbd5e1';
+                                        dropZone.style.backgroundColor = '#f8fafc';
+                                        previewWrapper.style.display = 'none';
+                                    }
+                                }
+                            </script>
                         </div>
-                    <!-- PESTAÑA 4 FIN: ADJUNTOS Y REFERENCIAS -->
+                    <!-- FINAL -->
   
                     <!-- PESTAÑA 5 -->
                     <!-- INICIO -->
                     <!-- HISTORIAL -->
                         <div class="tab-panel" id="historial-tab">
+                            
+                            <style>
+                                /* Línea vertical conectora */
+                                .history-list {
+                                    position: relative;
+                                    padding-left: 20px;
+                                }
+                                .history-list::before {
+                                    content: '';
+                                    position: absolute;
+                                    left: 27px; /* Ajustar según el ancho del marker */
+                                    top: 10px;
+                                    bottom: 0;
+                                    width: 2px;
+                                    background: #e9ecef;
+                                    z-index: 0;
+                                }
+                                
+                                /* Items individuales */
+                                .timeline-item {
+                                    position: relative;
+                                    padding-left: 30px;
+                                    z-index: 1;
+                                }
+                                
+                                /* El punto/marcador en la línea */
+                                .timeline-marker {
+                                    position: absolute;
+                                    left: 0;
+                                    top: 20px;
+                                    width: 16px;
+                                    height: 16px;
+                                    border-radius: 50%;
+                                    background: #fff;
+                                    border: 3px solid #0d6efd; /* Azul primario */
+                                    z-index: 2;
+                                    box-shadow: 0 0 0 3px rgba(255, 255, 255, 1); /* Borde blanco externo */
+                                }
+
+                                /* Efecto cuando se selecciona para escalar */
+                                .timeline-item.border-primary .timeline-marker {
+                                    background-color: #0d6efd;
+                                    box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.2);
+                                }
+                                
+                                .transition-hover:hover {
+                                    transform: translateY(-2px);
+                                    box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+                                    transition: all 0.2s ease;
+                                }
+                            </style>
+
                             <div class="category-container">
-                                <div class="category-header">
-                                    <h5 class="category-title">
-                                        <div class="category-icon">
-                                            <i class="bi bi-clock-history"></i>
-                                        </div>
-                                        Historial de Interacciones
-                                    </h5>
-                                    <p class="category-description">Interacciones previas con este cliente. Selecciona una para escalar.</p>
-                                </div>
-                                <div class="category-content">
-                                    <!-- Mensaje cuando no hay cliente seleccionado -->
-                                    <div id="no-client-selected" class="text-center py-5">
-                                        <i class="bi bi-person-x display-1 text-muted"></i>
-                                        <p class="mt-3 text-muted">Selecciona un cliente para ver su historial de interacciones</p>
+                                
+                                <div class="category-header d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h5 class="category-title mb-1">
+                                            <div class="category-icon text-white bg-primary">
+                                                <i class="bi bi-clock-history"></i>
+                                            </div>
+                                            Historial de Interacciones
+                                        </h5>
+                                        <p class="category-description mb-0">Consulta la línea de tiempo. Selecciona una interacción para escalar.</p>
                                     </div>
                                     
-                                    <!-- Campo oculto para almacenar el ID de la interacción padre (para escalamiento) -->
-                                    <input type="hidden" id="parent_interaction_id" name="parent_interaction_id" value="">
+                                    <div>
+                                        <button type="button" class="btn btn-sm btn-light border shadow-sm text-primary" id="refresh-history" title="Recargar lista">
+                                            <i class="bi bi-arrow-clockwise"></i> Actualizar
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="category-content bg-light p-0">
                                     
-                                    <!-- Sección de historial (inicialmente oculta) -->
-                                    <div class="card border-0 bg-light mb-4" id="history-section" style="display:none;">
-                                        <div class="card-body p-3">
-                                            <div class="d-flex align-items-center mb-3">
-                                                <i class="bi bi-clock-history text-primary me-2"></i>
-                                                <h6 class="mb-0 fw-semibold">Historial Reciente</h6>
-                                                <div class="ms-auto">
-                                                    <!-- Botón para actualizar el historial -->
-                                                    <button type="button" class="btn btn-sm btn-outline-primary" id="refresh-history">
-                                                        <i class="bi bi-arrow-clockwise"></i> Actualizar
-                                                    </button>
-                                                    <!-- Botón para expandir/contraer el historial -->
-                                                    <button type="button" class="btn btn-sm btn-outline-secondary ms-1" id="toggle-history">
-                                                        <i class="bi bi-chevron-down"></i>
-                                                    </button>
+                                    <div id="no-client-selected" class="text-center py-5">
+                                        <div class="mb-3">
+                                            <i class="bi bi-person-workspace display-1 text-muted opacity-25"></i>
+                                        </div>
+                                        <h5 class="text-muted fw-light">Cliente no identificado</h5>
+                                        <p class="text-muted small">Selecciona un cliente arriba para cargar su línea de tiempo.</p>
+                                    </div>
+                                    
+                                    <div id="history-section" style="display:none;">
+                                        
+                                        <input type="hidden" id="parent_interaction_id" name="parent_interaction_id" value="">
+
+                                        <div class="p-3">
+                                            <div id="selected-parent-info" class="alert alert-primary shadow-sm border-0 d-flex align-items-center mb-4" style="display:none; background-color: #cfe2ff;">
+                                                <div class="me-3">
+                                                    <span class="bg-primary text-white rounded-circle p-2 d-inline-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                        <i class="bi bi-diagram-3-fill fs-5"></i>
+                                                    </span>
                                                 </div>
-                                            </div>
-                                            
-                                            <!-- Indicador de interacción padre seleccionada para escalamiento -->
-                                            <div id="selected-parent-info" class="alert alert-info d-flex align-items-center" style="display:none;">
-                                                <i class="bi bi-info-circle me-2"></i>
                                                 <div class="flex-grow-1">
-                                                    <strong>Interacción padre seleccionada:</strong> 
-                                                    <span id="selected-parent-text">Ninguna</span>
+                                                    <h6 class="alert-heading fw-bold mb-0 text-primary">Escalando Interacción</h6>
+                                                    <div class="small text-dark">
+                                                        Vinculando nueva gestión a: <strong id="selected-parent-text" class="bg-white px-2 rounded text-dark border ms-1">...</strong>
+                                                    </div>
                                                 </div>
-                                                <!-- Botón para limpiar la selección de interacción padre -->
-                                                <button type="button" class="btn btn-sm btn-outline-secondary" id="clear-parent-selection">
-                                                    <i class="bi bi-x-circle"></i> Limpiar
+                                                <button type="button" class="btn btn-sm btn-outline-primary bg-white text-primary border-0 shadow-sm" id="clear-parent-selection">
+                                                    <i class="bi bi-x-circle me-1"></i> Cancelar
                                                 </button>
                                             </div>
-                                            
-                                            <!-- Contenedor para la lista de interacciones del historial -->
+
                                             <div id="history-content">
-                                                <div id="interaction-history-list" class="history-list" style="max-height:400px; overflow-y:auto;">
-                                                    <!-- Los elementos del historial se cargan dinámicamente con JavaScript -->
-                                                </div>
+                                                <div id="interaction-history-list" class="history-list" style="max-height: 600px; overflow-y: auto; padding-right: 10px;">
+                                                    </div>
                                             </div>
                                         </div>
                                     </div>
+
                                 </div>
                             </div>
                             
-                            <!-- Botones de acción final del formulario -->
-                            <div class="form-actions">
-                                <div class="action-buttons">
-                                    <button type="button" class="btn btn-light" onclick="showTab('adjuntos')">
-                                        <i class="bi bi-arrow-left"></i> Anterior
-                                    </button>
-                                </div>
-                                <div class="action-buttons">
-                                    <!-- Botón para limpiar borrador guardado -->
-                                    <button id="clear-draft" type="button" class="btn btn-outline-secondary me-2">
-                                        <i class="bi bi-trash me-1"></i> Borrar Borrador
-                                    </button>
-                                    <!-- Botón principal para enviar el formulario -->
-                                    <button type="submit" class="btn btn-primary px-4">
-                                        <i class="bi bi-save me-1"></i>
-                                        {{ $modoEdicion ? 'Actualizar Interacción' : 'Guardar Interacción' }}
-                                    </button>
+                            <div class="form-actions border-top bg-white p-3 mt-0">
+                                <div class="d-flex justify-content-between w-100">
+                                    <div class="action-buttons">
+                                        <button type="button" class="btn btn-light border" onclick="showTab('adjuntos')">
+                                            <i class="bi bi-arrow-left"></i> Anterior
+                                        </button>
+                                    </div>
+                                    <div class="action-buttons">
+                                        <button id="clear-draft" type="button" class="btn btn-outline-danger me-2">
+                                            <i class="bi bi-trash me-1"></i> Borrar Borrador
+                                        </button>
+                                        <button type="submit" class="btn btn-primary px-4 shadow-sm">
+                                            <i class="bi bi-save me-1"></i>
+                                            {{ $modoEdicion ? 'Actualizar Interacción' : 'Guardar Interacción' }}
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -2040,7 +2375,7 @@
                 console.log('selectParentInteraction llamado con ID:', interactionId); // DEBUG
                 // Actualizar el campo oculto con el ID de la interacción padre
                 $('#parent_interaction_id').val(interactionId);
-                // Agregar esta línea para verificar
+                // Verificar que el valor se establezca correctamente
                 console.log('Valor de parent_interaction_id después de establecer:', $('#parent_interaction_id').val());
 
                 // Mostrar información de la interacción seleccionada
@@ -2095,270 +2430,387 @@
             });
 
             // =================================================================
-            // LÓGICA DE HISTORIAL DE CLIENTES
+            // LÓGICA COMPLETA DE HISTORIAL DE CLIENTES (TIMELINE + DATOS COMPLETOS)
             // =================================================================
-            
-            // Función para actualizar el historial del cliente (versión mejorada con escalamiento)
-            function refreshClientHistory() {
-                console.log('refreshClientHistory llamado'); // DEBUG
-                const cod_ter = $('#client_id').val();
-                if (!cod_ter) return;
-                
-                const $historyList = $('#interaction-history-list');
-                $historyList.empty().html('<div class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary" role="status"><span class="visually-hidden">Cargando...</span></div> Cargando historial...</div>');
-                
-                $.ajax({
-                    url: @json(route('interactions.cliente.show', ['cod_ter' => ':cod_ter'])).replace(':cod_ter', cod_ter),
-                    type: 'GET',
-                    dataType: 'json',
-                    timeout: 15000,
-                }).done(function(data) {
-                    console.log('Datos de historial recibidos:', data); // DEBUG
-                    $historyList.empty();
-                    if (data.history && data.history.length) {
-                        let historyHtml = '';
-                        data.history.forEach(item => {
-                            // Crear una cadena de info segura para el atributo data
-                            const interactionInfo = `${item.type} - ${item.date.substring(0, 10)}`;
-                            
-                            historyHtml += `
-                                <div class="history-item mb-3 p-3 border rounded bg-white" id="history-item-${item.id}">
-                                    <div class="d-flex justify-content-between align-items-start mb-2">
-                                        <div>
-                                            <span class="badge bg-primary me-2">${item.type}</span>
-                                            <span class="badge bg-success">${item.outcome}</span>
-                                        </div>
-                                        <small class="text-muted">${item.date}</small>
-                                    </div>
-                                    <div class="mb-1">
-                                        <i class="bi bi-person-circle me-1"></i>
-                                        <strong>Agente:</strong> ${item.agent}
-                                    </div>
-                                    <div class="text-muted mb-2">
-                                        <i class="bi bi-chat-text me-1"></i>
-                                        ${item.notes}
-                                    </div>
-                                    <div class="d-flex justify-content-end">
-                                        <button type="button" class="btn btn-sm btn-outline-primary btn-escalate" 
-                                                data-id="${item.id}" 
-                                                data-info="${interactionInfo}">
-                                            <i class="bi bi-arrow-up-circle me-1"></i> Escalar desde aquí
-                                        </button>
-                                    </div>
-                                </div>
+                /**
+                 * Función auxiliar para generar el HTML de una tarjeta de historial.
+                 * Mapea TODOS los campos del modelo visualmente.
+                 */
+                function renderHistoryCard(item) {
+                    // -------------------------------------------------------------------------
+                    // 1. CONFIGURACIÓN DE RUTA EXACTA (SEGÚN TU WEB.PHP)
+                    // -------------------------------------------------------------------------
+                    // Tu ruta es: Route::get('/{interaction}/show', ...)
+                    // Por lo tanto la URL debe ser: /interactions/{id}/show
+                    const SHOW_INTERACTION_URL = `/interactions/${item.id}/show`;
+
+                    // -------------------------------------------------------------------------
+                    // 2. PREPARACIÓN DE VARIABLES
+                    // -------------------------------------------------------------------------
+                    
+                    // Info para botón escalar
+                    const interactionInfo = `${item.type} - ${item.date}`;
+
+                    // Colores de estado
+                    const isSuccess = ['Exitoso', 'Resuelto', 'Cerrado', 'Venta', 'Finalizado'].includes(item.outcome);
+                    const isPending = ['Pendiente', 'Seguimiento', 'En Proceso', 'Abierto'].includes(item.outcome);
+                    const badgeClass = isSuccess ? 'bg-success' : (isPending ? 'bg-warning text-dark' : 'bg-secondary');
+
+                    // Icono del canal
+                    let channelIcon = 'bi-chat-dots';
+                    const ch = (item.channel || '').toLowerCase();
+                    if (ch.includes('tel')) channelIcon = 'bi-telephone';
+                    else if (ch.includes('mail') || ch.includes('correo')) channelIcon = 'bi-envelope';
+                    else if (ch.includes('wsp') || ch.includes('what')) channelIcon = 'bi-whatsapp';
+                    else if (ch.includes('presen') || ch.includes('fisic')) channelIcon = 'bi-person-badge';
+
+                    // Notas seguras
+                    const safeNotes = item.notes ? $('<div>').text(item.notes).html() : '<em class="text-muted small">Sin notas registradas.</em>';
+
+                    // -------------------------------------------------------------------------
+                    // 3. BOTONES DE ARCHIVOS (Llevan a la vista SHOW de la interacción)
+                    // -------------------------------------------------------------------------
+                    let attachmentButtonsHtml = '';
+                    let files = item.attachment_urls;
+                    if (typeof files === 'string') { try { files = JSON.parse(files); } catch (e) { files = []; } }
+                    if (!Array.isArray(files)) files = [];
+
+                    if (files.length > 0) {
+                        attachmentButtonsHtml = files.map((rawFileName) => {
+                            // Limpieza del nombre para mostrarlo bonito
+                            let dbFileName = rawFileName.trim();
+                            if (dbFileName.startsWith('/') || dbFileName.startsWith('\\')) dbFileName = dbFileName.substring(1);
+                            const displayName = dbFileName.split('/').pop();
+
+                            // EL BOTÓN DEL ARCHIVO LLEVA A LA URL CORREGIDA (/show)
+                            return `
+                                <a href="${SHOW_INTERACTION_URL}" 
+                                target="_blank" 
+                                class="btn btn-sm btn-outline-info border-info text-info mb-1 me-1 text-decoration-none shadow-sm" 
+                                title="Ir al detalle para ver: ${displayName}"
+                                onclick="event.stopPropagation();">
+                                    <i class="bi bi-paperclip me-1"></i> ${displayName}
+                                </a>
                             `;
-                        });
-                        $historyList.html(historyHtml);
+                        }).join('');
+                    }
+
+                    // -------------------------------------------------------------------------
+                    // 4. HTML FINAL
+                    // -------------------------------------------------------------------------
+                    return `
+                        <div class="history-item mb-4 timeline-item" id="history-item-${item.id}">
+                            <div class="timeline-marker"></div>
+                            <div class="card border shadow-sm h-100">
+                                
+                                <div class="card-header bg-white d-flex justify-content-between align-items-center py-2 px-3">
+                                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                                        <span class="badge bg-dark text-white font-monospace">ID: ${item.id}</span>
+                                        <span class="badge ${badgeClass} rounded-pill">${item.outcome}</span>
+                                        <span class="fw-bold text-dark d-flex align-items-center small border-start ps-2">
+                                            <i class="${channelIcon} me-1 text-primary"></i> ${item.type}
+                                        </span>
+                                        ${item.parent_interaction_id ? 
+                                            `<span class="badge rounded-pill bg-info text-white border border-info" title="Es seguimiento de #${item.parent_interaction_id}">
+                                                <i class="bi bi-reply-fill me-1"></i>Seguimiento
+                                            </span>` : ''}
+                                    </div>
+                                    <small class="text-muted fw-bold font-monospace">${item.date}</small>
+                                </div>
+
+                                <div class="card-body pt-2 pb-3 px-3">
+                                    
+                                    ${(item.nombre_quien_llama || item.celular_quien_llama) ? `
+                                        <div class="bg-light p-2 rounded mb-3 d-flex align-items-center small border-start border-4 border-info">
+                                            <i class="bi bi-person-vcard text-info fs-4 me-3 ms-1"></i>
+                                            <div>
+                                                <span class="fw-bold d-block text-dark">Interlocutor: ${item.nombre_quien_llama || 'No registrado'}</span>
+                                                <span class="text-muted">
+                                                    ${item.parentezco_quien_llama ? `<span class="badge bg-white text-dark border me-1">${item.parentezco_quien_llama}</span>` : ''} 
+                                                    ${item.celular_quien_llama ? `<span class="me-1"><i class="bi bi-phone"></i> ${item.celular_quien_llama}</span>` : ''}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ` : ''}
+
+                                    <div class="mb-3">
+                                        <h6 class="small text-uppercase text-muted fw-bold mb-1" style="font-size: 0.75rem;">Notas de la gestión</h6>
+                                        <div class="p-2 bg-light bg-opacity-50 rounded text-dark border-start" style="white-space: pre-line; font-size: 0.95rem;">${safeNotes}</div>
+                                    </div>
+
+                                    ${(item.area_name || item.cargo_name || item.distrito || item.linea_obligacion_name) ? `
+                                        <div class="mb-3 p-2 border rounded bg-white small">
+                                            <div class="row g-2">
+                                                ${item.distrito ? `<div class="col-6 col-md-4 text-truncate" title="${item.distrito}"><i class="bi bi-geo-alt text-muted"></i> <strong>Dist:</strong> ${item.distrito}</div>` : ''}
+                                                ${item.area_name ? `<div class="col-6 col-md-4 text-truncate" title="${item.area_name}"><i class="bi bi-building text-muted"></i> <strong>Área:</strong> ${item.area_name}</div>` : ''}
+                                                ${item.cargo_name ? `<div class="col-6 col-md-4 text-truncate" title="${item.cargo_name}"><i class="bi bi-briefcase text-muted"></i> <strong>Cargo:</strong> ${item.cargo_name}</div>` : ''}
+                                                ${item.linea_obligacion_name ? `<div class="col-6 col-md-4 text-truncate" title="${item.linea_obligacion_name}"><i class="bi bi-diagram-2 text-muted"></i> <strong>Línea:</strong> ${item.linea_obligacion_name}</div>` : ''}
+                                                ${item.area_asignacion_name ? `<div class="col-6 col-md-4 text-truncate" title="${item.area_asignacion_name}"><i class="bi bi-pin-map text-muted"></i> <strong>Asig:</strong> ${item.area_asignacion_name}</div>` : ''}
+                                            </div>
+                                        </div>
+                                    ` : ''}
+
+                                    ${(attachmentButtonsHtml) ? `
+                                        <div class="mb-3 d-flex flex-wrap gap-2">
+                                            ${attachmentButtonsHtml}
+                                        </div>
+                                    ` : ''}
+
+                                    ${item.next_action_date ? `
+                                        <div class="alert alert-warning d-flex align-items-start py-2 px-3 mb-3 small shadow-sm border-warning">
+                                            <i class="bi bi-calendar-check fs-5 me-2 text-warning"></i>
+                                            <div class="w-100">
+                                                <div class="d-flex justify-content-between">
+                                                    <strong>Próximo paso: ${item.next_action_type || 'Seguimiento'}</strong>
+                                                    <span class="badge bg-warning text-dark">${item.next_action_date}</span>
+                                                </div>
+                                                ${item.next_action_notes ? `<div class="text-muted mt-1 fst-italic border-top border-warning border-opacity-25 pt-1">"${item.next_action_notes}"</div>` : ''}
+                                            </div>
+                                        </div>
+                                    ` : ''}
+
+                                    <div class="d-flex justify-content-between align-items-end border-top pt-2 mt-2">
+                                        <div class="d-flex align-items-center text-muted small">
+                                            <div class="bg-light rounded-circle p-1 me-2 border text-center" style="width: 32px; height: 32px; display:flex; align-items:center; justify-content:center;">
+                                                <i class="bi bi-headset text-secondary"></i>
+                                            </div>
+                                            <div style="line-height: 1.2;">
+                                                <span class="d-block" style="font-size: 0.7rem; text-transform: uppercase;">Gestionado por</span>
+                                                <strong class="text-dark">${item.agent}</strong>
+                                            </div>
+                                        </div>
+
+                                        <div class="d-flex gap-1">
+                                            <a href="${SHOW_INTERACTION_URL}" 
+                                            target="_blank"
+                                            class="btn btn-sm btn-outline-info shadow-sm text-decoration-none"
+                                            onclick="event.stopPropagation();"
+                                            title="Ver ficha completa">
+                                                <i class="bi bi-eye"></i> Ver
+                                            </a>
+
+                                            <button type="button" class="btn btn-sm btn-outline-primary btn-escalate transition-hover" 
+                                                data-id="${item.id}" 
+                                                data-info="${interactionInfo}"
+                                                onclick="event.stopPropagation();">
+                                                <i class="bi bi-arrow-up-right-circle me-1"></i> Escalar
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // Función para actualizar manualmente (Botón Refrescar)
+                function refreshClientHistory() {
+                    console.log('refreshClientHistory llamado');
+                    const cod_ter = $('#client_id').val();
+                    
+                    if (!cod_ter) {
+                        $('#interaction-history-list').empty();
+                        $('#no-client-selected').show();
+                        $('#history-section').hide();
+                        return;
+                    }
+                    
+                    const $historyList = $('#interaction-history-list');
+                    
+                    // Loader
+                    $historyList.empty().html(`
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status"></div>
+                            <p class="mt-2 text-muted">Actualizando historial completo...</p>
+                        </div>
+                    `);
+                    
+                    $.ajax({
+                        url: @json(route('interactions.cliente.show', ['cod_ter' => ':cod_ter'])).replace(':cod_ter', cod_ter),
+                        type: 'GET',
+                        dataType: 'json',
+                        timeout: 15000,
+                    }).done(function(data) {
+                        $historyList.empty();
                         
-                        // Restaurar la selección si existe en el borrador
-                        const parentId = $('#parent_interaction_id').val();
-                        if (parentId) {
-                            console.log('Restaurando selección para ID de padre:', parentId); // DEBUG
-                            const $selectedItem = $(`#history-item-${parentId}`);
-                            if ($selectedItem.length) {
-                                $selectedItem.addClass('border-primary bg-light');
-                                
-                                // Mostrar información de la interacción seleccionada
-                                const $selectedInfo = $('#selected-parent-info');
-                                const $selectedText = $('#selected-parent-text');
-                                
-                                // Buscar la información de la interacción seleccionada
-                                const parentItem = data.history.find(item => item.id == parentId);
-                                if (parentItem) {
-                                    const interactionInfo = `${parentItem.type} - ${parentItem.date.substring(0, 10)}`;
-                                    $selectedText.text(interactionInfo);
-                                    $selectedInfo.show();
+                        if (data.history && data.history.length) {
+                            // Renderizamos usando la función auxiliar
+                            let historyHtml = data.history.map(item => renderHistoryCard(item)).join('');
+                            $historyList.html(historyHtml);
+                            
+                            // Lógica para restaurar selección de escalamiento (si existía un borrador)
+                            const parentId = $('#parent_interaction_id').val();
+                            if (parentId) {
+                                const $selectedItem = $(`#history-item-${parentId}`);
+                                if ($selectedItem.length) {
+                                    $selectedItem.addClass('border-primary'); 
+                                    $selectedItem.find('.card').addClass('shadow');
+                                    // Header azul para destacar
+                                    $selectedItem.find('.card-header').addClass('bg-primary text-white').removeClass('bg-white');
+                                    $selectedItem.find('.text-dark').removeClass('text-dark').addClass('text-white');
+                                    
+                                    const parentItem = data.history.find(item => item.id == parentId);
+                                    if (parentItem) {
+                                        $('#selected-parent-text').text(`${parentItem.type} - ${parentItem.date}`);
+                                        $('#selected-parent-info').show();
+                                    }
                                 }
                             }
+                        } else {
+                            $historyList.html(`
+                                <div class="text-center py-5 opacity-75">
+                                    <i class="bi bi-inbox display-4 text-muted mb-3"></i>
+                                    <p class="text-muted">No hay interacciones previas registradas.</p>
+                                </div>
+                            `);
+                        }
+                        toastr.success('Historial actualizado correctamente');
+                    }).fail(function(xhr, status, error) {
+                        console.error('Error historial:', error);
+                        $historyList.html(`<div class="alert alert-danger m-3">Error cargando historial: ${error}</div>`);
+                        toastr.error('No se pudo cargar el historial');
+                    });
+                }
+
+                // Función auxiliar de visibilidad
+                function updateHistoryTabVisibility() {
+                    const clientId = $('#client_id').val();
+                    if (clientId) {
+                        $('#no-client-selected').hide();
+                        $('#history-section').show();
+                        // Si la lista está vacía, intentamos cargar automáticamente
+                        if ($('#interaction-history-list').is(':empty')) {
+                            refreshClientHistory();
                         }
                     } else {
-                        $historyList.html('<div class="text-center text-muted py-3">No hay interacciones previas con este cliente</div>');
+                        $('#no-client-selected').show();
+                        $('#history-section').hide();
                     }
-                    toastr.success('Historial actualizado correctamente');
-                }).fail(function(xhr, status, error) {
-                    console.error('Error al actualizar historial:', {xhr, status, error});
-                    
-                    let errorMessage = 'No se pudo cargar el historial del cliente';
-                    
-                    if (xhr.responseJSON && xhr.responseJSON.error) {
-                        errorMessage = xhr.responseJSON.error;
-                    } else if (status === 'timeout') {
-                        errorMessage = 'La solicitud tardó demasiado tiempo. Inténtalo de nuevo.';
-                    }
-                    
-                    $historyList.html(`<div class="text-center text-danger py-3">${errorMessage}</div>`);
-                    toastr.error(errorMessage);
-                });
-            }
-
-            // Función para actualizar la visibilidad de elementos en la pestaña de historial
-            function updateHistoryTabVisibility() {
-                const clientId = $('#client_id').val();
-                if (clientId) {
-                    $('#no-client-selected').hide();
-                    $('#history-section').show();
-                    // Cargar el historial si no está cargado
-                    if ($('#interaction-history-list').is(':empty')) {
-                        refreshClientHistory();
-                    }
-                } else {
-                    $('#no-client-selected').show();
-                    $('#history-section').hide();
-                }
-            }
-
-            // =================================================================
-            // LÓGICA DE CARGA DE INFORMACIÓN DEL CLIENTE
-            // =================================================================
-            
-            // Event listener para cuando se selecciona un cliente
-            $('#client_id').on('change', function() {
-                const cod_ter = $(this).val();
-                const clientCard = $('#client-info-card');
-                const historySection = $('#history-section');
-                const historyList = $('#interaction-history-list');
-                const $durationDisplay = $('#duration-display');
-                const $startTimeField = $('#start_time');
-
-                // Limpiar cualquier cronómetro existente
-                if (startTimeInterval) {
-                    clearInterval(startTimeInterval);
-                    startTimeInterval = null;
                 }
 
-                if (!cod_ter) {
-                    // Si no hay cliente seleccionado, ocultar información
-                    clientCard.fadeOut();
-                    historySection.fadeOut();
+                // =================================================================
+                // EVENTO PRINCIPAL: CAMBIO DE CLIENTE
+                // ================================================================= 
+                $('#client_id').on('change', function() {
+                    const cod_ter = $(this).val();
+                    const clientCard = $('#client-info-card');
+                    const historySection = $('#history-section');
+                    const historyList = $('#interaction-history-list');
+                    const $durationDisplay = $('#duration-display');
+                    const $startTimeField = $('#start_time');
+
+                    // 1. Limpiar cronómetro previo
+                    if (typeof startTimeInterval !== 'undefined' && startTimeInterval) {
+                        clearInterval(startTimeInterval);
+                        startTimeInterval = null;
+                    }
+
+                    // 2. Estado "Sin Cliente"
+                    if (!cod_ter) {
+                        clientCard.fadeOut();
+                        historySection.fadeOut();
+                        $durationDisplay.val('0 segundos');
+                        $startTimeField.val('');
+                        $('#duration').val(0);
+                        if(typeof updateProgress === 'function') updateProgress();
+                        updateHistoryTabVisibility();
+                        return;
+                    }
+
+                    // 3. Iniciar nuevo cronómetro
+                    startTime = new Date();
+                    $startTimeField.val(startTime.toISOString());
                     $durationDisplay.val('0 segundos');
-                    $startTimeField.val('');
                     $('#duration').val(0);
-                    updateProgress();
-                    updateHistoryTabVisibility();
-                    return;
-                }
 
-                // Registrar hora de inicio y empezar a contar duración
-                startTime = new Date();
-                $startTimeField.val(startTime.toISOString());
-                $durationDisplay.val('0 segundos');
-                $('#duration').val(0);
+                    startTimeInterval = setInterval(() => {
+                        const now = new Date();
+                        const durationSeconds = Math.round((now - startTime) / 1000);
+                        $durationDisplay.val(`${durationSeconds} segundos`);
+                        $('#duration').val(durationSeconds);
+                    }, 1000);
 
-                startTimeInterval = setInterval(() => {
-                    const now = new Date();
-                    const durationSeconds = Math.round((now - startTime) / 1000);
-                    $durationDisplay.val(`${durationSeconds} segundos`);
-                    $('#duration').val(durationSeconds);
-                }, 1000);
-
-                // Mostrar indicador de carga
-                showLoader();
-                
-                // Obtener información del cliente mediante AJAX
-                $.ajax({
-                    url: @json(route('interactions.cliente.show', ['cod_ter' => ':cod_ter'])).replace(':cod_ter', cod_ter),
-                    type: 'GET',
-                    dataType: 'json',
-                    timeout: 15000,
-                })
-                .done(function(data) {                    
-                    // Verificar si hay error en la respuesta
-                    if (data.error) {
-                        throw new Error(data.error);
-                    }
+                    // 4. Mostrar loaders (usando tu función showLoader si existe)
+                    if(typeof showLoader === 'function') showLoader();
                     
-                    // Actualizar avatar con iniciales del cliente
-                    const initials = ((data.nom1 || '').charAt(0) + (data.apl1 || '').charAt(0))
-                        .toUpperCase();
-                    $('#info-avatar').text(initials || '—');
+                    // Preparar UI del historial
+                    historyList.empty().html(`
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status"></div>
+                            <p class="mt-2 text-muted">Cargando perfil e historial completo...</p>
+                        </div>
+                    `);
                     
-                    // Actualizar información básica del cliente
-                    $('#info-nombre').text(data.nom_ter || 'No registrado');
-                    $('#info-id').text(`ID: ${data.cod_ter || 'N/A'}`);
-                    $('#info-distrito').text(data.distrito?.NOM_DIST || 'No registrado');
-                    $('#info-categoria').text(data.maeTipos?.nombre || 'No registrado');
-                    $('#info-email').text(data.email || 'No registrado');
-                    $('#info-telefono').text(data.tel1 || 'No registrado');
-                    $('#info-direccion').text(data.dir || 'No registrado');
-                    $('#btn-editar-cliente').attr('href', `/maestras/terceros/${data.cod_ter}/edit`);
-                    $('#btn-ver-cliente').attr('href', `/maestras/terceros/${data.cod_ter}`);
+                    // 5. AJAX Principal
+                    $.ajax({
+                        url: @json(route('interactions.cliente.show', ['cod_ter' => ':cod_ter'])).replace(':cod_ter', cod_ter),
+                        type: 'GET',
+                        dataType: 'json',
+                        timeout: 15000,
+                    })
+                    .done(function(data) {                    
+                        if (data.error) throw new Error(data.error);
+                        
+                        // A. Actualizar Info del Cliente (Header de la vista)
+                        const initials = ((data.nom1 || '').charAt(0) + (data.apl1 || '').charAt(0)).toUpperCase();
+                        $('#info-avatar').text(initials || '—');
+                        
+                        $('#info-nombre').text(data.nom_ter || 'No registrado');
+                        $('#info-id').text(`ID: ${data.cod_ter || 'N/A'}`);
+                        $('#info-distrito').text(data.distrito?.NOM_DIST || 'No registrado');
+                        $('#info-categoria').text(data.maeTipos?.nombre || 'No registrado');
+                        $('#info-email').text(data.email || 'No registrado');
+                        $('#info-telefono').text(data.tel1 || 'No registrado');
+                        $('#info-direccion').text(data.dir || 'No registrado');
+                        $('#btn-editar-cliente').attr('href', `/maestras/terceros/${data.cod_ter}/edit`);
+                        $('#btn-ver-cliente').attr('href', `/maestras/terceros/${data.cod_ter}`);
 
-                    // Cargar historial de interacciones del cliente
-                    historyList.empty();
-                    if (data.history && data.history.length > 0) {
-                        console.log(data);
-                        let historyHtml = '';
-                        data.history.forEach(item => {
-                            // Crear una cadena de info segura para el atributo data
-                            const interactionInfo = `${item.type} - ${item.date.substring(0, 10)}`;
-                            
-                            historyHtml += `
-                                <div class="history-item mb-3 p-3 border rounded bg-white" id="history-item-${item.id}">
-                                    <div class="d-flex justify-content-between align-items-start mb-2">
-                                        <div>
-                                            <span class="badge bg-primary me-2">${item.type}</span>
-                                            <span class="badge bg-success">${item.outcome}</span>
-                                        </div>
-                                        <small class="text-muted">${item.date}</small>
-                                    </div>
-                                    <div class="mb-1">
-                                        <i class="bi bi-person-circle me-1"></i>
-                                        <strong>Agente:</strong> ${item.agent}
-                                    </div>
-                                    <div class="text-muted mb-2">
-                                        <i class="bi bi-chat-text me-1"></i>
-                                        ${item.notes}
-                                    </div>
-                                    <div class="d-flex justify-content-end">
-                                        <button type="button" class="btn btn-sm btn-outline-primary btn-escalate" 
-                                                data-id="${item.id}" 
-                                                data-info="${interactionInfo}">
-                                            <i class="bi bi-arrow-up-circle me-1"></i> Escalar desde aquí
-                                        </button>
-                                    </div>
+                        // B. Renderizar Historial Completo
+                        historyList.empty();
+                        if (data.history && data.history.length > 0) {
+                            console.log('Historial cargado:', data.history.length, 'elementos');
+                            // Mapeamos los datos usando la función renderHistoryCard actualizada
+                            const historyHtml = data.history.map(item => renderHistoryCard(item)).join('');
+                            historyList.html(historyHtml);
+                            historySection.fadeIn();
+                        } else {
+                            historyList.html(`
+                                <div class="text-center py-5 opacity-75">
+                                    <i class="bi bi-inbox display-4 text-muted mb-3"></i>
+                                    <p class="text-muted">No hay interacciones previas con este cliente.</p>
                                 </div>
-                            `;
-                        });
-                        historyList.html(historyHtml);
-                        historySection.fadeIn();
-                    } else {
-                        historyList.html('<div class="text-center text-muted py-3">No hay interacciones previas con este cliente</div>');
-                        historySection.fadeIn();
-                    }
+                            `);
+                            historySection.fadeIn();
+                        }
 
-                    // Mostrar tarjeta de información del cliente
-                    clientCard.fadeIn();
-                    updateProgress();
-                    toastr.success('Información del cliente cargada correctamente');
-                })
-                .fail(function(xhr, status, error) {
-                    console.error('Error en la solicitud AJAX:', {xhr, status, error});
-                    
-                    let errorMessage = 'No se pudo cargar la información del cliente';
-                    
-                    // Intentar obtener un mensaje de error más específico
-                    if (xhr.responseJSON && xhr.responseJSON.error) {
-                        errorMessage = xhr.responseJSON.error;
-                    } else if (status === 'timeout') {
-                        errorMessage = 'La solicitud tardó demasiado tiempo. Inténtalo de nuevo.';
-                    } else if (status === 'error') {
-                        errorMessage = 'Error de conexión. Verifica tu conexión a internet.';
-                    }
-                    
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Error al cargar cliente',
-                        text: errorMessage,
-                        footer: 'Código de error: ' + xhr.status
+                        clientCard.fadeIn();
+                        if(typeof updateProgress === 'function') updateProgress();
+                        toastr.success('Información del cliente cargada correctamente');
+                    })
+                    .fail(function(xhr, status, error) {
+                        console.error('Error AJAX:', {xhr, status, error});
+                        let errorMessage = 'No se pudo cargar la información del cliente';
+                        
+                        if (xhr.responseJSON && xhr.responseJSON.error) errorMessage = xhr.responseJSON.error;
+                        else if (status === 'timeout') errorMessage = 'La solicitud tardó demasiado tiempo.';
+                        else if (status === 'error') errorMessage = 'Error de conexión.';
+                        
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error al cargar cliente',
+                            text: errorMessage,
+                            footer: 'Código: ' + xhr.status
+                        });
+                        
+                        $('#client-info-card').fadeOut();
+                        $('#history-section').fadeOut();
+                    })
+                    .always(function() {
+                        if(typeof hideLoader === 'function') hideLoader();
                     });
-                    
-                    $('#client-info-card').fadeOut();
-                    $('#history-section').fadeOut();
-                })
-                .always(function() {
-                    hideLoader();
                 });
-            });
+            // CIERRE HISTORICO
 
             // =================================================================
             // LÓGICA DE PLANIFICACIÓN
