@@ -7,6 +7,7 @@
                     <table class="table table-hover">
                         <thead>
                             <tr>
+                                <th>ID</th>
                                 <th>Nombre</th>
                                 <th>Cálculo</th>
                                 <th>Meta</th>
@@ -18,6 +19,7 @@
                         <tbody>
                             @foreach ($indicators as $ind)
                                 <tr>
+                                    <td>{{$ind->id}}</td>
                                     <td>{{ $ind->nombre }}</td>
                                     <td>{{ $ind->calculo }}</td>
                                     <td class="fw-bold text-dark">{{ $ind->meta }}</td>
@@ -32,7 +34,7 @@
                                             <div class="badge bg-soft-success text-success">{{ $ind->frecuencia }}</div>
                                         @endif
                                     </td>
-                                    <td></td>
+                                    <td>{{ number_format($ind->indicador_calculado, 1) }} % </td>
                                     <td class="text-end">
                                         <div class="hstack gap-2 justify-content-end">
                                             <div class="dropdown">
@@ -66,9 +68,8 @@
     <div class="modal fade" id="modalCalculo" tabindex="-1">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
-                <form method="POST" action="{{ route('indicadores.update') }}">
+                <form method="POST">
                     @csrf
-
                     <div class="modal-header">
                         <h5 class="modal-title">Actualizar Indicador</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
