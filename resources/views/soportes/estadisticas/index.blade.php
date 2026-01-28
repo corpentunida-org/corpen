@@ -453,7 +453,7 @@
                 <div class="col-lg-2 col-6">
                     <div class="card-box p-3 text-center">
                         <div class="text-muted small fw-bold mb-1">SLA CUMPLIDO</div>
-                        <div class="fs-4 fw-bold text-success"><span id="slaComplianceMetric">{{ $slaCompliance ?? 0 }}</span>%</div>
+                        <div class="fs-4 fw-bold text-success"><span id="slaComplianceMetric">{{ number_format($slaCompliance,1) ?? 0 }}</span>%</div>
                     </div>
                 </div>
                 <div class="col-lg-2 col-6">
