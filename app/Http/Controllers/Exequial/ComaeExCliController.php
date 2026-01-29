@@ -30,7 +30,6 @@ class ComaeExCliController extends Controller
     public function index()
     {
         $token = env('TOKEN_ADMIN');
-
         $response = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
         ])->get(env('API_PRODUCCION') . '/api/District');

@@ -261,6 +261,8 @@ class MaeC_ExSerController extends Controller
             'labels' => $datamunicipios->pluck('municipio')->toArray(),
             'valores' => $datamunicipios->pluck('total')->toArray(),
         ];
+        $numtotalbeneficiarios = DB::table('EXE_ExRelPar')->where('tipo', 'A')->count();
+        $numtotaltitulares = DB::table('EXE_ExCli')->where('estado', '1')->count();
         $total = DB::table('Auditoria')->where('area', 'EXEQUIALES')->count();
         $add = DB::table('Auditoria')->where('area', 'EXEQUIALES')->where('accion', 'like', 'add beneficiario%')->count();
         $update = DB::table('Auditoria')->where('area', 'EXEQUIALES')->where('accion', 'like', 'update beneficiario%')->count();
@@ -293,6 +295,6 @@ class MaeC_ExSerController extends Controller
             ],
         ];
 
-        return view('exequial.prestarServicio.dashboard', compact('arraydata', 'totalservicios', 'arraydatamunicipios', 'kpis'));
+        return view('exequial.prestarServicio.dashboard', compact('arraydata', 'totalservicios', 'arraydatamunicipios', 'kpis', 'numtotalbeneficiarios', 'numtotaltitulares'));
     }
 }
