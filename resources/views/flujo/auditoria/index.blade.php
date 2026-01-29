@@ -1,7 +1,6 @@
 <x-base-layout>
     {{-- 1. Librerías Externas --}}
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
 
     <div class="app-container" id="audit-container">
         
@@ -255,9 +254,7 @@
                             <i class="fas fa-info-circle"></i>
                             <span>Filtros activos</span>
                         </div>
-                        <a href="{{ route('flujo.auditoria.index') }}" class="clear-all-filters">
-                            <i class="fas fa-times"></i> Limpiar todo
-                        </a>
+                        <a href="{{ route('flujo.auditoria.index') }}" class="clear-all-filters"><i class="fas fa-times"></i> Limpiar todo</a>
                     </div>
                 @endif
             </div>
@@ -352,12 +349,12 @@
             --shadow-hover: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
         }
 
-        body { background-color: var(--bg-body); color: var(--text-main); font-family: 'Plus Jakarta Sans', sans-serif; }
+        body { background-color: var(--bg-body); color: var(--text-main);}
         .app-container { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
 
         /* --- Header --- */
         .main-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; flex-wrap: wrap; gap: 15px; }
-        .text-title { font-family: 'Outfit'; font-size: 2.2rem; font-weight: 800; letter-spacing: -0.02em; margin: 0; color: #1e293b; }
+        .text-title { font-size: 2.2rem; font-weight: 800; letter-spacing: -0.02em; margin: 0; color: #1e293b; }
         .header-pretitle { font-size: 10px; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.1em; }
         .subtitle { color: var(--text-muted); font-size: 0.95rem; margin-top: 5px; }
 
@@ -392,7 +389,7 @@
         .metric-pill.active { background: var(--primary); border-color: var(--primary); color: white; }
         .metric-pill.active .m-label, .metric-pill.active .m-value { color: white; }
         .m-label { font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--text-muted); }
-        .m-value { font-family: 'Outfit'; font-size: 1.5rem; font-weight: 700; }
+        .m-value { font-size: 1.5rem; font-weight: 700; }
         .m-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-bottom: 5px; }
         .dot-comentario { background: #3b82f6; } 
         .dot-historial { background: #f59e0b; }
@@ -400,7 +397,7 @@
         /* --- Charts & Matrix Section --- */
         .insights-section { display: flex; flex-wrap: wrap; gap: 20px; margin-bottom: 40px; }
         .insights-header { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
-        .insights-header h2 { font-family: 'Outfit'; font-size: 1.3rem; font-weight: 700; margin: 0; }
+        .insights-header h2 {font-size: 1.3rem; font-weight: 700; margin: 0; }
         .insight-badge { font-size: 0.8rem; background: #e0e7ff; color: var(--primary); padding: 4px 10px; border-radius: 20px; font-weight: 600; }
         
         .insight-card { 
@@ -412,7 +409,7 @@
         .chart-subtitle { margin: 0 0 15px 0; font-size: 0.8rem; color: var(--text-muted); }
 
         /* --- STYLES MATRIZ TIC (NEW) --- */
-        .tic-audit-table { width: 100%; border-collapse: collapse; min-width: 800px; font-family: 'Inter', sans-serif; }
+        .tic-audit-table { width: 100%; border-collapse: collapse; min-width: 800px;}
         .tic-audit-table th { 
             text-align: left; padding: 14px 20px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; 
             color: #64748b; border-bottom: 1px solid #e2e8f0; letter-spacing: 0.03em;
@@ -420,10 +417,10 @@
         .tic-audit-table td { padding: 16px 20px; border-bottom: 1px solid #f8fafc; font-size: 0.9rem; color: #334155; vertical-align: middle; }
         .tic-audit-table tr:hover td { background-color: #fcfcfd; }
         
-        .code-cell { font-family: 'Menlo', 'Monaco', monospace; font-size: 0.75rem; color: #64748b; background: #f1f5f9; padding: 4px 8px; border-radius: 6px; }
+        .code-cell { font-size: 0.75rem; color: #64748b; background: #f1f5f9; padding: 4px 8px; border-radius: 6px; }
         .fw-bold { font-weight: 600; color: #0f172a; }
         
-        .kpi-flex { display: flex; align-items: center; gap: 10px; font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1rem; }
+        .kpi-flex { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1rem; }
         .text-ok { color: #10b981; }
         .text-warn { color: #f59e0b; }
         
