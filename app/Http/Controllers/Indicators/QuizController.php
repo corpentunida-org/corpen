@@ -19,7 +19,8 @@ class QuizController extends Controller
 
     public function index()
     {
-        return view('indicators.quiz.index');
+        $pruebausuarios = IndUsuarios::all();
+        return view('indicators.quiz.index', compact('pruebausuarios'));
     }
 
     public function generarpreguntas(int $pruebaid)

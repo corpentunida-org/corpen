@@ -19,7 +19,7 @@
                         <tbody>
                             @foreach ($indicators as $ind)
                                 <tr>
-                                    <td>{{$ind->id}}</td>
+                                    <td>{{ $ind->id }}</td>
                                     <td>{{ $ind->nombre }}</td>
                                     <td>{{ $ind->calculo }}</td>
                                     <td class="fw-bold text-dark">{{ $ind->meta }}</td>
@@ -34,7 +34,7 @@
                                             <div class="badge bg-soft-success text-success">{{ $ind->frecuencia }}</div>
                                         @endif
                                     </td>
-                                    <td>{{ number_format($ind->indicador_calculado, 1) }} % </td>
+                                    <td>{{ $ind->indicador_calculado !== null ? number_format($ind->indicador_calculado, 1) . ' %' : '' }}</td>
                                     <td class="text-end">
                                         <div class="hstack gap-2 justify-content-end">
                                             <div class="dropdown">
@@ -83,13 +83,13 @@
                             <label class="form-label">Nombre</label>
                             <input type="text" class="form-control" id="ind_nombre" disabled>
                         </div>
-                    
+
 
                         <div class="mb-3">
                             <label class="form-label">Meta</label>
                             <input type="text" class="form-control" name="meta" id="ind_meta">
                         </div>
-                
+
 
                     </div>
 
