@@ -19,40 +19,37 @@
                             <a href="javascript:void(0);" class="avatar-text avatar-xs bg-success"
                                 data-bs-toggle="expand"> </a>
                         </div>
-                    </div>                    
-                </div>
-            </div>
-            <div class="card-body custom-card-action">                
-                <div class="tab-content">
-                    <div class="tab-pane fade show active" id="leadsTab" role="tabpanel">
-                        <div id="leads-bar-chart"></div>
-                    </div>
-                    <div class="tab-pane fade" id="proposalTab" role="tabpanel">
-                        <div id="proposal-bar-chart"></div>
-                    </div>
-                    <div class="tab-pane fade" id="contractTab" role="tabpanel">
-                        <div id="contract-bar-chart"></div>
-                    </div>
-                    <div class="tab-pane fade" id="projectTab" role="tabpanel">
-                        <div id="project-bar-chart"></div>
                     </div>
                 </div>
             </div>
-            <div class="card-footer d-md-flex flex-wrap p-4 pt-5 border-top border-gray-5">
-                <div class="flex-fill mb-4 mb-md-0 pb-2 pb-md-0">
-                    <p class="fs-11 fw-semibold text-uppercase text-primary mb-2">Current</p>
-                    <h2 class="fs-20 fw-bold mb-0">$65,658 USD</h2>
-                </div>
-                <div class="vr mx-4 text-gray-600 d-none d-md-flex"></div>
-                <div class="flex-fill mb-4 mb-md-0 pb-2 pb-md-0">
-                    <p class="fs-11 fw-semibold text-uppercase text-danger mb-2">Overdue</p>
-                    <h2 class="fs-20 fw-bold mb-0">$34,54 USD</h2>
-                </div>
-                <div class="vr mx-4 text-gray-600 d-none d-md-flex"></div>
-                <div class="flex-fill">
-                    <p class="fs-11 fw-semibold text-uppercase text-success mb-2">Additional</p>
-                    <h2 class="fs-20 fw-bold mb-0">$20,478 USD</h2>
-                </div>
+            <div class="table-responsive">
+                <table class="table table-hover" id="projectList">
+                    <thead>
+                        <tr>
+                            <th>Correo</th>
+                            <th>Nombre</th>
+                            <th>Puntaje</th>
+                            <th>TIC</th>
+                            <th>Nuevas TIC</th>
+                            <th>Tiempo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($pruebausuarios as $user)
+                            <tr>
+                                <td>{{ $user->id_correo }}</td>
+                                <td>{{ $user->nombre }}</td>
+                                <td>{{ $user->puntaje }}</td>
+                                <td>{{ $user->respuestas[5] }} <span style="color: #f5c518;">★</span></td>
+                                <td>
+                                    {{ $user->respuestas[6] }}
+                                    {!! $user->respuestas[6] !== 'n/a' ? '<span style="color:#f5c518;">★</span>' : '' !!}
+                                </td>
+                                <td>{{ $user->tiempo }}</td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -84,27 +81,12 @@
                                 <i class="feather-more-vertical"></i>
                             </div>
                         </a>
-                        <div class="dropdown-menu dropdown-menu-end">
-                            <a href="javascript:void(0);" class="dropdown-item"><i
-                                    class="feather-at-sign"></i>New</a>
-                            <a href="javascript:void(0);" class="dropdown-item"><i
-                                    class="feather-calendar"></i>Event</a>
-                            <a href="javascript:void(0);" class="dropdown-item"><i
-                                    class="feather-bell"></i>Snoozed</a>
-                            <a href="javascript:void(0);" class="dropdown-item"><i
-                                    class="feather-trash-2"></i>Deleted</a>
-                            <div class="dropdown-divider"></div>
-                            <a href="javascript:void(0);" class="dropdown-item"><i
-                                    class="feather-settings"></i>Settings</a>
-                            <a href="javascript:void(0);" class="dropdown-item"><i class="feather-life-buoy"></i>Tips
-                                & Tricks</a>
-                        </div>
                     </div>
                 </div>
             </div>
             <div class="card-body custom-card-action">
                 <div class="text-center mb-4">
-                    <div class="goal-prigress"></div>
+                    <canvas id="ChartTotalQuiz"></canvas>
                 </div>
                 <div class="row g-4">
                     <div class="col-sm-6">
@@ -150,4 +132,10 @@
             </div>
         </div>
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const porcentaje = 20;
+            const ctx = document.getElementById('ChartTotalQuiz').getContext('2d');
+        });
+    </script>
 </x-base-layout>
