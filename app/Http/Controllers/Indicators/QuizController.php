@@ -12,16 +12,22 @@ use Illuminate\Http\Request;
 
 class QuizController extends Controller
 {
+    public function quizinicio()
+    {
+        return view('indicators.quiz.inicioquiz');
+    }
+
     public function index()
     {
-        return view('indicators.inicioquiz');
+        $pruebausuarios = IndUsuarios::all();
+        return view('indicators.quiz.index', compact('pruebausuarios'));
     }
 
     public function generarpreguntas(int $pruebaid)
     {
         $activeQuiz = IndQuiz::where('id', $pruebaid)->where('estado', 1)->exists();
         if (!$activeQuiz) {
-            return view('indicators.quizTI', ['quizActivo' => false]);
+            return view('indicators.quiz.quizTI', ['quizActivo' => false]);
         }
         $idsEspeciales = [1, 2];
         $idsPreguntas = IndPreguntas::where('ref_quiz', $pruebaid)->whereNotIn('id', $idsEspeciales)->inRandomOrder()->limit(5)->pluck('id')->toArray();
@@ -43,14 +49,14 @@ class QuizController extends Controller
                 'indicador' => in_array($idPregunta, $idsEspeciales),
             ];
         }
-        return view('indicators.quizTI', [
+        return view('indicators.quiz.quizTI', [
             'quizActivo' => true,
             'preguntas' => $preguntas,
             'pruebaid' => $pruebaid,
         ]);
     }
 
-    public function store(Request $request)
+    public function storeQuiz(Request $request)
     {
         $preguntas = $request->preguntas;
         $resultado = [];
@@ -92,7 +98,7 @@ class QuizController extends Controller
             'prueba' => $request->pruebaid,
         ]);
 
-        return view('indicators.resultadoquiz', [
+        return view('indicators.quiz.resultadoquiz', [
             'nombre' => strtoupper($request->nombreUsuario),
             'resultado' => $resultado,
             'puntaje' => $quizuser->puntaje,
@@ -108,11 +114,8 @@ class QuizController extends Controller
         ]);
 
         $correo = $request->correoUsuario;
-
         $existe = DB::table('gdo_cargo')->where('correo_corporativo', $correo)->exists();
-
         $respondido = DB::table('Ind_usuarios')->where('id_correo', $correo)->where('prueba', $request->pruebaid)->exists();
-
         return response()->json([
             'existe' => $existe,
             'respondido' => $respondido,

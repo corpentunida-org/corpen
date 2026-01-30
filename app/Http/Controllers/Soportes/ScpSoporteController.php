@@ -480,7 +480,6 @@ class ScpSoporteController extends Controller
                 return $this->formatearSoporte($soporte);
             });
         }
-
         return response()->json($respuesta);
     }
 

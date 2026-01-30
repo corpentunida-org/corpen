@@ -101,6 +101,7 @@ use App\Http\Controllers\Vistas\VisitaCorpenController;
 
 //QUIZ INDICATORS
 use App\Http\Controllers\Indicators\QuizController;
+use App\Http\Controllers\Indicators\IndicadoresController;
 
 
 /* Route::middleware(['auth'])->group(function () {
@@ -781,8 +782,14 @@ Route::middleware('auth')->prefix('visitas')->name('visitas.')->group(function (
 });
 
 //QUIZ TI
-Route::get('/indicators/quiz', [QuizController::class, 'index'])->name('indicators.quiz.inicio');
-//Route::get('/indicators/quiz/preguntas', [QuizController::class, 'generarpreguntas'])->name('indicators.quiz.preguntas');
+Route::get('/indicators/quiz', [QuizController::class, 'quizinicio'])->name('indicators.quiz.inicio');
 Route::get('/indicators/quiz/{prueba}/preguntas',[QuizController::class, 'generarpreguntas'])->name('indicators.quiz.preguntas');
 Route::post('/indicators/validarcorreo', [QuizController::class, 'validar'])->name('indicators.validar.correo');
-Route::post('/indicators/quiz/store', [QuizController::class, 'store'])->name('indicators.quiz.store');
+Route::post('/indicators/quiz/store', [QuizController::class, 'storeQuiz'])->name('indicators.quiz.store');
+Route::prefix('indicators')->group(function () {
+    Route::resource('quizes', QuizController::class)->names('indicators.quizes')->middleware('auth');
+});
+//Indicadores
+Route::prefix('indicators')->group(function () {
+    Route::resource('indicador', IndicadoresController::class)->names('indicators.indicadores')->middleware('auth');
+});
