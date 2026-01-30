@@ -16,6 +16,11 @@ class GdoCategoriaDocumentoController extends Controller
         $searchTerm = $request->input('search');
         $query = GdoCategoriaDocumento::query();
 
+        $categorias = $query->withCount('tiposDocumento') // Esto añade el atributo tipos_documento_count
+            ->latest()
+            ->paginate(10)
+            ->appends($request->query());
+
         if ($searchTerm) {
             $query->where('nombre', 'LIKE', "%{$searchTerm}%");
         }
@@ -27,17 +32,17 @@ class GdoCategoriaDocumentoController extends Controller
     /**
      * Muestra el formulario para crear una nueva categoría.
      */
-public function create()
-{
-    // 1. PRIMERO, le damos un valor a la variable $categoria.
-    $categoria = new GdoCategoriaDocumento();
+    public function create()
+    {
+        // 1. PRIMERO, le damos un valor a la variable $categoria.
+        $categoria = new GdoCategoriaDocumento();
 
-    // 2. SEGUNDO, ahora que la variable ya existe, la podemos mostrar con dd().
-    /* dd($categoria); */
+        // 2. SEGUNDO, ahora que la variable ya existe, la podemos mostrar con dd().
+        /* dd($categoria); */
 
-    // 3. El resto del código no se ejecutará.
-    return view('archivo.categorias.create', compact('categoria'));
-}
+        // 3. El resto del código no se ejecutará.
+        return view('archivo.categorias.create', compact('categoria'));
+    }
 
     /**
      * Guardar una nueva categoría en la base de datos.
@@ -55,11 +60,16 @@ public function create()
     }
 
     /**
-     * Muestra los detalles de una categoría (redirige a editar).
+     * Muestra los detalles de una categoría y sus documentos vinculados.
      */
     public function show(GdoCategoriaDocumento $categoria)
     {
-        return redirect()->route('archivo.categorias.edit', $categoria);
+        // Cargamos la relación para que la vista tenga datos que mostrar
+        // y el conteo de documentos vinculados.
+        $categoria->load(['tiposDocumento']);
+        $categoria->loadCount('tiposDocumento');
+
+        return view('archivo.categorias.show', compact('categoria'));
     }
 
     /**
@@ -91,9 +101,14 @@ public function create()
      */
     public function destroy(GdoCategoriaDocumento $categoria)
     {
+        if (!$categoria->esEliminable()) {
+            return redirect()->route('archivo.categorias.index')
+                ->with('error', "No se puede eliminar '{$categoria->nombre}' porque tiene documentos vinculados. Primero mueve o elimina los documentos asociados.");
+        }
+
         $categoria->delete();
 
         return redirect()->route('archivo.categorias.index')
-                         ->with('success', 'Categoría eliminada exitosamente.');
+            ->with('success', 'Categoría eliminada correctamente.');
     }
 }
