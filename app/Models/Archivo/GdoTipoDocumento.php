@@ -19,8 +19,7 @@ class GdoTipoDocumento extends Model
      */
     protected $fillable = [
         'nombre',
-        'categoria_documento_id', // <-- AÑADE ESTA LÍNEA
-
+        'categoria_documento_id',
     ];
 
     /**
@@ -28,13 +27,15 @@ class GdoTipoDocumento extends Model
      */
     public function documentos()
     {
-        return $this->hasMany(GdoDocsEmpleados::class, 'tipo_documento_id','id');
+        return $this->hasMany(GdoDocsEmpleados::class, 'tipo_documento_id', 'id');
     }
+
     /**
      * Relación con la categoría de documento.
      */
     public function categoria()
     {
+        // Asegúrate de que el modelo GdoCategoriaDocumento exista en este mismo namespace
         return $this->belongsTo(GdoCategoriaDocumento::class, 'categoria_documento_id', 'id');
     }
 }
