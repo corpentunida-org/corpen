@@ -1,144 +1,142 @@
 <x-base-layout>
-
-    {{-- 1. SECCIÓN DE ESTILOS Y LIBRERÍAS PROFESIONALES --}}
     @push('styles')
-        {{-- Toastr para notificaciones elegantes --}}
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
         <style>
-            /* Estilo para avatares con iniciales */
-            .avatar-initials {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                width: 40px;
-                height: 40px;
-                border-radius: 50%;
-                background-color: var(--bs-primary-bg-subtle);
-                color: var(--bs-primary-text-emphasis);
-                font-weight: 600;
-                font-size: 0.9rem;
-            }
-            /* Consistencia en los botones de la tabla */
-            .table-actions .btn {
-                width: 35px;
-                height: 35px;
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-            }
-            /* Ocultar el spinner de los inputs de tipo search */
-            input[type="search"]::-webkit-search-decoration,
-            input[type="search"]::-webkit-search-cancel-button,
-            input[type="search"]::-webkit-search-results-button,
-            input[type="search"]::-webkit-search-results-decoration {
-                -webkit-appearance:none;
-            }
+            .hover-lift:hover { background-color: #fbfcfd !important; transition: all 0.2s ease; }
+            .file-icon-bg { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 8px; background-color: #f1f5f9; color: #475569; }
+            .search-container { background-color: #ffffff; border-bottom: 1px solid #e2e8f0; padding: 1.5rem 2rem; }
+            .input-search-custom { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; transition: all 0.3s; }
+            .input-search-custom:focus-within { border-color: #6366f1; background-color: #fff; box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1); }
+            .btn-action-pill { border: 1px solid #e2e8f0; border-radius: 50px; padding: 0.35rem 0.8rem; background: #fff; color: #64748b; font-size: 0.85rem; transition: all 0.2s; }
+            .btn-action-pill:hover { background: #f8fafc; color: #4f46e5; border-color: #4f46e5; }
         </style>
     @endpush
 
-    {{-- 2. PANEL DE CONTROL --}}
-    <div class="card card-friendly animate-on-load mb-4">
-        <div class="card-body p-3 p-lg-4">
-            <div class="row align-items-center">
-                {{-- Título --}}
-                <div class="col-lg-5 col-md-12 mb-3 mb-lg-0">
-                    <div class="d-flex align-items-center">
-                        <i class="bi bi-folder2-open fs-2 text-primary me-3"></i>
-                        <div>
-                            <h4 class="fw-bold mb-0">Documentos de Empleados</h4>
-                            <small class="text-muted">Gestiona, busca y administra los registros.</small>
-                        </div>
-                    </div>
-                </div>
-                {{-- Buscador --}}
-                <div class="col-lg-4 col-md-6 mb-3 mb-md-0">
-                    <form method="GET" action="{{ route('archivo.gdodocsempleados.index') }}">
-                        <div class="input-group">
-                            <input type="search" name="search" class="form-control" placeholder="Buscar por empleado..." value="{{ $search ?? '' }}">
-                            <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
-                        </div>
-                    </form>
-                </div>
-                {{-- Botón de Crear --}}
-                <div class="col-lg-3 col-md-6 text-md-end">
-                    <a href="{{ route('archivo.gdodocsempleados.create') }}" 
-                       class="btn btn-primary rounded-pill px-4 py-2 w-100 w-md-auto btn-hover-lift swal-confirm"
-                       data-swal-title="¿Crear un nuevo documento?"
-                       data-swal-text="Serás redirigido al formulario de creación."
-                       data-swal-icon="info">
-                        <i class="bi bi-plus-lg me-1"></i> Nuevo Documento
-                    </a>
-                </div>
+    <div class="container-fluid py-4 px-lg-5">
+        {{-- Encabezado --}}
+        <div class="d-flex align-items-center justify-content-between mb-5">
+            <div>
+                <h2 class="fw-bold text-dark m-0" style="letter-spacing: -1px;">Expedientes de Empleados</h2>
+                <p class="text-muted small m-0">Repositorio central de documentos y soportes del personal.</p>
             </div>
+            <a href="{{ route('archivo.gdodocsempleados.create') }}" class="btn btn-dark rounded-pill px-4 shadow-sm fw-bold">
+                <i class="bi bi-cloud-upload me-2"></i> Subir Documento
+            </a>
         </div>
-    </div>
 
-    {{-- 3. ZONA DE DATOS --}}
-    <div class="card card-friendly animate-on-load" style="animation-delay: 0.1s;">
-        <div class="card-body p-0">
+        {{-- Notificaciones --}}
+        @if (session('success'))
+            <div class="alert alert-soft-success border-0 mb-4 shadow-sm d-flex align-items-center" role="alert">
+                <i class="bi bi-check-circle-fill me-2"></i>
+                <div>{{ session('success') }}</div>
+            </div>
+        @endif
+
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+            {{-- Buscador --}}
+            <div class="search-container">
+                <form method="GET" action="{{ route('archivo.gdodocsempleados.index') }}">
+                    <div class="row g-3">
+                        <div class="col-lg-6">
+                            <div class="input-group input-search-custom px-3">
+                                <span class="input-group-text bg-transparent border-0 text-muted">
+                                    <i class="bi bi-search"></i>
+                                </span>
+                                <input type="search" name="search" class="form-control bg-transparent border-0 py-2" 
+                                       placeholder="Buscar por fecha, observaciones o ruta..." value="{{ request('search') }}">
+                            </div>
+                        </div>
+                        @if(request('search'))
+                            <div class="col-auto">
+                                <a href="{{ route('archivo.gdodocsempleados.index') }}" class="btn btn-link text-danger fw-bold text-decoration-none small pt-2">
+                                    <i class="bi bi-x-circle-fill"></i> Limpiar
+                                </a>
+                            </div>
+                        @endif
+                    </div>
+                </form>
+            </div>
+
+            {{-- Tabla --}}
             <div class="table-responsive">
-                <table class="table table-hover mb-0 align-middle">
-                    <thead class="table-light">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light">
                         <tr>
-                            <th class="py-3 px-4">Empleado</th>
-                            <th class="py-3 px-4">Tipo de Documento</th>
-                            <th class="py-3 px-4">Fecha de Subida</th>
-                            <th class="py-3 px-4 text-center">Acciones</th>
+                            <th class="ps-4 py-3 text-muted small fw-bold text-uppercase">Empleado</th>
+                            <th class="py-3 text-muted small fw-bold text-uppercase">Tipo / Documento</th>
+                            <th class="py-3 text-muted small fw-bold text-uppercase text-center">Fecha Subida</th>
+                            <th class="py-3 text-muted small fw-bold text-uppercase">Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse ($gdodocsempleados as $doc)
-                            <tr>
-                                {{-- Celda de Empleado con avatar --}}
-                                <td class="px-4">
+                            <tr class="hover-lift">
+                                <td class="ps-4 py-3">
                                     <div class="d-flex align-items-center">
-                                        <div class="avatar-initials me-3">
-                                            {{ strtoupper(substr($doc->empleado->nombre1 ?? '?', 0, 1) . substr($doc->empleado->apellido1 ?? '?', 0, 1)) }}
+                                        <div class="bg-primary-soft rounded-circle me-3 d-flex align-items-center justify-content-center fw-bold text-primary" style="width: 35px; height: 35px; background: #eef2ff;">
+                                            {{ substr($doc->empleado->apellido1 ?? 'E', 0, 1) }}
                                         </div>
                                         <div>
-                                            <div class="fw-bold">{{ $doc->empleado->nombre_completo ?? 'Empleado no encontrado' }}</div>
-                                            <small class="text-muted">{{ $doc->empleado->cedula ?? 'Sin Cédula' }}</small>
+                                            <span class="fw-bold text-dark d-block">
+                                                {{ $doc->empleado->nombre1 ?? 'N/A' }} {{ $doc->empleado->apellido1 ?? '' }}
+                                            </span>
+                                            <small class="text-muted">ID: {{ $doc->empleado->cedula ?? 'N/A' }}</small>
                                         </div>
                                     </div>
                                 </td>
-                                {{-- Celda de Tipo de Documento --}}
-                                <td class="px-4">{{ $doc->tipoDocumento->nombre ?? '—' }}</td>
-                                {{-- Celda de Fecha --}}
-                                <td class="px-4">{{ $doc->fecha_subida ? $doc->fecha_subida->format('d M, Y') : '—' }}</td>
-                                {{-- Celda de Acciones con menú desplegable --}}
-                                <td class="text-center px-4">
-                                    <div class="btn-group">
-                                        <a href="{{ route('gdodocsempleados.ver', $doc->id) }}" target="_blank" class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip" title="Ver Archivo"><i class="bi bi-eye-fill"></i></a>
-                                        <a href="{{ route('gdodocsempleados.download', $doc->id) }}" class="btn btn-sm btn-outline-secondary" data-bs-toggle="tooltip" title="Descargar"><i class="bi bi-download"></i></a>
-                                        <a href="{{ route('archivo.gdodocsempleados.edit', $doc->id) }}" 
-                                           class="btn btn-sm btn-outline-secondary swal-confirm" 
-                                           data-bs-toggle="tooltip" title="Editar"
-                                           data-swal-title="¿Editar este registro?"
-                                           data-swal-icon="question">
-                                           <i class="bi bi-pencil-fill"></i>
+                                <td class="py-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="file-icon-bg me-3">
+                                            <i class="bi bi-file-earmark-pdf"></i>
+                                        </div>
+                                        <div>
+                                            <span class="fw-medium text-dark d-block">{{ $doc->tipoDocumento->nombre ?? 'Sin Tipo' }}</span>
+                                            <small class="text-muted d-block text-truncate" style="max-width: 200px;">{{ $doc->observaciones }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="py-3 text-center">
+                                    <span class="small fw-medium text-slate-600">
+                                        {{ \Carbon\Carbon::parse($doc->fecha_subida)->format('d/m/Y') }}
+                                    </span>
+                                </td>
+                                <td class="py-3 pe-4 text-end">
+                                    <div class="btn-group gap-2">
+                                        {{-- Ver Archivo (Nueva pestaña) --}}
+                                        <a href="{{ route('archivo.gdodocsempleados.verArchivo', $doc->id) }}" target="_blank" class="btn-action-pill text-decoration-none">
+                                            <i class="bi bi-eye"></i>
                                         </a>
-                                        <form action="{{ route('archivo.gdodocsempleados.destroy', $doc->id) }}" method="POST" class="d-inline swal-confirm-form">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-outline-danger" 
-                                                    data-bs-toggle="tooltip" title="Eliminar"
-                                                    data-swal-title="¿Estás seguro de eliminar?"
-                                                    data-swal-text="Esta acción no se puede deshacer."
-                                                    data-swal-icon="warning">
-                                                <i class="bi bi-trash-fill"></i>
+                                        
+                                        {{-- Descargar --}}
+                                        <a href="{{ route('archivo.gdodocsempleados.download', $doc->id) }}" class="btn-action-pill text-decoration-none">
+                                            <i class="bi bi-download"></i>
+                                        </a>
+
+                                        {{-- Menú de opciones --}}
+                                        <div class="dropdown">
+                                            <button class="btn-action-pill" data-bs-toggle="dropdown">
+                                                <i class="bi bi-three-dots"></i>
                                             </button>
-                                        </form>
+                                            <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-3">
+                                                <li><a class="dropdown-item py-2 small" href="{{ route('archivo.gdodocsempleados.show', $doc->id) }}"><i class="bi bi-info-circle me-2"></i> Detalles</a></li>
+                                                <li><a class="dropdown-item py-2 small" href="{{ route('archivo.gdodocsempleados.edit', $doc->id) }}"><i class="bi bi-pencil me-2"></i> Editar</a></li>
+                                                <li><hr class="dropdown-divider opacity-50"></li>
+                                                <li>
+                                                    <form action="{{ route('archivo.gdodocsempleados.destroy', $doc->id) }}" method="POST" onsubmit="return confirm('¿Estás seguro de eliminar este documento?')">
+                                                        @csrf @method('DELETE')
+                                                        <button class="dropdown-item py-2 small text-danger"><i class="bi bi-trash3 me-2"></i> Eliminar</button>
+                                                    </form>
+                                                </li>
+                                            </ul>
+                                        </div>
                                     </div>
                                 </td>
                             </tr>
                         @empty
-                            {{-- 4. ESTADO VACÍO INTELIGENTE --}}
                             <tr>
-                                <td colspan="5">
-                                    <div class="text-center py-5 px-4">
-                                        <i class="bi bi-cloud-drizzle display-1 text-muted mb-3"></i>
-                                        <h4 class="fw-bold">No se encontraron resultados</h4>
-                                        <p class="text-muted">Intenta ajustar tu búsqueda o crea el primer documento.</p>
+                                <td colspan="4" class="text-center py-5">
+                                    <div class="py-4">
+                                        <i class="bi bi-folder2-open display-1 text-light"></i>
+                                        <p class="text-muted mt-3 mb-0">No se encontraron documentos registrados.</p>
                                     </div>
                                 </td>
                             </tr>
@@ -146,82 +144,13 @@
                     </tbody>
                 </table>
             </div>
-            
-            {{-- 5. PAGINACIÓN --}}
-            @if ($gdodocsempleados->hasPages())
-                <div class="card-footer bg-white border-0">
-                    {{ $gdodocsempleados->appends(request()->query())->links() }}
+
+            {{-- Paginación --}}
+            @if($gdodocsempleados->hasPages())
+                <div class="p-4 border-top bg-light bg-opacity-50">
+                    {{ $gdodocsempleados->links() }}
                 </div>
             @endif
         </div>
     </div>
-
-    @push('scripts')
-        {{-- Librerías requeridas --}}
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-        {{-- 6. JAVASCRIPT REFACTORIZADO Y PROFESIONAL --}}
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                // Configuración global de Toastr
-                toastr.options = {
-                    "closeButton": true, "progressBar": true, "positionClass": "toast-bottom-right",
-                };
-
-                // Disparar Toastr si hay un mensaje de éxito en la sesión
-                @if (session('success'))
-                    toastr.success("{{ session('success') }}");
-                @endif
-                
-                // Inicializar todos los tooltips de la página
-                var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-                var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-                  return new bootstrap.Tooltip(tooltipTriggerEl)
-                });
-                
-                // Delegación de eventos para todas las confirmaciones con SweetAlert
-                document.body.addEventListener('click', function(e) {
-                    const swalConfirm = e.target.closest('.swal-confirm');
-                    if (swalConfirm) {
-                        e.preventDefault();
-                        const title = swalConfirm.dataset.swalTitle || '¿Estás seguro?';
-                        const text = swalConfirm.dataset.swalText || '';
-                        const icon = swalConfirm.dataset.swalIcon || 'question';
-                        
-                        Swal.fire({
-                            title: title, text: text, icon: icon, showCancelButton: true,
-                            confirmButtonColor: '#0d6efd', cancelButtonColor: '#6c757d',
-                            confirmButtonText: 'Sí, continuar', cancelButtonText: 'Cancelar',
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                window.location.href = swalConfirm.getAttribute('href');
-                            }
-                        });
-                    }
-                });
-
-                document.body.addEventListener('submit', function(e) {
-                    const swalConfirmForm = e.target.closest('.swal-confirm-form');
-                    if (swalConfirmForm) {
-                        e.preventDefault();
-                        const submitButton = swalConfirmForm.querySelector('[type="submit"]');
-                        const title = submitButton.dataset.swalTitle || '¿Estás seguro?';
-                        const text = submitButton.dataset.swalText || '';
-                        const icon = submitButton.dataset.swalIcon || 'warning';
-
-                        Swal.fire({
-                            title: title, text: text, icon: icon, showCancelButton: true,
-                            confirmButtonColor: '#d33', cancelButtonColor: '#6c757d',
-                            confirmButtonText: 'Sí, eliminar', cancelButtonText: 'Cancelar',
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                swalConfirmForm.submit();
-                            }
-                        });
-                    }
-                });
-            });
-        </script>
-    @endpush
 </x-base-layout>

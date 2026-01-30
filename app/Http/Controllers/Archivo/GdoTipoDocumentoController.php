@@ -3,124 +3,134 @@
 namespace App\Http\Controllers\Archivo;
 
 use App\Http\Controllers\Controller;
-use App\Models\Archivo\GdoCategoriaDocumento; // 1. Importar el modelo de Categoría
+use App\Models\Archivo\GdoCategoriaDocumento;
 use App\Models\Archivo\GdoTipoDocumento;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class GdoTipoDocumentoController extends Controller
 {
-
     /**
-     * Mostrar una lista de tipos de documentos, incluyendo los no categorizados.
+     * Listado de tipos de documentos con filtros avanzados.
      */
     public function index(Request $request)
     {
+        // 1. Captura de inputs de filtros
         $search = $request->input('search');
+        $categoriaId = $request->input('categoria_id');
 
-        $query = GdoTipoDocumento::with('categoria')
-            // 1. Cambiamos a LEFT JOIN para incluir TODOS los tipos de documento.
+        // 2. Query optimizada con Eager Loading y Joins para ordenamiento
+        $tipos = GdoTipoDocumento::with('categoria')
             ->leftJoin('gdo_categoria_documento', 'gdo_tipo_documento.categoria_documento_id', '=', 'gdo_categoria_documento.id')
-            // 2. Mantenemos el select() para evitar conflictos de columnas.
             ->select('gdo_tipo_documento.*')
-            ->when($search, function($query, $search) {
-                // La búsqueda sigue funcionando para ambos campos.
-                $query->where('gdo_tipo_documento.nombre', 'like', "%{$search}%")
+            
+            // Filtro de búsqueda (Nombre del tipo o Nombre de la categoría)
+            ->when($search, function($query) use ($search) {
+                $query->where(function($q) use ($search) {
+                    $q->where('gdo_tipo_documento.nombre', 'like', "%{$search}%")
                       ->orWhere('gdo_categoria_documento.nombre', 'like', "%{$search}%");
+                });
             })
-            // 3. Usamos una ordenación más robusta para manejar los nulos.
-            //    Esto pone los tipos sin categoría (NULL) al principio de la lista.
-            ->orderByRaw('gdo_categoria_documento.nombre IS NULL DESC')
-            // 4. Luego ordena alfabéticamente por el nombre de la categoría (los que la tienen).
+            
+            // Filtro específico por ID de categoría
+            ->when($categoriaId, function($query) use ($categoriaId) {
+                $query->where('gdo_tipo_documento.categoria_documento_id', $categoriaId);
+            })
+            
+            // Ordenamiento corporativo: Categorías nulas al final, luego alfabético
+            ->orderByRaw('gdo_categoria_documento.nombre IS NULL ASC')
             ->orderBy('gdo_categoria_documento.nombre', 'asc')
-            // 5. Y finalmente, por el nombre del tipo de documento.
-            ->orderBy('gdo_tipo_documento.nombre', 'asc');
+            ->orderBy('gdo_tipo_documento.nombre', 'asc')
+            ->paginate(15)
+            ->appends($request->all());
 
-        $tipos = $query->paginate(15)->appends(['search' => $search]); // Aumenté un poco la paginación, siéntete libre de ajustarla.
+        // 3. Datos para el selector de filtros en la vista
+        $todasCategorias = GdoCategoriaDocumento::orderBy('nombre')->get();
 
-        return view('archivo.gdotipodocumento.index', compact('tipos', 'search'));
+        return view('archivo.gdotipodocumento.index', compact('tipos', 'todasCategorias'));
     }
 
     /**
-     * Mostrar el formulario para crear un nuevo tipo de documento.
+     * Formulario de creación.
      */
     public function create()
     {
         $tipoDocumento = new GdoTipoDocumento();
-        // 3. Obtener todas las categorías para pasarlas al formulario
         $categorias = GdoCategoriaDocumento::orderBy('nombre')->get();
+        
         return view('archivo.gdotipodocumento.create', compact('tipoDocumento', 'categorias'));
     }
 
     /**
-     * Almacenar un nuevo tipo de documento en la base de datos.
+     * Almacenamiento con validación estricta.
      */
     public function store(Request $request)
     {
-        // 4. Añadir validación para el campo de categoría
-        $request->validate([
+        $validated = $request->validate([
             'nombre' => 'required|string|max:255|unique:gdo_tipo_documento,nombre',
-            'categoria_documento_id' => 'required|exists:gdo_categoria_documento,id',
+            'categoria_documento_id' => 'nullable|exists:gdo_categoria_documento,id',
         ]);
 
-        // 5. Crear el registro incluyendo el ID de la categoría
-        GdoTipoDocumento::create($request->all());
+        GdoTipoDocumento::create($validated);
 
         return redirect()
             ->route('archivo.gdotipodocumento.index')
-            ->with('success', 'Tipo de documento creado correctamente.');
+            ->with('success', 'Tipo de documento registrado exitosamente.');
     }
 
     /**
-     * Mostrar un tipo de documento específico.
+     * Vista de detalle (Show).
      */
     public function show(GdoTipoDocumento $tipoDocumento)
     {
-        // El 'route model binding' ya carga el tipo de documento.
-        // La relación 'categoria' se cargará automáticamente si la usas en la vista.
+        // Cargamos el conteo de documentos reales vinculados para la UX del Show
+        $tipoDocumento->loadCount('documentos');
+        
         return view('archivo.gdotipodocumento.show', compact('tipoDocumento'));
     }
 
     /**
-     * Mostrar el formulario para editar un tipo de documento.
+     * Formulario de edición.
      */
     public function edit(GdoTipoDocumento $tipoDocumento)
     {
-        if (!$tipoDocumento->exists) {
-            abort(404);
-        }
-        // 6. Obtener todas las categorías para pasarlas al formulario de edición
         $categorias = GdoCategoriaDocumento::orderBy('nombre')->get();
         return view('archivo.gdotipodocumento.edit', compact('tipoDocumento', 'categorias'));
     }
 
     /**
-     * Actualizar un tipo de documento en la base de datos.
+     * Actualización de datos.
      */
     public function update(Request $request, GdoTipoDocumento $tipoDocumento)
     {
-        // 7. Validar los datos, incluyendo la categoría
-        $request->validate([
+        $validated = $request->validate([
             'nombre' => 'required|string|max:255|unique:gdo_tipo_documento,nombre,' . $tipoDocumento->id,
-            'categoria_documento_id' => 'required|exists:gdo_categoria_documento,id',
+            'categoria_documento_id' => 'nullable|exists:gdo_categoria_documento,id',
         ]);
 
-        // 8. Actualizar el registro
-        $tipoDocumento->update($request->all());
+        $tipoDocumento->update($validated);
 
         return redirect()
             ->route('archivo.gdotipodocumento.index')
-            ->with('success', 'Tipo de documento actualizado correctamente.');
+            ->with('success', 'Información actualizada correctamente.');
     }
 
     /**
-     * Eliminar un tipo de documento de la base de datos.
+     * Eliminación con protección de integridad.
      */
     public function destroy(GdoTipoDocumento $tipoDocumento)
     {
+        // UX Pro: No permitir borrar si tiene documentos reales asociados
+        if ($tipoDocumento->documentos()->exists()) {
+            return redirect()
+                ->route('archivo.gdotipodocumento.index')
+                ->with('error', 'No se puede eliminar: Existen archivos físicos vinculados a este tipo.');
+        }
+
         $tipoDocumento->delete();
 
         return redirect()
             ->route('archivo.gdotipodocumento.index')
-            ->with('success', 'Tipo de documento eliminado correctamente.');
+            ->with('success', 'Registro eliminado del sistema.');
     }
 }

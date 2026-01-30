@@ -16,40 +16,43 @@ class GdoContrato extends Model
 
     /**
      * Campos que se pueden asignar masivamente.
+     * Se han actualizado según la nueva estructura de la imagen.
      */
     protected $fillable = [
-        'nombre',
+        'valorSalarial',
         'fecha_inicio',
         'fecha_fin',
-        'estado',
-        'observacion',
         'descripcion',
-        'documento',
+        'observacion',
+        'tipoContrato',
+        'estado',
     ];
 
     /**
-     * Campos que serán tratados como fechas por Eloquent.
+     * Los atributos que deben ser convertidos a tipos nativos.
+     * En versiones recientes de Laravel (8+), se prefiere $casts sobre $dates.
      */
-    protected $dates = [
-        'fecha_inicio',
-        'fecha_fin',
-        'created_at',
-        'updated_at',
+    protected $casts = [
+        'fecha_inicio' => 'date',
+        'fecha_fin'    => 'date',
+        'created_at'   => 'datetime',
+        'updated_at'   => 'datetime',
     ];
-
-    /**
-     * Accesor para mostrar solo el nombre del archivo del contrato.
-     */
-    public function getNombreArchivoAttribute()
-    {
-        return $this->documento ? basename($this->documento) : null;
-    }
 
     /**
      * Mutator para asegurar que el estado siempre esté en minúsculas.
+     * Útil dado que tu base de datos usa un ENUM.
      */
     public function setEstadoAttribute($value)
     {
         $this->attributes['estado'] = strtolower($value);
+    }
+    
+    /**
+     * Si necesitas formatear el valor salarial como moneda (opcional)
+     */
+    public function getValorSalarialFormateadoAttribute()
+    {
+        return '$' . number_format((float)$this->valorSalarial, 2);
     }
 }

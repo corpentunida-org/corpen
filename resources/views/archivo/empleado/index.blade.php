@@ -1,34 +1,29 @@
 <x-base-layout>
-    <!-- CONTENEDOR PRINCIPAL -->
     <div class="main-container">
-        <!-- PANEL DE CONTROL PRINCIPAL -->
-        <div class="card mb-4">
+        <div class="card mb-4 shadow-sm">
             <div class="card-body p-4">
                 <div class="row align-items-center">
-                    <!-- Título y descripción del módulo -->
                     <div class="col-md-4">
-                        <h4 class="fw-bold mb-1">Gestión de Empleados</h4>
+                        <h4 class="fw-bold mb-1 text-blue-king">Gestión de Empleados</h4>
                         <p class="text-muted mb-0">Administra el personal registrado</p>
                     </div>
                     
-                    <!-- Formulario de búsqueda -->
                     <div class="col-md-4">
                         <form method="GET" action="{{ route('archivo.empleado.index') }}">
                             @csrf
-                            <div class="input-group">
-                                <input type="search" name="search" class="form-control" 
+                            <div class="input-group border rounded shadow-sm">
+                                <input type="search" name="search" class="form-control border-0" 
                                        placeholder="Buscar por cédula o nombre..." 
                                        value="{{ $search ?? '' }}">
-                                <button class="btn btn-warning" type="submit">
+                                <button class="btn btn-blue-king" type="submit">
                                     <i class="bi bi-search"></i>
                                 </button>
                             </div>
                         </form>
                     </div>
                     
-                    <!-- Botón para crear nuevo empleado -->
                     <div class="col-md-4 text-end">
-                        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#crearEmpleadoModal">
+                        <button type="button" class="btn btn-warning shadow-sm" data-bs-toggle="modal" data-bs-target="#crearEmpleadoModal">
                             <i class="bi bi-plus-circle me-2"></i> Nuevo Empleado
                         </button>
                     </div>
@@ -36,385 +31,261 @@
             </div>
         </div>
 
-        <!-- CONTENEDOR DE VISTAS LADO A LADO -->
         <div class="views-container">
-            <!-- COLUMNA IZQUIERDA: LISTA DE EMPLEADOS -->
             <div class="employee-list-container">
-                <div class="card h-100">
-                    <!-- Header con contador de empleados -->
+                <div class="card h-100 shadow-sm">
                     <div class="card-header bg-white py-3">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0 fw-semibold">Empleados</h5>
-                            <span class="badge bg-warning">{{ $empleados->count() }}</span>
-                        </div>
+                        <h5 class="mb-0 fw-semibold text-blue-king">Lista de Personal</h5>
                     </div>
                     
-                    <!-- Lista scrollable de empleados -->
                     <div class="card-body p-0 employee-list">
                         @forelse ($empleados as $empleado)
-                            <!-- Tarjeta individual de empleado -->
                             <div class="p-3 employee-card {{ request('id') == $empleado->id ? 'active' : '' }}" 
                                  onclick="window.location.href='{{ route('archivo.empleado.index', ['id' => $empleado->id, 'search' => $search ?? '']) }}'"
                                  role="button">
                                 <div class="d-flex align-items-center">
                                     @if ($empleado->ubicacion_foto)
-                                        <!-- Foto del empleado si existe -->
-                                        <img src="{{ route('archivo.empleado.verFoto', $empleado->id) }}"
-                                             alt="Foto de {{ $empleado->nombre_completo }}"
-                                             class="rounded-circle me-3"
-                                             style="width: 45px; height: 45px; object-fit: cover;">
+                                        <img src="{{ route('archivo.empleado.verFoto', $empleado->id) }}" class="rounded-circle me-3 shadow-sm" style="width: 45px; height: 45px; object-fit: cover;">
                                     @else
-                                        <!-- Iniciales si no hay foto -->
-                                        <div class="rounded-circle bg-warning bg-opacity-10 text-warning d-flex align-items-center justify-content-center me-3" 
-                                             style="width: 45px; height: 45px; font-weight: 600;">
+                                        <div class="rounded-circle bg-blue-king bg-opacity-10 text-blue-king d-flex align-items-center justify-content-center me-3 shadow-sm" style="width: 45px; height: 45px; font-weight: 600;">
                                             {{ strtoupper(substr($empleado->nombre1 ?? '?', 0, 1) . substr($empleado->apellido1 ?? '?', 0, 1)) }}
                                         </div>
                                     @endif
                                     <div>
                                         <div class="fw-medium">{{ $empleado->nombre_completo }}</div>
-                                        <small class="text-muted">{{ $empleado->cedula }}</small>
-                                        @if($empleado->cargo)
-                                            <div class="small text-warning">{{ $empleado->cargo->nombre_cargo }}</div>
-                                        @endif
+                                        <small class="text-muted">C.C. {{ $empleado->cedula }}</small>
                                     </div>
                                 </div>
                             </div>
                         @empty
-                            <!-- Mensaje cuando no hay empleados -->
-                            <div class="empty-state">
-                                <i class="bi bi-people"></i>
-                                <h6>No se encontraron empleados</h6>
-                                <p class="small">Intenta ajustar tu búsqueda o registra al primer empleado.</p>
-                                <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#crearEmpleadoModal">
-                                    <i class="bi bi-plus-circle me-1"></i>Registrar empleado
-                                </button>
-                            </div>
+                            <div class="text-center p-4">No se encontraron empleados</div>
                         @endforelse
                     </div>
                 </div>
             </div>
 
-            <!-- COLUMNA DERECHA: DETALLES DEL EMPLEADO -->
             <div class="employee-details-container">
                 @if (isset($empleadoSeleccionado))
-                    <!-- Contenedor principal con modo inicial de vista -->
-                    <div class="card vista-mode h-100" id="empleadoDetailCard">
-                        <!-- Navegación por pestañas (SIMPLIFICADA) -->
+                    <div class="card shadow-sm h-100" id="empleadoDetailCard">
                         <div class="card-header bg-white p-0">
-                            <ul class="nav nav-tabs" role="tablist">
-                                <li class="nav-item">
-                                    <a class="nav-link active text-warning" data-bs-toggle="tab" href="#personal" role="tab">
-                                        <i class="bi bi-person me-1"></i>Personal
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link text-warning" data-bs-toggle="tab" href="#cargo" role="tab">
-                                        <i class="bi bi-briefcase me-1"></i>Cargo
-                                    </a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link text-warning" data-bs-toggle="tab" href="#documentos" role="tab">
-                                        <i class="bi bi-folder2-open me-1"></i>Documentos
-                                    </a>
-                                </li>
+                            <ul class="nav nav-tabs border-bottom-0" role="tablist">
+                                <li class="nav-item"><a class="nav-link active fw-bold text-blue-king" data-bs-toggle="tab" href="#personal"><i class="bi bi-person-vcard me-2"></i>Personal</a></li>
+                                <li class="nav-item"><a class="nav-link text-blue-king" data-bs-toggle="tab" href="#cargo"><i class="bi bi-briefcase me-2"></i>Cargo</a></li>
+                                <li class="nav-item"><a class="nav-link text-blue-king" data-bs-toggle="tab" href="#documentos"><i class="bi bi-folder-check me-2"></i>Documentos</a></li>
                             </ul>
                         </div>
                         
-                        <!-- Contenido de las pestañas -->
-                        <div class="card-body" style="overflow-y: auto; max-height: calc(100vh - 300px);">
-                            <!-- Cabecera con información básica y botones de acción -->
+                        <div class="card-body p-4" style="overflow-y: auto; max-height: calc(100vh - 300px);">
                             <div class="d-flex justify-content-between align-items-center mb-4">
-                                <div class="d-flex align-items-center">
-                                    @if ($empleadoSeleccionado->ubicacion_foto)
-                                        <img src="{{ route('archivo.empleado.verFoto', $empleadoSeleccionado->id) }}" 
-                                             alt="Foto de {{ $empleadoSeleccionado->nombre_completo }}"
-                                             id="fotoPreview"
-                                             class="rounded-circle me-3"
-                                             style="width: 60px; height: 60px; object-fit: cover;">
-                                    @else
-                                        <div id="fotoPreview"
-                                             class="rounded-circle bg-warning bg-opacity-10 text-warning d-flex align-items-center justify-content-center me-3"
-                                             style="width: 60px; height: 60px; font-size: 1.5rem; font-weight: 600;">
-                                            {{ substr($empleadoSeleccionado->nombre1, 0, 1) }}{{ substr($empleadoSeleccionado->apellido1, 0, 1) }}
-                                        </div>
-                                    @endif
-                                    <div>
-                                        <h5 class="fw-bold mb-1">{{ $empleadoSeleccionado->nombre_completo }}</h5>
-                                        <p class="text-muted mb-1">C.C. {{ $empleadoSeleccionado->cedula }}</p>
-                                        @if($empleadoSeleccionado->cargo)
-                                            <span class="badge bg-warning bg-opacity-10 text-white">{{ $empleadoSeleccionado->cargo->nombre_cargo }}</span>
-                                        @endif
-                                    </div>
-                                </div>
-                                
-                                <!-- Botones de acción: editar, guardar, cancelar -->
+                                <h5 class="fw-bold mb-0 text-blue-king">Perfil de Empleado</h5>
                                 <div class="d-flex gap-2">
-                                    <button type="button" id="btn-editar" class="btn btn-sm btn-outline-warning">
-                                        <i class="bi bi-pencil me-1"></i> Editar
-                                    </button>
-                                    <button type="button" id="btn-guardar" class="btn btn-sm btn-success d-none">
-                                        <i class="bi bi-check me-1"></i> Guardar
-                                    </button>
-                                    <button type="button" id="btn-cancelar" class="btn btn-sm btn-light d-none">
-                                        <i class="bi bi-x me-1"></i> Cancelar
-                                    </button>
+                                    <button type="button" id="btn-editar" class="btn btn-sm btn-outline-blue-king shadow-sm"><i class="bi bi-pencil-square me-1"></i>Editar</button>
+                                    <button type="button" id="btn-guardar" class="btn btn-sm btn-success d-none shadow-sm"><i class="bi bi-save me-1"></i>Guardar Cambios</button>
+                                    <button type="button" id="btn-cancelar" class="btn btn-sm btn-light border d-none shadow-sm">Cancelar</button>
                                 </div>
                             </div>
                             
-                            <!-- Contenido dinámico de las pestañas -->
                             <div class="tab-content">
-                                {{-- PESTAÑA: INFORMACIÓN PERSONAL --}}
+                                {{-- PESTAÑA PERSONAL: MEJORA UX CON FLOATING LABELS --}}
                                 <div class="tab-pane fade show active" id="personal" role="tabpanel">
                                     <form id="form-empleado" method="POST" action="{{ route('archivo.empleado.update', $empleadoSeleccionado->id) }}" enctype="multipart/form-data">
-                                        @csrf
-                                        @method('PUT')
-                                        
-                                        <!-- Sección para la foto de perfil -->
-                                        <div class="row g-3 mb-4 align-items-center">
-                                            <div class="col-md-8">
-                                                <div class="campo-empleado">
+                                        @csrf @method('PUT')
+                                        <div class="row g-3">
+                                            <div class="col-md-12 mb-3">
+                                                <div class="vista-campo">
+                                                    <small class="text-muted d-block"><i class="bi bi-camera me-1"></i>Foto de Perfil</small>
+                                                    <span class="fw-bold text-dark">{{ $empleadoSeleccionado->ubicacion_foto ? 'Foto cargada satisfactoriamente' : 'El empleado no posee foto' }}</span>
+                                                </div>
+                                                <div class="edicion-campo" style="display:none">
+                                                    <label class="form-label small text-muted fw-bold">Actualizar Foto de Perfil</label>
+                                                    <input type="file" name="ubicacion_foto" class="form-control form-control-sm" accept="image/*">
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-4">
+                                                <div class="campo-ux">
                                                     <div class="vista-campo">
-                                                        <div class="d-flex align-items-center">
-                                                            <i class="bi bi-camera text-warning me-2"></i>
-                                                            <div>
-                                                                <small class="text-muted d-block">Foto de Perfil</small>
-                                                                <span class="fw-medium">{{ $empleadoSeleccionado->ubicacion_foto ? 'Foto cargada' : 'Sin foto' }}</span>
-                                                            </div>
-                                                        </div>
+                                                        <small class="text-muted d-block"><i class="bi bi-card-text me-1"></i>Cédula</small>
+                                                        <span class="fw-bold">{{ $empleadoSeleccionado->cedula }}</span>
                                                     </div>
-                                                    <div class="edicion-campo">
-                                                        <label for="ubicacion_foto" class="form-label">Foto de Perfil (Opcional)</label>
-                                                        <input class="form-control @error('ubicacion_foto') is-invalid @enderror" type="file" id="ubicacion_foto" name="ubicacion_foto" accept="image/*">
-                                                        @error('ubicacion_foto')
-                                                            <div class="invalid-feedback">{{ $message }}</div>
-                                                        @enderror
-                                                        <small class="form-text text-muted">Archivos permitidos: JPG, PNG, GIF. Tamaño máximo: 2MB.</small>
-                                                        
-                                                        <!-- Vista previa de la foto actual en modo edición -->
-                                                        <div class="mt-2 d-flex align-items-center" id="fotoPreviewContainer">
-                                                            @if ($empleadoSeleccionado->ubicacion_foto)
-                                                                <img src="{{ route('archivo.empleado.verFoto', $empleadoSeleccionado->id) }}" alt="Foto actual" class="img-thumbnail rounded-circle me-2" style="width: 60px; height: 60px; object-fit: cover;">
-                                                                <small class="text-muted">Foto Actual</small>
-                                                            @else
-                                                                <div class="rounded-circle bg-light d-flex align-items-center justify-content-center me-2" style="width: 60px; height: 60px;">
-                                                                    <i class="bi bi-person display-4 text-warning"></i>
-                                                                </div>
-                                                                <small class="text-muted">Sin foto</small>
-                                                            @endif
-                                                        </div>
+                                                    <div class="edicion-campo form-floating" style="display:none">
+                                                        <input type="text" name="cedula" class="form-control" value="{{ $empleadoSeleccionado->cedula }}" readonly>
+                                                        <label>Número de Cédula</label>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                        
-                                        <div class="row">
-                                            <!-- Campo: Cédula (solo lectura) -->
-                                            <div class="col-md-6">
-                                                <div class="campo-empleado">
+                                            <div class="col-md-4">
+                                                <div class="campo-ux">
                                                     <div class="vista-campo">
-                                                        <div class="d-flex align-items-center">
-                                                            <i class="bi bi-card-text text-warning me-2"></i>
-                                                            <div>
-                                                                <small class="text-muted d-block">Cédula</small>
-                                                                <span class="fw-medium">{{ $empleadoSeleccionado->cedula }}</span>
-                                                            </div>
-                                                        </div>
+                                                        <small class="text-muted d-block"><i class="bi bi-calendar-event me-1"></i>Fecha Expedida</small>
+                                                        <span class="fw-bold">{{ $empleadoSeleccionado->fecha_expedida ?? 'N/A' }}</span>
                                                     </div>
-                                                    <div class="edicion-campo">
-                                                        <div class="form-floating">
-                                                            <input type="text" name="cedula" id="cedula" class="form-control" placeholder="Cédula" value="{{ $empleadoSeleccionado->cedula }}" readonly>
-                                                            <label for="cedula">Cédula</label>
-                                                        </div>
+                                                    <div class="edicion-campo form-floating" style="display:none">
+                                                        <input type="date" name="fecha_expedida" class="form-control" value="{{ $empleadoSeleccionado->fecha_expedida }}">
+                                                        <label>Fecha Expedición</label>
                                                     </div>
                                                 </div>
                                             </div>
-                                            
-                                            <!-- Campo: Correo Personal -->
-                                            <div class="col-md-6">
-                                                <div class="campo-empleado">
+                                            <div class="col-md-4">
+                                                <div class="campo-ux">
                                                     <div class="vista-campo">
-                                                        <div class="d-flex align-items-center">
-                                                            <i class="bi bi-envelope text-warning me-2"></i>
-                                                            <div>
-                                                                <small class="text-muted d-block">Correo Personal</small>
-                                                                <span class="fw-medium">{{ $empleadoSeleccionado->correo_personal ?? 'N/A' }}</span>
-                                                            </div>
-                                                        </div>
+                                                        <small class="text-muted d-block"><i class="bi bi-geo-alt me-1"></i>Lugar Expedición</small>
+                                                        <span class="fw-bold">{{ $empleadoSeleccionado->lugar_exp ?? 'N/A' }}</span>
                                                     </div>
-                                                    <div class="edicion-campo">
-                                                        <div class="form-floating">
-                                                            <input type="email" name="correo_personal" id="correo_personal" class="form-control" placeholder="Correo Personal" value="{{ $empleadoSeleccionado->correo_personal }}">
-                                                            <label for="correo_personal">Correo Personal</label>
-                                                        </div>
+                                                    <div class="edicion-campo form-floating" style="display:none">
+                                                        <input type="text" name="lugar_exp" class="form-control" value="{{ $empleadoSeleccionado->lugar_exp }}">
+                                                        <label>Lugar Expedición</label>
                                                     </div>
                                                 </div>
                                             </div>
-                                            
-                                            <!-- Campos de nombre y apellido -->
-                                            <div class="col-md-6">
-                                                <div class="campo-empleado">
+
+                                            <div class="col-md-3">
+                                                <div class="campo-ux">
                                                     <div class="vista-campo">
-                                                        <div class="d-flex align-items-center">
-                                                            <i class="bi bi-person text-warning me-2"></i>
-                                                            <div>
-                                                                <small class="text-muted d-block">Nombres</small>
-                                                                <span class="fw-medium">{{ $empleadoSeleccionado->nombre1 }} {{ $empleadoSeleccionado->nombre2 ?? '' }}</span>
-                                                            </div>
-                                                        </div>
+                                                        <small class="text-muted d-block">Primer Nombre</small>
+                                                        <span class="fw-bold">{{ $empleadoSeleccionado->nombre1 }}</span>
                                                     </div>
-                                                    <div class="edicion-campo">
-                                                        <div class="form-floating">
-                                                            <input type="text" name="nombre1" id="nombre1" class="form-control" placeholder="Primer Nombre" value="{{ $empleadoSeleccionado->nombre1 }}">
-                                                            <label for="nombre1">Primer Nombre</label>
-                                                        </div>
+                                                    <div class="edicion-campo form-floating" style="display:none">
+                                                        <input type="text" name="nombre1" class="form-control" value="{{ $empleadoSeleccionado->nombre1 }}">
+                                                        <label>Primer Nombre</label>
                                                     </div>
                                                 </div>
                                             </div>
-                                            
-                                            <div class="col-md-6">
-                                                <div class="campo-empleado">
-                                                    <div class="edicion-campo">
-                                                        <div class="form-floating">
-                                                            <input type="text" name="nombre2" id="nombre2" class="form-control" placeholder="Segundo Nombre" value="{{ $empleadoSeleccionado->nombre2 }}">
-                                                            <label for="nombre2">Segundo Nombre</label>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            
-                                            <div class="col-md-6">
-                                                <div class="campo-empleado">
+                                            <div class="col-md-3">
+                                                <div class="campo-ux">
                                                     <div class="vista-campo">
-                                                        <div class="d-flex align-items-center">
-                                                            <i class="bi bi-person text-warning me-2"></i>
-                                                            <div>
-                                                                <small class="text-muted d-block">Apellidos</small>
-                                                                <span class="fw-medium">{{ $empleadoSeleccionado->apellido1 }} {{ $empleadoSeleccionado->apellido2 }}</span>
-                                                            </div>
-                                                        </div>
+                                                        <small class="text-muted d-block">Segundo Nombre</small>
+                                                        <span class="fw-bold">{{ $empleadoSeleccionado->nombre2 ?? 'N/A' }}</span>
                                                     </div>
-                                                    <div class="edicion-campo">
-                                                        <div class="form-floating">
-                                                            <input type="text" name="apellido1" id="apellido1" class="form-control" placeholder="Primer Apellido" value="{{ $empleadoSeleccionado->apellido1 }}">
-                                                            <label for="apellido1">Primer Apellido</label>
-                                                        </div>
+                                                    <div class="edicion-campo form-floating" style="display:none">
+                                                        <input type="text" name="nombre2" class="form-control" value="{{ $empleadoSeleccionado->nombre2 }}">
+                                                        <label>Segundo Nombre</label>
                                                     </div>
                                                 </div>
                                             </div>
-                                            
-                                            <div class="col-md-6">
-                                                <div class="campo-empleado">
-                                                    <div class="edicion-campo">
-                                                        <div class="form-floating">
-                                                            <input type="text" name="apellido2" id="apellido2" class="form-control" placeholder="Segundo Apellido" value="{{ $empleadoSeleccionado->apellido2 }}">
-                                                            <label for="apellido2">Segundo Apellido</label>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            
-                                            <!-- Campos de nacimiento y demografía -->
-                                            <div class="col-md-6">
-                                                <div class="campo-empleado">
+                                            <div class="col-md-3">
+                                                <div class="campo-ux">
                                                     <div class="vista-campo">
-                                                        <div class="d-flex align-items-center">
-                                                            <i class="bi bi-calendar-event text-warning me-2"></i>
-                                                            <div>
-                                                                <small class="text-muted d-block">Fecha de Nacimiento</small>
-                                                                <span class="fw-medium">{{ $empleadoSeleccionado->nacimiento ? $empleadoSeleccionado->nacimiento->format('d/m/Y') : 'N/A' }}</span>
-                                                            </div>
-                                                        </div>
+                                                        <small class="text-muted d-block">Primer Apellido</small>
+                                                        <span class="fw-bold">{{ $empleadoSeleccionado->apellido1 }}</span>
                                                     </div>
-                                                    <div class="edicion-campo">
-                                                        <div class="form-floating">
-                                                            <input type="date" name="nacimiento" id="nacimiento" class="form-control" placeholder="Fecha de Nacimiento" value="{{ $empleadoSeleccionado->nacimiento ? $empleadoSeleccionado->nacimiento->format('Y-m-d') : '' }}">
-                                                            <label for="nacimiento">Fecha de Nacimiento</label>
-                                                        </div>
+                                                    <div class="edicion-campo form-floating" style="display:none">
+                                                        <input type="text" name="apellido1" class="form-control" value="{{ $empleadoSeleccionado->apellido1 }}">
+                                                        <label>Primer Apellido</label>
                                                     </div>
                                                 </div>
                                             </div>
-                                            
-                                            <div class="col-md-6">
-                                                <div class="campo-empleado">
+                                            <div class="col-md-3">
+                                                <div class="campo-ux">
                                                     <div class="vista-campo">
-                                                        <div class="d-flex align-items-center">
-                                                            <i class="bi bi-geo-alt text-warning me-2"></i>
-                                                            <div>
-                                                                <small class="text-muted d-block">Lugar de Nacimiento</small>
-                                                                <span class="fw-medium">{{ $empleadoSeleccionado->lugar ?? 'N/A' }}</span>
-                                                            </div>
-                                                        </div>
+                                                        <small class="text-muted d-block">Segundo Apellido</small>
+                                                        <span class="fw-bold">{{ $empleadoSeleccionado->apellido2 ?? 'N/A' }}</span>
                                                     </div>
-                                                    <div class="edicion-campo">
-                                                        <div class="form-floating">
-                                                            <input type="text" name="lugar" id="lugar" class="form-control" placeholder="Lugar de Nacimiento" value="{{ $empleadoSeleccionado->lugar }}">
-                                                            <label for="lugar">Lugar de Nacimiento</label>
-                                                        </div>
+                                                    <div class="edicion-campo form-floating" style="display:none">
+                                                        <input type="text" name="apellido2" class="form-control" value="{{ $empleadoSeleccionado->apellido2 }}">
+                                                        <label>Segundo Apellido</label>
                                                     </div>
                                                 </div>
                                             </div>
-                                            
-                                            <div class="col-md-6">
-                                                <div class="campo-empleado">
+
+                                            <div class="col-md-4">
+                                                <div class="campo-ux">
                                                     <div class="vista-campo">
-                                                        <div class="d-flex align-items-center">
-                                                            <i class="bi bi-gender-ambiguous text-warning me-2"></i>
-                                                            <div>
-                                                                <small class="text-muted d-block">Sexo</small>
-                                                                <span class="fw-medium">{{ $empleadoSeleccionado->sexo == 'M' ? 'Masculino' : ($empleadoSeleccionado->sexo == 'F' ? 'Femenino' : 'N/A') }}</span>
-                                                            </div>
-                                                        </div>
+                                                        <small class="text-muted d-block"><i class="bi bi-calendar3 me-1"></i>Fecha Nacimiento</small>
+                                                        <span class="fw-bold">{{ $empleadoSeleccionado->nacimiento ? $empleadoSeleccionado->nacimiento->format('d/m/Y') : 'N/A' }}</span>
                                                     </div>
-                                                    <div class="edicion-campo">
-                                                        <div class="form-floating">
-                                                            <select class="form-select" id="sexo" name="sexo">
-                                                                <option value="">Seleccione...</option>
-                                                                <option value="M" {{ $empleadoSeleccionado->sexo == 'M' ? 'selected' : '' }}>Masculino</option>
-                                                                <option value="F" {{ $empleadoSeleccionado->sexo == 'F' ? 'selected' : '' }}>Femenino</option>
-                                                            </select>
-                                                            <label for="sexo">Sexo</label>
-                                                        </div>
+                                                    <div class="edicion-campo form-floating" style="display:none">
+                                                        <input type="date" name="nacimiento" class="form-control" value="{{ $empleadoSeleccionado->nacimiento ? $empleadoSeleccionado->nacimiento->format('Y-m-d') : '' }}">
+                                                        <label>Fecha Nacimiento</label>
                                                     </div>
                                                 </div>
                                             </div>
-                                            
-                                            <!-- Campos de contacto -->
-                                            <div class="col-md-6">
-                                                <div class="campo-empleado">
+                                            <div class="col-md-4">
+                                                <div class="campo-ux">
                                                     <div class="vista-campo">
-                                                        <div class="d-flex align-items-center">
-                                                            <i class="bi bi-phone text-warning me-2"></i>
-                                                            <div>
-                                                                <small class="text-muted d-block">Celular Personal</small>
-                                                                <span class="fw-medium">{{ $empleadoSeleccionado->celular_personal ?? 'N/A' }}</span>
-                                                            </div>
-                                                        </div>
+                                                        <small class="text-muted d-block"><i class="bi bi-geo-alt-fill me-1"></i>Lugar Nacimiento</small>
+                                                        <span class="fw-bold">{{ $empleadoSeleccionado->lugar ?? 'N/A' }}</span>
                                                     </div>
-                                                    <div class="edicion-campo">
-                                                        <div class="form-floating">
-                                                            <input type="text" name="celular_personal" id="celular_personal" class="form-control" placeholder="Celular Personal" value="{{ $empleadoSeleccionado->celular_personal }}">
-                                                            <label for="celular_personal">Celular Personal</label>
-                                                        </div>
+                                                    <div class="edicion-campo form-floating" style="display:none">
+                                                        <input type="text" name="lugar" class="form-control" value="{{ $empleadoSeleccionado->lugar }}">
+                                                        <label>Lugar Nacimiento</label>
                                                     </div>
                                                 </div>
                                             </div>
-                                            
-                                            <div class="col-md-6">
-                                                <div class="campo-empleado">
+                                            <div class="col-md-4">
+                                                <div class="campo-ux">
                                                     <div class="vista-campo">
-                                                        <div class="d-flex align-items-center">
-                                                            <i class="bi bi-shield-lock text-warning me-2"></i>
-                                                            <div>
-                                                                <small class="text-muted d-block">Contacto Acudiente</small>
-                                                                <span class="fw-medium">{{ $empleadoSeleccionado->celular_acudiente ?? 'N/A' }}</span>
-                                                            </div>
-                                                        </div>
+                                                        <small class="text-muted d-block"><i class="bi bi-gender-ambiguous me-1"></i>Sexo</small>
+                                                        <span class="fw-bold">{{ $empleadoSeleccionado->sexo == 'M' ? 'Masculino' : 'Femenino' }}</span>
                                                     </div>
-                                                    <div class="edicion-campo">
-                                                        <div class="form-floating">
-                                                            <input type="text" name="celular_acudiente" id="celular_acudiente" class="form-control" placeholder="Celular Acudiente" value="{{ $empleadoSeleccionado->celular_acudiente }}">
-                                                            <label for="celular_acudiente">Celular Acudiente</label>
-                                                        </div>
+                                                    <div class="edicion-campo form-floating" style="display:none">
+                                                        <select name="sexo" class="form-select">
+                                                            <option value="M" {{ $empleadoSeleccionado->sexo == 'M' ? 'selected' : '' }}>Masculino</option>
+                                                            <option value="F" {{ $empleadoSeleccionado->sexo == 'F' ? 'selected' : '' }}>Femenino</option>
+                                                        </select>
+                                                        <label>Género</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <div class="campo-ux">
+                                                    <div class="vista-campo">
+                                                        <small class="text-muted d-block"><i class="bi bi-house me-1"></i>Dirección Residencia</small>
+                                                        <span class="fw-bold">{{ $empleadoSeleccionado->direccion_residencia ?? 'N/A' }}</span>
+                                                    </div>
+                                                    <div class="edicion-campo form-floating" style="display:none">
+                                                        <input type="text" name="direccion_residencia" class="form-control" value="{{ $empleadoSeleccionado->direccion_residencia }}">
+                                                        <label>Dirección</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="campo-ux">
+                                                    <div class="vista-campo">
+                                                        <small class="text-muted d-block"><i class="bi bi-hospital me-1"></i>Entidad EPS</small>
+                                                        <span class="fw-bold">{{ $empleadoSeleccionado->entidad_eps ?? 'N/A' }}</span>
+                                                    </div>
+                                                    <div class="edicion-campo form-floating" style="display:none">
+                                                        <input type="text" name="entidad_eps" class="form-control" value="{{ $empleadoSeleccionado->entidad_eps }}">
+                                                        <label>Nombre de EPS</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-4">
+                                                <div class="campo-ux">
+                                                    <div class="vista-campo">
+                                                        <small class="text-muted d-block"><i class="bi bi-envelope me-1"></i>Correo</small>
+                                                        <span class="fw-bold">{{ $empleadoSeleccionado->correo_personal ?? 'N/A' }}</span>
+                                                    </div>
+                                                    <div class="edicion-campo form-floating" style="display:none">
+                                                        <input type="email" name="correo_personal" class="form-control" value="{{ $empleadoSeleccionado->correo_personal }}">
+                                                        <label>Correo Electrónico</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="campo-ux">
+                                                    <div class="vista-campo">
+                                                        <small class="text-muted d-block"><i class="bi bi-phone me-1"></i>Celular</small>
+                                                        <span class="fw-bold">{{ $empleadoSeleccionado->celular_personal ?? 'N/A' }}</span>
+                                                    </div>
+                                                    <div class="edicion-campo form-floating" style="display:none">
+                                                        <input type="text" name="celular_personal" class="form-control" value="{{ $empleadoSeleccionado->celular_personal }}">
+                                                        <label>Celular</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="campo-ux">
+                                                    <div class="vista-campo">
+                                                        <small class="text-muted d-block"><i class="bi bi-telephone-plus me-1"></i>Acudiente</small>
+                                                        <span class="fw-bold">{{ $empleadoSeleccionado->celular_acudiente ?? 'N/A' }}</span>
+                                                    </div>
+                                                    <div class="edicion-campo form-floating" style="display:none">
+                                                        <input type="text" name="celular_acudiente" class="form-control" value="{{ $empleadoSeleccionado->celular_acudiente }}">
+                                                        <label>Contacto Acudiente</label>
                                                     </div>
                                                 </div>
                                             </div>
@@ -422,183 +293,259 @@
                                     </form>
                                 </div>
 
-                                <!-- Pestaña: Cargo -->
+                                {{-- PESTAÑA: CARGO (Versión Minimalista UX Pro) --}}
                                 <div class="tab-pane fade" id="cargo" role="tabpanel">
                                     @if ($empleadoSeleccionado->cargo)
-                                        <div class="row g-3">
-                                            <div class="col-md-6">
-                                                <div class="card border-0 bg-light">
-                                                    <div class="card-body">
-                                                        <h6 class="fw-bold text-warning mb-3">Información del Cargo</h6>
-                                                        <div class="mb-3">
-                                                            <small class="text-muted d-block">Nombre del Cargo</small>
-                                                            <p class="fw-medium mb-0">{{ $empleadoSeleccionado->cargo->nombre_cargo }}</p>
-                                                        </div>
-                                                        <div class="mb-3">
-                                                            <small class="text-muted d-block">Área Funcional</small>
-                                                            <p class="fw-medium mb-0">{{ $empleadoSeleccionado->cargo->gdoArea->nombre ?? 'Sin área' }}</p>
+                                        <form id="form-cargo" method="POST" action="{{ route('archivo.cargo.update', $empleadoSeleccionado->cargo->id) }}">
+                                            @csrf @method('PUT')
+                                            
+                                            <div class="row g-3">
+                                                <div class="col-12 mt-2">
+                                                    <div class="d-flex align-items-center mb-1">
+                                                        <i class="bi bi-diagram-3 text-blue-king me-2"></i>
+                                                        <span class="fw-bold text-blue-king small text-uppercase" style="letter-spacing: 1px;">Estructura y Posición</span>
+                                                    </div>
+                                                    <hr class="mt-0 mb-3 opacity-10">
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <div class="vista-campo border-start border-blue-king border-3 ps-3 py-1">
+                                                        <small class="text-muted fw-bold text-uppercase" style="font-size: 10px;">Denominación</small>
+                                                        <div class="text-dark fw-bold fs-5">{{ $empleadoSeleccionado->cargo->nombre_cargo }}</div>
+                                                    </div>
+                                                    <div class="edicion-campo" style="display:none">
+                                                        <div class="form-floating">
+                                                            <input type="text" name="nombre_cargo" class="form-control form-control-sm border-blue-king shadow-none" value="{{ $empleadoSeleccionado->cargo->nombre_cargo }}">
+                                                            <label class="text-muted">Nombre del Cargo</label>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="card border-0 bg-light">
-                                                    <div class="card-body">
-                                                        <h6 class="fw-bold text-warning mb-3">Detalles Adicionales</h6>
-                                                        <div class="mb-3">
-                                                            <small class="text-muted d-block">Salario Base</small>
-                                                            <p class="fw-medium mb-0">{{ $empleadoSeleccionado->cargo->salario_base !== null ? '$'.number_format($empleadoSeleccionado->cargo->salario_base, 2, ',', '.') : '—' }}</p>
+
+                                                <div class="col-md-6">
+                                                    <div class="vista-campo border-start border-blue-king border-3 ps-3 py-1">
+                                                        <small class="text-muted fw-bold text-uppercase" style="font-size: 10px;">Unidad / Área</small>
+                                                        <div class="text-blue-king fw-bold fs-5">
+                                                            {{ $empleadoSeleccionado->cargo->gdoArea->nombre ?? 'SIN ÁREA ASIGNADA' }}
                                                         </div>
+                                                    </div>
+                                                    <div class="edicion-campo" style="display:none">
+                                                        <div class="form-floating">
+                                                            <select name="GDO_area_id" class="form-select border-blue-king shadow-none">
+                                                                @isset($areas)
+                                                                    @foreach($areas as $area)
+                                                                        <option value="{{ $area->id }}" {{ $empleadoSeleccionado->cargo->GDO_area_id == $area->id ? 'selected' : '' }}>{{ $area->nombre }}</option>
+                                                                    @endforeach
+                                                                @endisset
+                                                            </select>
+                                                            <label class="text-muted">Área Funcional</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-4 mt-4">
+                                                    <div class="vista-campo">
+                                                        <small class="text-muted fw-bold text-uppercase d-block mb-1" style="font-size: 10px;">Remuneración Base</small>
+                                                        <span class="text-success fw-bold fs-5">${{ number_format($empleadoSeleccionado->cargo->salario_base, 2) }}</span>
+                                                    </div>
+                                                    <div class="edicion-campo" style="display:none">
+                                                        <div class="form-floating">
+                                                            <input type="number" step="0.01" name="salario_base" class="form-control border-success shadow-none" value="{{ $empleadoSeleccionado->cargo->salario_base }}">
+                                                            <label class="text-success">Salario Base</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-4 mt-4">
+                                                    <div class="vista-campo">
+                                                        <small class="text-muted fw-bold text-uppercase d-block mb-1" style="font-size: 10px;">Jornada Laboral</small>
+                                                        <span class="text-dark fw-bold">{{ $empleadoSeleccionado->cargo->jornada ?? 'NO DEFINIDA' }}</span>
+                                                    </div>
+                                                    <div class="edicion-campo" style="display:none">
+                                                        <div class="form-floating">
+                                                            <input type="text" name="jornada" class="form-control shadow-none" value="{{ $empleadoSeleccionado->cargo->jornada }}">
+                                                            <label>Jornada</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-4 mt-4 text-md-end">
+                                                    <div class="vista-campo">
+                                                        <small class="text-muted fw-bold text-uppercase d-block mb-1" style="font-size: 10px;">Estatus</small>
+                                                        <span class="badge {{ $empleadoSeleccionado->cargo->estado ? 'bg-primary' : 'bg-danger' }} px-3 py-2 rounded-pill">
+                                                            {{ $empleadoSeleccionado->cargo->estado ? 'ACTIVO' : 'INACTIVO' }}
+                                                        </span>
+                                                    </div>
+                                                    <div class="edicion-campo" style="display:none">
+                                                        <div class="form-floating">
+                                                            <select name="estado" class="form-select shadow-none">
+                                                                <option value="1" {{ $empleadoSeleccionado->cargo->estado ? 'selected' : '' }}>Activo</option>
+                                                                <option value="0" {{ !$empleadoSeleccionado->cargo->estado ? 'selected' : '' }}>Inactivo</option>
+                                                            </select>
+                                                            <label>Estado</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-12 mt-4">
+                                                    <div class="d-flex align-items-center mb-1">
+                                                        <i class="bi bi-telephone-inbound text-blue-king me-2"></i>
+                                                        <span class="fw-bold text-blue-king small text-uppercase" style="letter-spacing: 1px;">Canales Corporativos</span>
+                                                    </div>
+                                                    <hr class="mt-0 mb-3 opacity-10">
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <div class="vista-campo bg-white p-3 rounded border shadow-sm h-100">
                                                         <div class="mb-3">
-                                                            <small class="text-muted d-block">Estado</small>
-                                                            <p class="mb-0">
-                                                                @if($empleadoSeleccionado->cargo->estado)
-                                                                    <span class="badge bg-warning">Activo</span>
+                                                            <small class="text-muted fw-bold text-uppercase d-block" style="font-size: 9px;">Email Institucional</small>
+                                                            <span class="text-primary fw-bold">{{ $empleadoSeleccionado->cargo->correo_corporativo ?? 'N/A' }}</span>
+                                                        </div>
+                                                        <div>
+                                                            <small class="text-muted fw-bold text-uppercase d-block" style="font-size: 9px;">Gmail Auxiliar</small>
+                                                            <span class="text-dark fw-bold">{{ $empleadoSeleccionado->cargo->gmail_corporativo ?? 'N/A' }}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="edicion-campo" style="display:none">
+                                                        <div class="form-floating mb-2">
+                                                            <input type="email" name="correo_corporativo" class="form-control shadow-none" value="{{ $empleadoSeleccionado->cargo->correo_corporativo }}">
+                                                            <label>Email Corporativo</label>
+                                                        </div>
+                                                        <div class="form-floating">
+                                                            <input type="email" name="gmail_corporativo" class="form-control shadow-none" value="{{ $empleadoSeleccionado->cargo->gmail_corporativo }}">
+                                                            <label>Gmail Auxiliar</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <div class="vista-campo bg-white p-3 rounded border shadow-sm h-100">
+                                                        <div class="row">
+                                                            <div class="col-6 mb-3">
+                                                                <small class="text-muted fw-bold text-uppercase d-block" style="font-size: 9px;">Teléfono Fijo</small>
+                                                                <span class="text-dark fw-bold">{{ $empleadoSeleccionado->cargo->telefono_corporativo ?? 'N/A' }}</span>
+                                                            </div>
+                                                            <div class="col-6 mb-3">
+                                                                <small class="text-muted fw-bold text-uppercase d-block" style="font-size: 9px;">Extensión</small>
+                                                                <span class="text-blue-king fw-bold">{{ $empleadoSeleccionado->cargo->ext_corporativo ?? '000' }}</span>
+                                                            </div>
+                                                            <div class="col-12">
+                                                                <small class="text-muted fw-bold text-uppercase d-block" style="font-size: 9px;">Celular Corporativo</small>
+                                                                <span class="text-dark fw-bold"><i class="bi bi-phone me-1"></i>{{ $empleadoSeleccionado->cargo->celular_corporativo ?? 'N/A' }}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="edicion-campo" style="display:none">
+                                                        <div class="row g-2">
+                                                            <div class="col-8">
+                                                                <div class="form-floating"><input type="text" name="telefono_corporativo" class="form-control shadow-none" value="{{ $empleadoSeleccionado->cargo->telefono_corporativo }}"><label>Teléfono</label></div>
+                                                            </div>
+                                                            <div class="col-4">
+                                                                <div class="form-floating"><input type="text" name="ext_corporativo" class="form-control shadow-none" value="{{ $empleadoSeleccionado->cargo->ext_corporativo }}"><label>Ext.</label></div>
+                                                            </div>
+                                                            <div class="col-12">
+                                                                <div class="form-floating"><input type="text" name="celular_corporativo" class="form-control shadow-none" value="{{ $empleadoSeleccionado->cargo->celular_corporativo }}"><label>Móvil Corp.</label></div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-12 mt-4">
+                                                    <div class="d-flex align-items-center mb-1">
+                                                        <i class="bi bi-card-checklist text-blue-king me-2"></i>
+                                                        <span class="fw-bold text-blue-king small text-uppercase" style="letter-spacing: 1px;">Gestión de Funciones</span>
+                                                    </div>
+                                                    <hr class="mt-0 mb-3 opacity-10">
+                                                </div>
+
+                                                <div class="col-12">
+                                                    <div class="vista-campo">
+                                                        <div class="p-3 rounded-3" style="background-color: #f8f9fa; border: 1px dashed #dee2e6;">
+                                                            <div class="mb-3">
+                                                                <small class="text-muted fw-bold text-uppercase d-block mb-1" style="font-size: 9px;">Manual de Funciones</small>
+                                                                
+                                                                @if(isset($empleadoSeleccionado->cargo) && $empleadoSeleccionado->cargo->manual_funciones)
+                                                                    <a href="{{ route('archivo.cargo.verManual', $empleadoSeleccionado->cargo->id) }}" 
+                                                                    target="_blank" 
+                                                                    class="text-decoration-none shadow-sm p-1 px-2 border rounded bg-light d-inline-block transition-all"
+                                                                    style="border-color: #e2e8f0 !important;">
+                                                                        <span class="text-dark fw-medium small">
+                                                                            <i class="bi bi-file-earmark-pdf-fill me-1 text-danger"></i> 
+                                                                            Ver Manual de Funciones
+                                                                        </span>
+                                                                        <i class="bi bi-box-arrow-up-right ms-1 text-muted" style="font-size: 10px;"></i>
+                                                                    </a>
                                                                 @else
-                                                                    <span class="badge bg-secondary">Inactivo</span>
+                                                                    <span class="text-muted small italic">
+                                                                        <i class="bi bi-file-earmark-x me-1"></i> Manual no disponible
+                                                                    </span>
                                                                 @endif
-                                                            </p>
+                                                            </div>
+                                                            <div>
+                                                                <small class="text-muted fw-bold text-uppercase d-block mb-1" style="font-size: 9px;">Observaciones Adicionales</small>
+                                                                <p class="text-dark small mb-0 lh-sm">{{ $empleadoSeleccionado->cargo->observacion ?? 'Sin observaciones registradas.' }}</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="edicion-campo" style="display:none">
+                                                        <div class="form-floating mb-2">
+                                                            <input type="text" name="manual_funciones" class="form-control shadow-none" value="{{ $empleadoSeleccionado->cargo->manual_funciones }}">
+                                                            <label>Nombre/Link Manual de Funciones</label>
+                                                        </div>
+                                                        <div class="form-floating">
+                                                            <textarea name="observacion" class="form-control shadow-none" style="height: 100px">{{ $empleadoSeleccionado->cargo->observacion }}</textarea>
+                                                            <label>Observaciones de Gestión</label>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
+                                        </form>
                                     @else
-                                        <div class="empty-state">
-                                            <i class="bi bi-briefcase text-warning"></i>
-                                            <h6>Sin Cargo Asignado</h6>
-                                            <p class="small">Este empleado no tiene un cargo registrado actualmente.</p>
-                                            <a href="#" class="btn btn-warning">Asignar Cargo</a>
+                                        <div class="text-center py-5">
+                                            <div class="bg-light d-inline-block p-4 rounded-circle mb-3">
+                                                <i class="bi bi-person-exclamation text-blue-king display-4"></i>
+                                            </div>
+                                            <h5 class="fw-bold text-dark">Cargo no definido</h5>
+                                            <p class="text-muted small">Este empleado no tiene una relación contractual de cargo activa.</p>
+                                            <button class="btn btn-warning shadow-sm fw-bold px-4 rounded-pill btn-sm" data-bs-toggle="modal" data-bs-target="#asignarCargoModal">
+                                                Asignar Cargo
+                                            </button>
                                         </div>
                                     @endif
                                 </div>
 
-                                {{-- PESTAÑA: DOCUMENTOS (MEJORADA Y CENTRALIZADA) --}}
-                                <div class="tab-pane fade" id="documentos" role="tabpanel">
-                                    <!-- Cabecera con botón para añadir documento -->
-                                    <div class="d-flex justify-content-between align-items-center mb-4">
-                                        <h5 class="fw-semibold mb-0 text-warning">Documentos del Empleado</h5>
-                                        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#subirDocumentoModal">
-                                            <i class="bi bi-plus-circle me-1"></i> Subir Documento
+                                {{-- PESTAÑA: DOCUMENTOS --}}
+                                <div class="tab-pane fade" id="documentos">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h6 class="text-blue-king fw-bold mb-0">Documentos del Expediente</h6>
+                                        <button type="button" class="btn btn-sm btn-warning shadow-sm" data-bs-toggle="modal" data-bs-target="#subirDocumentoModal">
+                                            <i class="bi bi-upload me-1"></i>Subir
                                         </button>
                                     </div>
-
-                                    <!-- Filtros de documentos -->
-                                    <div class="row mb-4">
-                                        <div class="col-md-12">
-                                            <div class="card bg-light">
-                                                <div class="card-body p-3">
-                                                    <div class="d-flex flex-wrap gap-2">
-                                                        <button class="btn btn-sm btn-outline-warning active" data-filter="todos">
-                                                            <i class="bi bi-grid-3x3-gap me-1"></i> Todos
-                                                        </button>
-                                                        <button class="btn btn-sm btn-outline-warning" data-filter="contratos">
-                                                            <i class="bi bi-file-earmark-text me-1"></i> Contratos
-                                                        </button>
-                                                        <button class="btn btn-sm btn-outline-warning" data-filter="permisos">
-                                                            <i class="bi bi-calendar-check me-1"></i> Permisos
-                                                        </button>
-                                                        <button class="btn btn-sm btn-outline-warning" data-filter="medicos">
-                                                            <i class="bi bi-heart-pulse me-1"></i> Obs. Médicas
-                                                        </button>
-                                                        <button class="btn btn-sm btn-outline-warning" data-filter="dotaciones">
-                                                            <i class="bi bi-person-badge me-1"></i> Dotaciones
-                                                        </button>
-                                                        <button class="btn btn-sm btn-outline-warning" data-filter="afiliaciones">
-                                                            <i class="bi bi-shield-check me-1"></i> Afiliaciones
-                                                        </button>
-                                                        <button class="btn btn-sm btn-outline-warning" data-filter="nomina">
-                                                            <i class="bi bi-receipt me-1"></i> Nómina
-                                                        </button>
-                                                        <button class="btn btn-sm btn-outline-warning" data-filter="otros">
-                                                            <i class="bi bi-file-earmark me-1"></i> Otros
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Contenedor de documentos -->
-                                    <div class="documentos-container">
+                                    <div class="list-group list-group-flush">
                                         @forelse ($documentosDelEmpleado as $doc)
-                                            @php
-                                                $tipoNombre = strtolower($doc->tipoDocumento->nombre ?? '');
-                                                $categoria = 'otros';
-                                                $icono = 'bi bi-file-earmark';
-                                                $bgColor = 'bg-dark';
-
-                                                if (str_contains($tipoNombre, 'contrato')) { $categoria = 'contratos'; $icono = 'bi bi-file-earmark-text'; $bgColor = 'bg-primary'; }
-                                                elseif (str_contains($tipoNombre, 'permiso') || str_contains($tipoNombre, 'licencia')) { $categoria = 'permisos'; $icono = 'bi bi-calendar-check'; $bgColor = 'bg-success'; }
-                                                elseif (str_contains($tipoNombre, 'medic') || str_contains($tipoNombre, 'incapacidad')) { $categoria = 'medicos'; $icono = 'bi bi-heart-pulse'; $bgColor = 'bg-danger'; }
-                                                elseif (str_contains($tipoNombre, 'dotacion') || str_contains($tipoNombre, 'uniforme')) { $categoria = 'dotaciones'; $icono = 'bi bi-person-badge'; $bgColor = 'bg-info'; }
-                                                elseif (str_contains($tipoNombre, 'afiliacion') || str_contains($tipoNombre, 'seguridad') || str_contains($tipoNombre, 'eps') || str_contains($tipoNombre, 'pension') || str_contains($tipoNombre, 'arl')) { $categoria = 'afiliaciones'; $icono = 'bi bi-shield-check'; $bgColor = 'bg-secondary'; }
-                                                elseif (str_contains($tipoNombre, 'nomina') || str_contains($tipoNombre, 'pago') || str_contains($tipoNombre, 'comprobante')) { $categoria = 'nomina'; $icono = 'bi bi-receipt'; $bgColor = 'bg-warning'; }
-                                            @endphp
-                                            <!-- Tarjeta de documento con categoría -->
-                                            <div class="card mb-3 documento-item" data-category="{{ $categoria }}">
-                                                <div class="card-body p-3">
-                                                    <div class="d-flex justify-content-between align-items-center">
-                                                        <div class="d-flex align-items-center">
-                                                            <div class="me-3">
-                                                                <div class="rounded-circle d-flex align-items-center justify-content-center {{ $bgColor }}" style="width: 45px; height: 45px;">
-                                                                    <i class="{{ $icono }} text-white"></i>
-                                                                </div>
-                                                            </div>
-                                                            <div>
-                                                                <span class="fw-medium">{{ $doc->tipoDocumento->nombre ?? 'Documento sin tipo' }}</span>
-                                                                <small class="text-muted d-block">Subido: {{ $doc->fecha_subida ? $doc->fecha_subida->format('d/m/Y') : 'N/A' }}</small>
-                                                            </div>
-                                                        </div>
-                                                        <div class="btn-group" role="group">
-                                                            <a href="{{ route('gdodocsempleados.ver', $doc->id) }}" 
-                                                               target="_blank" 
-                                                               class="btn btn-sm btn-outline-warning" 
-                                                               title="Ver">
-                                                                <i class="bi bi-eye"></i>
-                                                            </a>
-                                                            <a href="{{ route('gdodocsempleados.download', $doc->id) }}" 
-                                                               class="btn btn-sm btn-outline-warning" 
-                                                               title="Descargar">
-                                                                <i class="bi bi-download"></i>
-                                                            </a>
-                                                            <button type="button" class="btn btn-sm btn-outline-danger" 
-                                                                    title="Eliminar"
-                                                                    onclick="confirmarEliminacion({{ $doc->id }})">
-                                                                <i class="bi bi-trash"></i>
-                                                            </button>
-                                                        </div>
-                                                    </div>
+                                            <div class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                                <div>
+                                                    <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
+                                                    <span class="fw-medium">{{ $doc->tipoDocumento->nombre }}</span>
+                                                </div>
+                                                <div class="btn-group">
+                                                    <a href="{{ route('archivo.empleado.verDocumento', $doc->id) }}" target="_blank" class="btn btn-sm btn-light border shadow-sm"><i class="bi bi-eye"></i></a>
+                                                    <button onclick="confirmarEliminacion({{ $doc->id }})" class="btn btn-sm btn-light border text-danger shadow-sm"><i class="bi bi-trash"></i></button>
                                                 </div>
                                             </div>
                                         @empty
-                                            <!-- Mensaje cuando no hay documentos -->
-                                            <div class="empty-state">
-                                                <i class="bi bi-folder2-open text-warning"></i>
-                                                <h6>Sin Documentos Adjuntos</h6>
-                                                <p class="small">Aún no se han cargado documentos para este perfil.</p>
-                                                <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#subirDocumentoModal">
-                                                    <i class="bi bi-plus-circle me-1"></i> Subir primer documento
-                                                </button>
-                                            </div>
+                                            <p class="text-center text-muted py-4 small">No se han registrado documentos aún.</p>
                                         @endforelse
-                                        
-                                        @if ($documentosDelEmpleado->hasPages())
-                                            <!-- Paginación de documentos -->
-                                            <div class="mt-4">{{ $documentosDelEmpleado->links('pagination::bootstrap-5-sm') }}</div>
-                                        @endif
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 @else
-                    <!-- Mensaje cuando no hay empleado seleccionado -->
-                    <div class="card h-100">
-                        <div class="card-body text-center py-5 d-flex flex-column justify-content-center h-100">
-                            <i class="bi bi-person-lines-fill display-1 text-warning opacity-50 mb-3"></i>
-                            <h5 class="fw-semibold">Selecciona un empleado</h5>
-                            <p class="text-muted">Haz clic en un empleado de la lista para ver sus detalles.</p>
+                    <div class="card h-100 d-flex align-items-center justify-content-center border-0 bg-transparent opacity-50">
+                        <div class="text-center">
+                            <i class="bi bi-person-bounding-box display-1 text-blue-king"></i>
+                            <h5 class="mt-3 fw-bold">Seleccione un empleado</h5>
                         </div>
                     </div>
                 @endif
@@ -606,130 +553,41 @@
         </div>
     </div>
 
-    <!-- MODAL PARA CREAR NUEVO EMPLEADO -->
-    <div class="modal fade" id="crearEmpleadoModal" tabindex="-1" aria-labelledby="crearEmpleadoModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="crearEmpleadoModalLabel">
-                        <i class="bi bi-person-plus me-2 text-warning"></i> Registrar Nuevo Empleado
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="modal fade" id="subirDocumentoModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-lg border-0">
+                <div class="modal-header bg-blue-king text-white">
+                    <h5 class="modal-title"><i class="bi bi-cloud-arrow-up me-2"></i>Subir Documento</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
-                <form id="form-crear-empleado" action="{{ route('archivo.empleado.store') }}" method="POST" enctype="multipart/form-data">
+                <form id="form-subir-documento" enctype="multipart/form-data">
                     @csrf
-                    <div class="modal-body">
-                        <div class="row g-3">
-                            <!-- Campo: Foto de Perfil -->
-                            <div class="col-md-12">
-                                <label for="crear_ubicacion_foto" class="form-label">Foto de Perfil (Opcional)</label>
-                                <div class="d-flex align-items-center gap-3">
-                                    <input class="form-control @error('ubicacion_foto') is-invalid @enderror" type="file" id="crear_ubicacion_foto" name="ubicacion_foto" accept="image/*">
-                                    <div id="crear_foto_preview" class="rounded-circle bg-light d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
-                                        <i class="bi bi-person display-4 text-warning"></i>
-                                    </div>
-                                </div>
-                                @error('ubicacion_foto')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                                <small class="form-text text-muted">Archivos permitidos: JPG, PNG, GIF. Tamaño máximo: 2MB.</small>
-                            </div>
-                            
-                            <!-- Campos obligatorios -->
-                            <div class="col-md-4">
-                                <div class="form-floating">
-                                    <input type="text" name="cedula" id="crear_cedula" class="form-control @error('cedula') is-invalid @enderror" placeholder="Cédula" value="{{ old('cedula') }}" required>
-                                    <label for="crear_cedula">Cédula</label>
-                                    @error('cedula') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-4">
-                                <div class="form-floating">
-                                    <input type="text" name="nombre1" id="crear_nombre1" class="form-control @error('nombre1') is-invalid @enderror" placeholder="Primer Nombre" value="{{ old('nombre1') }}" required>
-                                    <label for="crear_nombre1">Primer Nombre</label>
-                                    @error('nombre1') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-4">
-                                <div class="form-floating">
-                                    <input type="text" name="apellido1" id="crear_apellido1" class="form-control @error('apellido1') is-invalid @enderror" placeholder="Primer Apellido" value="{{ old('apellido1') }}" required>
-                                    <label for="crear_apellido1">Primer Apellido</label>
-                                    @error('apellido1') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                                </div>
-                            </div>
-                            
-                            <!-- Campos opcionales -->
-                            <div class="col-md-4">
-                                <div class="form-floating">
-                                    <input type="text" name="nombre2" id="crear_nombre2" class="form-control" placeholder="Segundo Nombre" value="{{ old('nombre2') }}">
-                                    <label for="crear_nombre2">Segundo Nombre</label>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-4">
-                                <div class="form-floating">
-                                    <input type="text" name="apellido2" id="crear_apellido2" class="form-control" placeholder="Segundo Apellido" value="{{ old('apellido2') }}">
-                                    <label for="crear_apellido2">Segundo Apellido</label>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-4">
-                                <div class="form-floating">
-                                    <input type="date" name="nacimiento" id="crear_nacimiento" class="form-control @error('nacimiento') is-invalid @enderror" placeholder="Fecha de Nacimiento" value="{{ old('nacimiento') }}">
-                                    <label for="crear_nacimiento">Fecha de Nacimiento</label>
-                                    @error('nacimiento') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-4">
-                                <div class="form-floating">
-                                    <input type="text" name="lugar" id="crear_lugar" class="form-control" placeholder="Lugar de Nacimiento" value="{{ old('lugar') }}">
-                                    <label for="crear_lugar">Lugar de Nacimiento</label>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-4">
-                                <div class="form-floating">
-                                    <select class="form-select @error('sexo') is-invalid @enderror" id="crear_sexo" name="sexo">
-                                        <option value="" selected>Seleccione...</option>
-                                        <option value="M" {{ old('sexo') == 'M' ? 'selected' : '' }}>Masculino</option>
-                                        <option value="F" {{ old('sexo') == 'F' ? 'selected' : '' }}>Femenino</option>
-                                    </select>
-                                    <label for="crear_sexo">Sexo</label>
-                                    @error('sexo') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                                </div>
-                            </div>
-                            
-                            <!-- Campos de contacto -->
-                            <div class="col-md-6">
-                                <div class="form-floating">
-                                    <input type="email" name="correo_personal" id="crear_correo_personal" class="form-control @error('correo_personal') is-invalid @enderror" placeholder="Correo Personal" value="{{ old('correo_personal') }}">
-                                    <label for="crear_correo_personal">Correo Personal</label>
-                                    @error('correo_personal') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="form-floating">
-                                    <input type="text" name="celular_personal" id="crear_celular_personal" class="form-control" placeholder="Celular Personal" value="{{ old('celular_personal') }}">
-                                    <label for="crear_celular_personal">Celular Personal</label>
-                                </div>
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <div class="form-floating">
-                                    <input type="text" name="celular_acudiente" id="crear_celular_acudiente" class="form-control" placeholder="Celular Acudiente" value="{{ old('celular_acudiente') }}">
-                                    <label for="crear_celular_acudiente">Celular Acudiente</label>
-                                </div>
-                            </div>
+                    <div class="modal-body p-4">
+                        <input type="hidden" name="empleado_id" value="{{ $empleadoSeleccionado->cedula ?? '' }}">
+                        <div class="form-floating mb-3">
+                            <select name="tipo_documento_id" id="val_tipo_id" class="form-select" required>
+                                <option value="">Seleccione tipo...</option>
+                                @isset($tiposDocumento)
+                                    @foreach($tiposDocumento as $tipo)
+                                        <option value="{{ $tipo->id }}">{{ $tipo->nombre }}</option>
+                                    @endforeach
+                                @endisset
+                            </select>
+                            <label>Tipo de Documento</label>
+                        </div>
+                        <div class="form-floating mb-3">
+                            <input type="date" name="fecha_subida" id="val_fecha" class="form-control" value="{{ now()->format('Y-m-d') }}" required>
+                            <label>Fecha de Registro</label>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Seleccionar Archivo</label>
+                            <input type="file" name="archivo" id="archivo_input" class="form-control shadow-sm" required>
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-warning">
-                            <i class="bi bi-check-circle me-1"></i> Guardar Empleado
+                    <div class="modal-footer bg-light p-3">
+                        <button type="button" class="btn btn-link text-muted text-decoration-none" data-bs-dismiss="modal">Cerrar</button>
+                        <button type="button" class="btn btn-warning px-4 shadow-sm fw-bold" id="btn-subir-accion" onclick="procesarSubidaManual()">
+                            Subir Documento
                         </button>
                     </div>
                 </form>
@@ -737,374 +595,131 @@
         </div>
     </div>
 
-    <!-- MODAL PARA SUBIR DOCUMENTO -->
-    <div class="modal fade" id="subirDocumentoModal" tabindex="-1" aria-labelledby="subirDocumentoModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="subirDocumentoModalLabel">
-                        <i class="bi bi-cloud-upload me-2 text-warning"></i> Subir Documento para {{ $empleadoSeleccionado->nombre_completo ?? 'Empleado' }}
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form action="{{ route('archivo.gdodocsempleados.store') }}" method="POST" enctype="multipart/form-data" id="form-subir-documento">
-                    @csrf
-                    <div class="modal-body">
-                        <div class="d-flex flex-column gap-3">
-                            <!-- Campo Empleado (pre-seleccionado y oculto) -->
-                            <input type="hidden" name="empleado_id" id="empleado_id_doc" value="{{ $empleadoSeleccionado->cedula }}">
+@push('scripts')
+    <script>
+        // FUNCIÓN MEJORADA: Subida AJAX blindada
+        function procesarSubidaManual() {
+            const btn = document.getElementById('btn-subir-accion');
+            const fileInput = document.getElementById('archivo_input');
+            const tipoInput = document.getElementById('val_tipo_id');
 
-                            <!-- Campo Tipo de Documento -->
-                            <div class="form-floating">
-                                <select name="tipo_documento_id" id="tipo_documento_id" class="form-select" required>
-                                    <option value="" disabled selected>Abre para seleccionar...</option>
-                                    @if(isset($tiposDocumento))
-                                        @foreach($tiposDocumento as $tipo)
-                                            <option value="{{ $tipo->id }}">{{ $tipo->nombre }}</option>
-                                        @endforeach
-                                    @endif
-                                </select>
-                                <label for="tipo_documento_id">Tipo de Documento</label>
-                            </div>
-                            
-                            <!-- Campo Fecha -->
-                            <div class="form-floating">
-                                <input type="date" name="fecha_subida" id="fecha_subida" class="form-control" 
-                                       placeholder="Fecha de Subida" value="{{ now()->format('Y-m-d') }}" required>
-                                <label for="fecha_subida">Fecha de Subida</label>
-                            </div>
+            if (!fileInput.files[0] || !tipoInput.value) {
+                Swal.fire({ icon: 'warning', title: 'Faltan datos', text: 'Por favor complete todos los campos obligatorios.' });
+                return;
+            }
 
-                            <!-- Campo de Archivo -->
-                            <div class="form-floating">
-                                <input type="text" id="archivo-display" class="form-control" placeholder="Archivo" 
-                                       readonly style="cursor: pointer;">
-                                <label for="archivo-display">Archivo</label>
-                                <!-- El input real está oculto -->
-                                <input type="file" name="archivo" id="archivo-real" class="visually-hidden" required>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-warning">
-                            <i class="bi bi-check-lg me-1"></i> Subir Documento
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Subiendo...';
 
-    @push('scripts')
-        <!-- Librerías JavaScript externas -->
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+            const formData = new FormData(document.getElementById('form-subir-documento'));
+            const url = "{{ route('archivo.empleado.storeDocumento') }}";
 
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                // Configuración de notificaciones Toastr
-                toastr.options = { 
-                    "closeButton": true, 
-                    "progressBar": true, 
-                    "positionClass": "toast-bottom-right",
-                    "showDuration": "300",
-                    "hideDuration": "1000",
-                    "timeOut": "5000"
-                };
-
-                // Mostrar notificaciones de sesión si existen
-                @if (session('success'))
-                    toastr.success("{{ session('success') }}");
-                @endif
-
-                /*
-                    ===================================================================
-                    SISTEMA DE EDICIÓN EN LÍNEA (PESTAÑA PERSONAL)
-                    ===================================================================
-                */
-                const btnEditar = document.getElementById('btn-editar');
-                const btnGuardar = document.getElementById('btn-guardar');
-                const btnCancelar = document.getElementById('btn-cancelar');
-                const empleadoDetailCard = document.getElementById('empleadoDetailCard');
-                const formEmpleado = document.getElementById('form-empleado');
-                
-                let valoresOriginales = {};
-                let fotoPreviewOriginal = '';
-                
-                function toggleCampos(modo) {
-                    const camposVista = document.querySelectorAll('.vista-campo');
-                    const camposEdicion = document.querySelectorAll('.edicion-campo');
-                    
-                    if (modo === 'vista') {
-                        camposVista.forEach(campo => campo.style.display = 'block');
-                        camposEdicion.forEach(campo => campo.style.display = 'none');
-                    } else {
-                        camposVista.forEach(campo => campo.style.display = 'none');
-                        camposEdicion.forEach(campo => campo.style.display = 'block');
-                    }
+            fetch(url, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'X-Requested-With': 'XMLHttpRequest'
                 }
-                
-                function activarModoEdicion() {
-                    const campos = formEmpleado.querySelectorAll('input, select');
-                    campos.forEach(campo => valoresOriginales[campo.name] = campo.value);
-                    
-                    const fotoPreviewContainer = document.getElementById('fotoPreviewContainer');
-                    if (fotoPreviewContainer) fotoPreviewOriginal = fotoPreviewContainer.innerHTML;
-                    
-                    empleadoDetailCard.classList.remove('vista-mode');
-                    empleadoDetailCard.classList.add('edicion-mode');
-                    toggleCampos('edicion');
-                    
-                    btnEditar.classList.add('d-none');
-                    btnGuardar.classList.remove('d-none');
-                    btnCancelar.classList.remove('d-none');
-                    
-                    document.querySelectorAll('.nav-tabs .nav-link:not([href="#personal"])').forEach(tab => {
-                        tab.setAttribute('data-bs-toggle', '');
-                        tab.classList.add('disabled');
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    Swal.fire({ icon: 'success', title: 'Excelente', text: data.message, timer: 2000, showConfirmButton: false })
+                    .then(() => {
+                        window.location.hash = 'documentos';
+                        window.location.reload();
                     });
+                } else {
+                    throw data;
                 }
-                
-                function cancelarEdicion() {
-                    const campos = formEmpleado.querySelectorAll('input, select');
-                    campos.forEach(campo => {
-                        if (campo.type !== 'file') campo.value = valoresOriginales[campo.name];
-                    });
-                    
-                    const fotoPreviewContainer = document.getElementById('fotoPreviewContainer');
-                    if (fotoPreviewContainer && fotoPreviewOriginal) {
-                        fotoPreviewContainer.innerHTML = fotoPreviewOriginal;
-                    }
-                    
-                    const fileInput = document.getElementById('ubicacion_foto');
-                    if (fileInput) fileInput.value = '';
-                    
-                    empleadoDetailCard.classList.remove('edicion-mode');
-                    empleadoDetailCard.classList.add('vista-mode');
-                    toggleCampos('vista');
-                    
-                    btnEditar.classList.remove('d-none');
-                    btnGuardar.classList.add('d-none');
-                    btnCancelar.classList.add('d-none');
-                    
-                    document.querySelectorAll('.nav-tabs .nav-link').forEach(tab => {
-                        tab.setAttribute('data-bs-toggle', 'tab');
-                        tab.classList.remove('disabled');
-                    });
-                }
-                
-                if (btnEditar) btnEditar.addEventListener('click', activarModoEdicion);
-                if (btnCancelar) btnCancelar.addEventListener('click', cancelarEdicion);
+            })
+            .catch(err => {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+                let msg = err.message || (err.errors ? Object.values(err.errors).flat().join('\n') : 'Error técnico al subir');
+                Swal.fire('Error', msg, 'error');
+            });
+        }
 
-                if (btnGuardar) {
-                    btnGuardar.addEventListener('click', function() {
-                        const formData = new FormData(formEmpleado);
-                        
-                        fetch(formEmpleado.action, {
-                            method: 'POST',
-                            body: formData,
-                            headers: {
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                                'X-Requested-With': 'XMLHttpRequest'
-                            }
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.success) {
-                                window.location.reload(); // Recarga para mostrar cambios
-                            } else {
-                                if (data.errors) {
-                                    let errorMessage = 'Por favor, corrige los siguientes errores:<br><ul>';
-                                    for (const field in data.errors) errorMessage += `<li>${data.errors[field][0]}</li>`;
-                                    errorMessage += '</ul>';
-                                    Swal.fire({ icon: 'error', title: 'Error de validación', html: errorMessage });
-                                } else {
-                                    toastr.error('Ha ocurrido un error al actualizar el empleado.');
-                                }
-                            }
-                        })
-                        .catch(error => toastr.error('Ha ocurrido un error al actualizar el empleado.'));
-                    });
-                }
-                
-                // Inicializar campos en modo vista
-                if (empleadoDetailCard && empleadoDetailCard.classList.contains('vista-mode')) {
-                    toggleCampos('vista');
-                }
+        document.addEventListener('DOMContentLoaded', function () {
+            // Manejo persistente de tabs por Hash
+            const hash = window.location.hash;
+            if (hash) {
+                const triggerEl = document.querySelector(`.nav-tabs a[href="${hash}"]`);
+                if (triggerEl) bootstrap.Tab.getOrCreateInstance(triggerEl).show();
+            }
 
-                /*
-                    ===================================================================
-                    FUNCIONALIDAD PARA MODAL DE CREAR EMPLEADO
-                    ===================================================================
-                */
-                const formCrearEmpleado = document.getElementById('form-crear-empleado');
-                const crearFotoInput = document.getElementById('crear_ubicacion_foto');
-                const crearFotoPreview = document.getElementById('crear_foto_preview');
-                
-                if (crearFotoInput && crearFotoPreview) {
-                    crearFotoInput.addEventListener('change', function(e) {
-                        const file = e.target.files[0];
-                        if (file) {
-                            const reader = new FileReader();
-                            reader.onload = function(e) {
-                                crearFotoPreview.innerHTML = `<img src="${e.target.result}" alt="Vista previa" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
-                            };
-                            reader.readAsDataURL(file);
+            // Lógica UX Edición Personal
+            const btnEd = document.getElementById('btn-editar');
+            const btnSv = document.getElementById('btn-guardar');
+            const btnCn = document.getElementById('btn-cancelar');
+
+            if(btnEd) {
+                btnEd.addEventListener('click', function() {
+                    document.querySelectorAll('.vista-campo').forEach(el => el.style.display = 'none');
+                    document.querySelectorAll('.edicion-campo').forEach(el => el.style.display = 'block');
+                    this.classList.add('d-none');
+                    btnSv.classList.remove('d-none');
+                    btnCn.classList.remove('d-none');
+                });
+            }
+
+            if(btnSv) {
+                btnSv.addEventListener('click', function() {
+                    const form = document.getElementById('form-empleado');
+                    const fd = new FormData(form);
+                    
+                    btnSv.disabled = true;
+                    btnSv.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+                    fetch(form.action, {
+                        method: 'POST',
+                        body: fd,
+                        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'X-Requested-With': 'XMLHttpRequest' }
+                    })
+                    .then(r => r.json())
+                    .then(d => {
+                        if(d.success) {
+                            Swal.fire({ icon: 'success', title: 'Perfil Actualizado', timer: 1500, showConfirmButton: false })
+                            .then(() => window.location.reload());
+                        } else {
+                            btnSv.disabled = false;
+                            btnSv.innerHTML = 'Guardar Cambios';
+                            let errs = d.errors ? Object.values(d.errors).flat().join('\n') : 'No se pudo guardar';
+                            Swal.fire('Error', errs, 'error');
                         }
-                    });
-                }
-                
-                const editarFotoInput = document.getElementById('ubicacion_foto');
-                if (editarFotoInput) {
-                    editarFotoInput.addEventListener('change', function(e) {
-                        const file = e.target.files[0];
-                        if (file) {
-                            const reader = new FileReader();
-                            reader.onload = function(e) {
-                                const previewContainer = editarFotoInput.parentElement.querySelector('#fotoPreviewContainer');
-                                if (previewContainer) {
-                                    previewContainer.innerHTML = `<img src="${e.target.result}" alt="Vista previa" class="img-thumbnail rounded-circle me-2" style="width: 60px; height: 60px; object-fit: cover;"><small class="text-muted">Nueva Foto</small>`;
-                                }
-                            };
-                            reader.readAsDataURL(file);
-                        }
-                    });
-                }
-                
-                if (formCrearEmpleado) {
-                    formCrearEmpleado.addEventListener('submit', function(e) {
-                        e.preventDefault();
-                        const submitBtn = this.querySelector('button[type="submit"]');
-                        const originalText = submitBtn.innerHTML;
-                        submitBtn.disabled = true;
-                        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Guardando...';
-                        
-                        const formData = new FormData(this);
-                        
-                        fetch(this.action, {
-                            method: 'POST',
-                            body: formData,
-                            headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'), 'X-Requested-With': 'XMLHttpRequest' }
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            submitBtn.disabled = false;
-                            submitBtn.innerHTML = originalText;
-                            if (data.success) {
-                                bootstrap.Modal.getInstance(document.getElementById('crearEmpleadoModal')).hide();
-                                this.reset();
-                                crearFotoPreview.innerHTML = '<i class="bi bi-person display-4 text-warning"></i>';
-                                toastr.success(data.message);
-                                setTimeout(() => window.location.href = `{{ route('archivo.empleado.index') }}?id=${data.empleado.id}`, 1000);
-                            } else {
-                                // Manejar errores...
-                            }
-                        })
-                        .catch(error => { /* manejar error */ });
-                    });
-                }
-
-                /*
-                    ===================================================================
-                    FUNCIONALIDAD PARA PESTAÑA DE DOCUMENTOS
-                    ===================================================================
-                */
-                // Filtros de documentos
-                const filterButtons = document.querySelectorAll('[data-filter]');
-                const documentItems = document.querySelectorAll('.documento-item');
-                
-                filterButtons.forEach(button => {
-                    button.addEventListener('click', function() {
-                        filterButtons.forEach(btn => btn.classList.remove('active'));
-                        this.classList.add('active');
-                        
-                        const filter = this.getAttribute('data-filter');
-                        documentItems.forEach(item => {
-                            item.style.display = (filter === 'todos' || item.getAttribute('data-category') === filter) ? 'block' : 'none';
-                        });
                     });
                 });
+            }
 
-                // Funcionalidad para el campo de archivo en el modal de subir documento
-                const archivoDisplay = document.getElementById('archivo-display');
-                const archivoReal = document.getElementById('archivo-real');
-                
-                if (archivoDisplay && archivoReal) {
-                    archivoDisplay.addEventListener('click', () => archivoReal.click());
-                    archivoReal.addEventListener('change', function() {
-                        archivoDisplay.value = this.files && this.files[0] ? this.files[0].name : '';
+            if(btnCn) btnCn.addEventListener('click', () => window.location.reload());
+        });
+
+        // Eliminar Documento (S3)
+        function confirmarEliminacion(id) {
+            Swal.fire({
+                title: '¿Deseas eliminar el archivo?',
+                text: "Esta acción lo borrará permanentemente de AWS S3.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, eliminar',
+                confirmButtonColor: '#d33',
+                cancelButtonText: 'No, cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    fetch(`{{ route('archivo.empleado.destroyDocumento', '') }}/${id}`, {
+                        method: 'DELETE',
+                        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'X-Requested-With': 'XMLHttpRequest' }
+                    })
+                    .then(res => res.json())
+                    .then(data => {
+                        if(data.success) window.location.reload();
                     });
                 }
-
-                // Envío del formulario de subir documento
-                const formSubirDoc = document.getElementById('form-subir-documento');
-                if(formSubirDoc) {
-                    formSubirDoc.addEventListener('submit', function(e) {
-                        e.preventDefault();
-                        const submitBtn = this.querySelector('button[type="submit"]');
-                        const originalText = submitBtn.innerHTML;
-                        submitBtn.disabled = true;
-                        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Subiendo...';
-                        
-                        const formData = new FormData(this);
-                        fetch(this.action, { method: 'POST', body: formData, headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'), 'X-Requested-With': 'XMLHttpRequest' } })
-                        .then(response => response.json())
-                        .then(data => {
-                            submitBtn.disabled = false; submitBtn.innerHTML = originalText;
-                            if(data.success) {
-                                bootstrap.Modal.getInstance(document.getElementById('subirDocumentoModal')).hide();
-                                this.reset();
-                                archivoDisplay.value = '';
-                                toastr.success(data.message);
-                                // Recargar la lista de documentos sin recargar la página completa es complejo,
-                                // así que una recarga completa es la solución más robusta y simple aquí.
-                                window.location.reload();
-                            } else {
-                                // Manejar errores de validación
-                                let errorMessage = 'Por favor, corrige los siguientes errores:<br><ul>';
-                                for (const field in data.errors) errorMessage += `<li>${data.errors[field][0]}</li>`;
-                                errorMessage += '</ul>';
-                                Swal.fire({ icon: 'error', title: 'Error de validación', html: errorMessage });
-                            }
-                        })
-                        .catch(error => {
-                            submitBtn.disabled = false; submitBtn.innerHTML = originalText;
-                            toastr.error('Ha ocurrido un error al subir el documento.');
-                        });
-                    });
-                }
-
-                // Función para confirmar eliminación de documento
-                window.confirmarEliminacion = function(docId) {
-                    Swal.fire({
-                        title: '¿Estás seguro?',
-                        text: "Esta acción no se puede revertir",
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonColor: '#d33',
-                        cancelButtonColor: '#6c757d',
-                        confirmButtonText: 'Sí, eliminar',
-                        cancelButtonText: 'Cancelar'
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            fetch(`/archivo/gdodocsempleados/${docId}`, {
-                                method: 'DELETE',
-                                headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'), 'X-Requested-With': 'XMLHttpRequest' }
-                            })
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.success) {
-                                    toastr.success(data.message);
-                                    window.location.reload(); // Recarga para actualizar la lista
-                                } else {
-                                    toastr.error('Ha ocurrido un error al eliminar el documento.');
-                                }
-                            })
-                            .catch(error => toastr.error('Ha ocurrido un error al eliminar el documento.'));
-                        }
-                    });
-                };
             });
-        </script>
-    @endpush
+        }
+    </script>
+@endpush
 </x-base-layout>

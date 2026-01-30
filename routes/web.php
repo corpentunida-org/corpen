@@ -271,16 +271,21 @@ Route::prefix('creditos')->middleware('auth')->group(function () {
 });
 
 
-// =============================
-//   MÓDULO DE GESTION DOCUMENTAL
-// =============================
-    Route::prefix('archivo')->middleware('auth')->group(function () {
+// =========================================================================
+// MÓDULO DE GESTIÓN DOCUMENTAL (AWS S3 OPTIMIZED)
+// =========================================================================
+    Route::prefix('archivo')->middleware(['auth'])->group(function () {
 
-        // <-- CAMBIO CLAVE: Ruta segura para ver/descargar los manuales.
+        // --- GESTIÓN DE CARGOS Y ÁREAS ---
+        
+        // Exportación de datos (Se coloca antes del resource)
+        Route::get('cargos/export-csv', [GdoCargoController::class, 'exportCsv'])
+            ->name('archivo.cargo.export.csv');
+
+        // Ruta segura para ver manuales de funciones desde S3
         Route::get('cargos/{cargo}/ver-manual', [GdoCargoController::class, 'verManual'])
             ->name('archivo.cargo.verManual');
 
-        // Recursos
         Route::resource('cargos', GdoCargoController::class)
             ->names('archivo.cargo')
             ->parameters(['cargos' => 'cargo']);
@@ -289,32 +294,48 @@ Route::prefix('creditos')->middleware('auth')->group(function () {
             ->names('archivo.area')
             ->parameters(['areas' => 'area']);
 
-        // Empleados - Modificado para manejar la vista unificada
+
+        // --- GESTIÓN DE EMPLEADOS (Controlador Unificado) ---
+        // Rutas para el CRUD de empleados
         Route::get('empleados', [GdoEmpleadoController::class, 'index'])
             ->name('archivo.empleado.index');
         
-        Route::get('empleados/create', [GdoEmpleadoController::class, 'create'])
-            ->name('archivo.empleado.create');
-        
         Route::post('empleados', [GdoEmpleadoController::class, 'store'])
             ->name('archivo.empleado.store');
-        
-        Route::get('empleados/{empleado}', [GdoEmpleadoController::class, 'show'])
-            ->name('archivo.empleado.show');
-        
-        Route::get('empleados/{empleado}/edit', [GdoEmpleadoController::class, 'edit'])
-            ->name('archivo.empleado.edit');
         
         Route::put('empleados/{empleado}', [GdoEmpleadoController::class, 'update'])
             ->name('archivo.empleado.update');
         
         Route::delete('empleados/{empleado}', [GdoEmpleadoController::class, 'destroy'])
             ->name('archivo.empleado.destroy');
-        
-        Route::get('empleados/{empleado}/foto', [GdoEmpleadoController::class, 'verFoto'])
-            ->name('archivo.empleado.verFoto')
-            ->middleware('auth');
 
+        // Visualización de Foto de Perfil (URL Firmada S3)
+        Route::get('empleados/{id}/foto', [GdoEmpleadoController::class, 'verFoto'])
+            ->name('archivo.empleado.verFoto');
+
+
+        // --- GESTIÓN DE DOCUMENTOS ADICIONALES (Implementación S3) ---
+        // Subida de documentos adicionales
+        Route::post('empleados/storeDocumento', [GdoEmpleadoController::class, 'storeDocumento'])
+            ->name('archivo.empleado.storeDocumento');
+
+        // Rutas para ver y descargar documentos (ahora en GdoEmpleadoController)
+        Route::get('empleados/verDocumento/{id}', [GdoEmpleadoController::class, 'verDocumento'])
+            ->name('archivo.empleado.verDocumento');
+
+        Route::get('empleados/downloadDocumento/{id}', [GdoEmpleadoController::class, 'downloadDocumento'])
+            ->name('archivo.empleado.downloadDocumento');
+
+        // Eliminación física y lógica de documentos adicionales
+        Route::delete('empleados/documentos/{id}', [GdoEmpleadoController::class, 'destroyDocumento'])
+            ->name('archivo.empleado.destroyDocumento');
+        
+        // Ruta para el menú de navegación (apunta al mismo método index)
+        Route::get('gdodocsempleados', [GdoEmpleadoController::class, 'index'])
+            ->name('archivo.gdodocsempleados.index');
+
+
+        // --- CONFIGURACIONES MAESTRAS ---
         Route::resource('gdotipodocumento', GdoTipoDocumentoController::class)
             ->names('archivo.gdotipodocumento')
             ->parameters(['gdotipodocumento' => 'tipoDocumento']);
@@ -323,19 +344,8 @@ Route::prefix('creditos')->middleware('auth')->group(function () {
             ->names('archivo.categorias')
             ->parameters(['categorias' => 'categoria']);
 
-        Route::resource('gdodocsempleados', GdoDocsEmpleadosController::class)
-            ->names('archivo.gdodocsempleados')
-            ->parameters(['gdodocsempleados' => 'gdodocsempleado']);
-
-        Route::get('gdodocsempleados/ver/{id}', [GdoDocsEmpleadosController::class, 'verArchivo'])
-            ->name('gdodocsempleados.ver')
-            ->middleware('auth');
-
-        Route::get('gdodocsempleados/download/{id}', [GdoDocsEmpleadosController::class, 'download'])
-            ->name('gdodocsempleados.download')
-            ->middleware('auth');
     });
-//FIN GESTION DOCUMENTAL
+// FIN DE GESTIÓN DOCUMENTAL
 
 // =============================
 //   MÓDULO DE INTERACCIONES
