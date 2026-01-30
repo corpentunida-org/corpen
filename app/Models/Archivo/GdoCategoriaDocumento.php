@@ -18,11 +18,19 @@ class GdoCategoriaDocumento extends Model
     ];
 
 
-    /**
-     * Relación con los tipos de documento.
-     */
+    
     public function tiposDocumento()
     {
         return $this->hasMany(GdoTipoDocumento::class, 'categoria_documento_id', 'id');
     }
+
+    /**
+     * Determina si la categoría se puede eliminar legalmente.
+     */
+    public function esEliminable(): bool
+    {
+        // Si tiene 0 tipos de documento, es eliminable.
+        return $this->tiposDocumento()->count() === 0;
+    }
+
 }

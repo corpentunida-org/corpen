@@ -36,16 +36,12 @@
                 Tipo de Documento
             </a>
         </li>
-        <li class="nxl-item {{ request()->routeIs('archivo.gdodocsempleados.index') ? 'active' : '' }}">
-            <a class="nxl-link" href="{{ route('archivo.gdodocsempleados.index') }}">
-                <span class="nxl-micon"><i class="bi bi-file-check"></i></span>
-                Documentos
-            </a>
-        </li>
+        <!--  INACTIVO TEMPORALMENTO
         <li class="nxl-item {{ request()->routeIs('visitas.corpen.index') ? 'active' : '' }}">
             <a class="nxl-link" href="{{ route('visitas.corpen.index') }}">
-                <span class="nxl-micon"><i class="bi bi-file-check"></i></span> Actualizaciones de Datos
+                <span class="nxl-micon"><i class="bi bi-file-check"></i></span> Registro de Visitas
             </a>
         </li>
+         -->
     </ul>
 </li>

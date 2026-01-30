@@ -1,110 +1,152 @@
 {{-- 
-    Este formulario está organizado en secciones temáticas usando fieldsets.
-    Cada sección tiene un encabezado claro (legend) para guiar al usuario.
-    Se utiliza una mezcla de columnas para optimizar el espacio sin sacrificar la legibilidad.
+    ESTILO: Vertical Zen (Single Column Flow)
+    SOLUCIÓN: Máximo aprovechamiento de lectura horizontal y espaciado generoso.
 --}}
 
-{{-- Sección 1: Identificación del Cargo --}}
-<fieldset class="mb-4">
-    <legend class="fs-6 fw-bold border-bottom pb-2 mb-3">
-        <i class="bi bi-briefcase text-primary me-2"></i> Identificación del Cargo
-    </legend>
-    <div class="row g-3">
-        <div class="col-md-9">
-            <div class="form-floating">
-                <input type="text" name="nombre_cargo" id="nombre_cargo" class="form-control" placeholder="Nombre del cargo" value="{{ old('nombre_cargo', $cargo->nombre_cargo ?? '') }}" required>
-                <label for="nombre_cargo">Nombre del Cargo</label>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="form-floating">
-                <select name="estado" id="estado" class="form-select">
-                    <option value="1" {{ old('estado', $cargo->estado ?? 1) == 1 ? 'selected' : '' }}>Activo</option>
-                    <option value="0" {{ old('estado', $cargo->estado ?? 1) == 0 ? 'selected' : '' }}>Inactivo</option>
-                </select>
-                <label for="estado">Estado</label>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="form-floating">
-                <select name="GDO_area_id" id="GDO_area_id" class="form-select" required>
-                    <option value="" disabled selected>Selecciona un área...</option>
-                    @foreach($areas as $area)
-                        <option value="{{ $area->id }}" {{ old('GDO_area_id', $cargo->GDO_area_id ?? '') == $area->id ? 'selected' : '' }}>{{ $area->nombre }}</option>
-                    @endforeach
-                </select>
-                <label for="GDO_area_id">Área Funcional</label>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="form-floating">
-                <select name="GDO_empleados_cedula" id="GDO_empleados_cedula" class="form-select">
-                    <option value="">(Ningún empleado asignado)</option>
-                    @foreach($empleados as $empleado)
-                        <option value="{{ $empleado->cedula }}" {{ old('GDO_empleados_cedula', $cargo->GDO_empleados_cedula ?? '') == $empleado->cedula ? 'selected' : '' }}>{{ $empleado->nombre_completo }}</option>
-                    @endforeach
-                </select>
-                <label for="GDO_empleados_cedula">Empleado Asignado</label>
-            </div>
-        </div>
-    </div>
-</fieldset>
+<div class="animate-fade-in mx-auto" style="max-width: 900px;">
 
-{{-- Sección 2: Detalles Salariales y Jornada --}}
-<fieldset class="mb-4">
-    <legend class="fs-6 fw-bold border-bottom pb-2 mb-3">
-        <i class="bi bi-cash-coin text-success me-2"></i> Detalles Salariales y Jornada
-    </legend>
-    <div class="row g-3">
-        <div class="col-md-6">
-            <div class="form-floating">
-                <input type="number" step="0.01" name="salario_base" id="salario_base" class="form-control" placeholder="Salario base" value="{{ old('salario_base', $cargo->salario_base ?? '') }}">
-                <label for="salario_base">Salario Base ($)</label>
+    {{-- SECCIÓN 1: IDENTIFICACIÓN --}}
+    <div class="card border-0 shadow-sm mb-4 custom-card">
+        <div class="card-body p-4 p-md-5">
+            <div class="mb-4">
+                <h5 class="fw-bold text-dark mb-1">Identificación del Cargo</h5>
+                <p class="text-muted small">Define el rol y su ubicación en la estructura.</p>
             </div>
-        </div>
-        <div class="col-md-6">
-            <div class="form-floating">
-                <input type="text" name="jornada" id="jornada" class="form-control" placeholder="Jornada" value="{{ old('jornada', $cargo->jornada ?? '') }}">
-                <label for="jornada">Jornada</label>
-            </div>
-        </div>
-    </div>
-</fieldset>
 
-{{-- Sección 3: Información de Contacto --}}
-<fieldset class="mb-4">
-    <legend class="fs-6 fw-bold border-bottom pb-2 mb-3">
-        <i class="bi bi-telephone text-info me-2"></i> Información de Contacto
-    </legend>
-    <div class="row g-3">
-        <div class="col-md-4"><div class="form-floating"><input type="text" name="telefono_corporativo" id="telefono_corporativo" class="form-control" placeholder="Teléfono" value="{{ old('telefono_corporativo', $cargo->telefono_corporativo ?? '') }}"><label for="telefono_corporativo">Teléfono</label></div></div>
-        <div class="col-md-4"><div class="form-floating"><input type="text" name="celular_corporativo" id="celular_corporativo" class="form-control" placeholder="Celular" value="{{ old('celular_corporativo', $cargo->celular_corporativo ?? '') }}"><label for="celular_corporativo">Celular</label></div></div>
-        <div class="col-md-4"><div class="form-floating"><input type="text" name="ext_corporativo" id="ext_corporativo" class="form-control" placeholder="Extensión" value="{{ old('ext_corporativo', $cargo->ext_corporativo ?? '') }}"><label for="ext_corporativo">Extensión</label></div></div>
-        <div class="col-md-6"><div class="form-floating"><input type="email" name="correo_corporativo" id="correo_corporativo" class="form-control" placeholder="Correo" value="{{ old('correo_corporativo', $cargo->correo_corporativo ?? '') }}"><label for="correo_corporativo">Correo Corporativo</label></div></div>
-        <div class="col-md-6"><div class="form-floating"><input type="email" name="gmail_corporativo" id="gmail_corporativo" class="form-control" placeholder="Gmail" value="{{ old('gmail_corporativo', $cargo->gmail_corporativo ?? '') }}"><label for="gmail_corporativo">Gmail Corporativo</label></div></div>
-    </div>
-</fieldset>
-
-{{-- Sección 4: Documentación y Observaciones --}}
-<fieldset>
-    <legend class="fs-6 fw-bold border-bottom pb-2 mb-3">
-        <i class="bi bi-journal-text text-secondary me-2"></i> Documentación y Observaciones
-    </legend>
-    <div class="row g-3">
-        <div class="col-md-12">
-            <label for="manual_funciones" class="form-label">Manual de funciones (PDF)</label>
-            <input type="file" name="manual_funciones" id="manual_funciones" class="form-control" accept=".pdf">
-            @if (isset($cargo) && $cargo->manual_funciones)
-                <small class="text-muted mt-1 d-block">Archivo actual: 
-                    <a href="{{ route('archivo.cargo.verManual', $cargo->id) }}" target="_blank"><i class="bi bi-file-earmark-pdf"></i> Ver Manual</a>
-                </small>
-            @endif
-        </div>
-        <div class="col-md-12">
-            <div class="form-floating">
-                <textarea name="observacion" id="observacion" class="form-control" placeholder="Observaciones" style="height: 100px">{{ old('observacion', $cargo->observacion ?? '') }}</textarea>
-                <label for="observacion">Observaciones</label>
+            <div class="row g-4">
+                <div class="col-md-9">
+                    <label class="label-minimal">Nombre del Cargo</label>
+                    <input type="text" name="nombre_cargo" class="form-control minimal-input" value="{{ old('nombre_cargo', $cargo->nombre_cargo ?? '') }}" placeholder="Ej: Director de Tecnología" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="label-minimal">Estado</label>
+                    <select name="estado" class="form-select minimal-input">
+                        <option value="1" {{ old('estado', $cargo->estado ?? 1) == 1 ? 'selected' : '' }}>Activo</option>
+                        <option value="0" {{ old('estado', $cargo->estado ?? 1) == 0 ? 'selected' : '' }}>Inactivo</option>
+                    </select>
+                </div>
+                <div class="col-md-9">
+                    <label class="label-minimal">Área Funcional</label>
+                    <select name="GDO_area_id" class="form-select minimal-input" required>
+                        <option value="" disabled selected>Seleccione área...</option>
+                        @foreach($areas as $area)
+                            <option value="{{ $area->id }}" {{ old('GDO_area_id', $cargo->GDO_area_id ?? '') == $area->id ? 'selected' : '' }}>{{ $area->nombre }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-9">
+                    <label class="label-minimal">Líder / Responsable</label>
+                    <select name="GDO_empleados_cedula" class="form-select minimal-input">
+                        <option value="">(Sin asignar)</option>
+                        @foreach($empleados as $empleado)
+                            <option value="{{ $empleado->cedula }}" {{ old('GDO_empleados_cedula', $cargo->GDO_empleados_cedula ?? '') == $empleado->cedula ? 'selected' : '' }}>{{ $empleado->nombre1 }} {{ $empleado->apellido1 }}</option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
         </div>
     </div>
-</fieldset>
+
+    {{-- SECCIÓN 2: CONDICIONES LABORALES --}}
+    <div class="card border-0 shadow-sm mb-4 custom-card">
+        <div class="card-body p-4 p-md-5">
+            <h6 class="text-uppercase fw-bold text-muted mb-4 small" style="letter-spacing: 1px;">Condiciones y Remuneración</h6>
+            
+            <div class="row g-4 align-items-end">
+                <div class="col-md-6">
+                    <label class="label-minimal text-success">Salario Base Mensual</label>
+                    <div class="input-group">
+                        <span class="input-group-text border-0 bg-light fw-bold">$</span>
+                        <input type="text" id="salario_input" name="salario_base_visual" class="form-control minimal-input border-start-0" 
+                               value="{{ old('salario_base', isset($cargo->salario_base) ? number_format($cargo->salario_base, 0, ',', '.') : '') }}" placeholder="0">
+                        <input type="hidden" name="salario_base" id="salario_hidden" value="{{ old('salario_base', $cargo->salario_base ?? '') }}">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label class="label-minimal">Jornada</label>
+                    <input type="text" name="jornada" class="form-control minimal-input" value="{{ old('jornada', $cargo->jornada ?? '') }}" placeholder="Ej: Tiempo Completo">
+                </div>
+                
+                <div class="col-12 mt-4">
+                    <div class="p-3 rounded-3 bg-light border border-dashed text-center">
+                        <label class="label-minimal d-block mb-2">Documentación Técnica (Manual de Funciones)</label>
+                        <input type="file" name="manual_funciones" class="form-control form-control-sm border-0 bg-transparent mx-auto" style="max-width: 300px;" accept=".pdf">
+                        @if(isset($cargo) && $cargo->manual_funciones)
+                            <div class="mt-2">
+                                <a href="{{ route('archivo.cargo.verManual', $cargo->id) }}" target="_blank" class="text-decoration-none small fw-bold text-primary">
+                                    <i class="bi bi-file-earmark-check"></i> Ver PDF Actual Cargado
+                                </a>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- SECCIÓN 3: CONTACTO --}}
+    <div class="card border-0 shadow-sm mb-5 custom-card">
+        <div class="card-body p-4 p-md-5">
+            <h6 class="text-uppercase fw-bold text-muted mb-4 small" style="letter-spacing: 1px;">Canales Corporativos</h6>
+            
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="label-minimal">Teléfono</label>
+                    <input type="text" name="telefono_corporativo" class="form-control minimal-input" value="{{ old('telefono_corporativo', $cargo->telefono_corporativo ?? '') }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="label-minimal">Celular</label>
+                    <input type="text" name="celular_corporativo" class="form-control minimal-input" value="{{ old('celular_corporativo', $cargo->celular_corporativo ?? '') }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="label-minimal">Extensión</label>
+                    <input type="text" name="ext_corporativo" class="form-control minimal-input" value="{{ old('ext_corporativo', $cargo->ext_corporativo ?? '') }}">
+                </div>
+                <div class="col-md-6">
+                    <label class="label-minimal">E-mail Institucional</label>
+                    <input type="email" name="correo_corporativo" class="form-control minimal-input" value="{{ old('correo_corporativo', $cargo->correo_corporativo ?? '') }}">
+                </div>
+                <div class="col-md-6">
+                    <label class="label-minimal">Gmail Corporativo</label>
+                    <input type="email" name="gmail_corporativo" class="form-control minimal-input" value="{{ old('gmail_corporativo', $cargo->gmail_corporativo ?? '') }}">
+                </div>
+                <div class="col-12 mt-3">
+                    <label class="label-minimal">Observaciones</label>
+                    <textarea name="observacion" class="form-control minimal-input pt-2" style="height: 80px;">{{ old('observacion', $cargo->observacion ?? '') }}</textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .custom-card {
+        border-radius: 20px;
+        background: #ffffff;
+    }
+
+    .minimal-input {
+        background-color: #f8fafc !important;
+        border: 1.5px solid #f1f5f9 !important;
+        border-radius: 12px !important;
+        height: 48px;
+        transition: all 0.2s ease;
+    }
+
+    .minimal-input:focus {
+        background-color: #fff !important;
+        border-color: #3b82f6 !important;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05) !important;
+    }
+
+    .label-minimal {
+        font-size: 11px;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+        display: block;
+    }
+
+    .border-dashed { border: 2px dashed #e2e8f0 !important; }
+</style>
