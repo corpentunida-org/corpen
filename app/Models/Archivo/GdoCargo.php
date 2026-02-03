@@ -34,7 +34,8 @@ class GdoCargo extends Model
         'salario_base' => 'decimal:2',
     ];
 
-    // Área a la que pertenece este cargo
+    // --- Relaciones existentes ---
+
     public function gdoArea()
     {
         return $this->belongsTo(GdoArea::class, 'GDO_area_id', 'id');
@@ -42,7 +43,6 @@ class GdoCargo extends Model
 
     public function empleado()
     {
-        // belongsTo(ClaseRelacionada, campo_foraneo_en_gdo_cargo, campo_local_en_gdo_empleados)
         return $this->belongsTo(GdoEmpleado::class, 'GDO_empleados_cedula', 'cedula');
     }
 
@@ -57,5 +57,17 @@ class GdoCargo extends Model
     }
 
 
-
+    /**
+     * Obtiene las funciones asignadas a este cargo.
+     */
+    public function funciones()
+    {
+        return $this->belongsToMany(
+            GdoFuncion::class,      // Modelo relacionado
+            'gdo_funcion_cargo',    // Tabla pivot
+            'gdo_cargo_id',         // Llave foránea de este modelo en la pivot
+            'gdo_funcion_id'        // Llave foránea del modelo funciones en la pivot
+        )->withPivot('id', 'estado') // Traer campos extras de la tabla pivot
+         ->withTimestamps();
+    }
 }
