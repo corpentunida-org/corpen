@@ -1,6 +1,19 @@
 <x-base-layout>
-    @section('titlepage', 'Crear Usuario')
+    <style>
+        .select2-container .select2-selection--single {
+            height: 38px;
+            padding: 6px 12px;
+        }
 
+        .select2-selection__rendered {
+            line-height: 24px !important;
+        }
+
+        .select2-selection__arrow {
+            height: 36px !important;
+        }
+    </style>
+    @section('titlepage', 'Crear Usuario')
     <div class="col-12 mt-3">
         <div class="card">
             <div class="card-body">
