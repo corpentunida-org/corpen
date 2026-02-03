@@ -344,7 +344,22 @@ Route::prefix('creditos')->middleware('auth')->group(function () {
         Route::resource('categorias', GdoCategoriaDocumentoController::class)
             ->names('archivo.categorias')
             ->parameters(['categorias' => 'categoria']);
+        
+        // --- GESTIÓN DE FUNCIONES (ACTUALIZADO) ---
+        
+        // CRUD Principal de Funciones
+        Route::resource('funciones', \App\Http\Controllers\Archivo\GdoFuncionController::class)
+            ->names('archivo.funcion')
+            ->parameters(['funciones' => 'funcion']);
 
+        // Ruta para asignar una función a un cargo (Crear o Actualizar Pivot)
+        Route::post('funciones/asignar-cargo', [\App\Http\Controllers\Archivo\GdoFuncionController::class, 'asignarCargo'])
+            ->name('archivo.funcion.asignarCargo');
+            
+        // NUEVA RUTA: Cambiar estado Activo/Inactivo (Reemplaza a desvincular)
+        Route::put('funciones/{cargo}/{funcion}/estado', [\App\Http\Controllers\Archivo\GdoFuncionController::class, 'cambiarEstadoVinculo'])
+            ->name('archivo.funcion.cambiarEstadoVinculo');
+            
     });
 // FIN DE GESTIÓN DOCUMENTAL
 
