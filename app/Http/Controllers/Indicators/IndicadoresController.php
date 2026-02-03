@@ -14,11 +14,11 @@ use Illuminate\Http\Request;
 class IndicadoresController extends Controller
 {
     public function index()
-    {
+    {        
         $indicators = IndIndicadores::all();
         $calculos = [
             1 => function () {
-                $usuarios = IndUsuarios::whereRaw("CAST(SUBSTRING_INDEX(puntaje, '/', 1) AS UNSIGNED) > 4")->count();
+                $usuarios = IndUsuarios::whereRaw("CAST(SUBSTRING_INDEX(puntaje, '/', 1) AS UNSIGNED) > 3")->count();
                 return ($usuarios / GdoEmpleado::count()) * 100;
             },
             2 => function () {
@@ -41,8 +41,8 @@ class IndicadoresController extends Controller
                             WHEN 1 THEN 5
                             ELSE 0
                         END
-                    ",)->count();
-                    return ($totalDentroSLA / ScpSoporte::count()) * 100;
+                    ",)->count();                    
+                    return ($totalDentroSLA / ScpSoporte::where('estado',4)->count()) * 100;
             },
             6 => function () {
                 $tiempoPromedioAlta = DB::table('scp_soportes as s')->join('scp_observaciones as o', 'o.id_scp_soporte', '=', 's.id')->where('s.id_scp_prioridad', 1)->selectRaw('AVG(TIMESTAMPDIFF(MINUTE,s.created_at,o.created_at)) as promedio')->groupBy('s.id')->value('promedio');
