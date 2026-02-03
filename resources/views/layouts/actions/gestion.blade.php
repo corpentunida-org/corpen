@@ -1,4 +1,4 @@
-<li class="nxl-item nxl-hasmenu {{ request()->routeIs('archivo.cargo.*', 'archivo.area.*', 'archivo.empleado.*', 'archivo.categoria.*', 'archivo.gdotipodocumento.*', 'archivo.gdodocsempleados.*', 'visitas.corpen.*') ? 'active' : '' }}">
+<li class="nxl-item nxl-hasmenu {{ request()->routeIs('archivo.cargo.*', 'archivo.area.*', 'archivo.empleado.*', 'archivo.categoria.*', 'archivo.gdotipodocumento.*', 'archivo.gdodocsempleados.*', 'archivo.funcion.*', 'visitas.corpen.*') ? 'active' : '' }}">
     <a href="javascript:void(0);" class="nxl-link">
         <span class="nxl-micon"><i class="bi bi-collection"></i></span>
         <span class="nxl-mtext">Gestión Documental</span>
@@ -16,6 +16,12 @@
             <a class="nxl-link" href="{{ route('archivo.cargo.index') }}">
                 <span class="nxl-micon"><i class="bi bi-briefcase"></i></span>
                 Cargos
+            </a>
+        </li>
+        <li class="nxl-item {{ request()->routeIs('archivo.funcion.*') ? 'active' : '' }}">
+            <a class="nxl-link" href="{{ route('archivo.funcion.index') }}">
+                <span class="nxl-micon"><i class="bi bi-list-check"></i></span>
+                Funciones
             </a>
         </li>
         <li class="nxl-item {{ request()->routeIs('archivo.area.index') ? 'active' : '' }}">
@@ -36,12 +42,5 @@
                 Tipo de Documento
             </a>
         </li>
-        <!--  INACTIVO TEMPORALMENTO
-        <li class="nxl-item {{ request()->routeIs('visitas.corpen.index') ? 'active' : '' }}">
-            <a class="nxl-link" href="{{ route('visitas.corpen.index') }}">
-                <span class="nxl-micon"><i class="bi bi-file-check"></i></span> Registro de Visitas
-            </a>
-        </li>
-         -->
     </ul>
 </li>

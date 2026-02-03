@@ -1,4 +1,7 @@
 <x-base-layout>
+    {{-- Carga de estilos de librería (Mejor al inicio para evitar parpadeos) --}}
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
+
     <div class="task-creation-wrapper">
         {{-- Encabezado de Acción --}}
         <header class="form-header">
@@ -49,9 +52,11 @@
                     {{-- Columna Lateral: Configuración y Asignación --}}
                     <div class="form-column">
                         <div class="card-minimal">
+                            
+                            {{-- CAMPO 1: WORKFLOW (Ahora con buscador) --}}
                             <div class="form-group">
                                 <label for="workflow_id"><i class="fas fa-project-diagram"></i> Workflow Asociado</label>
-                                <select name="workflow_id" id="workflow_id" class="form-select">
+                                <select name="workflow_id" id="workflow_id" autocomplete="off" placeholder="Buscar proyecto...">
                                     <option value="">Seleccione el flujo de origen</option>
                                     @foreach($workflows as $workflow)
                                         <option value="{{ $workflow->id }}"
@@ -62,9 +67,10 @@
                                 </select>
                             </div>
 
+                            {{-- CAMPO 2: USUARIO (Ahora con buscador) --}}
                             <div class="form-group">
                                 <label for="user_id"><i class="far fa-user"></i> Responsable Ejecutivo</label>
-                                <select name="user_id" id="user_id" class="form-select">
+                                <select name="user_id" id="user_id" autocomplete="off" placeholder="Buscar responsable...">
                                     <option value="">Asignar a un miembro</option>
                                     @foreach($users as $user)
                                         <option value="{{ $user->id }}" {{ old('user_id') == $user->id ? 'selected' : '' }}>
@@ -115,6 +121,36 @@
         </main>
     </div>
 
+    {{-- Script de la librería --}}
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Configuración común para ambos selectores
+            const commonConfig = {
+                create: false,
+                sortField: { field: "text", direction: "asc" },
+                plugins: ['dropdown_input'],
+                onInitialize: function() {
+                    // Esto ayuda a corregir glitches visuales en la carga inicial
+                    this.wrapper.style.opacity = "1";
+                }
+            };
+
+            // 1. Inicializar Buscador de Usuarios
+            new TomSelect("#user_id", {
+                ...commonConfig,
+                placeholder: 'Buscar responsable...',
+            });
+
+            // 2. Inicializar Buscador de Workflows (Proyectos)
+            new TomSelect("#workflow_id", {
+                ...commonConfig,
+                placeholder: 'Buscar proyecto...',
+            });
+        });
+    </script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;800&display=swap');
 
@@ -163,7 +199,7 @@
             height: 100%;
         }
 
-        /* Inputs */
+        /* Inputs Generales */
         .form-group { margin-bottom: 24px; }
         .form-group.mb-0 { margin-bottom: 0; }
         
@@ -179,6 +215,7 @@
             font-size: 14px; color: var(--text-main); outline: none;
             transition: all 0.25s ease;
             box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
         }
         
         .form-input:focus, .form-select:focus {
@@ -189,13 +226,15 @@
         .form-row-compact { display: flex; gap: 16px; }
         .flex-1 { flex: 1; }
 
-        /* Alerts */
+        /* Alerts & Errors */
         .alert-minimal-error {
             background: #fff1f2; color: #be123c; padding: 16px 20px;
             border-radius: var(--radius-md); margin-bottom: 28px; display: flex;
             align-items: center; gap: 12px; font-size: 14px; font-weight: 600;
             border: 1px solid #ffe4e6;
         }
+        .error-text { color: #e11d48; font-size: 12px; margin-top: 6px; font-weight: 500; display: block; }
+        .invalid { border-color: #fda4af !important; background: #fff1f2 !important; }
 
         /* Footer Actions */
         .form-actions-footer {
@@ -221,10 +260,71 @@
             box-shadow: 0 12px 20px -5px rgba(0,0,0,0.15);
         }
 
-        .error-text { color: #e11d48; font-size: 12px; margin-top: 6px; font-weight: 500; display: block; }
-        .invalid { border-color: #fda4af !important; background: #fff1f2 !important; }
+        /* --- ESTILOS ESPECÍFICOS PARA TOM SELECT (BUSCADOR) --- */
+        
+        /* 1. Ocultar el select original para evitar saltos visuales */
+        select[hidden] { display: none; }
 
-        /* --- MOBILE OPTIMIZATION --- */
+        /* 2. Contenedor Principal (Simula el input normal) */
+        .ts-control {
+            background-color: #fbfcfd !important;
+            border: 1px solid var(--border-color) !important;
+            border-radius: var(--radius-md) !important;
+            padding: 12px 16px !important;
+            font-family: 'Inter', sans-serif !important;
+            color: var(--text-main) !important;
+            box-shadow: none !important;
+            font-size: 14px !important;
+            min-height: auto;
+            display: flex; align-items: center;
+        }
+
+        /* 3. Estado Foco (Igual al de tus inputs) */
+        .ts-control.focus {
+            border-color: var(--accent-blue) !important;
+            background-color: var(--white) !important;
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.08) !important;
+        }
+
+        /* 4. Menú Desplegable */
+        .ts-dropdown {
+            border-radius: var(--radius-md) !important;
+            border: 1px solid var(--border-color) !important;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+            margin-top: 8px !important;
+            overflow: hidden;
+            z-index: 9999;
+            background: var(--white);
+        }
+
+        /* 5. Opciones */
+        .ts-dropdown .option {
+            padding: 10px 16px;
+            font-size: 14px;
+            color: var(--text-main);
+            cursor: pointer;
+        }
+
+        /* 6. Opción Activa/Hover */
+        .ts-dropdown .active {
+            background-color: var(--bg-neutral) !important;
+            color: var(--brand-primary) !important;
+            font-weight: 600;
+        }
+        
+        /* 7. Input de texto dentro del control */
+        .ts-control > input {
+            font-family: 'Inter', sans-serif !important;
+            font-size: 14px !important;
+            color: var(--text-main) !important;
+        }
+
+        /* 8. Limpieza de elementos nativos de la librería */
+        .ts-wrapper.single .ts-control:after { display: none !important; }
+        .ts-wrapper.single .ts-control { padding-right: 16px !important; }
+
+
+        /* --- RESPONSIVE --- */
         @media (max-width: 768px) {
             .task-creation-wrapper { margin: 20px auto; padding: 0 16px; }
             .form-grid { grid-template-columns: 1fr; gap: 16px; }
