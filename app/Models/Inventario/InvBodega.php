@@ -11,7 +11,7 @@ class InvBodega extends Model
     use HasFactory, SoftDeletes;
 
     protected $table = 'inv_bodegas'; // [cite: 233]
-    protected $fillable = ['nombre'];
+    protected $fillable = ['nombre', 'descripcion'];
 
     public function activos()
     {
