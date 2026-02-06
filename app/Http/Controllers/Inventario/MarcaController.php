@@ -18,4 +18,17 @@ class MarcaController extends Controller
         InvMarca::create($request->all());
         return back()->with('success', 'Marca creada');
     }
+    
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'nombre' => 'required|string|max:255',
+            'descripcion' => 'nullable|string'
+        ]);
+        
+        $marca = InvMarca::findOrFail($id);
+        $marca->update($request->all());
+        
+        return back()->with('success', 'Marca actualizada');
+    }
 }
