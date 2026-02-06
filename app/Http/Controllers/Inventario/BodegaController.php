@@ -17,6 +17,7 @@ class BodegaController extends Controller
     public function store(Request $request)
     {
         $request->validate(['nombre' => 'required']);
+        $request->validate(['descripcion' => 'required']);
         InvBodega::create($request->all());
         return back()->with('success', 'Bodega creada');
     }
