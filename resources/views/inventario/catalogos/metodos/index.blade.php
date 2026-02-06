@@ -8,33 +8,88 @@
         .cat-form { display: flex; gap: 10px; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #f1f5f9; }
         .cat-input { flex-grow: 1; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; }
         .cat-btn { background: #000; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 700; }
+        .cat-btn-edit { background: #3b82f6; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.875rem; }
         
-        .cat-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
+        .cat-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
         .cat-name { font-weight: 600; }
+        .cat-actions { display: flex; gap: 8px; }
+        
+        /* Estilos para el modal */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #fefefe; margin: 10% auto; padding: 20px; border-radius: 12px; width: 80%; max-width: 500px; }
+        .close { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .close:hover { color: black; }
     </style>
 
     <div class="cat-wrapper">
         <div class="cat-head">
-            <h1 class="cat-title">Gestión de Metodos</h1>
+            <h1 class="cat-title">Gestión de Métodos de Pago</h1>
         </div>
 
         <div class="cat-card">
             {{-- Formulario Rápido --}}
-            <form action="{{ route('inventario.marcas.store') }}" method="POST" class="cat-form">
+            <form action="{{ route('inventario.metodos-pago.store') }}" method="POST" class="cat-form">
                 @csrf
-                <input type="text" name="nombre" class="cat-input" placeholder="Nombre de la nueva marca..." required>
+                <input type="text" name="nombre" class="cat-input" placeholder="Nombre del nuevo método de pago..." required>
                 <button type="submit" class="cat-btn">Agregar</button>
             </form>
 
             {{-- Lista --}}
             <div>
-                @foreach($marcas as $marca)
+                @foreach($metodos as $metodo)
                 <div class="cat-item">
-                    <span class="cat-name">{{ $marca->nombre }}</span>
-                    <span style="color: #cbd5e1;">ID: {{ $marca->id }}</span>
+                    <div>
+                        <div class="cat-name">{{ $metodo->nombre }}</div>
+                    </div>
+                    <div class="cat-actions">
+                        <span style="color: #cbd5e1; margin-right: 8px;">ID: {{ $metodo->id }}</span>
+                        <button class="cat-btn-edit" onclick="openEditModal({{ $metodo->id }}, '{{ $metodo->nombre }}')">Editar</button>
+                    </div>
                 </div>
                 @endforeach
             </div>
         </div>
     </div>
+
+    <!-- Modal de Edición -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeEditModal()">&times;</span>
+            <h2>Editar Método de Pago</h2>
+            <form id="editForm" action="#" method="POST">
+                @csrf
+                @method('PUT')
+                <input type="hidden" id="editId" name="id">
+                <div style="margin-bottom: 15px;">
+                    <label for="editNombre">Nombre:</label>
+                    <input type="text" id="editNombre" name="nombre" class="cat-input" style="width: 100%; margin-top: 5px;" required>
+                </div>
+                <button type="submit" class="cat-btn">Actualizar</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openEditModal(id, nombre) {
+            document.getElementById('editId').value = id;
+            document.getElementById('editNombre').value = nombre;
+            
+            // Establecer la acción del formulario
+            document.getElementById('editForm').action = '/inventario/metodos-pago/' + id;
+            
+            document.getElementById('editModal').style.display = 'block';
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        // Cerrar el modal si el usuario hace clic fuera de él
+        window.onclick = function(event) {
+            const modal = document.getElementById('editModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+    </script>
 </x-base-layout>

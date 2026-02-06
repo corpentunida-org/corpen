@@ -12,7 +12,6 @@ class InvGrupo extends Model
 
     protected $table = 'inv_grupos';
     
-    // Agregamos 'id_InvLineas' para que guarde el padre
     protected $fillable = ['nombre', 'descripcion', 'id_InvLineas'];
 
     // Relación: Un Grupo pertenece a una Línea
@@ -21,6 +20,7 @@ class InvGrupo extends Model
         return $this->belongsTo(InvLinea::class, 'id_InvLineas');
     }
 
+    // Relación: Un Grupo tiene muchos Subgrupos
     public function subgrupos()
     {
         return $this->hasMany(InvSubgrupo::class, 'id_InvGrupos');
