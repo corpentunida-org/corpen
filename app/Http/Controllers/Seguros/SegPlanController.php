@@ -47,7 +47,7 @@ class SegPlanController extends Controller
      */
     public function store(Request $request)
     {
-        dd($request->all());
+        //dd($request->all());
         $plan = SegPlan::create([
             'name' => strtoupper($request->input('name')),
             'valor' => $request->input('valorPlanAsegurado'),

@@ -85,35 +85,31 @@
                 </div>
             </div>
             <div class="card-body custom-card-action">
-                <div class="text-center mb-4">
-                    <canvas id="ChartTotalQuiz"></canvas>
-                </div>
                 <div class="row g-4">
                     <div class="col-sm-6">
                         <div class="px-4 py-3 text-center border border-dashed rounded-3">
-                            <div class="avatar-text bg-gray-200 mx-auto mb-2">
-                                <i class="feather-activity"></i>
-                            </div>
-                            <h2 class="fs-13 tx-spacing-1">Marketing Gaol</h2>
-                            <div class="fs-11 text-muted">$550/$1250 USD</div>
+                            <canvas id="progressChart" class="mb-4"></canvas>
+                            <h2 class="fs-13 tx-spacing-1">Usuarios calificados</h2>
+                            <div class="fs-11 text-muted">Puntaje aprobado:<span
+                                    class="fs-13 fw-bold">{{ $datacharts['usuariosmaspuntaje'] }}</span></div>
+                            <div class="fs-11 text-muted">Total empleados: <span
+                                    class="fs-13 fw-bold">{{ $datacharts['totalempleados'] }}</span></div>
                         </div>
                     </div>
                     <div class="col-sm-6">
                         <div class="px-4 py-3 text-center border border-dashed rounded-3">
-                            <div class="avatar-text bg-gray-200 mx-auto mb-2">
-                                <i class="feather-users"></i>
-                            </div>
-                            <h2 class="fs-13 tx-spacing-1">Teams Goal</h2>
-                            <div class="fs-11 text-muted">$550/$1250 USD</div>
+                            <canvas id="chartSatisfaccion"></canvas>
+                            @foreach ($datacharts['ticcorpen'] as $puntaje => $cantidad)
+                                <div class="fs-11 text-muted">
+                                    Puntaje {{ $puntaje }}:
+                                    <span class="fs-11 fw-bold">{{ $cantidad }}</span> Registros
+                                </div>
+                            @endforeach
                         </div>
                     </div>
                     <div class="col-sm-6">
                         <div class="px-4 py-3 text-center border border-dashed rounded-3">
-                            <div class="avatar-text bg-gray-200 mx-auto mb-2">
-                                <i class="feather-check-circle"></i>
-                            </div>
-                            <h2 class="fs-13 tx-spacing-1">Leads Goal</h2>
-                            <div class="fs-11 text-muted">$850/$950 USD</div>
+                            <canvas id="chartSatisfaccionSoft"></canvas>
                         </div>
                     </div>
                     <div class="col-sm-6">
@@ -128,14 +124,120 @@
                 </div>
             </div>
             <div class="card-footer">
-                <a href="javascript:void(0);" class="btn btn-primary">Generate Report</a>
+                <a class="btn btn-primary">Generate Report</a>
             </div>
         </div>
     </div>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const porcentaje = 20;
-            const ctx = document.getElementById('ChartTotalQuiz').getContext('2d');
+        const porcentaje = {{ round(($datacharts['usuariosmaspuntaje'] / $datacharts['totalempleados']) * 100, 1) }};
+        const ctx = document.getElementById('progressChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                datasets: [{
+                    data: [porcentaje, 100 - porcentaje],
+                    backgroundColor: [
+                        '#3454d1',
+                        '#e6e6e6'
+                    ],
+                    borderWidth: 0,
+                    borderRadius: 15,
+                }]
+            },
+            options: {
+                cutout: '72%',
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        enabled: false
+                    }
+                }
+            },
+            plugins: [{
+                id: 'centerText',
+                beforeDraw(chart) {
+                    const {
+                        width
+                    } = chart;
+                    const {
+                        height
+                    } = chart;
+                    const ctx = chart.ctx;
+                    ctx.restore();
+                    ctx.font = 'bold 30px Arial';
+                    ctx.fillStyle = '#111827';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(
+                        porcentaje + '%',
+                        width / 2,
+                        height / 2
+                    );
+                    ctx.save();
+                }
+            }]
+        });
+
+        const ctxbarras = document.getElementById('chartSatisfaccion').getContext('2d');
+        const ctxsoftware = document.getElementById('chartSatisfaccionSoft').getContext('2d');
+        labels = ['1', '2', '3', '4', '5'];
+        ticCorpen = @json($datacharts['ticcorpen']);
+        dataCorpen = labels.map(n => ticCorpen[n] ?? 0)
+        ticsoft = @json($datacharts['ticsoft']);
+        dataSoft = labels.map(n => ticsoft[n] ?? 0)
+        const colors = ['#ef4444', '#f97316', '#22c55e', '#6366f1', '#eab308', '#9ca3af'];
+        new Chart(ctxbarras, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: dataCorpen,
+                    backgroundColor: colors,
+                    borderWidth: 2,
+                    cutout: '65%'
+                }]
+            },
+            options: {
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => `Puntaje: ${ctx.label}, Respuestas: ${ctx.raw} personas`
+                        }
+                    },
+                    legend: {
+                        display: false
+                    },
+                }
+            }
+        });
+
+        new Chart(ctxsoftware, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: dataSoft,
+                    backgroundColor: colors,
+                    borderWidth: 2,
+                    cutout: '65%'
+                }]
+            },
+            options: {
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => `Puntaje: ${ctx.label}, Respuestas: ${ctx.raw} personas`
+                        }
+                    },
+                    legend: {
+                        display: false
+                    },
+                }
+            }
         });
     </script>
+
 </x-base-layout>
