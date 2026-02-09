@@ -12,7 +12,8 @@
                             <div class="fs-12 text-muted">Titular: </div>
                             <div class="fs-4 fw-bold text-dark"><span
                                     class="counter">{{ $poliza->asegurado->nombre_titular ?? ' ' }}</span></div>
-                            <h3 class="fs-13 fw-semibold text-truncate-1-line">{{ $asegurado->tercero_preferido->cod_ter }}</h3>
+                            <h3 class="fs-13 fw-semibold text-truncate-1-line">
+                                {{ $poliza->asegurado->titular }}</h3>
                         </div>
                     </div>
                 </div>
@@ -32,7 +33,8 @@
                     </div>
                     <div class="col-lg-5 mb-4">
                         <label class="form-label">Nombre Asegurado</label>
-                        <input type="text" class="form-control" value="{{ $asegurado->nombre_tercero ?? 'No hay un nombre asignado' }}" readonly>
+                        <input type="text" class="form-control"
+                            value="{{ $asegurado->nombre_tercero ?? 'No hay un nombre asignado' }}" readonly>
                     </div>
                     <div class="col-lg-2 mb-4">
                         <label class="form-label">Tipo de Afiliado</label>
@@ -42,11 +44,13 @@
                     <div class="col-lg-2 mb-4">
                         <label class="form-label">Genero</label>
                         <input class="form-control datepicker-input"
-                            value="{{ $asegurado->tercero?->sexo == 'V' ? 'Masculino' : ($asegurado->tercero?->sexo == 'H' ? 'Femenino' : 'Asignar') }}" readonly>
+                            value="{{ $asegurado->tercero?->sexo == 'V' ? 'Masculino' : ($asegurado->tercero?->sexo == 'H' ? 'Femenino' : 'Asignar') }}"
+                            readonly>
                     </div>
                     <div class="col-lg-1 mb-4">
                         <label class="form-label">Distrito</label>
-                        <input class="form-control datepicker-input" value="{{ $asegurado->tercero->cod_dist ?? ' ' }}" readonly>
+                        <input class="form-control datepicker-input" value="{{ $asegurado->tercero->cod_dist ?? ' ' }}"
+                            readonly>
                     </div>
                 </div>
             </div>
@@ -57,7 +61,8 @@
             <div class="card-body">
                 @if ($reclamaciones->isNotEmpty())
                     <div class="table-responsive mb-4">
-                        <label class="form-label"><span class="text-danger">HISTORIAL DE AFECTACIONES A ESTA PÓLIZA</span></label>
+                        <label class="form-label"><span class="text-danger">HISTORIAL DE AFECTACIONES A ESTA
+                                PÓLIZA</span></label>
                         <table class="table mb-4">
                             <thead>
                                 <tr class="border-top">
@@ -82,7 +87,8 @@
                         </table>
                     </div>
                 @endif
-                <label class="form-label"><span class="text-danger">CREAR UN PROCESO DE RECLAMACIÓN</span></span></label>
+                <label class="form-label"><span class="text-danger">CREAR UN PROCESO DE
+                        RECLAMACIÓN</span></span></label>
                 <form method="post" action="{{ route('seguros.reclamacion.store') }}" class="row"
                     id="formAddReclamacion" novalidate>
                     @csrf
@@ -92,7 +98,9 @@
                             <label class="form-label">Cobertura<span class="text-danger">*</span></label>
                             <select name="cobertura_id" class="form-control" id="selectCobertura">
                                 @foreach ($poliza->plan->coberturas as $cobertura)
-                                    <option value="{{ $cobertura->id }}" data-porcentaje="{{ $cobertura->porcentajeReclamacion }}">{{ $cobertura->nombre }}</option>
+                                    <option value="{{ $cobertura->id }}"
+                                        data-porcentaje="{{ $cobertura->porcentajeReclamacion }}">
+                                        {{ $cobertura->nombre }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -144,7 +152,7 @@
                                 @foreach ($estados as $e)
                                     <option value="{{ $e->id }}">{{ $e->nombre }}</option>
                                 @endforeach
-                            </select>                            
+                            </select>
                         </div>
                     </div>
                     <div class="row">
@@ -157,8 +165,8 @@
                         <div class="col-lg-3"></div>
                         <div class="col-lg-4 nav-link mt-1" id="checkconfirmarvalorasegurado">
                             <div class="custom-control custom-checkbox" style="padding-left: 30px;">
-                                <input type="checkbox" class="custom-control-input"
-                                        name="cambiovalasegurado" checked>
+                                <input type="checkbox" class="custom-control-input" name="cambiovalasegurado"
+                                    checked>
                                 <label class="custom-control-label c-pointer">Modificar el valor asegurado</label>
                             </div>
                         </div>
@@ -169,10 +177,9 @@
                             <input type="date" class="form-control" name="fechadesembolso">
                             <div class="nav-link mt-1" id="checkconfirmarfinrec">
                                 <div class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input"
-                                        name="finreclamacion">
-                                    <label class="custom-control-label c-pointer">Marcar como cierre de
-                                        la reclamación</label>
+                                    <input type="checkbox" class="custom-control-input" name="finreclamacion">
+                                    <label class="custom-control-label c-pointer">Marcar como cierre de la
+                                        reclamación</label>
                                 </div>
                             </div>
                         </div>
@@ -225,13 +232,20 @@
                         <input type="text" value="{{ $poliza->id }}" name="poliza_id" hidden>
                         <input type="hidden" name="asegurado" value="{{ $asegurado->cedula }}">
                     </div>
+                    <div class="nav-link mt-1" id="contenedorViuda" style="display:none;">
+                        <div class="custom-control custom-checkbox ms-3">
+                            <input type="checkbox" class="custom-control-input" id="confirmViuda"
+                                name="confirmviuda">
+                            <label class="custom-control-label c-pointer" for="confirmViuda">Marcar como viuda la
+                                esposa y dejarla como titular</label>
+                        </div>
+                    </div>
                     <div class="d-flex justify-content-end gap-2 mt-3">
                         <button class="btn btn-success" title="Prestar servicio" type="submit">
                             <i class="feather-plus me-2"></i>
                             <span>Agregar Reclamación</span>
                         </button>
                     </div>
-
                 </form>
             </div>
         </div>
@@ -258,8 +272,8 @@
                 }
             });
 
-            $('#selectCobertura').on('change', function () {
-            var porcentaje = $(this).find(':selected').data('porcentaje');
+            $('#selectCobertura').on('change', function() {
+                var porcentaje = $(this).find(':selected').data('porcentaje');
                 $('input[name="porValorAsegurado"]').val(porcentaje ?? '');
             });
             $('#selectCobertura').trigger('change');
@@ -267,12 +281,12 @@
             function toggleDiv() {
                 if ($('#SelectReclamacionEstado').val() === '4') {
                     $('#divFechaDesembolso').show();
-                    $('#checkconfirmarvalorasegurado').show();                    
+                    $('#checkconfirmarvalorasegurado').show();
                     $('#divFechaDesembolso input[name="fechadesembolso"]').attr('required', true);
                     $('input[name="finreclamacion"]').prop('checked', true);
                 } else {
                     $('#divFechaDesembolso').hide();
-                    $('#checkconfirmarvalorasegurado').hide();  
+                    $('#checkconfirmarvalorasegurado').hide();
                     $('#divFechaDesembolso input[name="fechadesembolso"]').removeAttr('required');
                     $('input[name="finreclamacion"]').prop('checked', false);
                 }
@@ -289,6 +303,27 @@
                     $('#checkbox2').prop('checked', false);
                 }
             });
+
+            function evaluarViudaTitular() {
+                const coberturaId = $('#selectCobertura').val();
+                const asegurado = '{{ $asegurado->parentesco }}';
+
+                if (coberturaId === '1' && asegurado === 'AF') {
+                    $('#contenedorViuda').show();
+                    $('#confirmViuda').prop('checked', false);
+                } else {
+                    $('#contenedorViuda').hide();
+                    $('#confirmViuda').prop('checked', false);
+                }
+            }
+
+            // Eventos
+            $('#selectCobertura').on('change', evaluarViudaTitular);
+            $('input[name="asegurado"]').on('change', evaluarViudaTitular);
+
+            // Evaluar al cargar
+            evaluarViudaTitular();
+
         });
     </script>
 </x-base-layout>

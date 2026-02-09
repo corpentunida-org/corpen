@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Soportes;
 use App\Http\Controllers\Controller;
 use App\Models\Soportes\ScpUsuario;
 use App\Models\Maestras\maeTerceros;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class ScpUsuarioController extends Controller
@@ -16,8 +17,8 @@ class ScpUsuarioController extends Controller
 
     public function create()
     {
-        $terceros = maeTerceros::where("tip_prv","9")->get();
-
+        //$terceros = maeTerceros::where("tip_prv","9")->get();
+        $terceros = User::all();
         // PASAR una instancia vacía para que $usuario exista en la vista
         $usuario = new ScpUsuario();
 
@@ -28,7 +29,7 @@ class ScpUsuarioController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'cod_ter' => 'required|exists:mae_terceros,cod_ter',
+            'cod_ter' => 'required|exists:MaeTerceros,cod_ter',
             'rol'     => 'nullable|string|max:255',
         ]);
 
@@ -64,7 +65,7 @@ class ScpUsuarioController extends Controller
         }
 
         $request->validate([
-            'cod_ter' => 'required|exists:mae_terceros,cod_ter',
+            'cod_ter' => 'required|exists:MaeTerceros,cod_ter',
             'usuario' => 'required|string|max:255',
             'estado'  => 'required|in:Activo,Inactivo',
         ]);

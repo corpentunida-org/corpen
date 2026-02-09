@@ -634,8 +634,7 @@ Route::prefix('creditos')->middleware('auth')->group(function () {
             ->name('notificaciones');
 
         // Vista completa de notificaciones
-        Route::get('notificaciones/detalladas', [ScpSoporteController::class, 'getNotificacionesDetalladas'])
-            ->name('notificaciones.detalladas');
+        Route::get('notificaciones/detalladas', [ScpSoporteController::class, 'getNotificacionesDetalladas'])->name('notificaciones.detalladas')->middleware('auth');
 
         // Acción manual de reenvío de correo
         Route::get('enviar-correo-escalado/{id}', [ScpNotificacionController::class, 'enviarCorreoEscalado'])

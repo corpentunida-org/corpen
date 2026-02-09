@@ -96,7 +96,7 @@ class SegReclamacionesController extends Controller
      */
 
     public function store(Request $request)
-    {
+    {        
         $data = [
             'cedulaAsegurado' => $request->asegurado,
             'idCobertura' => $request->cobertura_id,
@@ -137,6 +137,10 @@ class SegReclamacionesController extends Controller
             $valor = $request->valorAsegurado - ($request->valorAsegurado * $request->porValorAsegurado) / 100;
             $polizares->update(['valor_asegurado' => $valor]);
         }
+        if($request->boolean('confirmviuda')){
+            $asegurado = SegAsegurado::where('titular', $request->asegurado)->where('parentesco', 'CO')->first();
+            if ($asegurado) {$asegurado->update(['viuda' => true]);}
+        }
         $cambioEstado = SegCambioEstadoReclamacion::create([
             'reclamacion_id' => $reclamacion->id,
             'estado_id' => $request->estado_id,
@@ -144,6 +148,7 @@ class SegReclamacionesController extends Controller
             'fecha_actualizacion' => now()->toDateString(),
             'hora_actualizacion' => now()->toTimeString(),
         ]);
+
         $url = route('seguros.poliza.show', ['poliza' => 'ID']) . '?id=' . $request->asegurado;
         if ($reclamacion && $cambioEstado) {
             $accion = 'add nueva reclamacion  ' . $request->asegurado;
