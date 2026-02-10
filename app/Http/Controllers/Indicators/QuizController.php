@@ -7,6 +7,7 @@ use App\Models\Indicators\IndPreguntas;
 use App\Models\Indicators\IndRespuestas;
 use App\Models\Indicators\IndUsuarios;
 use App\Models\Indicators\IndQuiz;
+use App\Models\Archivo\GdoEmpleado;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
@@ -16,11 +17,45 @@ class QuizController extends Controller
     {
         return view('indicators.quiz.inicioquiz');
     }
-
+    /*
+        $usuarios = IndUsuarios::whereRaw("CAST(SUBSTRING_INDEX(puntaje, '/', 1) AS UNSIGNED) > 4")->count();
+                return ($usuarios / GdoEmpleado::count()) * 100;
+    */
     public function index()
     {
         $pruebausuarios = IndUsuarios::all();
-        return view('indicators.quiz.index', compact('pruebausuarios'));
+        $respuestas = IndUsuarios::pluck('respuestas');
+        $ticcorpen = [1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0];
+        $ticsoft = [1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0, 'n/a' => 0];
+
+        foreach ($respuestas as $respuesta) {
+            $array = is_string($respuesta) ? json_decode($respuesta, true) : $respuesta;
+            if (isset($array[5]) && is_numeric($array[5])) {
+                $valor5 = (int) $array[5];
+                if ($valor5 >= 1 && $valor5 <= 5) {
+                    $ticcorpen[$valor5]++;
+                }
+            }
+            if (isset($array[6])) {
+                if ($array[6] === 'n/a') {
+                    $ticsoft['n/a']++;
+                }
+                elseif (is_numeric($array[6])) {
+                    $valor6 = (int) $array[6];
+                    if ($valor6 >= 1 && $valor6 <= 5) {
+                        $ticsoft[$valor6]++;
+                    }
+                }
+            }
+        }
+
+        $datacharts = [
+            'usuariosmaspuntaje' => IndUsuarios::whereRaw("CAST(SUBSTRING_INDEX(puntaje, '/', 1) AS UNSIGNED) > 3")->count(),
+            'totalempleados' => GdoEmpleado::count(),
+            'ticcorpen' => $ticcorpen,
+            'ticsoft' => $ticsoft,
+        ];
+        return view('indicators.quiz.index', compact('pruebausuarios', 'datacharts'));
     }
 
     public function generarpreguntas(int $pruebaid)

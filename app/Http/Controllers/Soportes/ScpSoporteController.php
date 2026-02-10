@@ -341,12 +341,12 @@ class ScpSoporteController extends Controller
         //   LÓGICA DE ENVÍO DE CORREOS
         // ================================c
 
-        if ($esEscalamiento) {                   
+        if ($esEscalamiento) {
             $tipoObservacion = ScpTipoObservacion::find($request->id_tipo_observacion);
             if ($tipoObservacion && strtolower(trim($tipoObservacion->nombre)) === 'escalamiento') {
                 if ($request->filled('id_scp_usuario_asignado') && $request->id_scp_usuario_asignado != 0) {
-                    $usuarioEscalado = ScpUsuario::with('UserApp')->find($request->id_scp_usuario_asignado);            
-                    if ($usuarioEscalado && $usuarioEscalado->UserApp && !empty($usuarioEscalado->UserApp->email)) {             
+                    $usuarioEscalado = ScpUsuario::with('UserApp')->find($request->id_scp_usuario_asignado);
+                    if ($usuarioEscalado && $usuarioEscalado->UserApp && !empty($usuarioEscalado->UserApp->email)) {
                         Mail::to($usuarioEscalado->UserApp->email)->send(new SoporteEscaladoMail($scpSoporte, 'escalado'));
                     }
                 }
@@ -420,6 +420,9 @@ class ScpSoporteController extends Controller
 
     public function getNotificacionesDetalladas()
     {
+        if (!request()->ajax()) {
+            abort(403);
+        }
         $userId = Auth::id();
         $usuarioEscalado = ScpUsuario::where('usuario', $userId)->first();
 
