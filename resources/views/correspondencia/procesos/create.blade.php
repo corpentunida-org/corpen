@@ -19,7 +19,7 @@
                 <div class="d-flex justify-content-between mb-4 position-relative px-5">
                     <div class="text-center" style="z-index: 2;">
                         <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center shadow" style="width: 40px; height: 40px; margin: 0 auto;">1</div>
-                        <small class="fw-bold d-block mt-2">Definir Flujo</small>
+                        <small class="fw-bold d-block mt-2">Definir Datos</small>
                     </div>
                     <div class="text-center text-muted" style="z-index: 2;">
                         <div class="rounded-circle bg-white border text-muted d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; margin: 0 auto;">2</div>
@@ -38,7 +38,7 @@
                                 {{-- Sección: Responsable (Automático) --}}
                                 <div class="col-md-12">
                                     <div class="p-3 rounded-4 border-dashed d-flex align-items-center bg-light">
-                                        <div class="avatar-circle bg-white text-primary shadow-sm me-3 d-flex align-items-center justify-content-center fw-bold" style="width: 45px; height: 45px; border-radius: 12px;">
+                                        <div class="avatar-circle bg-white text-primary shadow-sm me-3 d-flex align-items-center justify-content-center fw-bold" style="width: 45px; height: 45px; border-radius: 12px; border: 1px solid #e2e8f0;">
                                             {{ substr(auth()->user()->name, 0, 1) }}
                                         </div>
                                         <div>
@@ -51,6 +51,21 @@
                                             </span>
                                         </div>
                                     </div>
+                                </div>
+
+                                {{-- NUEVO: Nombre del Proceso --}}
+                                <div class="col-md-12">
+                                    <label class="form-label fw-bold text-dark">Título o Nombre del Proceso <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-white border-end-0"><i class="fas fa-tag text-muted"></i></span>
+                                        <input type="text" name="nombre" 
+                                               class="form-control border-start-0 ps-0 @error('nombre') is-invalid @enderror" 
+                                               placeholder="Ej: Revisión de Contrato Trimestral" 
+                                               value="{{ old('nombre') }}" required>
+                                    </div>
+                                    @error('nombre') 
+                                        <div class="text-danger small mt-1">{{ $message }}</div> 
+                                    @enderror
                                 </div>
 
                                 {{-- Sección: Selección de Flujo --}}
@@ -106,7 +121,7 @@
                 <div class="mt-4 p-3 bg-soft-primary rounded-4 d-flex align-items-start">
                     <i class="fas fa-info-circle text-primary mt-1 me-3"></i>
                     <p class="small text-muted mb-0">
-                        <strong>Nota:</strong> Una vez creado el proceso, el sistema lo redirigirá automáticamente a la gestión de responsables donde podrá asignar revisores, aprobadores y ejecutores.
+                        <strong>Nota:</strong> Al hacer clic en "Siguiente", los datos se guardarán y pasará a la pantalla de asignación de usuarios para definir quiénes participarán en el flujo.
                     </p>
                 </div>
             </div>
@@ -118,7 +133,7 @@
         .bg-soft-primary { background-color: #f0f4ff; }
         .form-select:focus, .form-control:focus {
             border-color: #6366f1;
-            box-shadow: 0 0 0 0.25 margin rgba(99, 102, 241, 0.1);
+            box-shadow: 0 0 0 0.25rem rgba(99, 102, 241, 0.1);
         }
         .breadcrumb-item + .breadcrumb-item::before { content: "›"; font-size: 1.2rem; line-height: 1; vertical-align: middle; }
     </style>
