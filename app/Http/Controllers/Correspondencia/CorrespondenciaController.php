@@ -8,7 +8,7 @@ use App\Models\Correspondencia\Correspondencia;
 use App\Models\Correspondencia\Trd;
 use App\Models\Correspondencia\FlujoDeTrabajo;
 use App\Models\Correspondencia\Estado;
-use App\Models\Correspondencia\Proceso; // Importado para el modal
+use App\Models\Correspondencia\Proceso;
 use App\Models\Maestras\maeTerceros;
 use App\Models\User;
 use Illuminate\Support\Facades\Storage;
@@ -19,10 +19,24 @@ class CorrespondenciaController extends Controller
     /**
      * Listado general (CRUD estándar)
      */
-    public function index()
+    public function index(Request $request)
     {
-        $correspondencias = Correspondencia::with(['trd', 'flujo', 'estado', 'usuario', 'remitente'])->paginate(15);
-        return view('correspondencia.correspondencias.index', compact('correspondencias'));
+        $estados = Estado::all();
+
+        $query = Correspondencia::with(['trd', 'flujo', 'estado', 'usuario', 'remitente']);
+
+        if ($request->filled('estado')) {
+            $query->where('estado_id', $request->estado);
+        }
+
+        if ($request->filled('search')) {
+            $query->where('asunto', 'LIKE', '%' . $request->search . '%')
+                ->orWhere('id_radicado', 'LIKE', '%' . $request->search . '%');
+        }
+
+        $correspondencias = $query->paginate(15);
+
+        return view('correspondencia.correspondencias.index', compact('correspondencias', 'estados'));
     }
 
     public function create()
@@ -32,16 +46,11 @@ class CorrespondenciaController extends Controller
         $estados = Estado::all();
         $remitentes = maeTerceros::all();
 
-        // Auto-increment manual para campo string id_radicado
         $ultimoId = Correspondencia::max('id_radicado');
         $siguienteId = $ultimoId ? (int) $ultimoId + 1 : 1;
 
         return view('correspondencia.correspondencias.create', compact(
-            'trds',
-            'flujos',
-            'estados',
-            'remitentes',
-            'siguienteId'
+            'trds', 'flujos', 'estados', 'remitentes', 'siguienteId'
         ));
     }
 
@@ -56,7 +65,7 @@ class CorrespondenciaController extends Controller
             'trd_id' => 'required',
             'flujo_id' => 'required',
             'estado_id' => 'required',
-            'observacion_previa' => 'nullable|string', // Asegurado para la DB
+            'observacion_previa' => 'nullable|string',
             'documento_arc' => 'nullable|file|mimes:pdf,doc,docx|max:10240',
         ]);
 
@@ -84,24 +93,41 @@ class CorrespondenciaController extends Controller
     }
 
     /**
-     * Muestra el detalle del radicado y carga procesos para el modal
+     * Muestra el detalle del radicado, carga el Flujo y Procesos específicos
      */
-    public function show($id)
-    {
-        // Buscamos por ID primario de la tabla corr_correspondencia
-        $correspondencia = Correspondencia::with([
-            'procesos.usuario', 
-            'procesos.proceso.flujo', // Importante para ver el nombre de la etapa en la tabla
-            'trd', 
-            'estado', 
-            'remitente'
-        ])->findOrFail($id);
+ public function show($id)
+{
+    // 1. Buscamos la correspondencia con sus relaciones
+    $correspondencia = Correspondencia::with([
+        'procesos.usuario', 
+        'procesos.proceso.flujo',
+        'trd', 
+        'estado', 
+        'remitente',
+        'flujo'
+    ])->findOrFail($id);
 
-        // Cargamos los procesos para que el modal de la vista pueda llenarlos
-        $procesos_disponibles = Proceso::with('flujo')->get(); 
+    $flujo = null;
+    $procesos_disponibles = collect();
 
-        return view('correspondencia.correspondencias.show', compact('correspondencia', 'procesos_disponibles'));
+    if ($correspondencia->flujo_id) {
+        $flujo = FlujoDeTrabajo::with(['usuario'])
+            ->find($correspondencia->flujo_id);
+        
+        // 2. CORRECCIÓN: Eliminamos ->orderBy('orden') para evitar el error 1054
+        $procesos_disponibles = Proceso::where('flujo_id', $correspondencia->flujo_id)
+            ->with(['flujo', 'usuariosAsignados.usuario']) 
+            ->get(); // Ahora cargará sin errores
+    } else {
+        $procesos_disponibles = Proceso::with(['flujo', 'usuariosAsignados.usuario'])->get();
     }
+
+    return view('correspondencia.correspondencias.show', compact(
+        'correspondencia', 
+        'procesos_disponibles', 
+        'flujo'
+    ));
+}
 
     public function edit(Correspondencia $correspondencia)
     {
@@ -131,7 +157,6 @@ class CorrespondenciaController extends Controller
         $data['finalizado'] = $request->boolean('finalizado');
 
         if ($request->hasFile('documento_arc')) {
-            // Eliminar anterior si existe
             if ($correspondencia->documento_arc) {
                 Storage::disk('s3')->delete($correspondencia->documento_arc);
             }
@@ -233,9 +258,6 @@ class CorrespondenciaController extends Controller
         ));
     }
 
-    /**
-     * AJAX: Dependencia TRD por Flujo
-     */
     public function getTrdsByFlujo($flujo_id)
     {
         $trds = Trd::where('fk_flujo', $flujo_id)->get(['id_trd', 'serie_documental', 'tiempo_gestion']);

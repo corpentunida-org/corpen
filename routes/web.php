@@ -791,7 +791,6 @@ Route::prefix('creditos')->middleware('auth')->group(function () {
         // ---------------------------------------------------
         // 1. DASHBOARD (TABLERO UNIFICADO)
         // ---------------------------------------------------
-        // URL: /correspondencia/tablero
         Route::get('tablero', [CorrespondenciaController::class, 'tablero'])
             ->name('tablero');
 
@@ -801,12 +800,10 @@ Route::prefix('creditos')->middleware('auth')->group(function () {
         Route::resource('correspondencias', CorrespondenciaController::class)
             ->parameters(['correspondencias' => 'correspondencia']);
 
-
         // AJAX: Consultas dinámicas para la UI
         Route::get('ajax/correspondencias-por-estado/{estado_id}', [CorrespondenciaController::class, 'getByEstado'])
             ->name('ajax.correspondencias.estado');
 
-        // RUTA AGREGADA: Filtrado de TRD por Flujo (Anidamiento)
         Route::get('ajax/trds-por-flujo/{flujo_id}', [CorrespondenciaController::class, 'getTrdsByFlujo'])
             ->name('ajax.trds.flujo');
 
@@ -859,8 +856,10 @@ Route::prefix('creditos')->middleware('auth')->group(function () {
             ->name('comunicaciones-salida.descargar');
 
         // ---------------------------------------------------
-        // 8. TRACKING DE PROCESOS
+        // 8. TRACKING DE PROCESOS (HISTORIAL/SEGUIMIENTO)
         // ---------------------------------------------------
+        
+        // HE QUITADO EL 'EXCEPT' para que 'create' y 'edit' existan y no den error
         Route::resource('correspondencias-procesos', CorrespondenciaProcesoController::class)
             ->parameters(['correspondencias-procesos' => 'correspondenciaProceso']);
 

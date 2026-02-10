@@ -13,6 +13,7 @@ class CorrespondenciaProceso extends Model
     protected $table = 'corr_correspondencia_proceso';
 
     protected $fillable = [
+        'id',
         'id_correspondencia',
         'observacion',
         'estado',
@@ -21,6 +22,8 @@ class CorrespondenciaProceso extends Model
         'fecha_gestion',
         'documento_arc',
         'fk_usuario',
+        'created_at',
+        'updated_at',
     ];
 
     protected $casts = [

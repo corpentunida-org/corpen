@@ -185,4 +185,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(\App\Models\Correspondencia\CorrespondenciaProceso::class, 'fk_usuario');
     }
+    public function seguimientosCorrespondencia()
+    {
+        // Un usuario tiene muchos registros de gestión/seguimiento
+        return $this->hasMany(\App\Models\Correspondencia\CorrespondenciaProceso::class, 'fk_usuario'); 
+    }
 }
