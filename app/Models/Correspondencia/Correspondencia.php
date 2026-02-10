@@ -1,0 +1,105 @@
+<?php
+
+namespace App\Models\Correspondencia;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\User;
+use App\Models\Correspondencia\Trd;
+use App\Models\Correspondencia\Estado;
+use App\Models\Correspondencia\FlujoDeTrabajo;
+use App\Models\Maestras\maeTerceros;
+use Illuminate\Support\Facades\Storage;
+
+class Correspondencia extends Model
+{
+    use HasFactory;
+
+    protected $table = 'corr_correspondencia';
+
+    protected $primaryKey = 'id_radicado';
+
+    protected $keyType = 'string';
+
+    public $incrementing = false;
+
+    protected $fillable = [
+        'id_radicado',
+        'fecha_solicitud',
+        'asunto',
+        'es_confidencial',
+        'medio_recibido',
+        'remitente_id',
+        'trd_id',
+        'flujo_id',
+        'estado_id',
+        'usuario_id',
+        'observacion_previa',
+        'finalizado',
+        'documento_arc',
+    ];
+
+    protected $casts = [
+        'fecha_solicitud' => 'datetime',
+        'es_confidencial' => 'boolean',
+        'finalizado' => 'boolean',
+    ];
+
+    public function getFile ($nameFile)
+    {
+        $url = '#';
+        if($nameFile) {
+            if (Storage::disk('s3')->exists($nameFile)) {
+                $url = Storage::disk('s3')->temporaryUrl(
+                    $nameFile, now()->addMinutes(5)
+                );
+            }
+        }
+        return $url;
+    }
+
+    /**
+     * Relación: TRD
+     */
+    public function trd()
+    {
+        return $this->belongsTo(Trd::class, 'trd_id', 'id_trd');
+    }
+
+    /**
+     * Relación: flujo
+     */
+    public function flujo()
+    {
+        return $this->belongsTo(FlujoDeTrabajo::class, 'flujo_id');
+    }
+
+    /**
+     * Relación: estado
+     */
+    public function estado()
+    {
+        return $this->belongsTo(Estado::class, 'estado_id');
+    }
+
+    /**
+     * Relación: usuario responsable
+     */
+    public function usuario()
+    {
+        return $this->belongsTo(User::class, 'usuario_id');
+    }
+    public function remitente()
+    {
+        return $this->belongsTo(maeTerceros::class, 'remitente_id','cod_ter');
+    }
+    /**
+     * Relación: Historial de procesos/gestiones
+     */
+    public function procesos()
+    {
+        // Asumiendo que el modelo se llama CorrespondenciaProceso 
+        // y que en su tabla la columna que apunta aquí se llama 'id_correspondencia'
+        return $this->hasMany(CorrespondenciaProceso::class, 'id_correspondencia', 'id_radicado');
+    }
+}

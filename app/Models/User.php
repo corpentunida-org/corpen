@@ -136,4 +136,53 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     } */
+
+    //SECCION FLUJO DE SOLICITUDES
+    // Flujos creados por el usuario
+    public function flujosDeTrabajo()
+    {
+        return $this->hasMany(\App\Models\Correspondencia\FlujoDeTrabajo::class, 'usuario_id');
+    }
+
+    // Procesos asignados al usuario (tabla pivote)
+    public function procesosAsignados()
+    {
+        return $this->hasMany(\App\Models\Correspondencia\ProcesoUsuario::class, 'user_id');
+    }
+
+    // Notificaciones recibidas
+    public function notificacionesRecibidas()
+    {
+        return $this->hasMany(\App\Models\Correspondencia\Notificacion::class, 'usuario_destino_id');
+    }
+
+    // Notificaciones enviadas
+    public function notificacionesEnviadas()
+    {
+        return $this->hasMany(\App\Models\Correspondencia\Notificacion::class, 'usuario_envia_id');
+    }
+
+    // TRD creados
+    public function trds()
+    {
+        return $this->hasMany(\App\Models\Correspondencia\Trd::class, 'usuario_id');
+    }
+
+    // Correspondencia responsable
+    public function correspondencias()
+    {
+        return $this->hasMany(\App\Models\Correspondencia\Correspondencia::class, 'usuario_id');
+    }
+
+    // Comunicaciones de salida generadas
+    public function comunicacionesSalida()
+    {
+        return $this->hasMany(\App\Models\Correspondencia\ComunicacionSalida::class, 'fk_usuario');
+    }
+
+    // CorrespondenciaProceso gestionadas
+    public function correspondenciasProceso()
+    {
+        return $this->hasMany(\App\Models\Correspondencia\CorrespondenciaProceso::class, 'fk_usuario');
+    }
 }

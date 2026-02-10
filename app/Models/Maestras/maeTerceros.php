@@ -255,4 +255,11 @@ class maeTerceros extends Model
     {
         return $this->belongsTo(maeDistritos::class, 'cod_dist', 'COD_DIST');
     }
+
+    //SECCION FLUJO DE SOLICITUDES
+    // Correspondencias enviadas por este tercero
+    public function correspondencias()
+    {
+        return $this->hasMany(\App\Models\Correspondencia\Correspondencia::class, 'remitente_id', 'cod_ter');
+    }
 }
