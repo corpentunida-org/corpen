@@ -806,4 +806,5 @@ Route::prefix('indicators')->group(function () {
 //Indicadores
 Route::prefix('indicators')->group(function () {
     Route::resource('indicador', IndicadoresController::class)->names('indicators.indicadores')->middleware('auth');
+    Route::post('/generar/informe', [IndicadoresController::class, 'descargarInforme'])->name('indicators.indicadores.descargar')->middleware('auth');
 });
