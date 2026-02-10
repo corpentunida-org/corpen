@@ -27464,7 +27464,6 @@ namespace  {
     class View extends \Illuminate\Support\Facades\View {}
     class Vite extends \Illuminate\Support\Facades\Vite {}
     class Pdf extends \Barryvdh\DomPDF\Facade\Pdf {}
-    class PDF extends \Barryvdh\DomPDF\Facade\Pdf {}
     class Livewire extends \Livewire\Livewire {}
     class Excel extends \Maatwebsite\Excel\Facades\Excel {}
     class Flare extends \Spatie\LaravelIgnition\Facades\Flare {}
