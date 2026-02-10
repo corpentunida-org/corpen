@@ -18382,7 +18382,7 @@ namespace Illuminate\Support\Facades {
          * Get a filesystem instance.
          *
          * @param string|null $name
-         * @return \Illuminate\Filesystem\AwsS3V3Adapter
+         * @return \Illuminate\Filesystem\FilesystemAdapter
          * @static
          */
         public static function drive($name = null)
@@ -18395,7 +18395,7 @@ namespace Illuminate\Support\Facades {
          * Get a filesystem instance.
          *
          * @param string|null $name
-         * @return \Illuminate\Filesystem\AwsS3V3Adapter
+         * @return \Illuminate\Filesystem\FilesystemAdapter
          * @static
          */
         public static function disk($name = null)
@@ -18420,7 +18420,7 @@ namespace Illuminate\Support\Facades {
          * Build an on-demand disk.
          *
          * @param string|array $config
-         * @return \Illuminate\Filesystem\AwsS3V3Adapter
+         * @return \Illuminate\Filesystem\FilesystemAdapter
          * @static
          */
         public static function build($config)
@@ -18433,7 +18433,7 @@ namespace Illuminate\Support\Facades {
          * Create an instance of the local driver.
          *
          * @param array $config
-         * @return \Illuminate\Filesystem\AwsS3V3Adapter
+         * @return \Illuminate\Filesystem\FilesystemAdapter
          * @static
          */
         public static function createLocalDriver($config)
@@ -18446,7 +18446,7 @@ namespace Illuminate\Support\Facades {
          * Create an instance of the ftp driver.
          *
          * @param array $config
-         * @return \Illuminate\Filesystem\AwsS3V3Adapter
+         * @return \Illuminate\Filesystem\FilesystemAdapter
          * @static
          */
         public static function createFtpDriver($config)
@@ -18459,7 +18459,7 @@ namespace Illuminate\Support\Facades {
          * Create an instance of the sftp driver.
          *
          * @param array $config
-         * @return \Illuminate\Filesystem\AwsS3V3Adapter
+         * @return \Illuminate\Filesystem\FilesystemAdapter
          * @static
          */
         public static function createSftpDriver($config)
@@ -18485,7 +18485,7 @@ namespace Illuminate\Support\Facades {
          * Create a scoped driver.
          *
          * @param array $config
-         * @return \Illuminate\Filesystem\AwsS3V3Adapter
+         * @return \Illuminate\Filesystem\FilesystemAdapter
          * @static
          */
         public static function createScopedDriver($config)
@@ -18586,85 +18586,16 @@ namespace Illuminate\Support\Facades {
         }
 
         /**
-         * Get the URL for the file at the given path.
-         *
-         * @param string $path
-         * @return string
-         * @throws \RuntimeException
-         * @static
-         */
-        public static function url($path)
-        {
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
-            return $instance->url($path);
-        }
-
-        /**
-         * Determine if temporary URLs can be generated.
-         *
-         * @return bool
-         * @static
-         */
-        public static function providesTemporaryUrls()
-        {
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
-            return $instance->providesTemporaryUrls();
-        }
-
-        /**
-         * Get a temporary URL for the file at the given path.
-         *
-         * @param string $path
-         * @param \DateTimeInterface $expiration
-         * @param array $options
-         * @return string
-         * @static
-         */
-        public static function temporaryUrl($path, $expiration, $options = [])
-        {
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
-            return $instance->temporaryUrl($path, $expiration, $options);
-        }
-
-        /**
-         * Get a temporary upload URL for the file at the given path.
-         *
-         * @param string $path
-         * @param \DateTimeInterface $expiration
-         * @param array $options
-         * @return array
-         * @static
-         */
-        public static function temporaryUploadUrl($path, $expiration, $options = [])
-        {
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
-            return $instance->temporaryUploadUrl($path, $expiration, $options);
-        }
-
-        /**
-         * Get the underlying S3 client.
-         *
-         * @return \Aws\S3\S3Client
-         * @static
-         */
-        public static function getClient()
-        {
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
-            return $instance->getClient();
-        }
-
-        /**
          * Assert that the given file or directory exists.
          *
          * @param string|array $path
          * @param string|null $content
-         * @return \Illuminate\Filesystem\AwsS3V3Adapter
+         * @return \Illuminate\Filesystem\FilesystemAdapter
          * @static
          */
         public static function assertExists($path, $content = null)
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->assertExists($path, $content);
         }
 
@@ -18672,13 +18603,12 @@ namespace Illuminate\Support\Facades {
          * Assert that the given file or directory does not exist.
          *
          * @param string|array $path
-         * @return \Illuminate\Filesystem\AwsS3V3Adapter
+         * @return \Illuminate\Filesystem\FilesystemAdapter
          * @static
          */
         public static function assertMissing($path)
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->assertMissing($path);
         }
 
@@ -18686,13 +18616,12 @@ namespace Illuminate\Support\Facades {
          * Assert that the given directory is empty.
          *
          * @param string $path
-         * @return \Illuminate\Filesystem\AwsS3V3Adapter
+         * @return \Illuminate\Filesystem\FilesystemAdapter
          * @static
          */
         public static function assertDirectoryEmpty($path)
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->assertDirectoryEmpty($path);
         }
 
@@ -18705,8 +18634,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function exists($path)
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->exists($path);
         }
 
@@ -18719,8 +18647,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function missing($path)
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->missing($path);
         }
 
@@ -18733,8 +18660,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function fileExists($path)
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->fileExists($path);
         }
 
@@ -18747,8 +18673,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function fileMissing($path)
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->fileMissing($path);
         }
 
@@ -18761,8 +18686,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function directoryExists($path)
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->directoryExists($path);
         }
 
@@ -18775,8 +18699,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function directoryMissing($path)
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->directoryMissing($path);
         }
 
@@ -18789,8 +18712,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function path($path)
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->path($path);
         }
 
@@ -18803,8 +18725,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function get($path)
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->get($path);
         }
 
@@ -18818,8 +18739,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function json($path, $flags = 0)
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->json($path, $flags);
         }
 
@@ -18835,8 +18755,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function response($path, $name = null, $headers = [], $disposition = 'inline')
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->response($path, $name, $headers, $disposition);
         }
 
@@ -18850,8 +18769,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function download($path, $name = null, $headers = [])
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->download($path, $name, $headers);
         }
 
@@ -18866,8 +18784,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function put($path, $contents, $options = [])
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->put($path, $contents, $options);
         }
 
@@ -18882,8 +18799,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function putFile($path, $file = null, $options = [])
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->putFile($path, $file, $options);
         }
 
@@ -18899,8 +18815,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function putFileAs($path, $file, $name = null, $options = [])
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->putFileAs($path, $file, $name, $options);
         }
 
@@ -18913,8 +18828,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function getVisibility($path)
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->getVisibility($path);
         }
 
@@ -18928,8 +18842,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function setVisibility($path, $visibility)
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->setVisibility($path, $visibility);
         }
 
@@ -18945,8 +18858,7 @@ namespace Illuminate\Support\Facades {
         public static function prepend($path, $data, $separator = '
 ')
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->prepend($path, $data, $separator);
         }
 
@@ -18962,8 +18874,7 @@ namespace Illuminate\Support\Facades {
         public static function append($path, $data, $separator = '
 ')
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->append($path, $data, $separator);
         }
 
@@ -18976,8 +18887,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function delete($paths)
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->delete($paths);
         }
 
@@ -18991,8 +18901,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function copy($from, $to)
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->copy($from, $to);
         }
 
@@ -19006,8 +18915,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function move($from, $to)
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->move($from, $to);
         }
 
@@ -19020,8 +18928,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function size($path)
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->size($path);
         }
 
@@ -19034,8 +18941,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function checksum($path, $options = [])
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->checksum($path, $options);
         }
 
@@ -19048,8 +18954,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function mimeType($path)
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->mimeType($path);
         }
 
@@ -19062,8 +18967,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function lastModified($path)
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->lastModified($path);
         }
 
@@ -19076,8 +18980,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function readStream($path)
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->readStream($path);
         }
 
@@ -19092,9 +18995,66 @@ namespace Illuminate\Support\Facades {
          */
         public static function writeStream($path, $resource, $options = [])
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->writeStream($path, $resource, $options);
+        }
+
+        /**
+         * Get the URL for the file at the given path.
+         *
+         * @param string $path
+         * @return string
+         * @throws \RuntimeException
+         * @static
+         */
+        public static function url($path)
+        {
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
+            return $instance->url($path);
+        }
+
+        /**
+         * Determine if temporary URLs can be generated.
+         *
+         * @return bool
+         * @static
+         */
+        public static function providesTemporaryUrls()
+        {
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
+            return $instance->providesTemporaryUrls();
+        }
+
+        /**
+         * Get a temporary URL for the file at the given path.
+         *
+         * @param string $path
+         * @param \DateTimeInterface $expiration
+         * @param array $options
+         * @return string
+         * @throws \RuntimeException
+         * @static
+         */
+        public static function temporaryUrl($path, $expiration, $options = [])
+        {
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
+            return $instance->temporaryUrl($path, $expiration, $options);
+        }
+
+        /**
+         * Get a temporary upload URL for the file at the given path.
+         *
+         * @param string $path
+         * @param \DateTimeInterface $expiration
+         * @param array $options
+         * @return array
+         * @throws \RuntimeException
+         * @static
+         */
+        public static function temporaryUploadUrl($path, $expiration, $options = [])
+        {
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
+            return $instance->temporaryUploadUrl($path, $expiration, $options);
         }
 
         /**
@@ -19107,8 +19067,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function files($directory = null, $recursive = false)
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->files($directory, $recursive);
         }
 
@@ -19121,8 +19080,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function allFiles($directory = null)
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->allFiles($directory);
         }
 
@@ -19136,8 +19094,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function directories($directory = null, $recursive = false)
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->directories($directory, $recursive);
         }
 
@@ -19150,8 +19107,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function allDirectories($directory = null)
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->allDirectories($directory);
         }
 
@@ -19164,8 +19120,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function makeDirectory($path)
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->makeDirectory($path);
         }
 
@@ -19178,8 +19133,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function deleteDirectory($directory)
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->deleteDirectory($directory);
         }
 
@@ -19191,8 +19145,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function getDriver()
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->getDriver();
         }
 
@@ -19204,8 +19157,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function getAdapter()
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->getAdapter();
         }
 
@@ -19217,8 +19169,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function getConfig()
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->getConfig();
         }
 
@@ -19231,8 +19182,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function buildTemporaryUrlsUsing($callback)
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             $instance->buildTemporaryUrlsUsing($callback);
         }
 
@@ -19249,7 +19199,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function when($value = null, $callback = null, $default = null)
         {
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->when($value, $callback, $default);
         }
 
@@ -19266,7 +19216,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function unless($value = null, $callback = null, $default = null)
         {
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->unless($value, $callback, $default);
         }
 
@@ -19281,8 +19231,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function macro($name, $macro)
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            \Illuminate\Filesystem\AwsS3V3Adapter::macro($name, $macro);
+            \Illuminate\Filesystem\FilesystemAdapter::macro($name, $macro);
         }
 
         /**
@@ -19296,8 +19245,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function mixin($mixin, $replace = true)
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            \Illuminate\Filesystem\AwsS3V3Adapter::mixin($mixin, $replace);
+            \Illuminate\Filesystem\FilesystemAdapter::mixin($mixin, $replace);
         }
 
         /**
@@ -19309,8 +19257,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function hasMacro($name)
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            return \Illuminate\Filesystem\AwsS3V3Adapter::hasMacro($name);
+            return \Illuminate\Filesystem\FilesystemAdapter::hasMacro($name);
         }
 
         /**
@@ -19321,8 +19268,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function flushMacros()
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            \Illuminate\Filesystem\AwsS3V3Adapter::flushMacros();
+            \Illuminate\Filesystem\FilesystemAdapter::flushMacros();
         }
 
         /**
@@ -19336,8 +19282,7 @@ namespace Illuminate\Support\Facades {
          */
         public static function macroCall($method, $parameters)
         {
-            //Method inherited from \Illuminate\Filesystem\FilesystemAdapter 
-            /** @var \Illuminate\Filesystem\AwsS3V3Adapter $instance */
+            /** @var \Illuminate\Filesystem\FilesystemAdapter $instance */
             return $instance->macroCall($method, $parameters);
         }
 
@@ -21457,6 +21402,496 @@ namespace Illuminate\Support\Facades {
         public static function flushMacros()
         {
             \Illuminate\Foundation\Vite::flushMacros();
+        }
+
+            }
+    }
+
+namespace ArielMejiaDev\LarapexCharts\Facades {
+    /**
+     */
+    class LarapexChart {
+        /**
+         * @static
+         */
+        public static function pieChart()
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->pieChart();
+        }
+
+        /**
+         * @static
+         */
+        public static function donutChart()
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->donutChart();
+        }
+
+        /**
+         * @static
+         */
+        public static function radialChart()
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->radialChart();
+        }
+
+        /**
+         * @static
+         */
+        public static function polarAreaChart()
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->polarAreaChart();
+        }
+
+        /**
+         * @static
+         */
+        public static function lineChart()
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->lineChart();
+        }
+
+        /**
+         * @static
+         */
+        public static function areaChart()
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->areaChart();
+        }
+
+        /**
+         * @static
+         */
+        public static function barChart()
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->barChart();
+        }
+
+        /**
+         * @static
+         */
+        public static function horizontalBarChart()
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->horizontalBarChart();
+        }
+
+        /**
+         * @static
+         */
+        public static function heatMapChart()
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->heatMapChart();
+        }
+
+        /**
+         * @static
+         */
+        public static function radarChart()
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->radarChart();
+        }
+
+        /**
+         * @deprecated deprecated since version 2.0
+         * @param null $type
+         * @return \ArielMejiaDev\LarapexCharts\LarapexChart
+         * @static
+         */
+        public static function setType($type = null)
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->setType($type);
+        }
+
+        /**
+         * @static
+         */
+        public static function setFontFamily($fontFamily)
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->setFontFamily($fontFamily);
+        }
+
+        /**
+         * @static
+         */
+        public static function setDataset($dataset)
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->setDataset($dataset);
+        }
+
+        /**
+         * @static
+         */
+        public static function setHeight($height)
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->setHeight($height);
+        }
+
+        /**
+         * @static
+         */
+        public static function setWidth($width)
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->setWidth($width);
+        }
+
+        /**
+         * @static
+         */
+        public static function setColors($colors)
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->setColors($colors);
+        }
+
+        /**
+         * @static
+         */
+        public static function setHorizontal($horizontal)
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->setHorizontal($horizontal);
+        }
+
+        /**
+         * @static
+         */
+        public static function setTitle($title)
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->setTitle($title);
+        }
+
+        /**
+         * @static
+         */
+        public static function setSubtitle($subtitle, $position = 'left')
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->setSubtitle($subtitle, $position);
+        }
+
+        /**
+         * @static
+         */
+        public static function setLabels($labels)
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->setLabels($labels);
+        }
+
+        /**
+         * @static
+         */
+        public static function setXAxis($categories)
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->setXAxis($categories);
+        }
+
+        /**
+         * @static
+         */
+        public static function setGrid($transparent = true, $color = '#e5e5e5', $opacity = 0.1)
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->setGrid($transparent, $color, $opacity);
+        }
+
+        /**
+         * @static
+         */
+        public static function setMarkers($colors = [], $width = 4, $hoverSize = 7)
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->setMarkers($colors, $width, $hoverSize);
+        }
+
+        /**
+         * @static
+         */
+        public static function setStroke($width, $colors = [])
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->setStroke($width, $colors);
+        }
+
+        /**
+         * @static
+         */
+        public static function setToolbar($show, $zoom = true)
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->setToolbar($show, $zoom);
+        }
+
+        /**
+         * @static
+         */
+        public static function setDataLabels($enabled = true)
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->setDataLabels($enabled);
+        }
+
+        /**
+         * @param array $array
+         * @return array|false|string
+         * @static
+         */
+        public static function transformLabels($array)
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->transformLabels($array);
+        }
+
+        /**
+         * @return mixed
+         * @static
+         */
+        public static function container()
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->container();
+        }
+
+        /**
+         * @return mixed
+         * @static
+         */
+        public static function script()
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->script();
+        }
+
+        /**
+         * @static
+         */
+        public static function cdn()
+        {
+            return \ArielMejiaDev\LarapexCharts\LarapexChart::cdn();
+        }
+
+        /**
+         * @return false|string
+         * @static
+         */
+        public static function id()
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->id();
+        }
+
+        /**
+         * @return mixed
+         * @static
+         */
+        public static function title()
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->title();
+        }
+
+        /**
+         * @return mixed
+         * @static
+         */
+        public static function subtitle()
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->subtitle();
+        }
+
+        /**
+         * @return mixed
+         * @static
+         */
+        public static function subtitlePosition()
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->subtitlePosition();
+        }
+
+        /**
+         * @return string
+         * @static
+         */
+        public static function type()
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->type();
+        }
+
+        /**
+         * @return string
+         * @static
+         */
+        public static function fontFamily()
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->fontFamily();
+        }
+
+        /**
+         * @return mixed
+         * @static
+         */
+        public static function labels()
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->labels();
+        }
+
+        /**
+         * @return mixed
+         * @static
+         */
+        public static function dataset()
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->dataset();
+        }
+
+        /**
+         * @return int
+         * @static
+         */
+        public static function height()
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->height();
+        }
+
+        /**
+         * @static
+         */
+        public static function width()
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->width();
+        }
+
+        /**
+         * @return false|string
+         * @static
+         */
+        public static function colors()
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->colors();
+        }
+
+        /**
+         * @return false|string
+         * @static
+         */
+        public static function horizontal()
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->horizontal();
+        }
+
+        /**
+         * @return mixed
+         * @static
+         */
+        public static function xAxis()
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->xAxis();
+        }
+
+        /**
+         * @return false|string
+         * @static
+         */
+        public static function grid()
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->grid();
+        }
+
+        /**
+         * @return false|string
+         * @static
+         */
+        public static function markers()
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->markers();
+        }
+
+        /**
+         * @return mixed
+         * @static
+         */
+        public static function stroke()
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->stroke();
+        }
+
+        /**
+         * @return true|boolean
+         * @static
+         */
+        public static function toolbar()
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->toolbar();
+        }
+
+        /**
+         * @return true|boolean
+         * @static
+         */
+        public static function zoom()
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->zoom();
+        }
+
+        /**
+         * @return true|boolean
+         * @static
+         */
+        public static function dataLabels()
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->dataLabels();
+        }
+
+        /**
+         * @static
+         */
+        public static function toJson()
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->toJson();
+        }
+
+        /**
+         * @static
+         */
+        public static function toVue()
+        {
+            /** @var \ArielMejiaDev\LarapexCharts\LarapexChart $instance */
+            return $instance->toVue();
         }
 
             }
@@ -27463,7 +27898,9 @@ namespace  {
     class Validator extends \Illuminate\Support\Facades\Validator {}
     class View extends \Illuminate\Support\Facades\View {}
     class Vite extends \Illuminate\Support\Facades\Vite {}
+    class LarapexChart extends \ArielMejiaDev\LarapexCharts\Facades\LarapexChart {}
     class Pdf extends \Barryvdh\DomPDF\Facade\Pdf {}
+    class PDF extends \Barryvdh\DomPDF\Facade\Pdf {}
     class Livewire extends \Livewire\Livewire {}
     class Excel extends \Maatwebsite\Excel\Facades\Excel {}
     class Flare extends \Spatie\LaravelIgnition\Facades\Flare {}
