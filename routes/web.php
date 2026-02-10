@@ -647,8 +647,7 @@ Route::prefix('creditos')->middleware('auth')->group(function () {
             ->name('notificaciones');
 
         // Vista completa de notificaciones
-        Route::get('notificaciones/detalladas', [ScpSoporteController::class, 'getNotificacionesDetalladas'])
-            ->name('notificaciones.detalladas');
+        Route::get('notificaciones/detalladas', [ScpSoporteController::class, 'getNotificacionesDetalladas'])->name('notificaciones.detalladas')->middleware('auth');
 
         // Acción manual de reenvío de correo
         Route::get('enviar-correo-escalado/{id}', [ScpNotificacionController::class, 'enviarCorreoEscalado'])
@@ -914,4 +913,5 @@ Route::prefix('indicators')->group(function () {
 //Indicadores
 Route::prefix('indicators')->group(function () {
     Route::resource('indicador', IndicadoresController::class)->names('indicators.indicadores')->middleware('auth');
+    Route::post('/generar/informe', [IndicadoresController::class, 'descargarInforme'])->name('indicators.indicadores.descargar')->middleware('auth');
 });

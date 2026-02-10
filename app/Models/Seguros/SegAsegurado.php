@@ -15,7 +15,8 @@ class SegAsegurado extends Model
         'cedula',
         'parentesco',
         'titular',
-        'valorpAseguradora'
+        'valorpAseguradora',
+        'viuda'
     ];
 
     public function tercero()
