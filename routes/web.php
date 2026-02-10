@@ -110,6 +110,19 @@ use App\Http\Controllers\Indicators\IndicadoresController;
     })->name('dashboard');
 }); */
 
+
+//CORRESPONDENCIA
+use App\Http\Controllers\Correspondencia\TableroCorrespondenciaController;
+use App\Http\Controllers\Correspondencia\CorrespondenciaController;
+use App\Http\Controllers\Correspondencia\FlujoDeTrabajoController;
+use App\Http\Controllers\Correspondencia\ProcesoController;
+use App\Http\Controllers\Correspondencia\NotificacionController;
+use App\Http\Controllers\Correspondencia\TrdController;
+use App\Http\Controllers\Correspondencia\PlantillaController;
+use App\Http\Controllers\Correspondencia\ComunicacionSalidaController;
+use App\Http\Controllers\Correspondencia\CorrespondenciaProcesoController;
+use App\Http\Controllers\Correspondencia\CorrEstadoController;
+
 Route::middleware(['auth'])->group(function () {
     Route::get('/', [IndexController::class, 'index'])->name('dashboard');
 });
@@ -769,6 +782,100 @@ Route::prefix('creditos')->middleware('auth')->group(function () {
 
     });
 // FIN MÓDULO INVENTARIOS
+
+// ==========================================
+//   MÓDULO DE CORRESPONDENCIA
+// ==========================================
+    Route::middleware(['auth'])->prefix('correspondencia')->name('correspondencia.')->group(function () {
+
+        // ---------------------------------------------------
+        // 1. DASHBOARD (TABLERO UNIFICADO)
+        // ---------------------------------------------------
+        // URL: /correspondencia/tablero
+        Route::get('tablero', [CorrespondenciaController::class, 'tablero'])
+            ->name('tablero');
+
+        // ---------------------------------------------------
+        // 2. GESTIÓN DE CORRESPONDENCIA (CRUD)
+        // ---------------------------------------------------
+        Route::resource('correspondencias', CorrespondenciaController::class)
+            ->parameters(['correspondencias' => 'correspondencia']);
+
+
+        // AJAX: Consultas dinámicas para la UI
+        Route::get('ajax/correspondencias-por-estado/{estado_id}', [CorrespondenciaController::class, 'getByEstado'])
+            ->name('ajax.correspondencias.estado');
+
+        // RUTA AGREGADA: Filtrado de TRD por Flujo (Anidamiento)
+        Route::get('ajax/trds-por-flujo/{flujo_id}', [CorrespondenciaController::class, 'getTrdsByFlujo'])
+            ->name('ajax.trds.flujo');
+
+        // ---------------------------------------------------
+        // 3. FLUJOS Y PROCESOS
+        // ---------------------------------------------------
+        Route::resource('flujos', FlujoDeTrabajoController::class)
+            ->parameters(['flujos' => 'flujo']);
+
+        Route::resource('procesos', ProcesoController::class)
+            ->parameters(['procesos' => 'proceso']);
+
+        Route::post('procesos/{proceso}/asignar-usuario', [ProcesoController::class, 'asignarUsuario'])
+            ->name('procesos.asignarUsuario');
+
+        Route::delete('procesos/{proceso}/remover-usuario/{user_id}', [ProcesoController::class, 'removerUsuario'])
+            ->name('procesos.removerUsuario');
+
+        Route::get('ajax/usuarios-proceso/{proceso_id}', [ProcesoController::class, 'getUsuariosByProceso'])
+            ->name('ajax.usuarios.proceso');
+
+        // ---------------------------------------------------
+        // 4. NOTIFICACIONES
+        // ---------------------------------------------------
+        Route::resource('notificaciones', NotificacionController::class)
+            ->parameters(['notificaciones' => 'notificacion']);
+
+        Route::post('notificaciones/{notificacion}/marcar-leida', [NotificacionController::class, 'marcarLeida'])
+            ->name('notificaciones.marcarLeida');
+
+        // ---------------------------------------------------
+        // 5. TRD (Tablas de Retención Documental)
+        // ---------------------------------------------------
+        Route::resource('trds', TrdController::class)
+            ->parameters(['trds' => 'trd']);
+
+        // ---------------------------------------------------
+        // 6. PLANTILLAS
+        // ---------------------------------------------------
+        Route::resource('plantillas', PlantillaController::class)
+            ->parameters(['plantillas' => 'plantilla']);
+
+        // ---------------------------------------------------
+        // 7. COMUNICACIONES DE SALIDA
+        // ---------------------------------------------------
+        Route::resource('comunicaciones-salida', ComunicacionSalidaController::class)
+            ->parameters(['comunicaciones-salida' => 'comunicacionSalida']);
+
+        Route::get('comunicaciones-salida/{comunicacionSalida}/descargar-pdf', [ComunicacionSalidaController::class, 'descargarPdf'])
+            ->name('comunicaciones-salida.descargar');
+
+        // ---------------------------------------------------
+        // 8. TRACKING DE PROCESOS
+        // ---------------------------------------------------
+        Route::resource('correspondencias-procesos', CorrespondenciaProcesoController::class)
+            ->parameters(['correspondencias-procesos' => 'correspondenciaProceso']);
+
+        Route::post('correspondencias-procesos/{correspondenciaProceso}/marcar-notificado', [CorrespondenciaProcesoController::class, 'marcarNotificado'])
+            ->name('correspondencias-procesos.marcarNotificado');
+
+        // ---------------------------------------------------
+        // 9. CONFIGURACIÓN DE ESTADOS
+        // ---------------------------------------------------
+        Route::resource('estados', CorrEstadoController::class)
+            ->parameters(['estados' => 'estado']);
+
+    });
+// FIN MÓDULO DE CORRESPONDENCIA
+
 
 //VISITAS
 Route::middleware('auth')->prefix('visitas')->name('visitas.')->group(function () {
