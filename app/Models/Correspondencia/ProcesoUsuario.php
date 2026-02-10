@@ -27,7 +27,7 @@ class ProcesoUsuario extends Model
     }
 
     /**
-     * Relación: proceso
+     * Relación: proceso al que pertenece esta asignación
      */
     public function proceso()
     {
