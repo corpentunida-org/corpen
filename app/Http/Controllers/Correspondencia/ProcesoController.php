@@ -31,21 +31,18 @@ class ProcesoController extends Controller
 
     public function store(Request $request)
     {
-        // Agregamos 'nombre' a la validación
         $data = $request->validate([
             'flujo_id' => 'required|exists:corr_flujo_de_trabajo,id',
             'nombre'   => 'required|string|max:255',
             'detalle'  => 'nullable|string',
         ]);
 
-        // Asignación automática del usuario logueado
         $data['usuario_creador_id'] = Auth::id();
 
         $proceso = Proceso::create($data);
 
-        // Redirigimos al SHOW para obligar a asignar usuarios inmediatamente
         return redirect()->route('correspondencia.procesos.show', $proceso)
-            ->with('success', 'Etapa creada correctamente. Ahora puede asignar los responsables.');
+            ->with('success', 'Paso creado. Por favor, asigne los participantes para finalizar.');
     }
 
     public function show(Proceso $proceso)
