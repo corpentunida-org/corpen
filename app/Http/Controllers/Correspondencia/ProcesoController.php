@@ -7,11 +7,17 @@ use Illuminate\Http\Request;
 use App\Models\Correspondencia\Proceso;
 use App\Models\Correspondencia\FlujoDeTrabajo;
 use App\Models\Correspondencia\ProcesoUsuario;
+use App\Http\Controllers\AuditoriaController;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 
 class ProcesoController extends Controller
 {
+    private function auditoria($accion)
+    {
+        $auditoriaController = app(AuditoriaController::class);
+        $auditoriaController->create($accion, 'CORRESPONDENCIA');
+    }
     public function index()
     {
         // Cargamos relaciones incluyendo usuariosAsignados para ver participantes desde el index si es necesario
@@ -40,6 +46,7 @@ class ProcesoController extends Controller
         $data['usuario_creador_id'] = Auth::id();
 
         $proceso = Proceso::create($data);
+        $this->auditoria('ADD PROCESO ID ' . $proceso->id);
 
         return redirect()->route('correspondencia.procesos.show', $proceso)
             ->with('success', 'Paso creado. Por favor, asigne los participantes para finalizar.');
@@ -73,7 +80,7 @@ class ProcesoController extends Controller
         ]);
 
         $proceso->update($data);
-
+        $this->auditoria('UPDATE PROCESO ID ' . $proceso->id);
         return redirect()->route('correspondencia.procesos.index')
             ->with('success', 'Proceso actualizado correctamente');
     }

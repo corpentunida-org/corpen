@@ -5,10 +5,16 @@ namespace App\Http\Controllers\Correspondencia;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Correspondencia\FlujoDeTrabajo;
+use App\Http\Controllers\AuditoriaController;
 use App\Models\User;
 
 class FlujoDeTrabajoController extends Controller
 {
+    private function auditoria($accion)
+    {
+        $auditoriaController = app(AuditoriaController::class);
+        $auditoriaController->create($accion, 'CORRESPONDENCIA');
+    }
     public function index()
     {
         // Agregamos 'correspondencias_count' de forma eficiente
@@ -33,7 +39,8 @@ class FlujoDeTrabajoController extends Controller
             'usuario_id' => 'required|exists:users,id',
         ]);
 
-        FlujoDeTrabajo::create($data);
+        $flujoadd = FlujoDeTrabajo::create($data);
+        $this->auditoria('ADD FLUJO DE TRABAJO ID ' . $flujoadd->id);
 
         return redirect()->route('correspondencia.flujos.index')->with('success','Flujo creado correctamente');
     }
@@ -62,7 +69,7 @@ class FlujoDeTrabajoController extends Controller
         ]);
 
         $flujo->update($data);
-
+        $this->auditoria('UPDATE FLUJO DE TRABAJO ID ' . $flujo->id);
         return redirect()->route('correspondencia.flujos.index')->with('success','Flujo actualizado correctamente');
     }
 
