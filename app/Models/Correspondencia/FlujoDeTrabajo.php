@@ -25,4 +25,13 @@ class FlujoDeTrabajo extends Model
     {
         return $this->belongsTo(User::class, 'usuario_id');
     }
+    public function correspondencias()
+    {
+        return $this->hasMany(Correspondencia::class, 'flujo_id');
+    }
+    public function procesos()
+    {
+        // Un flujo tiene muchos procesos
+        return $this->hasMany(Proceso::class, 'flujo_id');
+    }
 }
