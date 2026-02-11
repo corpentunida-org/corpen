@@ -28,8 +28,7 @@ class CorrespondenciaProcesoController extends Controller
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('id_correspondencia', 'LIKE', "%$search%")
-                  ->orWhere('observacion', 'LIKE', "%$search%");
+                $q->where('id_correspondencia', 'LIKE', "%$search%")->orWhere('observacion', 'LIKE', "%$search%");
             });
         }
 
@@ -54,7 +53,7 @@ class CorrespondenciaProcesoController extends Controller
         $correspondencias = Correspondencia::select('id_radicado', 'asunto')->get();
         $procesos_disponibles = Proceso::with('flujo')->get();
         $estados = Estado::all();
-        
+
         return view('correspondencia.correspondencias_procesos.create', compact('correspondencias', 'procesos_disponibles', 'estados'));
     }
 
@@ -66,58 +65,44 @@ class CorrespondenciaProcesoController extends Controller
         // Validación basada en los tipos de tu tabla (BigInt, Varchar, DateTime)
         $validData = $request->validate([
             'id_correspondencia' => 'required|integer|exists:corr_correspondencia,id_radicado',
-            'id_proceso'         => 'required|integer|exists:corr_procesos,id',
-            'observacion'        => 'required|string',
-            'estado'             => 'required|string|max:255',
-            'fecha_gestion'      => 'required|date',
-            'documento_arc'      => 'nullable|file|mimes:pdf,doc,docx,jpg,png|max:10240',
+            'id_proceso' => 'required|integer|exists:corr_procesos,id',
+            'observacion' => 'required|string',
+            'estado' => 'required|string|max:255',
+            'fecha_gestion' => 'required|date',
+            'documento_arc' => 'nullable|file|mimes:pdf,doc,docx,jpg,png|max:10240',
         ]);
 
         try {
-            // Usamos una variable para capturar el ID fuera de la transacción si es necesario
             $idRadicado = $validData['id_correspondencia'];
-
-            DB::transaction(function () use ($request, $validData, $idRadicado) {
-                $path = null;
-
-                // 1. Gestión de Archivo en S3
+            DB::transaction(function () use ($request, $validData, $idRadicado) {                
                 if ($request->hasFile('documento_arc')) {
                     $file = $request->file('documento_arc');
-                    $fileName = 'seg_' . $idRadicado . '_' . time() . '.' . $file->getClientOriginalExtension();
-                    $path = 'corpentunida/correspondencia/seguimientos/' . $fileName;
-                    
-                    Storage::disk('s3')->put($path, fopen($file, 'r+'));
-                }
+                    $nombre = 'corpentunida/correspondencia/seg_' . $idRadicado . '_' . time() . '.' . $file->getClientOriginalExtension();
+                    Storage::disk('s3')->put($nombre, file_get_contents($file));
+                }                
 
-                // 2. Creación del registro (Eloquent maneja created_at/updated_at automáticamente)
                 CorrespondenciaProceso::create([
                     'id_correspondencia' => $idRadicado,
-                    'observacion'        => $validData['observacion'],
-                    'estado'             => $validData['estado'],
-                    'id_proceso'         => $validData['id_proceso'],
-                    'notificado_email'   => $request->boolean('notificado_email'), // Laravel castea a 1 o 0
-                    'fecha_gestion'      => $validData['fecha_gestion'],
-                    'documento_arc'      => $path,
-                    'fk_usuario'         => auth()->id(),
+                    'observacion' => $validData['observacion'],
+                    'estado' => $validData['estado'],
+                    'id_proceso' => $validData['id_proceso'],
+                    'notificado_email' => $request->boolean('notificado_email'), // Laravel castea a 1 o 0
+                    'fecha_gestion' => $validData['fecha_gestion'],
+                    'documento_arc' => $nombre,
+                    'fk_usuario' => auth()->id(),
                 ]);
-
-                // 3. Sincronización: Actualizar estado en la tabla Maestra de Correspondencia
+                
                 $nombreEstado = str_replace('_', ' ', $validData['estado']);
                 $estadoMaestro = Estado::where('nombre', 'LIKE', '%' . $nombreEstado . '%')->first();
-                
+
                 if ($estadoMaestro) {
-                    Correspondencia::where('id_radicado', $idRadicado)
-                        ->update(['estado_id' => $estadoMaestro->id]);
+                    Correspondencia::where('id_radicado', $idRadicado)->update(['estado_id' => $estadoMaestro->id]);
                 }
             });
 
-            return redirect()->route('correspondencia.correspondencias.show', $idRadicado)
-                ->with('success', 'Seguimiento registrado y estado actualizado correctamente.');
-
+            return redirect()->route('correspondencia.correspondencias.show', $idRadicado)->with('success', 'Seguimiento registrado y estado actualizado correctamente.');
         } catch (\Exception $e) {
-            return redirect()->back()
-                ->withInput()
-                ->with('error', 'Error en la operación: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Error en la operación: ' . $e->getMessage());
         }
     }
 
@@ -146,17 +131,17 @@ class CorrespondenciaProcesoController extends Controller
     public function update(Request $request, CorrespondenciaProceso $correspondenciaProceso)
     {
         $validData = $request->validate([
-            'observacion'   => 'required|string',
-            'estado'        => 'required|string|max:255',
+            'observacion' => 'required|string',
+            'estado' => 'required|string|max:255',
             'fecha_gestion' => 'required|date',
             'documento_arc' => 'nullable|file|mimes:pdf,doc,docx,jpg,png|max:10240',
         ]);
 
         try {
             $updateData = [
-                'observacion'      => $validData['observacion'],
-                'estado'           => $validData['estado'],
-                'fecha_gestion'    => $validData['fecha_gestion'],
+                'observacion' => $validData['observacion'],
+                'estado' => $validData['estado'],
+                'fecha_gestion' => $validData['fecha_gestion'],
                 'notificado_email' => $request->boolean('notificado_email'),
             ];
 
@@ -165,20 +150,20 @@ class CorrespondenciaProcesoController extends Controller
                 if ($correspondenciaProceso->documento_arc) {
                     Storage::disk('s3')->delete($correspondenciaProceso->documento_arc);
                 }
-                
-                $file = $request->file('documento_arc');
-                $path = 'corpentunida/correspondencia/seguimientos/upd_' . time() . '.' . $file->getClientOriginalExtension();
-                Storage::disk('s3')->put($path, fopen($file, 'r+'));
-                $updateData['documento_arc'] = $path;
+
+                $file = $request->file('documento_arc');                
+                $nombre = 'corpentunida/correspondencia/upd_seg_' . $idRadicado . '_' . time() . '.' . $file->getClientOriginalExtension();
+                Storage::disk('s3')->put($nombre, file_get_contents($file))
+                $updateData['documento_arc'] = $nombre;
             }
 
             $correspondenciaProceso->update($updateData);
 
-            return redirect()->route('correspondencia.correspondencias.show', $correspondenciaProceso->id_correspondencia)
-                ->with('success', 'Gestión actualizada correctamente.');
-
+            return redirect()->route('correspondencia.correspondencias.show', $correspondenciaProceso->id_correspondencia)->with('success', 'Gestión actualizada correctamente.');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Error al actualizar: ' . $e->getMessage());
+            return redirect()
+                ->back()
+                ->with('error', 'Error al actualizar: ' . $e->getMessage());
         }
     }
 
@@ -195,8 +180,7 @@ class CorrespondenciaProcesoController extends Controller
             }
             $correspondenciaProceso->delete();
 
-            return redirect()->route('correspondencia.correspondencias.show', $id_radicado)
-                ->with('success', 'Registro eliminado del historial.');
+            return redirect()->route('correspondencia.correspondencias.show', $id_radicado)->with('success', 'Registro eliminado del historial.');
         } catch (\Exception $e) {
             return back()->with('error', 'No se pudo eliminar: ' . $e->getMessage());
         }
@@ -211,7 +195,7 @@ class CorrespondenciaProcesoController extends Controller
             ->where('id_correspondencia', $id_radicado)
             ->orderBy('fecha_gestion', 'desc')
             ->get();
-            
+
         return response()->json($historial);
     }
 }
