@@ -109,7 +109,7 @@
                                                     <i class="bi bi-chat-left-text"></i>
                                                 </button>
                                                 @if($registro->documento_arc)
-                                                    <a href="{{ Storage::disk('s3')->url($registro->documento_arc) }}" target="_blank" class="btn btn-sm btn-soft-danger border-0 rounded-circle" title="Ver Soporte">
+                                                    <a href="{{ $registro->getFile($registro->documento_arc) }}" target="_blank" class="btn btn-sm btn-soft-danger border-0 rounded-circle" title="Ver Soporte">
                                                         <i class="bi bi-file-earmark-pdf"></i>
                                                     </a>
                                                 @endif

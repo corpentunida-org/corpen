@@ -4,6 +4,7 @@ namespace App\Models\Correspondencia;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\Storage;
 use App\Models\User;
 
 class CorrespondenciaProceso extends Model
@@ -30,6 +31,17 @@ class CorrespondenciaProceso extends Model
         'notificado_email' => 'boolean',
         'fecha_gestion' => 'datetime',
     ];
+
+    public function getFile($nameFile)
+    {
+        $url = '#';
+        if ($nameFile) {
+            if (Storage::disk('s3')->exists($nameFile)) {
+                $url = Storage::disk('s3')->temporaryUrl($nameFile, now()->addMinutes(5));
+            }
+        }
+        return $url;
+    }
 
     /**
      * Correspondencia relacionada

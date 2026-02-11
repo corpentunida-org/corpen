@@ -33,7 +33,6 @@ class IndicadoresController extends Controller
                 }
             }
         }
-
         $promedioAlcanzados = $totalIndicadores > 0 ? ($indicadoresAlcanzados / $totalIndicadores) * 100 : 0;
         $promedioAlcanzados = round($promedioAlcanzados, 2);
         return view('indicators.index', compact('indicators', 'lastReport','promedioAlcanzados'));
