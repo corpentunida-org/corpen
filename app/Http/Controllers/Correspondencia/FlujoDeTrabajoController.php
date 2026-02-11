@@ -11,7 +11,11 @@ class FlujoDeTrabajoController extends Controller
 {
     public function index()
     {
-        $flujos = FlujoDeTrabajo::with('usuario')->paginate(15);
+        // Agregamos 'correspondencias_count' de forma eficiente
+        $flujos = FlujoDeTrabajo::with('usuario')
+            ->withCount('correspondencias') 
+            ->paginate(15);
+
         return view('correspondencia.flujos.index', compact('flujos'));
     }
 
@@ -36,9 +40,13 @@ class FlujoDeTrabajoController extends Controller
 
     public function show(FlujoDeTrabajo $flujo)
     {
+        // Cargamos usuario responsable, conteo de correspondencias 
+        // y la lista de procesos con sus usuarios asignados
+        $flujo->load(['usuario', 'procesos.usuarios'])
+            ->loadCount('correspondencias');
+            
         return view('correspondencia.flujos.show', compact('flujo'));
     }
-
     public function edit(FlujoDeTrabajo $flujo)
     {
         $usuarios = User::all();
@@ -60,7 +68,12 @@ class FlujoDeTrabajoController extends Controller
 
     public function destroy(FlujoDeTrabajo $flujo)
     {
+        // VALIDACIÓN: Si el flujo tiene correspondencias, no se puede eliminar
+        if ($flujo->correspondencias()->exists()) {
+            return redirect()->back()->with('error', 'No se puede eliminar: Este flujo está siendo utilizado en registros de correspondencia.');
+        }
+
         $flujo->delete();
-        return redirect()->route('correspondencia.flujos.index')->with('success','Flujo eliminado correctamente');
+        return redirect()->route('correspondencia.flujos.index')->with('success', 'Flujo eliminado correctamente.');
     }
 }
