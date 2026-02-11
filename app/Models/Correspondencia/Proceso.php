@@ -47,7 +47,7 @@ class Proceso extends Model
                     ->withPivot('detalle')
                     ->withTimestamps();
     }
-
+    
     /**
      * Relación One-to-Many: Acceso a la tabla intermedia como modelo
      * CORRECCIÓN: Se cambió 'id_proceso' por 'proceso_id'
