@@ -34,7 +34,7 @@
                                 <span class="badge bg-soft-primary text-primary mb-2 px-3 py-2 rounded-pill" style="font-size: 0.7rem; letter-spacing: 0.5px; font-weight: 700; text-transform: uppercase;">Asunto del Documento</span>
                                 <h4 class="fw-bold text-dark mb-0">{{ $correspondencia->asunto }}</h4>
                             </div>
-                            <span class="badge rounded-pill px-4 py-2 {{ Str::slug($correspondencia->estado->nombre ?? 'default') }} shadow-sm">
+                            <span class="badge rounded-pill px-4 py-2 text-primary fw-bold">
                                 {{ $correspondencia->estado->nombre ?? 'Estado N/D' }}
                             </span>
                         </div>
@@ -72,17 +72,25 @@
                             <table class="table table-hover align-middle mb-0">
                                 <thead class="bg-light">
                                     <tr>
-                                        <th class="ps-4 py-3 border-0">Etapa/Proceso</th>
-                                        <th class="border-0">Estado</th>
-                                        <th class="border-0">Responsable</th>
+                                        <th class="ps-4 py-3 border-0">Etapa/Proceso/Estado</th>
                                         <th class="border-0">Fecha</th>
                                         <th class="text-center border-0">Notif.</th>
-                                        <th class="pe-4 text-end border-0">Acciones</th>
+                                        <th class="text-center border-0">Finalizado</th>
+                                        <th class="pe-4 text-end border-0">Soporte</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @forelse($correspondencia->procesos as $registro)
-                                    <tr>
+                                    <tr class="clickable-row" 
+                                        data-proceso="{{ $registro->proceso->nombre ?? 'Gestión Directa' }}"
+                                        data-estado="{{ ucfirst(str_replace('_', ' ', $registro->estado)) }}"
+                                        data-usuario="{{ $registro->usuario->name ?? 'N/D' }}"
+                                        data-fecha="{{ \Carbon\Carbon::parse($registro->fecha_gestion)->format('d/m/Y H:i') }}"
+                                        data-observacion="{{ $registro->observacion }}"
+                                        data-notificado="{{ $registro->notificado_email ? 'Sí' : 'No' }}"
+                                        data-finalizado="{{ $registro->finalizado ? 'Sí' : 'No' }}"
+                                        style="{{ $registro->finalizado ? 'background-color: #fff9f9;' : '' }}">
+                                        
                                         <td class="ps-4">
                                             <div class="fw-bold small text-primary">
                                                 {{ $registro->proceso->nombre ?? 'Gestión Directa' }}
@@ -90,18 +98,26 @@
                                             <div class="text-muted" style="font-size: 0.7rem;">
                                                 {{ $registro->proceso->flujo->nombre ?? '' }}
                                             </div>
+                                            <div class="fw-medium text-muted" style="font-size: 0.7rem;">
+                                                <span class="text-uppercase">{{ str_replace('_', ' ', $registro->estado) }}</span>
+                                            </div>
                                         </td>
-                                        <td>
-                                            <span class="badge bg-soft-info text-info rounded-pill px-3 border-0">
-                                                {{ ucfirst(str_replace('_', ' ', $registro->estado)) }}
-                                            </span>
-                                        </td>
-                                        <td class="small">{{ $registro->usuario->name ?? 'N/D' }}</td>
+
                                         <td class="small text-muted">
                                             {{ \Carbon\Carbon::parse($registro->fecha_gestion)->format('d/m/Y H:i') }}
                                         </td>
                                         <td class="text-center">
-                                            <i class="bi {{ $registro->notificado_email ? 'bi-envelope-check text-success' : 'bi-envelope text-muted opacity-50' }}"></i>
+                                            <i class="bi {{ $registro->notificado_email ? 'bi-envelope-check text-success' : 'bi-envelope text-muted opacity-50' }}" 
+                                               title="{{ $registro->notificado_email ? 'Notificado por correo' : 'Sin notificación' }}" data-bs-toggle="tooltip"></i>
+                                        </td>
+                                        <td class="text-center">
+                                            @if($registro->finalizado)
+                                                <span class="badge bg-danger rounded-circle p-1" title="Cierre de Expediente" data-bs-toggle="tooltip">
+                                                    <i class="bi bi-lock-fill text-white" style="font-size: 0.75rem;"></i>
+                                                </span>
+                                            @else
+                                                <i class="bi bi-unlock text-muted opacity-25" style="font-size: 0.85rem;"></i>
+                                            @endif
                                         </td>
                                         <td class="pe-4 text-end">
                                             <div class="btn-group">
@@ -118,7 +134,7 @@
                                     </tr>
                                     @empty
                                     <tr>
-                                        <td colspan="6" class="text-center py-5 text-muted">No hay gestiones registradas aún.</td>
+                                        <td colspan="5" class="text-center py-5 text-muted">No hay gestiones registradas aún.</td>
                                     </tr>
                                     @endforelse
                                 </tbody>
@@ -130,14 +146,11 @@
 
             {{-- COLUMNA DERECHA: INDICADORES Y FLUJO --}}
             <div class="col-lg-4">
-                {{-- INDICADOR DE TIEMPO --}}
-                @php
-                    $limite = \Carbon\Carbon::parse($correspondencia->fecha_solicitud)->addDays($correspondencia->trd->tiempo_gestion ?? 0);
-                    $dias = now()->diffInDays($limite, false);
-                    
-                    if ($dias > 3) {
+                @php                   
+
+                    if ($diferenciatrd->y > 3) {
                         $bgColor = '#e7f3ff'; $textColor = '#3a7abd'; $borderColor = '#cfe5ff';
-                    } elseif ($dias <= 0) {
+                    } elseif ($diferenciatrd->y <= 2 || $diferenciatrd->y >= 0) {
                         $bgColor = '#ffe5e5'; $textColor = '#bd3a3a'; $borderColor = '#ffcfcf';
                     } else {
                         $bgColor = '#fff8e1'; $textColor = '#8d6e1d'; $borderColor = '#ffecb3';
@@ -145,31 +158,67 @@
                 @endphp
                 
                 <div class="card border-0 shadow-sm mb-4" 
-                     style="border-radius: 20px; background-color: {{ $bgColor }}; border: 1px solid {{ $borderColor }} !important;">
-                    <div class="card-body p-4 text-center">
-                        <h6 class="text-uppercase fw-bold mb-3" style="color: {{ $textColor }}; opacity: 0.8; font-size: 0.75rem; letter-spacing: 1px;">
-                            Vencimiento TRD
-                        </h6>
-                        <div class="d-flex justify-content-center align-items-baseline mb-1">
-                            <span class="display-4 fw-bold" style="color: {{ $textColor }};">{{ abs((int)$dias) }}</span>
+                    style="border-radius: 24px; background-color: {{ $bgColor }}; border: 1px solid {{ $borderColor }} !important; overflow: hidden;">
+                    <div class="card-body p-4">
+                        
+                        <div class="text-center mb-3">
+                            <span class="badge rounded-pill px-3 py-2" style="background-color: rgba(255,255,255,0.2); color: {{ $textColor }}; font-size: 0.65rem; letter-spacing: 0.5px;">
+                                <i class="bi bi-info-circle-fill me-1"></i> CONTROL DE GESTIÓN DOCUMENTAL
+                            </span>
                         </div>
-                        <p class="mb-3 fw-medium" style="color: {{ $textColor }}; opacity: 0.9;">
-                            {{ $dias >= 0 ? 'Días restantes' : 'Días de retraso' }}
-                        </p>
-                        <div class="py-3 px-3 rounded-4" style="background-color: rgba(255,255,255,0.4); border: 1px dashed {{ $borderColor }};">
-                            <div class="d-flex justify-content-between mb-1">
-                                <span class="small opacity-75 fw-bold" style="color: {{ $textColor }};">Serie:</span>
-                                <span class="small fw-bold" style="color: {{ $textColor }};">{{ $correspondencia->trd->serie_documental ?? 'N/A' }}</span>
-                            </div>
-                            <div class="d-flex justify-content-between">
-                                <span class="small opacity-75 fw-bold" style="color: {{ $textColor }};">Límite:</span>
-                                <span class="small fw-bold" style="color: {{ $textColor }};">{{ $limite->format('d/m/Y') }}</span>
+
+                        <div class="text-center mb-4">
+                            <h6 class="text-uppercase fw-bolder mb-3" style="color: {{ $textColor }}; opacity: 0.9; font-size: 0.75rem;">
+                                Tiempo restante de conservación
+                            </h6>
+                            
+                            <div class="row g-2 justify-content-center">
+                                <div class="col-4">
+                                    <div class="p-2 rounded-3" style="background: rgba(255,255,255,0.15);">
+                                        <div class="h3 fw-bold m-0" style="color: {{ $textColor }};">{{$diferenciatrd->y}}</div>
+                                        <div class="small opacity-75" style="color: {{ $textColor }}; font-size: 0.6rem;">AÑOS</div>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="p-2 rounded-3" style="background: rgba(255,255,255,0.15);">
+                                        <div class="h3 fw-bold m-0" style="color: {{ $textColor }};">{{$diferenciatrd->m}}</div>
+                                        <div class="small opacity-75" style="color: {{ $textColor }}; font-size: 0.6rem;">MESES</div>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="p-2 rounded-3" style="background: rgba(255,255,255,0.15);">
+                                        <div class="h3 fw-bold m-0" style="color: {{ $textColor }};">{{$diferenciatrd->d}}</div>
+                                        <div class="small opacity-75" style="color: {{ $textColor }}; font-size: 0.6rem;">DÍAS</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
+
+                        <div class="mb-4 text-center px-2">
+                            <p style="color: {{ $textColor }}; font-size: 0.85rem; line-height: 1.4; opacity: 0.9;">
+                                Este documento está sujeto a los tiempos de retención definidos para la serie 
+                                <strong>"{{ $correspondencia->trd->serie_documental ?? 'General' }}"</strong>. 
+                                Debe permanecer en archivo de gestión hasta cumplir su ciclo de vida.
+                            </p>
+                        </div>
+                        
+                        <div class="p-3 rounded-4" style="background-color: rgba(255,255,255,0.3); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.2);">
+                            <div class="d-flex justify-content-between align-items-center mb-2 pb-2" style="border-bottom: 1px dashed {{ $borderColor }}; opacity: 0.8;">
+                                <span class="small fw-bold" style="color: {{ $textColor }};"><i class="bi bi-shield-check me-1"></i> Disposición:</span>
+                                <span class="small fw-bold text-uppercase" style="color: {{ $textColor }};">Archivo Central</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="small fw-bold" style="color: {{ $textColor }};"><i class="bi bi-calendar-event me-1"></i> Límite TRD:</span>
+                                <span class="badge shadow-sm" style="background-color: {{ $textColor }}; color: {{ $bgColor }}; border-radius: 8px; font-size: 0.85rem;">
+                                    {{ $limite->format('d/m/Y') }}
+                                </span>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
-                {{-- RUTA DEL PROCESO + PARTICIPANTES --}}
+                {{-- RUTA DEL PROCESO --}}
                 <div class="card border-0 shadow-sm mb-4" style="border-radius: 20px;">
                     <div class="card-header bg-transparent border-0 pt-4 px-4">
                         <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-people me-2 text-primary"></i>Ruta y Participantes</h6>
@@ -179,7 +228,6 @@
                             @php $procesosCompletados = $correspondencia->procesos->pluck('id_proceso')->toArray(); @endphp
                             @forelse($procesos_disponibles as $index => $paso)
                                 <div class="d-flex mb-4 position-relative">
-                                    {{-- Indicador Visual --}}
                                     <div class="me-3 position-relative" style="z-index: 2;">
                                         @if(in_array($paso->id, $procesosCompletados))
                                             <span class="badge rounded-circle bg-success p-2 shadow-sm">
@@ -195,13 +243,10 @@
                                         @endif
                                     </div>
                                     
-                                    {{-- Información del Proceso --}}
                                     <div class="w-100">
                                         <div class="fw-bold small {{ in_array($paso->id, $procesosCompletados) ? 'text-success' : 'text-dark' }}">
                                             {{ $paso->nombre }}
                                         </div>
-                                        
-                                        {{-- AVATARES DE PARTICIPANTES --}}
                                         <div class="d-flex align-items-center mt-2">
                                             @if($paso->usuariosAsignados && $paso->usuariosAsignados->count() > 0)
                                                 <div class="avatar-group d-flex">
@@ -226,27 +271,11 @@
                         </div>
                     </div>
                 </div>
-
-                {{-- ARCHIVO ORIGINAL --}}
-                @if($correspondencia->documento_arc)
-                <div class="card border-0 shadow-sm p-4 text-center" style="border-radius: 20px; background: linear-gradient(145deg, #ffffff, #f8f9fa);">
-                    <div class="mb-3">
-                        <div class="bg-soft-danger d-inline-block p-3 rounded-circle">
-                            <i class="bi bi-file-earmark-pdf text-danger h1 mb-0"></i>
-                        </div>
-                    </div>
-                    <h6 class="fw-bold mb-1">Documento Original</h6>
-                    <p class="text-muted small mb-3">Expediente digitalizado</p>
-                    <a href="{{ Storage::disk('s3')->url($correspondencia->documento_arc) }}" target="_blank" class="btn btn-dark w-100 rounded-pill py-2 fw-bold">
-                        <i class="bi bi-eye me-2"></i>Visualizar PDF
-                    </a>
-                </div>
-                @endif
             </div>
         </div>
     </div>
 
-    {{-- MODAL REESTILIZADO --}}
+    {{-- MODAL 1: REGISTRAR GESTIÓN --}}
     <div class="modal fade" id="modalSeguimiento" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg" style="border-radius: 25px;">
@@ -259,6 +288,7 @@
                 <form action="{{ route('correspondencia.correspondencias-procesos.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="id_correspondencia" value="{{ $correspondencia->id_radicado }}">
+                    
                     <div class="modal-body p-4">
                         <div class="row g-3">
                             <div class="col-md-6">
@@ -291,54 +321,152 @@
                                 <label class="form-label fw-bold small text-muted">Fecha</label>
                                 <input type="datetime-local" name="fecha_gestion" class="form-control border-0 bg-light rounded-3" value="{{ now()->format('Y-m-d\TH:i') }}" required>
                             </div>
+
+                            <div class="col-12 mt-4">
+                                <div class="row g-2">
+                                    <div class="col-md-6">
+                                        <div class="form-check form-switch p-3 border rounded-3 bg-light w-100 d-flex align-items-center justify-content-between">
+                                            <div class="ms-1">
+                                                <label class="form-check-label fw-bold d-block mb-0" for="notifCheck">Notificar Remitente</label>
+                                                <small class="text-muted" style="font-size: 0.7rem;">Enviar correo automático</small>
+                                            </div>
+                                            <input class="form-check-input ms-0" style="width: 2.5em; height: 1.25em;" type="checkbox" name="notificado_email" value="1" id="notifCheck">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-check form-switch p-3 border rounded-3 w-100 d-flex align-items-center justify-content-between" style="background-color: #fff5f5; border-color: #feb2b2 !important;">
+                                            <div class="ms-1">
+                                                <label class="form-check-label fw-bold text-danger d-block mb-0" for="finalizadoCheck">Finalizar Expediente</label>
+                                                <small class="text-danger opacity-75" style="font-size: 0.7rem;">Cierra el ciclo del radicado</small>
+                                            </div>
+                                            <input class="form-check-input ms-0" style="width: 2.5em; height: 1.25em;" type="checkbox" name="finalizado" value="1" id="finalizadoCheck">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
+
                     <div class="modal-footer border-0 pb-4 px-4">
                         <button type="button" class="btn btn-light rounded-pill px-4 fw-bold" data-bs-dismiss="modal">Cerrar</button>
-                        <button type="submit" class="btn btn-primary rounded-pill px-4 shadow fw-bold">Guardar Cambios</button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4 shadow fw-bold">
+                            <i class="bi bi-save me-2"></i>Guardar Gestión
+                        </button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
+
+    {{-- MODAL 2: VER DETALLES --}}
+    <div class="modal fade" id="modalDetalleHistorial" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 25px;">
+                <div class="modal-header bg-light border-0 py-3 px-4" style="border-radius: 25px 25px 0 0;">
+                    <h5 class="modal-title fw-bold text-dark">Detalle de la Gestión</h5>
+                    <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-4">
+                        <label class="text-muted small d-block mb-1 text-uppercase fw-bold">Observación</label>
+                        <div id="det-observacion" class="p-3 rounded-4 bg-light text-dark border-start border-4 border-primary shadow-sm">
+                        </div>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <label class="text-muted small d-block mb-1">Etapa</label>
+                            <span id="det-proceso" class="fw-bold text-primary"></span>
+                        </div>
+                        <div class="col-6">
+                            <label class="text-muted small d-block mb-1">Estado</label>
+                            <span id="det-estado" class="badge bg-soft-info text-info rounded-pill px-3 text-uppercase"></span>
+                        </div>
+                        <div class="col-6">
+                            <label class="text-muted small d-block mb-1">Responsable</label>
+                            <span id="det-usuario" class="fw-bold"></span>
+                        </div>
+                        <div class="col-6">
+                            <label class="text-muted small d-block mb-1">Fecha y Hora</label>
+                            <span id="det-fecha" class="text-muted small d-block"></span>
+                        </div>
+                        <div class="col-6">
+                            <label class="text-muted small d-block mb-1">Notificado</label>
+                            <span id="det-notificado" class="fw-bold"></span>
+                        </div>
+                        <div class="col-6">
+                            <label class="text-muted small d-block mb-1">Cierre Expediente</label>
+                            <span id="det-finalizado" class="fw-bold"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-secondary rounded-pill px-4 fw-bold" data-bs-dismiss="modal">Regresar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        body { background-color: #f4f7f9; }
+        .bg-soft-primary { background-color: #eef2ff; }
+        .bg-soft-info { background-color: #e0f7fa; }
+        .bg-soft-danger { background-color: #fff1f0; }
+        .btn-soft-danger { background-color: #fff1f0; color: #ff4d4f; }
+        .btn-soft-danger:hover { background-color: #ff4d4f; color: white; }
+        
+        .clickable-row { cursor: pointer; transition: background-color 0.2s ease; }
+        .clickable-row:hover { background-color: #f8f9ff !important; }
+
+        /* Estados para la Card Principal y Tablas */
+        .state-badge.recibido { background-color: #e3f2fd; color: #1976d2; }
+        .state-badge.en-tramite, .state-badge.en_tramite { background-color: #fff3e0; color: #f57c00; }
+        .state-badge.finalizado { background-color: #e8f5e9; color: #388e3c; }
+        .state-badge.devuelto { background-color: #fce4ec; color: #c2185b; }
+
+        .main-header { border-bottom: 1px solid #dee2e6; }
+        .table thead th { font-size: 0.7rem; letter-spacing: 0.5px; font-weight: 700; color: #8898aa; }
+        
+        .avatar-circle-sm {
+            width: 24px; height: 24px; background-color: #e9ecef; color: #495057;
+            border: 2px solid #fff; border-radius: 50%; display: flex;
+            align-items: center; justify-content: center; font-size: 0.65rem;
+            font-weight: 700; margin-left: -8px; transition: all 0.2s ease; cursor: default;
+        }
+        .avatar-circle-sm:first-child { margin-left: 0; }
+        .avatar-circle-sm:hover { transform: translateY(-3px); z-index: 10; background-color: #3b82f6; color: white; }
+
+        .form-select:focus, .form-control:focus { background-color: #fff; box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.05); border: 1px solid #dee2e6; }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Inicializar Tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            });
+
+            // Lógica para abrir modal al hacer clic en la FILA
+            const filas = document.querySelectorAll('.clickable-row');
+            const modalDetalle = document.getElementById('modalDetalleHistorial');
+            
+            if (modalDetalle) {
+                const modalInstance = new bootstrap.Modal(modalDetalle);
+
+                filas.forEach(fila => {
+                    fila.addEventListener('click', function() {
+                        document.getElementById('det-proceso').textContent = this.getAttribute('data-proceso');
+                        document.getElementById('det-estado').textContent = this.getAttribute('data-estado');
+                        document.getElementById('det-usuario').textContent = this.getAttribute('data-usuario');
+                        document.getElementById('det-fecha').textContent = this.getAttribute('data-fecha');
+                        document.getElementById('det-observacion').textContent = this.getAttribute('data-observacion') || 'Sin detalles registrados.';
+                        document.getElementById('det-notificado').textContent = this.getAttribute('data-notificado');
+                        document.getElementById('det-finalizado').textContent = this.getAttribute('data-finalizado');
+
+                        modalInstance.show();
+                    });
+                });
+            }
+        });
+    </script>
 </x-base-layout>
-
-<style>
-    body { background-color: #f4f7f9; }
-    .bg-soft-primary { background-color: #eef2ff; }
-    .bg-soft-info { background-color: #e0f7fa; }
-    .bg-soft-danger { background-color: #fff1f0; }
-    .btn-soft-danger { background-color: #fff1f0; color: #ff4d4f; }
-    .btn-soft-danger:hover { background-color: #ff4d4f; color: white; }
-    
-    /* Estados Pastel */
-    .recibido { background-color: #e3f2fd; color: #1976d2; border: 0; font-weight: 600; }
-    .en-tramite, .en_tramite { background-color: #fff3e0; color: #f57c00; border: 0; font-weight: 600; }
-    .finalizado { background-color: #e8f5e9; color: #388e3c; border: 0; font-weight: 600; }
-    .devuelto { background-color: #fce4ec; color: #c2185b; border: 0; font-weight: 600; }
-
-    .main-header { border-bottom: 1px solid #dee2e6; }
-    .table thead th { font-size: 0.7rem; letter-spacing: 0.5px; font-weight: 700; color: #8898aa; }
-    
-    /* Estilos de Avatares */
-    .avatar-group { display: flex; padding-left: 0; }
-    .avatar-circle-sm {
-        width: 24px; height: 24px; background-color: #e9ecef; color: #495057;
-        border: 2px solid #fff; border-radius: 50%; display: flex;
-        align-items: center; justify-content: center; font-size: 0.65rem;
-        font-weight: 700; margin-left: -8px; transition: all 0.2s ease; cursor: default;
-    }
-    .avatar-circle-sm:first-child { margin-left: 0; }
-    .avatar-circle-sm:hover { transform: translateY(-3px); z-index: 10; background-color: #3b82f6; color: white; }
-
-    .form-select:focus, .form-control:focus { background-color: #fff; box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.05); border: 1px solid #dee2e6; }
-</style>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-        tooltipTriggerList.map(function (tooltipTriggerEl) {
-            return new bootstrap.Tooltip(tooltipTriggerEl)
-        })
-    });
-</script>

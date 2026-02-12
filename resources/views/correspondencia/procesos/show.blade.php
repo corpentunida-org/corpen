@@ -1,37 +1,55 @@
 <x-base-layout>
     <div class="app-container py-4">
+        {{-- Alerta de éxito --}}
         @if(session('success'))
             <div class="alert alert-success border-0 shadow-sm mb-4 d-flex align-items-center" style="border-radius: 12px; background-color: #ecfdf5; color: #065f46;">
                 <i class="fas fa-check-circle me-3 fs-4"></i> {{ session('success') }}
             </div>
         @endif
 
+        {{-- Encabezado de la página --}}
         <header class="main-header mb-4">
-            <div class="d-flex align-items-center justify-content-between">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
                 <div class="d-flex align-items-center gap-3">
-                    <a href="{{ route('correspondencia.flujos.show', $proceso->flujo_id) }}" class="btn btn-white shadow-sm rounded-circle border d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;" title="Volver al flujo">
+                    <a href="{{ route('correspondencia.procesos.index') }}" class="btn btn-white shadow-sm rounded-circle border d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;" title="Volver al listado">
                         <i class="fas fa-arrow-left text-muted"></i>
                     </a>
                     <div>
-                        <h1 class="h3 fw-bold mb-0">{{ $proceso->nombre }}</h1>
+                        <div class="d-flex align-items-center gap-2">
+                            <h1 class="h3 fw-bold mb-0">{{ $proceso->nombre }}</h1>
+                            @if($proceso->activo)
+                                <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-3" style="font-size: 0.7rem;">
+                                    <i class="fas fa-circle me-1" style="font-size: 0.5rem;"></i> ACTIVO
+                                </span>
+                            @else
+                                <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle px-3" style="font-size: 0.7rem;">
+                                    <i class="fas fa-pause me-1" style="font-size: 0.5rem;"></i> INACTIVO
+                                </span>
+                            @endif
+                        </div>
                         <span class="badge bg-soft-primary mt-1" style="background-color: #eef2ff; color: #4f46e5; border: 1px solid #c7d2fe;">
                             <i class="fas fa-project-diagram me-1"></i> {{ $proceso->flujo->nombre }}
                         </span>
                     </div>
                 </div>
 
-                <a href="{{ route('correspondencia.flujos.show', $proceso->flujo_id) }}" class="btn btn-outline-indigo rounded-pill px-3 fw-bold shadow-sm border-2">
-                    <i class="bi bi-diagram-3 me-2"></i>Ver Estructura del Flujo
-                </a>
+                <div class="d-flex gap-2">
+                    <a href="{{ route('correspondencia.procesos.edit', $proceso) }}" class="btn btn-white border rounded-pill px-3 fw-bold shadow-sm">
+                        <i class="fas fa-edit me-2 text-warning"></i>Editar Datos
+                    </a>
+                    <a href="{{ route('correspondencia.flujos.show', $proceso->flujo_id) }}" class="btn btn-outline-indigo rounded-pill px-3 fw-bold shadow-sm border-2">
+                        <i class="bi bi-diagram-3 me-2"></i>Estructura
+                    </a>
+                </div>
             </div>
         </header>
 
         <div class="row g-4">
-            {{-- COLUMNA PRINCIPAL: INFO Y CORRESPONDENCIAS --}}
+            {{-- COLUMNA PRINCIPAL --}}
             <div class="col-lg-8">
                 <div class="card border-0 shadow-sm p-4 mb-4" style="border-radius: 20px;">
                     <h5 class="fw-bold mb-3 d-flex align-items-center">
-                        <i class="fas fa-info-circle me-2 text-primary"></i> Detalles del Paso
+                        <i class="fas fa-info-circle me-2 text-primary"></i> Detalles de la Instancia
                     </h5>
                     <p class="text-muted mb-4" style="line-height: 1.7;">
                         {{ $proceso->detalle ?: 'Sin descripción adicional para este paso del flujo.' }}
@@ -40,11 +58,17 @@
                     <div class="row g-3 bg-light p-3 rounded-4">
                         <div class="col-md-6">
                             <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.65rem;">Configurado por</small>
-                            <div class="fw-bold text-dark">{{ $proceso->creador->name ?? 'Sistema' }}</div>
+                            <div class="fw-bold text-dark d-flex align-items-center">
+                                <i class="fas fa-user-circle me-2 text-muted"></i>
+                                {{ $proceso->creador->name ?? 'Sistema' }}
+                            </div>
                         </div>
                         <div class="col-md-6">
                             <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.65rem;">Fecha de Creación</small>
-                            <div class="fw-bold text-dark">{{ $proceso->created_at->format('d/m/Y') }}</div>
+                            <div class="fw-bold text-dark d-flex align-items-center">
+                                <i class="fas fa-calendar-alt me-2 text-muted"></i>
+                                {{ $proceso->created_at->format('d/m/Y') }}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -97,16 +121,17 @@
                 </div>
             </div>
 
-            {{-- COLUMNA LATERAL: EQUIPO --}}
+            {{-- COLUMNA LATERAL --}}
             <div class="col-lg-4">
-                <div class="card border-0 shadow-sm h-100" style="border-radius: 20px;">
+                {{-- RESPONSABLES --}}
+                <div class="card border-0 shadow-sm mb-4" style="border-radius: 20px;">
                     <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
-                        <h5 class="fw-bold m-0">Responsables</h5>
+                        <h5 class="fw-bold m-0 small text-uppercase text-muted">Responsables</h5>
                         <button class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalAsignar">
                             <i class="fas fa-plus me-1"></i> Añadir
                         </button>
                     </div>
-                    <div class="card-body p-4">
+                    <div class="card-body p-4 pt-2">
                         <div class="list-group list-group-flush">
                             @forelse($proceso->usuariosAsignados as $asignacion)
                             <div class="list-group-item px-0 py-3 d-flex justify-content-between align-items-center bg-transparent border-bottom">
@@ -117,24 +142,53 @@
                                     </div>
                                     <div>
                                         <div class="fw-bold text-dark small">{{ $asignacion->usuario->name }}</div>
-                                        <span class="text-muted" style="font-size: 0.7rem;">
-                                            {{ $asignacion->detalle ?: 'Integrante' }}
-                                        </span>
+                                        <span class="text-muted" style="font-size: 0.7rem;">{{ $asignacion->detalle ?: 'Integrante' }}</span>
                                     </div>
                                 </div>
                                 <form action="{{ route('correspondencia.procesos.removerUsuario', [$proceso->id, $asignacion->user_id]) }}" method="POST">
-                                    @csrf 
-                                    @method('DELETE')
+                                    @csrf @method('DELETE')
                                     <button type="submit" class="btn btn-link text-danger p-0 border-0" onclick="return confirm('¿Remover del equipo?')">
                                         <i class="fas fa-minus-circle"></i>
                                     </button>
                                 </form>
                             </div>
                             @empty
-                            <div class="text-center py-5">
-                                <i class="fas fa-users text-light fa-3x mb-3 opacity-50"></i>
-                                <p class="text-muted mt-2 small">Sin responsables asignados.</p>
+                            <div class="text-center py-4"><p class="text-muted m-0 small">Sin responsables asignados.</p></div>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+
+                {{-- ESTADOS PERMITIDOS --}}
+                <div class="card border-0 shadow-sm" style="border-radius: 20px;">
+                    <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                        <h5 class="fw-bold m-0 small text-uppercase text-muted">Estados Permitidos</h5>
+                        <button class="btn btn-indigo btn-sm rounded-pill px-3 shadow-sm text-white" data-bs-toggle="modal" data-bs-target="#modalEstado">
+                            <i class="fas fa-cog me-1"></i> Configurar
+                        </button>
+                    </div>
+                    <div class="card-body p-4 pt-2">
+                        <div class="list-group list-group-flush">
+                            @forelse($proceso->estadosProcesos as $ep)
+                            <div class="list-group-item px-0 py-3 d-flex justify-content-between align-items-center bg-transparent border-bottom">
+                                <div class="d-flex align-items-center">
+                                    <div class="icon-sm bg-soft-primary text-indigo rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 35px; height: 35px;">
+                                        <i class="fas fa-tag small"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold text-dark small">{{ $ep->estado->nombre }}</div>
+                                        <span class="text-muted" style="font-size: 0.7rem;">{{ $ep->detalle ?: 'Sin observaciones' }}</span>
+                                    </div>
+                                </div>
+                                <form action="{{ route('correspondencia.procesos.eliminarEstado', $ep->id) }}" method="POST">
+                                    @csrf @method('DELETE')
+                                    <button type="submit" class="btn btn-link text-danger p-0 border-0" onclick="return confirm('¿Eliminar esta configuración?')">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                </form>
                             </div>
+                            @empty
+                            <div class="text-center py-4"><p class="text-muted m-0 small">No hay estados configurados.</p></div>
                             @endforelse
                         </div>
                     </div>
@@ -143,7 +197,7 @@
         </div>
     </div>
 
-    {{-- MODAL ASIGNAR --}}
+    {{-- MODAL ASIGNAR INTEGRANTE --}}
     <div class="modal fade" id="modalAsignar" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <form action="{{ route('correspondencia.procesos.asignarUsuario', $proceso) }}" method="POST" class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
@@ -154,7 +208,7 @@
                 </div>
                 <div class="modal-body px-4">
                     <div class="mb-3">
-                        <label class="form-label fw-bold small text-muted">USUARIO RESPONSABLE</label>
+                        <label class="form-label fw-bold small text-muted text-uppercase">Usuario Responsable</label>
                         <select name="user_id" class="form-select border-0 bg-light p-3" style="border-radius: 12px;" required>
                             <option value="">Seleccione un usuario...</option>
                             @foreach($usuarios_disponibles as $u)
@@ -163,8 +217,8 @@
                         </select>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-bold small text-muted">FUNCIÓN O ROL</label>
-                        <input type="text" name="detalle" class="form-control border-0 bg-light p-3" style="border-radius: 12px;" placeholder="Ej: Revisor principal, Aprobador final...">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Función o Rol</label>
+                        <input type="text" name="detalle" class="form-control border-0 bg-light p-3" style="border-radius: 12px;" placeholder="Ej: Revisor principal...">
                     </div>
                 </div>
                 <div class="modal-footer border-0 pb-4 px-4">
@@ -175,12 +229,49 @@
         </div>
     </div>
 
+    {{-- MODAL CONFIGURAR ESTADO (ACTUALIZADO CON SELECT) --}}
+    <div class="modal fade" id="modalEstado" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <form action="{{ route('correspondencia.procesos.guardarEstado', $proceso) }}" method="POST" class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+                @csrf
+                <div class="modal-header border-0 pt-4 px-4">
+                    <h5 class="modal-title fw-bold">Vincular Estado Permitido</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body px-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Estado del Catálogo</label>
+                        <select name="id_estado" class="form-select border-0 bg-light p-3" style="border-radius: 12px;" required>
+                            <option value="">Seleccione un estado...</option>
+                            @foreach($estados_catalogo as $est)
+                                <option value="{{ $est->id }}">{{ $est->nombre }}</option>
+                            @endforeach
+                        </select>
+                        <div class="form-text small px-1">Solo aparecerán los estados definidos en el módulo de Configuración.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-muted text-uppercase">Observaciones de Uso</label>
+                        <textarea name="detalle" class="form-control border-0 bg-light p-3" style="border-radius: 12px;" rows="2" placeholder="Describa para qué se usa este estado en esta etapa..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pb-4 px-4">
+                    <button type="button" class="btn btn-light rounded-pill px-4 fw-bold" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-indigo rounded-pill px-4 fw-bold shadow text-white">Guardar Configuración</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <style>
         .text-indigo { color: #4f46e5 !important; }
         .bg-indigo { background-color: #4f46e5 !important; }
+        .btn-indigo { background-color: #4f46e5; border: none; }
+        .btn-indigo:hover { background-color: #4338ca; }
         .btn-outline-indigo { color: #4f46e5; border-color: #4f46e5; }
         .btn-outline-indigo:hover { background-color: #4f46e5; color: white; }
         .bg-soft-primary { background-color: #f0f4ff; color: #4f46e5; }
+        .bg-success-subtle { background-color: #d1e7dd; }
+        .bg-danger-subtle { background-color: #f8d7da; }
         .table-hover tbody tr:hover { background-color: #f8faff; transition: 0.2s; }
     </style>
 </x-base-layout>

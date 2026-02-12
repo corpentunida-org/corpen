@@ -19,6 +19,7 @@
                         <tr>
                             <th class="px-4 py-3">ID</th>
                             <th>Proceso / Nombre</th>
+                            <th>Estado</th>
                             <th>Flujo</th>
                             <th>Creador</th>
                             <th>Equipo</th>
@@ -31,14 +32,25 @@
                             <td class="px-4 text-muted fw-bold">#{{ $proceso->id }}</td>
                             <td>
                                 <div class="fw-bold text-dark">{{ $proceso->nombre }}</div>
-                                <small class="text-muted d-block text-truncate" style="max-width: 250px;">
+                                <small class="text-muted d-block text-truncate" style="max-width: 200px;">
                                     {{ $proceso->detalle ?: 'Sin descripción' }}
                                 </small>
                             </td>
                             <td>
-                                <span class="badge bg-soft-primary px-3 py-2" style="background-color: #eef2ff; color: #4f46e5; border-radius: 8px;">
+                                @if($proceso->activo)
+                                    <span class="badge rounded-pill bg-success-subtle text-success border border-success-subtle px-3">Activo</span>
+                                @else
+                                    <span class="badge rounded-pill bg-danger-subtle text-danger border border-danger-subtle px-3">Inactivo</span>
+                                @endif
+                            </td>
+                            <td>
+                                {{-- COLUMNA MODIFICADA: Ahora es un enlace --}}
+                                <a href="{{ route('correspondencia.flujos.show', $proceso->flujo_id) }}" 
+                                   class="badge px-3 py-2 text-decoration-none d-inline-flex align-items-center gap-2 flujo-link" 
+                                   title="Ver estructura del flujo">
+                                    <i class="fas fa-project-diagram"></i>
                                     {{ $proceso->flujo->nombre ?? 'N/A' }}
-                                </span>
+                                </a>
                             </td>
                             <td>
                                 <div class="d-flex align-items-center">
@@ -50,10 +62,9 @@
                             </td>
                             <td>
                                 <div class="avatar-stack">
-                                    {{-- Usamos la relación corregida para evitar errores --}}
                                     @foreach($proceso->usuariosAsignados->take(3) as $asignacion)
                                         <div class="avatar-circle" title="{{ $asignacion->usuario->name }}">
-                                            {{ substr($asignacion->usuario->name, 0, 1) }}
+                                            {{ strtoupper(substr($asignacion->usuario->name, 0, 1)) }}
                                         </div>
                                     @endforeach
                                     @if($proceso->usuariosAsignados->count() > 3)
@@ -83,6 +94,19 @@
     </div>
 
     <style>
+        .flujo-link {
+            background-color: #eef2ff;
+            color: #4f46e5;
+            border: 1px solid #c7d2fe;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+        .flujo-link:hover {
+            background-color: #4f46e5;
+            color: white !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
+        }
         .avatar-stack { display: flex; align-items: center; }
         .avatar-circle { 
             width: 32px; height: 32px; background: #6366f1; color: white; 
@@ -92,5 +116,7 @@
         }
         .avatar-circle:first-child { margin-left: 0; }
         .avatar-circle:hover { transform: translateY(-3px); z-index: 10; }
+        .bg-success-subtle { background-color: #d1e7dd; }
+        .bg-danger-subtle { background-color: #f8d7da; }
     </style>
 </x-base-layout>
