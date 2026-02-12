@@ -53,7 +53,7 @@
                                     </div>
                                 </div>
 
-                                {{-- NUEVO: Nombre del Proceso --}}
+                                {{-- Nombre del Proceso --}}
                                 <div class="col-md-12">
                                     <label class="form-label fw-bold text-dark">Título o Nombre del Proceso <span class="text-danger">*</span></label>
                                     <div class="input-group">
@@ -68,7 +68,7 @@
                                     @enderror
                                 </div>
 
-                                {{-- Sección: Selección de Flujo --}}
+                                {{-- Selección de Flujo --}}
                                 <div class="col-md-12">
                                     <label class="form-label fw-bold text-dark">Flujo de Trabajo <span class="text-danger">*</span></label>
                                     <div class="input-group">
@@ -88,7 +88,7 @@
                                     <div class="form-text">El flujo define los pasos predeterminados que seguirá este proceso.</div>
                                 </div>
 
-                                {{-- Sección: Detalle --}}
+                                {{-- Detalle --}}
                                 <div class="col-md-12">
                                     <label class="form-label fw-bold text-dark">Asunto / Detalle Inicial</label>
                                     <textarea name="detalle" 
@@ -99,6 +99,25 @@
                                     @error('detalle') 
                                         <div class="text-danger small mt-1">{{ $message }}</div> 
                                     @enderror
+                                </div>
+
+                                {{-- CAMPO: Activo (Switch Estilizado) --}}
+                                <div class="col-md-12">
+                                    <div class="p-3 rounded-4 border bg-light d-flex align-items-center justify-content-between">
+                                        <div class="d-flex align-items-center">
+                                            <div class="icon-box bg-white shadow-sm rounded-3 me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                <i class="fas fa-toggle-on text-primary"></i>
+                                            </div>
+                                            <div>
+                                                <label class="fw-bold text-dark mb-0 d-block" for="activo">Estado de la Instancia</label>
+                                                <small class="text-muted">Habilitar inmediatamente al crear</small>
+                                            </div>
+                                        </div>
+                                        <div class="form-check form-switch m-0">
+                                            <input type="hidden" name="activo" value="0">
+                                            <input class="form-check-input" type="checkbox" name="activo" value="1" id="activo" style="width: 3em; height: 1.5em; cursor: pointer;" checked>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 {{-- Botonera --}}
@@ -134,6 +153,10 @@
         .form-select:focus, .form-control:focus {
             border-color: #6366f1;
             box-shadow: 0 0 0 0.25rem rgba(99, 102, 241, 0.1);
+        }
+        .form-check-input:checked {
+            background-color: #4f46e5;
+            border-color: #4f46e5;
         }
         .breadcrumb-item + .breadcrumb-item::before { content: "›"; font-size: 1.2rem; line-height: 1; vertical-align: middle; }
     </style>

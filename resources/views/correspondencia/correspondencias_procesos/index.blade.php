@@ -10,6 +10,7 @@
             </a>
         </div>
 
+        {{-- Filtros --}}
         <div class="card border-0 shadow-sm mb-4" style="border-radius: 15px;">
             <div class="card-body">
                 <form action="{{ route('correspondencia.correspondencias-procesos.index') }}" method="GET" class="row g-3">
@@ -20,7 +21,7 @@
                         </div>
                     </div>
                     <div class="col-md-3">
-                        <select name="proceso_id" class="form-select">
+                        <select name="proceso_id" class="form-select shadow-none">
                             <option value="">Todas las Etapas</option>
                             @foreach($procesos_maestros as $pm)
                                 <option value="{{ $pm->id }}" {{ request('proceso_id') == $pm->id ? 'selected' : '' }}>{{ $pm->nombre }}</option>
@@ -28,7 +29,7 @@
                         </select>
                     </div>
                     <div class="col-md-3">
-                        <select name="usuario_id" class="form-select">
+                        <select name="usuario_id" class="form-select shadow-none">
                             <option value="">Todos los Responsables</option>
                             @foreach($usuarios as $u)
                                 <option value="{{ $u->id }}" {{ request('usuario_id') == $u->id ? 'selected' : '' }}>{{ $u->name }}</option>
@@ -36,7 +37,7 @@
                         </select>
                     </div>
                     <div class="col-md-2 d-grid">
-                        <button type="submit" class="btn btn-dark">Filtrar</button>
+                        <button type="submit" class="btn btn-dark rounded-3">Filtrar</button>
                     </div>
                 </form>
             </div>
@@ -50,6 +51,7 @@
                             <th class="px-4">Radicado</th>
                             <th>Proceso/Etapa</th>
                             <th>Estado</th>
+                            <th class="text-center">Terminado</th> {{-- Nueva Columna --}}
                             <th>Responsable</th>
                             <th class="text-center">Doc</th>
                             <th class="text-center">Email</th>
@@ -80,14 +82,25 @@
                                     {{ ucfirst(str_replace('_', ' ', $registro->estado)) }}
                                 </span>
                             </td>
+                            <td class="text-center">
+                                @if($registro->finalizado)
+                                    <span class="badge rounded-pill bg-success px-2" title="Proceso Finalizado">
+                                        <i class="fas fa-check-double text-white p-1"></i>
+                                    </span>
+                                @else
+                                    <span class="badge rounded-pill bg-light border text-muted px-2" title="Pendiente">
+                                        <i class="fas fa-clock p-1"></i>
+                                    </span>
+                                @endif
+                            </td>
                             <td class="small">{{ $registro->usuario->name }}</td>
                             <td class="text-center">
                                 @if($registro->documento_arc)
-                                    <a href="{{ Storage::disk('s3')->url($registro->documento_arc) }}" target="_blank" class="text-primary">
+                                    <a href="{{ Storage::disk('s3')->url($registro->documento_arc) }}" target="_blank" class="text-primary hover-elevate">
                                         <i class="fas fa-file-pdf fs-4"></i>
                                     </a>
                                 @else
-                                    <i class="fas fa-minus text-muted"></i>
+                                    <i class="fas fa-minus text-muted opacity-50"></i>
                                 @endif
                             </td>
                             <td class="text-center">
@@ -95,27 +108,35 @@
                             </td>
                             <td class="small">{{ $registro->fecha_gestion ? $registro->fecha_gestion->format('d/m/Y H:i') : 'N/A' }}</td>
                             <td class="text-end px-4">
-                                <div class="btn-group">
-                                    <a href="{{ route('correspondencia.correspondencias-procesos.show', $registro) }}" class="btn btn-sm btn-light border" title="Ver Detalle"><i class="fas fa-search"></i></a>
-                                    <a href="{{ route('correspondencia.correspondencias-procesos.edit', $registro) }}" class="btn btn-sm btn-light border" title="Editar"><i class="fas fa-edit text-warning"></i></a>
-                                    <form action="{{ route('correspondencia.correspondencias-procesos.destroy', $registro) }}" method="POST" class="d-inline" onsubmit="return confirm('¿Eliminar este registro?')">
-                                        @csrf @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-light border text-danger"><i class="fas fa-trash"></i></button>
-                                    </form>
+                                <div class="btn-group shadow-sm">
+                                    <a href="{{ route('correspondencia.correspondencias-procesos.show', $registro) }}" class="btn btn-sm btn-white border" title="Ver Detalle"><i class="fas fa-eye text-primary"></i></a>
+                                    <a href="{{ route('correspondencia.correspondencias-procesos.edit', $registro) }}" class="btn btn-sm btn-white border" title="Editar"><i class="fas fa-pen text-warning"></i></a>
                                 </div>
                             </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="8" class="text-center py-4 text-muted">No se encontraron registros de gestión.</td>
+                            <td colspan="9" class="text-center py-5">
+                                <img src="https://cdn-icons-png.flaticon.com/512/6134/6134065.png" style="width: 60px; opacity: .3" class="mb-3">
+                                <p class="text-muted small">No se encontraron registros de gestión.</p>
+                            </td>
                         </tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
-            <div class="card-footer bg-white border-0">
-                {{ $procesos->links() }}
+            <div class="card-footer bg-white border-0 py-3">
+                {{ $procesos->appends(request()->query())->links() }}
             </div>
         </div>
     </div>
+
+    <style>
+        .bg-soft-success { background-color: #ecfdf5; }
+        .bg-soft-primary { background-color: #eff6ff; }
+        .bg-soft-danger { background-color: #fef2f2; }
+        .bg-soft-info { background-color: #f0f9ff; }
+        .hover-elevate:hover { transform: translateY(-2px); transition: 0.2s; }
+        .btn-white { background: white; }
+    </style>
 </x-base-layout>

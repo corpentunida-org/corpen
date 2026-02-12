@@ -12,7 +12,8 @@ use App\Models\Correspondencia\Proceso;
 use App\Models\Maestras\maeTerceros;
 use App\Models\User;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+use Carbon\CarbonInterval;
 use App\Http\Controllers\AuditoriaController;
 
 class CorrespondenciaController extends Controller
@@ -120,7 +121,11 @@ class CorrespondenciaController extends Controller
             $procesos_disponibles = Proceso::with(['flujo', 'usuariosAsignados.usuario'])->get();
         }
 
-        return view('correspondencia.correspondencias.show', compact('correspondencia', 'procesos_disponibles', 'flujo'));
+        $tiempoGestion = $correspondencia->trd->tiempo_gestion ?? 0;
+        $fechaInicio = Carbon::parse($correspondencia->fecha_solicitud);
+        $limite = $fechaInicio->copy()->addYears($tiempoGestion);
+        $diferenciatrd = CarbonInterval::instance(now()->diff($limite));
+        return view('correspondencia.correspondencias.show', compact('correspondencia', 'procesos_disponibles', 'flujo', 'diferenciatrd','limite'));
     }
 
     public function edit(Correspondencia $correspondencia)
@@ -189,7 +194,7 @@ class CorrespondenciaController extends Controller
 
         $searchWords = $request->filled('search') ? array_filter(explode(' ', $request->search)) : [];
 
-        $query = Correspondencia::with(['trd', 'flujo', 'estado', 'usuario']);
+        $query = Correspondencia::with(['trd', 'flujo', 'estado', 'usuario', 'procesos.proceso']);
 
         if (!empty($searchWords)) {
             $query->where(function ($q) use ($searchWords) {

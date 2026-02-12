@@ -22,6 +22,7 @@ class CorrespondenciaProceso extends Model
         'notificado_email',
         'fecha_gestion',
         'documento_arc',
+        'finalizado',
         'fk_usuario',
         'created_at',
         'updated_at',
@@ -29,6 +30,7 @@ class CorrespondenciaProceso extends Model
 
     protected $casts = [
         'notificado_email' => 'boolean',
+        'finalizado' => 'boolean',
         'fecha_gestion' => 'datetime',
     ];
 

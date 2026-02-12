@@ -786,93 +786,100 @@ Route::prefix('creditos')->middleware('auth')->group(function () {
 // ==========================================
 //   MÓDULO DE CORRESPONDENCIA
 // ==========================================
-    Route::middleware(['auth'])->prefix('correspondencia')->name('correspondencia.')->group(function () {
+Route::middleware(['auth'])->prefix('correspondencia')->name('correspondencia.')->group(function () {
 
-        // ---------------------------------------------------
-        // 1. DASHBOARD (TABLERO UNIFICADO)
-        // ---------------------------------------------------
-        Route::get('tablero', [CorrespondenciaController::class, 'tablero'])
-            ->name('tablero');
+    // ---------------------------------------------------
+    // 1. DASHBOARD (TABLERO UNIFICADO)
+    // ---------------------------------------------------
+    Route::get('tablero', [CorrespondenciaController::class, 'tablero'])
+        ->name('tablero');
 
-        // ---------------------------------------------------
-        // 2. GESTIÓN DE CORRESPONDENCIA (CRUD)
-        // ---------------------------------------------------
-        Route::resource('correspondencias', CorrespondenciaController::class)
-            ->parameters(['correspondencias' => 'correspondencia']);
+    // ---------------------------------------------------
+    // 2. GESTIÓN DE CORRESPONDENCIA (CRUD)
+    // ---------------------------------------------------
+    Route::resource('correspondencias', CorrespondenciaController::class)
+        ->parameters(['correspondencias' => 'correspondencia']);
 
-        // AJAX: Consultas dinámicas para la UI
-        Route::get('ajax/correspondencias-por-estado/{estado_id}', [CorrespondenciaController::class, 'getByEstado'])
-            ->name('ajax.correspondencias.estado');
+    // AJAX: Consultas dinámicas para la UI
+    Route::get('ajax/correspondencias-por-estado/{estado_id}', [CorrespondenciaController::class, 'getByEstado'])
+        ->name('ajax.correspondencias.estado');
 
-        Route::get('ajax/trds-por-flujo/{flujo_id}', [CorrespondenciaController::class, 'getTrdsByFlujo'])
-            ->name('ajax.trds.flujo');
+    Route::get('ajax/trds-por-flujo/{flujo_id}', [CorrespondenciaController::class, 'getTrdsByFlujo'])
+        ->name('ajax.trds.flujo');
 
-        // ---------------------------------------------------
-        // 3. FLUJOS Y PROCESOS
-        // ---------------------------------------------------
-        Route::resource('flujos', FlujoDeTrabajoController::class)
-            ->parameters(['flujos' => 'flujo']);
+    // ---------------------------------------------------
+    // 3. FLUJOS Y PROCESOS
+    // ---------------------------------------------------
+    Route::resource('flujos', FlujoDeTrabajoController::class)
+        ->parameters(['flujos' => 'flujo']);
 
-        Route::resource('procesos', ProcesoController::class)
-            ->parameters(['procesos' => 'proceso']);
+    Route::resource('procesos', ProcesoController::class)
+        ->parameters(['procesos' => 'proceso']);
 
-        Route::post('procesos/{proceso}/asignar-usuario', [ProcesoController::class, 'asignarUsuario'])
-            ->name('procesos.asignarUsuario');
+    // Gestión de Usuarios en Procesos
+    Route::post('procesos/{proceso}/asignar-usuario', [ProcesoController::class, 'asignarUsuario'])
+        ->name('procesos.asignarUsuario');
 
-        Route::delete('procesos/{proceso}/remover-usuario/{user_id}', [ProcesoController::class, 'removerUsuario'])
-            ->name('procesos.removerUsuario');
+    Route::delete('procesos/{proceso}/remover-usuario/{user_id}', [ProcesoController::class, 'removerUsuario'])
+        ->name('procesos.removerUsuario');
 
-        Route::get('ajax/usuarios-proceso/{proceso_id}', [ProcesoController::class, 'getUsuariosByProceso'])
-            ->name('ajax.usuarios.proceso');
+    // --- NUEVAS RUTAS DE ESTADOS PARA PROCESOS ---
+    Route::post('procesos/{proceso}/guardar-estado', [ProcesoController::class, 'guardarEstado'])
+        ->name('procesos.guardarEstado');
 
-        // ---------------------------------------------------
-        // 4. NOTIFICACIONES
-        // ---------------------------------------------------
-        Route::resource('notificaciones', NotificacionController::class)
-            ->parameters(['notificaciones' => 'notificacion']);
+    Route::delete('procesos/estado/{id}', [ProcesoController::class, 'eliminarEstado'])
+        ->name('procesos.eliminarEstado');
+    // ----------------------------------------------
 
-        Route::post('notificaciones/{notificacion}/marcar-leida', [NotificacionController::class, 'marcarLeida'])
-            ->name('notificaciones.marcarLeida');
+    Route::get('ajax/usuarios-proceso/{proceso_id}', [ProcesoController::class, 'getUsuariosByProceso'])
+        ->name('ajax.usuarios.proceso');
 
-        // ---------------------------------------------------
-        // 5. TRD (Tablas de Retención Documental)
-        // ---------------------------------------------------
-        Route::resource('trds', TrdController::class)
-            ->parameters(['trds' => 'trd']);
+    // ---------------------------------------------------
+    // 4. NOTIFICACIONES
+    // ---------------------------------------------------
+    Route::resource('notificaciones', NotificacionController::class)
+        ->parameters(['notificaciones' => 'notificacion']);
 
-        // ---------------------------------------------------
-        // 6. PLANTILLAS
-        // ---------------------------------------------------
-        Route::resource('plantillas', PlantillaController::class)
-            ->parameters(['plantillas' => 'plantilla']);
+    Route::post('notificaciones/{notificacion}/marcar-leida', [NotificacionController::class, 'marcarLeida'])
+        ->name('notificaciones.marcarLeida');
 
-        // ---------------------------------------------------
-        // 7. COMUNICACIONES DE SALIDA
-        // ---------------------------------------------------
-        Route::resource('comunicaciones-salida', ComunicacionSalidaController::class)
-            ->parameters(['comunicaciones-salida' => 'comunicacionSalida']);
+    // ---------------------------------------------------
+    // 5. TRD (Tablas de Retención Documental)
+    // ---------------------------------------------------
+    Route::resource('trds', TrdController::class)
+        ->parameters(['trds' => 'trd']);
 
-        Route::get('comunicaciones-salida/{comunicacionSalida}/descargar-pdf', [ComunicacionSalidaController::class, 'descargarPdf'])
-            ->name('comunicaciones-salida.descargar');
+    // ---------------------------------------------------
+    // 6. PLANTILLAS
+    // ---------------------------------------------------
+    Route::resource('plantillas', PlantillaController::class)
+        ->parameters(['plantillas' => 'plantilla']);
 
-        // ---------------------------------------------------
-        // 8. TRACKING DE PROCESOS (HISTORIAL/SEGUIMIENTO)
-        // ---------------------------------------------------
-        
-        // HE QUITADO EL 'EXCEPT' para que 'create' y 'edit' existan y no den error
-        Route::resource('correspondencias-procesos', CorrespondenciaProcesoController::class)
-            ->parameters(['correspondencias-procesos' => 'correspondenciaProceso']);
+    // ---------------------------------------------------
+    // 7. COMUNICACIONES DE SALIDA
+    // ---------------------------------------------------
+    Route::resource('comunicaciones-salida', ComunicacionSalidaController::class)
+        ->parameters(['comunicaciones-salida' => 'comunicacionSalida']);
 
-        Route::post('correspondencias-procesos/{correspondenciaProceso}/marcar-notificado', [CorrespondenciaProcesoController::class, 'marcarNotificado'])
-            ->name('correspondencias-procesos.marcarNotificado');
+    Route::get('comunicaciones-salida/{comunicacionSalida}/descargar-pdf', [ComunicacionSalidaController::class, 'descargarPdf'])
+        ->name('comunicaciones-salida.descargar');
 
-        // ---------------------------------------------------
-        // 9. CONFIGURACIÓN DE ESTADOS
-        // ---------------------------------------------------
-        Route::resource('estados', CorrEstadoController::class)
-            ->parameters(['estados' => 'estado']);
+    // ---------------------------------------------------
+    // 8. TRACKING DE PROCESOS (HISTORIAL/SEGUIMIENTO)
+    // ---------------------------------------------------
+    Route::resource('correspondencias-procesos', CorrespondenciaProcesoController::class)
+        ->parameters(['correspondencias-procesos' => 'correspondenciaProceso']);
 
-    });
+    Route::post('correspondencias-procesos/{correspondenciaProceso}/marcar-notificado', [CorrespondenciaProcesoController::class, 'marcarNotificado'])
+        ->name('correspondencias-procesos.marcarNotificado');
+
+    // ---------------------------------------------------
+    // 9. CONFIGURACIÓN DE ESTADOS (MAESTRO)
+    // ---------------------------------------------------
+    Route::resource('estados', CorrEstadoController::class)
+        ->parameters(['estados' => 'estado']);
+
+});
 // FIN MÓDULO DE CORRESPONDENCIA
 
 
