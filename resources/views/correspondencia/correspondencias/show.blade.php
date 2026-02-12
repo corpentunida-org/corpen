@@ -120,17 +120,16 @@
                                             @endif
                                         </td>
                                         <td class="pe-4 text-end">
-                                            @if($registro->documento_arc)
-                                                <a href="{{ Storage::disk('s3')->url($registro->documento_arc) }}" 
-                                                   target="_blank" 
-                                                   class="btn btn-sm btn-soft-danger border-0 rounded-circle" 
-                                                   title="Ver Soporte"
-                                                   onclick="event.stopPropagation();">
-                                                    <i class="bi bi-file-earmark-pdf"></i>
-                                                </a>
-                                            @else
-                                                <span class="text-muted small">-</span>
-                                            @endif
+                                            <div class="btn-group">
+                                                <button class="btn btn-sm btn-light border-0 rounded-circle me-1" title="{{ $registro->observacion }}" data-bs-toggle="tooltip">
+                                                    <i class="bi bi-chat-left-text"></i>
+                                                </button>
+                                                @if($registro->documento_arc)
+                                                    <a href="{{ $registro->getFile($registro->documento_arc) }}" target="_blank" class="btn btn-sm btn-soft-danger border-0 rounded-circle" title="Ver Soporte">
+                                                        <i class="bi bi-file-earmark-pdf"></i>
+                                                    </a>
+                                                @endif
+                                            </div>
                                         </td>
                                     </tr>
                                     @empty
