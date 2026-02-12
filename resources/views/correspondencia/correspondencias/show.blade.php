@@ -34,7 +34,7 @@
                                 <span class="badge bg-soft-primary text-primary mb-2 px-3 py-2 rounded-pill" style="font-size: 0.7rem; letter-spacing: 0.5px; font-weight: 700; text-transform: uppercase;">Asunto del Documento</span>
                                 <h4 class="fw-bold text-dark mb-0">{{ $correspondencia->asunto }}</h4>
                             </div>
-                            <span class="badge rounded-pill px-4 py-2 state-badge {{ Str::slug($correspondencia->estado->nombre ?? 'default') }} shadow-sm">
+                            <span class="badge rounded-pill px-4 py-2 text-primary fw-bold">
                                 {{ $correspondencia->estado->nombre ?? 'Estado N/D' }}
                             </span>
                         </div>
@@ -146,14 +146,11 @@
 
             {{-- COLUMNA DERECHA: INDICADORES Y FLUJO --}}
             <div class="col-lg-4">
-                @php
-                    $tiempoGestion = $correspondencia->trd->tiempo_gestion ?? 0;
-                    $limite = \Carbon\Carbon::parse($correspondencia->fecha_solicitud)->addDays($tiempoGestion);
-                    $dias = (int)now()->diffInDays($limite, false);
-                    
-                    if ($dias > 3) {
+                @php                   
+
+                    if ($diferenciatrd->y > 3) {
                         $bgColor = '#e7f3ff'; $textColor = '#3a7abd'; $borderColor = '#cfe5ff';
-                    } elseif ($dias <= 0) {
+                    } elseif ($diferenciatrd->y <= 2 || $diferenciatrd->y >= 0) {
                         $bgColor = '#ffe5e5'; $textColor = '#bd3a3a'; $borderColor = '#ffcfcf';
                     } else {
                         $bgColor = '#fff8e1'; $textColor = '#8d6e1d'; $borderColor = '#ffecb3';
@@ -161,27 +158,63 @@
                 @endphp
                 
                 <div class="card border-0 shadow-sm mb-4" 
-                     style="border-radius: 20px; background-color: {{ $bgColor }}; border: 1px solid {{ $borderColor }} !important;">
-                    <div class="card-body p-4 text-center">
-                        <h6 class="text-uppercase fw-bold mb-3" style="color: {{ $textColor }}; opacity: 0.8; font-size: 0.75rem; letter-spacing: 1px;">
-                            Vencimiento TRD
-                        </h6>
-                        <div class="d-flex justify-content-center align-items-baseline mb-1">
-                            <span class="display-4 fw-bold" style="color: {{ $textColor }};">{{ abs($dias) }}</span>
+                    style="border-radius: 24px; background-color: {{ $bgColor }}; border: 1px solid {{ $borderColor }} !important; overflow: hidden;">
+                    <div class="card-body p-4">
+                        
+                        <div class="text-center mb-3">
+                            <span class="badge rounded-pill px-3 py-2" style="background-color: rgba(255,255,255,0.2); color: {{ $textColor }}; font-size: 0.65rem; letter-spacing: 0.5px;">
+                                <i class="bi bi-info-circle-fill me-1"></i> CONTROL DE GESTIÓN DOCUMENTAL
+                            </span>
                         </div>
-                        <p class="mb-3 fw-medium" style="color: {{ $textColor }}; opacity: 0.9;">
-                            {{ $dias >= 0 ? 'Días restantes' : 'Días de retraso' }}
-                        </p>
-                        <div class="py-3 px-3 rounded-4" style="background-color: rgba(255,255,255,0.4); border: 1px dashed {{ $borderColor }};">
-                            <div class="d-flex justify-content-between mb-1">
-                                <span class="small opacity-75 fw-bold" style="color: {{ $textColor }};">Serie:</span>
-                                <span class="small fw-bold" style="color: {{ $textColor }};">{{ $correspondencia->trd->serie_documental ?? 'N/A' }}</span>
-                            </div>
-                            <div class="d-flex justify-content-between">
-                                <span class="small opacity-75 fw-bold" style="color: {{ $textColor }};">Límite:</span>
-                                <span class="small fw-bold" style="color: {{ $textColor }};">{{ $limite->format('d/m/Y') }}</span>
+
+                        <div class="text-center mb-4">
+                            <h6 class="text-uppercase fw-bolder mb-3" style="color: {{ $textColor }}; opacity: 0.9; font-size: 0.75rem;">
+                                Tiempo restante de conservación
+                            </h6>
+                            
+                            <div class="row g-2 justify-content-center">
+                                <div class="col-4">
+                                    <div class="p-2 rounded-3" style="background: rgba(255,255,255,0.15);">
+                                        <div class="h3 fw-bold m-0" style="color: {{ $textColor }};">{{$diferenciatrd->y}}</div>
+                                        <div class="small opacity-75" style="color: {{ $textColor }}; font-size: 0.6rem;">AÑOS</div>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="p-2 rounded-3" style="background: rgba(255,255,255,0.15);">
+                                        <div class="h3 fw-bold m-0" style="color: {{ $textColor }};">{{$diferenciatrd->m}}</div>
+                                        <div class="small opacity-75" style="color: {{ $textColor }}; font-size: 0.6rem;">MESES</div>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="p-2 rounded-3" style="background: rgba(255,255,255,0.15);">
+                                        <div class="h3 fw-bold m-0" style="color: {{ $textColor }};">{{$diferenciatrd->d}}</div>
+                                        <div class="small opacity-75" style="color: {{ $textColor }}; font-size: 0.6rem;">DÍAS</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
+
+                        <div class="mb-4 text-center px-2">
+                            <p style="color: {{ $textColor }}; font-size: 0.85rem; line-height: 1.4; opacity: 0.9;">
+                                Este documento está sujeto a los tiempos de retención definidos para la serie 
+                                <strong>"{{ $correspondencia->trd->serie_documental ?? 'General' }}"</strong>. 
+                                Debe permanecer en archivo de gestión hasta cumplir su ciclo de vida.
+                            </p>
+                        </div>
+                        
+                        <div class="p-3 rounded-4" style="background-color: rgba(255,255,255,0.3); backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.2);">
+                            <div class="d-flex justify-content-between align-items-center mb-2 pb-2" style="border-bottom: 1px dashed {{ $borderColor }}; opacity: 0.8;">
+                                <span class="small fw-bold" style="color: {{ $textColor }};"><i class="bi bi-shield-check me-1"></i> Disposición:</span>
+                                <span class="small fw-bold text-uppercase" style="color: {{ $textColor }};">Archivo Central</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="small fw-bold" style="color: {{ $textColor }};"><i class="bi bi-calendar-event me-1"></i> Límite TRD:</span>
+                                <span class="badge shadow-sm" style="background-color: {{ $textColor }}; color: {{ $bgColor }}; border-radius: 8px; font-size: 0.85rem;">
+                                    {{ $limite->format('d/m/Y') }}
+                                </span>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
