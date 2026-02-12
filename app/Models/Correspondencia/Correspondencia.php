@@ -98,8 +98,8 @@ class Correspondencia extends Model
      */
     public function procesos()
     {
-        // Asumiendo que el modelo se llama CorrespondenciaProceso 
-        // y que en su tabla la columna que apunta aquí se llama 'id_correspondencia'
-        return $this->hasMany(CorrespondenciaProceso::class, 'id_correspondencia', 'id_radicado');
+        // Añadimos orderBy para que el último proceso aparezca primero en el resumen
+        return $this->hasMany(CorrespondenciaProceso::class, 'id_correspondencia', 'id_radicado')
+                    ->orderBy('created_at', 'desc');
     }
 }
