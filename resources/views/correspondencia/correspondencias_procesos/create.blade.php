@@ -80,17 +80,26 @@
                             @enderror
                         </div>
 
-                        <div class="col-md-6">
+                        <div class="col-md-12">
                             <label class="form-label fw-bold">Fecha de Gestión</label>
                             <input type="datetime-local" name="fecha_gestion" class="form-control" 
                                    value="{{ old('fecha_gestion', now()->format('Y-m-d\TH:i')) }}" required>
                         </div>
 
-                        <div class="col-md-6 d-flex align-items-center">
-                            <div class="form-check form-switch mt-4 p-3 border rounded-3 w-100 bg-light">
+                        <div class="col-md-6">
+                            <div class="form-check form-switch p-3 border rounded-3 w-100 bg-light">
                                 <input class="form-check-input ms-0 me-2" type="checkbox" name="notificado_email" value="1" id="notifCheck" {{ old('notificado_email') ? 'checked' : '' }}>
                                 <label class="form-check-label fw-bold" for="notifCheck">
                                     ¿Notificar por correo?
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-check form-switch p-3 border rounded-3 w-100" style="background-color: #fff5f5; border-color: #feb2b2 !important;">
+                                <input class="form-check-input ms-0 me-2" type="checkbox" name="finalizado" value="1" id="finalizadoCheck" {{ old('finalizado') ? 'checked' : '' }}>
+                                <label class="form-check-label fw-bold text-danger" for="finalizadoCheck">
+                                    <i class="fas fa-lock me-1"></i> ¿Finalizar proceso?
                                 </label>
                             </div>
                         </div>
