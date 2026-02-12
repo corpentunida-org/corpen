@@ -7,16 +7,17 @@ use Illuminate\Http\Request;
 use App\Models\Correspondencia\Proceso;
 use App\Models\Correspondencia\FlujoDeTrabajo;
 use App\Models\Correspondencia\ProcesoUsuario;
-use App\Models\Correspondencia\EstadoProceso;
-use App\Models\Correspondencia\Estado; // <--- Modelo del catálogo de estados
+use App\Http\Controllers\AuditoriaController;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 
 class ProcesoController extends Controller
 {
-    /**
-     * Listado principal de procesos.
-     */
+    private function auditoria($accion)
+    {
+        $auditoriaController = app(AuditoriaController::class);
+        $auditoriaController->create($accion, 'CORRESPONDENCIA');
+    }
     public function index()
     {
         $procesos = Proceso::with(['flujo', 'creador', 'usuariosAsignados.usuario'])
@@ -52,6 +53,7 @@ class ProcesoController extends Controller
         $data['usuario_creador_id'] = Auth::id();
 
         $proceso = Proceso::create($data);
+        $this->auditoria('ADD PROCESO ID ' . $proceso->id);
 
         return redirect()->route('correspondencia.procesos.show', $proceso)
             ->with('success', 'Paso creado. Por favor, asigne los responsables y estados permitidos.');
@@ -104,7 +106,7 @@ class ProcesoController extends Controller
         ]);
 
         $proceso->update($data);
-
+        $this->auditoria('UPDATE PROCESO ID ' . $proceso->id);
         return redirect()->route('correspondencia.procesos.index')
             ->with('success', 'Proceso actualizado correctamente');
     }
