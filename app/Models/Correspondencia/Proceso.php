@@ -17,6 +17,7 @@ class Proceso extends Model
         'flujo_id',
         'nombre', // Asegúrate de que 'nombre' esté aquí si lo usas en la vista
         'detalle',
+        'activo',
         'usuario_creador_id',
         'created_at',
         'updated_at',
@@ -55,5 +56,14 @@ class Proceso extends Model
     public function usuariosAsignados()
     {
         return $this->hasMany(ProcesoUsuario::class, 'proceso_id');
+    }
+    /**
+     * Relación con los estados/permisos configurados para este proceso.
+     */
+    public function estadosProcesos()
+    {
+        // Asegúrate de que los nombres de las columnas coincidan con tu base de datos
+        // foreign_key: id_proceso
+        return $this->hasMany(EstadoProceso::class, 'id_proceso');
     }
 }
