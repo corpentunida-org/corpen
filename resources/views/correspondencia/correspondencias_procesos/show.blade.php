@@ -6,14 +6,17 @@
                     <i class="fas fa-chevron-left me-1"></i> Volver al listado
                 </a>
                 <div class="d-flex gap-2">
+                    <a href="{{ route('correspondencia.correspondencias-procesos.edit', $correspondenciaProceso) }}" class="btn btn-sm btn-light border">
+                        <i class="fas fa-edit me-1"></i> Editar
+                    </a>
                     <a href="{{ route('correspondencia.correspondencias.show', $correspondenciaProceso->id_correspondencia) }}" class="btn btn-sm btn-outline-primary rounded-pill">
-                        <i class="fas fa-external-link-alt me-1"></i> Ver Expediente Completo
+                        <i class="fas fa-external-link-alt me-1"></i> Ver Expediente
                     </a>
                 </div>
             </div>
             <div class="card-body p-5 pt-2">
                 <div class="text-center mb-5">
-                    <div class="icon-circle bg-soft-primary text-primary mx-auto mb-3 d-flex align-items-center justify-content-center shadow-sm" style="width: 70px; height: 70px; border-radius: 50%; background: #eef2ff; font-size: 1.5rem;">
+                    <div class="icon-circle text-primary mx-auto mb-3 d-flex align-items-center justify-content-center shadow-sm" style="width: 70px; height: 70px; border-radius: 50%; background: #eef2ff; font-size: 1.5rem;">
                         <i class="fas fa-file-signature"></i>
                     </div>
                     <h2 class="fw-bold mb-1">Detalle del Movimiento</h2>
@@ -24,6 +27,12 @@
                     <div class="col-6">
                         <p class="text-muted small text-uppercase fw-bold mb-1">Estado de la Gestión</p>
                         <span class="badge bg-primary px-3 shadow-sm">{{ ucfirst(str_replace('_', ' ', $correspondenciaProceso->estado)) }}</span>
+                        
+                        @if($correspondenciaProceso->finalizado)
+                            <span class="badge bg-danger px-3 shadow-sm ms-2">
+                                <i class="fas fa-lock me-1"></i> FINALIZADO
+                            </span>
+                        @endif
                     </div>
                     <div class="col-6 text-end">
                         <p class="text-muted small text-uppercase fw-bold mb-1">Responsable</p>
@@ -37,6 +46,18 @@
                             <p class="mb-0 text-dark" style="white-space: pre-line; line-height: 1.6;">{{ $correspondenciaProceso->observacion ?: 'Sin observaciones.' }}</p>
                         </div>
                     </div>
+
+                    @if($correspondenciaProceso->finalizado)
+                    <div class="col-12">
+                        <div class="alert alert-danger border-0 rounded-4 d-flex align-items-center shadow-sm" style="background-color: #fdf2f2;">
+                            <i class="fas fa-archive me-3 fs-3 text-danger"></i>
+                            <div>
+                                <div class="fw-bold text-danger">Cierre de Expediente</div>
+                                <small class="text-dark">Esta gestión marcó el radicado como <strong>completado/archivado</strong>.</small>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
 
                     @if($correspondenciaProceso->documento_arc)
                     <div class="col-12">
@@ -65,12 +86,10 @@
 
                 <div class="mt-5">
                     @if(!$correspondenciaProceso->notificado_email)
-                        <form action="{{ route('correspondencia.correspondencias-procesos.marcarNotificado', $correspondenciaProceso->id) }}" method="POST">
-                            @csrf
-                            <button type="submit" class="btn btn-outline-success w-100 rounded-pill py-2 fw-bold">
-                                <i class="fas fa-envelope me-2"></i> Marcar como Notificado vía Email
-                            </button>
-                        </form>
+                        <div class="alert alert-warning border-0 rounded-4 d-flex align-items-center">
+                            <i class="fas fa-info-circle me-3 fs-4"></i>
+                            <small>Esta gestión aún no ha sido notificada al remitente por correo.</small>
+                        </div>
                     @else
                         <div class="alert alert-success border-0 rounded-4 d-flex align-items-center shadow-sm">
                             <i class="fas fa-check-circle me-3 fs-3"></i>

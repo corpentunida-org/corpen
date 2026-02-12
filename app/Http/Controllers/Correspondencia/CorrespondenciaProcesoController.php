@@ -21,6 +21,7 @@ class CorrespondenciaProcesoController extends Controller
     public function index(Request $request)
     {
         $procesos_maestros = Proceso::all();
+        // Usamos la relación que ya tienes definida en User
         $usuarios = User::whereHas('seguimientosCorrespondencia')->get();
 
         $query = CorrespondenciaProceso::with(['correspondencia', 'proceso.flujo', 'usuario']);
@@ -63,7 +64,6 @@ class CorrespondenciaProcesoController extends Controller
      */
     public function store(Request $request)
     {
-        // Validación basada en los tipos de tu tabla (BigInt, Varchar, DateTime)
         $validData = $request->validate([
             'id_correspondencia' => 'required|integer|exists:corr_correspondencia,id_radicado',
             'id_proceso'         => 'required|integer|exists:corr_procesos,id',
@@ -71,16 +71,15 @@ class CorrespondenciaProcesoController extends Controller
             'estado'             => 'required|string|max:255',
             'fecha_gestion'      => 'required|date',
             'documento_arc'      => 'nullable|file|mimes:pdf,doc,docx,jpg,png|max:10240',
+            'finalizado'         => 'nullable|boolean',
         ]);
 
         try {
-            // Usamos una variable para capturar el ID fuera de la transacción si es necesario
             $idRadicado = $validData['id_correspondencia'];
 
             DB::transaction(function () use ($request, $validData, $idRadicado) {
                 $path = null;
 
-                // 1. Gestión de Archivo en S3
                 if ($request->hasFile('documento_arc')) {
                     $file = $request->file('documento_arc');
                     $fileName = 'seg_' . $idRadicado . '_' . time() . '.' . $file->getClientOriginalExtension();
@@ -89,19 +88,18 @@ class CorrespondenciaProcesoController extends Controller
                     Storage::disk('s3')->put($path, fopen($file, 'r+'));
                 }
 
-                // 2. Creación del registro (Eloquent maneja created_at/updated_at automáticamente)
                 CorrespondenciaProceso::create([
                     'id_correspondencia' => $idRadicado,
                     'observacion'        => $validData['observacion'],
                     'estado'             => $validData['estado'],
                     'id_proceso'         => $validData['id_proceso'],
-                    'notificado_email'   => $request->boolean('notificado_email'), // Laravel castea a 1 o 0
+                    'notificado_email'   => $request->boolean('notificado_email'),
                     'fecha_gestion'      => $validData['fecha_gestion'],
                     'documento_arc'      => $path,
+                    'finalizado'         => $request->boolean('finalizado'),
                     'fk_usuario'         => auth()->id(),
                 ]);
 
-                // 3. Sincronización: Actualizar estado en la tabla Maestra de Correspondencia
                 $nombreEstado = str_replace('_', ' ', $validData['estado']);
                 $estadoMaestro = Estado::where('nombre', 'LIKE', '%' . $nombreEstado . '%')->first();
                 
@@ -150,6 +148,7 @@ class CorrespondenciaProcesoController extends Controller
             'estado'        => 'required|string|max:255',
             'fecha_gestion' => 'required|date',
             'documento_arc' => 'nullable|file|mimes:pdf,doc,docx,jpg,png|max:10240',
+            'finalizado'    => 'nullable|boolean',
         ]);
 
         try {
@@ -158,10 +157,10 @@ class CorrespondenciaProcesoController extends Controller
                 'estado'           => $validData['estado'],
                 'fecha_gestion'    => $validData['fecha_gestion'],
                 'notificado_email' => $request->boolean('notificado_email'),
+                'finalizado'       => $request->boolean('finalizado'),
             ];
 
             if ($request->hasFile('documento_arc')) {
-                // Eliminar archivo anterior si existe
                 if ($correspondenciaProceso->documento_arc) {
                     Storage::disk('s3')->delete($correspondenciaProceso->documento_arc);
                 }
@@ -183,27 +182,27 @@ class CorrespondenciaProcesoController extends Controller
     }
 
     /**
-     * Eliminación de registro y archivo
+     * Eliminación
      */
+    /* 
     public function destroy(CorrespondenciaProceso $correspondenciaProceso)
     {
         $id_radicado = $correspondenciaProceso->id_correspondencia;
-
         try {
             if ($correspondenciaProceso->documento_arc) {
                 Storage::disk('s3')->delete($correspondenciaProceso->documento_arc);
             }
             $correspondenciaProceso->delete();
-
             return redirect()->route('correspondencia.correspondencias.show', $id_radicado)
-                ->with('success', 'Registro eliminado del historial.');
+                ->with('success', 'Registro eliminado.');
         } catch (\Exception $e) {
-            return back()->with('error', 'No se pudo eliminar: ' . $e->getMessage());
+            return back()->with('error', 'Error: ' . $e->getMessage());
         }
     }
+     */
 
     /**
-     * API/AJAX: Obtener historial por Radicado
+     * API/AJAX
      */
     public function getHistorialByRadicado($id_radicado)
     {
@@ -211,7 +210,6 @@ class CorrespondenciaProcesoController extends Controller
             ->where('id_correspondencia', $id_radicado)
             ->orderBy('fecha_gestion', 'desc')
             ->get();
-            
         return response()->json($historial);
     }
 }

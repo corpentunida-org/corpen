@@ -47,7 +47,6 @@
 
                         <div class="col-md-12">
                             <label class="form-label fw-bold">Documento de Soporte</label>
-                            
                             @if($correspondenciaProceso->documento_arc)
                                 <div class="d-flex align-items-center p-2 border rounded-3 bg-light mb-2">
                                     <i class="fas fa-file-alt text-primary mx-3 fs-4"></i>
@@ -63,20 +62,30 @@
                                 <input type="file" name="documento_arc" class="form-control" accept=".pdf,.doc,.docx,.jpg,.png">
                                 <span class="input-group-text"><i class="fas fa-upload"></i></span>
                             </div>
-                            <div class="form-text">Si selecciona un archivo nuevo, el anterior será reemplazado en S3.</div>
                         </div>
 
-                        <div class="col-md-6">
+                        <div class="col-md-12">
                             <label class="form-label fw-bold">Fecha y Hora de Gestión</label>
                             <input type="datetime-local" name="fecha_gestion" class="form-control" 
                                    value="{{ $correspondenciaProceso->fecha_gestion ? $correspondenciaProceso->fecha_gestion->format('Y-m-d\TH:i') : now()->format('Y-m-d\TH:i') }}" required>
                         </div>
 
-                        <div class="col-md-6 d-flex align-items-center">
-                            <div class="form-check form-switch mt-4 p-3 border rounded-3 w-100 {{ $correspondenciaProceso->notificado_email ? 'bg-soft-success' : '' }}">
+                        <div class="col-md-6">
+                            <div class="form-check form-switch p-3 border rounded-3 w-100 {{ $correspondenciaProceso->notificado_email ? 'bg-soft-success' : 'bg-light' }}">
                                 <input class="form-check-input ms-0 me-2" type="checkbox" name="notificado_email" value="1" id="notifCheck" {{ $correspondenciaProceso->notificado_email ? 'checked' : '' }}>
                                 <label class="form-check-label fw-bold" for="notifCheck">
                                     {{ $correspondenciaProceso->notificado_email ? 'Notificación Enviada' : '¿Marcar como Notificado?' }}
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-check form-switch p-3 border rounded-3 w-100 {{ $correspondenciaProceso->finalizado ? 'text-white' : '' }}" 
+                                 style="{{ $correspondenciaProceso->finalizado ? 'background-color: #dc3545;' : 'background-color: #fff5f5; border-color: #feb2b2 !important;' }}">
+                                <input class="form-check-input ms-0 me-2" type="checkbox" name="finalizado" value="1" id="finalizadoCheck" {{ $correspondenciaProceso->finalizado ? 'checked' : '' }}>
+                                <label class="form-check-label fw-bold {{ $correspondenciaProceso->finalizado ? 'text-white' : 'text-danger' }}" for="finalizadoCheck">
+                                    <i class="fas fa-flag-checkered me-1"></i> 
+                                    {{ $correspondenciaProceso->finalizado ? 'Gestión Finalizada' : '¿Marcar como Finalizado?' }}
                                 </label>
                             </div>
                         </div>
