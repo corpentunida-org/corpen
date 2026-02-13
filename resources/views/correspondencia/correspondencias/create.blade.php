@@ -19,16 +19,16 @@
             <div class="card-body p-4">
                 <form action="{{ route('correspondencia.correspondencias.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
-@if ($errors->any())
-    <div style="background: #fee2e2; color: #991b1b; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #f87171;">
-        <strong>Atención: El formulario tiene errores:</strong>
-        <ul>
-            @foreach ($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-    </div>
-@endif
+                    @if ($errors->any())
+                        <div style="background: #fee2e2; color: #991b1b; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #f87171;">
+                            <strong>Atención: El formulario tiene errores:</strong>
+                            <ul>
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
                     @include('correspondencia.correspondencias._form')
 
                     <hr class="my-4" style="opacity: 0.1;">

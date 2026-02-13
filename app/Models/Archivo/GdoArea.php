@@ -104,4 +104,13 @@ class GdoArea extends Model
     {
         return $this->hasMany(Interaction::class, 'id_area_de_asignacion', 'id');
     }
+
+    /**
+     * Flujos de solicitudes asociados a esta área.
+     */
+    public function flujos(): HasMany
+    {
+        return $this->hasMany(\App\Models\Correspondencia\FlujoDeTrabajo::class, 'id_area', 'id');
+    }
+
 }
