@@ -216,10 +216,9 @@ Route::post('cartera', [ReadExelController::class, 'store'])
 Route::post('/cartera/pdfMora', [ReadExelController::class, 'pdfMora'])->middleware('auth')->name('cartera.morosos.pdfMora');
 
 //Módulo inventario
-
 Route::get('/inventario', [UserController::class, 'inventario'])->middleware('auth')->name('inventario');
-//Route::get('/inventario/{id}', [UserController::class, 'inventario'])->middleware('auth')->name('inventario');
 
+//RESERVAS
 Route::get('user/validation/asociado', [UserController::class, 'validarAsociadoCreate'])->name('user.validar.asociado');
 Route::get('/consumir-api', [UserController::class, 'consumirEndpoint']);
 Route::post('validar/asociado', [UserController::class, 'validarAsociado'])->name('validar.asociado');
@@ -230,16 +229,15 @@ Route::post('reservaI/store', [ResReservaController::class, 'storeReserva'])->na
 Route::get('reservaI/{id}/soporte', [ResReservaController::class, 'createSoporte'])->name('reserva.inmueble.soporte.create');
 Route::post('reservaI/storeSoporte', [ResReservaController::class, 'storeSoporte'])->name('reserva.inmueble.soporte.store');
 
-Route::get('reservaI/confirmacion', [ResReservaController::class, 'indexConfirmacion'])->name('reserva.inmueble.confirmacion');
-Route::get('reservaI/confirmacion/{id}/show', [ResReservaController::class, 'showConfirmacion'])->name('reserva.inmueble.confirmacion.show');
+Route::get('reservaI/confirmacion', [ResReservaController::class, 'indexConfirmacion'])->name('reserva.inmueble.confirmacion')->middleware(['auth', 'candirect:reservas.Reserva.lista']);
+Route::get('reservaI/confirmacion/{id}/show', [ResReservaController::class, 'showConfirmacion'])->name('reserva.inmueble.confirmacion.show')->middleware(['auth', 'candirect:reservas.Reserva.lista']);
 Route::post('reservaI/notificar/ajuste', [ResReservaController::class, 'notificarAjuste'])->name('reserva.inmueble.notificar.ajuste');
 Route::post('reservaI/confirmar', [ResReservaController::class, 'confirmar'])->name('reserva.inmueble.confirmar');
 
-Route::get('reservaI/historico', [ResReservaController::class, 'indexHistorico'])->name('reserva.inmueble.historico');
+Route::get('reservaI/historico', [ResReservaController::class, 'indexHistorico'])->name('reserva.inmueble.historico')->middleware(['auth', 'candirect:reservas.Reserva.historico']);
 
 
 //TERCEROS
-// ARCHIVO DE RUTAS UNIFICADO
 Route::prefix('maestras')->middleware('auth')->name('maestras.')->group(function () {
 
     // TERCEROS
