@@ -16,6 +16,18 @@ class TaskHistory extends Model
      */
     protected $table = 'wor_task_histories';
 
+    public function getFile ($nameFile)
+    {
+        $url = '#';
+        if($nameFile) {
+            if (Storage::disk('s3')->exists($nameFile)) {
+                $url = Storage::disk('s3')->temporaryUrl(
+                    $nameFile, now()->addMinutes(5)
+                );
+            }
+        }
+        return $url;
+    }
     protected $fillable = [
         'task_id',
         'estado_anterior',
