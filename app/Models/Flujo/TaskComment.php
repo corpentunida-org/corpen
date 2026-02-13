@@ -12,6 +12,19 @@ class TaskComment extends Model
     use HasFactory;
     protected $table = 'wor_task_comments';
 
+    public function getFile ($nameFile)
+    {
+        $url = '#';
+        if($nameFile) {
+            if (Storage::disk('s3')->exists($nameFile)) {
+                $url = Storage::disk('s3')->temporaryUrl(
+                    $nameFile, now()->addMinutes(5)
+                );
+            }
+        }
+        return $url;
+    }
+
     protected $fillable = [
         'task_id',
         'user_id',
