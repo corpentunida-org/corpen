@@ -633,15 +633,8 @@
                                                         {{ $event->comentario }}
                                                     </div>
                                                 @endif
-                                                <div class="comment-attachment mt-2">
-                                                    @php
-                                                        $urlS3 = Storage::disk('s3')->temporaryUrl(
-                                                            $event->soporte,
-                                                            now()->addMinutes(30),
-                                                        );
-                                                    @endphp
-                                                    <a href="{{ $urlS3 }}" target="_blank"
-                                                        class="attachment-link">
+                                                <div class="comment-attachment mt-2">                                                    
+                                                    <a href="{{ $event->getFile($event->soporte) }}" target="_blank"class="attachment-link">
                                                         <i class="fas fa-file-download"></i> Ver Archivo
                                                     </a>
                                                 </div>
