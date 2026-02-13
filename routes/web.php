@@ -122,6 +122,7 @@ use App\Http\Controllers\Correspondencia\PlantillaController;
 use App\Http\Controllers\Correspondencia\ComunicacionSalidaController;
 use App\Http\Controllers\Correspondencia\CorrespondenciaProcesoController;
 use App\Http\Controllers\Correspondencia\CorrEstadoController;
+use App\Http\Controllers\Correspondencia\MedioRecepcionController;
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/', [IndexController::class, 'index'])->name('dashboard');
@@ -876,6 +877,12 @@ Route::middleware(['auth'])->prefix('correspondencia')->name('correspondencia.')
     // ---------------------------------------------------
     Route::resource('estados', CorrEstadoController::class)
         ->parameters(['estados' => 'estado']);
+    
+        // ---------------------------------------------------
+    // 10. MEDIOS DE RECEPCIÓN (NUEVO)
+    // ---------------------------------------------------
+    Route::resource('medios-recepcion', MedioRecepcionController::class)
+        ->parameters(['medios-recepcion' => 'medios_recepcion']);
 
 });
 // FIN MÓDULO DE CORRESPONDENCIA

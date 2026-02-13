@@ -83,6 +83,12 @@
                 <i class="bi bi-gear-wide-connected me-2"></i> Estados del Sistema
             </a>
         </li>
+        {{-- NUEVO: MEDIOS DE RECEPCIÓN --}}
+        <li class="nxl-item">
+            <a class="nxl-link" href="{{ route('correspondencia.medios-recepcion.index') }}">
+                <i class="bi bi-mailbox2 me-2"></i> Medios de Recepción
+            </a>
+        </li>
 
         {{-- SEPARADOR FINAL --}}
         <li class="nxl-item-separator" style="height:1px; background: rgba(0,0,0,0.04); margin:10px 20px;"></li>

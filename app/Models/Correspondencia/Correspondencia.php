@@ -102,4 +102,13 @@ class Correspondencia extends Model
         return $this->hasMany(CorrespondenciaProceso::class, 'id_correspondencia', 'id_radicado')
                     ->orderBy('created_at', 'desc');
     }
+    /**
+     * Relación: Medio de Recepción
+     * Relaciona 'medio_recibido' de esta tabla con el 'id' de corr_medio_recepcion
+     */
+    public function medioRecepcion()
+    {
+        // belongsTo(ModeloDestino, llave_foranea_local, llave_primaria_destino)
+        return $this->belongsTo(MedioRecepcion::class, 'medio_recibido', 'id');
+    }
 }

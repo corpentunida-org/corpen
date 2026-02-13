@@ -26,9 +26,11 @@
                     
                     <div class="d-flex justify-content-between align-items-center">
                         {{-- Botón de eliminación con confirmación --}}
+                        <!-- 
                         <button type="button" class="btn btn-outline-danger" onclick="confirmDelete()">
                             <i class="bi bi-trash me-1"></i> Eliminar Registro
                         </button>
+                         -->
 
                         <div class="d-flex gap-2">
                             <a href="{{ route('correspondencia.correspondencias.index') }}" class="btn btn-light px-4">Volver</a>
@@ -46,7 +48,7 @@
             </div>
         </div>
     </div>
-
+    <!-- 
     <script>
         function confirmDelete() {
             if(confirm('¿Está seguro de eliminar este radicado? Esta acción no se puede deshacer.')) {
@@ -54,4 +56,5 @@
             }
         }
     </script>
+     -->
 </x-base-layout>

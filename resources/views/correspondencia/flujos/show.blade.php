@@ -21,6 +21,7 @@
         </header>
 
         <div class="row">
+            {{-- Columna Izquierda: Info General --}}
             <div class="col-lg-4">
                 <div class="card border-0 shadow-sm rounded-4 mb-4">
                     <div class="card-body p-4 text-center">
@@ -28,15 +29,23 @@
                             <i class="bi bi-diagram-3-fill fs-2"></i>
                         </div>
                         <h5 class="fw-bold mb-1">Información General</h5>
-                        <span class="badge rounded-pill {{ $flujo->correspondencias_count > 0 ? 'bg-soft-warning text-warning' : 'bg-soft-success text-success' }} mb-3">
-                            {{ $flujo->correspondencias_count > 0 ? 'En Uso: ' . $flujo->correspondencias_count : 'Sin Uso Activo' }}
+                        <span class="badge rounded-pill {{ ($flujo->correspondencias_count ?? 0) > 0 ? 'bg-soft-warning text-warning' : 'bg-soft-success text-success' }} mb-3">
+                            {{ ($flujo->correspondencias_count ?? 0) > 0 ? 'En Uso: ' . $flujo->correspondencias_count : 'Sin Uso Activo' }}
                         </span>
                         
                         <hr class="my-3 text-muted opacity-25">
                         
                         <div class="text-start">
                             <div class="mb-3">
-                                <label class="small text-muted d-block text-uppercase fw-bold" style="font-size: 0.65rem;">Responsable del Flujo</label>
+                                <label class="small text-muted d-block text-uppercase fw-bold" style="font-size: 0.65rem;">Área / Dependencia</label>
+                                <div class="d-flex align-items-center mt-1 text-indigo">
+                                    <i class="bi bi-building me-2"></i>
+                                    <span class="fw-bold small">{{ $flujo->area->nombre ?? 'Área no definida' }}</span>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="small text-muted d-block text-uppercase fw-bold" style="font-size: 0.65rem;">Responsable (Jefe)</label>
                                 <div class="d-flex align-items-center mt-1">
                                     <div class="avatar-xs bg-indigo text-white me-2" style="width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: bold;">
                                         {{ strtoupper(substr($flujo->usuario->name ?? 'U', 0, 1)) }}
@@ -60,6 +69,7 @@
                 </div>
             </div>
 
+            {{-- Columna Derecha: Pasos --}}
             <div class="col-lg-8">
                 <div class="card border-0 shadow-sm rounded-4 mb-4">
                     <div class="card-body p-4">
@@ -75,7 +85,7 @@
                             <span class="badge bg-light text-indigo border px-3 py-2 rounded-pill">{{ $flujo->procesos->count() }} Etapas</span>
                         </div>
 
-                        @forelse($flujo->procesos as $proceso)
+                        @forelse($flujo->procesos->sortBy('id') as $proceso)
                             <div class="d-flex mb-4 position-relative">
                                 @if(!$loop->last)
                                     <div class="position-absolute h-100 border-start border-2 border-light" style="left: 15px; top: 35px; z-index: 1;"></div>
@@ -98,10 +108,10 @@
                                             </h6>
                                         </div>
                                         <div class="btn-group">
-                                            <a href="{{ route('correspondencia.procesos.show', $proceso) }}" class="btn btn-sm btn-light text-primary border" title="Asignar Participantes">
-                                                <i class="bi bi-person-plus-fill"></i>
+                                            <a href="{{ route('correspondencia.procesos.show', $proceso) }}" class="btn btn-sm btn-light text-primary border" title="Asignar Participantes y Estados">
+                                                <i class="bi bi-gear-fill"></i>
                                             </a>
-                                            <a href="{{ route('correspondencia.procesos.edit', $proceso) }}" class="btn btn-sm btn-light text-warning border" title="Editar Paso">
+                                            <a href="{{ route('correspondencia.procesos.edit', $proceso) }}" class="btn btn-sm btn-light text-warning border">
                                                 <i class="bi bi-pencil-square"></i>
                                             </a>
                                         </div>
@@ -116,7 +126,7 @@
                                         @endforeach
                                         @if($proceso->usuarios->isEmpty())
                                             <span class="text-danger small fw-medium" style="font-size: 10px;">
-                                                <i class="bi bi-exclamation-triangle me-1"></i>Requiere asignar responsables
+                                                <i class="bi bi-exclamation-triangle me-1"></i>Requiere responsables
                                             </span>
                                         @endif
                                     </div>
@@ -125,7 +135,7 @@
                         @empty
                             <div class="text-center py-5 border border-dashed rounded-4 bg-light-subtle">
                                 <i class="bi bi-stack text-muted opacity-50 display-4"></i>
-                                <p class="text-muted mt-2">No hay pasos definidos para este flujo.</p>
+                                <p class="text-muted mt-2">No hay pasos definidos.</p>
                                 <button class="btn btn-sm btn-outline-indigo mt-2" data-bs-toggle="modal" data-bs-target="#modalCrearProceso">
                                     <i class="bi bi-plus-circle me-1"></i>Agregar el primer paso
                                 </button>
@@ -137,47 +147,47 @@
         </div>
     </div>
 
+    {{-- MODAL CREAR PASO --}}
     <div class="modal fade" id="modalCrearProceso" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg rounded-4">
                 <div class="modal-header bg-indigo text-white rounded-top-4">
-                    <h5 class="modal-title fw-bold"><i class="bi bi-gear-fill me-2"></i>Configurar Nuevo Paso</h5>
+                    <h5 class="modal-title fw-bold"><i class="bi bi-plus-circle me-2"></i>Nuevo Paso para {{ $flujo->nombre }}</h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form action="{{ route('correspondencia.procesos.store') }}" method="POST">
                     @csrf
                     <div class="modal-body p-4">
+                        {{-- Campo oculto para vincular al flujo actual --}}
                         <input type="hidden" name="flujo_id" value="{{ $flujo->id }}">
-                        <input type="hidden" name="usuario_creador_id" value="{{ auth()->id() }}">
                         
                         <div class="mb-3">
                             <label class="form-label fw-bold small text-muted text-uppercase">Nombre de la etapa</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light border-end-0"><i class="bi bi-tag text-indigo"></i></span>
-                                <input type="text" name="nombre" class="form-control border-start-0 ps-0" placeholder="Ej: Revisión Técnica" required>
+                                <input type="text" name="nombre" class="form-control border-start-0 ps-0" placeholder="Ej: Revisión Jurídica" required>
                             </div>
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label fw-bold small text-muted text-uppercase">Instrucciones o Detalle</label>
-                            <textarea name="detalle" class="form-control" rows="3" placeholder="Describe brevemente qué debe suceder en este paso..."></textarea>
+                            <label class="form-label fw-bold small text-muted text-uppercase">Instrucciones</label>
+                            <textarea name="detalle" class="form-control" rows="3" placeholder="¿Qué debe hacer el responsable en este paso?"></textarea>
                         </div>
 
                         <div class="bg-light p-3 rounded-3 border d-flex justify-content-between align-items-center">
                             <div>
-                                <label class="form-label fw-bold small text-muted text-uppercase mb-0 d-block">Estado</label>
-                                <small class="text-muted">Habilitar este paso inmediatamente</small>
+                                <label class="form-label fw-bold small text-muted text-uppercase mb-0 d-block">¿Paso Activo?</label>
+                                <small class="text-muted">Si se desactiva, se saltará en el flujo.</small>
                             </div>
                             <div class="form-check form-switch">
                                 <input class="form-check-input ms-0" type="checkbox" name="activo" value="1" id="switchActivo" checked style="width: 2.4em; height: 1.2em;">
-                                <label class="form-check-label" for="switchActivo"></label>
                             </div>
                         </div>
                     </div>
                     <div class="modal-footer bg-light rounded-bottom-4 border-top">
                         <button type="button" class="btn btn-light border btn-sm px-3 shadow-sm" data-bs-dismiss="modal">Cerrar</button>
                         <button type="submit" class="btn btn-indigo btn-sm px-4 shadow-sm">
-                            Guardar Paso <i class="bi bi-arrow-right-short ms-1"></i>
+                            Guardar Etapa <i class="bi bi-arrow-right-short ms-1"></i>
                         </button>
                     </div>
                 </form>
@@ -185,19 +195,13 @@
         </div>
     </div>
 
+    {{-- Estilos --}}
     <style>
         .bg-soft-indigo { background-color: #f0f3ff; }
-        .bg-soft-warning { background-color: #fff9e6; }
-        .bg-soft-success { background-color: #e6fffa; }
         .text-indigo { color: #4f46e5; }
         .bg-indigo { background-color: #4f46e5; }
         .btn-indigo { background-color: #4f46e5; color: white; }
-        .btn-indigo:hover { background-color: #4338ca; color: white; }
-        .btn-outline-indigo { border-color: #4f46e5; color: #4f46e5; }
         .btn-primary-neo { background-color: #4f46e5; color: white; border: none; padding: 0.5rem 1.2rem; border-radius: 10px; font-weight: 500; transition: all 0.2s; }
-        .btn-primary-neo:hover { background-color: #4338ca; transform: translateY(-1px); }
-        .hover-up { transition: all 0.2s; border: 1px solid #eee !important; }
-        .hover-up:hover { transform: translateY(-3px); border-color: #c7d2fe !important; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05) !important; }
-        .form-switch .form-check-input:checked { background-color: #4f46e5; border-color: #4f46e5; }
+        .hover-up:hover { transform: translateY(-3px); border-color: #c7d2fe !important; }
     </style>
 </x-base-layout>
