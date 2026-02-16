@@ -98,9 +98,11 @@
 
                     {{-- Botones de acción --}}
                     <div class="d-flex justify-content-between align-items-center pt-3 border-top mt-4">
-                        <a href="{{ route('correspondencia.flujos.index') }}" class="btn btn-light border px-4">
+                        {{-- CAMBIO AQUÍ: Usamos $flujo en lugar de $proceso --}}
+                        <a href="{{ route('correspondencia.flujos.show', $flujo) }}" class="btn btn-light border px-4">
                             <i class="bi bi-chevron-left me-2"></i>Volver
                         </a>
+                        
                         <button type="submit" id="btn-submit-edit" class="btn btn-primary px-5 fw-bold shadow-sm" style="background-color: #4f46e5; border:none;">
                             <i class="bi bi-save me-2"></i>Guardar Cambios
                         </button>

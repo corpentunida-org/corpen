@@ -16,6 +16,7 @@ class ProcesoUsuario extends Model
         'user_id',
         'proceso_id',
         'detalle',
+        'activo',
     ];
 
     /**

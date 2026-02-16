@@ -12,10 +12,10 @@
             </div>
             <div class="header-actions d-flex gap-2">
                 <button type="button" class="btn btn-primary-neo shadow-sm" data-bs-toggle="modal" data-bs-target="#modalCrearProceso">
-                    <i class="bi bi-plus-circle-fill me-1"></i> Nuevo Paso
+                    <i class="bi bi-plus-circle-fill me-1"></i> Configuración de Nuevo Proceso
                 </button>
                 <a href="{{ route('correspondencia.flujos.edit', $flujo) }}" class="btn btn-warning btn-sm d-flex align-items-center rounded-3 px-3">
-                    <i class="bi bi-pencil me-1"></i> Editar
+                    <i class="bi bi-pencil me-1"></i> Editar Detalles del Flujo
                 </a>
             </div>
         </header>
@@ -119,14 +119,17 @@
                                     <p class="small text-muted mb-2">{{ $proceso->detalle }}</p>
                                     
                                     <div class="d-flex align-items-center flex-wrap gap-1 mt-2">
+                                        {{-- Solo iterará sobre los que el controlador permitió (los activos) --}}
                                         @foreach($proceso->usuarios as $user)
                                             <span class="badge border text-dark bg-light shadow-none" style="font-size: 10px; font-weight: 500;">
                                                 <i class="bi bi-person me-1"></i>{{ $user->name }}
                                             </span>
                                         @endforeach
+
+                                        {{-- Si el controlador no devolvió ninguno (o no hay asignados), sale la advertencia --}}
                                         @if($proceso->usuarios->isEmpty())
                                             <span class="text-danger small fw-medium" style="font-size: 10px;">
-                                                <i class="bi bi-exclamation-triangle me-1"></i>Requiere responsables
+                                                <i class="bi bi-exclamation-triangle me-1"></i>Requiere responsables activos
                                             </span>
                                         @endif
                                     </div>
