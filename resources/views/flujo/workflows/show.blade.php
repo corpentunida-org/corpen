@@ -617,19 +617,14 @@
                                             <td style="padding: 15px; color: #64748b; vertical-align: top;">
                                                 <div style="margin-bottom: 6px;">
                                                     @if ($event->tipo_evento == 'comentario')
-                                                        <span style="color: #6366f1; font-weight: 600;">
-                                                            <i class="far fa-comment-dots"></i> Nuevo Comentario
-                                                        </span>
+                                                        <span style="color: #6366f1; font-weight: 600;"><i class="far fa-comment-dots"></i> Nuevo Comentario</span>
                                                     @else
-                                                        Cambió estado a <strong
-                                                            style="color: #334155;">{{ $event->estado_nuevo }}</strong>
+                                                        Cambió estado a <strong style="color: #334155;">{{ $event->estado_nuevo }}</strong>
                                                     @endif
                                                 </div>
                                                 @if (!empty($event->comentario))
-                                                    <div
-                                                        style="background: #f8fafc; padding: 10px 14px; border-radius: 12px; border: 1px solid #e2e8f0; font-size: 0.85rem; color: #475569; line-height: 1.4; position: relative;">
-                                                        <span
-                                                            style="position: absolute; top: -5px; left: 10px; width: 8px; height: 8px; background: #f8fafc; border-top: 1px solid #e2e8f0; border-left: 1px solid #e2e8f0; transform: rotate(45deg);"></span>
+                                                    <div style="background: #f8fafc; padding: 10px 14px; border-radius: 12px; border: 1px solid #e2e8f0; font-size: 0.85rem; color: #475569; line-height: 1.4; position: relative;">
+                                                        <span style="position: absolute; top: -5px; left: 10px; width: 8px; height: 8px; background: #f8fafc; border-top: 1px solid #e2e8f0; border-left: 1px solid #e2e8f0; transform: rotate(45deg);"></span>
                                                         {{ $event->comentario }}
                                                     </div>
                                                 @endif
