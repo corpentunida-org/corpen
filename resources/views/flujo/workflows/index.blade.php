@@ -6,14 +6,6 @@
 
     {{-- Lógica PHP --}}
     @php
-        // Etiquetas semánticas
-        $estadoLabels = [
-            'borrador'   => 'Inicialización',
-            'activo'     => 'Ejecución',
-            'pausado'    => 'En Cola',
-            'completado' => 'Terminado',
-            'archivado'  => 'Rechazado'
-        ];
 
         // Lógica de búsqueda y Pestaña Activa
         $searchWords = request()->filled('search') ? array_filter(explode(' ', request('search'))) : [];
@@ -22,37 +14,7 @@
         $hasActiveFilters = request()->filled('search') || request()->filled('page') || request()->filled('estado') || request()->filled('condicion') || request()->filled('asignado_a');
         $activeTab = $hasActiveFilters ? 'gestion' : 'dashboard';
 
-        // Consulta Base
-        $query = App\Models\Flujo\Workflow::with('asignado');
-
-        // 1. Filtro por Palabras
-        if (!empty($searchWords)) {
-            $query->where(function($q) use ($searchWords) {
-                foreach ($searchWords as $word) {
-                    $q->orWhere('nombre', 'LIKE', '%' . $word . '%')
-                      ->orWhere('descripcion', 'LIKE', '%' . $word . '%');
-                }
-            });
-        }
-
-        // 2. Filtros Estándar
-        if (request()->filled('estado')) $query->where('estado', request('estado'));
-        if (request()->filled('prioridad')) $query->where('prioridad', request('prioridad'));
-        if (request()->filled('asignado_a')) $query->where('asignado_a', request('asignado_a'));
-
-        // 3. Filtro Especial de Condición
-        if (request('condicion') == 'atrasado') {
-            $query->where('fecha_fin', '<', now())->where('estado', '!=', 'completado');
-        } elseif (request('condicion') == 'a_tiempo') {
-            $query->where('fecha_fin', '>=', now())->where('estado', '!=', 'completado');
-        }
-
-        // Resultados Paginados
-        $workflows = $query->orderBy('created_at', 'desc')->paginate(10);
-
-        // --- DATOS PARA DASHBOARD ---
-        $rawCounts = App\Models\Flujo\Workflow::selectRaw('estado, count(*) as total')->groupBy('estado')->pluck('total', 'estado');
-        $total = $rawCounts->sum();
+       
 
         // Datos Gráficas
         $baseMetrics = App\Models\Flujo\Workflow::query();
@@ -67,12 +29,9 @@
             ->whereNotNull('asignado_a')
             ->groupBy('asignado_a')
             ->get();
-            
-        $users = App\Models\User::orderBy('name')->get();
     @endphp
-
+    
     <div class="app-container">
-        
         {{-- BREADCRUMBS --}}
         <nav class="breadcrumbs">
             <a href="#" class="crumb-link">Inicio</a>
@@ -141,17 +100,17 @@
                             'completado' => '#6366f1', // Indigo
                             'archivado' => '#475569', // Slate
                         };
-                        $label = match($est) {
+                        /*$label = match($est) {
                             'borrador' => 'Inicialización',
                             'activo' => 'Ejecución',
                             'pausado' => 'En Cola',
                             'completado' => 'Terminado',
                             'archivado' => 'Rechazado',
-                        };
+                        };*/
                     @endphp
                     <div class="kpi-box clickable" onclick="applyFilter('estado', '{{ $est }}')" style="border-top-color: {{ $color }};">
                         <div class="kpi-inner">
-                            <span class="kpi-label" style="color: {{ $color }};">{{ $label }}</span>
+                            <span class="kpi-label" style="color: {{ $color }};">{{-- $label --}} {{ $est }}</span>
                             <span class="kpi-number">{{ $rawCounts[$est] ?? 0 }}</span>
                         </div>
                     </div>
@@ -258,17 +217,17 @@
 
                 @forelse($workflows as $wf)
                     @php
-                        $isOverdue = $wf->fecha_fin && $wf->fecha_fin->isPast() && $wf->estado !== 'completado';
-                        
+                    $isOverdue = false;
+                    if($wf->estado === 'activo'){
+                        $isOverdue = $wf->fecha_fin && $wf->fecha_fin->isPast();
+                    }                        
                         $progColor = $isOverdue ? '#ef4444' : match($wf->estado) {
                             'completado' => '#6366f1',
                             'activo'     => '#10b981',
                             'pausado'    => '#f59e0b',
                             'archivado'  => '#475569',
                             default      => '#94a3b8'
-                        };
-                        
-                        $progWidth = in_array($wf->estado, ['completado', 'archivado']) ? '100%' : ($wf->estado == 'activo' ? '65%' : '20%');
+                        };                        
                     @endphp
 
                     <div class="project-row {{ $isOverdue ? 'row-overdue' : '' }}">
@@ -284,16 +243,16 @@
 
                         <div class="col-status">
                             <span class="badge-status {{ $wf->estado }}">
-                                {{ $estadoLabels[$wf->estado] ?? $wf->estado }}
+                                {{ $wf->estado }}
                             </span>
                         </div>
-
+                      
                         <div class="col-progress">
                             <div class="progress-container-neo">
                                 <div class="progress-track">
-                                    <div class="progress-fill" style="width: {{ $progWidth }}; background: {{ $progColor }};"></div>
+                                    <div class="progress-fill" style="width: {{ $wf->progreso }}%; background: {{ $progColor }};"></div>
                                 </div>
-                                <span class="progress-val">{{ $progWidth }}</span>
+                                <span class="progress-val">{{ $wf->progreso }}%</span>
                             </div>
                             @if($isOverdue)
                                 <span class="overdue-text">Vencido</span>
@@ -390,7 +349,7 @@
                                 <tr style="border-bottom: 1px solid var(--border);">
                                     <td style="padding: 15px 20px;">
                                         <div style="font-weight: 600; color: var(--text-dark);">{{ $wf->nombre }}</div>
-                                        <div style="font-size: 11px; color: var(--text-gray);">{{ $estadoLabels[$wf->estado] ?? $wf->estado }}</div>
+                                        <div style="font-size: 11px; color: var(--text-gray);">{{ $wf->estado }}</div>
                                     </td>
                                     <td style="padding: 15px 20px; color: var(--text-gray); font-size: 13px;">
                                         {{ $wf->fecha_inicio ? $wf->fecha_inicio->format('d M, Y') : '--' }}
