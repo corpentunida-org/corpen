@@ -58,9 +58,14 @@ class FlujoDeTrabajoController extends Controller
 
     public function show(FlujoDeTrabajo $flujo)
     {
-        // Cargamos área, jefe y procesos
-        $flujo->load(['usuario', 'area', 'procesos.usuarios'])
-            ->loadCount('correspondencias');
+        // Cargamos área, jefe y procesos, pero filtramos los usuarios de los procesos
+        $flujo->load([
+            'usuario', 
+            'area', 
+            'procesos.usuarios' => function($query) {
+                $query->where('activo', true); // <--- SOLO USUARIOS ACTIVOS
+            }
+        ])->loadCount('correspondencias');
             
         return view('correspondencia.flujos.show', compact('flujo'));
     }
@@ -86,7 +91,7 @@ class FlujoDeTrabajoController extends Controller
 
         $this->auditoria('UPDATE FLUJO DE TRABAJO ID ' . $flujo->id);
 
-        return redirect()->route('correspondencia.flujos.index')
+        return redirect()->route('correspondencia.flujos.show', $flujo)
             ->with('success', 'Flujo actualizado correctamente.');
     }
 
