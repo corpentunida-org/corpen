@@ -79,8 +79,7 @@
                         {{-- Botonera --}}
                         <div class="col-md-12 pt-4 border-top">
                             <div class="d-flex justify-content-between align-items-center">
-                                <a href="{{ route('correspondencia.procesos.index') }}" class="btn btn-light px-4 border" style="border-radius: 10px;">Cancelar</a>
-                                <div class="d-flex gap-2">
+                                    <a href="{{ route('correspondencia.procesos.show', $proceso) }}" class="btn btn-light px-4 border" style="border-radius: 10px;">Cancelar</a>                                <div class="d-flex gap-2">
                                     <a href="{{ route('correspondencia.procesos.show', $proceso) }}" class="btn btn-outline-primary px-4" style="border-radius: 10px;">
                                         <i class="fas fa-users me-2"></i> Equipo
                                     </a>

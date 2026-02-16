@@ -110,7 +110,7 @@ class ProcesoController extends Controller
         $proceso->update($data);
         $this->auditoria('UPDATE PROCESO ID ' . $proceso->id);
         
-        return redirect()->route('correspondencia.procesos.index')
+        return redirect()->route('correspondencia.procesos.show', $proceso)
             ->with('success', 'Proceso actualizado correctamente');
     }
 
@@ -137,28 +137,42 @@ class ProcesoController extends Controller
             'detalle' => 'nullable|string|max:255'
         ]);
 
+        /**
+         * syncWithoutDetaching:
+         * Si el usuario no está, lo inserta con activo = 1.
+         * Si ya existe, actualiza el detalle y asegura que vuelva a estar activo = 1.
+         */
         $proceso->usuarios()->syncWithoutDetaching([
             $request->user_id => [
-                'detalle' => $request->detalle,
-                'created_at' => now(),
+                'detalle'    => $request->detalle,
+                'activo'     => 1, // Siempre que se asigna o re-asigna, se marca como activo
                 'updated_at' => now()
             ]
         ]);
 
-        $this->auditoria('ASIGNAR USUARIO ID ' . $request->user_id . ' A PROCESO ' . $proceso->id);
+        $this->auditoria('ASIGNAR/ACTIVAR USUARIO ID ' . $request->user_id . ' EN PROCESO ' . $proceso->id);
 
-        return back()->with('success', 'Responsable asignado correctamente');
+        return back()->with('success', 'Responsable asignado y activado correctamente');
     }
 
     public function removerUsuario($proceso_id, $user_id)
     {
         $proceso = Proceso::findOrFail($proceso_id);
-        $proceso->usuarios()->detach($user_id);
         
-        $this->auditoria('REMOVER USUARIO ID ' . $user_id . ' DE PROCESO ' . $proceso_id);
+        /**
+         * NO USAMOS detach() para no borrar la evidencia de auditoría.
+         * updateExistingPivot cambia el estado a 0 (inactivo).
+         */
+        $proceso->usuarios()->updateExistingPivot($user_id, [
+            'activo'     => 0,
+            'updated_at' => now()
+        ]);
         
-        return back()->with('success', 'Responsable removido del equipo');
+        $this->auditoria('DESACTIVAR USUARIO ID ' . $user_id . ' DE PROCESO ' . $proceso_id);
+        
+        return back()->with('success', 'El responsable ha sido marcado como inactivo para este proceso');
     }
+
 
     // =========================================================================
     // GESTIÓN DE ESTADOS / PERMISOS (Modelo EstadoProceso)
