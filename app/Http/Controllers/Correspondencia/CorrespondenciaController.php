@@ -106,6 +106,7 @@ class CorrespondenciaController extends Controller
 
     public function show($id)
     {
+        // 1. Cargar la correspondencia con todas sus relaciones base
         $correspondencia = Correspondencia::with([
             'procesos.usuario', 
             'procesos.proceso.flujo', 
@@ -113,21 +114,27 @@ class CorrespondenciaController extends Controller
             'estado', 
             'remitente', 
             'flujo',
-            'medioRecepcion' // Relación añadida
+            'medioRecepcion'
         ])->findOrFail($id);
 
         $flujo = null;
         $procesos_disponibles = collect();
 
+        // 2. Cargar los procesos del flujo (o todos si no hay flujo)
         if ($correspondencia->flujo_id) {
             $flujo = FlujoDeTrabajo::with(['usuario'])->find($correspondencia->flujo_id);
+            
+            // CORRECCIÓN AQUÍ: Usamos 'estadosProcesos.estado'
+            // Esto le dice a Laravel: "Trae la tabla intermedia Y TAMBIÉN el estado relacionado"
             $procesos_disponibles = Proceso::where('flujo_id', $correspondencia->flujo_id)
-                ->with(['flujo', 'usuariosAsignados.usuario'])
+                ->with(['flujo', 'usuariosAsignados.usuario', 'estadosProcesos.estado']) 
                 ->get();
         } else {
-            $procesos_disponibles = Proceso::with(['flujo', 'usuariosAsignados.usuario'])->get();
+            // CORRECCIÓN AQUÍ TAMBIÉN: 'estadosProcesos.estado'
+            $procesos_disponibles = Proceso::with(['flujo', 'usuariosAsignados.usuario', 'estadosProcesos.estado'])->get();
         }
 
+        // 3. Cálculos de tiempos (KPIs)
         $tiempoGestion = $correspondencia->trd->tiempo_gestion ?? 0;
         $fechaInicio = Carbon::parse($correspondencia->fecha_solicitud);
         $limite = $fechaInicio->copy()->addYears($tiempoGestion);

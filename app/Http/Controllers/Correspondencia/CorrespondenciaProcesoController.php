@@ -63,11 +63,12 @@ class CorrespondenciaProcesoController extends Controller
      */
     public function store(Request $request)
     {
+        // 1. Cambiamos 'estado' por 'estado_id' y validamos que sea un ID existente
         $validData = $request->validate([
-            'id_correspondencia' => 'required|integer|exists:corr_correspondencia,id_radicado',
+            'id_correspondencia' => 'required|exists:corr_correspondencia,id_radicado',
             'id_proceso'         => 'required|integer|exists:corr_procesos,id',
             'observacion'        => 'required|string',
-            'estado'             => 'required|string|max:255',
+            'estado_id'          => 'required|integer|exists:corr_estados,id', // <-- CORREGIDO
             'fecha_gestion'      => 'required|date',
             'documento_arc'      => 'nullable|file|mimes:pdf,doc,docx,jpg,png|max:10240',
             'finalizado'         => 'nullable|boolean',
@@ -75,35 +76,40 @@ class CorrespondenciaProcesoController extends Controller
 
         try {
             $idRadicado = $validData['id_correspondencia'];
-            DB::transaction(function () use ($request, $validData, $idRadicado) {  
-                $nombre=null;              
+            
+            DB::transaction(function () use ($request, $validData, $idRadicado) { 
+                // Buscar el modelo del Estado para obtener el nombre real (texto)
+                $estadoMaestro = Estado::findOrFail($validData['estado_id']);
+                
+                $nombreArchivo = null;              
                 if ($request->hasFile('documento_arc')) {
                     $file = $request->file('documento_arc');
-                    $nombre = 'corpentunida/correspondencia/seg_' . $idRadicado . '_' . time() . '.' . $file->getClientOriginalExtension();
-                    Storage::disk('s3')->put($nombre, file_get_contents($file));
+                    $nombreArchivo = 'corpentunida/correspondencia/seg_' . $idRadicado . '_' . time() . '.' . $file->getClientOriginalExtension();
+                    Storage::disk('s3')->put($nombreArchivo, file_get_contents($file));
                 }     
 
+                // Crear el registro del proceso (Seguimiento)
                 CorrespondenciaProceso::create([
                     'id_correspondencia' => $idRadicado,
-                    'observacion' => $validData['observacion'],
-                    'estado' => $validData['estado'],
-                    'id_proceso' => $validData['id_proceso'],
-                    'notificado_email' => $request->boolean('notificado_email'), // Laravel castea a 1 o 0
-                    'fecha_gestion' => $validData['fecha_gestion'],
-                    'documento_arc' => $nombre,
-                    'finalizado' => $request->boolean('finalizado'),
-                    'fk_usuario' => auth()->id(),
+                    'observacion'        => $validData['observacion'],
+                    'estado'             => $estadoMaestro->nombre, // Guardamos el NOMBRE (texto) para el historial
+                    'id_proceso'         => $validData['id_proceso'],
+                    'notificado_email'   => $request->boolean('notificado_email'),
+                    'fecha_gestion'      => $validData['fecha_gestion'],
+                    'documento_arc'      => $nombreArchivo,
+                    'finalizado'         => $request->boolean('finalizado'),
+                    'fk_usuario'         => auth()->id(),
                 ]);
                 
-                $nombreEstado = str_replace('_', ' ', $validData['estado']);
-                $estadoMaestro = Estado::where('nombre', 'LIKE', '%' . $nombreEstado . '%')->first();
-
-                if ($estadoMaestro) {
-                    Correspondencia::where('id_radicado', $idRadicado)->update(['estado_id' => $estadoMaestro->id]);
-                }
+                // Actualizar la tabla maestra de correspondencia con el ID
+                Correspondencia::where('id_radicado', $idRadicado)->update([
+                    'estado_id' => $estadoMaestro->id
+                ]);
             });
 
-            return redirect()->route('correspondencia.correspondencias.show', $idRadicado)->with('success', 'Seguimiento registrado y estado actualizado correctamente.');
+            return redirect()->route('correspondencia.correspondencias.show', $idRadicado)
+                ->with('success', 'Seguimiento registrado y estado actualizado correctamente.');
+
         } catch (\Exception $e) {
             return redirect()->back()->withInput()->with('error', 'Error en la operación: ' . $e->getMessage());
         }
