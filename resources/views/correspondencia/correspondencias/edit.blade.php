@@ -32,9 +32,14 @@
                         </button>
                          -->
 
-                        <div class="d-flex gap-2">
-                            <a href="{{ route('correspondencia.correspondencias.index') }}" class="btn btn-light px-4">Volver</a>
-                            <button type="submit" class="btn btn-primary px-4 fw-bold">
+                        <div class="d-flex gap-2 justify-content-end">
+                            {{-- Botón Volver: Se le pasa la variable $correspondencia --}}
+                            <a href="{{ route('correspondencia.correspondencias.show', $correspondencia) }}" class="btn btn-light border px-4">
+                                <i class="bi bi-arrow-left me-1"></i> Volver
+                            </a>
+
+                            {{-- Botón Guardar --}}
+                            <button type="submit" class="btn btn-primary px-4 fw-bold shadow-sm">
                                 <i class="bi bi-save me-1"></i> Guardar Cambios
                             </button>
                         </div>

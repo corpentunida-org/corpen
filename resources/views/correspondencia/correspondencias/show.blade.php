@@ -31,6 +31,7 @@
         <div class="row g-4">
             {{-- COLUMNA IZQUIERDA: INFORMACIÓN Y TRAZABILIDAD --}}
             <div class="col-lg-8">
+                
                 {{-- CARD PRINCIPAL (INFORMACIÓN) --}}
                 <div class="card border-0 shadow-sm mb-4" style="border-radius: 20px;">
                     <div class="card-body p-4">
@@ -57,12 +58,50 @@
                                 <label class="text-muted small d-block mb-1"><i class="bi bi-calendar-event me-1"></i>Fecha Radicación</label>
                                 <span class="fw-bold text-dark">{{ \Carbon\Carbon::parse($correspondencia->fecha_solicitud)->format('d/m/Y') }}</span>
                             </div>
+
+                            {{-- ================================================================= --}}
+                            {{-- NUEVO BLOQUE: VISUALIZACIÓN DEL ARCHIVO ADJUNTO --}}
+                            {{-- ================================================================= --}}
+                            <div class="col-12">
+                                <label class="text-muted small d-block mb-2 text-uppercase fw-bold"><i class="bi bi-paperclip me-1"></i>Solicitud Digital</label>
+                                @if($correspondencia->documento_arc)
+                                    <div class="d-flex align-items-center p-3 rounded-4 border border-primary-subtle bg-primary-subtle bg-opacity-10 transition-all hover-lift">
+                                        <div class="me-3 bg-white p-2 rounded-circle text-primary shadow-sm d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+                                            <i class="bi bi-file-earmark-pdf-fill fs-4"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0 fw-bold text-primary">Documento Adjunto Disponible</h6>
+                                            <small class="text-muted">Clic en el botón para visualizar el archivo original</small>
+                                        </div>
+                                        <a href="{{ $correspondencia->getFile($correspondencia->documento_arc) }}" target="_blank" class="btn btn-primary rounded-pill ms-auto px-4 fw-bold shadow-sm">
+                                            <i class="bi bi-eye me-2"></i>Ver Documento
+                                        </a>
+                                    </div>
+                                @else
+                                    <div class="p-3 rounded-4 border border-dashed bg-light text-muted d-flex align-items-center">
+                                        <i class="bi bi-file-earmark-x fs-4 me-3 opacity-50"></i>
+                                        <span>No se cargó ningún soporte digital para esta solicitud.</span>
+                                    </div>
+                                @endif
+                            </div>
+                            {{-- ================================================================= --}}
+
                             <div class="col-12">
                                 <label class="text-muted small d-block mb-1">Observaciones Iniciales</label>
                                 <div class="p-3 rounded-4 italic text-muted border-start border-4 border-primary-subtle" style="background-color: #f8f9fa;">
                                     {{ $correspondencia->observacion_previa ?? 'Sin observaciones adicionales.' }}
                                 </div>
                             </div>
+
+                            {{-- NUEVO BLOQUE: RESOLUCIÓN FINAL (SI EXISTE) --}}
+                            @if($correspondencia->finalizado && $correspondencia->final_descripcion)
+                            <div class="col-12">
+                                <label class="text-danger small d-block mb-1 fw-bold text-uppercase"><i class="bi bi-check-all me-1"></i>Resolución de cierre – usuario inicial o cierre abrupto</label>
+                                <div class="p-3 rounded-4 text-dark border border-danger-subtle bg-danger-subtle bg-opacity-10">
+                                    {{ $correspondencia->final_descripcion }}
+                                </div>
+                            </div>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -84,7 +123,6 @@
                                     </div>
 
                                     {{-- Contenedor de la Gestión (Card Clickable & Angosta) --}}
-                                    {{-- Nota: py-2 px-3 hace la tarjeta más angosta verticalmente --}}
                                     <div class="timeline-card clickable-row bg-white py-2 px-3 rounded-4 border shadow-sm transition-all"
                                          data-proceso="{{ $registro->proceso->nombre ?? 'Gestión Directa' }}"
                                          data-estado="{{ ucfirst(str_replace('_', ' ', $registro->estado)) }}"
@@ -157,13 +195,10 @@
                 @php                    
                     // Lógica de colores Pastel para TRD
                     if ($diferenciatrd->y > 3) {
-                        // Azul Pastel
                         $bgColor = '#e3f2fd'; $textColor = '#1565c0'; $borderColor = '#bbdefb';
                     } elseif ($diferenciatrd->y <= 2 || $diferenciatrd->y >= 0) {
-                        // Rojo Pastel
                         $bgColor = '#ffebee'; $textColor = '#c62828'; $borderColor = '#ffcdd2';
                     } else {
-                        // Amarillo Pastel
                         $bgColor = '#fffde7'; $textColor = '#f9a825'; $borderColor = '#fff9c4';
                     }
                 @endphp
@@ -360,80 +395,123 @@
         </div>
     </div>
 
-    {{-- MODAL 1: REGISTRAR GESTIÓN --}}
+    {{-- MODAL 1: REGISTRAR GESTIÓN (RENOVADO UX/UI) --}}
     <div class="modal fade" id="modalSeguimiento" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content border-0 shadow-lg" style="border-radius: 25px;">
-                <div class="modal-header border-0 pt-4 px-4">
-                    <h5 class="modal-title fw-bold text-dark">
-                        <i class="bi bi-plus-circle-fill text-primary me-2"></i>Registrar Gestión
-                    </h5>
-                    <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 25px; overflow: hidden;">
+                
+                {{-- Cabecera más limpia --}}
+                <div class="modal-header border-0 pt-4 px-4 pb-2 bg-white">
+                    <div>
+                        <h5 class="modal-title fw-bolder text-dark" style="letter-spacing: -0.5px;">
+                            <span class="text-primary me-2"><i class="bi bi-pencil-square"></i></span>
+                            Registrar Gestión
+                        </h5>
+                        <p class="text-muted small mb-0 mt-1">Complete los detalles para avanzar en el flujo.</p>
+                    </div>
+                    <button type="button" class="btn-close shadow-none bg-light rounded-circle p-2" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
+
                 <form action="{{ route('correspondencia.correspondencias-procesos.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="id_correspondencia" value="{{ $correspondencia->id_radicado }}">
                     <input type="hidden" name="id_proceso" id="input_etapa_proceso_hidden">
 
-                    <div class="modal-body p-4">
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold small text-muted">Etapa del Proceso</label>
-                                <select id="select_etapa_proceso_visual" class="form-select border-0 bg-secondary-subtle rounded-3 py-2" disabled>
-                                    <option value="">Seleccione etapa...</option>
-                                    @foreach($procesos_disponibles as $proceso)
-                                        <option value="{{ $proceso->id }}">{{ $proceso->nombre }}</option>
-                                    @endforeach
-                                </select>
+                    <div class="modal-body px-4 py-2">
+                        <div class="row g-4">
+                            
+                            {{-- FILA 1: Contexto Visual (Etapa y Fecha) --}}
+                            <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2 p-3 bg-light rounded-4">
+                                <div>
+                                    <label class="text-uppercase text-muted fw-bold" style="font-size: 0.65rem; letter-spacing: 1px;">Etapa Actual</label>
+                                    <div class="d-flex align-items-center">
+                                        {{-- Visualización de la etapa (no editable) --}}
+                                        <div class="fw-bold text-dark fs-5" id="visual_etapa_nombre">Cargando etapa...</div>
+                                        {{-- Select oculto pero funcional para lógica legacy --}}
+                                        <select id="select_etapa_proceso_visual" class="d-none" disabled>
+                                            <option value="">Seleccione...</option>
+                                            @foreach($procesos_disponibles as $proceso)
+                                                <option value="{{ $proceso->id }}">{{ $proceso->nombre }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <label class="text-uppercase text-muted fw-bold" style="font-size: 0.65rem; letter-spacing: 1px;">Fecha de Registro</label>
+                                    <div class="d-flex align-items-center justify-content-end text-primary fw-bold">
+                                        <i class="bi bi-calendar-event me-2"></i>
+                                        <span>{{ now()->format('d/m/Y H:i A') }}</span>
+                                    </div>
+                                    {{-- Input real oculto/readonly --}}
+                                    <input type="datetime-local" name="fecha_gestion" class="d-none" value="{{ now()->format('Y-m-d\TH:i') }}" readonly>
+                                </div>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold small text-muted">Nuevo Estado</label>
-                                <div id="container_estados_checkin" class="d-flex flex-wrap gap-2">
+
+                            {{-- FILA 2: Decisión (Chelins) --}}
+                            <div class="col-12">
+                                <label class="form-label fw-bold small text-dark mb-2">Seleccione Nuevo Estado <span class="text-danger">*</span></label>
+                                <div id="container_estados_checkin" class="d-flex flex-wrap gap-2 p-2 rounded-3 border border-light bg-white">
                                     <span class="text-muted small italic">Seleccione una etapa primero...</span>
                                 </div>
                                 <input type="hidden" name="estado_id" id="input_estado_id_hidden" required>
                             </div>
+
+                            {{-- FILA 3: Observaciones --}}
                             <div class="col-12">
-                                <label class="form-label fw-bold small text-muted">Observaciones</label>
-                                <textarea name="observacion" class="form-control border-0 bg-light rounded-3" rows="3" placeholder="Detalles de la gestión..." required></textarea>
+                                <label class="form-label fw-bold small text-dark">Detalle de la Observación <span class="text-danger">*</span></label>
+                                <textarea name="observacion" class="form-control border-light bg-light rounded-4 p-3 shadow-sm" rows="3" placeholder="Escriba aquí los detalles importantes de esta gestión..." style="resize: none;" required></textarea>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold small text-muted">Soporte (PDF/Img)</label>
-                                <input type="file" name="documento_arc" class="form-control border-0 bg-light rounded-3">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-bold small text-muted">Fecha</label>
-                                <input type="datetime-local" name="fecha_gestion" class="form-control border-0 bg-light rounded-3" value="{{ now()->format('Y-m-d\TH:i') }}" required>
-                            </div>
-                            <div class="col-12 mt-4">
-                                <div class="row g-2">
-                                    <div class="col-md-6">
-                                        <div class="form-check form-switch p-3 border rounded-3 bg-light w-100 d-flex align-items-center justify-content-between">
-                                            <div class="ms-1">
-                                                <label class="form-check-label fw-bold d-block mb-0" for="notifCheck">Notificar Remitente</label>
-                                                <small class="text-muted" style="font-size: 0.7rem;">Enviar correo automático</small>
-                                            </div>
-                                            <input class="form-check-input ms-0" style="width: 2.5em; height: 1.25em;" type="checkbox" name="notificado_email" value="1" id="notifCheck">
-                                        </div>
+
+                            {{-- FILA 4: Carga de Archivos (Drag & Drop Look) --}}
+                            <div class="col-12">
+                                <label class="form-label fw-bold small text-dark">Soporte Documental (Opcional)</label>
+                                <div class="upload-box position-relative d-flex align-items-center p-2 rounded-4 border-2 border-dashed" style="border-color: #dee2e6; background-color: #fcfcfc;">
+                                    <div class="p-3 bg-white rounded-circle shadow-sm me-3 text-primary">
+                                        <i class="bi bi-cloud-arrow-up-fill fs-4"></i>
                                     </div>
+                                    <div>
+                                        <h6 class="mb-0 fw-bold small">Adjuntar archivo</h6>
+                                        <p class="text-muted small mb-0" style="font-size: 0.75rem;">PDF, Imágenes (Max 5MB)</p>
+                                    </div>
+                                    <input type="file" name="documento_arc" class="position-absolute w-100 h-100 top-0 start-0 opacity-0 cursor-pointer" title="Seleccionar archivo">
+                                </div>
+                            </div>
+
+                            {{-- FILA 5: Acciones Críticas (Cards) --}}
+                            <div class="col-12">
+                                <div class="row g-3">
+                                    {{-- Card Notificar --}}
                                     <div class="col-md-6">
-                                        <div class="form-check form-switch p-3 border rounded-3 w-100 d-flex align-items-center justify-content-between" style="background-color: #fff5f5; border-color: #feb2b2 !important;">
-                                            <div class="ms-1">
-                                                <label class="form-check-label fw-bold text-danger d-block mb-0" for="finalizadoCheck">Finalización de Solicitud</label>
-                                                <small class="text-danger opacity-75" style="font-size: 0.7rem;">Cierra el ciclo del radicado</small>
+                                        <label class="action-card d-flex align-items-center p-3 rounded-4 border cursor-pointer h-100 transition-all">
+                                            <input type="checkbox" name="notificado_email" value="1" class="form-check-input me-3 mt-0 fs-5">
+                                            <div>
+                                                <div class="fw-bold text-dark small">Notificar al Remitente</div>
+                                                <div class="text-muted" style="font-size: 0.7rem;">Enviar correo automático</div>
                                             </div>
-                                            <input class="form-check-input ms-0" style="width: 2.5em; height: 1.25em;" type="checkbox" name="finalizado" value="1" id="finalizadoCheck">
-                                        </div>
+                                            <i class="bi bi-envelope-check ms-auto text-muted opacity-50 fs-5"></i>
+                                        </label>
+                                    </div>
+                                    {{-- Card Finalizar --}}
+                                    <div class="col-md-6">
+                                        <label class="action-card d-flex align-items-center p-3 rounded-4 border border-danger-subtle bg-danger-subtle cursor-pointer h-100 transition-all">
+                                            <input type="checkbox" name="finalizado" value="1" class="form-check-input me-3 mt-0 fs-5 border-danger">
+                                            <div>
+                                                <div class="fw-bold text-danger small">Cerrar Etapa</div>
+                                                <div class="text-danger opacity-75" style="font-size: 0.7rem;">Finalizar y avanzar flujo</div>
+                                            </div>
+                                            <i class="bi bi-check-circle-fill ms-auto text-danger opacity-50 fs-5"></i>
+                                        </label>
                                     </div>
                                 </div>
                             </div>
+
                         </div>
                     </div>
 
-                    <div class="modal-footer border-0 pb-4 px-4">
-                        <button type="button" class="btn btn-light rounded-pill px-4 fw-bold" data-bs-dismiss="modal">Cerrar</button>
-                        <button type="submit" class="btn btn-primary rounded-pill px-4 shadow fw-bold">
-                            <i class="bi bi-save me-2"></i>Guardar Gestión
+                    <div class="modal-footer border-0 pt-0 pb-4 px-4 justify-content-between align-items-center">
+                        <button type="button" class="btn btn-link text-muted text-decoration-none fw-bold small" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-5 py-2 shadow-lg fw-bold transition-all hover-lift">
+                            Guardar Gestión
                         </button>
                     </div>
                 </form>
@@ -460,7 +538,7 @@
                         <div class="col-6"><label class="text-muted small d-block mb-1">Responsable</label><span id="det-usuario" class="fw-bold"></span></div>
                         <div class="col-6"><label class="text-muted small d-block mb-1">Fecha y Hora</label><span id="det-fecha" class="text-muted small d-block"></span></div>
                         <div class="col-6"><label class="text-muted small d-block mb-1">Notificado</label><span id="det-notificado" class="fw-bold"></span></div>
-                        <div class="col-6"><label class="text-muted small d-block mb-1">Finalización de Solicitud</label><span id="det-finalizado" class="fw-bold"></span></div>
+                        <div class="col-6"><label class="text-muted small d-block mb-1">La etapa fue finalizada y el proceso continúa</label><span id="det-finalizado" class="fw-bold"></span></div>
                     </div>
                 </div>
                 <div class="modal-footer border-0">
@@ -515,22 +593,64 @@
 
         .form-select:focus, .form-control:focus { background-color: #fff; box-shadow: 0 0 0 0.25rem rgba(227, 242, 253, 0.5); border: 1px solid #90caf9; }
    
-        #container_estados_checkin button {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            border-width: 2px;
-        }
-
-        #container_estados_checkin button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(13, 110, 253, 0.15);
-        }
-
-        /* Estilo para el botón cuando está seleccionado */
+        /* Estilos generales */
         .btn-primary {
             background-color: #1976d2; border-color: #1976d2;
         }
         .btn-primary:hover {
             background-color: #1565c0; border-color: #1565c0;
+        }
+
+        /* --- ESTILOS CHELIN (Fichas de selección) --- */
+        .chelin-item {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 50px; /* Completamente redondo */
+            border: 1px solid #dee2e6;
+            background-color: white;
+            color: #6c757d;
+            font-size: 0.75rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none; /* Evita que se seleccione el texto */
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .chelin-item:hover {
+            background-color: #f8f9fa;
+            border-color: #adb5bd;
+            transform: translateY(-1px);
+        }
+
+        /* ESTADO ACTIVO (Seleccionado) */
+        .chelin-item.active {
+            background-color: #e3f2fd; /* Azul pastel */
+            color: #1565c0; /* Azul fuerte */
+            border-color: #90caf9;
+            box-shadow: 0 4px 6px rgba(13, 110, 253, 0.15);
+        }
+
+        /* --- NUEVOS ESTILOS UX MODAL --- */
+        .cursor-pointer { cursor: pointer; }
+        .border-dashed { border-style: dashed !important; }
+        
+        .upload-box:hover {
+            background-color: #f1f8ff !important;
+            border-color: #bbdefb !important;
+        }
+
+        .action-card:hover {
+            background-color: #f8f9fa;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .action-card input:checked + div {
+            color: #0d6efd;
+        }
+        .hover-lift:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
         }
     </style>
 
@@ -553,54 +673,62 @@
             @endforeach
         };
 
+        // Objeto para mapear nombres de procesos (para el título visual)
+        const nombresProcesos = {
+            @foreach($procesos_disponibles as $proceso)
+                {{ $proceso->id }}: "{{ $proceso->nombre }}",
+            @endforeach
+        };
+
         function abrirModalGestion(idProceso) {
             var myModal = new bootstrap.Modal(document.getElementById('modalSeguimiento'));
             
             // IDs de los elementos
             var inputProcesoHidden = document.getElementById('input_etapa_proceso_hidden');
             var selectVisual = document.getElementById('select_etapa_proceso_visual');
+            var divNombreVisual = document.getElementById('visual_etapa_nombre'); // Nuevo elemento visual
             var containerEstados = document.getElementById('container_estados_checkin');
             var inputEstadoHidden = document.getElementById('input_estado_id_hidden');
 
             // 1. Asignar Proceso
             if(inputProcesoHidden) inputProcesoHidden.value = idProceso;
             if(selectVisual) selectVisual.value = idProceso;
+            
+            // Actualizar nombre visual de la etapa
+            if(divNombreVisual) divNombreVisual.textContent = nombresProcesos[idProceso] || 'Etapa Seleccionada';
 
             // 2. Limpiar contenedor y resetear input de estado
             containerEstados.innerHTML = '';
             inputEstadoHidden.value = '';
 
-            // 3. Obtener estados y generar botones
+            // 3. Obtener estados y generar CHELINS
             var estadosDisponibles = estadosPorProceso[idProceso] || [];
 
             if (estadosDisponibles.length > 0) {
                 estadosDisponibles.forEach(function(estado) {
-                    // Crear el "botón" tipo check-in
-                    var btn = document.createElement('button');
-                    btn.type = 'button';
-                    btn.className = 'btn btn-outline-primary btn-sm rounded-pill px-3 py-2 fw-bold flex-grow-1';
-                    btn.style.fontSize = '0.75rem';
-                    btn.textContent = estado.text;
                     
-                    // Evento al hacer clic
-                    btn.onclick = function() {
-                        // Quitar clase "active" de todos los hermanos
-                        containerEstados.querySelectorAll('button').forEach(b => {
-                            b.classList.remove('btn-primary', 'text-white');
-                            b.classList.add('btn-outline-primary');
-                        });
-                        // Marcar este como activo
-                        btn.classList.remove('btn-outline-primary');
-                        btn.classList.add('btn-primary', 'text-white');
-                        
-                        // Guardar el valor en el input oculto para el Form
+                    // CREAMOS UN DIV (NO UN BOTÓN)
+                    var chelin = document.createElement('div');
+                    chelin.className = 'chelin-item'; 
+                    chelin.textContent = estado.text;
+                    
+                    // EVENTO CLICK EN EL CHELIN
+                    chelin.onclick = function() {
+                        // A. Quitar clase 'active' de todos los chelins hermanos
+                        var todosLosChelins = containerEstados.querySelectorAll('.chelin-item');
+                        todosLosChelins.forEach(el => el.classList.remove('active'));
+
+                        // B. Activar ESTE chelin
+                        chelin.classList.add('active');
+
+                        // C. Actualizar el input oculto con el valor real
                         inputEstadoHidden.value = estado.val;
                     };
 
-                    containerEstados.appendChild(btn);
+                    containerEstados.appendChild(chelin);
                 });
             } else {
-                containerEstados.innerHTML = '<span class="text-danger small">Sin estados configurados</span>';
+                containerEstados.innerHTML = '<span class="text-muted small italic px-2">Esta etapa no requiere selección de estado.</span>';
             }
 
             myModal.show();
