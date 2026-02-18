@@ -53,7 +53,7 @@
         </header>
 
         {{-- MENÚ HORIZONTAL (TABS) --}}
-        <div class="tabs-header">
+        <div class="tabs-header mb-2">
             <button class="tab-btn {{ $activeTab === 'dashboard' ? 'active' : '' }}" onclick="switchTab('dashboard')">
                 <i class="fas fa-chart-pie"></i>
                 <span>Tablero de Mando</span>
@@ -75,7 +75,7 @@
         {{-- VISTA 1: DASHBOARD --}}
         <div id="view-dashboard" class="tab-content {{ $activeTab === 'dashboard' ? 'active' : '' }}">
             
-            <div class="section-title">
+            <div class="section-title mt-4">
                 <h3>Indicadores Clave</h3>
             </div>
 
