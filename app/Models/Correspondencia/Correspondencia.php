@@ -36,6 +36,7 @@ class Correspondencia extends Model
         'usuario_id',
         'observacion_previa',
         'finalizado',
+        'final_descripcion',
         'documento_arc',
     ];
 
