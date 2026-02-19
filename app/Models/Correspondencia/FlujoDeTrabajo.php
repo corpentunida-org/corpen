@@ -45,4 +45,9 @@ class FlujoDeTrabajo extends Model
     {
         return $this->hasMany(Proceso::class, 'flujo_id');
     }
+    public function trd()
+    {
+        // hasOne(Modelo, clave_foranea_en_trd, clave_local)
+        return $this->hasOne(Trd::class, 'fk_flujo', 'id');
+    }
 }
