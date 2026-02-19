@@ -52,18 +52,28 @@ class FlujoDeTrabajoController extends Controller
         
         $this->auditoria('ADD FLUJO DE TRABAJO ID ' . $flujoadd->id);
 
+        // 👇 LÓGICA AGREGADA PARA SOPORTAR AJAX (MODAL DE TRD) 👇
+        if ($request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success'  => true,
+                'flujo_id' => $flujoadd->id // Enviamos el ID recién creado al frontend
+            ]);
+        }
+        // 👆 FIN DE LA LÓGICA AJAX 👆
+
         return redirect()->route('correspondencia.flujos.index')
             ->with('success', 'Flujo de trabajo creado y asignado al área correctamente.');
     }
 
     public function show(FlujoDeTrabajo $flujo)
     {
-        // Cargamos área, jefe y procesos, pero filtramos los usuarios de los procesos
+        // Cargamos área, jefe, procesos Y LA TRD
         $flujo->load([
             'usuario', 
             'area', 
+            'trd', // <--- AGREGAR ESTA LÍNEA AQUÍ
             'procesos.usuarios' => function($query) {
-                $query->where('activo', true); // <--- SOLO USUARIOS ACTIVOS
+                $query->where('activo', true); 
             }
         ])->loadCount('correspondencias');
             

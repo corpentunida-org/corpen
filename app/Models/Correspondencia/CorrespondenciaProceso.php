@@ -32,17 +32,37 @@ class CorrespondenciaProceso extends Model
         'notificado_email' => 'boolean',
         'finalizado' => 'boolean',
         'fecha_gestion' => 'datetime',
+        'documento_arc' => 'array', // <--- NUEVO: Cast automático a Array/JSON
     ];
 
-    public function getFile($nameFile)
+    /**
+     * Obtiene una lista con las URLs temporales de todos los archivos guardados
+     */
+    public function getArchivosUrls()
     {
-        $url = '#';
-        if ($nameFile) {
-            if (Storage::disk('s3')->exists($nameFile)) {
-                $url = Storage::disk('s3')->temporaryUrl($nameFile, now()->addMinutes(5));
+        $urls = [];
+        $archivos = $this->documento_arc;
+
+        if (is_array($archivos)) {
+            foreach ($archivos as $archivo) {
+                if ($archivo && Storage::disk('s3')->exists($archivo)) {
+                    $urls[] = [
+                        'nombre' => basename($archivo), // Saca el nombre del archivo de la ruta
+                        'url'    => Storage::disk('s3')->temporaryUrl($archivo, now()->addMinutes(5))
+                    ];
+                }
+            }
+        } elseif (is_string($archivos) && $archivos) {
+            // Por si tienes registros antiguos guardados como un solo string
+            if (Storage::disk('s3')->exists($archivos)) {
+                $urls[] = [
+                    'nombre' => basename($archivos),
+                    'url'    => Storage::disk('s3')->temporaryUrl($archivos, now()->addMinutes(5))
+                ];
             }
         }
-        return $url;
+
+        return $urls;
     }
 
     /**
