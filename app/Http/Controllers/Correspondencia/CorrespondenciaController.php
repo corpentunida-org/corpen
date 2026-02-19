@@ -266,34 +266,55 @@ class CorrespondenciaController extends Controller
 
     /**
      * Genera el tablero de control (Dashboard) con KPIs y gráficas.
+     * Corregido para soportar la gestión rápida desde el tablero.
      */
     public function tablero(Request $request)
     {
-        // Determina si se muestra la pestaña de gestión o la de indicadores
-        $activeTab = $request->filled('search') || $request->filled('page') || $request->filled('estado_id') || $request->filled('usuario_id') || $request->filled('condicion') ? 'gestion' : 'dashboard';
+        // 1. CARGA DE PROCESOS (Obligatorio para el Modal de Gestión Rápida)
+        // Traemos procesos con sus estados y usuarios asignados para los mapas JS
+        $procesos_disponibles = Proceso::with(['flujo', 'usuariosAsignados.usuario', 'estadosProcesos.estado'])->get();
 
-        $searchWords = $request->filled('search') ? array_filter(explode(' ', $request->search)) : [];
+        // 2. DETERMINAR PESTAÑA ACTIVA
+        // Si hay búsqueda o filtros específicos, abrimos en la pestaña 'gestión'
+        $activeTab = $request->filled('search') || 
+                     $request->filled('page') || 
+                     $request->filled('estado_id') || 
+                     $request->filled('usuario_id') || 
+                     $request->filled('condicion') ? 'gestion' : 'dashboard';
 
-        $query = Correspondencia::with(['trd', 'flujo', 'estado', 'usuario', 'procesos.proceso', 'medioRecepcion']);
+        // 3. CONSTRUCCIÓN DE LA CONSULTA DE CORRESPONDENCIAS
+        $query = Correspondencia::with([
+            'trd', 
+            'flujo.procesos.usuariosAsignados', // Para validar el lápiz de gestión
+            'estado', 
+            'usuario', 
+            'procesos.proceso', 
+            'medioRecepcion',
+            'remitente'
+        ]);
 
-        // Búsqueda avanzada por palabras clave
-        if (!empty($searchWords)) {
+        // Búsqueda por palabras clave (Asunto o Radicado)
+        if ($request->filled('search')) {
+            $searchWords = array_filter(explode(' ', $request->search));
             $query->where(function ($q) use ($searchWords) {
                 foreach ($searchWords as $word) {
-                    $q->orWhere('id_radicado', 'LIKE', '%' . $word . '%')->orWhere('asunto', 'LIKE', '%' . $word . '%');
+                    $q->orWhere('id_radicado', 'LIKE', '%' . $word . '%')
+                      ->orWhere('asunto', 'LIKE', '%' . $word . '%');
                 }
             });
         }
 
-        // Filtros adicionales de tablero
+        // Filtro por Estado
         if ($request->filled('estado_id')) {
             $query->where('estado_id', $request->estado_id);
         }
+
+        // Filtro por Usuario Creador
         if ($request->filled('usuario_id')) {
             $query->where('usuario_id', $request->usuario_id);
         }
 
-        // Filtro por condición de tiempo (Vencidos vs A Tiempo)
+        // Filtro por Condición de Tiempo (KPI TRD)
         if ($request->filled('condicion')) {
             if ($request->condicion == 'vencido') {
                 $query->whereHas('trd', function ($q) {
@@ -308,37 +329,49 @@ class CorrespondenciaController extends Controller
             }
         }
 
-        $correspondencias = $query->orderBy('fecha_solicitud', 'desc')->paginate(10);
+        // Ejecutar paginación
+        $correspondencias = $query->orderBy('fecha_solicitud', 'desc')->paginate(10)->appends($request->all());
 
-        // --- CÁLCULO DE DATOS PARA GRÁFICAS ---
-
-        // Distribución por Estados
+        // 4. CÁLCULO DE DATOS PARA INDICADORES (DASHBOARD)
+        
+        // Distribución por Estados (Donut Chart)
         $estados = Estado::withCount('correspondencias')->get();
         $totalCorrespondencias = $estados->sum('correspondencias_count');
 
         $chartDistribucion = [
             'labels' => $estados->pluck('nombre'),
-            'data' => $estados->pluck('correspondencias_count'),
+            'data'   => $estados->pluck('correspondencias_count'),
         ];
 
-        // Carga de trabajo por Usuario (Top 5)
+        // Carga de trabajo por Usuario - Top 5 (Bar Chart)
         $usuariosCarga = User::withCount([
             'correspondencias' => function ($q) {
                 $q->where('finalizado', false);
             },
         ])
-            ->orderBy('correspondencias_count', 'desc')
-            ->take(5)
-            ->get();
+        ->orderBy('correspondencias_count', 'desc')
+        ->take(5)
+        ->get();
 
         $chartCarga = [
             'labels' => $usuariosCarga->pluck('name'),
-            'data' => $usuariosCarga->pluck('correspondencias_count'),
+            'data'   => $usuariosCarga->pluck('correspondencias_count'),
         ];
 
+        // Lista de usuarios para el filtro del tablero
         $usuarios = User::orderBy('name')->get();
 
-        return view('correspondencia.tablero.index', compact('correspondencias', 'estados', 'totalCorrespondencias', 'usuarios', 'activeTab', 'chartDistribucion', 'chartCarga'));
+        // 5. RETORNO DE VISTA CON TODOS LOS COMPONENTES
+        return view('correspondencia.tablero.index', compact(
+            'correspondencias', 
+            'estados', 
+            'totalCorrespondencias', 
+            'usuarios', 
+            'activeTab', 
+            'chartDistribucion', 
+            'chartCarga',
+            'procesos_disponibles' // <-- Variable indispensable enviada
+        ));
     }
 
     /**

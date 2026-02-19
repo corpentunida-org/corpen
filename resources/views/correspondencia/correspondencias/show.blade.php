@@ -60,7 +60,7 @@
                             </div>
 
                             {{-- ================================================================= --}}
-                            {{-- NUEVO BLOQUE: VISUALIZACIÓN DEL ARCHIVO ADJUNTO --}}
+                            {{-- VISUALIZACIÓN DEL ARCHIVO ADJUNTO INICIAL --}}
                             {{-- ================================================================= --}}
                             <div class="col-12">
                                 <label class="text-muted small d-block mb-2 text-uppercase fw-bold"><i class="bi bi-paperclip me-1"></i>Solicitud Digital</label>
@@ -93,7 +93,7 @@
                                 </div>
                             </div>
 
-                            {{-- NUEVO BLOQUE: RESOLUCIÓN FINAL (SI EXISTE) --}}
+                            {{-- RESOLUCIÓN FINAL (SI EXISTE) --}}
                             @if($correspondencia->finalizado && $correspondencia->final_descripcion)
                             <div class="col-12">
                                 <label class="text-danger small d-block mb-1 fw-bold text-uppercase"><i class="bi bi-check-all me-1"></i>Resolución de cierre – usuario inicial o cierre abrupto</label>
@@ -170,10 +170,17 @@
                                                 @if($registro->notificado_email)
                                                     <i class="bi bi-envelope-check text-success opacity-75" style="font-size: 0.9rem;" title="Correo Enviado" data-bs-toggle="tooltip"></i>
                                                 @endif
-                                                @if($registro->documento_arc)
-                                                    <a href="{{ $registro->getFile($registro->documento_arc) }}" target="_blank" class="text-danger opacity-75 hover-opacity-100" onclick="event.stopPropagation();">
-                                                        <i class="bi bi-file-earmark-pdf-fill" style="font-size: 1rem;"></i>
-                                                    </a>
+                                                
+                                                {{-- MODIFICACIÓN ARCHIVOS: Leer el array de URLs mediante el modelo --}}
+                                                @php $urlsArchivos = $registro->getArchivosUrls(); @endphp
+                                                @if(count($urlsArchivos) > 0)
+                                                    <div class="d-flex gap-1">
+                                                        @foreach($urlsArchivos as $archivo)
+                                                            <a href="{{ $archivo['url'] }}" target="_blank" class="text-danger opacity-75 hover-opacity-100" title="{{ $archivo['nombre'] }}" onclick="event.stopPropagation();">
+                                                                <i class="bi bi-file-earmark-pdf-fill" style="font-size: 1rem;"></i>
+                                                            </a>
+                                                        @endforeach
+                                                    </div>
                                                 @endif
                                             </div>
                                         </div>
@@ -395,7 +402,7 @@
         </div>
     </div>
 
-    {{-- MODAL 1: REGISTRAR GESTIÓN (RENOVADO UX/UI) --}}
+    {{-- MODAL 1: REGISTRAR GESTIÓN (RENOVADO UX/UI CON ARCHIVOS DINÁMICOS) --}}
     <div class="modal fade" id="modalSeguimiento" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg" style="border-radius: 25px; overflow: hidden;">
@@ -425,9 +432,7 @@
                                 <div>
                                     <label class="text-uppercase text-muted fw-bold" style="font-size: 0.65rem; letter-spacing: 1px;">Etapa Actual</label>
                                     <div class="d-flex align-items-center">
-                                        {{-- Visualización de la etapa (no editable) --}}
                                         <div class="fw-bold text-dark fs-5" id="visual_etapa_nombre">Cargando etapa...</div>
-                                        {{-- Select oculto pero funcional para lógica legacy --}}
                                         <select id="select_etapa_proceso_visual" class="d-none" disabled>
                                             <option value="">Seleccione...</option>
                                             @foreach($procesos_disponibles as $proceso)
@@ -442,7 +447,6 @@
                                         <i class="bi bi-calendar-event me-2"></i>
                                         <span>{{ now()->format('d/m/Y H:i A') }}</span>
                                     </div>
-                                    {{-- Input real oculto/readonly --}}
                                     <input type="datetime-local" name="fecha_gestion" class="d-none" value="{{ now()->format('Y-m-d\TH:i') }}" readonly>
                                 </div>
                             </div>
@@ -462,19 +466,16 @@
                                 <textarea name="observacion" class="form-control border-light bg-light rounded-4 p-3 shadow-sm" rows="3" placeholder="Escriba aquí los detalles importantes de esta gestión..." style="resize: none;" required></textarea>
                             </div>
 
-                            {{-- FILA 4: Carga de Archivos (Drag & Drop Look) --}}
+                            {{-- FILA 4: CARGA DE ARCHIVOS DINÁMICA (Array) --}}
                             <div class="col-12">
-                                <label class="form-label fw-bold small text-dark">Soporte Documental (Opcional)</label>
-                                <div class="upload-box position-relative d-flex align-items-center p-2 rounded-4 border-2 border-dashed" style="border-color: #dee2e6; background-color: #fcfcfc;">
-                                    <div class="p-3 bg-white rounded-circle shadow-sm me-3 text-primary">
-                                        <i class="bi bi-cloud-arrow-up-fill fs-4"></i>
+                                <label class="form-label fw-bold small text-dark d-flex justify-content-between">
+                                    <span>Soporte Documental</span>
+                                    <span id="label_req_archivos" class="badge bg-secondary">Cargando requerimiento...</span>
+                                </label>
+                                
+                                {{-- Contenedor donde se inyectan los inputs dinámicos --}}
+                                <div id="container_archivos_dinamicos" class="d-flex flex-column gap-2">
                                     </div>
-                                    <div>
-                                        <h6 class="mb-0 fw-bold small">Adjuntar archivo</h6>
-                                        <p class="text-muted small mb-0" style="font-size: 0.75rem;">PDF, Imágenes (Max 5MB)</p>
-                                    </div>
-                                    <input type="file" name="documento_arc" class="position-absolute w-100 h-100 top-0 start-0 opacity-0 cursor-pointer" title="Seleccionar archivo">
-                                </div>
                             </div>
 
                             {{-- FILA 5: Acciones Críticas (Cards) --}}
@@ -605,7 +606,7 @@
         .chelin-item {
             display: inline-block;
             padding: 8px 16px;
-            border-radius: 50px; /* Completamente redondo */
+            border-radius: 50px;
             border: 1px solid #dee2e6;
             background-color: white;
             color: #6c757d;
@@ -613,7 +614,7 @@
             font-weight: 700;
             cursor: pointer;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            user-select: none; /* Evita que se seleccione el texto */
+            user-select: none;
             box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
 
@@ -623,10 +624,9 @@
             transform: translateY(-1px);
         }
 
-        /* ESTADO ACTIVO (Seleccionado) */
         .chelin-item.active {
-            background-color: #e3f2fd; /* Azul pastel */
-            color: #1565c0; /* Azul fuerte */
+            background-color: #e3f2fd;
+            color: #1565c0;
             border-color: #90caf9;
             box-shadow: 0 4px 6px rgba(13, 110, 253, 0.15);
         }
@@ -654,10 +654,24 @@
         }
     </style>
 
-    <script>
+<script>
         // -------------------------------------------------------------
-        // MAPA DE ESTADOS POR PROCESO
+        // MAPA DE DATOS DEL PROCESO
         // -------------------------------------------------------------
+        
+        const numeroArchivosPorProceso = {
+            @foreach($procesos_disponibles as $proceso)
+                {{ $proceso->id }}: {{ (int) $proceso->numero_archivos }},
+            @endforeach
+        };
+
+        // NUEVO: Mapa con los nombres de los archivos requeridos
+        const tiposArchivosPorProceso = {
+            @foreach($procesos_disponibles as $proceso)
+                {{ $proceso->id }}: @json($proceso->tipos_archivos ?? []),
+            @endforeach
+        };
+
         const estadosPorProceso = {
             @foreach($procesos_disponibles as $proceso)
                 {{ $proceso->id }}: [
@@ -673,7 +687,6 @@
             @endforeach
         };
 
-        // Objeto para mapear nombres de procesos (para el título visual)
         const nombresProcesos = {
             @foreach($procesos_disponibles as $proceso)
                 {{ $proceso->id }}: "{{ $proceso->nombre }}",
@@ -683,52 +696,80 @@
         function abrirModalGestion(idProceso) {
             var myModal = new bootstrap.Modal(document.getElementById('modalSeguimiento'));
             
-            // IDs de los elementos
-            var inputProcesoHidden = document.getElementById('input_etapa_proceso_hidden');
-            var selectVisual = document.getElementById('select_etapa_proceso_visual');
-            var divNombreVisual = document.getElementById('visual_etapa_nombre'); // Nuevo elemento visual
+            // Asignaciones base
+            document.getElementById('input_etapa_proceso_hidden').value = idProceso;
+            document.getElementById('select_etapa_proceso_visual').value = idProceso;
+            document.getElementById('visual_etapa_nombre').textContent = nombresProcesos[idProceso] || 'Etapa Seleccionada';
+
+            // --- LÓGICA 1: CHELINS DE ESTADOS ---
             var containerEstados = document.getElementById('container_estados_checkin');
             var inputEstadoHidden = document.getElementById('input_estado_id_hidden');
-
-            // 1. Asignar Proceso
-            if(inputProcesoHidden) inputProcesoHidden.value = idProceso;
-            if(selectVisual) selectVisual.value = idProceso;
-            
-            // Actualizar nombre visual de la etapa
-            if(divNombreVisual) divNombreVisual.textContent = nombresProcesos[idProceso] || 'Etapa Seleccionada';
-
-            // 2. Limpiar contenedor y resetear input de estado
             containerEstados.innerHTML = '';
             inputEstadoHidden.value = '';
 
-            // 3. Obtener estados y generar CHELINS
             var estadosDisponibles = estadosPorProceso[idProceso] || [];
-
             if (estadosDisponibles.length > 0) {
                 estadosDisponibles.forEach(function(estado) {
-                    
-                    // CREAMOS UN DIV (NO UN BOTÓN)
                     var chelin = document.createElement('div');
                     chelin.className = 'chelin-item'; 
                     chelin.textContent = estado.text;
-                    
-                    // EVENTO CLICK EN EL CHELIN
                     chelin.onclick = function() {
-                        // A. Quitar clase 'active' de todos los chelins hermanos
-                        var todosLosChelins = containerEstados.querySelectorAll('.chelin-item');
-                        todosLosChelins.forEach(el => el.classList.remove('active'));
-
-                        // B. Activar ESTE chelin
+                        containerEstados.querySelectorAll('.chelin-item').forEach(el => el.classList.remove('active'));
                         chelin.classList.add('active');
-
-                        // C. Actualizar el input oculto con el valor real
                         inputEstadoHidden.value = estado.val;
                     };
-
                     containerEstados.appendChild(chelin);
                 });
             } else {
                 containerEstados.innerHTML = '<span class="text-muted small italic px-2">Esta etapa no requiere selección de estado.</span>';
+            }
+
+            // --- LÓGICA 2: ARCHIVOS DINÁMICOS CON NOMBRES ---
+            let numArchivos = numeroArchivosPorProceso[idProceso] || 0;
+            let nombresArchivos = tiposArchivosPorProceso[idProceso] || [];
+            let containerArchivos = document.getElementById('container_archivos_dinamicos');
+            let labelBadge = document.getElementById('label_req_archivos');
+            
+            containerArchivos.innerHTML = ''; // Limpiar anteriores
+
+            if(numArchivos > 0) {
+                // Generar N inputs individuales obligatorios
+                labelBadge.className = "badge bg-danger rounded-pill";
+                labelBadge.textContent = numArchivos + " Archivo(s) Obligatorio(s)";
+                
+                for(let i = 1; i <= numArchivos; i++) {
+                    // Si el proceso tiene nombre definido lo usa, si no, usa un nombre genérico
+                    let nombreDelDocumento = nombresArchivos[i-1] ? nombresArchivos[i-1] : `Documento Requerido #${i}`;
+
+                    containerArchivos.innerHTML += `
+                        <div class="position-relative d-flex align-items-center p-2 rounded-4 border-2 border-dashed" style="border-color: #dee2e6; background-color: #fcfcfc;">
+                            <div class="p-2 bg-white rounded-circle shadow-sm me-3 text-danger d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                <i class="bi bi-file-earmark-pdf-fill fs-5"></i>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-0 fw-bold small text-uppercase">${nombreDelDocumento} <span class="text-danger">*</span></h6>
+                                <input type="file" name="documento_arc[]" class="form-control form-control-sm mt-1 shadow-sm border-0 bg-white" accept=".pdf,.doc,.docx,.jpg,.png" required>
+                            </div>
+                        </div>
+                    `;
+                }
+            } else {
+                // Generar 1 input drag and drop opcional múltiple
+                labelBadge.className = "badge bg-pastel-primary rounded-pill text-uppercase";
+                labelBadge.textContent = "Opcional";
+                
+                containerArchivos.innerHTML = `
+                    <div class="upload-box position-relative d-flex align-items-center p-3 rounded-4 border-2 border-dashed" style="border-color: #dee2e6; background-color: #fcfcfc;">
+                        <div class="p-3 bg-white rounded-circle shadow-sm me-3 text-primary d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                            <i class="bi bi-cloud-arrow-up-fill fs-4"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0 fw-bold text-dark">Subir archivos opcionales</h6>
+                            <p class="text-muted small mb-0" style="font-size: 0.75rem;">Puede seleccionar varios PDF/Imágenes</p>
+                        </div>
+                        <input type="file" name="documento_arc[]" class="position-absolute w-100 h-100 top-0 start-0 opacity-0 cursor-pointer" multiple accept=".pdf,.doc,.docx,.jpg,.png" title="Seleccionar archivos">
+                    </div>
+                `;
             }
 
             myModal.show();
@@ -738,7 +779,7 @@
             var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
             tooltipTriggerList.map(function (tooltipTriggerEl) { return new bootstrap.Tooltip(tooltipTriggerEl) });
 
-            // Lógica para abrir detalles desde la nueva Timeline
+            // Lógica para abrir detalles desde la Timeline
             const filas = document.querySelectorAll('.clickable-row');
             const modalDetalle = document.getElementById('modalDetalleHistorial');
             if (modalDetalle) {

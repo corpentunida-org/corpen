@@ -47,6 +47,7 @@
         <div class="row g-4">
             {{-- COLUMNA PRINCIPAL --}}
             <div class="col-lg-8">
+                {{-- 1. DESCRIPCIÓN TÉCNICA --}}
                 <div class="card border-0 shadow-sm p-4 mb-4" style="border-radius: 20px;">
                     <h5 class="fw-bold mb-3 d-flex align-items-center">
                         <i class="fas fa-info-circle me-2 text-primary"></i> Descripción Técnica del Proceso
@@ -73,12 +74,52 @@
                     </div>
                 </div>
 
-                <div class="card border-0 shadow-sm p-4" style="border-radius: 20px;">
+                {{-- 2. NUEVO: CONFIGURACIÓN DE ARCHIVOS REQUERIDOS --}}
+                <div class="card border-0 shadow-sm p-4 mb-4" style="border-radius: 20px; border-left: 4px solid #4f46e5 !important;">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h5 class="fw-bold m-0 d-flex align-items-center">
-                            <i class="fas fa-envelope-open-text me-2 text-indigo"></i> Documentos en este paso
+                            <i class="fas fa-file-signature me-2 text-indigo"></i> Configuración de Archivos Obligatorios
                         </h5>
-                        <span class="badge bg-indigo text-white rounded-pill px-3">
+                    </div>
+                    
+                    <form action="{{ route('correspondencia.procesos.update', $proceso) }}" method="POST">
+                        @csrf
+                        @method('PUT')
+                        {{-- Campos ocultos para mantener la validación de update --}}
+                        <input type="hidden" name="flujo_id" value="{{ $proceso->flujo_id }}">
+                        <input type="hidden" name="nombre" value="{{ $proceso->nombre }}">
+                        <input type="hidden" name="detalle" value="{{ $proceso->detalle }}">
+                        <input type="hidden" name="activo" value="{{ $proceso->activo ? 1 : 0 }}">
+
+                        <div class="row align-items-center mb-4 bg-soft-primary p-3 rounded-4 border" style="border-color: #c7d2fe !important;">
+                            <div class="col-md-8">
+                                <label class="form-label fw-bold small text-indigo text-uppercase mb-1">¿Cuántos archivos se deben subir?</label>
+                                <p class="small text-muted mb-2">Define la cantidad y asigna un nombre a cada documento requerido.</p>
+                                <div class="input-group shadow-sm" style="width: 150px; border-radius: 10px; overflow: hidden;">
+                                    <span class="input-group-text bg-white border-end-0"><i class="fas fa-sort-numeric-up text-indigo"></i></span>
+                                    <input type="number" id="cantidad_archivos" name="numero_archivos" class="form-control border-start-0 fw-bold" min="0" value="{{ $proceso->numero_archivos ?? 0 }}">
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                                <button type="submit" class="btn btn-indigo rounded-pill px-4 py-2 fw-bold shadow">
+                                    <i class="fas fa-save me-1"></i> Guardar Cambios
+                                </button>
+                            </div>
+                        </div>
+
+                        {{-- Contenedor donde aparecerán los inputs dinámicos --}}
+                        <div id="contenedor_archivos" class="row g-3">
+                            </div>
+                    </form>
+                </div>
+
+                {{-- 3. TRÁMITES EN ESTE PASO (Antiguo Documentos en este paso) --}}
+                <div class="card border-0 shadow-sm p-4" style="border-radius: 20px;">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="fw-bold m-0 d-flex align-items-center text-secondary">
+                            <i class="fas fa-envelope-open-text me-2"></i> Trámites activos en este paso
+                        </h5>
+                        <span class="badge bg-secondary text-white rounded-pill px-3">
                             {{ $proceso->flujo->correspondencias->where('proceso_actual_id', $proceso->id)->count() }} Activos
                         </span>
                     </div>
@@ -179,7 +220,6 @@
                                         <span class="text-muted" style="font-size: 0.65rem;">Desactivado el: {{ $asignacion->updated_at->format('d/m/Y') }}</span>
                                     </div>
                                 </div>
-                                {{-- FORMULARIO DE REACTIVACIÓN CON ID PARA EL SCRIPT --}}
                                 <form action="{{ route('correspondencia.procesos.asignarUsuario', $proceso) }}" method="POST" id="form-reactivar-{{ $asignacion->user_id }}">
                                     @csrf
                                     <input type="hidden" name="user_id" value="{{ $asignacion->user_id }}">
@@ -236,6 +276,9 @@
         </div>
     </div>
 
+    {{-- MODALES EXISTENTES (ASIGNAR, ESTADO, CONFIRMACIÓN, REACTIVACIÓN) --}}
+    {{-- ... Aquí mantienes todos los modales HTML exactamente iguales a los que me enviaste ... --}}
+    
     {{-- 1. MODAL ASIGNAR INTEGRANTE --}}
     <div class="modal fade" id="modalAsignar" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -346,6 +389,45 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             
+            // --- NUEVA LÓGICA: Generación Dinámica de Archivos Requeridos ---
+            const inputCantidad = document.getElementById('cantidad_archivos');
+            const contenedor = document.getElementById('contenedor_archivos');
+            
+            // Recuperamos los datos guardados si existen.
+            let existingFiles = @json($proceso->tipos_archivos ?? []);
+            if(typeof existingFiles === 'string') {
+                try { existingFiles = JSON.parse(existingFiles); } catch(e) { existingFiles = []; }
+            }
+            if(!Array.isArray(existingFiles)) existingFiles = [];
+
+            function renderArchivos(cantidad) {
+                contenedor.innerHTML = '';
+                for(let i = 0; i < cantidad; i++) {
+                    let val = existingFiles[i] || '';
+                    let col = document.createElement('div');
+                    col.className = 'col-md-6 mb-3';
+                    col.innerHTML = `
+                        <label class="form-label fw-bold small text-muted text-uppercase mb-1">Nombre del Archivo ${i+1}</label>
+                        <div class="input-group shadow-sm" style="border-radius: 10px; overflow: hidden;">
+                            <span class="input-group-text bg-white border-end-0"><i class="fas fa-file-alt text-indigo"></i></span>
+                            <input type="text" name="tipos_archivos[]" class="form-control border-start-0" placeholder="Ej: Cédula, Contrato..." value="${val}" required>
+                        </div>
+                    `;
+                    contenedor.appendChild(col);
+                }
+            }
+
+            if(inputCantidad) {
+                inputCantidad.addEventListener('input', function() {
+                    let cant = parseInt(this.value) || 0;
+                    if(cant < 0) { cant = 0; this.value = 0; }
+                    renderArchivos(cant);
+                });
+                // Iniciar con el valor actual al cargar la página
+                renderArchivos(parseInt(inputCantidad.value) || 0);
+            }
+            // ---------------------------------------------------------------
+
             // Lógica del buscador de usuarios
             const userSearch = document.getElementById('user_search');
             const userHidden = document.getElementById('user_id_hidden');
@@ -394,8 +476,8 @@
     <style>
         .text-indigo { color: #4f46e5 !important; }
         .bg-indigo { background-color: #4f46e5 !important; }
-        .btn-indigo { background-color: #4f46e5; border: none; }
-        .btn-indigo:hover { background-color: #4338ca; }
+        .btn-indigo { background-color: #4f46e5; border: none; color: white; }
+        .btn-indigo:hover { background-color: #4338ca; color: white; }
         .btn-outline-indigo { color: #4f46e5; border-color: #4f46e5; }
         .btn-outline-indigo:hover { background-color: #4f46e5; color: white; }
         .bg-soft-primary { background-color: #f0f4ff; color: #4f46e5; }

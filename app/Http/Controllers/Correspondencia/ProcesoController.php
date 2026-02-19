@@ -46,10 +46,12 @@ class ProcesoController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'flujo_id' => 'required|exists:corr_flujo_de_trabajo,id',
-            'nombre'   => 'required|string|max:255',
-            'detalle'  => 'nullable|string',
-            'activo'   => 'nullable|boolean',
+            'flujo_id'        => 'required|exists:corr_flujo_de_trabajo,id',
+            'nombre'          => 'required|string|max:255',
+            'detalle'         => 'nullable|string',
+            'activo'          => 'nullable|boolean',
+            'numero_archivos' => 'nullable|string|max:255', // <-- AGREGADO
+            'tipos_archivos'  => 'nullable',                // <-- AGREGADO
         ]);
 
         $data['activo'] = $request->has('activo') ? $request->activo : 1;
@@ -61,6 +63,7 @@ class ProcesoController extends Controller
         // REDIRECCIÓN HACIA ATRÁS: Mantiene al usuario en la vista del detalle del flujo
         return back()->with('success', 'Nuevo paso agregado correctamente al flujo.');
     }
+    
     /**
      * Vista de detalle: Gestión de usuarios y estados del proceso.
      */
@@ -101,10 +104,12 @@ class ProcesoController extends Controller
     public function update(Request $request, Proceso $proceso)
     {
         $data = $request->validate([
-            'flujo_id' => 'required|exists:corr_flujo_de_trabajo,id',
-            'nombre'   => 'required|string|max:255',
-            'detalle'  => 'nullable|string',
-            'activo'   => 'required|boolean',
+            'flujo_id'        => 'required|exists:corr_flujo_de_trabajo,id',
+            'nombre'          => 'required|string|max:255',
+            'detalle'         => 'nullable|string',
+            'activo'          => 'required|boolean',
+            'numero_archivos' => 'nullable|string|max:255', // <-- AGREGADO
+            'tipos_archivos'  => 'nullable',                // <-- AGREGADO
         ]);
 
         $proceso->update($data);
