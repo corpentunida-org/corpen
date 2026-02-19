@@ -860,9 +860,9 @@ Route::middleware(['auth'])->prefix('correspondencia')->name('correspondencia.')
     Route::resource('comunicaciones-salida', ComunicacionSalidaController::class)
         ->parameters(['comunicaciones-salida' => 'comunicacionSalida']);
 
-    Route::get('comunicaciones-salida/{comunicacionSalida}/descargar-pdf', [ComunicacionSalidaController::class, 'descargarPdf'])
-        ->name('comunicaciones-salida.descargar');
-
+    // RUTA CORREGIDA: Cambiamos el parámetro a {id} y agregamos "Pdf" al nombre
+    Route::get('comunicaciones-salida/{id}/descargar-pdf', [ComunicacionSalidaController::class, 'descargarPdf'])
+        ->name('comunicaciones-salida.descargarPdf');
     // ---------------------------------------------------
     // 8. TRACKING DE PROCESOS (HISTORIAL/SEGUIMIENTO)
     // ---------------------------------------------------
