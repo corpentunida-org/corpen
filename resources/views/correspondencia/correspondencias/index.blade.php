@@ -1,4 +1,30 @@
 <x-base-layout>
+    @php
+        // 1. EMPAQUETAMOS LOS FILTROS BASE EN UNA FUNCIÓN (CLOSURE)
+        $aplicarFiltrosBase = function($q) {
+            if (request()->filled('search')) {
+                $words = explode(' ', request('search'));
+                $q->where(function($subQ) use ($words) {
+                    foreach ($words as $word) {
+                        $subQ->orWhere('id_radicado', 'LIKE', "%$word%")
+                             ->orWhere('asunto', 'LIKE', "%$word%");
+                    }
+                });
+            }
+            if (request()->filled('estado')) {
+                $q->where('estado_id', request('estado')); // Asumiendo que 'estado' es 'estado_id' en la bd
+            }
+        };
+
+        // 2. CONSULTA DE CATEGORÍAS (FLUJOS) CON CONTEO DINÁMICO
+        $flujos_disponibles = \App\Models\Correspondencia\FlujoDeTrabajo::withCount(['correspondencias' => $aplicarFiltrosBase])
+            ->orderBy('nombre')
+            ->get();
+            
+        // Variable para contar todos los radicados sin importar la categoría
+        $total_radicados_busqueda = \App\Models\Correspondencia\Correspondencia::where($aplicarFiltrosBase)->count();
+    @endphp
+
     <style>
         :root {
             /* Paleta Pastel Minimalista */
@@ -40,7 +66,7 @@
         .btn-soft-primary { background: var(--pastel-blue); color: var(--text-blue); font-weight: 600; font-size: 0.85rem; padding: 6px 16px; border-radius: 8px; border: 1px solid transparent; transition: all 0.2s; }
         .btn-soft-primary:hover { background: #dbeafe; transform: translateY(-1px); }
 
-        /* Estilos Chelins */
+        /* Estilos Chelins (Gestión Rápida) */
         .chelin-item { display: inline-block; padding: 8px 16px; border-radius: 50px; border: 1px solid #dee2e6; background-color: white; color: #6c757d; font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s; user-select: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
         .chelin-item:hover { background-color: #f8f9fa; transform: translateY(-1px); }
         .chelin-item.active { background-color: var(--pastel-blue); color: var(--text-blue); border-color: #90caf9; box-shadow: 0 4px 6px rgba(13, 110, 253, 0.15); }
@@ -54,6 +80,15 @@
         .avatar-circle-sm:first-child { margin-left: 0; }
         .avatar-circle-sm:hover { transform: translateY(-3px); z-index: 10; }
         .route-line { position: absolute; left: 50%; transform: translateX(-50%); width: 2px; height: 100%; top: 32px; z-index: -1; background-color: #f0f2f5; }
+
+        /* NUEVO: ESTILOS CHIPS CATEGORÍAS */
+        .ux-category-scroll { display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+        .ux-category-scroll::-webkit-scrollbar { display: none; }
+        .ux-chip { white-space: nowrap; padding: 6px 14px; background: var(--white); border: 1px solid var(--border-light); border-radius: 50px; font-size: 0.8rem; font-weight: 600; color: var(--text-light); cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);}
+        .ux-chip:hover { background: #f8fafc; border-color: #d1d5db; color: var(--text-dark); }
+        .ux-chip.active { background: var(--text-dark); color: white; border-color: var(--text-dark); }
+        .badge-chip { background: #f1f5f9; color: var(--text-dark); padding: 2px 6px; border-radius: 10px; font-size: 0.65rem; }
+        .ux-chip.active .badge-chip { background: rgba(255,255,255,0.2); color: white; }
     </style>
 
     <div class="app-container">
@@ -70,18 +105,41 @@
         </div>
 
         {{-- FILTROS --}}
-        <div class="card-clean p-2 mb-3 d-flex align-items-center gap-2">
-            <form action="{{ route('correspondencia.correspondencias.index') }}" method="GET" class="d-flex w-100 align-items-center gap-2">
-                <div class="position-relative flex-grow-1" style="max-width: 300px;">
-                    <i class="bi bi-search position-absolute text-muted" style="left: 12px; top: 50%; transform: translateY(-50%); font-size: 0.8rem;"></i>
-                    <input type="text" name="search" class="form-control search-pill ps-5 w-100" placeholder="Buscar..." value="{{ request('search') }}">
+        <div class="card-clean p-3 mb-3">
+            <form action="{{ route('correspondencia.correspondencias.index') }}" method="GET" id="filter-form-minimal">
+                {{-- Input oculto para la categoría (flujo_id) --}}
+                <input type="hidden" name="flujo_id" id="input-flujo" value="{{ request('flujo_id') }}">
+
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <div class="position-relative flex-grow-1" style="max-width: 350px;">
+                        <i class="bi bi-search position-absolute text-muted" style="left: 12px; top: 50%; transform: translateY(-50%); font-size: 0.8rem;"></i>
+                        <input type="text" name="search" class="form-control search-pill ps-5 w-100" placeholder="Buscar radicado, asunto..." value="{{ request('search') }}" onblur="this.form.submit()">
+                    </div>
+                    <select name="estado" class="form-select search-pill border-0" style="width: auto; cursor: pointer; background-color: var(--bg-app);" onchange="this.form.submit()">
+                        <option value="">Estado: Todos</option>
+                        @foreach($estados as $est)
+                            <option value="{{ $est->id_estado }}" {{ request('estado') == $est->id_estado ? 'selected' : '' }}>{{ $est->nombre }}</option>
+                        @endforeach
+                    </select>
+                    @if(request()->filled('search') || request()->filled('estado') || request()->filled('flujo_id'))
+                        <a href="{{ route('correspondencia.correspondencias.index') }}" class="btn btn-sm btn-light rounded-circle p-2 shadow-sm text-danger" title="Limpiar Filtros">
+                            <i class="bi bi-x-lg"></i>
+                        </a>
+                    @endif
                 </div>
-                <select name="estado" class="form-select search-pill border-0" style="width: auto; cursor: pointer;" onchange="this.form.submit()">
-                    <option value="">Estado: Todos</option>
-                    @foreach($estados as $est)
-                        <option value="{{ $est->id_estado }}" {{ request('estado') == $est->id_estado ? 'selected' : '' }}>{{ $est->nombre }}</option>
+
+                {{-- NUEVO: FILTROS DE CATEGORÍA (CHIPS) --}}
+                <div class="ux-category-scroll">
+                    <span class="ux-chip {{ !request('flujo_id') ? 'active' : '' }}" onclick="applyCategoryFilter('')">
+                        Todas las Categorías <span class="badge-chip">{{ $total_radicados_busqueda }}</span>
+                    </span>
+                    @foreach($flujos_disponibles as $flujo)
+                        <span class="ux-chip {{ request('flujo_id') == $flujo->id ? 'active' : '' }}" 
+                              onclick="applyCategoryFilter('{{ $flujo->id }}')">
+                            {{ $flujo->nombre }} <span class="badge-chip">{{ $flujo->correspondencias_count }}</span>
+                        </span>
                     @endforeach
-                </select>
+                </div>
             </form>
         </div>
 
@@ -108,6 +166,9 @@
                                     <span class="text-truncate" style="max-width: 280px;">{{ $corr->asunto }}</span>
                                     @if($corr->es_confidencial) <i class="bi bi-lock-fill text-danger opacity-50" title="Confidencial" data-bs-toggle="tooltip"></i> @endif
                                     @if($corr->documento_arc) <i class="bi bi-paperclip text-primary opacity-50" title="Tiene adjunto" data-bs-toggle="tooltip"></i> @endif
+                                </div>
+                                <div class="text-muted small mt-1" style="font-size: 0.7rem;">
+                                    <i class="bi bi-folder me-1"></i> {{ $corr->flujo->nombre ?? 'Sin categoría' }}
                                 </div>
                             </td>
                             <td>
@@ -168,14 +229,14 @@
                         @empty
                         <tr>
                             <td colspan="6" class="text-center py-5">
-                                <div class="text-muted opacity-50"><i class="bi bi-inbox fs-4 d-block mb-1"></i> Sin registros</div>
+                                <div class="text-muted opacity-50"><i class="bi bi-inbox fs-4 d-block mb-1"></i> Sin registros en esta categoría</div>
                             </td>
                         </tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
-            @if($correspondencias->hasPages())
+            @if(isset($correspondencias) && method_exists($correspondencias, 'hasPages') && $correspondencias->hasPages())
                 <div class="px-3 py-2 border-top">{{ $correspondencias->links() }}</div>
             @endif
         </div>
@@ -280,6 +341,12 @@
     </div>
 
     <script>
+        // Función para enviar el formulario al dar clic en un Chip de Categoría
+        function applyCategoryFilter(idFlujo) {
+            document.getElementById('input-flujo').value = idFlujo;
+            document.getElementById('filter-form-minimal').submit();
+        }
+
         // CONFIGURACIÓN DE MAPAS
         const numeroArchivosPorProceso = {
             @foreach($procesos_disponibles as $proceso)
