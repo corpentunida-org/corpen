@@ -51,17 +51,9 @@
                         </p>
 
                         <div class="mt-auto d-flex justify-content-between">
-                            <a href="{{ route('apto-santamarta') }}" target="_blank"
-                                class="btn btn-sm btn-outline-primary">
-                                Ver
-                            </a>
-
+                            <a href="{{ route('reserva.crudinmuebles.show', $inmueble) }}" target="_blank" class="btn btn-sm btn-outline-primary">Ver</a>
                             <div class="d-flex gap-2">
-                                <a class="btn btn-sm btn-success"
-                                    href="{{ route('reserva.inmueble.create', $inmueble->id) }}">
-                                    Reservar
-                                </a>
-
+                                <a class="btn btn-sm btn-success" href="{{ route('reserva.inmueble.create', $inmueble->id) }}">Reservar</a>
                                 @candirect('reservas.inmueble.edit')
                                 <a class="btn btn-sm btn-warning">Editar</a>
                                 @endcandirect

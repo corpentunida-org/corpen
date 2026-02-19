@@ -100,7 +100,9 @@
 
         .hero-content h1 {
             font-size: 48px;
-            margin-bottom: 20px;
+            margin-top:30px;
+            padding-top:30px;
+            /*margin-bottom: 20px;*/
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
         }
 
@@ -454,9 +456,8 @@
 
 <header id="inicio">
     <div class="hero-content">
-        <h1>Su Refugio Perfecto para Descansar</h1>
+        <h1>{{$inmueble->name}}</h1>
         <p>Querido asociado disfrute de un apartamento completamente amoblado con todas las comodidades para una estadía inolvidable</p>
-
     </div>
 </header>
 
@@ -501,65 +502,26 @@
 <section id="galeria" style="background-color: #eef2f7;">
     <div class="container">
         <h2>Galería</h2>
+
         <div class="carousel-container">
             <div class="carousel" id="apartment-carousel">
-                <div class="carousel-slide">
-                    <img src="{{ asset('img/9.jpeg')}}" alt="Área de Comedor">
-                    <div class="carousel-caption">Terraza</div>
-                </div>
-                <div class="carousel-slide">
-                    <img src="{{ asset('img/12.jpeg')}}" alt="Área de Comedor">
-                    <div class="carousel-caption">Dormitorio principal</div>
-                </div>
-
-                <div class="carousel-slide">
-                    <img src="{{ asset('img/2.jpeg')}}" alt="Dormitorio Principal">
-                    <div class="carousel-caption">Dormitorio</div>
-                </div>
-                <div class="carousel-slide">
-                    <img src="{{ asset('img/3.jpeg')}}" alt="Cocina Equipada">
-                    <div class="carousel-caption">Comedor</div>
-                </div>
-
-                <div class="carousel-slide">
-                    <img src="{{ asset('img/5.jpeg')}}" alt="Vista desde el Balcón">
-                    <div class="carousel-caption">Sala TV</div>
-                </div>
-                <div class="carousel-slide">
-                    <img src="{{ asset('img/6.jpeg')}}" alt="Área de Comedor">
-                    <div class="carousel-caption">Sala TV</div>
-                </div>
-                <div class="carousel-slide">
-                    <img src="./img/7.jpeg')}}" alt="Área de Comedor">
-                    <div class="carousel-caption">Balcón</div>
-                </div>
-                <div class="carousel-slide">
-                    <img src="{{ asset('img/8.jpeg')}}" alt="Área de Comedor">
-                    <div class="carousel-caption">Zona de labores</div>
-                </div>
-
-                <div class="carousel-slide">
-                    <img src="{{ asset('img/10.jpeg')}}" alt="Área de Comedor">
-                    <div class="carousel-caption">Vista desde el Balcón</div>
-                </div>
-                <div class="carousel-slide">
-                    <img src="{{ asset('img/11.jpeg')}}" alt="Área de Comedor">
-                    <div class="carousel-caption">Closet</div>
-                </div>
-
-                <div class="carousel-slide">
-                    <img src="{{ asset('img/13.jpeg')}}" alt="Área de Comedor">
-                    <div class="carousel-caption">Dormitorio</div>
-                </div>
+                @foreach($inmueble->fotosrel as $foto)
+                    <div class="carousel-slide">
+                        <img src="{{$foto->ruta}}" alt="photo">
+                    </div>
+                @endforeach
             </div>
         </div>
+
         <div class="carousel-nav">
             <button id="prev-slide"><i class="fas fa-chevron-left"></i></button>
             <button id="next-slide"><i class="fas fa-chevron-right"></i></button>
         </div>
+
         <div class="carousel-dots" id="carousel-dots"></div>
     </div>
 </section>
+
 
 <!-- Nueva sección de condiciones -->
 <section id="condiciones" style="background-color: #eef2f7;">
