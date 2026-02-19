@@ -18,9 +18,18 @@ class Proceso extends Model
         'nombre', // Asegúrate de que 'nombre' esté aquí si lo usas en la vista
         'detalle',
         'activo',
+        'numero_archivos', // <-- AGREGADO
+        'tipos_archivos',  // <-- AGREGADO
         'usuario_creador_id',
         'created_at',
         'updated_at',
+    ];
+
+    /**
+     * Casteo de atributos.
+     */
+    protected $casts = [
+        'tipos_archivos' => 'array',
     ];
 
     /**
@@ -57,6 +66,7 @@ class Proceso extends Model
     {
         return $this->hasMany(ProcesoUsuario::class, 'proceso_id');
     }
+    
     /**
      * Relación con los estados/permisos configurados para este proceso.
      */

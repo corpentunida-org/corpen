@@ -101,6 +101,31 @@
                                     @enderror
                                 </div>
 
+                                {{-- NUEVA SECCIÓN: Archivos Requeridos --}}
+                                <div class="col-md-12 mt-4">
+                                    <div class="p-4 rounded-4" style="background-color: #fafafa; border: 1px solid #e5e7eb;">
+                                        <h6 class="fw-bold mb-3 d-flex align-items-center text-primary">
+                                            <i class="fas fa-file-signature me-2"></i> Configuración de Archivos Obligatorios
+                                        </h6>
+                                        <div class="row align-items-center mb-4">
+                                            <div class="col-md-8">
+                                                <label class="form-label fw-bold small text-muted text-uppercase mb-1">¿Cuántos archivos se deben subir?</label>
+                                                <p class="small text-muted mb-2">Define la cantidad y asigna un nombre a cada documento que será requerido en este proceso.</p>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="input-group shadow-sm" style="border-radius: 10px; overflow: hidden;">
+                                                    <span class="input-group-text bg-white border-end-0"><i class="fas fa-sort-numeric-up text-primary"></i></span>
+                                                    <input type="number" id="cantidad_archivos_create" name="numero_archivos" class="form-control border-start-0 fw-bold" min="0" value="{{ old('numero_archivos', 0) }}">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {{-- Contenedor donde aparecerán los inputs dinámicos --}}
+                                        <div id="contenedor_archivos_create" class="row g-3">
+                                            </div>
+                                    </div>
+                                </div>
+
                                 {{-- CAMPO: Activo (Switch Estilizado) --}}
                                 <div class="col-md-12">
                                     <div class="p-3 rounded-4 border bg-light d-flex align-items-center justify-content-between">
@@ -146,6 +171,45 @@
             </div>
         </div>
     </div>
+
+    {{-- Script para generación dinámica de inputs de archivos --}}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputCantidad = document.getElementById('cantidad_archivos_create');
+            const contenedor = document.getElementById('contenedor_archivos_create');
+            
+            // Si hay datos previos por validación fallida (old helper), los recuperamos
+            let oldFiles = @json(old('tipos_archivos', []));
+            if(!Array.isArray(oldFiles)) oldFiles = [];
+
+            function renderArchivos(cantidad) {
+                contenedor.innerHTML = '';
+                for(let i = 0; i < cantidad; i++) {
+                    let val = oldFiles[i] || '';
+                    let col = document.createElement('div');
+                    col.className = 'col-md-6 mb-3';
+                    col.innerHTML = `
+                        <label class="form-label fw-bold small text-muted text-uppercase mb-1">Nombre del Archivo ${i+1}</label>
+                        <div class="input-group shadow-sm" style="border-radius: 10px; overflow: hidden;">
+                            <span class="input-group-text bg-white border-end-0"><i class="fas fa-file-alt text-primary"></i></span>
+                            <input type="text" name="tipos_archivos[]" class="form-control border-start-0" placeholder="Ej: Cédula, Contrato..." value="${val}" required>
+                        </div>
+                    `;
+                    contenedor.appendChild(col);
+                }
+            }
+
+            if(inputCantidad) {
+                inputCantidad.addEventListener('input', function() {
+                    let cant = parseInt(this.value) || 0;
+                    if(cant < 0) { cant = 0; this.value = 0; }
+                    renderArchivos(cant);
+                });
+                // Renderizar inicialmente (por si old('numero_archivos') tiene valor)
+                renderArchivos(parseInt(inputCantidad.value) || 0);
+            }
+        });
+    </script>
 
     <style>
         .border-dashed { border: 2px dashed #e2e8f0; }
