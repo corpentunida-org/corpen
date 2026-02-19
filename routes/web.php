@@ -257,7 +257,6 @@ Route::get('/inventario', [UserController::class, 'inventario'])
     ->name('inventario');
 
 //RESERVAS
-Route::get('/apto-santamarta', function () {return view('reserva.index');})->name('apto-santamarta');
 Route::get('user/validation/asociado', [UserController::class, 'validarAsociadoCreate'])->name('user.validar.asociado');
 Route::get('/consumir-api', [UserController::class, 'consumirEndpoint']);
 Route::post('validar/asociado', [UserController::class, 'validarAsociado'])->name('validar.asociado');
@@ -646,9 +645,7 @@ Route::middleware('auth')
         Route::get('notificaciones', [ScpSoporteController::class, 'getNotificaciones'])->name('notificaciones');
 
         // Vista completa de notificaciones
-        Route::get('notificaciones/detalladas', [ScpSoporteController::class, 'getNotificacionesDetalladas'])
-            ->name('notificaciones.detalladas')
-            ->middleware('auth');
+        Route::get('notificaciones/detalladas', [ScpSoporteController::class, 'getNotificacionesDetalladas'])->name('notificaciones.detalladas')->middleware('auth');
 
         // Acción manual de reenvío de correo
         Route::get('enviar-correo-escalado/{id}', [ScpNotificacionController::class, 'enviarCorreoEscalado'])->name('enviarCorreoEscalado');

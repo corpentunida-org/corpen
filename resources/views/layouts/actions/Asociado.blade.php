@@ -4,6 +4,6 @@
         <span class="nxl-mtext">Asociado</span><span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
     </a>
     <ul class="nxl-submenu">
-        <li class="nxl-item"><a class="nxl-link" href="{{ route('reserva.reserva.index')}}">Reserva descanso</a></li>
+        <li class="nxl-item"><a class="nxl-link" href="{{ route('reserva.reserva.index')}}">Hacer una reserva</a></li>
     </ul>
 </li>

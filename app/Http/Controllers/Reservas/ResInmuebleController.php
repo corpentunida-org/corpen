@@ -15,7 +15,8 @@ class ResInmuebleController extends Controller
      */
     public function index()
     {
-        $inmuebles = Res_inmueble::where('active', 1)->with('fotosrel')->get()
+        $inmuebles = Res_inmueble::where('active', 1)
+            ->with('fotosrel')->get()
             ->map(function ($inmueble) {
                 $inmueble->fotosrel->map(function ($foto) {
                     if (Storage::disk('s3')->exists($foto->attached)) {
@@ -76,7 +77,15 @@ class ResInmuebleController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show() {}
+    public function show(Res_inmueble $inmueble)
+    {
+        $inmueble->load('fotosrel');
+        $inmueble->fotosrel->transform(function ($foto) {
+            $foto->ruta = Storage::disk('s3')->temporaryUrl($foto->attached, now()->addMinutes(5));
+            return $foto;
+        });
+        return view('reserva.index', compact('inmueble'));
+    }
 
     /**
      * Show the form for editing the specified resource.
