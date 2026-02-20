@@ -13,6 +13,22 @@ class Res_reserva extends Model
     use HasFactory;
     use SoftDeletes;
 
+     protected $fillable = [
+        'res_inmueble_id',
+        'res_status_id',
+        'user_id',
+        'nid',
+        'name_reserva',
+        'fecha_solicitud',
+        'fecha_inicio',
+        'fecha_fin',
+        'comentario_reserva',
+        'celular',
+        'celular_respaldo',
+        'soporte_pago',        
+        'puntuacion',
+    ];
+
     public function res_inmueble()
     {
         return $this->belongsTo(Res_inmueble::class);

@@ -1,6 +1,8 @@
 <x-base-layout>
     @section('titlepage', 'Reserva Asociado')
     <x-success />
+    <x-error />
+
 
     <div class="card" data-scrollbar-target="#psScrollbarInit">
         <div class="card-body p-4">
@@ -187,6 +189,18 @@
                         locale: 'es',
                         contentHeight: "auto",
                         expandRows: false,
+                        validRange: function(nowDate) {
+                            let start = new Date();
+                            start.setHours(0, 0, 0, 0);
+
+                            let end = new Date();
+                            end.setDate(end.getDate() + 365);
+
+                            return {
+                                start: start,
+                                end: end
+                            };
+                        },
                         headerToolbar: {
                             left: 'prev,next today',
                             center: 'title',
@@ -196,13 +210,33 @@
 
                         events: [
                             @foreach ($reservas as $reserva)
+
                                 {
-                                    title: '{{ $reserva->nid == '0000000000' ? 'Adecuación' : 'Reserva' }}',
+                                    title: 'Alistamiento',
+                                    start: '{{ \Carbon\Carbon::parse($reserva->fecha_inicio)->subDay()->format('Y-m-d') }}',
+                                    end: '{{ $reserva->fecha_inicio }}',
+                                    backgroundColor: '#4f545a',
+                                    display: 'background'
+                                },
+
+                                // RESERVA REAL
+                                {
+                                    title: 'Reserva',
                                     start: '{{ $reserva->fecha_inicio }}',
                                     end: '{{ \Carbon\Carbon::parse($reserva->fecha_fin)->addDay()->format('Y-m-d') }}',
-                                    description: '{{ $reserva->nid == '0000000000' ? 'Alistamiento del apartamento.' : 'Evento fijo para el día actual.' }}',
-                                    backgroundColor: '{{ $reserva->nid == '0000000000' ? '#4f545a' : 'rgba(0,123,255,0.94)' }}',
-                                    borderColor: '{{ $reserva->nid == '0000000000' ? '#1b1c1e' : '#073c8a' }}'
+                                    backgroundColor: 'rgba(0,123,255,0.94)',
+                                    borderColor: '#073c8a',
+                                    description: 'Reserva activa',
+                                    display: 'background'
+                                },
+
+                                // BLOQUEO DIA DESPUES
+                                {
+                                    title: 'Alistamiento',
+                                    start: '{{ \Carbon\Carbon::parse($reserva->fecha_fin)->addDay()->format('Y-m-d') }}',
+                                    end: '{{ \Carbon\Carbon::parse($reserva->fecha_fin)->addDays(2)->format('Y-m-d') }}',
+                                    backgroundColor: '#4f545a',
+                                    display: 'background'
                                 },
                             @endforeach
                         ],
@@ -216,6 +250,13 @@
                         },
 
                         dateClick(info) {
+                            const events = info.view.calendar.getEvents();
+
+                            const ocupado = events.some(e => {
+                                return info.date >= e.start && info.date < e.end;
+                            });
+
+                            if (ocupado) return;
                             const today = new Date();
                             today.setHours(0, 0, 0, 0);
                             const clicked = new Date(info.dateStr);
