@@ -15,7 +15,8 @@
                             <div class="fs-12 text-muted">Titular: </div>
                             <div class="fs-4 fw-bold text-dark"><span
                                     class="counter">{{ $asegurado->terceroAF->nom_ter ?? '' }}</span></div>
-                            <h3 class="fs-13 fw-semibold text-truncate-1-line">{{ $asegurado->terceroAF->cod_ter ?? '' }}
+                            <h3 class="fs-13 fw-semibold text-truncate-1-line">
+                                {{ $asegurado->terceroAF->cod_ter ?? '' }}
                             </h3>
                         </div>
                     </div>
@@ -123,7 +124,7 @@
                                 aria-labelledby="flush-headingOne" data-bs-parent="#accordionFaqGroup"
                                 style="">
                                 <div class="accordion-body">
-                                    <ul class="list-unstyled activity-feed">                                        
+                                    <ul class="list-unstyled activity-feed">
                                         @foreach ($hisreclamacion as $i => $hr)
                                             <li
                                                 class="d-flex justify-content-between feed-item feed-item-{{ $colors[$i % count($colors)] }}">
@@ -154,13 +155,18 @@
                                 @endforeach
                             </select>
                         </div>
-                        
-                        <div class="col-lg-3 mb-4" id="inputvalordesembolsado" style="{{ $reclamacion->estado == 4 ? '' : 'display: none;' }}">
-                                <label class="form-label">Fecha desembolso <span class="text-danger">*</span></label>
-                                <input type="date" class="form-control" name="fechadesembolso"
-                                    value="{{ \Carbon\Carbon::parse($reclamacion->fecha_desembolso)->format('Y-m-d') }}">
-                        </div>                        
-
+                        <div class="col-lg-3 mb-4" id="inputvalordesembolsado"
+                            style="{{ $reclamacion->estado == 4 ? '' : 'display: none;' }}">
+                            <label class="form-label">Fecha desembolso <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" name="fechadesembolso"
+                                value="{{ \Carbon\Carbon::parse($reclamacion->fecha_desembolso)->format('Y-m-d') }}">
+                        </div>
+                        <div class="col-lg-12 mb-4">
+                            <div class="custom-control custom-checkbox">
+                                <input id="finreclamacion" type="checkbox" class="custom-control-input" name="finreclamacion">
+                                <label for="finreclamacion" class="custom-control-label c-pointer">Marcar como cierre de la reclamación</label>
+                            </div>
+                        </div>
                         <div class="col-lg-12 mb-4">
                             <label class="form-label">Observaciones</label>
                             <input type="text" class="form-control uppercase-input" name="observacion" required>
@@ -170,7 +176,8 @@
                             <div class="custom-control custom-checkbox">
                                 <input type="checkbox" class="custom-control-input" id="checkbox1"
                                     name="checkchangevalaseg" value="1">
-                                <label class="custom-control-label c-pointer" for="checkbox1">Registrar desembolso del 50% al valor asegurado de la póliza</label>
+                                <label class="custom-control-label c-pointer" for="checkbox1">Registrar desembolso del
+                                    50% al valor asegurado de la póliza</label>
                             </div>
                         </div>
                         <div class="d-flex justify-content-end gap-2 mt-3">
