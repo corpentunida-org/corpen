@@ -12,7 +12,7 @@
                 });
             }
             if (request()->filled('estado')) {
-                $q->where('estado_id', request('estado')); // Asumiendo que 'estado' es 'estado_id' en la bd
+                $q->where('estado_id', request('estado'));
             }
         };
 
@@ -54,6 +54,11 @@
         .row-clickable { cursor: pointer; transition: background-color 0.2s ease; }
         .row-clickable:hover td { background-color: #f8fafc !important; }
 
+        /* --- ESTADO DE SALIDA (NUEVO) --- */
+        .row-has-exit td { background-color: var(--pastel-green) !important; border-bottom-color: #d1fae5 !important; }
+        .row-has-exit:hover td { background-color: #d1fae5 !important; }
+        .badge-exit { background: var(--text-green); color: white; font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; }
+
         /* Avatares y Badges */
         .avatar-tiny { width: 28px; height: 28px; border-radius: 8px; background: var(--pastel-purple); color: var(--text-purple); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; }
         .badge-pill { padding: 2px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 500; display: inline-flex; align-items: center; gap: 4px; }
@@ -64,31 +69,16 @@
         .btn-ghost { color: var(--text-light); padding: 4px; border-radius: 6px; transition: all 0.2s; cursor: pointer; border: none; background: transparent; display: inline-flex; align-items: center; justify-content: center;}
         .btn-ghost:hover { background: var(--pastel-blue); color: var(--text-blue); }
         .btn-soft-primary { background: var(--pastel-blue); color: var(--text-blue); font-weight: 600; font-size: 0.85rem; padding: 6px 16px; border-radius: 8px; border: 1px solid transparent; transition: all 0.2s; }
-        .btn-soft-primary:hover { background: #dbeafe; transform: translateY(-1px); }
 
-        /* Estilos Chelins (Gestión Rápida) */
+        /* ... Estilos Timeline y Chips (Se mantienen igual) ... */
         .chelin-item { display: inline-block; padding: 8px 16px; border-radius: 50px; border: 1px solid #dee2e6; background-color: white; color: #6c757d; font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s; user-select: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-        .chelin-item:hover { background-color: #f8f9fa; transform: translateY(-1px); }
-        .chelin-item.active { background-color: var(--pastel-blue); color: var(--text-blue); border-color: #90caf9; box-shadow: 0 4px 6px rgba(13, 110, 253, 0.15); }
-        
-        .upload-box:hover { background-color: var(--pastel-blue) !important; border-color: var(--text-blue) !important; }
-        .action-card { cursor: pointer; transition: all 0.2s; }
-        .modal-content { border-radius: 24px; border: none; overflow: hidden; }
-
-        /* Ruta y Timeline */
-        .avatar-circle-sm { width: 24px; height: 24px; background-color: #fff; color: #495057; border: 2px solid #e9ecef; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 700; margin-left: -8px; transition: all 0.2s ease; cursor: default; }
-        .avatar-circle-sm:first-child { margin-left: 0; }
-        .avatar-circle-sm:hover { transform: translateY(-3px); z-index: 10; }
+        .chelin-item.active { background-color: var(--pastel-blue); color: var(--text-blue); border-color: #90caf9; }
+        .avatar-circle-sm { width: 24px; height: 24px; background-color: #fff; color: #495057; border: 2px solid #e9ecef; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 700; margin-left: -8px; }
         .route-line { position: absolute; left: 50%; transform: translateX(-50%); width: 2px; height: 100%; top: 32px; z-index: -1; background-color: #f0f2f5; }
-
-        /* NUEVO: ESTILOS CHIPS CATEGORÍAS */
         .ux-category-scroll { display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
-        .ux-category-scroll::-webkit-scrollbar { display: none; }
-        .ux-chip { white-space: nowrap; padding: 6px 14px; background: var(--white); border: 1px solid var(--border-light); border-radius: 50px; font-size: 0.8rem; font-weight: 600; color: var(--text-light); cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.02);}
-        .ux-chip:hover { background: #f8fafc; border-color: #d1d5db; color: var(--text-dark); }
+        .ux-chip { white-space: nowrap; padding: 6px 14px; background: var(--white); border: 1px solid var(--border-light); border-radius: 50px; font-size: 0.8rem; font-weight: 600; color: var(--text-light); cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
         .ux-chip.active { background: var(--text-dark); color: white; border-color: var(--text-dark); }
         .badge-chip { background: #f1f5f9; color: var(--text-dark); padding: 2px 6px; border-radius: 10px; font-size: 0.65rem; }
-        .ux-chip.active .badge-chip { background: rgba(255,255,255,0.2); color: white; }
     </style>
 
     <div class="app-container">
@@ -107,7 +97,6 @@
         {{-- FILTROS --}}
         <div class="card-clean p-3 mb-3">
             <form action="{{ route('correspondencia.correspondencias.index') }}" method="GET" id="filter-form-minimal">
-                {{-- Input oculto para la categoría (flujo_id) --}}
                 <input type="hidden" name="flujo_id" id="input-flujo" value="{{ request('flujo_id') }}">
 
                 <div class="d-flex align-items-center gap-2 mb-3">
@@ -121,21 +110,14 @@
                             <option value="{{ $est->id_estado }}" {{ request('estado') == $est->id_estado ? 'selected' : '' }}>{{ $est->nombre }}</option>
                         @endforeach
                     </select>
-                    @if(request()->filled('search') || request()->filled('estado') || request()->filled('flujo_id'))
-                        <a href="{{ route('correspondencia.correspondencias.index') }}" class="btn btn-sm btn-light rounded-circle p-2 shadow-sm text-danger" title="Limpiar Filtros">
-                            <i class="bi bi-x-lg"></i>
-                        </a>
-                    @endif
                 </div>
 
-                {{-- NUEVO: FILTROS DE CATEGORÍA (CHIPS) --}}
                 <div class="ux-category-scroll">
                     <span class="ux-chip {{ !request('flujo_id') ? 'active' : '' }}" onclick="applyCategoryFilter('')">
                         Todas las Categorías <span class="badge-chip">{{ $total_radicados_busqueda }}</span>
                     </span>
                     @foreach($flujos_disponibles as $flujo)
-                        <span class="ux-chip {{ request('flujo_id') == $flujo->id ? 'active' : '' }}" 
-                              onclick="applyCategoryFilter('{{ $flujo->id }}')">
+                        <span class="ux-chip {{ request('flujo_id') == $flujo->id ? 'active' : '' }}" onclick="applyCategoryFilter('{{ $flujo->id }}')">
                             {{ $flujo->nombre }} <span class="badge-chip">{{ $flujo->correspondencias_count }}</span>
                         </span>
                     @endforeach
@@ -150,7 +132,7 @@
                     <thead>
                         <tr>
                             <th width="10%">Radicado</th>
-                            <th width="30%">Asunto</th>
+                            <th>Asunto</th>
                             <th width="20%">Remitente</th>
                             <th width="15%">Estado</th>
                             <th width="10%">Fecha</th>
@@ -159,11 +141,28 @@
                     </thead>
                     <tbody>
                         @forelse($correspondencias as $corr)
-                        <tr onclick="abrirModalRuta('{{ $corr->id_radicado }}')" class="row-clickable" title="Clic para ver flujo completo">
-                            <td><span class="fw-bold" style="color: #4b5563;">#{{ $corr->id_radicado }}</span></td>
+                        @php
+                            // Verificamos si ya tiene comunicación de salida
+                            $tieneSalida = $corr->comunicacion_salida_exists ?? $corr->comunicacionSalida()->exists();
+                        @endphp
+                        <tr onclick="abrirModalRuta('{{ $corr->id_radicado }}')" 
+                            class="row-clickable {{ $tieneSalida ? 'row-has-exit' : '' }}" 
+                            title="{{ $tieneSalida ? 'Este radicado ya tiene respuesta generada' : 'Clic para ver flujo completo' }}">
+                            
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    @if($tieneSalida)
+                                        <i class="bi bi-check-circle-fill text-green" title="Comunicación de salida existente"></i>
+                                    @endif
+                                    <span class="fw-bold" style="color: #4b5563;">#{{ $corr->id_radicado }}</span>
+                                </div>
+                            </td>
                             <td>
                                 <div class="d-flex align-items-center gap-2">
                                     <span class="text-truncate" style="max-width: 280px;">{{ $corr->asunto }}</span>
+                                    @if($tieneSalida)
+                                        <span class="badge-exit">Salida</span>
+                                    @endif
                                     @if($corr->es_confidencial) <i class="bi bi-lock-fill text-danger opacity-50" title="Confidencial" data-bs-toggle="tooltip"></i> @endif
                                     @if($corr->documento_arc) <i class="bi bi-paperclip text-primary opacity-50" title="Tiene adjunto" data-bs-toggle="tooltip"></i> @endif
                                 </div>
@@ -183,6 +182,7 @@
                                 @else
                                     <span class="badge-pill badge-blue"><i class="bi bi-clock"></i> En Proceso</span>
                                 @endif
+                                <span class="badge-pill badge-primary">{{ $corr->estado->nombre }}</span>
                             </td>
                             <td class="text-muted" style="font-size: 0.75rem;">{{ $corr->fecha_solicitud->format('d M, Y') }}</td>
                             
@@ -191,7 +191,6 @@
                                     @php
                                         $soyResponsableDeAlgo = false;
                                         $primerIdProcesoResponsable = null;
-
                                         if (!$corr->finalizado && $corr->flujo) {
                                             foreach ($corr->flujo->procesos->sortBy('id') as $paso) {
                                                 foreach ($paso->usuariosAsignados as $asignacion) {
@@ -341,13 +340,11 @@
     </div>
 
     <script>
-        // Función para enviar el formulario al dar clic en un Chip de Categoría
         function applyCategoryFilter(idFlujo) {
             document.getElementById('input-flujo').value = idFlujo;
             document.getElementById('filter-form-minimal').submit();
         }
 
-        // CONFIGURACIÓN DE MAPAS
         const numeroArchivosPorProceso = {
             @foreach($procesos_disponibles as $proceso)
                 {{ $proceso->id }}: {{ (int) $proceso->numero_archivos }},
@@ -368,7 +365,6 @@
             @endforeach
         };
 
-        // DATA DE RUTAS 
         const dataRutas = {
             @foreach($correspondencias as $corr)
                 "{{ $corr->id_radicado }}": {
@@ -469,7 +465,6 @@
                 const select = document.getElementById('select_etapa_proceso_visual');
                 if(select) {
                     select.value = idProceso;
-                    // BLOQUEO ESTRICTO DE ETAPA
                     select.disabled = true; 
                     select.style.backgroundColor = "#f3f4f6"; 
                     select.style.cursor = "not-allowed";
@@ -502,7 +497,6 @@
             containerEstados.innerHTML = ""; 
             if(!idProceso) return;
 
-            // ESTADOS
             const estados = estadosPorProceso[idProceso] || [];
             if(estados.length > 0) {
                 estados.forEach(est => {
@@ -516,7 +510,6 @@
                 });
             } else { containerEstados.innerHTML = '<span class="text-muted small italic px-2">Sin estados requeridos.</span>'; }
 
-            // ARCHIVOS DINÁMICOS
             let numArchivos = numeroArchivosPorProceso[idProceso] || 0;
             let nombresArchivos = tiposArchivosPorProceso[idProceso] || [];
             let containerArchivos = document.getElementById('container_archivos_dinamicos');

@@ -56,7 +56,7 @@ class CorrespondenciaProcesoController extends Controller
      */
     public function store(Request $request)
     {
-        // 1. Validamos primero la información básica
+        
         $request->validate([
             'id_correspondencia' => 'required|exists:corr_correspondencia,id_radicado',
             'id_proceso'         => 'required|integer|exists:corr_procesos,id',
@@ -66,11 +66,9 @@ class CorrespondenciaProcesoController extends Controller
             'finalizado'         => 'nullable|boolean',
         ]);
 
-        // 2. Buscamos el proceso para saber cuántos archivos son obligatorios
         $proceso = Proceso::findOrFail($request->id_proceso);
         $numRequeridos = (int) $proceso->numero_archivos;
 
-        // 3. Validación dinámica del ARRAY de archivos
         if ($numRequeridos > 0) {
             $request->validate([
                 'documento_arc'   => 'required|array|size:' . $numRequeridos,
@@ -81,7 +79,6 @@ class CorrespondenciaProcesoController extends Controller
                 'documento_arc.*.mimes'  => 'Solo se permiten archivos: PDF, DOC, DOCX, JPG o PNG.',
             ]);
         } else {
-            // Si no exige archivos, permitimos subida opcional de múltiples archivos
             $request->validate([
                 'documento_arc'   => 'nullable|array',
                 'documento_arc.*' => 'file|mimes:pdf,doc,docx,jpg,png|max:10240',
@@ -93,28 +90,31 @@ class CorrespondenciaProcesoController extends Controller
             
             DB::transaction(function () use ($request, $idRadicado, $proceso) { 
                 $estadoMaestro = Estado::findOrFail($request->estado_id);
-                
                 $rutasArchivos = [];              
                 
-                // 4. Si hay archivos, iteramos y subimos a S3
                 if ($request->hasFile('documento_arc')) {
                     foreach ($request->file('documento_arc') as $file) {
-                        // Usamos uniqid() para que no se sobreescriban los nombres si suben varios a la vez
-                        $nombreArchivo = 'corpentunida/correspondencia/seg_' . $idRadicado . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-                        Storage::disk('s3')->put($nombreArchivo, file_get_contents($file));
-                        $rutasArchivos[] = $nombreArchivo;
+                        // 1. Generamos solo el nombre del archivo
+                        $nombreArchivo = 'seg_' . $idRadicado . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                        
+                        // 2. Usamos storeAs con 'visibility' => 'public' para que Amazon S3 permita abrir el enlace
+                        $path = $file->storeAs('corpentunida/correspondencia', $nombreArchivo, [
+                            'disk' => 's3',
+                            'visibility' => 'public'
+                        ]);
+                        
+                        $rutasArchivos[] = $path;
                     }
-                }     
+                }    
 
-                // 5. Crear el registro guardando el array
                 CorrespondenciaProceso::create([
                     'id_correspondencia' => $idRadicado,
                     'observacion'        => $request->observacion,
-                    'estado'             => $estadoMaestro->nombre,
+                    'estado'             => $estadoMaestro->id,
                     'id_proceso'         => $proceso->id,
                     'notificado_email'   => $request->boolean('notificado_email'),
                     'fecha_gestion'      => $request->fecha_gestion,
-                    'documento_arc'      => $rutasArchivos, // El cast en el modelo lo convierte a JSON
+                    'documento_arc'      => $rutasArchivos, 
                     'finalizado'         => $request->boolean('finalizado'),
                     'fk_usuario'         => auth()->id(),
                 ]);
@@ -165,7 +165,6 @@ class CorrespondenciaProcesoController extends Controller
                 'finalizado'       => $request->boolean('finalizado'),
             ];
 
-            // Si suben nuevos archivos, REEMPLAZAMOS los anteriores (Puedes cambiar esto para agregarlos si lo deseas)
             if ($request->hasFile('documento_arc')) {
                 
                 // Borrar archivos viejos de S3
@@ -179,9 +178,15 @@ class CorrespondenciaProcesoController extends Controller
 
                 $rutasNuevas = [];
                 foreach ($request->file('documento_arc') as $file) {
-                    $nombre = 'corpentunida/correspondencia/upd_seg_' . $correspondenciaProceso->id_correspondencia . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-                    Storage::disk('s3')->put($nombre, file_get_contents($file));
-                    $rutasNuevas[] = $nombre;
+                    $nombreArchivo = 'upd_seg_' . $correspondenciaProceso->id_correspondencia . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                    
+                    // Igual que en el store, lo guardamos con permisos públicos
+                    $path = $file->storeAs('corpentunida/correspondencia', $nombreArchivo, [
+                        'disk' => 's3',
+                        'visibility' => 'public'
+                    ]);
+                    
+                    $rutasNuevas[] = $path;
                 }
                 
                 $updateData['documento_arc'] = $rutasNuevas;
