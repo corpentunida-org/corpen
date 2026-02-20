@@ -87,8 +87,7 @@
                         </table>
                     </div>
                 @endif
-                <label class="form-label"><span class="text-danger">CREAR UN PROCESO DE
-                        RECLAMACIÓN</span></span></label>
+                <p class="form-label"><span class="text-danger">CREAR UN PROCESO DE RECLAMACIÓN</span></p>
                 <form method="post" action="{{ route('seguros.reclamacion.store') }}" class="row"
                     id="formAddReclamacion" novalidate>
                     @csrf
@@ -165,9 +164,8 @@
                         <div class="col-lg-3"></div>
                         <div class="col-lg-4 nav-link mt-1" id="checkconfirmarvalorasegurado">
                             <div class="custom-control custom-checkbox" style="padding-left: 30px;">
-                                <input type="checkbox" class="custom-control-input" name="cambiovalasegurado"
-                                    checked>
-                                <label class="custom-control-label c-pointer">Modificar el valor asegurado</label>
+                                <input id="idcambiovalasegurado" type="checkbox" class="custom-control-input" name="cambiovalasegurado" checked>
+                                <label for="idcambiovalasegurado" class="custom-control-label c-pointer">Modificar el valor asegurado</label>
                             </div>
                         </div>
                     </div>
@@ -177,9 +175,8 @@
                             <input type="date" class="form-control" name="fechadesembolso">
                             <div class="nav-link mt-1" id="checkconfirmarfinrec">
                                 <div class="custom-control custom-checkbox">
-                                    <input type="checkbox" class="custom-control-input" name="finreclamacion">
-                                    <label class="custom-control-label c-pointer">Marcar como cierre de la
-                                        reclamación</label>
+                                    <input id="idfinreclamacion" type="checkbox" class="custom-control-input" name="finreclamacion">
+                                    <label for="idfinreclamacion" class="custom-control-label c-pointer">Marcar como cierre de la reclamación</label>
                                 </div>
                             </div>
                         </div>
