@@ -192,7 +192,8 @@
                                 </div>
                                 <div class="col-md-12">
                                     <label for="ubicacion_foto" class="form-label">Formulario</label>
-                                    <input class="form-control" type="file" id="formulario_nov" name="formulario_nov">
+                                    <input class="form-control" type="file" id="formulario_nov"
+                                        name="formulario_nov">
                                     <small class="form-text text-muted">Formato permitidos: PDF</small>
                                     @error('formulario_nov')
                                         <small class="text-danger">{{ $message }}</small>
@@ -212,7 +213,8 @@
 
                 {{-- INGRESO --}}
                 <div class="tab-pane fade p-4 " id="TaskTab" role="tabpanel">
-                    <form action={{ route('seguros.novedades.store') }} method="POST" id="formAddPoliza" enctype="multipart/form-data" novalidate>
+                    <form action={{ route('seguros.novedades.store') }} method="POST" id="formAddPoliza"
+                        enctype="multipart/form-data" novalidate>
                         @csrf
                         @method('POST')
                         <div class="mb-3 d-flex align-items-center justify-content-between">
@@ -331,7 +333,8 @@
                             </div>
                             <div class="col-md-3">
                                 <label for="ubicacion_foto" class="form-label">Formulario</label>
-                                <input class="form-control" type="file" id="formulario_nov" name="formulario_nov" accept="application/pdf">
+                                <input class="form-control" type="file" id="formulario_nov" name="formulario_nov"
+                                    accept="application/pdf">
                                 <small class="form-text text-muted">Formato permitidos: PDF</small>
                                 @error('formulario_nov')
                                     <small class="text-danger">{{ $message }}</small>
@@ -367,9 +370,10 @@
                                 value="{{ $asegurado->nombre_tercero ?? ' ' }}" disabled>
                         </div>
                     </div>
-                    @if (isset($asegurado))                        
-                        <form method="POST" class="px-4"
-                            action="{{ route('seguros.novedades.destroy', ['novedade' => $asegurado->cedula]) }}" enctype="multipart/form-data">
+                    @if (isset($asegurado))
+                        <form method="POST" class="px-4" id="idFormRetiro"
+                            action="{{ route('seguros.novedades.destroy', ['novedade' => $asegurado->cedula]) }}"
+                            enctype="multipart/form-data" novalidate>
                             @csrf
                             @method('DELETE')
                             <input type="hidden" name="tipoNovedad" value="3">
@@ -387,7 +391,8 @@
                                             PRIMA PASTOR:
                                             ${{ number_format($asegurado->polizas->first()->plan->prima_pastor) ?? '' }}
                                         @else
-                                            ${{ number_format($asegurado->polizas->first()->plan->prima_aseguradora) ?? '' }} -
+                                            ${{ number_format($asegurado->polizas->first()->plan->prima_aseguradora) ?? '' }}
+                                            -
                                             PRIMA ASEGURADO:
                                             ${{ number_format($asegurado->polizas->first()->plan->prima_asegurado) ?? '' }}
                                         @endif
@@ -396,18 +401,40 @@
                                 <span
                                     class="fs-12 fw-normal text-muted text-truncate-1-line pt-1">{{ $condicion->descripcion }}</span>
                             </div>
+                            @if ($asegurado->parentesco == 'AF')
+                                <div class="col-md-12 mb-4">
+                                    <h4 class="fw-bold">Retiro del pastor titular y su grupo familiar</h4>
+                                    <div class="fs-12 text-muted mb-2">
+                                        Al seleccionar la primera opción, automáticamente se desactiva de la póliza al
+                                        pastor y todo su grupo familiar.
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" id="retiroAsociacion" type="radio"
+                                            name="retiroPastor" value="retirarTodos">
+                                        <label class="form-check-label" for="retiroAsociacion"> 1. El titular ya no
+                                            pertenece a la asociación </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" id="retiroPoliza" type="radio"
+                                            name="retiroPastor" value="retirarIndividual" checked>
+                                        <label class="form-check-label" for="retiroPoliza"> 2. Solo es retiro de la
+                                            póliza </label>
+                                    </div>
+                                </div>
+                            @endif
                             <div class="mb-4">
                                 <label class="form-label">Observación<span class="text-danger">*</span></label>
                                 <input type="text" class="form-control uppercase-input" name="observacionretiro"
                                     required>
                             </div>
                             <div class="col-md-12">
-                                <label for="ubicacion_foto" class="form-label">Formulario</label>
-                                <input class="form-control" type="file" id="formulario_nov" name="formulario_nov">
+                                <label for="formulario_nov" class="form-label">Formulario</label>
+                                <input class="form-control" type="file" id="formulario_novret"
+                                    name="formulario_nov" required>
                                 <small class="form-text text-muted">Formato permitidos: PDF</small>
                             </div>
                             @error('formulario_nov')
-                                    <small class="text-danger">{{ $message }}</small>
+                                <small class="text-danger">{{ $message }}</small>
                             @enderror
                             <div class="d-flex flex-row-reverse gap-2 mt-2">
                                 <button class="btn btn-danger mt-4" data-bs-toggle="tooltip" title="Timesheets"
@@ -428,8 +455,14 @@
                 $(form).addClass('was-validated');
                 event.preventDefault();
                 event.stopPropagation();
-            } else {
-                console.log($(this).serialize());
+            }
+        });
+        $('#idFormRetiro').submit(function(event) {
+            var form = this;
+            if (!form.checkValidity()) {
+                $(form).addClass('was-validated');
+                event.preventDefault();
+                event.stopPropagation();
             }
         });
         $('#selectPlan').on('change', function() {
@@ -546,7 +579,7 @@
                 event.preventDefault();
                 event.stopPropagation();
                 $(form).addClass('was-validated');
-            }else {
+            } else {
                 console.log($(this).serialize());
             };
         });
@@ -597,6 +630,20 @@
             valormasextra = valorBase * (1 + (parseFloat($(this).val()) / 100))
             $('#valorindividual').val(Math.floor(valormasextra));
         });
+
+        function toggleRequired() {
+            if ($("#retiroAsociacion").is(":checked")) {
+                $("#formulario_novret")
+                    .prop("required", false)
+            } else {
+                $("#formulario_novret")
+                    .prop("required", true)
+                    .prop("disabled", false);
+            }
+        }
+        toggleRequired();
+
+        $('input[name="retiroPastor"]').on("change", toggleRequired);
     </script>
     @endcandirect
 </x-base-layout>

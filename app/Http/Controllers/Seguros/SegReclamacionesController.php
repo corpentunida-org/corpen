@@ -192,6 +192,11 @@ class SegReclamacionesController extends Controller
         $dataupdate = [
             'estado' => $request->estado_id,
         ];
+        $poliza = SegPoliza::find($request->poliza_id);
+        if ($request->boolean('finreclamacion')) {
+            SegReclamaciones::where('id', $id)->update(['finReclamacion' => true]);
+            $poliza->update(['active' => false]);
+        }
         if (!empty($request->fechadesembolso) && $request->estado_id == 4) {
             $dataupdate['finReclamacion'] = true;
             $dataupdate['fecha_desembolso'] = $request->fechadesembolso;
@@ -207,8 +212,7 @@ class SegReclamacionesController extends Controller
             'hora_actualizacion' => now()->toTimeString(),
         ]);
 
-        if ($request->checkchangevalaseg == '1') {
-            $poliza = SegPoliza::find($request->poliza_id);
+        if ($request->checkchangevalaseg == '1') {            
             $nuevoMonto = $poliza->valor_asegurado * 0.5;
             $poliza->valor_asegurado = $nuevoMonto;
             $poliza->save();
