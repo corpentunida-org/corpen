@@ -142,7 +142,7 @@ class CorrespondenciaController extends Controller
      */
     public function show($id)
     {
-        // Carga la correspondencia y sus relaciones anidadas
+        // 1. Carga la correspondencia con relaciones anidadas, incluyendo 'comunicacionSalida'
         $correspondencia = Correspondencia::with([
             'procesos.usuario', 
             'procesos.proceso.flujo', 
@@ -150,13 +150,14 @@ class CorrespondenciaController extends Controller
             'estado', 
             'remitente', 
             'flujo',
-            'medioRecepcion'
+            'medioRecepcion',
+            'comunicacionSalida' // <-- RELACIÓN CLAVE: Para ver si ya hay respuesta
         ])->findOrFail($id);
 
         $flujo = null;
         $procesos_disponibles = collect();
 
-        // Determina qué procesos se pueden ejecutar según el flujo asignado
+        // 2. Lógica de procesos según el flujo asignado
         if ($correspondencia->flujo_id) {
             $flujo = FlujoDeTrabajo::with(['usuario'])->find($correspondencia->flujo_id);
             
@@ -167,13 +168,29 @@ class CorrespondenciaController extends Controller
             $procesos_disponibles = Proceso::with(['flujo', 'usuariosAsignados.usuario', 'estadosProcesos.estado'])->get();
         }
 
-        // Cálculos de Tiempos de Gestión (KPIs) basados en la TRD
+        // 3. DATOS ADICIONALES PARA EL MODAL DE COMUNICACIÓN DE SALIDA
+        // Necesitamos la lista de usuarios para elegir el firmante y las plantillas de texto
+        $usuarios = User::orderBy('name', 'asc')->get();
+        $plantillas = \App\Models\Correspondencia\Plantilla::all();
+
+        // 4. Cálculos de Tiempos de Gestión (KPIs) basados en la TRD
         $tiempoGestion = $correspondencia->trd->tiempo_gestion ?? 0;
         $fechaInicio = Carbon::parse($correspondencia->fecha_solicitud);
         $limite = $fechaInicio->copy()->addYears($tiempoGestion);
+        
+        // Evitamos error si la fecha actual ya superó el límite (vencido)
         $diferenciatrd = CarbonInterval::instance(now()->diff($limite));
 
-        return view('correspondencia.correspondencias.show', compact('correspondencia', 'procesos_disponibles', 'flujo', 'diferenciatrd','limite'));
+        // 5. Retornamos la vista con las nuevas variables 'usuarios' y 'plantillas'
+        return view('correspondencia.correspondencias.show', compact(
+            'correspondencia', 
+            'procesos_disponibles', 
+            'flujo', 
+            'diferenciatrd',
+            'limite',
+            'usuarios', // <-- Para el select de firmantes en el modal
+            'plantillas' // <-- Para el select de plantillas en el modal
+        ));
     }
 
     /**
