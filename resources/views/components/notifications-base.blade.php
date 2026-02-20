@@ -126,7 +126,7 @@
         color: #073B4C;
     }
 
-    .badge.bg-danger {
+    .pulse-animation {
         background: linear-gradient(135deg, #FFD166, #F77F00) !important;
         animation: pulse 2s infinite;
     }

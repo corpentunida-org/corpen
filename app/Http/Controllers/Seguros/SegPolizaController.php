@@ -130,16 +130,23 @@ class SegPolizaController extends Controller
     public function show(Request $request)
     {
         $id = $request->input('id');
-        $poliza = SegPoliza::where('seg_asegurado_id', $id)->with(['tercero', 'asegurado', 'asegurado.terceroAF', 'plan.condicion', 'plan.coberturas', 'esreclamacion.estadoReclamacion'])->first();
+        $poliza = SegPoliza::where('seg_asegurado_id', $id)
+            ->with(['tercero', 'asegurado', 'asegurado.terceroAF', 'plan.condicion', 'plan.coberturas', 'esreclamacion.estadoReclamacion'])
+            ->first();
         if (!$poliza) {
             return redirect()->route('seguros.poliza.index')->with('warning', 'No se encontró la cédula como asegurado de una poliza');
         }
         $titularCedula = $poliza->asegurado->titular;
-        $grupoFamiliar = SegAsegurado::where('Titular', $titularCedula)->with('tercero', 'polizas.plan.coberturas')->get();
+        $grupoFamiliar = SegAsegurado::where('Titular', $titularCedula)
+            ->whereDoesntHave('reclamacion', function ($q) {
+                $q->where('finReclamacion', false);
+            })->whereHas('polizas', function ($q) {
+                $q->where('active', 1);
+            })->with('tercero', 'polizas.plan.coberturas')->get();
 
         $totalPrima = DB::table('SEG_polizas')->whereIn('seg_asegurado_id', $grupoFamiliar->pluck('cedula'))->sum('valor_prima');
 
-        if ($poliza->asegurado->parentesco === 'AF') {
+        if ($poliza->asegurado->parentesco === 'AF' || $poliza->asegurado->viuda) {
             $primaAseguradora = DB::table('SEG_polizas')->whereIn('seg_asegurado_id', $grupoFamiliar->pluck('cedula'))->sum('primapagar');
             if ($poliza->valorpagaraseguradora != $primaAseguradora) {
                 $poliza->update(['valorpagaraseguradora' => $primaAseguradora]);
