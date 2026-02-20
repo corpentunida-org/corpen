@@ -73,8 +73,6 @@ class SegAsegurado extends Model
             ?? null;
     }
 
-
-
     public function polizas()
     {
         return $this->hasMany(SegPoliza::class, 'seg_asegurado_id', 'cedula');

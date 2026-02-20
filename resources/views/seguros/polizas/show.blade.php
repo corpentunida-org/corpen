@@ -105,40 +105,40 @@
             <div class="d-flex flex-wrap justify-content-center mb-4" style="height: auto;">
                 @foreach ($poliza->plan->coberturas as $cobertura)
                     @if ($poliza->esreclamacion->contains('idCobertura', $cobertura->id))
-                    <div class="d-flex flex-column align-items-center justify-content-between text-center p-4 mb-4 bg-soft-danger border border-dashed border-gray-5 rounded-1 position-relative"
-                        style="flex: 1 1 auto; max-width: 13%; min-width: 150px; margin: 5px;">
-                    @else
-                    <div class="d-flex flex-column align-items-center justify-content-between text-center p-4 mb-4 bg-soft-100 border border-dashed border-gray-5 rounded-1 position-relative"
+                        <div class="d-flex flex-column align-items-center justify-content-between text-center p-4 mb-4 bg-soft-danger border border-dashed border-gray-5 rounded-1 position-relative"
+                            style="flex: 1 1 auto; max-width: 13%; min-width: 150px; margin: 5px;">
+                        @else
+                            <div class="d-flex flex-column align-items-center justify-content-between text-center p-4 mb-4 bg-soft-100 border border-dashed border-gray-5 rounded-1 position-relative"
                                 style="flex: 1 1 auto; max-width: 13%; min-width: 150px; margin: 5px;">
                     @endif
-                        <div style="height: 60%;">
-                            <h6 class="fs-13 fw-bold">{{ $cobertura->nombre }}</h6>
-                            <p class="fs-12 fw-normal text-muted">Seguros de vida</p>
-                        </div>
-                        @if ($cobertura->id == 1)
-                            {{-- @php $valoracalcular = $cobertura->pivot->valorAsegurado @endphp //valor full plan --}}
-                            @php $valoracalcular = $poliza->valor_asegurado @endphp
-                        @endif
-                        <div class="mt-4">
-                            <span class="fs-15 fw-bold text-dark">
-                                $
-                                @php
-                                    $valorcalculado = $valoracalcular * ($cobertura->pivot->porcentaje / 100) ?? 0;
-                                @endphp
-                                {{ number_format($valorcalculado) }}
-                            </span>
-                            <p class="fs-12 fw-normal text-muted">Valor asegurado</p>
-                        </div>
-                        <div class="position-absolute top-0 start-50 translate-middle">
-                            @if ($poliza->esreclamacion->contains('idCobertura', $cobertura->id))
-                                <i class="feather-info fs-12 bg-danger text-white p-1 mt-1 rounded-circle"></i>
-                            @else
-                                <i class="feather-check fs-12 bg-primary text-white p-1 rounded-circle"></i>
-                            @endif
-                        </div>
+                    <div style="height: 60%;">
+                        <h6 class="fs-13 fw-bold">{{ $cobertura->nombre }}</h6>
+                        <p class="fs-12 fw-normal text-muted">Seguros de vida</p>
                     </div>
-                @endforeach
-            </div>    
+                    @if ($cobertura->id == 1)
+                        {{-- @php $valoracalcular = $cobertura->pivot->valorAsegurado @endphp //valor full plan --}}
+                        @php $valoracalcular = $poliza->valor_asegurado @endphp
+                    @endif
+                    <div class="mt-4">
+                        <span class="fs-15 fw-bold text-dark">
+                            $
+                            @php
+                                $valorcalculado = $valoracalcular * ($cobertura->pivot->porcentaje / 100) ?? 0;
+                            @endphp
+                            {{ number_format($valorcalculado) }}
+                        </span>
+                        <p class="fs-12 fw-normal text-muted">Valor asegurado</p>
+                    </div>
+                    <div class="position-absolute top-0 start-50 translate-middle">
+                        @if ($poliza->esreclamacion->contains('idCobertura', $cobertura->id))
+                            <i class="feather-info fs-12 bg-danger text-white p-1 mt-1 rounded-circle"></i>
+                        @else
+                            <i class="feather-check fs-12 bg-primary text-white p-1 rounded-circle"></i>
+                        @endif
+                    </div>
+            </div>
+            @endforeach
+        </div>
 
         @if ($grupoFamiliar->count() >= 1)
             <div class="mb-4 px-4 d-flex align-items-center justify-content-between">
@@ -169,7 +169,8 @@
                                     @if ($familiar->polizas->first())
                                         <div class="fw-semibold mb-1">$
                                             {{ number_format($familiar->polizas->first()->valor_asegurado) }}</div>
-                                        <div class="d-flex gap-3"><a href="#" class="hstack gap-1 fs-11 fw-normal">
+                                        <div class="d-flex gap-3"><a href="#"
+                                                class="hstack gap-1 fs-11 fw-normal">
                                                 <span
                                                     class="badge bg-soft-warning text-warning">{{ $familiar->polizas->first()->plan->name ?? '' }}</span></a>
                                             <a href="#" class="hstack gap-1 fs-11 fw-normal">
@@ -201,7 +202,8 @@
                                 </td>
                                 @endcandirect
                                 <td class="hstack justify-content-end gap-4 text-end">
-                                    <form action="{{ route('seguros.poliza.show', ['poliza' => 'ID']) }}" method="GET">
+                                    <form action="{{ route('seguros.poliza.show', ['poliza' => 'ID']) }}"
+                                        method="GET">
                                         <div data-bs-toggle="tooltip" data-bs-trigger="hover"
                                             data-bs-original-title="Ver Poliza">
                                             <input type="hidden" name="id" id="valueCedula"
@@ -305,8 +307,8 @@
                 </div>
                 <div class="d-flex gap-4 align-items-center justify-content-sm-end justify-content-between">
                     <div class="text-bold">Subsidio</div>
-                    <div class="btn bg-soft-warning collapsed" data-bs-toggle="collapse" data-bs-target="#collapseOne"
-                        aria-expanded="false" style="font-size:20px;">$
+                    <div class="btn bg-soft-warning collapsed" data-bs-toggle="collapse"
+                        data-bs-target="#collapseOne" aria-expanded="false" style="font-size:20px;">$
                         @if (!$poliza->asegurado->valorpAseguradora || $totalPrima == 0)
                             0
                             @php
@@ -329,7 +331,7 @@
                 <div class="d-flex gap-4 align-items-center justify-content-sm-end justify-content-between">
                     <a href="javascript:void(0);" class="text-bold">Valor Titular</a>
                     <a href="javascript:void(0);" class="btn bg-soft-info" style="font-size:20px;">$
-                        {{ number_format($poliza->valorpagaraseguradora) }}</a>
+                        {{ is_numeric($poliza->valorpagaraseguradora) ? number_format($poliza->valorpagaraseguradora) : '' }}</a>
                 </div>
             </div>
             <div id="collapseOne" class="accordion-collapse page-header-collapse collapse" style="">
