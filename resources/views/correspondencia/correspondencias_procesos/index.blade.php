@@ -51,9 +51,9 @@
                             <th class="px-4">Radicado</th>
                             <th>Proceso/Etapa</th>
                             <th>Estado</th>
-                            <th class="text-center">Terminado</th> {{-- Nueva Columna --}}
+                            <th class="text-center">Terminado</th>
                             <th>Responsable</th>
-                            <th class="text-center">Doc</th>
+                            <th class="text-center">Doc(s)</th>
                             <th class="text-center">Email</th>
                             <th>Fecha Gestión</th>
                             <th class="text-end px-4">Acciones</th>
@@ -94,15 +94,30 @@
                                 @endif
                             </td>
                             <td class="small">{{ $registro->usuario->name }}</td>
+                            
+                            {{-- ========================================== --}}
+                            {{-- CORRECCIÓN APLICADA AQUÍ (AWS S3)          --}}
+                            {{-- ========================================== --}}
                             <td class="text-center">
-                                @if($registro->documento_arc)
-                                    <a href="{{ Storage::disk('s3')->url($registro->documento_arc) }}" target="_blank" class="text-primary hover-elevate">
-                                        <i class="fas fa-file-pdf fs-4"></i>
-                                    </a>
+                                @php 
+                                    // Usamos la misma función que funciona en la vista show.blade.php
+                                    $urlsArchivos = $registro->getArchivosUrls(); 
+                                @endphp
+
+                                @if(count($urlsArchivos) > 0)
+                                    <div class="d-flex justify-content-center gap-1">
+                                        @foreach($urlsArchivos as $archivo)
+                                            <a href="{{ $archivo['url'] }}" target="_blank" class="text-danger hover-elevate" title="{{ $archivo['nombre'] ?? 'Ver Documento' }}">
+                                                <i class="fas fa-file-pdf fs-5"></i>
+                                            </a>
+                                        @endforeach
+                                    </div>
                                 @else
                                     <i class="fas fa-minus text-muted opacity-50"></i>
                                 @endif
                             </td>
+                            {{-- ========================================== --}}
+
                             <td class="text-center">
                                 <i class="fas {{ $registro->notificado_email ? 'fa-envelope-open-text text-success' : 'fa-envelope text-muted opacity-50' }}"></i>
                             </td>
@@ -137,6 +152,6 @@
         .bg-soft-danger { background-color: #fef2f2; }
         .bg-soft-info { background-color: #f0f9ff; }
         .hover-elevate:hover { transform: translateY(-2px); transition: 0.2s; }
-        .btn-white { background: white; }
+        .btn-white { background: white; border: 1px solid #dee2e6 !important; }
     </style>
 </x-base-layout>

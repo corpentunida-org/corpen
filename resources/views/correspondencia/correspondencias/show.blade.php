@@ -548,6 +548,219 @@
             </div>
         </div>
     </div>
+{{-- ================================================================= --}}
+{{-- COMPONENTE: RESPUESTA OFICIAL (COMUNICACIÓN SALIENTE) --}}
+{{-- ================================================================= --}}
+<div class="card border-0 shadow-sm mb-4" style="border-radius: 24px; overflow: hidden;">
+    <div class="card-body p-4">
+        @if($correspondencia->comunicacionSalida)
+            {{-- ESTADO: COMUNICACIÓN EXISTENTE (DISEÑO PROFESIONAL) --}}
+            <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3">
+                <div class="d-flex align-items-center">
+                    <div class="symbol symbol-50px me-4">
+                        <div class="symbol-label bg-pastel-success">
+                            <i class="bi bi-send-check-fill text-success fs-2"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <h5 class="fw-bolder text-dark mb-0">Respuesta Oficial Generada</h5>
+                            @php
+                                $estadoSalida = $correspondencia->comunicacionSalida->estado_envio;
+                                $badgeSalida = [
+                                    'Generado' => 'bg-pastel-primary',
+                                    'Enviado por Email' => 'bg-pastel-info',
+                                    'Notificado Físicamente' => 'bg-pastel-success'
+                                ][$estadoSalida] ?? 'bg-light';
+                            @endphp
+                            <span class="badge {{ $badgeSalida }} rounded-pill px-3 py-1 fw-bold fs-9" style="text-transform: uppercase;">
+                                {{ $estadoSalida }}
+                            </span>
+                        </div>
+                        <p class="text-muted small mb-0">
+                            Oficio: <span class="fw-bold text-primary">{{ $correspondencia->comunicacionSalida->nro_oficio_salida }}</span> 
+                            • {{ $correspondencia->comunicacionSalida->fecha_generacion->format('d M, Y') }}
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="d-flex gap-2">
+                    <a href="{{ route('correspondencia.comunicaciones-salida.descargarPdf', $correspondencia->comunicacionSalida->id_respuesta) }}" 
+                       target="_blank" 
+                       class="btn btn-white border border-danger-subtle text-danger rounded-pill px-4 fw-bold shadow-sm hover-lift">
+                        <i class="bi bi-file-earmark-pdf-fill me-2"></i>Descargar PDF
+                    </a>
+                </div>
+            </div>
+
+            @if($correspondencia->comunicacionSalida->cuerpo_carta)
+                <div class="mt-4 p-3 rounded-4 bg-light bg-opacity-50 border border-dashed text-muted small italic">
+                    <i class="bi bi-quote fs-4 text-gray-300"></i>
+                    {{ Str::limit($correspondencia->comunicacionSalida->cuerpo_carta, 180) }}
+                </div>
+            @endif
+
+        @else
+            {{-- ESTADO: SIN RESPUESTA (INVITACIÓN MINIMALISTA) --}}
+            <div class="text-center py-2">
+                <div class="symbol symbol-60px mb-3">
+                    <div class="symbol-label bg-pastel-primary">
+                        <i class="bi bi-envelope-plus text-primary fs-1"></i>
+                    </div>
+                </div>
+                <h5 class="fw-bolder text-dark">Sin Respuesta Oficial</h5>
+                <p class="text-muted small mx-auto mb-4" style="max-width: 400px;">
+                    Este radicado aún no cuenta con un oficio de salida vinculado. Genere una comunicación formal para dar cierre al proceso.
+                </p>
+                <button type="button" class="btn btn-primary rounded-pill px-5 fw-bold shadow hover-lift" 
+                        data-bs-toggle="modal" data-bs-target="#modalCrearSalidaRapida">
+                    <i class="bi bi-magic me-2"></i>Redactar Oficio de Salida
+                </button>
+            </div>
+        @endif
+    </div>
+</div>
+
+{{-- ================================================================= --}}
+{{-- MODAL UX: CREACIÓN RÁPIDA DE OFICIO CON BUSCADOR --}}
+{{-- ================================================================= --}}
+<div class="modal fade" id="modalCrearSalidaRapida" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 30px; overflow: hidden;">
+            <div class="modal-header bg-pastel-primary border-0 pt-5 px-5 pb-4">
+                <div class="d-flex align-items-center">
+                    <div class="symbol symbol-50px me-3">
+                        <div class="symbol-label bg-white shadow-sm">
+                            <i class="bi bi-pencil-fill text-primary fs-3"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="fw-bolder text-primary mb-0">Generar Respuesta Oficial</h3>
+                        <span class="text-muted small fw-bold text-uppercase">RDS #{{ $correspondencia->id_radicado }}</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <form action="{{ route('correspondencia.comunicaciones-salida.store') }}" method="POST" enctype="multipart/form-data" id="formCrearSalida">
+                @csrf
+                <input type="hidden" name="id_correspondencia" value="{{ $correspondencia->id_radicado }}">
+
+                <div class="modal-body p-5">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark"><i class="bi bi-person-check me-1 text-primary"></i>Funcionario que Firma</label>
+                            <select name="fk_usuario" id="select_firmante_modal" class="form-select border-light bg-light rounded-4" required>
+                                <option value="">Escriba para buscar...</option>
+                                @foreach($usuarios as $user)
+                                    <option value="{{ $user->id }}" {{ auth()->id() == $user->id ? 'selected' : '' }}>{{ $user->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark"><i class="bi bi-send me-1 text-primary"></i>Estado de Envío</label>
+                            <select name="estado_envio" class="form-select border-light bg-light rounded-4" required>
+                                <option value="Generado">Generado (Borrador)</option>
+                                <option value="Enviado por Email" selected>Enviado por Email</option>
+                                <option value="Notificado Físicamente">Notificado Físicamente</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold text-dark"><i class="bi bi-layout-text-sidebar-reverse me-1 text-primary"></i>Plantilla de Texto</label>
+                            <select name="id_plantilla" id="select_plantilla_modal" class="form-select border-light bg-light rounded-4">
+                                <option value="">Texto libre (Sin plantilla)</option>
+                                @foreach($plantillas as $plan)
+                                    <option value="{{ $plan->id }}" data-contenido="{{ $plan->cuerpo_carta }}">{{ $plan->nombre_plantilla }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold text-dark">Contenido del Oficio (Respuesta)</label>
+                            <textarea name="cuerpo_carta" class="form-control border-light bg-light rounded-4 p-4" rows="8" placeholder="Escriba la respuesta oficial aquí..." style="resize: none;" required></textarea>
+                        </div>
+
+                        <div class="col-md-12">
+                            <div class="p-4 rounded-4 border border-warning border-dashed bg-light-warning bg-opacity-10">
+                                <label class="form-label fw-bold text-warning mb-2"><i class="bi bi-cloud-arrow-up me-2"></i>Sello de Firma (.png / .jpg)</label>
+                                <input type="file" name="firma_digital" class="form-control border-0 bg-white shadow-sm" accept="image/*">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-footer border-0 p-5 pt-0">
+                    <button type="button" class="btn btn-light-secondary rounded-pill px-4 fw-bold" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" id="btnSubmitSalida" class="btn btn-primary rounded-pill px-8 py-3 fw-bold shadow-lg transition-all hover-lift">
+                        <i class="bi bi-check-circle-fill me-2"></i>Guardar y Generar PDF
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{-- MODAL DE CARGA (LOADING) --}}
+<div class="modal fade" id="modalProcesandoSalida" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-body text-center p-5">
+                <div class="spinner-border text-primary mb-4" role="status" style="width: 3rem; height: 3rem;">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <h4 class="fw-bolder text-dark mb-2">Generando Documento Oficial</h4>
+                <p class="text-muted mb-0">Estamos procesando los datos y estampando la firma. Por favor, espere un momento...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+    $(document).ready(function() {
+        // Inicializar Select2 al abrir el modal
+        $('#modalCrearSalidaRapida').on('shown.bs.modal', function () {
+            $('#select_firmante_modal').select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                placeholder: 'Buscar funcionario...',
+                allowClear: true,
+                dropdownParent: $('#modalCrearSalidaRapida')
+            });
+        });
+
+        // Autocarga de contenido al seleccionar plantilla
+        $('#select_plantilla_modal').on('change', function() {
+            const contenido = $(this).find(':selected').data('contenido');
+            if(contenido) {
+                $('textarea[name="cuerpo_carta"]').val(contenido);
+            }
+        });
+
+        // PREVENCIÓN DE MULTIPLES CLICS Y MODAL DE CARGA
+        const form = document.getElementById('formCrearSalida');
+        const btn = document.getElementById('btnSubmitSalida');
+        const modalLoading = new bootstrap.Modal(document.getElementById('modalProcesandoSalida'));
+
+        form.addEventListener('submit', function (e) {
+            // Verificar si el formulario es válido (HTML5 validation)
+            if (form.checkValidity()) {
+                // Deshabilitar botón para evitar múltiples clics
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Procesando...';
+                
+                // Cerrar el modal de formulario
+                $('#modalCrearSalidaRapida').modal('hide');
+                
+                // Mostrar el modal de carga
+                modalLoading.show();
+            }
+        });
+    });
+</script>
+@endpush
 
     <style>
         body { background-color: #f8faff; }

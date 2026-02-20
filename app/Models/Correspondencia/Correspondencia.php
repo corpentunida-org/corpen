@@ -112,4 +112,14 @@ class Correspondencia extends Model
         // belongsTo(ModeloDestino, llave_foranea_local, llave_primaria_destino)
         return $this->belongsTo(MedioRecepcion::class, 'medio_recibido', 'id');
     }
+
+    /**
+     * Relación con la comunicación de salida (una correspondencia tiene una respuesta)
+     */
+    public function comunicacionSalida()
+    {
+        // id_correspondencia es la FK en corr_comunicaciones_salida
+        // id_radicado es la PK en corr_correspondencia
+        return $this->hasOne(ComunicacionSalida::class, 'id_correspondencia', 'id_radicado');
+    }
 }
