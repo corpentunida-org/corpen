@@ -52,16 +52,18 @@ class ResReservaController extends Controller implements HasMiddleware
 
     public function storeReserva(Request $request)
     {
+        //dd($request->all());
         $request->validate([
             'fechaInicio' => 'required|date',
             'endDate' => 'required|date|after:fechaInicio',
+            'description' => 'nullable|string|max:200',
         ]);
 
         $inmueble_id = $request->input('inmueble_id');
         $fechaInicio = $request->input('fechaInicio');
         $endDate = $request->input('endDate');
         date_default_timezone_set('America/Bogota');
-        $fecha_actual = date('Y-m-d');
+        $fecha_actual = Carbon::now()->toDateString();
 
         if ($fechaInicio < $fecha_actual) {
             return redirect()->back()->with('error', 'No se puede procesar la reserva, ya que la fecha de inicio seleccionada es anterior a la fecha actual.');
@@ -73,8 +75,6 @@ class ResReservaController extends Controller implements HasMiddleware
             return redirect()->back()->with('error', 'No se puede procesar la reserva, ya que la fecha de inicio seleccionada es mayor a 365 días a partir de la fecha actual.');
         }
 
-        //echo Carbon::parse($fechaInicio)->subYear()->format('Y-m-d');
-
         //consultar si el usuario ya tiene una reserva en el ultimo año 2025-04-22 <= 2025-03-27
         $reservaExistente = Res_reserva::where('user_id', auth()->user()->id)
             ->where('fecha_inicio', '>=', Carbon::parse($fechaInicio)->subYear()->format('Y-m-d')) // Fecha menor a un año antes de $fechaInicio
@@ -82,7 +82,7 @@ class ResReservaController extends Controller implements HasMiddleware
             ->count();
 
         if ($reservaExistente) {
-            return redirect()->back()->with('error', 'No se puede procesar la reserva, ya que ya tiene una reserva en el último año.');
+            return redirect()->back()->with('error', 'No se puede procesar la reserva, debido a que ya que ya tiene una reserva en el último año.');
         }
 
         //validar que la fecha de inicio y fin no supere los 5 dias
@@ -94,22 +94,38 @@ class ResReservaController extends Controller implements HasMiddleware
             return redirect()->back()->with('error', 'La reserva no puede ser procesada, ya que excede el límite máximo de 5 días permitidos por reserva.');
         }
 
-        $existe_reserva = Res_reserva::where('res_inmueble_id', $inmueble_id)
-            ->where(function ($query) use ($fechaInicio, $endDate) {
+        $existe_reserva = Res_reserva::where('res_inmueble_id', $inmueble_id)->where(function ($query) use ($fechaInicio, $endDate) {
                 $query
                     ->whereBetween('fecha_inicio', [$fechaInicio, $endDate])
                     ->orWhereBetween('fecha_fin', [$fechaInicio, $endDate])
                     ->orWhere(function ($query) use ($fechaInicio, $endDate) {
                         $query->where('fecha_inicio', '<=', $fechaInicio)->where('fecha_fin', '>=', $endDate);
                     });
-            })
-            ->first();
+            })->first();
 
         if ($existe_reserva) {
-            return redirect()->back()->with('error', 'Ya existe una reserva para este inmueble en estas fechas.');
+            return redirect()->back()->with('error', 'Ya existe una reserva para este inmueble en esa fecha seleccionada.');
         }
 
-        //fecha  fecha de inicio el dia anterior
+        $reservaacrear = Res_reserva::create([
+            'res_inmueble_id' => $request->inmueble_id,
+            'res_status_id' => 5,
+            'user_id' => auth()->user()->id,
+            'nid' => auth()->user()->nid,
+            'fecha_solicitud' => $fecha_actual,
+            'fecha_inicio' => $request->fechaInicio,
+            'fecha_fin' => $request->endDate,
+            'comentario_reserva' => $request->description,
+            'celular' => $request->celular,
+            'celular_respaldo' =>$request->celulartwo,
+        ]);
+
+        $texto = 'Hemos recibido su solicitud de reserva con ingreso el ' . $request->input('fechaInicio') . ' y salida el ' . $request->input('endDate') . '. En las próximas horas, un funcionario se comunicará con usted para validar los datos de la reserva. ¡Dios le bendiga!.';
+        Mail::to(auth()->user()->email)->send(new ReservaInmueble(auth()->user()->name, $texto, 'Reserva de Inmueble'));
+        return redirect()->route('reserva.reserva.index')->with('success', 'Reserva creada con éxito');
+
+        //INSERT CODIGO ANTERIOR
+        /*{
         $fechaAnt = Carbon::parse($fechaInicio)->subDay()->format('Y-m-d');
         $fechaDespues = Carbon::parse($endDate)->addDay()->format('Y-m-d');
 
@@ -150,11 +166,10 @@ class ResReservaController extends Controller implements HasMiddleware
         $reserva->save();
 
         $texto = 'Hemos recibido su solicitud de reserva con ingreso el ' . $request->input('fechaInicio') . ' y salida el ' . $request->input('endDate') . '. En las próximas horas, un funcionario se comunicará con usted para validar los datos de la reserva. ¡Dios le bendiga!.';
-        Mail::to(auth()->user()->email)
-            ->cc('jesdis@hotmail.com')
-            ->send(new ReservaInmueble(auth()->user()->name, $texto, 'Reserva de Inmueble'));
+        Mail::to(auth()->user()->email)->cc('jesdis@hotmail.com')->send(new ReservaInmueble(auth()->user()->name, $texto, 'Reserva de Inmueble'));
+        }*/
 
-        return redirect()->route('reserva.reserva.index')->with('message', 'Reserva creada con éxito');
+        
     }
 
     public function destroy($id)
