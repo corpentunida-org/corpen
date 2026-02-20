@@ -2,150 +2,141 @@
 <html lang="es">
 <head>
     <meta charset="utf-8">
-    <title>Oficio Salida - {{ $comunicacionSalida->nro_oficio_salida }}</title>
     <style>
         @page {
-            /* Márgenes basados en el documento de Corpentunida */
-            margin: 3.5cm 2.5cm 4cm 2.5cm; 
+            margin: 4cm 2.5cm 3cm 2.5cm; 
         }
 
         body {
             font-family: 'Helvetica', Arial, sans-serif;
-            color: #222;
+            color: #1a1a1a;
             line-height: 1.5;
-            font-size: 14px;
+            font-size: 13px;
+            margin: 0;
+            padding: 0;
         }
 
-        /* --- ENCABEZADO --- */
-        header {
+        /* --- FONDO --- */
+        #fondo-plantilla {
             position: fixed;
-            top: -2.5cm;
-            left: 0;
-            right: 0;
-            height: 2cm;
+            top: -4cm;
+            left: -2.5cm;
+            width: 21cm;
+            height: 29.7cm;
+            z-index: -2000;
         }
+        #fondo-plantilla img { width: 100%; height: 100%; }
 
-        .logo-text {
-            font-size: 24px;
-            font-weight: bold;
-            color: #000;
-            letter-spacing: 1px;
-            text-transform: lowercase; /* Para que diga "corpentunida" */
-        }
+        /* --- BLOQUES DE CONTENIDO --- */
+        .header-content { margin-bottom: 30px; }
+        .fecha { font-weight: bold; margin-bottom: 25px; }
+        .destinatario { margin-bottom: 20px; }
+        .asunto { font-weight: bold; text-transform: uppercase; margin-bottom: 30px; }
 
-        /* --- PIE DE PÁGINA --- */
-        footer {
-            position: fixed;
-            bottom: -3cm;
-            left: 0;
-            right: 0;
-            text-align: center;
-            font-size: 11px;
-            line-height: 1.3;
-            color: #000;
-        }
-
-        /* --- ESTRUCTURA DEL DOCUMENTO --- */
-        .fecha {
-            margin-bottom: 30px;
-        }
-
-        .destinatario {
-            margin-bottom: 25px;
-            line-height: 1.3;
-        }
-
-        .asunto {
-            font-weight: bold;
-            margin-bottom: 25px;
-        }
-
-        .cuerpo {
+        /* Contenedor flexible para el cuerpo para evitar que la firma quede muy arriba */
+        .cuerpo-carta {
             text-align: justify;
-            margin-bottom: 40px;
+            min-height: 350px; 
+            margin-bottom: 20px;
         }
 
-        /* --- FIRMA --- */
-        .firma-container {
-            margin-top: 50px;
-            page-break-inside: avoid;
+        /* --- SECCIÓN DE FIRMA --- */
+        .contenedor-firma {
+            page-break-inside: avoid; 
+            width: 300px;
+            margin-top: 10px;
         }
 
-        .firma-despedida {
-            margin-bottom: 40px;
+        .espacio-rubrica {
+            height: 65px; 
+            position: relative;
         }
 
-        .firma-nombre {
+        .img-firma {
+            max-height: 75px; /* Un poco más alta para mayor visibilidad */
+            position: absolute;
+            bottom: 5px; /* Pisa ligeramente la línea para verse natural */
+            left: 0;
+        }
+
+        .linea {
+            border-top: 1px solid #000;
+            width: 100%;
+            margin-bottom: 5px;
+        }
+
+        .nombre-firmante {
             font-weight: bold;
             text-transform: uppercase;
+            font-size: 12px;
+            display: block;
+        }
+
+        .cargo-firmante {
+            font-size: 11px;
+            color: #444;
         }
 
         .marca-agua {
             position: fixed;
-            top: 40%;
-            left: 15%;
-            font-size: 70px;
-            color: rgba(200, 200, 200, 0.15);
-            transform: rotate(-45deg);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            font-size: 50px;
+            color: rgba(200, 200, 200, 0.08);
             z-index: -1000;
-            white-space: nowrap;
-            letter-spacing: 5px;
         }
     </style>
 </head>
 <body>
 
-    <header>
-        <div class="logo-text">corpentunida</div>
-    </header>
-
-    <footer>
-        <strong>NIT. 860.509.451-5</strong><br>
-        <strong>Asociación Gremial de Ministros</strong><br>
-        <strong>de la Iglesia Pentecostal Unida de Colombia</strong><br>
-        Tv 29 38 22 La soledad / Bogotá / Colombia<br>
-        www.corpentunida.org.co / www.librerialuzyverdad.co<br>
-        PBX 60 1 208 71 71
-    </footer>
-
-    <div class="marca-agua">
-        {{ strtoupper($comunicacionSalida->estado_envio) }}
+    @if(isset($fondoImg))
+    <div id="fondo-plantilla">
+        <img src="{{ $fondoImg }}">
     </div>
+    @endif
+
+    <div class="marca-agua">{{ strtoupper($comunicacionSalida->estado_envio) }}</div>
 
     <main>
-        
-        <div class="fecha">
-            Bogotá, {{ $comunicacionSalida->fecha_generacion ? $comunicacionSalida->fecha_generacion->format('d/n/Y') : now()->format('d/n/Y') }}
-        </div>
-
-        <div class="destinatario">
-            Asociado<br>
-            
-            <strong>{{ $comunicacionSalida->correspondencia->remitente->nom_ter ?? 'Nombre no encontrado en base de datos' }}</strong><br>
-            
-            {{ $comunicacionSalida->correspondencia->remitente->distrito ?? 'Distrito / Ciudad' }}
-        </div>
-
-        <div class="asunto">
-            Asunto: {{ $comunicacionSalida->correspondencia->asunto ?? 'Respuesta a solicitud' }}
-        </div>
-
-        <div class="cuerpo">
-            <p>Cordial saludo en el nombre del señor Jesucristo para usted y su familia.</p>
-            {!! nl2br(e($comunicacionSalida->cuerpo_carta)) !!}
-        </div>
-
-        <div class="firma-container">
-            <div class="firma-despedida">Con amor en Cristo, cordialmente Junta Directiva,</div>
-            
-            <div class="firma-nombre">
-                {{ $comunicacionSalida->usuario->name ?? 'USUARIO DEL SISTEMA' }}
+        <div class="header-content">
+            <div class="fecha">
+                Bogotá D.C., {{ \Carbon\Carbon::parse($comunicacionSalida->fecha_generacion)->translatedFormat('d \d\e F \d\e Y') }}
             </div>
-            <div>
-                Secretario Corpentunida
+
+            <div class="destinatario">
+                Asociado(a):<br>
+                <strong>{{ $comunicacionSalida->correspondencia->remitente->nom_ter ?? 'NOMBRE DEL ASOCIADO' }}</strong><br>
+                {{ $comunicacionSalida->correspondencia->remitente->distrito ?? 'Distrito / Ciudad' }}
+            </div>
+
+            <div class="asunto">
+                Asunto: {{ $comunicacionSalida->correspondencia->asunto ?? 'SOLICITUD' }}
             </div>
         </div>
 
+        <div class="cuerpo-carta">
+            <p>Cordial saludo en el nombre del Señor Jesucristo para usted y los suyos.</p>
+            
+            <div style="margin-top: 15px;">
+                {!! nl2br(e($comunicacionSalida->cuerpo_carta)) !!}
+            </div>
+        </div>
+
+        <div class="contenedor-firma">
+            <p style="margin-bottom: 5px;">Cordialmente,</p>
+            
+            <div class="espacio-rubrica">
+                {{-- Priorizamos la imagen Base64 procesada por el controlador --}}
+                @if(isset($firmaImg) && $firmaImg)
+                    <img src="{{ $firmaImg }}" class="img-firma">
+                @endif
+            </div>
+
+            <div class="linea"></div>
+            <span class="nombre-firmante">{{ $comunicacionSalida->usuario->name ?? 'BRAYAM STIVED CASTILLO MORENO' }}</span>
+            <span class="cargo-firmante">Secretario Corpentunida</span>
+        </div>
     </main>
 </body>
 </html>
