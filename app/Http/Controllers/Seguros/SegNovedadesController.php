@@ -42,6 +42,7 @@ class SegNovedadesController extends Controller
                 ->get(),
             'aprobado' => SegNovedades::where('estado', 3)
                 ->with(['tercero', 'cambiosEstado'])
+                ->latest('created_at')
                 ->get(),
             'rechazado' => SegNovedades::where('estado', 4)
                 ->with(['tercero', 'cambiosEstado'])
@@ -228,10 +229,15 @@ class SegNovedadesController extends Controller
                         ]);
                     } elseif ($novedad->tipo == 3) {
                         $poliza = SegPoliza::findOrFail($novedad->id_poliza);
-                        $poliza->update([
-                            'active' => false,
-                            'fecha_fin' => Carbon::now()->toDateTimeString(),
-                        ]);
+                        $poliza->update(['active' => false, 'fecha_fin' => Carbon::now()->toDateTimeString()]);
+                        if ($novedad->eliminargrupofamiliar) {
+                            $cedulas = SegAsegurado::where('Titular', $novedad->id_asegurado)->whereDoesntHave('reclamacion', function ($q) {
+                                    $q->where('finReclamacion', false);})->whereHas('polizas', function ($q) {
+                                    $q->where('active', 1);})->pluck('cedula');
+
+                            SegPoliza::whereIn('seg_asegurado_id', $cedulas)->where('active', 1)
+                                ->update(['active' => false,'fecha_fin' => now(),]);
+                        }
                     } elseif ($novedad->tipo == 4) {
                         $beneficiario = SegBeneficiario::findOrFail($novedad->beneficiario_id);
                         $beneficiario->update(['activo' => 1]);
@@ -258,17 +264,19 @@ class SegNovedadesController extends Controller
         /*$request->validate([
             'formulario_nov' => 'required|mimes:pdf|max:2048',
         ]);*/
+        dd($request->all());
         $formulario = null;
         if ($request->hasFile('formulario_nov')) {
             $formulario = Storage::disk('s3')->put('corpentunida/seguros_vida/novedades/' . $id, $request->file('formulario_nov'));
         }
         $novedad = SegNovedades::create([
-            'id_poliza' => $request->id_poliza ?? null,
+            'id_poliza' => $request->id_poliza,
             'id_asegurado' => $id,
             'tipo' => $request->tipoNovedad,
             'estado' => 1,
             'id_plan' => $request->planid,
             'formulario' => $formulario,
+            'eliminargrupofamiliar' => $request->retiroPastor === 'retirarTodos',
         ]);
         SegCambioEstadoNovedad::create([
             'novedad' => $novedad->id,
@@ -276,6 +284,7 @@ class SegNovedadesController extends Controller
             'observaciones' => strtoupper($request->observacionretiro),
             'fechaIncio' => Carbon::now()->toDateTimeString(),
         ]);
+
         return redirect()->route('seguros.novedades.index')->with('success', 'Novedad registrada correctamente');
     }
 
