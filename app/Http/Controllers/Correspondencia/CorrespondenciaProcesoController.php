@@ -52,11 +52,10 @@ class CorrespondenciaProcesoController extends Controller
     }
 
     /**
-     * Almacenamiento con Validación Dinámica de Arrays de Archivos
+     * Almacenamiento con Validación Dinámica de Arrays de Archivos y S3
      */
     public function store(Request $request)
     {
-        
         $request->validate([
             'id_correspondencia' => 'required|exists:corr_correspondencia,id_radicado',
             'id_proceso'         => 'required|integer|exists:corr_procesos,id',
@@ -93,15 +92,26 @@ class CorrespondenciaProcesoController extends Controller
                 $rutasArchivos = [];              
                 
                 if ($request->hasFile('documento_arc')) {
-                    foreach ($request->file('documento_arc') as $file) {
-                        // 1. Generamos solo el nombre del archivo
-                        $nombreArchivo = 'seg_' . $idRadicado . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                    
+                    // Aseguramos de tener el array de nombres de archivos requeridos
+                    $nombresRequeridos = is_array($proceso->tipos_archivos) ? $proceso->tipos_archivos : json_decode($proceso->tipos_archivos, true) ?? [];
+
+                    // Agregamos el $index al foreach para saber qué archivo estamos procesando
+                    foreach ($request->file('documento_arc') as $index => $file) {
                         
-                        // 2. Usamos storeAs con 'visibility' => 'public' para que Amazon S3 permita abrir el enlace
-                        $path = $file->storeAs('corpentunida/correspondencia', $nombreArchivo, [
-                            'disk' => 's3',
-                            'visibility' => 'public'
-                        ]);
+                        // Determinamos el nombre base. Si no existe un nombre requerido (ej. archivo opcional), usamos 'doc-adjunto'
+                        $nombreBaseFormateado = isset($nombresRequeridos[$index]) ? Str::slug($nombresRequeridos[$index]) : 'doc-adjunto';
+
+                        // 1. Generamos el nombre del archivo integrando el nombre requerido
+                        $nombreArchivo = 'seg_' . $idRadicado . '_' . $nombreBaseFormateado . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                        
+                        // 2. Usamos storeAs a S3 sin forzar visibilidad pública
+                        $path = $file->storeAs('corpentunida/correspondencia', $nombreArchivo, 's3');
+                        
+                        // 3. Verificamos estrictamente que la subida haya sido exitosa
+                        if ($path === false) {
+                            throw new \Exception("Error al subir el archivo $nombreArchivo a Amazon S3. El bucket rechazó la solicitud.");
+                        }
                         
                         $rutasArchivos[] = $path;
                     }
@@ -167,24 +177,35 @@ class CorrespondenciaProcesoController extends Controller
 
             if ($request->hasFile('documento_arc')) {
                 
-                // Borrar archivos viejos de S3
+                // Borrar archivos viejos de S3 asegurando que no intentemos borrar un "false"
                 if (is_array($correspondenciaProceso->documento_arc)) {
                     foreach ($correspondenciaProceso->documento_arc as $oldFile) {
-                        Storage::disk('s3')->delete($oldFile);
+                        if ($oldFile && $oldFile !== 'false') {
+                            Storage::disk('s3')->delete($oldFile);
+                        }
                     }
-                } elseif (is_string($correspondenciaProceso->documento_arc)) {
+                } elseif (is_string($correspondenciaProceso->documento_arc) && $correspondenciaProceso->documento_arc !== 'false') {
                     Storage::disk('s3')->delete($correspondenciaProceso->documento_arc);
                 }
 
                 $rutasNuevas = [];
-                foreach ($request->file('documento_arc') as $file) {
-                    $nombreArchivo = 'upd_seg_' . $correspondenciaProceso->id_correspondencia . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                $proceso = $correspondenciaProceso->proceso;
+                $nombresRequeridos = is_array($proceso->tipos_archivos) ? $proceso->tipos_archivos : json_decode($proceso->tipos_archivos, true) ?? [];
+
+                foreach ($request->file('documento_arc') as $index => $file) {
                     
-                    // Igual que en el store, lo guardamos con permisos públicos
-                    $path = $file->storeAs('corpentunida/correspondencia', $nombreArchivo, [
-                        'disk' => 's3',
-                        'visibility' => 'public'
-                    ]);
+                    // Determinamos el nombre base formateado igual que en el método store
+                    $nombreBaseFormateado = isset($nombresRequeridos[$index]) ? Str::slug($nombresRequeridos[$index]) : 'doc-adjunto';
+
+                    $nombreArchivo = 'upd_seg_' . $correspondenciaProceso->id_correspondencia . '_' . $nombreBaseFormateado . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+                    
+                    // Subida a S3 sin forzar permisos públicos
+                    $path = $file->storeAs('corpentunida/correspondencia', $nombreArchivo, 's3');
+                    
+                    // Validación contra fallos silenciosos
+                    if ($path === false) {
+                        throw new \Exception("Error al actualizar en S3. El archivo $nombreArchivo fue rechazado.");
+                    }
                     
                     $rutasNuevas[] = $path;
                 }
