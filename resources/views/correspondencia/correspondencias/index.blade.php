@@ -302,9 +302,44 @@
                                 <input type="hidden" name="estado_id" id="input_estado_id_hidden" required>
                             </div>
 
-                            <div class="col-12">
-                                <label class="form-label fw-bold small text-dark">3. Detalle de la Gestión <span class="text-danger">*</span></label>
-                                <textarea id="observacion_gestion" name="observacion" class="form-control border-light bg-light rounded-4 p-3 shadow-sm" rows="2" placeholder="Describa la gestión..." style="resize: none;" required></textarea>
+                            {{-- 3. Detalle de la Gestión (Con formato estructurado opcional) --}}
+                            <div class="col-12 mb-3">
+                                {{-- Switch para activar el modo estructurado en el modal (Activado por defecto) --}}
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="toggleEstructuradoModal" checked>
+                                    <label class="form-check-label fw-bold small text-dark mt-1" for="toggleEstructuradoModal" style="cursor: pointer;">
+                                        Usar formato estructurado (Aprobado / Valor / Detalle)
+                                    </label>
+                                </div>
+
+                                {{-- Contenedor de los 3 campos (Oculto si el switch se apaga) --}}
+                                <div id="contenedor_estructurado_modal" class="p-3 bg-white rounded-4 border shadow-sm mb-3">
+                                    <div class="row g-3">
+                                        <div class="col-md-3">
+                                            <label class="form-label fw-bold small text-dark">¿Aprobado?</label>
+                                            <select id="modal_str_aprobado" class="form-select border-light bg-light str-input-modal">
+                                                <option value="Sí">Sí</option>
+                                                <option value="No">No</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-bold small text-dark">Valor (COP)</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text border-light bg-light">$</span>
+                                                <input type="text" id="modal_str_valor" class="form-control border-light bg-light str-input-modal" placeholder="Ej: 1.500.000">
+                                                <span class="input-group-text border-light bg-light">COP</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-5">
+                                            <label class="form-label fw-bold small text-dark">Detalle adicional</label>
+                                            <textarea id="modal_str_texto" class="form-control border-light bg-light str-input-modal" rows="1" placeholder="Motivo o detalle..." style="resize: none;"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- Textarea Original del Modal (El que realmente se envía) --}}
+                                <label id="label_observacion_modal" class="form-label fw-bold small text-dark">3. Detalle de la Gestión <span class="text-danger">*</span></label>
+                                <textarea id="observacion_gestion" name="observacion" class="form-control border-light bg-light rounded-4 p-3 shadow-sm" rows="3" placeholder="Describa la gestión..." style="resize: none;" required></textarea>
                             </div>
 
                             {{-- ARCHIVOS DINÁMICOS --}}
@@ -543,5 +578,68 @@
                     </div>`;
             }
         }
+        // --- LÓGICA DE OBSERVACIÓN DINÁMICA PARA EL MODAL DE GESTIÓN RÁPIDA ---
+        const toggleModal = $('#toggleEstructuradoModal');
+        const contEstModal = $('#contenedor_estructurado_modal');
+        const obsPrincipalModal = $('#observacion_gestion'); // El ID que ya tenías
+        const labelObsModal = $('#label_observacion_modal');
+
+        // Formatear el input de Valor a Pesos Colombianos (COP)
+        $('#modal_str_valor').on('input', function() {
+            let value = $(this).val().replace(/\D/g, "");
+            if(value !== "") {
+                value = new Intl.NumberFormat('es-CO').format(value);
+            }
+            $(this).val(value);
+            construirObservacionModal();
+        });
+
+        // Escuchar cambios en los inputs estructurados del modal
+        $('.str-input-modal').on('input change', function() {
+            construirObservacionModal();
+        });
+
+        // Función para armar el texto y pegarlo
+        function construirObservacionModal() {
+            if(toggleModal.is(':checked')) {
+                let aprobado = $('#modal_str_aprobado').val();
+                let texto = $('#modal_str_texto').val();
+                let valor = $('#modal_str_valor').val() ? $('#modal_str_valor').val() : '0';
+                
+                let resultado = `Aprobado: ${aprobado}\nValor: $ ${valor} COP\nObservación: ${texto}`;
+                
+                obsPrincipalModal.val(resultado);
+            }
+        }
+
+        // Lógica del switch
+        toggleModal.on('change', function() {
+            if($(this).is(':checked')) {
+                contEstModal.slideDown();
+                obsPrincipalModal.prop('readonly', true).addClass('bg-white text-muted');
+                labelObsModal.html('3. Vista Previa de la Gestión <span class="text-danger">*</span>');
+                construirObservacionModal();
+            } else {
+                contEstModal.slideUp();
+                obsPrincipalModal.prop('readonly', false).removeClass('bg-white text-muted');
+                obsPrincipalModal.val(''); // Limpiar para que escriban libremente
+                labelObsModal.html('3. Detalle de la Gestión <span class="text-danger">*</span>');
+            }
+        }).trigger('change'); // Se activa por defecto al cargar
+
+        // LIMPIEZA DEL MODAL AL CERRAR
+        // Para asegurar que al volver a abrir el modal esté limpio
+        $('#modalSeguimiento').on('hidden.bs.modal', function () {
+            $('#modal_str_aprobado').val('Sí');
+            $('#modal_str_valor').val('');
+            $('#modal_str_texto').val('');
+            
+            // Solo forzamos la limpieza si el switch está activado
+            if(toggleModal.is(':checked')) {
+                construirObservacionModal(); 
+            } else {
+                obsPrincipalModal.val('');
+            }
+        });        
     </script>
 </x-base-layout>
