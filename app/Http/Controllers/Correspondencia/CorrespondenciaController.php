@@ -20,6 +20,7 @@ use Carbon\Carbon;
 use Carbon\CarbonInterval;
 use App\Http\Controllers\AuditoriaController;
 
+
 class CorrespondenciaController extends Controller
 {
     /**
@@ -399,4 +400,15 @@ class CorrespondenciaController extends Controller
         $trds = Trd::where('fk_flujo', $flujo_id)->get(['id_trd', 'serie_documental', 'tiempo_gestion']);
         return response()->json($trds);
     }
+
+    public function getRemitenteByCodigo($cod_ter)
+    {
+        $tercero = maeTerceros::find($cod_ter);
+        if (!$tercero) {
+            return response()->json(['message' => 'Remitente no encontrado'], 404);
+        }
+        return response()->json($tercero);
+    }
+
+
 }

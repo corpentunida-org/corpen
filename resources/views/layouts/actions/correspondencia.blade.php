@@ -2,7 +2,7 @@
     {{-- MÓDULO CORRESPONDENCIA --}}
     <a href="javascript:void(0);" class="nxl-link">
         <span class="nxl-micon"><i class="bi bi-envelope-fill"></i></span>
-        <span class="nxl-mtext">Correspondencia</span>
+        <span class="nxl-mtext">Solicitudes</span>
         <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
     </a>
 
@@ -20,12 +20,12 @@
         {{-- 2. GESTIÓN DOCUMENTAL --}}
         <li class="nxl-item">
             <a class="nxl-link" href="{{ route('correspondencia.correspondencias.index') }}">
-                <i class="bi bi-journal-text me-2"></i> Listado de Radicados
+                <i class="bi bi-journal-text me-2"></i> Listado de Solicitudes
             </a>
         </li>
         <li class="nxl-item">
             <a class="nxl-link" href="{{ route('correspondencia.correspondencias.create') }}" style="color: var(--primary-indigo); font-weight: 600;">
-                <i class="bi bi-plus-square-fill me-2"></i> Radicar Documento
+                <i class="bi bi-plus-square-fill me-2"></i> Radicar Solicitud
             </a>
         </li>
 
