@@ -460,10 +460,44 @@
                                 <input type="hidden" name="estado_id" id="input_estado_id_hidden" required>
                             </div>
 
-                            {{-- FILA 3: Observaciones --}}
-                            <div class="col-12">
-                                <label class="form-label fw-bold small text-dark">Detalle de la Observación <span class="text-danger">*</span></label>
-                                <textarea name="observacion" class="form-control border-light bg-light rounded-4 p-3 shadow-sm" rows="3" placeholder="Escriba aquí los detalles importantes de esta gestión..." style="resize: none;" required></textarea>
+                            {{-- FILA 3: Observaciones Dinámicas --}}
+                            <div class="col-12 mb-3">
+                                {{-- Switch para activar el modo estructurado --}}
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="toggleEstructurado">
+                                    <label class="form-check-label fw-bold small text-dark mt-1" for="toggleEstructurado" style="cursor: pointer;">
+                                        ¿Hace parte de la junta directiva?
+                                    </label>
+                                </div>
+
+                                {{-- Contenedor de los 3 campos (Oculto por defecto) --}}
+                                <div id="contenedor_estructurado" style="display: none;" class="p-3 bg-white rounded-4 border shadow-sm mb-3">
+                                    <div class="row g-3">
+                                        <div class="col-md-3">
+                                            <label class="form-label fw-bold small text-dark">¿Aprobado?</label>
+                                            <select id="str_aprobado" class="form-select border-light bg-light str-input">
+                                                <option value="Sí">Sí</option>
+                                                <option value="No">No</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-bold small text-dark">Valor (COP)</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text border-light bg-light">$</span>
+                                                <input type="text" id="str_valor" class="form-control border-light bg-light str-input" placeholder="Ej: 1.500.000">
+                                                <span class="input-group-text border-light bg-light">COP</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-5">
+                                            <label class="form-label fw-bold small text-dark">Detalle adicional</label>
+                                            <textarea id="str_texto" class="form-control border-light bg-light str-input" rows="1" placeholder="Motivo o detalle..." style="resize: none;"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- Textarea Original (El que realmente se envía al backend) --}}
+                                <label id="label_observacion" class="form-label fw-bold small text-dark">Detalle de la Observación <span class="text-danger">*</span></label>
+                                <textarea name="observacion" id="observacion_principal" class="form-control border-light bg-light rounded-4 p-3 shadow-sm" rows="3" placeholder="Escriba aquí los detalles importantes de esta gestión..." style="resize: none;" required></textarea>
                             </div>
 
                             {{-- FILA 4: CARGA DE ARCHIVOS DINÁMICA (Array) --}}
@@ -758,6 +792,69 @@
                 modalLoading.show();
             }
         });
+
+        // --- LÓGICA DE OBSERVACIÓN DINÁMICA ---
+        const toggle = $('#toggleEstructurado');
+        const contEst = $('#contenedor_estructurado');
+        const obsPrincipal = $('#observacion_principal');
+        const labelObs = $('#label_observacion');
+
+        // 1. Formatear el input de Valor a Pesos Colombianos (COP) en tiempo real
+        $('#str_valor').on('input', function() {
+            // Quitar todo lo que no sea número
+            let value = $(this).val().replace(/\D/g, "");
+            
+            // Formatear con separador de miles
+            if(value !== "") {
+                value = new Intl.NumberFormat('es-CO').format(value);
+            }
+            
+            $(this).val(value);
+            construirObservacion();
+        });
+
+        // 2. Escuchar cambios en cualquiera de los 3 campos estructurados
+        $('.str-input').on('input change', function() {
+            construirObservacion();
+        });
+
+        // 3. Función para armar el texto y pegarlo en el textarea original
+        function construirObservacion() {
+            if(toggle.is(':checked')) {
+                let aprobado = $('#str_aprobado').val();
+                let texto = $('#str_texto').val();
+                let valor = $('#str_valor').val() ? $('#str_valor').val() : '0';
+                
+                // Plantilla del mensaje final
+                let resultado = `Aprobado: ${aprobado}\nValor: $ ${valor} COP\nObservación: ${texto}`;
+                
+                obsPrincipal.val(resultado);
+            }
+        }
+
+        // 4. Lógica de encendido/apagado del switch
+        toggle.on('change', function() {
+            if($(this).is(':checked')) {
+                // Mostrar contenedor estructurado
+                contEst.slideDown();
+                
+                // Cambiar el textarea original a modo "Vista Previa"
+                obsPrincipal.prop('readonly', true).addClass('bg-white text-muted');
+                labelObs.html('Vista Previa de la Observación <span class="text-danger">*</span>');
+                
+                // Disparar la construcción por si ya hay datos
+                construirObservacion();
+            } else {
+                // Ocultar contenedor estructurado
+                contEst.slideUp();
+                
+                // Devolver el textarea original a la normalidad
+                obsPrincipal.prop('readonly', false).removeClass('bg-white text-muted');
+                obsPrincipal.val(''); // Limpiar el textarea
+                labelObs.html('Detalle de la Observación <span class="text-danger">*</span>');
+            }
+        });
+
     });
 </script>
 @endpush
