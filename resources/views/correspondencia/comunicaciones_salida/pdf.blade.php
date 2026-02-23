@@ -33,7 +33,7 @@
         .destinatario { margin-bottom: 20px; }
         .asunto { font-weight: bold; text-transform: uppercase; margin-bottom: 30px; }
 
-        /* Contenedor flexible para el cuerpo para evitar que la firma quede muy arriba */
+        /* Contenedor flexible para el cuerpo */
         .cuerpo-carta {
             text-align: justify;
             min-height: 350px; 
@@ -53,9 +53,9 @@
         }
 
         .img-firma {
-            max-height: 75px; /* Un poco más alta para mayor visibilidad */
+            max-height: 75px; 
             position: absolute;
-            bottom: 5px; /* Pisa ligeramente la línea para verse natural */
+            bottom: 5px; 
             left: 0;
         }
 
@@ -100,14 +100,20 @@
 
     <main>
         <div class="header-content">
+            <br>
             <div class="fecha">
                 Bogotá D.C., {{ \Carbon\Carbon::parse($comunicacionSalida->fecha_generacion)->translatedFormat('d \d\e F \d\e Y') }}
             </div>
 
             <div class="destinatario">
-                Asociado(a):<br>
+                Pastor:<br>
                 <strong>{{ $comunicacionSalida->correspondencia->remitente->nom_ter ?? 'NOMBRE DEL ASOCIADO' }}</strong><br>
-                {{ $comunicacionSalida->correspondencia->remitente->distrito ?? 'Distrito / Ciudad' }}
+                
+                {{-- EXTRACCIÓN DEL NOMBRE DEL DISTRITO DESDE EL JSON --}}
+                @php
+                    $distritoRaw = $comunicacionSalida->correspondencia->remitente->distrito;
+                @endphp
+                Asociado<br>
             </div>
 
             <div class="asunto">
@@ -116,7 +122,7 @@
         </div>
 
         <div class="cuerpo-carta">
-            <p>Cordial saludo en el nombre del Señor Jesucristo para usted y los suyos.</p>
+            <p>Cordial saludo. Deseando que la bendición de Dios le acompañe en todos sus asuntos.</p>
             
             <div style="margin-top: 15px;">
                 {!! nl2br(e($comunicacionSalida->cuerpo_carta)) !!}
@@ -124,10 +130,9 @@
         </div>
 
         <div class="contenedor-firma">
-            <p style="margin-bottom: 5px;">Cordialmente,</p>
-            
+            <p style="margin-bottom: 5px;">Con amor en Cristo, siempre su servidor,</p>
+            <br><br>
             <div class="espacio-rubrica">
-                {{-- Priorizamos la imagen Base64 procesada por el controlador --}}
                 @if(isset($firmaImg) && $firmaImg)
                     <img src="{{ $firmaImg }}" class="img-firma">
                 @endif
