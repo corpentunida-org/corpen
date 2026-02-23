@@ -103,12 +103,13 @@ class MaeTercerosController extends Controller
         return view('maestras.terceros.edit', compact('tercero', 'tipos', 'congregaciones', 'distritos'));
     }
 
-    /**
+/**
      * Actualizar tercero existente.
+     * Soporta actualización normal y actualización vía Modal (Iframe).
      */
     public function update(Request $request, maeTerceros $tercero)
     {
-        // Validación mejorada
+        // 1. VALIDACIÓN
         $request->validate([
             'cod_ter' => "sometimes|required|string|max:20|unique:MaeTerceros,cod_ter,{$tercero->cod_ter},cod_ter",
             'nom_ter' => 'sometimes|required|string|max:255',
@@ -121,20 +122,37 @@ class MaeTercerosController extends Controller
             'fec_aport' => 'nullable|date',
         ]);
 
+        // 2. OBTENER DATOS PERMITIDOS
         $data = $request->only($this->fillableFields());
         
-        // Formatear fechas si existen
-        $dateFields = ['fec_nac', 'fec_minis', 'fecha_ipuc', 'fec_aport', 'fec_ing', 'fec_cump', 
-                       'fec_act', 'fec_dat', 'fec_falle', 'fecha_lice', 'fecha_aded', 'fec_expcc'];
+        // 3. FORMATEAR FECHAS (Si existen en el request)
+        $dateFields = [
+            'fec_nac', 'fec_minis', 'fecha_ipuc', 'fec_aport', 'fec_ing', 'fec_cump', 
+            'fec_act', 'fec_dat', 'fec_falle', 'fecha_lice', 'fecha_aded', 'fec_expcc'
+        ];
         
         foreach ($dateFields as $field) {
             if (isset($data[$field]) && !empty($data[$field])) {
-                $data[$field] = Carbon::parse($data[$field])->format('Y-m-d H:i:s');
+                $data[$field] = \Carbon\Carbon::parse($data[$field])->format('Y-m-d H:i:s');
             }
         }
         
+        // 4. ACTUALIZACIÓN EN BASE DE DATOS
         $tercero->update($data);
 
+        // --- LÓGICA DE REDIRECCIÓN CONDICIONAL PARA MODALES ---
+        
+        // Si la petición viene con el flag 'ref=modal', redirigimos a la misma vista 
+        // con un parámetro de éxito que activará el JavaScript de cierre en el Iframe.
+        if ($request->input('ref') === 'modal') {
+            return redirect()->route('maestras.terceros.edit', [
+                'tercero' => $tercero->cod_ter, // Usamos cod_ter como el parámetro de ruta
+                'ref' => 'modal', 
+                'actualizado' => 'true'
+            ])->with('success', 'Tercero actualizado correctamente.');
+        }
+
+        // Redirección estándar para el flujo normal de la aplicación
         return redirect()->route('maestras.terceros.index')
                          ->with('success', 'Tercero actualizado correctamente.');
     }

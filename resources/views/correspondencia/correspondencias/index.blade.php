@@ -86,7 +86,7 @@
         {{-- HEADER --}}
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <h1 class="fw-bold m-0" style="font-size: 1.1rem; color: #111827;">Correspondencia</h1>
+                <h1 class="fw-bold m-0" style="font-size: 1.1rem; color: #111827;">Solicitudes</h1>
                 <p class="m-0 text-muted" style="font-size: 0.8rem;">Bandeja de gestión rápida</p>
             </div>
             <a href="{{ route('correspondencia.correspondencias.create') }}" class="btn-soft-primary text-decoration-none shadow-sm">
