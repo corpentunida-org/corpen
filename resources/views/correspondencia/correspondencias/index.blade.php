@@ -41,7 +41,7 @@
         .app-container { padding: 1.5rem; max-width: 1400px; margin: 0 auto; }
 
         /* --- UI COMPONENTS --- */
-        .card-clean { background: var(--white); border-radius: 12px; border: 1px solid var(--border-light); box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+        .card-clean { background: var(--white); border-radius: 12px; border: 1px solid var(--border-light); box-shadow: 0 1px 2px rgba(0,0,0,0.03); position: relative; /* Necesario para el loading overlay */ }
         .search-pill { background: var(--bg-app); border: 1px solid transparent; border-radius: 50px; padding: 0.4rem 1rem; font-size: 0.85rem; transition: all 0.2s; color: var(--text-dark); }
         .search-pill:focus { background: var(--white); border-color: var(--pastel-blue); box-shadow: 0 0 0 3px var(--pastel-blue); outline: none; }
         
@@ -70,15 +70,53 @@
         .btn-ghost:hover { background: var(--pastel-blue); color: var(--text-blue); }
         .btn-soft-primary { background: var(--pastel-blue); color: var(--text-blue); font-weight: 600; font-size: 0.85rem; padding: 6px 16px; border-radius: 8px; border: 1px solid transparent; transition: all 0.2s; }
 
-        /* ... Estilos Timeline y Chips (Se mantienen igual) ... */
+        /* Estilos Timeline y Chips */
         .chelin-item { display: inline-block; padding: 8px 16px; border-radius: 50px; border: 1px solid #dee2e6; background-color: white; color: #6c757d; font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s; user-select: none; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
         .chelin-item.active { background-color: var(--pastel-blue); color: var(--text-blue); border-color: #90caf9; }
         .avatar-circle-sm { width: 24px; height: 24px; background-color: #fff; color: #495057; border: 2px solid #e9ecef; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 700; margin-left: -8px; }
         .route-line { position: absolute; left: 50%; transform: translateX(-50%); width: 2px; height: 100%; top: 32px; z-index: -1; background-color: #f0f2f5; }
-        .ux-category-scroll { display: flex; gap: 0.5rem; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+
+        .ux-category-scroll {
+            display: flex;
+            flex-wrap: nowrap; /* Evita que los chips bajen a otra línea */
+            gap: 0.5rem;
+            overflow-x: auto;
+            padding-bottom: 8px;
+            scrollbar-width: thin; /* Para Firefox */
+            scrollbar-color: #cbd5e1 transparent;
+            -webkit-overflow-scrolling: touch; /* Fluidez en móviles */
+        }
+
+        /* Scrollbar minimalista para Chrome/Edge/Safari */
+        .ux-category-scroll::-webkit-scrollbar { height: 6px; }
+        .ux-category-scroll::-webkit-scrollbar-track { background: transparent; }
+        .ux-category-scroll::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 10px; }
+        .ux-category-scroll:hover::-webkit-scrollbar-thumb { background-color: #94a3b8; }
+
         .ux-chip { white-space: nowrap; padding: 6px 14px; background: var(--white); border: 1px solid var(--border-light); border-radius: 50px; font-size: 0.8rem; font-weight: 600; color: var(--text-light); cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
-        .ux-chip.active { background: var(--text-dark); color: white; border-color: var(--text-dark); }
+        
+        /* --- CHIP ACTIVO: Pastel sutil, transparente pero más blanco --- */
+        .ux-chip.active {
+            background: rgba(255, 255, 255, 0.85); /* Fondo blanco semi-transparente */
+            color: var(--text-blue); /* Texto azul para indicar que está activo */
+            border-color: #bfdbfe; /* Un borde azul pastel muy suave */
+            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.08); /* Sombreado ligerísimo para que resalte */
+            font-weight: 700;
+        }
+
+        /* Contador (badge) dentro del chip activo */
+        .ux-chip.active .badge-chip { background: var(--pastel-blue); color: var(--text-blue); }
         .badge-chip { background: #f1f5f9; color: var(--text-dark); padding: 2px 6px; border-radius: 10px; font-size: 0.65rem; }
+
+        /* --- LOADING OVERLAY --- */
+        .loading-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.7); /* Blanco semi-transparente */
+            z-index: 10;
+            backdrop-filter: blur(1px); /* Un toque moderno de desenfoque */
+            border-radius: 12px;
+        }
     </style>
 
     <div class="app-container">
@@ -102,142 +140,203 @@
                 <div class="d-flex align-items-center gap-2 mb-3">
                     <div class="position-relative flex-grow-1" style="max-width: 350px;">
                         <i class="bi bi-search position-absolute text-muted" style="left: 12px; top: 50%; transform: translateY(-50%); font-size: 0.8rem;"></i>
-                        <input type="text" name="search" class="form-control search-pill ps-5 w-100" placeholder="Buscar radicado, asunto..." value="{{ request('search') }}" onblur="this.form.submit()">
+                        <input type="text" name="search" class="form-control search-pill ps-5 w-100" placeholder="Buscar radicado, asunto..." value="{{ request('search') }}">
                     </div>
-                    <select name="estado" class="form-select search-pill border-0" style="width: auto; cursor: pointer; background-color: var(--bg-app);" onchange="this.form.submit()">
-                        <option value="">Estado: Todos</option>
+                    <select name="estado" class="form-select search-pill border-0" style="width: auto; cursor: pointer; background-color: var(--bg-app);">
+                        <option value="" {{ empty(request('estado')) ? 'selected' : '' }}>Estado: Todos</option>
                         @foreach($estados as $est)
                             <option value="{{ $est->id_estado }}" {{ request('estado') == $est->id_estado ? 'selected' : '' }}>{{ $est->nombre }}</option>
                         @endforeach
                     </select>
                 </div>
 
-                <div class="ux-category-scroll">
-                    <span class="ux-chip {{ !request('flujo_id') ? 'active' : '' }}" onclick="applyCategoryFilter('')">
-                        Todas las Categorías <span class="badge-chip">{{ $total_radicados_busqueda }}</span>
-                    </span>
-                    @foreach($flujos_disponibles as $flujo)
-                        <span class="ux-chip {{ request('flujo_id') == $flujo->id ? 'active' : '' }}" onclick="applyCategoryFilter('{{ $flujo->id }}')">
-                            {{ $flujo->nombre }} <span class="badge-chip">{{ $flujo->correspondencias_count }}</span>
+                {{-- CONTENEDOR DINÁMICO DE CHIPS --}}
+                <div id="chips-container">
+                    <div class="ux-category-scroll">
+                        <span class="ux-chip {{ empty(request('flujo_id')) ? 'active' : '' }}" onclick="applyCategoryFilter('')">
+                            Todas las Categorías <span class="badge-chip">{{ $total_radicados_busqueda }}</span>
                         </span>
-                    @endforeach
+                        @foreach($flujos_disponibles as $flujo)
+                            <span class="ux-chip {{ request('flujo_id') == $flujo->id ? 'active' : '' }}" onclick="applyCategoryFilter('{{ $flujo->id }}')">
+                                {{ $flujo->nombre }} <span class="badge-chip">{{ $flujo->correspondencias_count }}</span>
+                            </span>
+                        @endforeach
+                    </div>
                 </div>
             </form>
         </div>
 
-        {{-- TABLA PRINCIPAL --}}
-        <div class="card-clean overflow-hidden">
-            <div class="table-responsive">
-                <table class="table-minimal">
-                    <thead>
-                        <tr>
-                            <th width="10%">Radicado</th>
-                            <th>Asunto</th>
-                            <th width="20%">Remitente</th>
-                            <th width="15%">Estado</th>
-                            <th width="10%">Fecha</th>
-                            <th width="15%" class="text-end">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($correspondencias as $corr)
-                        @php
-                            // Verificamos si ya tiene comunicación de salida
-                            $tieneSalida = $corr->comunicacion_salida_exists ?? $corr->comunicacionSalida()->exists();
-                        @endphp
-                        <tr onclick="abrirModalRuta('{{ $corr->id_radicado }}')" 
-                            class="row-clickable {{ $tieneSalida ? 'row-has-exit' : '' }}" 
-                            title="{{ $tieneSalida ? 'Este radicado ya tiene respuesta generada' : 'Clic para ver flujo completo' }}">
-                            
-                            <td>
-                                <div class="d-flex align-items-center gap-2">
-                                    @if($tieneSalida)
-                                        <i class="bi bi-check-circle-fill text-green" title="Comunicación de salida existente"></i>
+        {{-- CONTENEDOR DINÁMICO DE LA TABLA --}}
+        <div id="table-container">
+            <div class="card-clean overflow-hidden">
+                
+                {{-- LOADING OVERLAY (Ruedita girando) --}}
+                <div id="table-loading-overlay" class="loading-overlay d-none d-flex align-items-center justify-content-center">
+                    <div class="spinner-border text-primary" role="status" style="width: 2.5rem; height: 2.5rem;">
+                        <span class="visually-hidden">Cargando...</span>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table-minimal">
+                        <thead>
+                            <tr>
+                                <th width="10%">Radicado</th>
+                                <th>Asunto</th>
+                                <th width="20%">Remitente</th>
+                                <th width="15%">Estado</th>
+                                <th width="10%">Fecha</th>
+                                <th width="15%" class="text-end">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($correspondencias as $corr)
+                            @php
+                                // Verificamos si ya tiene comunicación de salida
+                                $tieneSalida = $corr->comunicacion_salida_exists ?? $corr->comunicacionSalida()->exists();
+                            @endphp
+                            <tr onclick="abrirModalRuta('{{ $corr->id_radicado }}')" 
+                                class="row-clickable {{ $tieneSalida ? 'row-has-exit' : '' }}" 
+                                title="{{ $tieneSalida ? 'Este radicado ya tiene respuesta generada' : 'Clic para ver flujo completo' }}">
+                                
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        @if($tieneSalida)
+                                            <i class="bi bi-check-circle-fill text-green" title="Comunicación de salida existente"></i>
+                                        @endif
+                                        <span class="fw-bold" style="color: #4b5563;">#{{ $corr->id_radicado }}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="text-truncate" style="max-width: 280px;">{{ $corr->asunto }}</span>
+                                        @if($tieneSalida)
+                                            <span class="badge-exit">Salida</span>
+                                        @endif
+                                        @if($corr->es_confidencial) <i class="bi bi-lock-fill text-danger opacity-50" title="Confidencial" data-bs-toggle="tooltip"></i> @endif
+                                        @if($corr->documento_arc) <i class="bi bi-paperclip text-primary opacity-50" title="Tiene adjunto" data-bs-toggle="tooltip"></i> @endif
+                                    </div>
+                                    <div class="text-muted small mt-1" style="font-size: 0.7rem;">
+                                        <i class="bi bi-folder me-1"></i> {{ $corr->flujo->nombre ?? 'Sin categoría' }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="avatar-tiny">{{ substr($corr->remitente->nom_ter ?? '?', 0, 1) }}</div>
+                                        <span class="text-truncate" style="max-width: 150px;">{{ Str::limit($corr->remitente->nom_ter ?? 'N/A', 20) }}</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    @if($corr->finalizado)
+                                        <span class="badge-pill badge-green"><i class="bi bi-check2"></i> Finalizado</span>
+                                    @else
+                                        <span class="badge-pill badge-blue"><i class="bi bi-clock"></i> En Proceso</span>
                                     @endif
-                                    <span class="fw-bold" style="color: #4b5563;">#{{ $corr->id_radicado }}</span>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="d-flex align-items-center gap-2">
-                                    <span class="text-truncate" style="max-width: 280px;">{{ $corr->asunto }}</span>
-                                    @if($tieneSalida)
-                                        <span class="badge-exit">Salida</span>
-                                    @endif
-                                    @if($corr->es_confidencial) <i class="bi bi-lock-fill text-danger opacity-50" title="Confidencial" data-bs-toggle="tooltip"></i> @endif
-                                    @if($corr->documento_arc) <i class="bi bi-paperclip text-primary opacity-50" title="Tiene adjunto" data-bs-toggle="tooltip"></i> @endif
-                                </div>
-                                <div class="text-muted small mt-1" style="font-size: 0.7rem;">
-                                    <i class="bi bi-folder me-1"></i> {{ $corr->flujo->nombre ?? 'Sin categoría' }}
-                                </div>
-                            </td>
-                            <td>
-                                <div class="d-flex align-items-center gap-2">
-                                    <div class="avatar-tiny">{{ substr($corr->remitente->nom_ter ?? '?', 0, 1) }}</div>
-                                    <span class="text-truncate" style="max-width: 150px;">{{ Str::limit($corr->remitente->nom_ter ?? 'N/A', 20) }}</span>
-                                </div>
-                            </td>
-                            <td>
-                                @if($corr->finalizado)
-                                    <span class="badge-pill badge-green"><i class="bi bi-check2"></i> Finalizado</span>
-                                @else
-                                    <span class="badge-pill badge-blue"><i class="bi bi-clock"></i> En Proceso</span>
-                                @endif
-                                <span class="badge-pill badge-primary">{{ $corr->estado->nombre }}</span>
-                            </td>
-                            <td class="text-muted" style="font-size: 0.75rem;">{{ $corr->fecha_solicitud->format('d M, Y') }}</td>
-                            
-                            <td class="text-end">
-                                <div class="d-flex justify-content-end gap-1 position-relative" style="z-index: 2;">
-                                    @php
-                                        $soyResponsableDeAlgo = false;
-                                        $primerIdProcesoResponsable = null;
-                                        if (!$corr->finalizado && $corr->flujo) {
-                                            foreach ($corr->flujo->procesos->sortBy('id') as $paso) {
-                                                foreach ($paso->usuariosAsignados as $asignacion) {
-                                                    $uid = $asignacion->usuario->id ?? $asignacion->user_id ?? $asignacion->usuario_id;
-                                                    if ($uid == auth()->id()) {
-                                                        $soyResponsableDeAlgo = true;
-                                                        $primerIdProcesoResponsable = $paso->id;
-                                                        break 2; 
+                                    <span class="badge-pill badge-primary">{{ $corr->estado->nombre }}</span>
+                                </td>
+                                <td class="text-muted" style="font-size: 0.75rem;">{{ $corr->fecha_solicitud->format('d M, Y') }}</td>
+                                
+                                <td class="text-end">
+                                    <div class="d-flex justify-content-end gap-1 position-relative" style="z-index: 2;">
+                                        @php
+                                            $soyResponsableDeAlgo = false;
+                                            $primerIdProcesoResponsable = null;
+                                            if (!$corr->finalizado && $corr->flujo) {
+                                                foreach ($corr->flujo->procesos->sortBy('id') as $paso) {
+                                                    foreach ($paso->usuariosAsignados as $asignacion) {
+                                                        $uid = $asignacion->usuario->id ?? $asignacion->user_id ?? $asignacion->usuario_id;
+                                                        if ($uid == auth()->id()) {
+                                                            $soyResponsableDeAlgo = true;
+                                                            $primerIdProcesoResponsable = $paso->id;
+                                                            break 2; 
+                                                        }
                                                     }
                                                 }
                                             }
+                                        @endphp
+
+                                        @if($soyResponsableDeAlgo)
+                                            <button type="button" class="btn-ghost text-success fw-bold" 
+                                                    onclick="event.stopPropagation(); saltarAGestionDirecta('{{ $corr->id_radicado }}', '{{ addslashes(Str::limit($corr->asunto, 60)) }}', '{{ $primerIdProcesoResponsable }}')"
+                                                    data-bs-toggle="tooltip" title="¡Estás asignado! Gestión Rápida">
+                                                <i class="bi bi-pencil-square fs-6"></i>
+                                            </button>
+                                        @endif
+
+                                        <a href="{{ route('correspondencia.correspondencias.show', $corr) }}" class="btn-ghost" onclick="event.stopPropagation();" data-bs-toggle="tooltip" title="Ver detalle">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        
+                                        @if(!$corr->finalizado)
+                                            <a href="{{ route('correspondencia.correspondencias.edit', $corr) }}" class="btn-ghost" onclick="event.stopPropagation();" data-bs-toggle="tooltip" title="Finalización">
+                                                <i class="bi bi-box-arrow-right"></i>
+                                            </a>
+                                        @endif
+                                    </div>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="6" class="text-center py-5">
+                                    <div class="text-muted opacity-50"><i class="bi bi-inbox fs-4 d-block mb-1"></i> Sin registros en esta categoría</div>
+                                </td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+                @if(isset($correspondencias) && method_exists($correspondencias, 'hasPages') && $correspondencias->hasPages())
+                    <div class="px-3 py-2 border-top pagination-wrapper">{{ $correspondencias->links() }}</div>
+                @endif
+            </div>
+
+            {{-- ESTE BLOQUE SE RECARGA POR AJAX PARA QUE LOS MODALES SIEMPRE ABRAN EL DATO CORRECTO --}}
+            <script id="dynamic-data-rutas">
+                window.dataRutas = {
+                    @foreach($correspondencias as $corr)
+                        "{{ $corr->id_radicado }}": {
+                            asunto: "{{ addslashes(Str::limit($corr->asunto, 60)) }}",
+                            pasos: [
+                                @php
+                                    $historialAgrupado = $corr->procesos->groupBy('id_proceso');
+                                    $siguientePasoEncontrado = false;
+                                    $participantesIds = $corr->procesos->pluck('usuario_id')->merge($corr->procesos->pluck('user_id'))->filter()->unique()->toArray();
+                                    $procesosDelFlujo = $corr->flujo ? $corr->flujo->procesos->sortBy('id') : collect();
+                                @endphp
+                                @foreach($procesosDelFlujo as $index => $paso)
+                                    @php
+                                        $yaTieneGestion = $historialAgrupado->has($paso->id);
+                                        $status = 'future';
+                                        if ($yaTieneGestion) { $status = 'completed'; }
+                                        elseif (!$siguientePasoEncontrado) { $status = 'current'; $siguientePasoEncontrado = true; }
+
+                                        $esResponsableEnEstePaso = false;
+                                        $usuariosList = [];
+                                        foreach($paso->usuariosAsignados as $asignacion) {
+                                            $uid = $asignacion->usuario->id ?? $asignacion->user_id ?? $asignacion->usuario_id;
+                                            if($uid == auth()->id()) $esResponsableEnEstePaso = true;
+                                            $u = $asignacion->usuario;
+                                            $usuariosList[] = [
+                                                'initial' => $u ? substr($u->name, 0, 1) : '?',
+                                                'name' => $u ? $u->name : 'N/A',
+                                                'status' => $u && in_array($u->id, $participantesIds) ? 'success' : 'danger'
+                                            ];
                                         }
                                     @endphp
-
-                                    @if($soyResponsableDeAlgo)
-                                        <button type="button" class="btn-ghost text-success fw-bold" 
-                                                onclick="event.stopPropagation(); saltarAGestionDirecta('{{ $corr->id_radicado }}', '{{ addslashes(Str::limit($corr->asunto, 60)) }}', '{{ $primerIdProcesoResponsable }}')"
-                                                data-bs-toggle="tooltip" title="¡Estás asignado! Gestión Rápida">
-                                            <i class="bi bi-pencil-square fs-6"></i>
-                                        </button>
-                                    @endif
-
-                                    <a href="{{ route('correspondencia.correspondencias.show', $corr) }}" class="btn-ghost" onclick="event.stopPropagation();" data-bs-toggle="tooltip" title="Ver detalle">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
-                                    
-                                    @if(!$corr->finalizado)
-                                        <a href="{{ route('correspondencia.correspondencias.edit', $corr) }}" class="btn-ghost" onclick="event.stopPropagation();" data-bs-toggle="tooltip" title="Finalización">
-                                            <i class="bi bi-box-arrow-right"></i>
-                                        </a>
-                                    @endif
-                                </div>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="6" class="text-center py-5">
-                                <div class="text-muted opacity-50"><i class="bi bi-inbox fs-4 d-block mb-1"></i> Sin registros en esta categoría</div>
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-            @if(isset($correspondencias) && method_exists($correspondencias, 'hasPages') && $correspondencias->hasPages())
-                <div class="px-3 py-2 border-top">{{ $correspondencias->links() }}</div>
-            @endif
+                                    {
+                                        id_proceso: "{{ $paso->id }}",
+                                        nombre: "{{ $paso->nombre }}",
+                                        index: {{ $index + 1 }},
+                                        status: "{{ $status }}", 
+                                        es_responsable: {{ $esResponsableEnEstePaso ? 'true' : 'false' }},
+                                        usuarios: @json($usuariosList)
+                                    },
+                                @endforeach
+                            ]
+                        },
+                    @endforeach
+                };
+            </script>
         </div>
     </div>
 
@@ -304,7 +403,7 @@
 
                             {{-- 3. Detalle de la Gestión (Con formato estructurado opcional) --}}
                             <div class="col-12 mb-3">
-                                {{-- Switch para activar el modo estructurado en el modal (Activado por defecto) --}}
+                                {{-- Switch para activar el modo estructurado en el modal --}}
                                 <div class="form-check form-switch mb-3">
                                     <input class="form-check-input" type="checkbox" id="toggleEstructuradoModal" checked>
                                     <label class="form-check-label fw-bold small text-dark mt-1" for="toggleEstructuradoModal" style="cursor: pointer;">
@@ -312,7 +411,7 @@
                                     </label>
                                 </div>
 
-                                {{-- Contenedor de los 3 campos (Oculto si el switch se apaga) --}}
+                                {{-- Contenedor de los 3 campos --}}
                                 <div id="contenedor_estructurado_modal" class="p-3 bg-white rounded-4 border shadow-sm mb-3">
                                     <div class="row g-3">
                                         <div class="col-md-3">
@@ -337,7 +436,7 @@
                                     </div>
                                 </div>
 
-                                {{-- Textarea Original del Modal (El que realmente se envía) --}}
+                                {{-- Textarea Original del Modal --}}
                                 <label id="label_observacion_modal" class="form-label fw-bold small text-dark">3. Detalle de la Gestión <span class="text-danger">*</span></label>
                                 <textarea id="observacion_gestion" name="observacion" class="form-control border-light bg-light rounded-4 p-3 shadow-sm" rows="3" placeholder="Describa la gestión..." style="resize: none;" required></textarea>
                             </div>
@@ -375,11 +474,7 @@
     </div>
 
     <script>
-        function applyCategoryFilter(idFlujo) {
-            document.getElementById('input-flujo').value = idFlujo;
-            document.getElementById('filter-form-minimal').submit();
-        }
-
+        // --- CONSTANTES DEL SERVIDOR ---
         const numeroArchivosPorProceso = {
             @foreach($procesos_disponibles as $proceso)
                 {{ $proceso->id }}: {{ (int) $proceso->numero_archivos }},
@@ -400,53 +495,127 @@
             @endforeach
         };
 
-        const dataRutas = {
-            @foreach($correspondencias as $corr)
-                "{{ $corr->id_radicado }}": {
-                    asunto: "{{ addslashes(Str::limit($corr->asunto, 60)) }}",
-                    pasos: [
-                        @php
-                            $historialAgrupado = $corr->procesos->groupBy('id_proceso');
-                            $siguientePasoEncontrado = false;
-                            $participantesIds = $corr->procesos->pluck('usuario_id')->merge($corr->procesos->pluck('user_id'))->filter()->unique()->toArray();
-                            $procesosDelFlujo = $corr->flujo ? $corr->flujo->procesos->sortBy('id') : collect();
-                        @endphp
-                        @foreach($procesosDelFlujo as $index => $paso)
-                            @php
-                                $yaTieneGestion = $historialAgrupado->has($paso->id);
-                                $status = 'future';
-                                if ($yaTieneGestion) { $status = 'completed'; }
-                                elseif (!$siguientePasoEncontrado) { $status = 'current'; $siguientePasoEncontrado = true; }
+        // --- LÓGICA DE FILTRADO EN TIEMPO REAL (AJAX) ---
+        let debounceTimer;
 
-                                $esResponsableEnEstePaso = false;
-                                $usuariosList = [];
-                                foreach($paso->usuariosAsignados as $asignacion) {
-                                    $uid = $asignacion->usuario->id ?? $asignacion->user_id ?? $asignacion->usuario_id;
-                                    if($uid == auth()->id()) $esResponsableEnEstePaso = true;
-                                    $u = $asignacion->usuario;
-                                    $usuariosList[] = [
-                                        'initial' => $u ? substr($u->name, 0, 1) : '?',
-                                        'name' => $u ? $u->name : 'N/A',
-                                        'status' => $u && in_array($u->id, $participantesIds) ? 'success' : 'danger'
-                                    ];
-                                }
-                            @endphp
-                            {
-                                id_proceso: "{{ $paso->id }}",
-                                nombre: "{{ $paso->nombre }}",
-                                index: {{ $index + 1 }},
-                                status: "{{ $status }}", 
-                                es_responsable: {{ $esResponsableEnEstePaso ? 'true' : 'false' }},
-                                usuarios: @json($usuariosList)
-                            },
-                        @endforeach
-                    ]
-                },
-            @endforeach
-        };
+        document.addEventListener('DOMContentLoaded', () => {
+            initRealTimeFilters();
+            initDragToScroll();
+        });
 
+        function initRealTimeFilters() {
+            const form = document.getElementById('filter-form-minimal');
+            const searchInput = form.querySelector('input[name="search"]');
+            const estadoSelect = form.querySelector('select[name="estado"]');
+
+            // Evento para input de búsqueda (con retraso)
+            searchInput.addEventListener('input', () => {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => triggerAjaxUpdate(), 350);
+            });
+
+            // Evento para el Select
+            estadoSelect.addEventListener('change', () => triggerAjaxUpdate());
+
+            // Interceptar clics en los enlaces de paginación
+            document.addEventListener('click', function(e) {
+                const paginationLink = e.target.closest('.pagination-wrapper a');
+                if (paginationLink) {
+                    e.preventDefault();
+                    triggerAjaxUpdate(paginationLink.href);
+                }
+            });
+        }
+
+        function applyCategoryFilter(idFlujo) {
+            document.getElementById('input-flujo').value = idFlujo;
+            triggerAjaxUpdate();
+        }
+
+        async function triggerAjaxUpdate(customUrl = null) {
+            const form = document.getElementById('filter-form-minimal');
+            const formData = new FormData(form);
+            const params = new URLSearchParams(formData);
+            const url = customUrl || `${form.action}?${params.toString()}`;
+
+            // 1. Guardar posición del scroll
+            const scrollContainer = document.querySelector('.ux-category-scroll');
+            const currentScroll = scrollContainer ? scrollContainer.scrollLeft : 0;
+
+            // 2. Efecto visual de "Cargando" (RUEDITA GIRANDO)
+            const overlay = document.getElementById('table-loading-overlay');
+            if(overlay) overlay.classList.remove('d-none');
+
+            try {
+                // 3. Petición al servidor
+                const response = await fetch(url, {
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const html = await response.text();
+
+                // 4. Analizar el HTML devuelto
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+
+                // 5. Reemplazar los contenedores
+                document.getElementById('chips-container').innerHTML = doc.getElementById('chips-container').innerHTML;
+                document.getElementById('table-container').innerHTML = doc.getElementById('table-container').innerHTML;
+
+                // 6. Restaurar Scroll y volver a activar el Drag-to-Scroll
+                const newScrollContainer = document.querySelector('.ux-category-scroll');
+                if(newScrollContainer) {
+                    newScrollContainer.scrollLeft = currentScroll;
+                    initDragToScroll(); 
+                }
+
+                // 7. Ejecutar el script que re-crea la variable `window.dataRutas`
+                const scriptTag = doc.getElementById('dynamic-data-rutas');
+                if(scriptTag) {
+                    const newScript = document.createElement('script');
+                    newScript.text = scriptTag.innerHTML;
+                    document.body.appendChild(newScript).parentNode.removeChild(newScript);
+                }
+
+                // 8. Actualizar la URL del navegador
+                window.history.pushState({}, '', url);
+
+            } catch (error) {
+                console.error("Error cargando los datos", error);
+            } finally {
+                 // 9. OCULTAR LA RUEDITA AL FINALIZAR (Éxito o Error)
+                 if(overlay) overlay.classList.add('d-none');
+            }
+        }
+
+        // --- DRAG TO SCROLL (REUTILIZABLE) ---
+        function initDragToScroll() {
+            const slider = document.querySelector('.ux-category-scroll');
+            let isDown = false;
+            let startX, scrollLeft;
+
+            if(!slider) return;
+
+            slider.style.cursor = 'grab';
+            slider.addEventListener('mousedown', (e) => {
+                isDown = true;
+                slider.style.cursor = 'grabbing';
+                startX = e.pageX - slider.offsetLeft;
+                scrollLeft = slider.scrollLeft;
+            });
+            slider.addEventListener('mouseleave', () => { isDown = false; slider.style.cursor = 'grab'; });
+            slider.addEventListener('mouseup', () => { isDown = false; slider.style.cursor = 'grab'; });
+            slider.addEventListener('mousemove', (e) => {
+                if (!isDown) return;
+                e.preventDefault();
+                const walk = (e.pageX - slider.offsetLeft - startX) * 2;
+                slider.scrollLeft = scrollLeft - walk;
+            });
+        }
+
+        // --- LÓGICA DE LOS MODALES ---
         function abrirModalRuta(idRadicado) {
-            const data = dataRutas[idRadicado];
+            // Utilizamos la variable global actualizada por AJAX
+            const data = window.dataRutas[idRadicado];
             if(!data) return;
 
             document.getElementById('ruta_radicado_lbl').textContent = "#" + idRadicado;
@@ -578,10 +747,11 @@
                     </div>`;
             }
         }
+
         // --- LÓGICA DE OBSERVACIÓN DINÁMICA PARA EL MODAL DE GESTIÓN RÁPIDA ---
         const toggleModal = $('#toggleEstructuradoModal');
         const contEstModal = $('#contenedor_estructurado_modal');
-        const obsPrincipalModal = $('#observacion_gestion'); // El ID que ya tenías
+        const obsPrincipalModal = $('#observacion_gestion');
         const labelObsModal = $('#label_observacion_modal');
 
         // Formatear el input de Valor a Pesos Colombianos (COP)
@@ -628,7 +798,6 @@
         }).trigger('change'); // Se activa por defecto al cargar
 
         // LIMPIEZA DEL MODAL AL CERRAR
-        // Para asegurar que al volver a abrir el modal esté limpio
         $('#modalSeguimiento').on('hidden.bs.modal', function () {
             $('#modal_str_aprobado').val('Sí');
             $('#modal_str_valor').val('');
