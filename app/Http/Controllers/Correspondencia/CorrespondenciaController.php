@@ -43,7 +43,7 @@ class CorrespondenciaController extends Controller
         $query = Correspondencia::with(['trd', 'flujo', 'estado', 'usuario', 'remitente', 'medioRecepcion'])
             ->latest();
 
-        // 1. FILTRO DE CATEGORÍAS (Esto era lo que te faltaba)
+        // 1. FILTRO DE CATEGORÍAS 
         if ($request->filled('flujo_id')) {
             $query->where('flujo_id', $request->flujo_id);
         }
@@ -65,8 +65,11 @@ class CorrespondenciaController extends Controller
                 }
             });
         }
-
-        $correspondencias = $query->paginate(15)->appends($request->all());
+        if(auth()->user()->hasPermission('correspondencia.lista.todos')){
+            $correspondencias = $query->paginate(15)->appends($request->all());
+        }else{
+            $correspondencias = $query->where('remitente_id',auth()->user()->nid)->paginate(15)->appends($request->all());
+        }
 
         return view('correspondencia.correspondencias.index', compact('correspondencias', 'estados', 'procesos_disponibles'));
     }

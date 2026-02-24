@@ -372,7 +372,7 @@ class InteractionController extends Controller
 
         // Crear la interacción con todos los datos, incluyendo el archivo.
         $interaction = Interaction::create($validatedData);
-        if ($file) {
+        if ($request->file('attachment')) {
             $ruta = Storage::disk('s3')->put('corpentunida/daytrack/' . $interaction->id, $file);
             $interaction->update(['attachment_urls' => $ruta]);
         }
