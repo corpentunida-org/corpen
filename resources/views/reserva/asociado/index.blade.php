@@ -8,19 +8,21 @@
                     <div class="hstack justify-content-between">
                         <div>
                             <h2 class="fw-extrabold">Mis Reservas</h2>
-                            <div class="alert alert-dismissible p-2 d-flex alert-soft-danger-message" role="alert">
-                                <div class="p-2">
-                                    <p class="fw-bold text-truncate-1-line">IMPORTANTE!</p>
-                                    <p class="fs-12 fw-medium">Las reservas que se encuentren en estado
-                                        <strong>REVISIÓN </strong>deberán adjuntar el soporte de pago mediante el botón
-                                        verde dentro de los TRES (3) DÍAS siguientes a la fecha de creación de la
-                                        reserva.<strong>
-                                            EN CASO DE NO ANEXAR el comprobante dentro de este plazo, </strong> la
-                                        reserva será
-                                        cancelada automáticamente y el espacio será asignado a otro asociado.
-                                    </p>
+                            @if ($reservas->contains('res_status_id', 1))
+                                <div class="alert alert-dismissible p-2 d-flex alert-soft-danger-message" role="alert">
+                                    <div class="p-2">
+                                        <p class="fw-bold text-truncate-1-line">IMPORTANTE!</p>
+                                        <p class="fs-12 fw-medium">Las reservas que se encuentren en estado
+                                            <strong>RESERVADA </strong>deberán adjuntar el soporte de pago mediante el botón
+                                            azul dentro de los TRES (3) DÍAS siguientes a la fecha de creación de la
+                                            reserva.<strong>
+                                                EN CASO DE NO ANEXAR el comprobante dentro de este plazo, </strong> la
+                                            reserva será <strong>
+                                            cancelada automáticamente</strong> y el espacio será asignado a otro asociado.
+                                        </p>
+                                    </div>
                                 </div>
-                            </div>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -60,16 +62,18 @@
                                         </td>
                                         <td>
                                             <div class="hstack gap-2 justify-content-end">
+                                            @if($reserva->soporte_pago == null || empty($reserva->soporte_pago))
                                                 <a href="{{ route('reserva.inmueble.soporte.create', $reserva->id) }}"
                                                     class="btn btn-sm btn-primary">
                                                     <i class="bi bi-cloud-upload me-2"></i> Anexar comprobante
                                                 </a>
-                                                {{-- <a href="{{ route('reserva.reserva.show', $reserva->id) }}"
-                                                    class="btn btn-sm btn-warning">
-                                                    <i class="bi bi-grid"></i>
-                                                </a> --}}
-                                                <form action="{{ route('reserva.reserva.destroy', $reserva->id) }}"
-                                                    method="POST">
+                                            @else
+                                                <a href="{{ $reserva->getFile($reserva->soporte_pago) }}"
+                                                    class="btn btn-sm btn-primary" target="_blank">
+                                                    <i class="bi bi-paperclip me-2"></i> Ver comprobante
+                                                </a>
+                                            @endif
+                                                <form action="{{ route('reserva.reserva.destroy', $reserva->id) }}" method="POST">
                                                     @csrf
                                                     @method('DELETE')
                                                     <button type="submit" class="btn btn-sm btn-danger"

@@ -52,7 +52,6 @@
                                     <td>
                                         <div class="fw-semibold mb-1">{{ $reserva->res_status->name }}</div>
                                     </td>
-
                                     <td>
                                         <div class="hstack gap-2 justify-content-end">
 

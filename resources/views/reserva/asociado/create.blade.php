@@ -77,6 +77,16 @@
                 /*z-index: auto;*/
             }
 
+            /* color del dia actual */
+            .fc .fc-daygrid-day.fc-day-today {
+                background-color: #fff9e2 !important;
+            }
+
+            /* por si el tema usa capa interna */
+            .fc .fc-daygrid-day.fc-day-today .fc-daygrid-day-frame {
+                background-color: #fff9e2 !important;
+            }
+
             /* controla altura total del grid */
             .fc .fc-scrollgrid-sync-table {
                 height: auto !important;
@@ -86,6 +96,11 @@
             .fc .fc-daygrid-day-frame {
                 min-height: 100px !important;
                 padding: 2px !important;
+            }
+
+            /* color texto eventos allday */
+            .fc-event-title {
+                color: #2b1a55 !important;
             }
 
             .modal-backdrop {
@@ -207,46 +222,86 @@
                             right: 'dayGridMonth'
                         },
                         initialView: 'dayGridMonth',
-
                         events: [
-                            @foreach ($reservas as $reserva)
-
+                            @foreach ($reservas as $r)
+                                // RESERVA
                                 {
-                                    title: 'Alistamiento',
-                                    start: '{{ \Carbon\Carbon::parse($reserva->fecha_inicio)->subDay()->format('Y-m-d') }}',
-                                    end: '{{ $reserva->fecha_inicio }}',
-                                    backgroundColor: '#4f545a',
-                                    display: 'background'
+                                    title: 'Reservado',
+                                    start: '{{ $r->fecha_inicio }}',
+                                    end: '{{ \Carbon\Carbon::parse($r->fecha_fin)->addDay()->format('Y-m-d') }}',
+                                    color: '#c8b6ff',
+                                    textColor: '#2b1a55',
+                                    extendedProps: {
+                                        tipo: 'reserva'
+                                    }
                                 },
 
-                                // RESERVA REAL
-                                {
-                                    title: 'Reserva',
-                                    start: '{{ $reserva->fecha_inicio }}',
-                                    end: '{{ \Carbon\Carbon::parse($reserva->fecha_fin)->addDay()->format('Y-m-d') }}',
-                                    backgroundColor: 'rgba(0,123,255,0.94)',
-                                    borderColor: '#073c8a',
-                                    description: 'Reserva activa',
-                                    display: 'background'
-                                },
-
-                                // BLOQUEO DIA DESPUES
+                                // ALISTAMIENTO ANTES
                                 {
                                     title: 'Alistamiento',
-                                    start: '{{ \Carbon\Carbon::parse($reserva->fecha_fin)->addDay()->format('Y-m-d') }}',
-                                    end: '{{ \Carbon\Carbon::parse($reserva->fecha_fin)->addDays(2)->format('Y-m-d') }}',
-                                    backgroundColor: '#4f545a',
-                                    display: 'background'
+                                    start: '{{ \Carbon\Carbon::parse($r->fecha_inicio)->subDay()->format('Y-m-d') }}',
+                                    end: '{{ $r->fecha_inicio }}',
+                                    color: '#E4E7EB',
+                                    textColor: '#000',
+                                    extendedProps: {
+                                        tipo: 'alistamiento'
+                                    }
+                                },
+
+                                // ALISTAMIENTO DESPUES
+                                {
+                                    title: 'Alistamiento',
+                                    start: '{{ \Carbon\Carbon::parse($r->fecha_fin)->addDay()->format('Y-m-d') }}',
+                                    end: '{{ \Carbon\Carbon::parse($r->fecha_fin)->addDays(2)->format('Y-m-d') }}',
+                                    color: '#E4E7EB',
+                                    textColor: '#000',
+                                    extendedProps: {
+                                        tipo: 'alistamiento'
+                                    }
                                 },
                             @endforeach
                         ],
+                        eventContent: function(arg) {
+                            let icon = '';
 
+                            if (arg.event.extendedProps.tipo === 'reserva') {
+                                icon = 'bi-calendar-check';
+                            }
+
+                            if (arg.event.extendedProps.tipo === 'alistamiento') {
+                                icon = 'bi-clock-history';
+                            }
+
+                            return {
+                                html: `<i class="bi ${icon} me-1 ms-2"></i> ${arg.event.title}`
+                            };
+                        },
                         eventClick(info) {
-                            info.jsEvent.preventDefault();
+                            let tipo = info.event.extendedProps.tipo;
 
-                            alert(
-                                `Evento: ${info.event.title}\nDescripción: ${info.event.extendedProps.description}`
-                            );
+                            let icono = "info";
+                            let color = "#3085d6";
+                            let titulo = " ";
+
+                            if (tipo === "reserva") {
+                                icono = "error";
+                                color = "#6f42c1";
+                                titulo = "Ya se encuentra reservado";
+                            }
+
+                            if (tipo === "alistamiento") {
+                                icono = "warning";
+                                color = "#6c757d";
+                                titulo = "Inumeble en " + info.event.title;
+                            }
+
+                            Swal.fire({
+                                title: titulo,
+                                text: "Fecha: " + info.event.startStr,
+                                icon: icono,
+                                confirmButtonColor: color,
+                                confirmButtonText: "Cerrar"
+                            });
                         },
 
                         dateClick(info) {
