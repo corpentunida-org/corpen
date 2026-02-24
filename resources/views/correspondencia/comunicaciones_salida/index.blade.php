@@ -61,12 +61,6 @@
         {{-- Encabezado --}}
         <div class="d-flex justify-content-between align-items-end mb-5">
             <div>
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb breadcrumb-dot fw-semibold fs-7 my-1">
-                        <li class="breadcrumb-item text-muted">Correspondencia</li>
-                        <li class="breadcrumb-item text-primary">Salidas</li>
-                    </ol>
-                </nav>
                 <h1 class="h2 fw-bold m-0" style="color: #2c3e50; letter-spacing: -0.5px;">Comunicaciones de Salida</h1>
             </div>
             <a href="{{ route('correspondencia.comunicaciones-salida.create') }}" class="btn btn-pastel-primary shadow-sm rounded-pill px-5 py-3 fw-bold">

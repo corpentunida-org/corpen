@@ -65,8 +65,11 @@ class CorrespondenciaController extends Controller
                 }
             });
         }
-
-        $correspondencias = $query->paginate(15)->appends($request->all());
+        if(auth()->user()->hasPermission('correspondencia.lista.todos')){
+            $correspondencias = $query->paginate(15)->appends($request->all());
+        }else{
+            $correspondencias = $query->where('remitente_id',auth()->user()->nid)->paginate(15)->appends($request->all());
+        }
 
         return view('correspondencia.correspondencias.index', compact('correspondencias', 'estados', 'procesos_disponibles'));
     }

@@ -1,21 +1,16 @@
 <x-base-layout>
     {{-- Librerías --}}
+    @section('titlepage', 'Tablero de Control')
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 
     <div class="ux-dashboard-wrapper container-fluid py-4">
         {{-- Header Principal --}}
         <header class="dashboard-header d-flex justify-content-between align-items-end mb-4">
-            <div>
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb mb-1 text-uppercase tracking-wider small">
-                        <li class="breadcrumb-item"><a href="#" class="text-decoration-none text-muted">Inicio</a></li>
-                        <li class="breadcrumb-item active fw-bold text-primary">Correspondencia</li>
-                    </ol>
-                </nav>
+            <div>               
                 <h2 class="fw-bold tracking-tight text-slate-900 mb-0">Centro de Gestión Documental</h2>
             </div>
-            <div class="actions">
+            <div class="d-flex">
                 <button class="btn btn-white border shadow-sm me-2 btn-ux" onclick="window.print()">
                     <i class="fas fa-download me-2 text-muted"></i> Reporte
                 </button>
@@ -182,6 +177,7 @@
 
         .btn-ux { border-radius: 10px; font-weight: 600; padding: 10px 18px; transition: all 0.2s; }
         .btn-white { background: white; }
+        .btn-ux:hover{all:unset;}
 
         /* KPI Cards */
         .kpi-icon { width: 42px; height: 42px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
@@ -201,7 +197,7 @@
             display: flex; align-items: center; padding: 10px 14px; border-radius: 12px; cursor: pointer; 
             transition: all 0.2s; border: 1px solid transparent; 
         }
-        .category-item:hover { background: var(--slate-50); color: var(--primary); }
+        /*.category-item:hover { background: var(--slate-50); color: var(--primary); }*/
         .category-item.active { background: var(--primary-soft); border-color: var(--primary); color: var(--primary); font-weight: 600; }
         .category-item input { display: none; }
 
