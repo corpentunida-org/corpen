@@ -284,13 +284,14 @@
                     <div class="mb-4">
                         <label class="field-label">Remitente <span class="text-danger">*</span></label>
                         @if($esEdicion)
-                            <div class="static-value fw-bold">{{ $correspondencia->remitente->nom_ter ?? 'N/A' }}</div>
+                            <div class="static-value fw-bold">{{ $correspondencia->remitente->cod_ter ?? '' }} - {{ $correspondencia->remitente->nom_ter ?? 'N/A' }}</div>
                             <input type="hidden" name="remitente_id" id="remitente_id" value="{{ $correspondencia->remitente_id }}">
                         @else
                             <select name="remitente_id" id="remitente_id" class="form-select select2-remitente" required>
-                                <option value="">Buscar...</option>
+                                <option value="">Buscar por nombre o cédula...</option>
                                 @foreach($remitentes as $r)
-                                    <option value="{{ $r->cod_ter }}">{{ $r->nom_ter }}</option>
+                                    {{-- Agregamos la cédula (cod_ter) al texto visible --}}
+                                    <option value="{{ $r->cod_ter }}">{{ $r->cod_ter }} - {{ $r->nom_ter }}</option>
                                 @endforeach
                             </select>
                         @endif
