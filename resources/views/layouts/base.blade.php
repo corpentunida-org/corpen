@@ -124,14 +124,14 @@
                     </div>
                     <!--! [End] nxl-lavel-mega-menu-toggle !-->
                     <!--! [Start] nxl-lavel-mega-menu !-->
-                    <div class="nxl-drp-link nxl-lavel-mega-menu">
+                    {{-- <div class="nxl-drp-link nxl-lavel-mega-menu">
                         <div class="nxl-lavel-mega-menu-toggle d-flex d-lg-none">
                             <a href="javascript:void(0)" id="nxl-lavel-mega-menu-hide">
                                 <i class="feather-arrow-left me-2"></i>
                                 <span>Back</span>
                             </a>
                         </div>
-                    </div>
+                    </div> --}}
 
                     <!--! [Start] Header RIGHT !-->
                     <div class="header-right ms-auto">

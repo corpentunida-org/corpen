@@ -763,11 +763,10 @@
 
             // Configurar nuevo timeout para reanudar actualizaciones
             pauseTimeout = setTimeout(() => {
-                isAutoUpdatePaused = false;
-                console.log('Actualizaciones automáticas reanudadas');
+                isAutoUpdatePaused = false;               
             }, PAUSE_DURATION);
 
-            console.log('Actualizaciones automáticas pausadas por', PAUSE_DURATION / 1000, 'segundos');
+            //console.log('Actualizaciones automáticas pausadas por', PAUSE_DURATION / 1000, 'segundos');
         }
 
         // ============================================
@@ -1135,8 +1134,7 @@
                 gainNode.gain.value = 0.1;
 
                 oscillator.start();
-                oscillator.stop(audioContext.currentTime + 0.15);
-                console.log('Sonido de notificación reproducido.'); // Para depuración
+                oscillator.stop(audioContext.currentTime + 0.15);                
             } catch (error) {
                 console.error('Error al intentar reproducir el sonido de notificación:', error);
             }
@@ -1151,8 +1149,7 @@
                     'event_category': category,
                     'event_label': 'Centro de Soportes'
                 });
-            }
-            console.log(`Evento: ${action}`);
+            }            
         }
 
         // ============================================

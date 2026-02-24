@@ -60,11 +60,11 @@
                                                class="btn btn-sm btn-primary">
                                                 <i class="bi bi-grid"></i>
                                             </a>
-                                            <a href="{{ route('reserva.edit', $reserva->id) }}"
+                                            <a href="#" {{-- href="{{ route('reserva.reserva.edit', $reserva->id) }}" --}}
                                                class="btn btn-sm btn-warning">
                                                 <i class="bi bi-pencil-square"></i>
                                             </a>
-                                            <form action="{{ route('reserva.destroy', $reserva->id) }}" method="POST">
+                                            <form action="{{ route('reserva.reserva.destroy', $reserva->id) }}" method="POST">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="btn btn-sm btn-danger"
