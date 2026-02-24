@@ -17,16 +17,60 @@ class FlujoDeTrabajoController extends Controller
         $auditoriaController->create($accion, 'CORRESPONDENCIA');
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        // Cargamos la relación 'area' y 'usuario' (jefe) para la tabla principal
-        $flujos = FlujoDeTrabajo::with(['usuario', 'area'])
-            ->withCount('correspondencias') 
-            ->paginate(15);
+        // 1. Iniciamos la consulta base
+        $query = FlujoDeTrabajo::with(['usuario', 'area'])
+            ->withCount('correspondencias');
 
-        return view('correspondencia.flujos.index', compact('flujos'));
+        // 2. Filtro de Búsqueda (Texto)
+        if ($request->filled('search')) {
+            $words = explode(' ', $request->search);
+            $query->where(function ($q) use ($words) {
+                foreach ($words as $word) {
+                    $q->orWhere('nombre', 'LIKE', "%$word%")
+                      ->orWhere('detalle', 'LIKE', "%$word%");
+                }
+            });
+        }
+
+        // 3. Filtro por Estado (En Uso / Disponible)
+        if ($request->filled('estado')) {
+            if ($request->estado == 'en_uso') {
+                $query->has('correspondencias');
+            } elseif ($request->estado == 'disponible') {
+                $query->doesntHave('correspondencias');
+            }
+        }
+
+        // 4. Filtro por Área (CORREGIDO: la columna en la BD es id_area)
+        if ($request->filled('area_id')) {
+            $query->where('id_area', $request->area_id);
+        }
+
+        // 5. Paginación manteniendo los parámetros de la URL
+        $flujos = $query->paginate(15)->appends($request->all());
+
+        // 6. Extraer TODAS las Áreas activas para los Chips horizontales
+        $total_flujos = FlujoDeTrabajo::count();
+        
+        // Obtenemos un diccionario con el conteo de flujos por cada ID de área (CORREGIDO: id_area)
+        $conteoPorArea = FlujoDeTrabajo::selectRaw('id_area, COUNT(*) as total')
+            ->groupBy('id_area')
+            ->pluck('total', 'id_area');
+
+        // Consultamos todas las áreas activas directamente de su modelo
+        $areas_disponibles = GdoArea::where('estado', 'activo')
+            ->orderBy('nombre')
+            ->get()
+            ->map(function ($area) use ($conteoPorArea) {
+                // Le asignamos la cantidad de flujos que tiene (0 si no tiene ninguno)
+                $area->flujos_count = $conteoPorArea->get($area->id, 0);
+                return $area;
+            });
+
+        return view('correspondencia.flujos.index', compact('flujos', 'areas_disponibles', 'total_flujos'));
     }
-
     public function create()
     {
         // Cargamos el cargo jefe, el empleado de ese cargo y el usuario de ese empleado
@@ -67,17 +111,56 @@ class FlujoDeTrabajoController extends Controller
 
     public function show(FlujoDeTrabajo $flujo)
     {
-        // Cargamos área, jefe, procesos Y LA TRD
+        // 1. Carga de relaciones asegurando el orden de los procesos
         $flujo->load([
             'usuario', 
             'area', 
-            'trd', // <--- AGREGAR ESTA LÍNEA AQUÍ
+            'trd',
+            'procesos' => function($query) {
+                $query->orderBy('id', 'asc'); // Importante para que el flujo sea secuencial
+            },
             'procesos.usuarios' => function($query) {
                 $query->where('activo', true); 
             }
         ])->loadCount('correspondencias');
+
+        // 2. CÁLCULO DE MÉTRICAS (KPIs)
+        $total_activos = $flujo->correspondencias()->where('finalizado', 0)->count();
+        $total_finalizados = $flujo->correspondencias()->where('finalizado', 1)->count();
+        
+        // Tiempo promedio (en días) de los radicados finalizados
+        $tiempo_promedio_dias = 0;
+        if ($total_finalizados > 0) {
+            $tiempo_promedio_dias = $flujo->correspondencias()
+                ->where('finalizado', 1)
+                ->selectRaw('AVG(DATEDIFF(updated_at, created_at)) as promedio')
+                ->value('promedio');
+        }
+
+        // 3. DATOS PARA LA GRÁFICA (Cálculo del Cuello de Botella)
+        $labelsGrafica = $flujo->procesos->pluck('nombre')->toArray();
+        $datosGrafica = array_fill(0, $flujo->procesos->count(), 0); // Llenamos de ceros inicialmente
+        
+        // Traemos los radicados activos con su historial de procesos
+        $activos = $flujo->correspondencias()->where('finalizado', 0)->with('procesos')->get();
+        
+        foreach($activos as $corr) {
+            // Obtenemos los IDs de los procesos que YA fueron completados por este radicado
+            $pasosCompletados = $corr->procesos->pluck('id_proceso')->toArray();
             
-        return view('correspondencia.flujos.show', compact('flujo'));
+            // Recorremos la ruta ideal del flujo
+            foreach($flujo->procesos as $index => $paso) {
+                // El primer paso de la ruta que NO esté en el historial, es donde está atascado
+                if(!in_array($paso->id, $pasosCompletados)) {
+                    $datosGrafica[$index]++;
+                    break; // Cortamos el bucle porque ya encontramos el cuello de botella de ESTE radicado
+                }
+            }
+        }
+
+        return view('correspondencia.flujos.show', compact(
+            'flujo', 'total_activos', 'total_finalizados', 'tiempo_promedio_dias', 'labelsGrafica', 'datosGrafica'
+        ));
     }
 
     public function edit(FlujoDeTrabajo $flujo)
