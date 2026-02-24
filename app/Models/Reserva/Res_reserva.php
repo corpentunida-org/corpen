@@ -13,6 +13,12 @@ class Res_reserva extends Model
     use HasFactory;
     use SoftDeletes;
 
+    protected $fillable = ['res_inmueble_id', 'res_status_id', 'user_id', 'nid', 'name_reserva', 'fecha_solicitud', 'fecha_inicio', 'fecha_fin', 'comentario_reserva', 'celular', 'celular_respaldo', 'soporte_pago', 'revision_user_id', 'revision_fecha', 'revision_comentario', 'puntuacion'];
+
+    protected $casts = [
+        'fecha_solicitud' => 'date',
+    ];
+
     public function res_inmueble()
     {
         return $this->belongsTo(Res_inmueble::class);
@@ -23,20 +29,18 @@ class Res_reserva extends Model
         return $this->belongsTo(Res_status::class);
     }
 
-    public function getFile ($nameFile)
+    public function getFile($nameFile)
     {
         $url = '#';
-        if($nameFile) {
+        if ($nameFile) {
             if (Storage::disk('s3')->exists($nameFile)) {
-                $url = Storage::disk('s3')->temporaryUrl(
-                    $nameFile, now()->addMinutes(5)
-                );
+                $url = Storage::disk('s3')->temporaryUrl($nameFile, now()->addMinutes(5));
             }
         }
         return $url;
     }
 
-    public function user ()
+    public function user()
     {
         return $this->belongsTo(User::class);
     }
