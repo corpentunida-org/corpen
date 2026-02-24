@@ -186,7 +186,9 @@
                                 <th width="20%">Remitente</th>
                                 <th width="15%">Estado</th>
                                 <th width="10%">Fecha</th>
+                                @candirect('correspondencia.index.accion')
                                 <th width="15%" class="text-end">Acciones</th>
+                                @endcandirect
                             </tr>
                         </thead>
                         <tbody>
@@ -235,7 +237,7 @@
                                     <span class="badge-pill badge-primary">{{ $corr->estado->nombre }}</span>
                                 </td>
                                 <td class="text-muted" style="font-size: 0.75rem;">{{ $corr->fecha_solicitud->format('d M, Y') }}</td>
-                                
+                                @candirect('correspondencia.index.accion')
                                 <td class="text-end">
                                     <div class="d-flex justify-content-end gap-1 position-relative" style="z-index: 2;">
                                         @php
@@ -274,6 +276,7 @@
                                         @endif
                                     </div>
                                 </td>
+                                @endcandirect
                             </tr>
                             @empty
                             <tr>
