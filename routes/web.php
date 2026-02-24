@@ -758,9 +758,7 @@ Route::middleware(['auth'])
 // ==========================================
 //   MÓDULO DE CORRESPONDENCIA
 // ==========================================
-Route::middleware(['auth'])
-    ->prefix('correspondencia')
-    ->name('correspondencia.')
+Route::middleware(['auth'])->prefix('correspondencia')->name('correspondencia.')
     ->group(function () {
         // ---------------------------------------------------
         // 1. DASHBOARD (TABLERO UNIFICADO)
@@ -776,6 +774,8 @@ Route::middleware(['auth'])
         Route::get('ajax/correspondencias-por-estado/{estado_id}', [CorrespondenciaController::class, 'getByEstado'])->name('ajax.correspondencias.estado');
 
         Route::get('ajax/trds-por-flujo/{flujo_id}', [CorrespondenciaController::class, 'getTrdsByFlujo'])->name('ajax.trds.flujo');
+
+        Route::get('ajax/remitente-por-codigo/{cod_ter}',[CorrespondenciaController::class, 'getRemitenteByCodigo'])->name('ajax.remitente.codigo');
 
         // ---------------------------------------------------
         // 3. FLUJOS Y PROCESOS

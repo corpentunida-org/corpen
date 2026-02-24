@@ -19,6 +19,11 @@ use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Model;
 use Spatie\Permission\Traits\HasRoles;
+use App\Models\Correspondencia\FlujoDeTrabajo;
+use App\Models\Correspondencia\ProcesoUsuario;
+use App\Models\Correspondencia\Notificacion;
+use App\Models\Correspondencia\Trd;
+use App\Models\Correspondencia\Correspondencia;
 
 class User extends Authenticatable
 {
@@ -102,7 +107,7 @@ class User extends Authenticatable
 
     public function cargoRelation()
     {
-        return $this->hasOne(GdoCargo::class, 'correo_corporativo', 'email');
+        return $this->hasOne(GdoCargo::class, 'GDO_empleados_cedula', 'nid');
     }
 
     // Un "getter" que trae el cargo por email directamente
@@ -141,37 +146,37 @@ class User extends Authenticatable
     // Flujos creados por el usuario
     public function flujosDeTrabajo()
     {
-        return $this->hasMany(\App\Models\Correspondencia\FlujoDeTrabajo::class, 'usuario_id');
+        return $this->hasMany(FlujoDeTrabajo::class, 'usuario_id');
     }
 
     // Procesos asignados al usuario (tabla pivote)
     public function procesosAsignados()
     {
-        return $this->hasMany(\App\Models\Correspondencia\ProcesoUsuario::class, 'user_id');
+        return $this->hasMany(ProcesoUsuario::class, 'user_id');
     }
 
     // Notificaciones recibidas
     public function notificacionesRecibidas()
     {
-        return $this->hasMany(\App\Models\Correspondencia\Notificacion::class, 'usuario_destino_id');
+        return $this->hasMany(Notificacion::class, 'usuario_destino_id');
     }
 
     // Notificaciones enviadas
     public function notificacionesEnviadas()
     {
-        return $this->hasMany(\App\Models\Correspondencia\Notificacion::class, 'usuario_envia_id');
+        return $this->hasMany(Notificacion::class, 'usuario_envia_id');
     }
 
     // TRD creados
     public function trds()
     {
-        return $this->hasMany(\App\Models\Correspondencia\Trd::class, 'usuario_id');
+        return $this->hasMany(Trd::class, 'usuario_id');
     }
 
     // Correspondencia responsable
     public function correspondencias()
     {
-        return $this->hasMany(\App\Models\Correspondencia\Correspondencia::class, 'usuario_id');
+        return $this->hasMany(Correspondencia::class, 'usuario_id');
     }
 
     // Comunicaciones de salida generadas

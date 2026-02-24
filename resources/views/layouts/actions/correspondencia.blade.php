@@ -8,14 +8,13 @@
 
     <ul class="nxl-submenu">
         {{-- 1. DASHBOARD ESTRATÉGICO --}}
+        @candirect('correspondencia.usuario.agente')
         <li class="nxl-item">
             <a class="nxl-link" href="{{ route('correspondencia.tablero') }}">
                 <i class="bi bi-speedometer2 me-2"></i> Tablero de Control
             </a>
         </li>
-
-        {{-- SEPARADOR --}}
-        <li class="nxl-item-separator" style="height:1px; background: rgba(0,0,0,0.04); margin:10px 20px;"></li>
+        @endcandirect
 
         {{-- 2. GESTIÓN DOCUMENTAL --}}
         <li class="nxl-item">
@@ -28,50 +27,54 @@
                 <i class="bi bi-plus-square-fill me-2"></i> Radicar Solicitud
             </a>
         </li>
-
-        {{-- SEPARADOR --}}
-        <li class="nxl-item-separator" style="height:1px; background: rgba(0,0,0,0.04); margin:10px 20px;"></li>
-
+        @candirect('gestion.TRD')
         {{-- 3. CONFIGURACIÓN TÉCNICA (TRD Y FLUJOS) --}}
         <li class="nxl-item">
             <a class="nxl-link" href="{{ route('correspondencia.trds.index') }}">
                 <i class="bi bi-archive me-2"></i> Tablas de Retención (TRD)
             </a>
         </li>
+        @endcandirect
+
+        @candirect('correspondencia.usuario.agente')
         <li class="nxl-item">
             <a class="nxl-link" href="{{ route('correspondencia.flujos.index') }}">
                 <i class="bi bi-bezier2 me-2"></i> Flujos de Trabajo
             </a>
         </li>
+        @endcandirect
+        
+        @candirect('correspondencia.usuario.admin')
         <li class="nxl-item">
             <a class="nxl-link" href="{{ route('correspondencia.procesos.index') }}">
                 <i class="bi bi-diagram-3 me-2"></i> Definición de Procesos
             </a>
         </li>
-
-        {{-- SEPARADOR --}}
-        <li class="nxl-item-separator" style="height:1px; background: rgba(0,0,0,0.04); margin:10px 20px;"></li>
+        @endcandirect
 
         {{-- 4. OPERACIÓN Y SEGUIMIENTO --}}
+        @candirect('correspondencia.usuario.admin')
         <li class="nxl-item">
             <a class="nxl-link" href="{{ route('correspondencia.correspondencias-procesos.index') }}">
                 <i class="bi bi-eye me-2"></i> Seguimiento (Tracking)
             </a>
         </li>
+        @endcandirect
+        @candirect('correspondencia.usuario.admin')
         <li class="nxl-item">
             <a class="nxl-link" href="{{ route('correspondencia.comunicaciones-salida.index') }}">
                 <i class="bi bi-send-check me-2"></i> Comunicaciones de Salida
             </a>
         </li>
+        @endcandirect
+        @candirect('correspondencia.usuario.agente')
         <li class="nxl-item">
             <a class="nxl-link" href="{{ route('correspondencia.notificaciones.index') }}">
                 <i class="bi bi-bell me-2"></i> Alertas y Notificaciones
             </a>
         </li>
-
-        {{-- SEPARADOR --}}
-        <li class="nxl-item-separator" style="height:1px; background: rgba(0,0,0,0.04); margin:10px 20px;"></li>
-
+        @endcandirect
+        @candirect('correspondencia.usuario.admin')
         {{-- 5. PARAMETRIZACIÓN --}}
         <li class="nxl-item">
             <a class="nxl-link" href="{{ route('correspondencia.plantillas.index') }}">
@@ -89,11 +92,12 @@
                 <i class="bi bi-mailbox2 me-2"></i> Medios de Recepción
             </a>
         </li>
+        @endcandirect
 
         {{-- SEPARADOR FINAL --}}
-        <li class="nxl-item-separator" style="height:1px; background: rgba(0,0,0,0.04); margin:10px 20px;"></li>
+       {{--  <li class="nxl-item-separator" style="height:1px; background: rgba(0,0,0,0.04); margin:10px 20px;"></li> --}}
 
         {{-- ESPACIADO PARA SCROLL --}}
-        <li class="nxl-item" style="height: 80px; pointer-events: none; list-style: none;"></li>
+{{--         <li class="nxl-item" style="height: 80px; pointer-events: none; list-style: none;"></li> --}}
     </ul>
 </li>
