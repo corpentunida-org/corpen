@@ -43,7 +43,7 @@ class CorrespondenciaController extends Controller
         $query = Correspondencia::with(['trd', 'flujo', 'estado', 'usuario', 'remitente', 'medioRecepcion'])
             ->latest();
 
-        // 1. FILTRO DE CATEGORÍAS 
+        // 1. FILTRO DE CATEGORÍAS (Esto era lo que te faltaba)
         if ($request->filled('flujo_id')) {
             $query->where('flujo_id', $request->flujo_id);
         }
