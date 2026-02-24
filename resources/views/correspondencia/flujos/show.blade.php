@@ -5,13 +5,12 @@
                 <nav aria-label="breadcrumb">
                     <ol class="breadcrumb mb-1">
                         <li class="breadcrumb-item"><a href="{{ route('correspondencia.flujos.index') }}" class="text-decoration-none">Flujos</a></li>
-                        <li class="breadcrumb-item active">Detalle</li>
+                        <li class="breadcrumb-item active">Detalle y Analítica</li>
                     </ol>
                 </nav>
                 <h1 class="page-title h3 fw-bold">{{ $flujo->nombre }}</h1>
             </div>
             <div class="header-actions d-flex gap-2">
-                {{-- NUEVO: Botón de TRD dinámico en el encabezado --}}
                 @if(empty($flujo->trd))
                     <button type="button" class="btn btn-outline-primary btn-sm d-flex align-items-center rounded-3 px-3 shadow-sm bg-white" data-bs-toggle="modal" data-bs-target="#modalTRD">
                         <i class="bi bi-folder-plus me-1"></i> Configurar TRD
@@ -27,17 +26,17 @@
         </header>
 
         <div class="row">
-            {{-- Columna Izquierda: Info General --}}
+            {{-- COLUMNA IZQUIERDA: Info General y KPIs --}}
             <div class="col-lg-4">
+                
+                {{-- Tarjeta 1: Info General --}}
                 <div class="card border-0 shadow-sm rounded-4 mb-4">
                     <div class="card-body p-4 text-center">
                         <div class="icon-box bg-soft-indigo text-indigo mx-auto mb-3" style="width: 70px; height: 70px; border-radius: 15px; display: flex; align-items: center; justify-content: center;">
                             <i class="bi bi-diagram-3-fill fs-2"></i>
                         </div>
                         <h5 class="fw-bold mb-1">Información General</h5>
-                        <span class="badge rounded-pill {{ ($flujo->correspondencias_count ?? 0) > 0 ? 'bg-soft-warning text-warning' : 'bg-soft-success text-success' }} mb-3">
-                            {{ ($flujo->correspondencias_count ?? 0) > 0 ? 'En Uso: ' . $flujo->correspondencias_count : 'Sin Uso Activo' }}
-                        </span>
+                        <p class="text-muted small mb-3">{{ $flujo->detalle ?? 'Sin descripción.' }}</p>
                         
                         <hr class="my-3 text-muted opacity-25">
                         
@@ -60,7 +59,7 @@
                                 </div>
                             </div>
 
-                            {{-- NUEVO: ESTADO DE LA TRD --}}
+                            {{-- ESTADO DE LA TRD --}}
                             <div class="mb-3 bg-light p-3 rounded-3 border">
                                 <label class="small text-muted d-block text-uppercase fw-bold" style="font-size: 0.65rem;">Serie Documental (TRD)</label>
                                 @if(!empty($flujo->trd))
@@ -82,15 +81,53 @@
                                     </div>
                                 @endif
                             </div>
+                        </div>
+                    </div>
+                </div>
 
-                            <div class="row g-2">
-                                <div class="col-6">
-                                    <label class="small text-muted d-block text-uppercase fw-bold" style="font-size: 0.65rem;">Creado</label>
-                                    <p class="small fw-medium mb-0"><i class="bi bi-calendar-event me-1"></i>{{ $flujo->created_at->format('d/m/Y') }}</p>
+                {{-- Tarjeta 2: KPIs / Métricas --}}
+                <div class="row g-3 mb-4">
+                    <div class="col-6">
+                        <div class="card border-0 shadow-sm rounded-4 bg-soft-warning h-100">
+                            <div class="card-body p-3">
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="bg-warning text-white rounded-circle p-2 me-2 d-flex align-items-center justify-content-center" style="width: 30px; height: 30px;">
+                                        <i class="bi bi-activity"></i>
+                                    </div>
+                                    <h6 class="mb-0 text-dark fw-bold" style="font-size: 0.8rem;">Activos</h6>
                                 </div>
-                                <div class="col-6">
-                                    <label class="small text-muted d-block text-uppercase fw-bold" style="font-size: 0.65rem;">Actualizado</label>
-                                    <p class="small fw-medium mb-0"><i class="bi bi-clock-history me-1"></i>{{ $flujo->updated_at->format('d/m/Y') }}</p>
+                                <h3 class="fw-bold text-dark mb-0">{{ $total_activos }}</h3>
+                                <small class="text-muted" style="font-size: 0.7rem;">Radicados en curso</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="card border-0 shadow-sm rounded-4 bg-soft-success h-100">
+                            <div class="card-body p-3">
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="bg-success text-white rounded-circle p-2 me-2 d-flex align-items-center justify-content-center" style="width: 30px; height: 30px;">
+                                        <i class="bi bi-check2-all"></i>
+                                    </div>
+                                    <h6 class="mb-0 text-dark fw-bold" style="font-size: 0.8rem;">Finalizados</h6>
+                                </div>
+                                <h3 class="fw-bold text-dark mb-0">{{ $total_finalizados }}</h3>
+                                <small class="text-muted" style="font-size: 0.7rem;">Radicados cerrados</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm rounded-4 bg-light">
+                            <div class="card-body p-3 d-flex align-items-center justify-content-between">
+                                <div>
+                                    <div class="d-flex align-items-center mb-1">
+                                        <i class="bi bi-stopwatch text-indigo me-2"></i>
+                                        <h6 class="mb-0 text-dark fw-bold" style="font-size: 0.8rem;">Tiempo Promedio</h6>
+                                    </div>
+                                    <small class="text-muted" style="font-size: 0.7rem;">Desde la creación hasta el cierre</small>
+                                </div>
+                                <div class="text-end">
+                                    <h4 class="fw-bold text-indigo mb-0">{{ number_format($tiempo_promedio_dias, 1) }}</h4>
+                                    <small class="text-muted" style="font-size: 0.7rem;">Días</small>
                                 </div>
                             </div>
                         </div>
@@ -98,23 +135,45 @@
                 </div>
             </div>
 
-            {{-- Columna Derecha: Pasos --}}
+            {{-- COLUMNA DERECHA: Dashboard y Pasos --}}
             <div class="col-lg-8">
+                
+                {{-- NUEVO: DASHBOARD CUELLO DE BOTELLA (Chart.js) --}}
                 <div class="card border-0 shadow-sm rounded-4 mb-4">
                     <div class="card-body p-4">
-                        <h6 class="text-uppercase fw-bold text-muted small mb-3" style="letter-spacing: 1px;">Descripción del Proceso</h6>
-                        <p class="text-secondary">{{ $flujo->detalle ?? 'No se ha proporcionado una descripción detallada.' }}</p>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div>
+                                <h6 class="text-uppercase fw-bold text-indigo mb-0">
+                                    <i class="bi bi-bar-chart-fill me-2"></i>Análisis de Cuellos de Botella
+                                </h6>
+                                <small class="text-muted">Distribución de los {{ $total_activos }} radicados activos por etapa.</small>
+                            </div>
+                        </div>
                         
-                        <hr class="my-4 text-muted opacity-25">
+                        @if($total_activos > 0)
+                            <div style="height: 250px; width: 100%;">
+                                <canvas id="bottleneckChart"></canvas>
+                            </div>
+                        @else
+                            <div class="text-center py-4 bg-light rounded-3 border-dashed">
+                                <i class="bi bi-emoji-smile text-success fs-2 opacity-50 mb-2 d-block"></i>
+                                <p class="text-muted mb-0 small">No hay radicados estancados en este momento. ¡Todo fluye!</p>
+                            </div>
+                        @endif
+                    </div>
+                </div>
 
+                {{-- Secuencia de Pasos Original --}}
+                <div class="card border-0 shadow-sm rounded-4 mb-4">
+                    <div class="card-body p-4">
                         <div class="d-flex justify-content-between align-items-center mb-4">
-                            <h6 class="text-uppercase fw-bold text-indigo mb-0">
+                            <h6 class="text-uppercase fw-bold text-dark mb-0">
                                 <i class="bi bi-list-check me-2"></i>Secuencia de Pasos
                             </h6>
                             <span class="badge bg-light text-indigo border px-3 py-2 rounded-pill">{{ $flujo->procesos->count() }} Etapas</span>
                         </div>
 
-                        @forelse($flujo->procesos->sortBy('id') as $proceso)
+                        @forelse($flujo->procesos as $proceso)
                             <div class="d-flex mb-4 position-relative">
                                 @if(!$loop->last)
                                     <div class="position-absolute h-100 border-start border-2 border-light" style="left: 15px; top: 35px; z-index: 1;"></div>
@@ -177,6 +236,8 @@
         </div>
     </div>
 
+    {{-- MODALES A CONTINUACIÓN (Crear Proceso y Configurar TRD) Mantenidos igual --}}
+    
     {{-- MODAL CREAR PASO --}}
     <div class="modal fade" id="modalCrearProceso" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
@@ -224,7 +285,7 @@
         </div>
     </div>
 
-    {{-- NUEVO: MODAL TRD (Solo se renderiza si no hay TRD vinculada) --}}
+    {{-- MODAL TRD --}}
     @if(empty($flujo->trd))
     <div class="modal fade" id="modalTRD" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -237,7 +298,6 @@
                     @csrf
                     <div class="modal-body p-4">
                         <input type="hidden" name="usuario_id" value="{{ auth()->id() }}">
-                        {{-- Vinculación oculta y automática al flujo actual --}}
                         <input type="hidden" name="fk_flujo" value="{{ $flujo->id }}">
 
                         <div class="mb-4">
@@ -300,23 +360,79 @@
 
     {{-- Estilos --}}
     <style>
-        .bg-soft-indigo { background-color: #f0f3ff; }
+        .bg-soft-indigo { background-color: #e0e7ff; }
         .text-indigo { color: #4f46e5; }
         .bg-indigo { background-color: #4f46e5; }
         .btn-indigo { background-color: #4f46e5; color: white; }
+        
+        .bg-soft-warning { background-color: #fffbeb; }
+        .bg-soft-success { background-color: #ecfdf5; }
+        .border-dashed { border: 1px dashed #dee2e6; }
+        
         .btn-primary-neo { background-color: #4f46e5; color: white; border: none; padding: 0.5rem 1.2rem; border-radius: 10px; font-weight: 500; transition: all 0.2s; }
         .hover-up:hover { transform: translateY(-3px); border-color: #c7d2fe !important; }
     </style>
 
-    {{-- Script AJAX para guardar TRD sin salir de la página --}}
     @push('scripts')
+    {{-- Cargar Chart.js mediante CDN --}}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Lógica para renderizar la Gráfica de Cuellos de Botella
+            const chartData = {!! json_encode($datosGrafica ?? []) !!};
+            const chartLabels = {!! json_encode($labelsGrafica ?? []) !!};
+            
+            // Solo dibujamos si hay datos activos
+            if (chartData.length > 0 && chartData.reduce((a, b) => a + b, 0) > 0) {
+                const ctx = document.getElementById('bottleneckChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: chartLabels,
+                        datasets: [{
+                            label: 'Radicados en esta etapa',
+                            data: chartData,
+                            backgroundColor: 'rgba(79, 70, 229, 0.6)', // Color índigo semi-transparente
+                            borderColor: 'rgba(79, 70, 229, 1)',
+                            borderWidth: 1,
+                            borderRadius: 6, // Bordes redondeados modernos
+                            barPercentage: 0.6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }, // Ocultamos la leyenda por ser obvia
+                            tooltip: {
+                                backgroundColor: '#111827',
+                                padding: 12,
+                                titleFont: { size: 13, family: 'Inter' },
+                                bodyFont: { size: 14, weight: 'bold', family: 'Inter' },
+                                displayColors: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { stepSize: 1, font: { family: 'Inter' } },
+                                grid: { color: '#f3f4f6', drawBorder: false }
+                            },
+                            x: {
+                                ticks: { font: { family: 'Inter', size: 11 } },
+                                grid: { display: false }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Lógica para guardar TRD vía AJAX (Mantenida igual)
             const trdForm = document.getElementById('form-trd');
             if(trdForm) {
                 trdForm.addEventListener('submit', async function(e) {
                     e.preventDefault();
-                    
                     const btn = document.getElementById('btn-save-trd');
                     const originalHtml = btn.innerHTML;
                     
@@ -336,22 +452,16 @@
                         if (response.ok) {
                             window.location.reload();
                         } else {
-                            // Capturamos la respuesta del servidor
                             const data = await response.json();
-                            console.error("Error del servidor:", data);
-
-                            // Si es un error de validación (Status 422)
                             if (response.status === 422 && data.errors) {
                                 let mensajes = [];
                                 for (let campo in data.errors) {
                                     mensajes.push("• " + data.errors[campo][0]);
                                 }
-                                alert("No se pudo guardar por estos errores:\n\n" + mensajes.join("\n"));
+                                alert("No se pudo guardar:\n\n" + mensajes.join("\n"));
                             } else {
-                                // Otro tipo de error (500, etc)
                                 alert(data.message || 'Ocurrió un error inesperado al guardar.');
                             }
-
                             btn.innerHTML = originalHtml;
                             btn.disabled = false;
                         }
