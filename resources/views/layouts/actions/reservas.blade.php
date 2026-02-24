@@ -9,4 +9,7 @@
     <ul class="nxl-submenu">
         <li class="nxl-item"><a class="nxl-link" href="{{ route('reserva.inmueble.historico')}}">Historicos</a></li>
     </ul>
+    <ul class="nxl-submenu">
+        <li class="nxl-item"><a class="nxl-link" href="{{ route('reserva.crudinmuebles.index')}}">Inmuebles</a></li>
+    </ul>
 </li>

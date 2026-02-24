@@ -3,24 +3,7 @@
     @section('titlepage', 'Reserva Asociado')
     <x-success />
 
-    <div class="row">
-        <div class="col-xxl-3 col-md-6">
-            @foreach($inmuebles as $inmueble)
-                <div class="card card-body">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div class="me-3">
-                            <h5 class="fs-4">{{ $inmueble->name }}</h5>
-                            <span class="text-muted">{{ $inmueble->description }}</span><br>
-                            <a href="{{ route('apto-santamarta') }}" target="_blank">Ver apartamento</a>
-                        </div>
-                        <div class="btn btn-md btn-success">
-                            <a href="{{ route('reserva.inmueble.create', $inmueble->id) }}" style="color: white">Reservar</a>
-                        </div>
-                    </div>
-                </div>
-            @endforeach
-        </div>
-    </div>
+    @include('reserva.asociado.inmueblesindex')
 
     <div class="col-lg-12">
         <div class="card stretch stretch-full">
@@ -70,11 +53,11 @@
                                             <a href="{{ route('reserva.inmueble.soporte.create', $reserva->id) }}" class="btn btn-sm btn-success">
                                                 <i class="bi bi-cloud-upload"></i> <!-- Ícono de subir -->
                                             </a>
-                                            <a href="{{ route('reserva.show', $reserva->id) }}"
+                                            <a href="{{ route('reserva.reserva.show', $reserva->id) }}"
                                                class="btn btn-sm btn-primary">
                                                 <i class="bi bi-grid"></i>
                                             </a>
-                                            <form action="{{ route('reserva.destroy', $reserva->id) }}" method="POST">
+                                            <form action="{{ route('reserva.reserva.destroy', $reserva->id) }}" method="POST">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="btn btn-sm btn-danger"

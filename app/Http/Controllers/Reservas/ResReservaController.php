@@ -1,7 +1,8 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Reservas;
 
+use App\Http\Controllers\Controller;
 use App\Mail\ReservaInmueble;
 use App\Models\Reserva\Res_inmueble;
 use App\Models\Reserva\Res_reserva;
@@ -18,9 +19,7 @@ class ResReservaController extends Controller  implements HasMiddleware
     //
     public static function middleware(): array
     {
-        return [
-            'auth',
-        ];
+        return ['auth',];
     }
 
     public function index()
@@ -151,7 +150,7 @@ class ResReservaController extends Controller  implements HasMiddleware
             ->cc( 'jesdis@hotmail.com' )
             ->send(New ReservaInmueble(auth()->user()->name, $texto, 'Reserva de Inmueble'));
 
-        return redirect()->route('reserva.index')->with('message', 'Reserva creada con éxito');
+        return redirect()->route('reserva.reserva.index')->with('message', 'Reserva creada con éxito');
     }
 
     public function destroy ( $id )
@@ -172,7 +171,7 @@ class ResReservaController extends Controller  implements HasMiddleware
 
         $reserva->delete();
 
-        return redirect()->route('reserva.index')->with('success', 'Reserva eliminada con éxito');
+        return redirect()->route('reserva.reserva.index')->with('success', 'Reserva eliminada con éxito');
     }
 
     public function createSoporte ( $id )
@@ -200,7 +199,7 @@ class ResReservaController extends Controller  implements HasMiddleware
             ->cc( 'jesdis@hotmail.com' )
             ->send(New ReservaInmueble(auth()->user()->name, $texto, 'Soporte pago del Aseo - Reserva'));
 
-        return redirect()->route('reserva.index')->with('success', 'Soporte de pago cargado con éxito');
+        return redirect()->route('reserva.reserva.index')->with('success', 'Soporte de pago cargado con éxito');
     }
 
     public function indexConfirmacion()
