@@ -673,8 +673,14 @@ Route::middleware(['auth'])
         // 2. GESTIÓN DE COMPRAS (Entradas)
         // ---------------------------------------------------
 
-        // Descargar Factura PDF
+        // Descargar Factura PDF (Sistema)
         Route::get('compras/{id}/descargar-factura', [CompraController::class, 'descargarFactura'])->name('compras.descargar');
+        
+        // Ver Archivo Adjunto en AWS S3
+        Route::get('compras/{id}/archivo', [CompraController::class, 'verArchivoS3'])->name('compras.archivo');
+
+        // Crear nueva Referencia (Producto) desde el Modal (AJAX) - ¡NUEVA RUTA AQUÍ!
+        Route::post('referencias/ajax', [CompraController::class, 'storeReferenciaAjax'])->name('referencias.ajax');
 
         // CRUD Completo de Compras
         Route::resource('compras', CompraController::class)->parameters(['compras' => 'invCompra']);

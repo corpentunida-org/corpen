@@ -11,6 +11,7 @@ use App\Models\Maestras\MaeTipo;
 use App\Models\Maestras\maeDistritos;
 use App\Models\Soportes\ScpUsuario;
 use App\Models\Interacciones\Interaction;
+use App\Models\Inventario\InvCompra;
 
 
 class maeTerceros extends Model
@@ -261,5 +262,15 @@ class maeTerceros extends Model
     public function correspondencias()
     {
         return $this->hasMany(\App\Models\Correspondencia\Correspondencia::class, 'remitente_id', 'cod_ter');
+    }
+
+    /**
+     * Relación uno a muchos con Compras
+     * Un tercero (proveedor) puede tener muchas compras asociadas
+     */
+    public function compras()
+    {
+        // hasMany(Modelo Relacionado, llave_foranea, llave_primaria_local)
+        return $this->hasMany(InvCompra::class, 'cod_ter_proveedor', 'cod_ter');
     }
 }
