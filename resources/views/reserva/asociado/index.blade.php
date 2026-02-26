@@ -32,8 +32,8 @@
                             <thead>
                                 <tr>
                                     <th>Inmueble</th>
-                                    <th>Inicio</th>
-                                    <th>Fin</th>
+                                    <th>Fecha Inicio - Fin</th>                                    
+                                    <th>Comentario</th>
                                     <th>Estado</th>
                                     <th class="text-end">Actions</th>
                                 </tr>
@@ -50,16 +50,9 @@
                                                 </a>
                                             </div>
                                         </td>
-
-                                        <td>
-                                            <div class="fw-semibold mb-1">{{ $reserva->fecha_inicio }}</div>
-                                        </td>
-                                        <td>
-                                            <div class="fw-semibold mb-1">{{ $reserva->fecha_fin }}</div>
-                                        </td>
-                                        <td>
-                                            <div class="fw-semibold mb-1">{{ $reserva->res_status->name }}</div>
-                                        </td>
+                                        <td>{{ $reserva->fecha_inicio }} a {{ $reserva->fecha_fin }}</td>
+                                        <td>{{ $reserva->comentario_reserva ?: ' '}}</td>
+                                        <td><div class="fw-semibold mb-1">{{ $reserva->res_status->name }}</div></td>
                                         <td>
                                             <div class="hstack gap-2 justify-content-end">
                                             @if($reserva->soporte_pago == null || empty($reserva->soporte_pago))

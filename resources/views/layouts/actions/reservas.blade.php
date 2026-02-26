@@ -5,14 +5,9 @@
     </a>
     @candirect('reservas.Reserva.lista')
         <ul class="nxl-submenu">
-            <li class="nxl-item"><a class="nxl-link" href="{{ route('reserva.inmueble.confirmacion') }}">Reservas</a></li>
+            <li class="nxl-item"><a class="nxl-link" href="{{ route('reserva.inmueble.historico') }}">Reservas</a></li>
         </ul>
-    @endcandirect
-    @candirect('reservas.Reserva.historico')
-        <ul class="nxl-submenu">
-            <li class="nxl-item"><a class="nxl-link" href="{{ route('reserva.inmueble.historico') }}">Historicos</a></li>
-        </ul>
-    @endcandirect
+    @endcandirect  
     @candirect('reservas.Inmueble.create')
         <ul class="nxl-submenu">
             <li class="nxl-item"><a class="nxl-link" href="{{ route('reserva.crudinmuebles.index') }}">Inmuebles</a></li>
