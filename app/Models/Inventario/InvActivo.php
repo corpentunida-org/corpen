@@ -24,25 +24,25 @@ class InvActivo extends Model
     protected $table = 'inv_activos';
     
     protected $fillable = [
-        'id', // ID del sistema
-        'nombre', // Arear de Sistemas
-        'codigo_activo', // Arear de Sistemas
-        'serial', // Arear de Sistemas
-        'descripcion', // Arear de Sistemas
-        'unidad_medida', // Arear de Sistemas
-        'hoja_vida',// Arear de Sistemas
+        'id', // ID del sistema Esta la llenas tu
+        'nombre', // Arear de Sistemas - Esta no la tocas
+        'codigo_activo', // Arear de Sistemas - Esta no la tocas
+        'serial', // Arear de Sistemas - Esta no la tocas
+        'descripcion', // Arear de Sistemas - Esta no la tocas
+        'unidad_medida', // Arear de Sistemas - Esta no la tocas
+        'hoja_vida',// Arear de Sistemas - Esta no la tocas
         'fecha_inicio_garantia', /* INSERCION - FECHA DEL CAMPO (Modelo: class InvCompra extends Model) - (Campo: "fecha_factura") */ 
-        'fecha_fin_garantia', // Arear de Sistemas
-        'vida_util_meses',// Arear de Sistemas
+        'fecha_fin_garantia', // Arear de Sistemas - Esta no la tocas
+        'vida_util_meses',// Arear de Sistemas - Esta no la tocas
         // Claves Foráneas
-        'id_InvSubGrupos', // Arear de Sistemas
-        'id_InvMarcas', // Arear de Sistemas
-        'id_InvBodegas',// Arear de Sistemas
-        'id_MaeMunicipios', // Arear de Sistemas
+        'id_InvSubGrupos', // Arear de Sistemas - Esta no la tocas
+        'id_InvMarcas', // Arear de Sistemas - Esta no la tocas
+        'id_InvBodegas',// Arear de Sistemas - Esta no la tocas
+        'id_MaeMunicipios', // Arear de Sistemas - Esta no la tocas
         'id_InvDetalleCompras', /* INSERCION - ID (Modelo: class InvDetalleCompra extends Model) - (Campo: "id") */
         'id_usersRegistro', /* INSERCION - CAMPO (Modelo: class InvCompra extends Model) - (Campo: "id_usersRegistro") */
-        'id_Estado', // Arear de Sistemas
-        'id_ultimo_usuario_asignado',// Arear de Sistemas
+        'id_Estado', // Arear de Sistemas - Esta no la tocas
+        'id_ultimo_usuario_asignado',// Arear de Sistemas - Esta no la tocas
         'invReferencias_id' /* INSERCION - CAMPO (class InvDetalleCompra extends Model) - (Campo: "invReferencias_id") */
     ];
 
