@@ -287,10 +287,10 @@ class ResReservaController extends Controller implements HasMiddleware
 
     public function indexHistorico()
     {
-        $reservasact = Res_reserva::whereIn('res_status_id', [1,2])->where('nid', '<>', '0000000000')->where('fecha_fin', '>=', today())
+        $reservasact = Res_reserva::select('id','res_inmueble_id','res_status_id','user_id','nid','fecha_inicio','fecha_fin')->whereIn('res_status_id', [1,2])->where('nid', '<>', '0000000000')->where('fecha_fin', '>=', today())
         ->orderBy('fecha_inicio', 'asc')->with(['tercero','user'])->get();
 
-        $historicosres = Res_reserva::where('nid', '<>', '0000000000')->orderBy('fecha_inicio', 'asc')->with(['tercero'])->get();
+        $historicosres = Res_reserva::select('id','res_inmueble_id','res_status_id','user_id','nid','fecha_inicio','fecha_fin')->where('nid', '<>', '0000000000')->with(['tercero:nom_ter'])->get();
         return view('reserva.funcionario.historico', compact('reservasact','historicosres'));
     }
 
@@ -300,6 +300,12 @@ class ResReservaController extends Controller implements HasMiddleware
             ->whereNotNull('soporte_pago')
             ->with(['user', 'res_inmueble'])
             ->get();
-        return view('reserva.funcionario.respagos', compact('reservas'));
+
+        $reservascon = Res_reserva::where('res_status_id', 2)
+            ->whereNotNull('soporte_pago')
+            ->with(['user', 'res_inmueble'])
+            ->get();
+
+        return view('reserva.funcionario.respagos', compact('reservas', 'reservascon'));
     }
 }
