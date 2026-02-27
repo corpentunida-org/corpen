@@ -6,12 +6,17 @@
             <h5 class="mb-0">Reservas pendientes de verificación de pago</h5>
         </a>
         <div class="card-body" style="">
+            @if ($reservas->count() == 0)
+                <div class="text-center">
+                    <i class="bi bi-check2-circle fs-1 text-success mb-3"></i>
+                    <p class="text-muted">No hay reservas pendientes de verificación de pago</p>
+                </div>
+            @else                
             <ul class="list-unstyled mb-0">
                 @foreach ($reservas as $res)
                     <li class="p-3 mb-3 border border-dashed rounded-3 item-reserva">
                         <div class="d-flex align-items-center justify-content-between">
                             <div class="d-flex align-items-center gap-3 me-3">
-
                                 <div class="custom-control custom-checkbox me-2">
                                     <input class="custom-control-input checkconfirmres"
                                         id="checkReserva_{{ $res->id }}" type="checkbox"
@@ -22,6 +27,51 @@
 
                                 <div class="d-flex align-items-center gap-3">
 
+                                    <div class="lh-base txt-nid">{{ $res->nid }}</div>
+
+                                    <a href="#">
+                                        <div class="fs-13 fw-bold text-truncate-1-line">
+                                            <span class="txt-usuario">{{ $res->user->name }}</span>
+                                            <span
+                                                class="ms-2 badge bg-soft-primary text-primary text-capitalize txt-inmueble">
+                                                {{ $res->res_inmueble->name }}
+                                            </span>
+                                        </div>
+                                        <div class="fs-12 fw-normal text-truncate-1-line txt-fechas">
+                                            {{ $res->fecha_inicio }} a {{ $res->fecha_fin }}
+                                        </div>
+                                    </a>
+                                </div>
+                            </div>
+                            <div class="d-flex flex-shrink-0 align-items-center gap-3">
+                                <a href="{{ $res->getFile($res->soporte_pago) }}"
+                                    class="badge bg-soft-primary text-primary text-capitalize p-2 link-soporte"
+                                    target="_blank">
+                                    <i class="bi bi-paperclip"></i> Soporte de pago
+                                </a>
+                                <div class="d-md-inline-block d-none me-3 txt-solicitud">
+                                    {{ $res->fecha_solicitud->format('d M, Y') }}
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                @endforeach
+            </ul>
+            @endif
+        </div>
+    </div>
+
+    <div class="card stretch stretch-full">
+        <a class="card-header">
+            <h5 class="mb-0">Historial de Reservas Verificadas</h5>
+        </a>
+        <div class="card-body" style="">
+            <ul class="list-unstyled mb-0">
+                @foreach ($reservascon as $res)
+                    <li class="p-3 mb-3 border border-dashed rounded-3 item-reserva">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-3 me-3">
+                                <div class="d-flex align-items-center gap-3">
                                     <div class="lh-base txt-nid">{{ $res->nid }}</div>
 
                                     <a href="#">

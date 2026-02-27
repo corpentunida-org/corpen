@@ -634,8 +634,11 @@
                                                     </a>
                                                 </div>
                                             </td>
-                                            <td style="text-align: right; color: #94a3b8;vertical-align: top;">
-                                                {{ $event->created_at->diffForHumans() }}
+                                            <td>
+                                                <div class="text-end text-secondary d-flex flex-column align-items-end">
+                                                    <span style="color: #6366f1; font-weight: 600;">{{$event->created_at->format('d M Y')}}</span>
+                                                    <span style="color: #94a3b8">{{ $event->created_at->diffForHumans() }}</span>
+                                                </div>
                                             </td>
                                         </tr>
                                     @endforeach
