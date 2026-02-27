@@ -35,9 +35,7 @@ class InvActivo extends Model
         'fecha_fin_garantia', // Arear de Sistemas - Esta no la tocas
         'vida_util_meses',// Arear de Sistemas - Esta no la tocas
         // Claves Foráneas
-        'id_InvSubGrupos', // Arear de Sistemas - Esta no la tocas
         'id_InvMarcas', // Arear de Sistemas - Esta no la tocas
-        'id_InvBodegas',// Arear de Sistemas - Esta no la tocas
         'id_MaeMunicipios', // Arear de Sistemas - Esta no la tocas
         'id_InvDetalleCompras', /* INSERCION - ID (Modelo: class InvDetalleCompra extends Model) - (Campo: "id") */
         'id_usersRegistro', /* INSERCION - CAMPO (Modelo: class InvCompra extends Model) - (Campo: "id_usersRegistro") */
