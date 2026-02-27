@@ -25,8 +25,8 @@ class UserController extends Controller
 
     public function index()
     {
-        //$users = User::latest()->take(5)->get();
-        $users = User::where('type', null)->paginate(5);
+        $users = User::where('type', null)->get();
+        //$users = User::where('type', null)->paginate(5);
         return view('admin.users.index', compact('users'));
     }
     

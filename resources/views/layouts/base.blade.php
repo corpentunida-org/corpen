@@ -292,13 +292,13 @@
 
             <script src="{{ asset('assets/js/projects-init.min.js') }}"></script>
             <script src="{{ asset('assets/js/payment-init.min.js') }}"></script>
-
+            
             <!--! END: Apps Init !-->
 
             <script src="{{ asset('assets/vendors/js/tagify.min.js') }}"></script>
             <script src="{{ asset('assets/vendors/js/tagify-data.min.js') }}"></script>
             <script src="{{ asset('assets/vendors/js/quill.min.js') }}"></script>
-            <script src="{{ asset('assets/vendors/js/datepicker.min.js') }}"></script>
+            <script src="{{ asset('assets/vendors/js/datepicker.min.js') }}"></script>            
 
             <script src="{{ asset('assets/js/proposal-create-init.min.js') }}"></script>
             <!--! END: Apps Init !-->

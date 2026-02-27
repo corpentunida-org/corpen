@@ -1,16 +1,16 @@
 <x-base-layout>
     @section('titlepage', 'Reservas lista')
-    <x-success />
-    <div class="scrollbar-container ps ps--active-x ps--active-y row">
+    <x-success />    
         <div class="col-lg-12">
             <div class="card stretch stretch-full">
-                <button class="card-header border-0 text-start w-100 mb-0" data-bs-toggle="collapse" data-bs-target="#resactivas_collapse_0">
+                <div class="card-header cursor-pointer" data-bs-toggle="collapse"
+                    data-bs-target="#resactivas_collapse_0">
                     <div class="mb-0">
                         <h5 class="fw-bold mb-1">Listado de Reserva</h5>
                         <p class="text-muted mb-0 small">Listado detallado de reservas activas</p>
                     </div>
-                </button>
-                <hr class="m-0">
+                </div>
+                
                 <div class="card-body p-0 collapse show mt-0" id="resactivas_collapse_0">
                     <div class="table-responsive">
                         <table class="table table-hover" id="customerList">
@@ -77,33 +77,20 @@
             </div>
         </div>
 
-        <div class="col-lg-12">
-            <div class="card stretch stretch-full">
-                <button class="card-header border-0 text-start w-100 mb-0" data-bs-toggle="collapse" data-bs-target="#calendar_collapse_0">
-                    <div class="mb-0">
-                        <h5 class="mb-0">Reservas Calendario</h5>
-                        <p class="text-muted mb-0 small">Calendario detallado de reservas activas.</p>
-                    </div>
-                </button>
-                <hr class="m-0">
-                <div class="card-body p-0 collapse show mt-0" id="calendar_collapse_0">
-
-                </div>
-            </div>
-        </div>
 
         <div class="col-lg-12">
             <div class="card stretch stretch-full">
-                <button class="card-header border-0 text-start w-100 mb-0" data-bs-toggle="collapse" data-bs-target="#historicores_collapse_0">
+                <div class="card-header cursor-pointer" data-bs-toggle="collapse"
+                    data-bs-target="#historicores_collapse_0">
                     <div class="mb-0">
                         <h5 class="fw-bold mb-1">Histórico de Reservas</h5>
                         <p class="text-muted mb-0 small">Listado detallado de todas las reservas registradas.</p>
                     </div>
-                </button>
-                <hr class="m-0">
+                </div>
+        
                 <div class="card-body p-0 collapse show mt-0" id="historicores_collapse_0">
                     <div class="table-responsive">
-                        <table class="table table-hover" id="customerList">
+                        <table class="table table-hover" id="projectList">
                             <thead>
                                 <tr>
                                     <th>Inmueble</th>
@@ -167,5 +154,55 @@
             </div>
         </div>
 
-    </div>
+        {{-- <div class="col-lg-12">
+            <div class="card stretch stretch-full">
+                <div class="card-header cursor-pointer" data-bs-toggle="collapse" data-bs-target="#calendarCollapse">
+                    <h5 class="fw-bold mb-1">Reservas Calendario</h5>
+                    <p class="text-muted mb-0 small">
+                        Calendario detallado de reservas activas.
+                    </p>
+                </div>
+                <hr class="m-0">
+
+                <div class="card-body d-flex flex-column p-0">
+                    <div id="calendar" class="flex-fill"></div>
+                </div>
+            </div>
+        </div> --}}
+    
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const calendarEl = document.getElementById('calendar');
+
+            const calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'es',
+                selectable: true,
+                editable: true,
+                height: '100%',
+                expandRows: true,
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                },
+
+                // Click en día para agregar evento
+                dateClick: function(info) {
+                    const title = prompt("Nombre del evento:");
+                    if (title) {
+                        calendar.addEvent({
+                            title: title,
+                            start: info.dateStr,
+                            allDay: true
+                        });
+                    }
+                },
+
+            });
+
+            calendar.render();
+        });
+    </script>
 </x-base-layout>
