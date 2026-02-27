@@ -39,7 +39,7 @@
                 </div>
             </div>
             <div class="card-body custom-card-action">
-                <form action="{{ route('admin.users.show', 1) }}" method="GET">
+                {{-- <form action="{{ route('admin.users.show', 1) }}" method="GET">
                     <div class="mb-4 pb-1 d-flex">
                         <input type="text" name="query" id="userSearch" class="form-control"
                             placeholder="Buscar por nombre de usuario...">
@@ -84,14 +84,57 @@
                             <hr class="border-dashed my-3">
                         @endforeach
                     @endif
+                </div> --}}
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0" id="projectList">
+                        <thead>
+                            <tr>
+                                <th>Usuario</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($users as $user)
+                                <tr class="border-bottom border-dashed">
+                                    {{-- Usuario --}}
+                                    <td class="py-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="me-3 text-primary">
+                                                <i class="bi bi-person-circle fs-3"></i>
+                                            </div>
+
+                                            <div>
+                                                <a href="{{ route('admin.users.edit', $user->id) }}"
+                                                    class="fw-semibold text-decoration-none d-block">
+                                                    {{ $user->name }}
+                                                </a>
+
+                                                <small class="text-muted">
+                                                    {{ $user->email }}
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </td>
+
+                                    {{-- Acciones --}}
+                                    <td class="text-end" style="width:70px">
+                                        <a href="{{ route('admin.users.edit', $user->id) }}"
+                                            class="avatar-text avatar-md ms-auto" data-bs-toggle="tooltip" data-title="Ver Detalle"><i
+                                                class="bi bi-arrow-right"></i></a>
+                                    </td>
+
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
-            <div class="card-footer d-flex justify-content-center">
+            {{-- <div class="card-footer d-flex justify-content-center">
                 @if (isset($users))
                     {{ $users->links() }}
                 @endif
-            </div>
+            </div> --}}
         </div>
     </div>
     {{-- ----------------------------------------------------------------------------------- --}}
