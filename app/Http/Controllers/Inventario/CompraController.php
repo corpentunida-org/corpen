@@ -9,7 +9,8 @@ use App\Models\Inventario\InvMetodo;
 use App\Models\Inventario\InvReferencia; 
 use App\Models\Inventario\InvActivo;
 use App\Models\Inventario\InvSubgrupo;
-use App\Models\Inventario\InvBodega; // <--- Importado para cargar bodegas
+use App\Models\Inventario\InvBodega;
+use App\Models\Inventario\InvMarca; // <--- Importado para el nuevo flujo
 use App\Models\Maestras\maeTerceros;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,9 +19,11 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class CompraController extends Controller
 {
+    /**
+     * Listado de compras
+     */
     public function index()
     {
-        // Cargamos la compra junto con su proveedor, método de pago y usuario
         $compras = InvCompra::with(['metodo', 'usuarioRegistro', 'proveedor'])
             ->orderBy('created_at', 'desc')
             ->paginate(10);
@@ -28,25 +31,29 @@ class CompraController extends Controller
         return view('inventario.compras.index', compact('compras'));
     }
 
+    /**
+     * Formulario de creación
+     */
     public function create()
     {
         $metodos = InvMetodo::all();
         $proveedores = maeTerceros::select('cod_ter', 'nom_ter', 'razon_soc')->get(); 
         
-        // Cargamos las referencias para enviarlas al formulario
-        $referencias = InvReferencia::select('id', 'referencia', 'id_InvSubGrupos', 'id_InvBodegas')
-            ->with(['subgrupo:id,nombre', 'bodega:id,nombre']) // Traemos los nombres de subgrupo y bodega
+        // Cargamos referencias con sus relaciones para el datalist
+        $referencias = InvReferencia::select('id', 'referencia', 'id_InvSubGrupos', 'id_InvBodegas', 'id_InvMarcas')
+            ->with(['subgrupo:id,nombre', 'bodega:id,nombre', 'marca:id,nombre']) 
             ->get();     
                
-        // Cargamos los subgrupos para el modal de "Nueva Referencia"
         $subgrupos = InvSubgrupo::select('id', 'nombre')->get();
+        $bodegas = InvBodega::select('id', 'nombre')->get();
+        $marcas = InvMarca::select('id', 'nombre')->orderBy('nombre')->get(); // <--- Para el modal
 
-        // ---> NUEVO: Cargamos las bodegas para el modal de "Nueva Referencia" <---
-        $bodegas = InvBodega::select('id', 'nombre')->get(); // Asegúrate de que el campo sea 'nombre' o el que uses
-
-        return view('inventario.compras.create', compact('metodos', 'proveedores', 'referencias', 'subgrupos', 'bodegas'));
+        return view('inventario.compras.create', compact('metodos', 'proveedores', 'referencias', 'subgrupos', 'bodegas', 'marcas'));
     }
 
+    /**
+     * Guardar compra y generar activos
+     */
     public function store(Request $request)
     {
         $request->validate([
@@ -69,7 +76,7 @@ class CompraController extends Controller
         try {
             DB::beginTransaction(); 
 
-            // --- SUBIDA A S3 ---
+            // Gestión de archivo en AWS S3
             $rutaArchivoS3 = null;
             if ($request->hasFile('eg_archivo')) {
                 $file = $request->file('eg_archivo');
@@ -79,7 +86,7 @@ class CompraController extends Controller
                 $rutaArchivoS3 = $path;
             }
 
-            // 1. Crear Cabecera (InvCompra)
+            // 1. Crear Cabecera
             $compra = InvCompra::create([
                 'cod_ter_proveedor' => $request->cod_ter_proveedor,
                 'numero_factura'    => $request->numero_factura,
@@ -92,7 +99,7 @@ class CompraController extends Controller
                 'id_usersRegistro'  => auth()->id(),
             ]);
 
-            // 2. Crear Detalles e Inserción Forzada de Activos
+            // 2. Crear Detalles y Activos
             foreach ($request->detalles as $item) {
                 $detalle = InvDetalleCompra::create([
                     'id_InvCompras'     => $compra->id,
@@ -103,42 +110,29 @@ class CompraController extends Controller
                     'sub_total'         => $item['cantidad'] * $item['precio'],
                 ]);
 
-                // Definimos la cantidad de activos a crear basados en la cantidad del detalle
                 $cantidadActivos = (int) $item['cantidad'];
-
-                // 1. Buscamos la referencia y le decimos a Laravel que traiga también el subgrupo relacionado
                 $referencia = InvReferencia::with('subgrupo')->find($detalle->invReferencias_id);
 
-                // 2. Extraemos el nombre del subgrupo de forma segura
                 $nombreSubgrupo = ($referencia && $referencia->subgrupo) 
                                     ? $referencia->subgrupo->nombre 
                                     : 'Sin Subgrupo definido';
 
-                // 3. Entramos al ciclo para crear los activos (se repetirá según $cantidadActivos)
                 for ($i = 0; $i < $cantidadActivos; $i++) {
                     InvActivo::create([
-                        // Asignamos el nombre que acabamos de consultar
                         'nombre'                => $nombreSubgrupo, 
-                        
                         'unidad_medida'         => '1', 
-                        
-                        // Claves foráneas obligatorias (BIGINT/INT)
-                        'id_InvMarcas'          => 1, 
                         'id_MaeMunicipios'      => 1, 
                         'id_Estado'             => 1,
-                        
-                        // IDs de relación real
                         'id_InvDetalleCompras'  => $detalle->id, 
                         'id_usersRegistro'      => auth()->id(), 
                         'invReferencias_id'     => $detalle->invReferencias_id,
-                        
-                        // Fecha de garantía (obligatoria para Sistemas)
                         'fecha_inicio_garantia' => $compra->fecha_factura,
+                        // id_InvMarcas ya no se envía aquí, se obtiene vía Referencia
                     ]);
                 }
             }
 
-            // 3. IVA Y COSTOS EXTRA
+            // 3. IVA y Costos Extra
             $referenciaGenericaId = $request->detalles[0]['invReferencias_id'];
             if ($request->filled('costo_iva') && $request->costo_iva > 0) {
                 InvDetalleCompra::create([
@@ -156,38 +150,208 @@ class CompraController extends Controller
             }
 
             DB::commit(); 
-            return redirect()->route('inventario.compras.index')->with('success', 'Guardado con éxito.');
+            return redirect()->route('inventario.compras.index')->with('success', 'Compra guardada exitosamente.');
 
         } catch (\Exception $e) {
             DB::rollBack(); 
             if (isset($rutaArchivoS3)) Storage::disk('s3')->delete($rutaArchivoS3);
-            return redirect()->back()->withInput()->with('error', 'Error en base de datos: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Error en el proceso: ' . $e->getMessage());
         }
     }
 
+    /**
+     * Crear Referencia vía AJAX desde el modal
+     */
+    public function storeReferenciaAjax(Request $request)
+    {
+        $request->validate([
+            'referencia'      => 'required|string|max:255|unique:inv_referencias,referencia',
+            'detalle'         => 'nullable|string|max:255',
+            'id_InvSubGrupos' => 'required|exists:inv_subgrupos,id',
+            'id_InvBodegas'   => 'required|exists:inv_bodegas,id', 
+            'id_InvMarcas'    => 'required|exists:inv_marcas,id', // <--- Validación del nuevo campo
+        ]);
+
+        $referencia = InvReferencia::create([
+            'referencia'      => $request->referencia,
+            'detalle'         => $request->detalle,
+            'id_InvSubGrupos' => $request->id_InvSubGrupos,
+            'id_InvBodegas'   => $request->id_InvBodegas,
+            'id_InvMarcas'    => $request->id_InvMarcas, // <--- Guardado del nuevo campo
+        ]);
+
+        return response()->json([
+            'success'    => true,
+            'referencia' => $referencia
+        ]);
+    }
+
+    /**
+     * Ver detalle de compra
+     */
     public function show($id)
     {
-        $compra = InvCompra::with(['detalles.referencia', 'proveedor', 'metodo', 'usuarioRegistro'])->findOrFail($id);
+        $compra = InvCompra::with([
+            'detalles' => function($query) { $query->withTrashed(); },
+            'detalles.referencia.subgrupo',
+            'detalles.referencia.marca', // <--- Incluimos marca
+            'proveedor', 
+            'metodo', 
+            'usuarioRegistro'
+        ])->findOrFail($id);
+
         return view('inventario.compras.show', compact('compra'));
     }
 
-    public function verArchivoS3($id)
+    /**
+     * Formulario de edición
+     */
+    public function edit($id)
+    {
+        $compra = InvCompra::with([
+            'detalles' => function($q) { $q->withTrashed(); },
+            'detalles.referencia.subgrupo',
+            'proveedor'
+        ])->findOrFail($id);
+        
+        $metodos = InvMetodo::all();
+        $proveedores = maeTerceros::select('cod_ter', 'nom_ter')->get(); 
+        $referencias = InvReferencia::with(['subgrupo', 'marca'])->get();
+        $subgrupos = InvSubgrupo::select('id', 'nombre')->get();
+        $bodegas = InvBodega::select('id', 'nombre')->get();
+        $marcas = InvMarca::select('id', 'nombre')->orderBy('nombre')->get(); // <--- También necesario aquí
+
+        $extraCosts = [
+            'iva' => $compra->detalles->where('cantidades', 0)
+                        ->filter(fn($i) => str_contains(strtolower($i->detalle), 'iva'))
+                        ->first()->precio_unitario ?? 0,
+            'varios' => $compra->detalles->where('cantidades', 0)
+                        ->filter(fn($i) => str_contains(strtolower($i->detalle), 'otros') || str_contains(strtolower($i->detalle), 'varios'))
+                        ->first()->precio_unitario ?? 0,
+        ];
+
+        return view('inventario.compras.edit', compact('compra', 'metodos', 'proveedores', 'referencias', 'extraCosts', 'subgrupos', 'bodegas', 'marcas'));
+    }
+
+    /**
+     * Actualizar compra
+     */
+    public function update(Request $request, $id)
     {
         $compra = InvCompra::findOrFail($id);
 
-        if (!$compra->eg_archivo) {
-            return back()->with('error', 'Esta compra no tiene archivo adjunto.');
-        }
+        $request->validate([
+            'cod_ter_proveedor' => 'required|exists:MaeTerceros,cod_ter',
+            'numero_factura'    => 'required|unique:inv_compras,numero_factura,' . $id,
+            'fecha_factura'     => 'required|date',
+            'id_InvMetodos'     => 'required|exists:inv_metodos,id',
+            'total_pago'        => 'required|numeric|min:0',
+            'eg_archivo'        => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:4096',
+            'detalles'          => 'required|array|min:1',
+        ]);
 
-        $url = '#';
+        try {
+            DB::beginTransaction();
+
+            if ($request->hasFile('eg_archivo')) {
+                if ($compra->eg_archivo) {
+                    Storage::disk('s3')->delete($compra->eg_archivo);
+                }
+                $file = $request->file('eg_archivo');
+                $path = $file->storeAs('corpentunida/inventario', 'fac_'.$request->numero_factura.'_'.time().'.'.$file->extension(), 's3');
+                $compra->eg_archivo = $path;
+            }
+
+            $compra->update([
+                'cod_ter_proveedor' => $request->cod_ter_proveedor,
+                'numero_factura'    => $request->numero_factura,
+                'fecha_factura'     => $request->fecha_factura,
+                'num_doc_interno'   => $request->num_doc_interno,
+                'numero_egreso'     => $request->numero_egreso,
+                'id_InvMetodos'     => $request->id_InvMetodos,
+                'total_pago'        => $request->total_pago,
+            ]);
+
+            if ($request->has('detalles_eliminados')) {
+                InvDetalleCompra::whereIn('id', $request->detalles_eliminados)->delete();
+            }
+
+            foreach ($request->detalles as $item) {
+                $datosDetalle = [
+                    'invReferencias_id' => $item['invReferencias_id'],
+                    'detalle'           => $item['detalle'],
+                    'cantidades'        => $item['cantidad'],
+                    'precio_unitario'   => $item['precio'],
+                    'sub_total'         => $item['cantidad'] * $item['precio'],
+                ];
+
+                if (isset($item['id']) && !empty($item['id'])) {
+                    InvDetalleCompra::where('id', $item['id'])->update($datosDetalle);
+                } else {
+                    $compra->detalles()->create($datosDetalle);
+                }
+            }
+
+            // Actualizar cargos extra
+            InvDetalleCompra::where('id_InvCompras', $compra->id)->where('cantidades', 0)->forceDelete();
+            $anchorRef = $request->detalles[0]['invReferencias_id'];
+
+            if ($request->costo_iva > 0) {
+                $compra->detalles()->create([
+                    'invReferencias_id' => $anchorRef,
+                    'detalle' => 'IVA Total ($)', 'cantidades' => 0,
+                    'precio_unitario' => $request->costo_iva, 'sub_total' => 0
+                ]);
+            }
+            if ($request->costo_varios > 0) {
+                $compra->detalles()->create([
+                    'invReferencias_id' => $anchorRef,
+                    'detalle' => 'Otros Costos / Varios ($)', 'cantidades' => 0,
+                    'precio_unitario' => $request->costo_varios, 'sub_total' => 0
+                ]);
+            }
+
+            DB::commit();
+            return redirect()->route('inventario.compras.show', $compra->id)->with('success', 'Compra actualizada correctamente.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Error al actualizar: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Eliminar compra
+     */
+    public function destroy($id)
+    {
+        try {
+            $compra = InvCompra::findOrFail($id);
+            if ($compra->eg_archivo) {
+                Storage::disk('s3')->delete($compra->eg_archivo);
+            }
+            $compra->detalles()->delete();
+            $compra->delete();
+
+            return redirect()->route('inventario.compras.index')->with('success', 'Compra eliminada.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Error al eliminar: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Utilidades: S3 y PDF
+     */
+    public function verArchivoS3($id)
+    {
+        $compra = InvCompra::findOrFail($id);
+        if (!$compra->eg_archivo) return back()->with('error', 'No hay archivo adjunto.');
+
         if (Storage::disk('s3')->exists($compra->eg_archivo)) {
-            $url = Storage::disk('s3')->temporaryUrl(
-                $compra->eg_archivo, now()->addMinutes(5)
-            );
+            $url = Storage::disk('s3')->temporaryUrl($compra->eg_archivo, now()->addMinutes(10));
             return redirect()->away($url); 
         }
-
-        return back()->with('error', 'El archivo no se encontró en el servidor AWS.');
+        return back()->with('error', 'Archivo no encontrado en S3.');
     }
 
     public function descargarFactura($id)
@@ -195,29 +359,5 @@ class CompraController extends Controller
         $compra = InvCompra::with(['detalles.referencia', 'proveedor', 'metodo', 'usuarioRegistro'])->findOrFail($id);
         $pdf = Pdf::loadView('inventario.compras.pdf', compact('compra'));
         return $pdf->download('Factura_' . $compra->numero_factura . '.pdf');
-    }
-
-    public function storeReferenciaAjax(Request $request)
-    {
-        $request->validate([
-            'referencia'      => 'required|string|max:255|unique:inv_referencias,referencia',
-            'detalle'         => 'nullable|string|max:255',
-            'id_InvSubGrupos' => 'required|exists:inv_subgrupos,id',
-            // ---> AHORA ES OBLIGATORIO Y DEBE EXISTIR EN LA TABLA BODEGAS <---
-            'id_InvBodegas'   => 'required|exists:inv_bodegas,id', 
-        ]);
-
-        $referencia = InvReferencia::create([
-            'referencia'      => $request->referencia,
-            'detalle'         => $request->detalle,
-            'id_InvSubGrupos' => $request->id_InvSubGrupos,
-            // ---> GUARDAMOS EL DATO QUE ELIJA EL USUARIO <---
-            'id_InvBodegas'   => $request->id_InvBodegas,
-        ]);
-
-        return response()->json([
-            'success'    => true,
-            'referencia' => $referencia
-        ]);
     }
 }

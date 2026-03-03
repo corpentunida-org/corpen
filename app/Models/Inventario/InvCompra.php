@@ -53,4 +53,5 @@ class InvCompra extends Model
         // belongsTo(Modelo Relacionado, llave_foranea, llave_primaria_del_modelo_relacionado)
         return $this->belongsTo(maeTerceros::class, 'cod_ter_proveedor', 'cod_ter'); 
     }
+    
 }

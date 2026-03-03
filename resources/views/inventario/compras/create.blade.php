@@ -1,6 +1,4 @@
 <x-base-layout>
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-
     <style>
         .page-wrap {
             max-width: 1100px;
@@ -117,56 +115,11 @@
             padding-left: 20px;
         }
 
-        /* Estilos Select2 */
-        .select2-container {
-            width: 100% !important;
-        }
-
-        .select2-container .select2-selection--single {
-            height: 41px !important;
-            border: 1px solid #cbd5e1 !important;
-            border-radius: 8px !important;
-            background-color: #fbfcfd !important;
-            padding: 0px 14px !important;
-            display: flex !important;
-            align-items: center !important;
-            font-family: inherit;
-            font-size: 0.95rem;
-        }
-
-        .select2-container--default .select2-selection--single .select2-selection__rendered {
-            color: #0f172a !important;
-            padding-left: 0 !important;
-            line-height: normal !important;
-            width: 100%;
-        }
-
-        .select2-container--default .select2-selection--single .select2-selection__arrow {
-            height: 40px !important;
-            right: 10px !important;
-        }
-
-        .select2-container--open .select2-selection--single {
-            border-color: #0f172a !important;
-            background-color: #fff !important;
-        }
-
         .input-readonly {
             background: #e2e8f0;
             color: #64748b;
             cursor: not-allowed;
             border-color: #cbd5e1;
-        }
-
-        /* --- NUEVO: ESTILOS RESULTADOS BUSCADOR SELECT2 --- */
-        .select2-results__option--highlighted .ref-badge-bod {
-            background: #cbd5e1 !important;
-            color: #0f172a;
-        }
-
-        .select2-results__option--highlighted .ref-badge-sg {
-            background: #cbd5e1 !important;
-            color: #0f172a;
         }
 
         /* Estilos Tabla Dinámica Items */
@@ -348,20 +301,6 @@
         .btn-modal-action:hover {
             background: #059669;
         }
-
-        .select2-container {
-            width: 100% !important;
-        }
-
-        .select2-selection {
-            height: 32px !important;
-            display: flex !important;
-            align-items: center !important;
-        }
-
-        .select2-selection__rendered {
-            line-height: 30px !important;
-        }
     </style>
 
     <div class="page-wrap">
@@ -376,23 +315,25 @@
             </div>
         @endif
 
-        {{-- PLANTILLA OCULTA PARA LAS OPCIONES DE REFERENCIAS (Optimiza la carga en nuevas filas) --}}
-        <select id="dummy_select_referencias" style="display:none;">
-            <option value="">Buscar producto, bodega o subgrupo...</option>
-            @foreach($referencias as $ref)
-                <option value="{{ $ref->id }}" data-subgrupo="{{ $ref->subgrupo->nombre ?? 'N/A' }}"
-                    data-bodega="{{ $ref->bodega->nombre ?? 'N/A' }}">
-                    {{ $ref->referencia }}
-                </option>
+        {{-- PLANTILLA ÚNICA DATALIST PARA PROVEEDORES --}}
+        <datalist id="proveedoresDataList">
+            @foreach($proveedores as $proveedor)
+                <option data-id="{{ $proveedor->cod_ter }}" value="{{ $proveedor->cod_ter }} - {{ $proveedor->nom_ter }} {{ $proveedor->razon_soc ? '- ' . $proveedor->razon_soc : '' }}"></option>
             @endforeach
-        </select>
+        </datalist>
 
-        <form action="{{ route('inventario.compras.store') }}" method="POST" enctype="multipart/form-data"
-            id="formCompra">
+        {{-- PLANTILLA ÚNICA DATALIST PARA PRODUCTOS --}}
+        <datalist id="referenciasDataList">
+            @foreach($referencias as $ref)
+                {{-- Actualizado para incluir Marca en el buscador --}}
+                <option data-id="{{ $ref->id }}" value="{{ $ref->referencia }} | Marca: {{ $ref->marca->nombre ?? 'N/A' }} | Bodega: {{ $ref->bodega->nombre ?? 'N/A' }} | SG: {{ $ref->subgrupo->nombre ?? 'N/A' }}"></option>
+            @endforeach
+        </datalist>
+
+        <form action="{{ route('inventario.compras.store') }}" method="POST" enctype="multipart/form-data" id="formCompra">
             @csrf
             <div class="form-header">
-                <a href="{{ route('inventario.compras.index') }}" class="back-link"><i class="bi bi-arrow-left"></i>
-                    Cancelar</a>
+                <a href="{{ route('inventario.compras.index') }}" class="back-link"><i class="bi bi-arrow-left"></i> Cancelar</a>
                 <h1 class="form-title">Nueva Compra</h1>
             </div>
 
@@ -404,8 +345,7 @@
                 <div class="section-body">
                     <div>
                         <label class="label">Registrado por</label>
-                        <input type="text" class="input input-readonly"
-                            value="{{ auth()->user()->name ?? 'Usuario Sistema' }}" disabled>
+                        <input type="text" class="input input-readonly" value="{{ auth()->user()->name ?? 'Usuario Sistema' }}" disabled>
                     </div>
                 </div>
             </div>
@@ -419,35 +359,24 @@
                     <div class="grid-2">
                         <div style="grid-column: span 2;">
                             <label class="label">Proveedor (Buscador) *</label>
-                            <select name="cod_ter_proveedor" class="input select2-proveedor" required>
-                                <option value="">Escriba para buscar proveedor...</option>
-                                @foreach($proveedores as $proveedor)
-                                    <option value="{{ $proveedor->cod_ter }}" {{ old('cod_ter_proveedor') == $proveedor->cod_ter ? 'selected' : '' }}>
-                                        {{ $proveedor->cod_ter }} - {{ $proveedor->nom_ter }}
-                                        {{ $proveedor->razon_soc ? ' - ' . $proveedor->razon_soc : '' }}
-                                    </option>
-                                @endforeach
-                            </select>
+                            <input list="proveedoresDataList" class="input proveedor-search" placeholder="Escriba el NIT o nombre del proveedor..." autocomplete="off" required>
+                            <input type="hidden" name="cod_ter_proveedor" class="proveedor-id" required>
                         </div>
                         <div>
                             <label class="label">Número de Factura *</label>
-                            <input type="text" name="numero_factura" class="input" placeholder="Ej: F-2024-001"
-                                value="{{ old('numero_factura') }}" required>
+                            <input type="text" name="numero_factura" class="input" placeholder="Ej: F-2024-001" value="{{ old('numero_factura') }}" required>
                         </div>
                         <div>
                             <label class="label">Fecha de Emisión *</label>
-                            <input type="date" name="fecha_factura" class="input" value="{{ old('fecha_factura') }}"
-                                required>
+                            <input type="date" name="fecha_factura" class="input" value="{{ old('fecha_factura') }}" required>
                         </div>
                         <div>
                             <label class="label">Núm. Doc. Interno</label>
-                            <input type="text" name="num_doc_interno" class="input" placeholder="Opcional"
-                                value="{{ old('num_doc_interno') }}">
+                            <input type="text" name="num_doc_interno" class="input" placeholder="Opcional" value="{{ old('num_doc_interno') }}">
                         </div>
                         <div>
                             <label class="label">Número de Egreso</label>
-                            <input type="number" name="numero_egreso" class="input" placeholder="Ej: 1024"
-                                value="{{ old('numero_egreso') }}">
+                            <input type="number" name="numero_egreso" class="input" placeholder="Ej: 1024" value="{{ old('numero_egreso') }}">
                         </div>
                         <div>
                             <label class="label">Método de Pago *</label>
@@ -462,8 +391,7 @@
                         </div>
                         <div>
                             <label class="label">Adjuntar Archivo de Egreso / PDF (AWS S3)</label>
-                            <input type="file" name="eg_archivo" class="input" style="padding: 7px;"
-                                accept=".pdf,.jpg,.jpeg,.png">
+                            <input type="file" name="eg_archivo" class="input" style="padding: 7px;" accept=".pdf,.jpg,.jpeg,.png">
                         </div>
                         <div style="grid-column: span 2;">
                             <input type="hidden" name="total_pago" id="total_pago_hidden" value="0">
@@ -499,41 +427,24 @@
                                 <tr>
                                     <td class="row-num" style="font-weight: 700; color: #64748b;">1</td>
                                     <td>
-                                        {{-- MODIFICADO: Eliminamos el datalist y el hidden, ahora usamos el select
-                                        directamente --}}
-                                        <select name="detalles[0][invReferencias_id]"
-                                            class="input select2-referencia item-ref-id" required>
-                                            <option value="">Buscar producto, bodega o subgrupo...</option>
-                                            @foreach($referencias as $ref)
-                                                <option value="{{ $ref->id }}"
-                                                    data-subgrupo="{{ $ref->subgrupo->nombre ?? 'N/A' }}"
-                                                    data-bodega="{{ $ref->bodega->nombre ?? 'N/A' }}">
-                                                    {{ $ref->referencia }}
-                                                </option>
-                                            @endforeach
-                                        </select>
+                                        <input list="referenciasDataList" class="input item-ref-search" placeholder="Escriba o seleccione..." autocomplete="off" required>
+                                        <input type="hidden" name="detalles[0][invReferencias_id]" class="item-ref-id" required>
                                     </td>
                                     <td>
-                                        <input type="text" name="detalles[0][detalle]" class="input item-detalle"
-                                            placeholder="Ej: Lote A, Talla M...">
+                                        <input type="text" name="detalles[0][detalle]" class="input item-detalle" placeholder="Ej: Lote A, Talla M...">
                                     </td>
                                     <td>
-                                        <input type="number" name="detalles[0][cantidad]" class="input item-qty"
-                                            value="1" min="0.01" step="0.01" required>
+                                        <input type="number" name="detalles[0][cantidad]" class="input item-qty" value="1" min="0.01" step="0.01" required>
                                     </td>
                                     <td>
-                                        <input type="text" class="input item-price-display input-money" placeholder="0"
-                                            required>
-                                        <input type="hidden" name="detalles[0][precio]" class="item-price-hidden"
-                                            value="0">
+                                        <input type="text" class="input item-price-display input-money" placeholder="0" required>
+                                        <input type="hidden" name="detalles[0][precio]" class="item-price-hidden" value="0">
                                     </td>
                                     <td>
-                                        <input type="text" class="input item-subtotal input-readonly input-money"
-                                            value="0" disabled style="font-family: monospace;">
+                                        <input type="text" class="input item-subtotal input-readonly input-money" value="0" disabled style="font-family: monospace;">
                                     </td>
                                     <td style="text-align: center;">
-                                        <button type="button" class="btn-remove-row" disabled style="opacity: 0.3;"><i
-                                                class="bi bi-x-circle"></i></button>
+                                        <button type="button" class="btn-remove-row" disabled style="opacity: 0.3;"><i class="bi bi-x-circle"></i></button>
                                     </td>
                                 </tr>
                             </tbody>
@@ -547,8 +458,7 @@
                     <div class="totals-wrapper">
                         <div class="total-row">
                             <label>Subtotal Productos:</label>
-                            <input type="text" id="suma_productos_display"
-                                class="input input-small input-readonly input-money" value="0" disabled>
+                            <input type="text" id="suma_productos_display" class="input input-small input-readonly input-money" value="0" disabled>
                         </div>
                         <div class="total-row">
                             <label>IVA Total ($):</label>
@@ -558,8 +468,7 @@
                         <div class="total-row">
                             <label>Otros Costos / Varios ($):</label>
                             <input type="text" class="input input-small extra-cost-display input-money" value="0">
-                            <input type="hidden" name="costo_varios" id="costo_varios" class="extra-cost-hidden"
-                                value="0">
+                            <input type="hidden" name="costo_varios" id="costo_varios" class="extra-cost-hidden" value="0">
                         </div>
                         <hr style="width: 100%; border: 0; border-top: 1px solid #cbd5e1; margin: 5px 0;">
                         <div class="total-row">
@@ -600,6 +509,17 @@
                     </select>
                 </div>
 
+                {{-- NUEVO: Campo Marca en el Modal --}}
+                <div style="margin-top: 15px;">
+                    <label class="label">Marca *</label>
+                    <select id="ref_id_InvMarcas" class="input" required>
+                        <option value="">Seleccione una marca...</option>
+                        @foreach($marcas as $marca)
+                            <option value="{{ $marca->id }}">{{ $marca->nombre }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
                 <div style="margin-top: 15px;">
                     <label class="label">Bodega *</label>
                     <select id="ref_id_InvBodegas" class="input" required>
@@ -615,105 +535,90 @@
                 </div>
             </div>
             <div style="margin-top: 25px; text-align: right; display: flex; justify-content: flex-end; gap: 10px;">
-                <button type="button" class="btn-add-row" style="width: auto; padding: 10px 20px;"
-                    id="cancelModal">Cancelar</button>
-                <button type="button" class="btn-submit" style="padding: 10px 20px;" id="btnSaveRefAjax">Guardar
-                    Producto</button>
+                <button type="button" class="btn-add-row" style="width: auto; padding: 10px 20px;" id="cancelModal">Cancelar</button>
+                <button type="button" class="btn-submit" style="padding: 10px 20px;" id="btnSaveRefAjax">Guardar Producto</button>
             </div>
         </div>
     </div>
 
     {{-- Librerías JS --}}
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 
     <script>
         $(document).ready(function () {
-            // Inicializar Select2 Proveedor
-            $('.select2-proveedor').select2({ placeholder: "Seleccione o busque un proveedor...", allowClear: true, width: '100%' });
+            
+            // =========================================================
+            // LÓGICA DE DICCIONARIO PARA DATALIST (Cero Lag y Funciona)
+            // =========================================================
+            
+            // 1. Guardamos todo en memoria cuando carga la página
+            let dictProveedores = {};
+            $('#proveedoresDataList option').each(function () {
+                dictProveedores[$(this).val()] = $(this).attr('data-id');
+            });
 
-            // ==========================================
-            // LOGICA SELECT2 PERSONALIZADO PARA REFERENCIAS
-            // ==========================================
+            let dictReferencias = {};
+            $('#referenciasDataList option').each(function () {
+                dictReferencias[$(this).val()] = $(this).attr('data-id');
+            });
 
-            // Función para buscar por nombre, subgrupo o bodega
-            function matchCustomReferencia(params, data) {
-                if ($.trim(params.term) === '') return data;
-                if (typeof data.text === 'undefined') return null;
+            // 2. Evento instantáneo para Proveedores
+            $(document).on('input change', '.proveedor-search', function () {
+                let val = $(this).val();
+                let hiddenInput = $(this).siblings('.proveedor-id');
 
-                let term = params.term.toLowerCase();
-                let text = data.text.toLowerCase();
-                let subgrupo = $(data.element).data('subgrupo') ? $(data.element).data('subgrupo').toString().toLowerCase() : '';
-                let bodega = $(data.element).data('bodega') ? $(data.element).data('bodega').toString().toLowerCase() : '';
-
-                if (text.indexOf(term) > -1 || subgrupo.indexOf(term) > -1 || bodega.indexOf(term) > -1) {
-                    return data;
+                if (dictProveedores.hasOwnProperty(val)) {
+                    hiddenInput.val(dictProveedores[val]);
+                    $(this).css('border-color', '#cbd5e1');
+                } else {
+                    hiddenInput.val('');
+                    if (val) $(this).css('border-color', '#ef4444');
                 }
-                return null;
-            }
+            });
 
-            // Función para renderizar los 3 campos en la lista desplegable
-            function formatResultReferencia(repo) {
-                if (!repo.id) return repo.text; // Texto por defecto "Buscar..."
-                if (repo.newTag) return `<span>Crear nueva referencia "${repo.text}" <i class="bi bi-plus-circle ms-1"></i> </span>`; // Cuando escriben algo nuevo
+            // 3. Evento instantáneo para Referencias / Productos
+            $(document).on('input change', '.item-ref-search', function () {
+                let val = $(this).val();
+                let hiddenInput = $(this).siblings('.item-ref-id');
 
-                let subgrupo = $(repo.element).data('subgrupo') || 'N/A';
-                let bodega = $(repo.element).data('bodega') || 'N/A';
+                if (dictReferencias.hasOwnProperty(val)) {
+                    hiddenInput.val(dictReferencias[val]);
+                    $(this).css('border-color', '#cbd5e1');
+                } else {
+                    hiddenInput.val('');
+                    if (val) $(this).css('border-color', '#ef4444');
+                }
+            });
 
-                return $(`
-                    <div style="display: flex; flex-direction: column; padding: 2px 0;">
-                        <span style="font-weight: 600; color: #0f172a;">${repo.text}</span>
-                        <div style="display: flex; gap: 8px; font-size: 0.75rem; margin-top: 4px;">
-                            <span class="ref-badge-bod" style="background: #e2e8f0; color: #475569; padding: 2px 6px; border-radius: 4px;">Bod: ${bodega}</span>
-                            <span class="ref-badge-sg" style="background: #f1f5f9; color: #475569; padding: 2px 6px; border-radius: 4px;">SG: ${subgrupo}</span>
-                        </div>
-                    </div>
-                `);
-            }
+            // =========================================================
+            // VALIDACIÓN ESTRICTA AL ENVIAR EL FORMULARIO
+            // =========================================================
+            $('#formCompra').on('submit', function (e) {
+                let isValid = true;
+                let errorMsg = [];
 
-            // Función para mostrar SÓLO LA REFERENCIA al seleccionar
-            function formatSelectionReferencia(repo) {
-                return repo.text;
-            }
+                if (!$('.proveedor-id').val()) {
+                    isValid = false;
+                    $('.proveedor-search').css('border-color', '#ef4444');
+                    errorMsg.push('- Debes seleccionar un PROVEEDOR válido de la lista desplegable.');
+                }
 
-            let filaActivaParaModal = null;
-
-            // Función reutilizable para inicializar Select2 de las Referencias
-            function initSelect2Referencias(selector) {
-                $(selector).select2({
-                    allowClear: true,
-                    width: '100%',
-                    tags: true, // Esto permite al usuario tipear un nombre nuevo
-                    dropdownParent: $('body'),
-                    createTag: function (params) {
-                        return { id: params.term, text: params.term, newTag: true };
-                    },
-                    matcher: matchCustomReferencia,
-                    templateResult: formatResultReferencia,
-                    templateSelection: formatSelectionReferencia,
-                    escapeMarkup: function (markup) {
-                        return markup;
-                    }
-                }).on('select2:select', function (e) {
-                    let data = e.params.data;
-                    // Si el usuario seleccionó "Crear nuevo" (el tag que tippeó)
-                    if (data.newTag) {
-                        filaActivaParaModal = $(this); // Guardamos quién disparó el modal
-                        $('#ref_referencia').val(data.text);
-                        $(this).val(null).trigger('change'); // Limpiamos el input para que no quede el texto roto si cancela
-                        $('#modalReferencia').fadeIn('fast');
+                $('.item-ref-id').each(function (index) {
+                    if (!$(this).val()) {
+                        isValid = false;
+                        $(this).siblings('.item-ref-search').css('border-color', '#ef4444');
+                        errorMsg.push(`- El producto de la FILA ${index + 1} no es válido. Escógelo de la lista.`);
                     }
                 });
-            }
 
-            // Inicializar la primera fila
-            //initSelect2Referencias('.select2-referencia');
-            $('.select2-referencia').each(function () {
-                initSelect2Referencias(this);
+                if (!isValid) {
+                    e.preventDefault();
+                    alert('FALTAN DATOS O HAY ERRORES:\n\n' + errorMsg.join('\n'));
+                }
             });
 
             // ==========================================
-            // LOGICA TABLA DINÁMICA Y TOTALES
+            // LÓGICA TABLA DINÁMICA Y TOTALES
             // ==========================================
             let rowCount = 1;
 
@@ -763,17 +668,14 @@
 
             $(document).on('input', '.item-qty', calculateTotals);
 
-            // AGREGAR FILA (Modificado para inyectar Select2)
+            // AGREGAR FILA
             $('#btnAddRow').click(function () {
-                let opciones = $('#dummy_select_referencias').html(); // Obtenemos las opciones precargadas
-
                 let newRow = `
                     <tr>
                         <td class="row-num" style="font-weight: 700; color: #64748b;">${rowCount + 1}</td>
                         <td>
-                            <select name="detalles[${rowCount}][invReferencias_id]" class="input select2-referencia item-ref-id" required>
-                                ${opciones}
-                            </select>
+                            <input list="referenciasDataList" class="input item-ref-search" placeholder="Escriba o seleccione..." autocomplete="off" required>
+                            <input type="hidden" name="detalles[${rowCount}][invReferencias_id]" class="item-ref-id" required>
                         </td>
                         <td>
                             <input type="text" name="detalles[${rowCount}][detalle]" class="input item-detalle" placeholder="Ej: Lote A, Talla M...">
@@ -795,9 +697,6 @@
                 `;
                 $('#itemsBody').append(newRow);
 
-                // Inicializamos Select2 en la nueva fila
-                initSelect2Referencias($('#itemsBody tr:last-child .select2-referencia'));
-
                 rowCount++;
                 updateRowNumbers();
                 calculateTotals();
@@ -805,8 +704,6 @@
 
             $(document).on('click', '.btn-remove-row', function () {
                 if ($('#itemsBody tr').length > 1) {
-                    // Tenemos que destruir el select2 antes de remover el nodo
-                    $(this).closest('tr').find('.select2-referencia').select2('destroy');
                     $(this).closest('tr').remove();
                     updateRowNumbers();
                     calculateTotals();
@@ -831,21 +728,20 @@
             calculateTotals();
 
             // ==========================================
-            // MODAL Y GUARDADO AJAX
+            // MODAL Y GUARDADO AJAX (ACTUALIZADO CON MARCA)
             // ==========================================
 
             $('#btnOpenModalRef').click(function () {
-                filaActivaParaModal = null;
                 $('#modalReferencia').fadeIn('fast');
             });
 
             $('#closeModal, #cancelModal').click(function () {
-                filaActivaParaModal = null;
                 $('#modalReferencia').fadeOut('fast');
                 $('#ref_referencia').val('');
                 $('#ref_detalle').val('');
                 $('#ref_id_InvSubGrupos').val('');
                 $('#ref_id_InvBodegas').val('');
+                $('#ref_id_InvMarcas').val(''); // Limpiar marca
                 $('#modalErrors').hide();
             });
 
@@ -854,10 +750,12 @@
                 let detalle = $('#ref_detalle').val().trim();
                 let id_InvSubGrupos = $('#ref_id_InvSubGrupos').val();
                 let id_InvBodegas = $('#ref_id_InvBodegas').val();
+                let id_InvMarcas = $('#ref_id_InvMarcas').val(); // Capturar marca
                 let btn = $(this);
 
                 if (!referencia) return $('#modalErrors').text('La referencia es obligatoria.').show();
                 if (!id_InvSubGrupos) return $('#modalErrors').text('Debe seleccionar un subgrupo.').show();
+                if (!id_InvMarcas) return $('#modalErrors').text('Debe seleccionar una marca.').show(); // Validar marca
                 if (!id_InvBodegas) return $('#modalErrors').text('Debe seleccionar una bodega.').show();
 
                 btn.prop('disabled', true).text('Guardando...');
@@ -871,7 +769,8 @@
                         referencia: referencia,
                         detalle: detalle,
                         id_InvSubGrupos: id_InvSubGrupos,
-                        id_InvBodegas: id_InvBodegas
+                        id_InvBodegas: id_InvBodegas,
+                        id_InvMarcas: id_InvMarcas // Enviar marca
                     },
                     success: function (response) {
                         if (response.success) {
@@ -879,32 +778,31 @@
                             let newRefName = response.referencia.referencia;
                             let nomSubgrupo = $('#ref_id_InvSubGrupos option:selected').text();
                             let nomBodega = $('#ref_id_InvBodegas option:selected').text();
+                            let nomMarca = $('#ref_id_InvMarcas option:selected').text(); // Texto marca
 
-                            // 1. Crear el nuevo "option" para inyectar
-                            let newOptionHTML = `<option value="${newRefId}" data-subgrupo="${nomSubgrupo}" data-bodega="${nomBodega}">${newRefName}</option>`;
+                            // 1. Armamos la cadena para el datalist incluyendo Marca
+                            let optionValue = `${newRefName} | Marca: ${nomMarca} | Bodega: ${nomBodega} | SG: ${nomSubgrupo}`;
+                            
+                            // 2. Agregamos al HTML del datalist
+                            let newOptionHTML = `<option data-id="${newRefId}" value="${optionValue}"></option>`;
+                            $('#referenciasDataList').append(newOptionHTML);
 
-                            // 2. Agregarlo a TODAS las listas de Select2 activas en la tabla y a la plantilla oculta
-                            $('.select2-referencia').append(newOptionHTML);
-                            $('#dummy_select_referencias').append(newOptionHTML);
+                            // 3. Agregamos al Diccionario en memoria
+                            dictReferencias[optionValue] = newRefId;
 
-                            // 3. Seleccionar la nueva opción en la fila correspondiente
-                            if (filaActivaParaModal) {
-                                filaActivaParaModal.val(newRefId).trigger('change');
-                                filaActivaParaModal = null;
-                            } else {
-                                $('#itemsBody tr:last-child').find('.select2-referencia').val(newRefId).trigger('change');
-                            }
+                            // 4. Autoseleccionar en la última fila agregada de la tabla
+                            let lastRowSearch = $('#itemsBody tr:last-child .item-ref-search');
+                            let lastRowHidden = $('#itemsBody tr:last-child .item-ref-id');
+                            lastRowSearch.val(optionValue).css('border-color', '#cbd5e1');
+                            lastRowHidden.val(newRefId);
 
-                            // 4. Limpiar y cerrar
+                            // Limpiar Modal
                             $('#modalReferencia').fadeOut('fast');
-                            $('#ref_referencia').val('');
-                            $('#ref_detalle').val('');
-                            $('#ref_id_InvSubGrupos').val('');
-                            $('#ref_id_InvBodegas').val('');
+                            $('#ref_referencia, #ref_detalle, #ref_id_InvSubGrupos, #ref_id_InvBodegas, #ref_id_InvMarcas').val('');
                             $('#modalErrors').hide();
                             btn.prop('disabled', false).text('Guardar Producto');
 
-                            alert('Producto creado con éxito.');
+                            alert('Producto creado y vinculado con éxito.');
                         }
                     },
                     error: function (xhr) {
