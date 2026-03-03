@@ -26,162 +26,147 @@
         .table-items { width: 100%; border-collapse: collapse; margin-top: 10px; min-width: 800px; }
         .table-items th { text-align: left; padding: 12px 16px; background: #f1f5f9; font-size: 0.8rem; text-transform: uppercase; color: #475569; border-radius: 6px 6px 0 0; }
         .table-items td { padding: 16px; border-bottom: 1px solid #e2e8f0; font-size: 0.95rem; color: #334155; vertical-align: middle; }
-        .table-items tr:last-child td { border-bottom: none; }
         .td-money { font-family: monospace; font-size: 1rem; }
         
         .total-box { background: #f8fafc; padding: 20px; border-radius: 8px; margin-top: 20px; text-align: right; border: 1px solid #e2e8f0; }
         .total-label { font-size: 0.9rem; font-weight: 600; color: #64748b; margin-right: 15px; }
         .total-amount { font-size: 1.5rem; font-weight: 800; color: #0f172a; font-family: monospace; }
         
-        /* Fila destacada para IVA o Costos extra */
-        .row-extra-cost { background-color: #f8fafc; }
-        .row-extra-cost td { border-bottom: 1px dashed #cbd5e1; }
+        .help-cursor { cursor: help; border-bottom: 1px dotted #cbd5e1; display: inline-block; width: 100%; }
+        .row-adjustment { background-color: #fefce8; } /* Color sutil para filas con cantidad 0 */
     </style>
 
     <div class="page-wrap">
-        
         <div class="header-actions">
             <div>
                 <a href="{{ route('inventario.compras.index') }}" class="back-link">
                     <i class="bi bi-arrow-left"></i> Volver al historial
                 </a>
-                <h1 class="page-title">Detalle de Compra</h1>
+                <h1 class="page-title">Detalle de Compra #{{ $compra->numero_factura }}</h1>
             </div>
             <div style="display: flex; gap: 10px;">
-                {{-- Botón AWS S3 --}}
                 @if($compra->eg_archivo)
-                    <a href="{{ route('inventario.compras.archivo', $compra->id) }}" target="_blank" class="btn-action btn-aws" title="Ver archivo original en AWS">
+                    <a href="{{ route('inventario.compras.archivo', $compra->id) }}" target="_blank" class="btn-action btn-aws">
                         <i class="bi bi-cloud-arrow-down"></i> Ver Soporte (AWS)
                     </a>
                 @endif
-                
-                {{-- Botón PDF del sistema --}}
+                <a href="{{ route('inventario.compras.edit', $compra->id) }}" class="btn-action">
+                    <i class="bi bi-pencil"></i> Editar
+                </a>
                 <a href="{{ route('inventario.compras.descargar', $compra->id) }}" class="btn-action btn-primary">
                     <i class="bi bi-file-pdf"></i> Generar PDF
                 </a>
             </div>
         </div>
 
-        {{-- TARJETA: INFORMACIÓN DEL PROVEEDOR --}}
+        {{-- TARJETA: PROVEEDOR --}}
         <div class="card">
             <div class="card-header"><i class="bi bi-building"></i> Información del Proveedor</div>
             <div class="card-body">
-                <div class="info-grid" style="grid-template-columns: 2fr 1fr;">
+                <div class="info-grid">
                     <div class="info-group">
                         <span class="info-label">Razón Social / Nombre</span>
-                        <span class="info-value" style="font-size: 1.1rem;">
-                            {{ $compra->proveedor->nom_ter ?? 'Proveedor No Encontrado' }} 
-                            {{ $compra->proveedor->razon_soc ? ' - ' . $compra->proveedor->razon_soc : '' }}
-                        </span>
+                        <span class="info-value">{{ $compra->proveedor->nom_ter ?? 'N/A' }}</span>
                     </div>
                     <div class="info-group">
                         <span class="info-label">NIT / Documento</span>
                         <span class="info-value">{{ $compra->cod_ter_proveedor }}</span>
                     </div>
+                    <div class="info-group">
+                        <span class="info-label">Teléfono</span>
+                        <span class="info-value">{{ $compra->proveedor->tel ?? 'N/A' }}</span>
+                    </div>
                 </div>
             </div>
         </div>
 
-        {{-- TARJETA: DATOS DE LA FACTURA Y PAGO --}}
+        {{-- TARJETA: FACTURACIÓN --}}
         <div class="card">
             <div class="card-header"><i class="bi bi-receipt"></i> Datos de Facturación</div>
             <div class="card-body">
                 <div class="info-grid">
                     <div class="info-group">
                         <span class="info-label">N° de Factura</span>
-                        <span class="info-value" style="font-size: 1.2rem; color: #0284c7;">{{ $compra->numero_factura }}</span>
+                        <span class="info-value" style="color: #0284c7;">{{ $compra->numero_factura }}</span>
                     </div>
                     <div class="info-group">
-                        <span class="info-label">Fecha de Emisión</span>
-                        <span class="info-value">{{ \Carbon\Carbon::parse($compra->fecha_factura)->format('d \d\e F, Y') }}</span>
+                        <span class="info-label">Fecha</span>
+                        <span class="info-value">{{ $compra->fecha_factura->format('d/m/Y') }}</span>
                     </div>
                     <div class="info-group">
                         <span class="info-label">Método de Pago</span>
                         <span class="info-value">{{ $compra->metodo->nombre ?? 'N/A' }}</span>
                     </div>
                     <div class="info-group">
-                        <span class="info-label">N° Doc. Interno</span>
-                        <span class="info-value">{{ $compra->num_doc_interno ?: 'No registrado' }}</span>
-                    </div>
-                    <div class="info-group">
-                        <span class="info-label">N° de Egreso</span>
-                        <span class="info-value">{{ $compra->numero_egreso ?: 'No registrado' }}</span>
-                    </div>
-                    <div class="info-group">
-                        <span class="info-label">Registrado en sistema por</span>
-                        <span class="info-value">{{ $compra->usuarioRegistro->name ?? 'Sistema' }}</span>
+                        <span class="info-label">N° Egreso</span>
+                        <span class="info-value">{{ $compra->numero_egreso ?: 'N/A' }}</span>
                     </div>
                 </div>
             </div>
         </div>
 
-        {{-- TARJETA: DETALLE DE ITEMS (PRODUCTOS) --}}
+        {{-- TARJETA: DETALLES --}}
         <div class="card">
-            <div class="card-header"><i class="bi bi-box-seam"></i> Detalle de Artículos Ingresados y Costos</div>
+            <div class="card-header"><i class="bi bi-box-seam"></i> Artículos y Cargos de la Compra</div>
             <div class="card-body" style="padding: 0;">
                 <div class="table-responsive">
                     <table class="table-items">
                         <thead>
                             <tr>
-                                <th style="width: 5%;">#</th>
-                                <th style="width: 25%;">Producto / Referencia</th>
-                                <th style="width: 25%;">Detalle</th>
-                                <th style="width: 10%; text-align: center;">Cantidad</th>
-                                <th style="width: 15%; text-align: right;">Costo Unit.</th>
-                                <th style="width: 20%; text-align: right;">Subtotal</th>
+                                <th style="width: 50px;">#</th>
+                                <th>Referencia / Producto</th>
+                                <th>Detalle Registro</th>
+                                <th style="text-align: center;">Cant.</th>
+                                <th style="text-align: right;">Precio Unit.</th>
+                                <th style="text-align: right;">Subtotal</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach($compra->detalles as $index => $detalle)
-                                {{-- Si la cantidad es 0, asumimos que es un registro de IVA o Costo Extra --}}
-                                @if($detalle->cantidades == 0)
-                                    <tr class="row-extra-cost">
-                                        <td style="font-weight: 700; color: #94a3b8;">*</td>
-                                        <td colspan="3" style="font-weight: 600; color: #475569; text-align: right;">
-                                            {{ $detalle->detalle ?: 'Costo Adicional' }}
-                                        </td>
-                                        <td style="text-align: right; color: #475569;" class="td-money">
-                                            ${{ number_format($detalle->precio_unitario, 2, ',', '.') }}
-                                        </td>
-                                        <td style="text-align: right; font-weight: 700;" class="td-money">
-                                            ${{ number_format($detalle->precio_unitario, 2, ',', '.') }}
-                                        </td>
-                                    </tr>
-                                @else
-                                    {{-- Fila normal de producto --}}
-                                    <tr>
-                                        <td style="font-weight: 700; color: #94a3b8;">{{ $index + 1 }}</td>
-                                        <td style="font-weight: 600; color: #0f172a;">
-                                            {{ $detalle->referencia->nombre ?? 'N/A' }}
-                                        </td>
-                                        <td style="font-size: 0.9rem; color: #64748b;">
-                                            {{ $detalle->detalle ?: '-' }}
-                                        </td>
-                                        <td style="text-align: center; font-weight: 600;">
-                                            {{ $detalle->cantidades }}
-                                        </td>
-                                        <td style="text-align: right;" class="td-money">
-                                            ${{ number_format($detalle->precio_unitario, 2, ',', '.') }}
-                                        </td>
-                                        <td style="text-align: right; font-weight: 700;" class="td-money">
-                                            ${{ number_format($detalle->sub_total, 2, ',', '.') }}
-                                        </td>
-                                    </tr>
-                                @endif
-                            @endforeach
+                            @forelse($compra->detalles as $index => $item)
+                                <tr class="{{ $item->cantidades <= 0 ? 'row-adjustment' : '' }}">
+                                    <td>{{ $index + 1 }}</td>
+                                    <td>
+                                        {{-- Uso de ?-> para evitar errores si la referencia es null --}}
+                                        <div class="help-cursor" title="Detalle Técnico: {{ $item->referencia?->detalle ?? 'Sin especificación' }}">
+                                            <div style="font-weight: 700; color: #0f172a; text-transform: uppercase; font-size: 0.85rem;">
+                                                {{ $item->referencia?->subgrupo?->nombre ?? 'CARGO ADICIONAL / AJUSTE' }}
+                                            </div>
+                                            <div style="font-size: 0.75rem; color: #64748b;">
+                                                @if($item->invReferencias_id)
+                                                    ID: {{ $item->invReferencias_id }} - <strong>{{ $item->referencia?->referencia ?? 'S/R' }}</strong>
+                                                @else
+                                                    <span class="badge bg-secondary">Sin Referencia de Inventario</span>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td style="font-size: 0.85rem; color: #475569;">{{ $item->detalle ?: '-' }}</td>
+                                    <td style="text-align: center; font-weight: 600;">{{ $item->cantidades }}</td>
+                                    <td style="text-align: right;" class="td-money">
+                                        ${{ number_format($item->precio_unitario, 2, ',', '.') }}
+                                    </td>
+                                    <td style="text-align: right; font-weight: 700;" class="td-money">
+                                        ${{ number_format($item->sub_total, 2, ',', '.') }}
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="6" style="text-align: center; padding: 40px; color: #64748b;">
+                                        No se encontraron artículos asociados a esta compra.
+                                    </td>
+                                </tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
             </div>
             
-            {{-- TOTAL GENERAL DE LA COMPRA --}}
             <div class="card-body" style="padding-top: 0;">
                 <div class="total-box">
-                    <span class="total-label">TOTAL FACTURA:</span>
+                    <span class="total-label">VALOR TOTAL:</span>
                     <span class="total-amount">${{ number_format($compra->total_pago, 2, ',', '.') }}</span>
                 </div>
             </div>
         </div>
-
     </div>
 </x-base-layout>

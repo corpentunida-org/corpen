@@ -17,10 +17,18 @@ class InvBodega extends Model
 
     /**
      * Relación con los Activos
+     * Una Bodega tiene muchos Activos A TRAVÉS de las Referencias.
      */
     public function activos()
     {
-        return $this->hasMany(InvActivo::class, 'id_InvBodegas');
+        return $this->hasManyThrough(
+            InvActivo::class, 
+            InvReferencia::class,
+            'id_InvBodegas',      // Llave foránea en la tabla inv_referencias
+            'invReferencias_id',  // Llave foránea en la tabla inv_activos
+            'id',                 // Llave local en inv_bodegas
+            'id'                  // Llave local en inv_referencias
+        );
     }
 
     /**

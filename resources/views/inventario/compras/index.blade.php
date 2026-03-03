@@ -12,10 +12,12 @@
         .table-list td { padding: 18px 24px; border-bottom: 1px solid #e2e8f0; font-size: 0.9rem; vertical-align: middle; }
         .table-list tr:hover { background-color: #f8fafc; }
         
-        .action-icon { color: #64748b; margin-left: 10px; font-size: 1.2rem; transition: 0.2s; display: inline-block; }
+        .action-icon { color: #64748b; margin-left: 10px; font-size: 1.2rem; transition: 0.2s; display: inline-block; text-decoration: none; }
         .action-icon:hover { color: #0f172a; transform: scale(1.1); }
         .icon-aws { color: #ea580c; } /* Color naranja para destacar que es un adjunto */
         .icon-aws:hover { color: #c2410c; }
+        .icon-edit { color: #2563eb; } /* Azul para editar */
+        .icon-edit:hover { color: #1d4ed8; }
         
         .badge-metodo { background: #e2e8f0; color: #475569; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
         .text-muted { font-size: 0.8rem; color: #64748b; margin-top: 4px; }
@@ -48,7 +50,7 @@
                         <th>Proveedor</th>
                         <th>Fecha</th>
                         <th>Método Pago</th>
-                        <th>Total</th>
+                        <th>Egreso</th> <th>Total</th>
                         <th>Registrado Por</th>
                         <th style="text-align: right">Acciones</th>
                     </tr>
@@ -63,7 +65,6 @@
                             @endif
                         </td>
                         <td>
-                            {{-- Mostramos el nombre del proveedor y su NIT/Documento --}}
                             <div style="font-weight: 600; color: #334155;">
                                 {{ $compra->proveedor->nom_ter ?? 'Proveedor No Encontrado' }}
                             </div>
@@ -73,6 +74,10 @@
                         <td>
                             <span class="badge-metodo">{{ $compra->metodo->nombre ?? 'N/A' }}</span>
                         </td>
+                        <td>
+                            {{-- Ajusta 'numero_egreso' al nombre real de tu columna en InvCompra --}}
+                            <div style="font-weight: 600; color: #0f172a;">{{ $compra->numero_egreso ?? 'N/A' }}</div>
+                        </td>
                         <td style="font-family: monospace; font-size: 1rem; font-weight: 600;">
                             ${{ number_format($compra->total_pago, 2) }}
                         </td>
@@ -81,6 +86,11 @@
                             {{-- Ver Detalle --}}
                             <a href="{{ route('inventario.compras.show', $compra->id) }}" class="action-icon" title="Ver Detalle">
                                 <i class="bi bi-eye"></i>
+                            </a>
+
+                            {{-- Editar --}}
+                            <a href="{{ route('inventario.compras.edit', $compra->id) }}" class="action-icon icon-edit" title="Editar Compra">
+                                <i class="bi bi-pencil-square"></i>
                             </a>
 
                             {{-- Ver Archivo Adjunto en AWS S3 (Solo si existe) --}}
@@ -98,7 +108,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" style="text-align: center; padding: 40px; color: #64748b;">
+                        <td colspan="8" style="text-align: center; padding: 40px; color: #64748b;">
                             <i class="bi bi-inbox" style="font-size: 2rem; display: block; margin-bottom: 10px;"></i>
                             No hay compras registradas en el sistema.
                         </td>
