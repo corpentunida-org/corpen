@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Maestras\maeTerceros;
 
 class Res_reserva extends Model
 {
@@ -43,5 +44,10 @@ class Res_reserva extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function tercero()
+    {
+        return $this->belongsTo(maeTerceros::class, 'nid', 'cod_ter');
     }
 }

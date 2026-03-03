@@ -3,7 +3,6 @@
     <x-success />
     <x-error />
 
-
     <div class="card" data-scrollbar-target="#psScrollbarInit">
         <div class="card-body p-4">
             <div id="calendar" class="p-4"></div>
