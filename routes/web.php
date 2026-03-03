@@ -673,8 +673,14 @@ Route::middleware(['auth'])
         // 2. GESTIÓN DE COMPRAS (Entradas)
         // ---------------------------------------------------
 
-        // Descargar Factura PDF
+        // Descargar Factura PDF (Sistema)
         Route::get('compras/{id}/descargar-factura', [CompraController::class, 'descargarFactura'])->name('compras.descargar');
+        
+        // Ver Archivo Adjunto en AWS S3
+        Route::get('compras/{id}/archivo', [CompraController::class, 'verArchivoS3'])->name('compras.archivo');
+
+        // Crear nueva Referencia (Producto) desde el Modal (AJAX)
+        Route::post('referencias/ajax', [CompraController::class, 'storeReferenciaAjax'])->name('referencias.ajax');
 
         // CRUD Completo de Compras
         Route::resource('compras', CompraController::class)->parameters(['compras' => 'invCompra']);
@@ -710,6 +716,10 @@ Route::middleware(['auth'])
         // Buscador AJAX para autocompletado
         Route::get('activos/buscar', [ActivoController::class, 'buscarAjax'])->name('activos.buscar');
 
+        // --- RUTA PARA EL MODAL DE COMPRA (AJAX) ---
+        // Esta ruta conecta el botón del Edit con el método que agregamos al ActivoController
+        Route::get('detalle-compra/ajax/{id}', [ActivoController::class, 'getDetalleCompraAjax'])->name('detalle-compra.ajax');
+
         // --- CRUD Principal ---
         Route::resource('activos', ActivoController::class)->parameters(['activos' => 'invActivo']);
 
@@ -733,7 +743,7 @@ Route::middleware(['auth'])
         Route::post('clasificacion/store-linea', [ClasificacionController::class, 'storeLinea'])->name('clasificacion.linea.store');
         Route::post('clasificacion/store-tipo', [ClasificacionController::class, 'storeTipo'])->name('clasificacion.tipo.store');
 
-        // 2. Rutas para ACTUALIZAR Catálogos Base (PUT) - ¡NUEVO!
+        // 2. Rutas para ACTUALIZAR Catálogos Base (PUT)
         Route::put('clasificacion/update-grupo/{id}', [ClasificacionController::class, 'updateGrupo'])->name('clasificacion.grupo.update');
         Route::put('clasificacion/update-linea/{id}', [ClasificacionController::class, 'updateLinea'])->name('clasificacion.linea.update');
         Route::put('clasificacion/update-tipo/{id}', [ClasificacionController::class, 'updateTipo'])->name('clasificacion.tipo.update');
