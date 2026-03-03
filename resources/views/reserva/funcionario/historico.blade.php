@@ -1,88 +1,208 @@
-
 <x-base-layout>
-    @section('titlepage', 'Historico reserva Asociado')
-    <x-success />
-
-    <div class="col-lg-12">
-        <div class="card stretch stretch-full">
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <x-success />
-                    @if($reservas->count() == 0)
-                        <div class="alert alert-warning text-center" style="margin-top: 15px">
-                            Aún no hay reservas.
-                        </div>
-                    @else
+    @section('titlepage', 'Reservas lista')
+    <x-success />    
+        <div class="col-lg-12">
+            <div class="card stretch stretch-full">
+                <div class="card-header cursor-pointer" data-bs-toggle="collapse"
+                    data-bs-target="#resactivas_collapse_0">
+                    <div class="mb-0">
+                        <h5 class="fw-bold mb-1">Listado de Reserva</h5>
+                        <p class="text-muted mb-0 small">Listado detallado de reservas activas</p>
+                    </div>
+                </div>
+                
+                <div class="card-body p-0 collapse show mt-0" id="resactivas_collapse_0">
+                    <div class="table-responsive">
                         <table class="table table-hover" id="customerList">
                             <thead>
-                            <tr>
-                                <th>Inmueble</th>
-                                <th>Asociado</th>
-                                <th>Inicio</th>
-                                <th>Fin</th>
-                                <th>Estado</th>
-                                <th class="text-end">Actions</th>
-                            </tr>
+                                <tr>
+                                    <th>Inmueble</th>
+                                    <th>Asociado</th>
+                                    <th>Inicio</th>
+                                    <th>Fin</th>
+                                    <th>Estado</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
                             </thead>
                             <tbody>
-                            @foreach ($reservas as $reserva)
-                                <tr>
-                                    <td>
-                                        <div class="fw-semibold mb-1"></div>
-                                        <div class="d-flex gap-3">
-                                            <a href="javascript:void(0);"
-                                               class="hstack gap-1 fs-11 fw-normal text-primary">
-                                                <span>{{ $reserva->res_inmueble->name }}</span>
-                                            </a>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        @if( $reserva->endosada)
-                                            <div class="fw-semibold mb-1">{{ $reserva->name_reserva }}</div>
-                                        @else
-                                            <div class="fw-semibold mb-1">{{ $reserva->user->name }}</div>
-                                        @endif
-                                    </td>
-                                    <td>
-                                        <div class="fw-semibold mb-1">{{ $reserva->fecha_inicio }}</div>
-                                    </td>
-                                    <td>
-                                        <div class="fw-semibold mb-1">{{ $reserva->fecha_fin }}</div>
-                                    </td>
-                                    <td>
-                                        <div class="fw-semibold mb-1">{{ $reserva->res_status->name }}</div>
-                                    </td>
+                                @foreach ($reservasact as $reserva)
+                                    <tr>
+                                        <td>
+                                            <div class="fw-semibold mb-1"></div>
+                                            <div class="d-flex gap-3">
+                                                <a class="hstack gap-1 fs-11 fw-normal text-primary">
+                                                    <span>{{ $reserva->res_inmueble->name }}</span>
+                                                </a>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="fw-semibold mb-1">{{ $reserva->nid }}</div>
+                                            {{ $reserva->tercero?->nom_ter ?? $reserva->user->name }}
+                                        </td>
+                                        <td>
+                                            <div class="fw-semibold mb-1">{{ $reserva->fecha_inicio }}</div>
+                                        </td>
+                                        <td>
+                                            <div class="fw-semibold mb-1">{{ $reserva->fecha_fin }}</div>
+                                        </td>
+                                        <td>
+                                            <div class="fw-semibold mb-1">{{ $reserva->res_status->name }}</div>
+                                        </td>
 
-                                    <td>
-                                        <div class="hstack gap-2 justify-content-end">
-
-                                            <a href="{{ route('reserva.inmueble.confirmacion.show', $reserva->id) }}"
-                                               class="btn btn-sm btn-primary">
-                                                <i class="bi bi-grid"></i>
-                                            </a>
-                                            <a href="#" {{-- href="{{ route('reserva.reserva.edit', $reserva->id) }}" --}}
-                                               class="btn btn-sm btn-warning">
-                                                <i class="bi bi-pencil-square"></i>
-                                            </a>
-                                            <form action="{{ route('reserva.reserva.destroy', $reserva->id) }}" method="POST">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-sm btn-danger"
+                                        <td>
+                                            <div class="hstack gap-2 justify-content-end">
+                                                <a {{-- href="{{ route('reserva.inmueble.confirmacion.show', $reserva->id) }}" --}} class="btn btn-sm btn-primary">
+                                                    <i class="bi bi-grid"></i>
+                                                </a>
+                                                <a href="#" {{-- href="{{ route('reserva.reserva.edit', $reserva->id) }}" --}} class="btn btn-sm btn-warning">
+                                                    <i class="bi bi-pencil-square"></i>
+                                                </a>
+                                                <form action="{{ route('reserva.reserva.destroy', $reserva->id) }}"
+                                                    method="POST">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-sm btn-danger"
                                                         onclick="return confirm('¿Está seguro de eliminar esta reserva?')">
-                                                    <i class="bi bi-trash"></i>
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforeach
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endforeach
                             </tbody>
                         </table>
-                    @endif
+                    </div>
                 </div>
             </div>
-
         </div>
-    </div>
 
+
+        <div class="col-lg-12">
+            <div class="card stretch stretch-full">
+                <div class="card-header cursor-pointer" data-bs-toggle="collapse"
+                    data-bs-target="#historicores_collapse_0">
+                    <div class="mb-0">
+                        <h5 class="fw-bold mb-1">Histórico de Reservas</h5>
+                        <p class="text-muted mb-0 small">Listado detallado de todas las reservas registradas.</p>
+                    </div>
+                </div>
+        
+                <div class="card-body p-0 collapse show mt-0" id="historicores_collapse_0">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="projectList">
+                            <thead>
+                                <tr>
+                                    <th>Inmueble</th>
+                                    <th>Asociado</th>
+                                    <th>Inicio</th>
+                                    <th>Fin</th>
+                                    <th>Estado</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($historicosres as $hisres)
+                                    <tr>
+                                        <td>
+                                            <div class="fw-semibold mb-1"></div>
+                                            <div class="d-flex gap-3">
+                                                <a class="hstack gap-1 fs-11 fw-normal text-primary">
+                                                    <span>{{ $hisres->res_inmueble->name }}</span>
+                                                </a>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="fw-semibold mb-1">{{ $hisres->nid }}</div>
+                                            {{ $hisres->tercero?->nom_ter ?? $hisres->user->name }}
+                                        </td>
+                                        <td>
+                                            <div class="fw-semibold mb-1">{{ $hisres->fecha_inicio }}</div>
+                                        </td>
+                                        <td>
+                                            <div class="fw-semibold mb-1">{{ $hisres->fecha_fin }}</div>
+                                        </td>
+                                        <td>
+                                            <div class="fw-semibold mb-1">{{ $hisres->res_status->name }}</div>
+                                        </td>
+
+                                        <td>
+                                            <div class="hstack gap-2 justify-content-end">
+                                                <a {{-- href="{{ route('reserva.inmueble.confirmacion.show', $reserva->id) }}" --}} class="btn btn-sm btn-primary">
+                                                    <i class="bi bi-grid"></i>
+                                                </a>
+                                                <a href="#" {{-- href="{{ route('reserva.reserva.edit', $reserva->id) }}" --}} class="btn btn-sm btn-warning">
+                                                    <i class="bi bi-pencil-square"></i>
+                                                </a>
+                                                <form action="{{ route('reserva.reserva.destroy', $reserva->id) }}"
+                                                    method="POST">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-sm btn-danger"
+                                                        onclick="return confirm('¿Está seguro de eliminar esta reserva?')">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- <div class="col-lg-12">
+            <div class="card stretch stretch-full">
+                <div class="card-header cursor-pointer" data-bs-toggle="collapse" data-bs-target="#calendarCollapse">
+                    <h5 class="fw-bold mb-1">Reservas Calendario</h5>
+                    <p class="text-muted mb-0 small">
+                        Calendario detallado de reservas activas.
+                    </p>
+                </div>
+                <hr class="m-0">
+
+                <div class="card-body d-flex flex-column p-0">
+                    <div id="calendar" class="flex-fill"></div>
+                </div>
+            </div>
+        </div> --}}
+    
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const calendarEl = document.getElementById('calendar');
+
+            const calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                locale: 'es',
+                selectable: true,
+                editable: true,
+                height: '100%',
+                expandRows: true,
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                },
+
+                // Click en día para agregar evento
+                dateClick: function(info) {
+                    const title = prompt("Nombre del evento:");
+                    if (title) {
+                        calendar.addEvent({
+                            title: title,
+                            start: info.dateStr,
+                            allDay: true
+                        });
+                    }
+                },
+
+            });
+
+            calendar.render();
+        });
+    </script>
 </x-base-layout>
