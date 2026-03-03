@@ -10,46 +10,66 @@
             --slate-100: #f1f5f9;
             --slate-200: #e2e8f0;
             --slate-400: #94a3b8;
+            --slate-500: #64748b;
             --slate-600: #475569;
             --slate-700: #334155;
             --slate-900: #0f172a;
         }
 
-        body { background-color: #f3f4f6; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; font-family: 'Inter', system-ui, sans-serif; }
+        body { background-color: #f3f4f6; margin: 0; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; font-family: 'Inter', system-ui, sans-serif; }
+
+        @media (min-width: 768px) {
+            .container { padding: 40px 20px; }
+        }
 
         /* Header Estilo Expediente */
         .cv-header { 
-            background: white; padding: 30px; border-radius: 20px 20px 0 0; 
+            background: white; padding: 20px; border-radius: 20px 20px 0 0; 
             border: 1px solid var(--slate-200); border-bottom: none;
-            display: flex; justify-content: space-between; align-items: center;
+            display: flex; flex-direction: column; gap: 15px;
         }
+        @media (min-width: 768px) {
+            .cv-header { flex-direction: row; justify-content: space-between; align-items: center; padding: 30px; }
+        }
+
         .asset-badge {
             background: var(--primary-soft); color: var(--primary);
             padding: 8px 16px; border-radius: 10px; font-weight: 800; font-size: 0.9rem;
             text-transform: uppercase; letter-spacing: 1px; border: 1px solid rgba(79, 70, 229, 0.2);
+            display: inline-block;
         }
 
         /* Contenedor Principal */
         .form-content { 
-            background: white; padding: 10px 30px 30px 30px; 
+            background: white; padding: 20px; 
             border-radius: 0 0 20px 20px; border: 1px solid var(--slate-200);
             box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
         }
+        @media (min-width: 768px) { .form-content { padding: 10px 30px 30px 30px; } }
 
         .panel-section { 
-            padding: 25px; border: 1px solid var(--slate-100); border-radius: 16px; 
+            padding: 20px; border: 1px solid var(--slate-100); border-radius: 16px; 
             margin-bottom: 25px; transition: 0.3s;
         }
+        @media (min-width: 768px) { .panel-section { padding: 25px; } }
         .panel-section:hover { border-color: var(--slate-200); background: var(--slate-50); }
 
         .panel-title { 
-            display: flex; align-items: center; gap: 10px; font-size: 1rem; 
+            display: flex; align-items: center; flex-wrap: wrap; gap: 10px; font-size: 1rem; 
             font-weight: 800; color: var(--slate-900); margin-bottom: 20px;
             border-bottom: 2px solid var(--slate-100); padding-bottom: 10px;
         }
 
-        .input-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        /* GRID ADAPTABLE PARA MÓVILES */
+        .input-grid { 
+            display: grid; 
+            grid-template-columns: 1fr; 
+            gap: 20px; 
+        }
+        @media (min-width: 768px) { .input-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (min-width: 1024px) { .input-grid { grid-template-columns: repeat(3, 1fr); } }
+        
         .full-row { grid-column: 1 / -1; }
 
         .field-group { display: flex; flex-direction: column; gap: 6px; }
@@ -61,6 +81,8 @@
             background: #fff; width: 100%; box-sizing: border-box;
         }
         input:focus, select:focus, textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 4px var(--primary-soft); outline: none; }
+        
+        input[type="file"] { padding: 8px; font-size: 0.85rem; background: var(--slate-50); border: 1px dashed var(--slate-400); cursor: pointer; }
 
         .input-inherited {
             background-color: var(--slate-100) !important;
@@ -70,15 +92,15 @@
             font-weight: 600;
         }
 
-        /* Modales */
+        /* Modales Responsivos */
         .modal-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15, 23, 42, 0.6); display: flex;
-            align-items: center; justify-content: center; z-index: 1000;
+            background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(3px); display: flex;
+            align-items: center; justify-content: center; z-index: 1000; padding: 15px;
         }
         .modal-content {
-            background: #fff; width: 100%; max-width: 500px;
-            border-radius: 12px; padding: 24px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            background: #fff; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto;
+            border-radius: 16px; padding: 25px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
         }
 
         /* Botones Especiales */
@@ -87,57 +109,66 @@
             cursor: pointer; border: none; transition: 0.2s; color: white; display: flex; align-items: center; gap: 6px;
         }
         .btn-new-ref { background: var(--success); }
-        .btn-edit-ref { background: var(--warning); display: none; } 
+        .btn-edit-ref { background: var(--warning); display: none; color: var(--slate-900); } 
         .btn-view-purchase { 
-            background: var(--slate-700); 
-            margin-top: 5px;
-            width: fit-content;
-            padding: 6px 12px;
+            background: var(--slate-700); margin-top: 5px; width: fit-content; padding: 6px 12px;
         }
         .btn-view-purchase:hover { background: var(--slate-900); transform: translateY(-1px); }
 
+        .btn-view-doc {
+            display: inline-flex; align-items: center; gap: 6px; padding: 10px 14px;
+            background: var(--slate-100); color: var(--primary); font-weight: 700; font-size: 0.85rem;
+            border-radius: 8px; text-decoration: none; border: 1px solid var(--slate-200);
+            transition: 0.2s; width: fit-content; white-space: nowrap;
+        }
+        .btn-view-doc:hover { background: white; border-color: var(--primary); }
+
         .action-bar { 
             position: sticky; bottom: 20px; background: rgba(15, 23, 42, 0.95); 
-            backdrop-filter: blur(10px); padding: 15px 30px; border-radius: 15px;
-            display: flex; justify-content: space-between; align-items: center;
-            margin-top: 30px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3);
-            z-index: 100;
+            backdrop-filter: blur(10px); padding: 15px 20px; border-radius: 15px;
+            display: flex; flex-direction: column-reverse; justify-content: space-between; align-items: center; gap: 15px;
+            margin-top: 30px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); z-index: 100;
         }
+        @media (min-width: 768px) {
+            .action-bar { flex-direction: row; padding: 15px 30px; }
+        }
+
         .btn-submit { 
-            background: var(--primary); color: white; border: none; padding: 12px 35px; 
-            border-radius: 10px; font-weight: 700; cursor: pointer;
+            background: var(--primary); color: white; border: none; padding: 12px 30px; 
+            border-radius: 10px; font-weight: 700; cursor: pointer; width: 100%; transition: 0.2s;
         }
+        .btn-submit:hover { background: #4338ca; }
+        @media (min-width: 768px) { .btn-submit { width: auto; } }
 
         /* Tabla Minimalista Modal Compra */
         .mini-table { width: 100%; margin-top: 15px; border-collapse: collapse; }
-        .mini-table td { padding: 10px; border-bottom: 1px solid var(--slate-100); font-size: 0.9rem; }
+        .mini-table td { padding: 10px 0; border-bottom: 1px solid var(--slate-100); font-size: 0.9rem; }
         .mini-table .label { font-weight: 800; color: var(--slate-500); width: 40%; }
         .mini-table .value { font-weight: 600; color: var(--slate-900); }
     </style>
 
     <div class="container">
         
-        {{-- DATALIST: REFERENCIAS --}}
         <datalist id="referenciasDataList">
             @foreach($referencias as $ref)
                 <option data-id="{{ $ref->id }}" 
                         data-pure-name="{{ $ref->referencia }}"
                         data-marca-nom="{{ $ref->marca->nombre ?? 'N/A' }}"
+                        data-marca-id="{{ $ref->id_MaeMarcas }}"
                         data-sub-nom="{{ $ref->subgrupo->nombre ?? 'N/A' }}"
+                        data-sub-id="{{ $ref->id_MaeSubgrupo }}"
                         data-bodega-nom="{{ $ref->bodega->nombre ?? 'N/A' }}"
                         value="{{ $ref->referencia }} | Marca: {{ $ref->marca->nombre ?? 'N/A' }} | Bodega: {{ $ref->bodega->nombre ?? 'N/A' }}">
                 </option>
             @endforeach
         </datalist>
 
-        {{-- DATALIST: MUNICIPIOS (NUEVO) --}}
         <datalist id="municipiosDataList">
             @foreach($municipios as $muni)
                 <option data-id="{{ $muni->id }}" value="{{ $muni->nombre }}"></option>
             @endforeach
         </datalist>
 
-        {{-- DATALIST: USUARIOS (NUEVO) --}}
         <datalist id="usuariosDataList">
             @foreach($usuarios as $user)
                 <option data-id="{{ $user->id }}" value="{{ $user->name }}"></option>
@@ -146,16 +177,17 @@
 
         <div class="cv-header">
             <div>
-                <h1 style="font-size: 1.6rem; font-weight: 900; margin: 0;">Expediente Técnico del Activo</h1>
-                <p style="margin: 0; color: var(--slate-600); font-weight: 500;">Hoja de Vida e Historial de Adquisición</p>
+                <h1 style="font-size: 1.5rem; font-weight: 900; margin: 0; color: var(--slate-900);">Expediente Técnico del Activo</h1>
+                <p style="margin: 5px 0 0 0; color: var(--slate-600); font-weight: 500; font-size: 0.9rem;">Hoja de Vida e Historial de Adquisición</p>
             </div>
             <div style="text-align: right;">
                 <div class="asset-badge">PLACA: {{ $activo->codigo_activo }}</div>
-                <p style="font-size: 0.7rem; color: var(--slate-400); margin-top: 5px; font-weight: 700;">ID SISTEMA: #{{ $activo->id }}</p>
+                <p style="font-size: 0.75rem; color: var(--slate-500); margin-top: 8px; font-weight: 700;">ID SISTEMA: #{{ $activo->id }}</p>
             </div>
         </div>
 
-        <form action="{{ route('inventario.activos.update', $activo->id) }}" method="POST">
+        {{-- Formulario habilitado para archivos --}}
+        <form action="{{ route('inventario.activos.update', $activo->id) }}" method="POST" enctype="multipart/form-data">
             @csrf
             @method('PUT')
 
@@ -163,10 +195,7 @@
                 
                 {{-- SECCIÓN 1: IDENTIDAD --}}
                 <div class="panel-section">
-                    <div class="panel-title">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                        1. Identidad del Activo
-                    </div>
+                    <div class="panel-title">1. Identidad del Activo</div>
                     <div class="input-grid">
                         <div class="field-group">
                             <label>Código de Placa</label>
@@ -190,10 +219,7 @@
                 {{-- SECCIÓN 2: CLASIFICACIÓN --}}
                 <div class="panel-section">
                     <div class="panel-title" style="justify-content: space-between;">
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"></line><line x1="4" y1="10" x2="4" y2="3"></line><line x1="12" y1="21" x2="12" y2="12"></line><line x1="12" y1="8" x2="12" y2="3"></line><line x1="20" y1="21" x2="20" y2="16"></line><line x1="20" y1="12" x2="20" y2="3"></line></svg>
-                            2. Clasificación Técnica
-                        </div>
+                        <div>2. Clasificación Técnica</div>
                         <div style="display: flex; gap: 8px;">
                             <button type="button" class="btn-modal-trigger btn-edit-ref" id="btnEditRef">✏️ Editar Referencia</button>
                             <button type="button" class="btn-modal-trigger btn-new-ref" id="btnNewRef">+ Crear Referencia</button>
@@ -220,10 +246,7 @@
 
                 {{-- SECCIÓN 3: CICLO DE VIDA, GARANTÍAS Y COMPRA --}}
                 <div class="panel-section">
-                    <div class="panel-title">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                        3. Ciclo de Vida y Adquisición
-                    </div>
+                    <div class="panel-title">3. Ciclo de Vida y Adquisición</div>
                     <div class="input-grid">
                         <div class="field-group">
                             <label>Inicio de Garantía</label>
@@ -241,10 +264,20 @@
                             <label>Unidad de Medida</label>
                             <input type="text" name="unidad_medida" value="{{ old('unidad_medida', $activo->unidad_medida) }}" placeholder="UND, MTS, PZA...">
                         </div>
-                        <div class="field-group">
-                            <label>Documento Hoja de Vida</label>
-                            <input type="text" name="hoja_vida" value="{{ old('hoja_vida', $activo->hoja_vida) }}" placeholder="Enlace o ruta de archivo">
+                        
+                        {{-- CAMPO HOJA DE VIDA (ENLACE DE TEXTO RESTAURADO) --}}
+                        <div class="field-group full-row">
+                            <label>Documento Hoja de Vida (Enlace)</label>
+                            <div style="display: flex; gap: 8px;">
+                                <input type="text" name="hoja_vida" value="{{ old('hoja_vida', $activo->hoja_vida) }}" placeholder="Ej: https://drive.google.com/..." style="flex: 1;">
+                                @if($activo->hoja_vida)
+                                    <a href="{{ $activo->hoja_vida }}" target="_blank" class="btn-view-doc">
+                                        📄 Ver Link
+                                    </a>
+                                @endif
+                            </div>
                         </div>
+
                         <div class="field-group">
                             <label>ID Detalle de Compra</label>
                             <div style="display: flex; flex-direction: column; gap: 4px;">
@@ -254,21 +287,37 @@
                                 
                                 @if($activo->id_InvDetalleCompras)
                                     <button type="button" id="btnOpenModalCompra" class="btn-modal-trigger btn-view-purchase">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                                         Ver Datos de Compra
                                     </button>
                                 @endif
                             </div>
                         </div>
+
+                        {{-- CAMPO DEL ARCHIVO FÍSICO (eg_archivo) --}}
+                        <div class="field-group full-row" style="background: var(--slate-50); padding: 15px; border-radius: 12px; border: 1px dashed var(--slate-300); margin-top: 10px;">
+                            <label style="color: var(--slate-900);">Factura</label>
+                            
+                            @if($activo->detalleCompra && $activo->detalleCompra->id_InvCompras)
+                                <div style="margin-bottom: 12px;">
+                                    <a href="{{ route('inventario.compras.archivo', $activo->detalleCompra->id_InvCompras) }}" target="_blank" class="btn-view-doc" style="background: white; border-color: var(--primary);">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                                        Ver Documento Actual (eg_archivo)
+                                    </a>
+                                </div>
+                            @endif
+
+                            <input type="file" name="eg_archivo" accept=".pdf,.doc,.docx,.jpg,.png">
+                            <small style="color: var(--slate-500); font-weight: 600; margin-top: 6px; display: block; line-height: 1.4;">
+                                Seleccione un archivo solo si desea actualizar el documento en la tabla <b>inv_compras</b>.
+                            </small>
+                        </div>
+
                     </div>
                 </div>
 
-                {{-- SECCIÓN 4: GESTIÓN (REDISEÑADA CON BUSCADORES) --}}
+                {{-- SECCIÓN 4: GESTIÓN --}}
                 <div class="panel-section">
-                    <div class="panel-title">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                        4. Control de Estado y Ubicación
-                    </div>
+                    <div class="panel-title">4. Control de Estado y Ubicación</div>
                     <div class="input-grid">
                         <div class="field-group">
                             <label>Estado Actual</label>
@@ -279,18 +328,16 @@
                             </select>
                         </div>
                         
-                        {{-- BUSCADOR UBICACIÓN --}}
                         <div class="field-group">
-                            <label style="color: var(--primary);">Ubicación / Sede (Buscador)</label>
+                            <label style="color: var(--primary);">Ubicación / Sede</label>
                             <input list="municipiosDataList" id="search_municipio" 
                                    value="{{ $activo->municipio->nombre ?? '' }}" 
                                    placeholder="Escriba municipio o sede...">
                             <input type="hidden" name="id_MaeMunicipios" id="hidden_municipio_id" value="{{ $activo->id_MaeMunicipios }}">
                         </div>
 
-                        {{-- BUSCADOR RESPONSABLE --}}
                         <div class="field-group">
-                            <label style="color: var(--primary);">Responsable Asignado (Buscador)</label>
+                            <label style="color: var(--primary);">Responsable Asignado</label>
                             <input list="usuariosDataList" id="search_usuario" 
                                    value="{{ $activo->usuarioAsignado->name ?? '' }}" 
                                    placeholder="Escriba nombre de usuario...">
@@ -321,23 +368,23 @@
             </div>
 
             <div class="action-bar">
-                <a href="{{ route('inventario.activos.index') }}" style="color: white; text-decoration: none; font-weight: 600;">← Cancelar</a>
+                <a href="{{ route('inventario.activos.index') }}" style="color: white; text-decoration: none; font-weight: 600; font-size: 0.9rem;">← Volver al Listado</a>
                 <button type="submit" class="btn-submit">💾 Actualizar Expediente Completo</button>
             </div>
         </form>
     </div>
 
-    {{-- MODALES (REFERENCIAS Y COMPRA) --}}
+    {{-- MODALES --}}
     <div id="modalRef" class="modal-overlay" style="display: none;">
         <div class="modal-content">
-            <h3 id="modalTitle">Referencia Maestra</h3>
+            <h3 id="modalTitle" style="margin-top:0; color: var(--slate-900);">Gestionar Referencia</h3>
             <hr style="border: 0; border-top: 1px solid var(--slate-100); margin-bottom: 20px;">
             <input type="hidden" id="modal_ref_id">
             <div class="field-group">
-                <label>Nombre *</label>
+                <label>Nombre de Referencia *</label>
                 <input type="text" id="modal_ref_nombre">
             </div>
-            <div class="input-grid" style="grid-template-columns: 1fr 1fr; margin-top: 15px;">
+            <div class="input-grid" style="gap: 15px; margin-top: 15px;">
                 <div class="field-group">
                     <label>Marca *</label>
                     <select id="modal_ref_marca">
@@ -351,19 +398,16 @@
                     </select>
                 </div>
             </div>
-            <div style="margin-top: 30px; text-align: right; display: flex; justify-content: flex-end; gap: 10px;">
-                <button type="button" id="btnCloseModal" style="background: var(--slate-100); border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">Cerrar</button>
-                <button type="button" id="btnSaveRefAjax" style="background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer;">Guardar</button>
+            <div style="margin-top: 25px; display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" id="btnCloseModal" style="background: var(--slate-100); color: var(--slate-700); font-weight: 700; border: none; padding: 12px 20px; border-radius: 10px; cursor: pointer;">Cancelar</button>
+                <button type="button" id="btnSaveRefAjax" style="background: var(--primary); color: white; font-weight: 700; border: none; padding: 12px 20px; border-radius: 10px; cursor: pointer;">Guardar</button>
             </div>
         </div>
     </div>
 
     <div id="modalCompra" class="modal-overlay" style="display: none;">
-        <div class="modal-content" style="max-width: 450px;">
-            <h3 style="margin-top: 0; display: flex; align-items: center; gap: 8px;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.5"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-                Datos de Adquisición
-            </h3>
+        <div class="modal-content">
+            <h3 style="margin-top: 0; color: var(--slate-900);">Datos de Adquisición</h3>
             <hr style="border: 0; border-top: 1px solid var(--slate-100);">
             <table class="mini-table">
                 <tr><td class="label">ID Registro:</td> <td class="value" id="view_compra_id"></td></tr>
@@ -373,8 +417,12 @@
                 <tr><td class="label">Referencia:</td> <td class="value" id="view_compra_ref"></td></tr>
                 <tr><td class="label" style="vertical-align: top;">Detalle:</td> <td class="value" id="view_compra_detalle"></td></tr>
             </table>
+
+            {{-- Contenedor donde se inyectará el botón para ver el archivo S3 --}}
+            <div id="fileContainer"></div>
+
             <div style="margin-top: 25px;">
-                <button type="button" id="btnCloseModalCompra" style="width: 100%; background: var(--slate-900); color: white; border: none; padding: 12px; border-radius: 10px; cursor: pointer; font-weight: 700;">Cerrar Consulta</button>
+                <button type="button" id="btnCloseModalCompra" style="width: 100%; background: var(--slate-900); color: white; border: none; padding: 14px; border-radius: 12px; cursor: pointer; font-weight: 700;">Cerrar Consulta</button>
             </div>
         </div>
     </div>
@@ -383,39 +431,29 @@
     <script>
         $(document).ready(function() {
             
-            // DICCIONARIOS GLOBALES
             let dictRefs = {};
             let dictMuni = {};
             let dictUser = {};
 
-            // 1. CARGAR DICCIONARIOS DESDE DATALISTS
             function initDictionaries() {
-                // Referencias
                 $('#referenciasDataList option').each(function() {
                     dictRefs[$(this).val()] = {
                         id: $(this).attr('data-id'),
+                        pureName: $(this).attr('data-pure-name'),
                         marcaNom: $(this).attr('data-marca-nom'),
-                        subNom: $(this).attr('data-sub-nom')
+                        marcaId: $(this).attr('data-marca-id'),
+                        subNom: $(this).attr('data-sub-nom'),
+                        subId: $(this).attr('data-sub-id')
                     };
                 });
-                // Municipios
-                $('#municipiosDataList option').each(function() {
-                    dictMuni[$(this).val()] = $(this).attr('data-id');
-                });
-                // Usuarios
-                $('#usuariosDataList option').each(function() {
-                    dictUser[$(this).val()] = $(this).attr('data-id');
-                });
+                $('#municipiosDataList option').each(function() { dictMuni[$(this).val()] = $(this).attr('data-id'); });
+                $('#usuariosDataList option').each(function() { dictUser[$(this).val()] = $(this).attr('data-id'); });
 
-                // Toggle Botón Editar Ref
                 let idRef = $('#hidden_referencia_id').val();
-                if (idRef) $('#btnEditRef').fadeIn(); else $('#btnEditRef').fadeOut();
+                if (idRef) $('#btnEditRef').css('display', 'inline-flex'); else $('#btnEditRef').css('display', 'none');
             }
             initDictionaries();
 
-            // 2. LISTENERS DE BUSCADORES
-
-            // Buscador Referencias
             $(document).on('input change', '#search_referencia', function() {
                 let val = $(this).val();
                 if (dictRefs[val]) {
@@ -430,38 +468,50 @@
                 initDictionaries(); 
             });
 
-            // Buscador Municipios
             $(document).on('input change', '#search_municipio', function() {
                 let val = $(this).val();
-                if (dictMuni[val]) {
-                    $('#hidden_municipio_id').val(dictMuni[val]);
-                    $(this).css('border-color', 'var(--slate-200)');
-                } else {
-                    $('#hidden_municipio_id').val('');
-                    if(val) $(this).css('border-color', 'var(--danger)');
-                }
+                if (dictMuni[val]) { $('#hidden_municipio_id').val(dictMuni[val]); $(this).css('border-color', 'var(--slate-200)'); } 
+                else { $('#hidden_municipio_id').val(''); if(val) $(this).css('border-color', 'var(--danger)'); }
             });
 
-            // Buscador Usuarios
             $(document).on('input change', '#search_usuario', function() {
                 let val = $(this).val();
-                if (dictUser[val]) {
-                    $('#hidden_usuario_id').val(dictUser[val]);
-                    $(this).css('border-color', 'var(--slate-200)');
-                } else {
-                    $('#hidden_usuario_id').val('');
-                    if(val) $(this).css('border-color', 'var(--danger)');
-                }
+                if (dictUser[val]) { $('#hidden_usuario_id').val(dictUser[val]); $(this).css('border-color', 'var(--slate-200)'); } 
+                else { $('#hidden_usuario_id').val(''); if(val) $(this).css('border-color', 'var(--danger)'); }
             });
 
-            // 3. LOGICA MODALES
-            $('#btnNewRef').click(() => $('#modalRef').fadeIn('fast'));
+            // MODAL REFERENCIAS
+            $('#btnNewRef').click(function() {
+                $('#modal_ref_id').val('');
+                $('#modal_ref_nombre').val('');
+                $('#modalTitle').text('Crear Nueva Referencia');
+                $('#modalRef').fadeIn('fast').css('display', 'flex');
+            });
+
+            $('#btnEditRef').click(function() {
+                let searchVal = $('#search_referencia').val();
+                let refData = dictRefs[searchVal];
+                
+                if(!refData || !refData.id) return alert('Seleccione una referencia válida primero.');
+
+                $('#modal_ref_id').val(refData.id);
+                $('#modal_ref_nombre').val(refData.pureName);
+                $('#modal_ref_marca').val(refData.marcaId);
+                $('#modal_ref_subgrupo').val(refData.subId);
+                $('#modalTitle').text('Editar Referencia Actual');
+                
+                $('#modalRef').fadeIn('fast').css('display', 'flex');
+            });
+
             $('#btnCloseModal').click(() => $('#modalRef').fadeOut('fast'));
 
+            // MODAL COMPRAS
             $('#btnOpenModalCompra').click(function() {
                 let id = $('#id_InvDetalleCompras').val();
                 if(!id) return;
-                $('#modalCompra').fadeIn('fast');
+                
+                $('#modalCompra').fadeIn('fast').css('display', 'flex');
+                
                 $.ajax({
                     url: `/inventario/detalle-compra/ajax/${id}`,
                     type: 'GET',
@@ -474,6 +524,18 @@
                             $('#view_compra_subtotal').text('$' + parseFloat(d.sub_total).toLocaleString());
                             $('#view_compra_ref').text(d.referencia?.referencia || 'N/A');
                             $('#view_compra_detalle').text(d.detalle || 'Sin observaciones');
+
+                            // Inyectar enlace dinámico al archivo maestro S3 de la compra
+                            if(d.id_InvCompras) {
+                                $('#fileContainer').html(`
+                                    <a href="/inventario/compras/${d.id_InvCompras}/archivo" target="_blank" 
+                                       style="display: flex; align-items: center; justify-content: center; gap: 8px; background: var(--slate-100); color: var(--slate-900); padding: 12px; border-radius: 10px; text-decoration: none; font-weight: 700; border: 1px solid var(--slate-200); margin-top: 15px;">
+                                        📄 Ver Archivo S3 (Factura/Egreso)
+                                    </a>
+                                `);
+                            } else {
+                                $('#fileContainer').empty();
+                            }
                         }
                     },
                     error: () => alert('Error al consultar los datos de compra.')
@@ -481,6 +543,10 @@
             });
 
             $('#btnCloseModalCompra').click(() => $('#modalCompra').fadeOut('fast'));
+
+            $('.modal-overlay').click(function(e) {
+                if(e.target === this) { $(this).fadeOut('fast'); }
+            });
         });
     </script>
 </x-base-layout>

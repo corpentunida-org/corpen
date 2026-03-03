@@ -390,7 +390,7 @@
                             </select>
                         </div>
                         <div>
-                            <label class="label">Adjuntar Archivo de Egreso / PDF (AWS S3)</label>
+                            <label class="label">Adjuntar archivo de factura (PDF)</label>
                             <input type="file" name="eg_archivo" class="input" style="padding: 7px;" accept=".pdf,.jpg,.jpeg,.png">
                         </div>
                         <div style="grid-column: span 2;">
