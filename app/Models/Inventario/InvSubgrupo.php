@@ -5,6 +5,10 @@ namespace App\Models\Inventario;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Inventario\InvReferencia;
+use App\Models\Inventario\InvTipo;
+use App\Models\Inventario\InvLinea;
+use App\Models\Inventario\InvGrupo;
 
 class InvSubgrupo extends Model
 {
@@ -17,4 +21,8 @@ class InvSubgrupo extends Model
     public function tipo() { return $this->belongsTo(InvTipo::class, 'id_InvTipos'); }
     public function linea() { return $this->belongsTo(InvLinea::class, 'id_InvLineas'); }
     public function grupo() { return $this->belongsTo(InvGrupo::class, 'id_InvGrupos'); }
+    public function referencias()
+    {
+        return $this->hasMany(InvReferencia::class, 'id_InvSubGrupos');
+    }
 }

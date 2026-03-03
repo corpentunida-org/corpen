@@ -4,31 +4,39 @@ namespace App\Models\Maestras;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Maestras\Congregacion;
+// Importante: Asegúrate de que el modelo Congregacion esté en este namespace
+// use App\Models\Maestras\Congregacion; 
 
 class MaeMunicipios extends Model
-
 {
-use HasFactory;
+    use HasFactory;
 
     protected $table = 'MaeMunicipios';
 
+    // Si la tabla de municipios no tiene created_at/updated_at, descomenta la siguiente línea:
+    // public $timestamps = false;
+
     protected $fillable = [
-        'id',
         'codigo_Dane',
         'nombre',
         'id_departamento',
     ];
-    
-    //crear una funcion que relacionara la otra tabla - congregaciones es el nombre de la funcion ya que mas adelante la voy a llamar
-    //relacionar el nombre con la misma tabla para que no hayan confuciones 
-        /**
+
+    /**
      * Relación uno a muchos con Congregaciones
-     * Un distrito puede tener muchas congregaciones
      */
     public function congregaciones()
     {
+        // 'municipio' es la llave foránea en la tabla congregaciones
+        // 'id' es la llave primaria en MaeMunicipios
         return $this->hasMany(Congregacion::class, 'municipio', 'id');
     }
 
+    /**
+     * Relación inversa: Un municipio puede tener muchos activos
+     */
+    public function activos()
+    {
+        return $this->hasMany(\App\Models\Inventario\InvActivo::class, 'id_MaeMunicipios', 'id');
+    }
 }
