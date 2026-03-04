@@ -10,7 +10,7 @@ use App\Models\Inventario\InvReferencia;
 use App\Models\Inventario\InvActivo;
 use App\Models\Inventario\InvSubgrupo;
 use App\Models\Inventario\InvBodega;
-use App\Models\Inventario\InvMarca; // <--- Importado para el nuevo flujo
+use App\Models\Inventario\InvMarca;
 use App\Models\Maestras\maeTerceros;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -42,7 +42,7 @@ class CompraController extends Controller
         // Cargamos referencias con sus relaciones para el datalist
         $referencias = InvReferencia::select('id', 'referencia', 'id_InvSubGrupos', 'id_InvBodegas', 'id_InvMarcas')
             ->with(['subgrupo:id,nombre', 'bodega:id,nombre', 'marca:id,nombre']) 
-            ->get();     
+            ->get();    
                
         $subgrupos = InvSubgrupo::select('id', 'nombre')->get();
         $bodegas = InvBodega::select('id', 'nombre')->get();
@@ -121,7 +121,7 @@ class CompraController extends Controller
                     InvActivo::create([
                         'nombre'                => $nombreSubgrupo, 
                         'unidad_medida'         => '1', 
-                        'id_MaeMunicipios'      => 1, 
+                        'id_MaeMunicipios'      => 382, 
                         'id_Estado'             => 1,
                         'id_InvDetalleCompras'  => $detalle->id, 
                         'id_usersRegistro'      => auth()->id(), 
@@ -164,26 +164,78 @@ class CompraController extends Controller
      */
     public function storeReferenciaAjax(Request $request)
     {
-        $request->validate([
-            'referencia'      => 'required|string|max:255|unique:inv_referencias,referencia',
-            'detalle'         => 'nullable|string|max:255',
-            'id_InvSubGrupos' => 'required|exists:inv_subgrupos,id',
-            'id_InvBodegas'   => 'required|exists:inv_bodegas,id', 
-            'id_InvMarcas'    => 'required|exists:inv_marcas,id', // <--- Validación del nuevo campo
-        ]);
+        try {
+            // Mapeamos y validamos los nombres de los campos que envía tu JS
+            $request->validate([
+                'referencia'     => 'required|string|max:255|unique:inv_referencias,referencia',
+                'detalle'        => 'nullable|string|max:255',
+                'id_MaeSubgrupo' => 'required|exists:inv_subgrupos,id',
+                'id_InvBodegas'  => 'required|exists:inv_bodegas,id', 
+                'id_MaeMarcas'   => 'required|exists:inv_marcas,id', 
+            ]);
 
-        $referencia = InvReferencia::create([
-            'referencia'      => $request->referencia,
-            'detalle'         => $request->detalle,
-            'id_InvSubGrupos' => $request->id_InvSubGrupos,
-            'id_InvBodegas'   => $request->id_InvBodegas,
-            'id_InvMarcas'    => $request->id_InvMarcas, // <--- Guardado del nuevo campo
-        ]);
+            // Guardamos usando los campos correctos de la Base de Datos
+            $referencia = InvReferencia::create([
+                'referencia'      => $request->referencia,
+                'detalle'         => $request->detalle,
+                'id_InvSubGrupos' => $request->id_MaeSubgrupo, // Traducido
+                'id_InvBodegas'   => $request->id_InvBodegas,
+                'id_InvMarcas'    => $request->id_MaeMarcas,   // Traducido
+            ]);
 
-        return response()->json([
-            'success'    => true,
-            'referencia' => $referencia
-        ]);
+            return response()->json([
+                'success'    => true,
+                'referencia' => $referencia
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Captura errores de validación (ej. Nombre duplicado) y los envía al frontend
+            $errores = implode(' ', $e->validator->errors()->all());
+            return response()->json(['success' => false, 'message' => $errores]);
+        } catch (\Exception $e) {
+            // Captura cualquier otro error interno
+            return response()->json(['success' => false, 'message' => 'Error de servidor: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Actualizar Referencia vía AJAX desde el modal (NUEVO MÉTODO)
+     */
+    public function updateReferenciaAjax(Request $request, $id)
+    {
+        try {
+            // Buscamos la referencia a actualizar
+            $referencia = InvReferencia::findOrFail($id);
+
+            // Validamos ignorando el unique del ID actual
+            $request->validate([
+                'referencia'     => 'required|string|max:255|unique:inv_referencias,referencia,' . $id,
+                'detalle'        => 'nullable|string|max:255',
+                'id_MaeSubgrupo' => 'required|exists:inv_subgrupos,id',
+                'id_InvBodegas'  => 'required|exists:inv_bodegas,id', 
+                'id_MaeMarcas'   => 'required|exists:inv_marcas,id', 
+            ]);
+
+            // Actualizamos la base de datos
+            $referencia->update([
+                'referencia'      => $request->referencia,
+                'detalle'         => $request->detalle,
+                'id_InvSubGrupos' => $request->id_MaeSubgrupo, // Traducido
+                'id_InvBodegas'   => $request->id_InvBodegas,
+                'id_InvMarcas'    => $request->id_MaeMarcas,   // Traducido
+            ]);
+
+            return response()->json([
+                'success'    => true,
+                'referencia' => $referencia
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $errores = implode(' ', $e->validator->errors()->all());
+            return response()->json(['success' => false, 'message' => $errores]);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Error de servidor: ' . $e->getMessage()]);
+        }
     }
 
     /**
