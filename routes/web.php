@@ -268,11 +268,12 @@ Route::prefix('reservas')->name('reserva.')->group(function () {
     Route::get('reservaI/{id}/soporte', [ResReservaController::class, 'createSoporte'])->name('inmueble.soporte.create');
     Route::post('reservaI/storeSoporte', [ResReservaController::class, 'storeSoporte'])->name('inmueble.soporte.store');
     Route::get('verificar/comprobante', [ResReservaController::class, 'reservaspagos'])->name('reservas.pago')->middleware(['auth', 'candirect:reservas.Reserva.pagos']);
-/*  Route::get('reservaI/confirmacion', [ResReservaController::class, 'indexConfirmacion'])->name('inmueble.confirmacion')->middleware(['auth', 'candirect:reservas.Reserva.lista']);
-    Route::get('reservaI/confirmacion/{id}/show', [ResReservaController::class, 'showConfirmacion'])->name('inmueble.confirmacion.show')->middleware(['auth', 'candirect:reservas.Reserva.lista']); */
-    Route::post('reservaI/notificar/ajuste', [ResReservaController::class, 'notificarAjuste'])->name('inmueble.notificar.ajuste');
+    Route::get('reservaI/confirmacion', [ResReservaController::class, 'indexConfirmacion'])->name('inmueble.confirmacion')->middleware(['auth', 'candirect:reservas.Reserva.lista']);
+    Route::get('reservaI/confirmacion/{id}/show', [ResReservaController::class, 'showConfirmacion'])->name('inmueble.confirmacion.show')->middleware(['auth', 'candirect:reservas.Reserva.lista']); 
+    //Route::post('reservaI/notificar/ajuste', [ResReservaController::class, 'notificarAjuste'])->name('inmueble.notificar.ajuste');
+    Route::post('reservaI/calificacion', [ResReservaController::class, 'calificacionAsociado'])->name('inmueble.resenia');
     Route::post('reservaI/confirmar', [ResReservaController::class, 'confirmar'])->name('inmueble.confirmar');
-    Route::get('reservaI/historico', [ResReservaController::class, 'indexHistorico'])->name('inmueble.historico')->middleware(['auth', 'candirect:reservas.Reserva.historico']);
+    Route::get('reservaI/historico', [ResReservaController::class, 'indexHistorico'])->name('inmueble.historico')->middleware(['auth', 'candirect:reservas.Reserva.lista']);
     Route::resource('inmueble', ResInmuebleController::class)->names('crudinmuebles');
 });
 Route::get('/scheduler-run', function () {Artisan::call('schedule:run');return 'Scheduler ejecutado';});
