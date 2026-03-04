@@ -24,6 +24,10 @@ use App\Models\Correspondencia\ProcesoUsuario;
 use App\Models\Correspondencia\Notificacion;
 use App\Models\Correspondencia\Trd;
 use App\Models\Correspondencia\Correspondencia;
+use App\Models\Soportes\ScpSoporte;
+use App\Models\Flujo\WorUsuario;
+use App\Models\Correspondencia\CorrespondenciaProceso;
+use App\Models\Correspondencia\ComunicacionSalida;
 
 class User extends Authenticatable
 {
@@ -118,13 +122,13 @@ class User extends Authenticatable
 
     public function soportesEscalados()
     {
-        return $this->hasMany(\App\Models\Soportes\ScpSoporte::class, 'usuario_escalado', 'id');
+        return $this->hasMany(ScpSoporte::class, 'usuario_escalado', 'id');
     }
 
     public function workflows()
     {
         return $this->belongsToMany(Workflow::class, 'wor_usuarios', 'user_id', 'workflow_id')
-                    ->using(\App\Models\Flujo\WorUsuario::class) 
+                    ->using(WorUsuario::class) 
                     ->withTimestamps();
     }
     /*
@@ -182,17 +186,13 @@ class User extends Authenticatable
     // Comunicaciones de salida generadas
     public function comunicacionesSalida()
     {
-        return $this->hasMany(\App\Models\Correspondencia\ComunicacionSalida::class, 'fk_usuario');
+        return $this->hasMany(ComunicacionSalida::class, 'fk_usuario');
     }
 
     // CorrespondenciaProceso gestionadas
-    public function correspondenciasProceso()
-    {
-        return $this->hasMany(\App\Models\Correspondencia\CorrespondenciaProceso::class, 'fk_usuario');
-    }
     public function seguimientosCorrespondencia()
     {
         // Un usuario tiene muchos registros de gestión/seguimiento
-        return $this->hasMany(\App\Models\Correspondencia\CorrespondenciaProceso::class, 'fk_usuario'); 
+        return $this->hasMany(CorrespondenciaProceso::class, 'fk_usuario'); 
     }
 }
