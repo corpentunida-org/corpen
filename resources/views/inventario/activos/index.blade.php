@@ -77,9 +77,14 @@
                     </span>
                 </form>
                 
-                <a href="{{ route('inventario.activos.create') }}" 
+                <!-- <a href="{{ route('inventario.activos.create') }}" 
                    style="background: var(--primary); color: white; padding: 12px 24px; border-radius: 12px; text-decoration: none; font-weight: 600; font-size: 0.9rem; box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);">
                     + Nuevo Activo
+                </a> -->
+                <a href="{{ route('inventario.compras.create') }}" 
+                    class="btn btn-primary btn-lg shadow-sm d-inline-flex align-items-center gap-2">
+                    <i class="bi bi-plus-lg"></i>
+                    Registrar Compra
                 </a>
             </div>
         </div>
