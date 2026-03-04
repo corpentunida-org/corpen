@@ -158,6 +158,8 @@
                         data-sub-nom="{{ $ref->subgrupo->nombre ?? 'N/A' }}"
                         data-sub-id="{{ $ref->id_MaeSubgrupo }}"
                         data-bodega-nom="{{ $ref->bodega->nombre ?? 'N/A' }}"
+                        data-bodega-id="{{ $ref->id_InvBodegas ?? '' }}" 
+                        data-detalle="{{ $ref->detalle ?? '' }}" 
                         value="{{ $ref->referencia }} | Marca: {{ $ref->marca->nombre ?? 'N/A' }} | Bodega: {{ $ref->bodega->nombre ?? 'N/A' }}">
                 </option>
             @endforeach
@@ -181,7 +183,7 @@
                 <p style="margin: 5px 0 0 0; color: var(--slate-600); font-weight: 500; font-size: 0.9rem;">Hoja de Vida e Historial de Adquisición</p>
             </div>
             <div style="text-align: right;">
-                <div class="asset-badge">PLACA: {{ $activo->codigo_activo }}</div>
+                <div class="asset-badge">MARQUILLA: {{ $activo->codigo_activo }}</div>
                 <p style="font-size: 0.75rem; color: var(--slate-500); margin-top: 8px; font-weight: 700;">ID SISTEMA: #{{ $activo->id }}</p>
             </div>
         </div>
@@ -198,7 +200,7 @@
                     <div class="panel-title">1. Identidad del Activo</div>
                     <div class="input-grid">
                         <div class="field-group">
-                            <label>Código de Placa</label>
+                            <label>Código de Marquilla</label>
                             <input type="text" name="codigo_activo" value="{{ old('codigo_activo', $activo->codigo_activo) }}" required>
                         </div>
                         <div class="field-group">
@@ -301,7 +303,7 @@
                                 <div style="margin-bottom: 12px;">
                                     <a href="{{ route('inventario.compras.archivo', $activo->detalleCompra->id_InvCompras) }}" target="_blank" class="btn-view-doc" style="background: white; border-color: var(--primary);">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
-                                        Ver Documento Actual (eg_archivo)
+                                        Ver Documento
                                     </a>
                                 </div>
                             @endif
@@ -369,7 +371,7 @@
 
             <div class="action-bar">
                 <a href="{{ route('inventario.activos.index') }}" style="color: white; text-decoration: none; font-weight: 600; font-size: 0.9rem;">← Volver al Listado</a>
-                <button type="submit" class="btn-submit">💾 Actualizar Expediente Completo</button>
+                <button type="submit" class="btn-submit">Actualizar Expediente Completo</button>
             </div>
         </form>
     </div>
@@ -380,21 +382,40 @@
             <h3 id="modalTitle" style="margin-top:0; color: var(--slate-900);">Gestionar Referencia</h3>
             <hr style="border: 0; border-top: 1px solid var(--slate-100); margin-bottom: 20px;">
             <input type="hidden" id="modal_ref_id">
+            
             <div class="field-group">
                 <label>Nombre de Referencia *</label>
                 <input type="text" id="modal_ref_nombre">
             </div>
+
+            {{-- NUEVO: CAMPO DETALLE AÑADIDO AL HTML --}}
+            <div class="field-group" style="margin-top: 15px;">
+                <label>Detalle / Descripción *</label>
+                <input type="text" id="modal_ref_detalle" placeholder="Agregue un detalle o '-' si no tiene">
+            </div>
+
             <div class="input-grid" style="gap: 15px; margin-top: 15px;">
                 <div class="field-group">
                     <label>Marca *</label>
                     <select id="modal_ref_marca">
+                        <option value="">Seleccione...</option>
                         @foreach($marcas as $m) <option value="{{ $m->id }}">{{ $m->nombre }}</option> @endforeach
                     </select>
                 </div>
                 <div class="field-group">
                     <label>Subgrupo *</label>
                     <select id="modal_ref_subgrupo">
+                        <option value="">Seleccione...</option>
                         @foreach($subgrupos as $s) <option value="{{ $s->id }}">{{ $s->nombre }}</option> @endforeach
+                    </select>
+                </div>
+                <div class="field-group">
+                    <label class="label">Bodega *</label>
+                    <select id="ref_id_InvBodegas" required>
+                        <option value="">Seleccione una bodega...</option>
+                        @foreach($bodegas as $bodega)
+                            <option value="{{ $bodega->id }}">{{ $bodega->nombre }}</option>
+                        @endforeach
                     </select>
                 </div>
             </div>
@@ -443,7 +464,9 @@
                         marcaNom: $(this).attr('data-marca-nom'),
                         marcaId: $(this).attr('data-marca-id'),
                         subNom: $(this).attr('data-sub-nom'),
-                        subId: $(this).attr('data-sub-id')
+                        subId: $(this).attr('data-sub-id'),
+                        bodegaId: $(this).attr('data-bodega-id'),
+                        detalle: $(this).attr('data-detalle') // <-- NUEVO: CAPTURA EL DETALLE
                     };
                 });
                 $('#municipiosDataList option').each(function() { dictMuni[$(this).val()] = $(this).attr('data-id'); });
@@ -480,30 +503,87 @@
                 else { $('#hidden_usuario_id').val(''); if(val) $(this).css('border-color', 'var(--danger)'); }
             });
 
-            // MODAL REFERENCIAS
+            // MODAL REFERENCIAS: CREAR NUEVA
             $('#btnNewRef').click(function() {
+                // <-- MEJORA: LIMPIAR LOS 5 CAMPOS
                 $('#modal_ref_id').val('');
                 $('#modal_ref_nombre').val('');
+                $('#modal_ref_detalle').val(''); // <-- NUEVO: Limpia el detalle
+                $('#modal_ref_marca').val('');
+                $('#modal_ref_subgrupo').val('');
+                $('#ref_id_InvBodegas').val('');
+                
                 $('#modalTitle').text('Crear Nueva Referencia');
                 $('#modalRef').fadeIn('fast').css('display', 'flex');
             });
 
+            // MODAL REFERENCIAS: EDITAR ACTUAL
             $('#btnEditRef').click(function() {
                 let searchVal = $('#search_referencia').val();
                 let refData = dictRefs[searchVal];
                 
                 if(!refData || !refData.id) return alert('Seleccione una referencia válida primero.');
 
+                // <-- MEJORA: CARGAR LOS 5 CAMPOS
                 $('#modal_ref_id').val(refData.id);
                 $('#modal_ref_nombre').val(refData.pureName);
+                $('#modal_ref_detalle').val(refData.detalle); // <-- NUEVO: Carga el detalle existente
                 $('#modal_ref_marca').val(refData.marcaId);
                 $('#modal_ref_subgrupo').val(refData.subId);
-                $('#modalTitle').text('Editar Referencia Actual');
+                $('#ref_id_InvBodegas').val(refData.bodegaId); 
                 
+                $('#modalTitle').text('Editar Referencia Actual');
                 $('#modalRef').fadeIn('fast').css('display', 'flex');
             });
 
             $('#btnCloseModal').click(() => $('#modalRef').fadeOut('fast'));
+
+            // BOTÓN GUARDAR AJAX
+            $('#btnSaveRefAjax').click(function() {
+                let id = $('#modal_ref_id').val();
+                let isUpdate = id !== '';
+                
+                let data = {
+                    _token: '{{ csrf_token() }}',
+                    referencia: $('#modal_ref_nombre').val(),
+                    detalle: $('#modal_ref_detalle').val(), // <-- NUEVO: Envía el detalle al backend
+                    id_MaeMarcas: $('#modal_ref_marca').val(),
+                    id_MaeSubgrupo: $('#modal_ref_subgrupo').val(),
+                    id_InvBodegas: $('#ref_id_InvBodegas').val()
+                };
+
+                // Añadido data.detalle a la validación frontal
+                if(!data.referencia || !data.detalle || !data.id_MaeMarcas || !data.id_MaeSubgrupo || !data.id_InvBodegas) {
+                    return alert('Por favor, completa todos los campos requeridos.');
+                }
+
+                let url = isUpdate ? `/inventario/referencias/ajax/${id}` : '/inventario/referencias/ajax';
+                let method = isUpdate ? 'PUT' : 'POST';
+
+                let $btn = $(this);
+                $btn.prop('disabled', true).text('Guardando...');
+
+                $.ajax({
+                    url: url,
+                    type: method,
+                    data: data,
+                    success: function(res) {
+                        if(res.success) {
+                            alert(isUpdate ? 'Referencia actualizada con éxito.' : 'Referencia creada con éxito.');
+                            $('#modalRef').fadeOut('fast');
+                            location.reload(); 
+                        } else {
+                            alert('Error: ' + (res.message || 'No se pudo procesar la solicitud.'));
+                            $btn.prop('disabled', false).text('Guardar');
+                        }
+                    },
+                    error: function(err) {
+                        console.error(err);
+                        alert('Ocurrió un error en el servidor. Revisa la consola o los logs de Laravel.');
+                        $btn.prop('disabled', false).text('Guardar');
+                    }
+                });
+            });
 
             // MODAL COMPRAS
             $('#btnOpenModalCompra').click(function() {
@@ -525,12 +605,11 @@
                             $('#view_compra_ref').text(d.referencia?.referencia || 'N/A');
                             $('#view_compra_detalle').text(d.detalle || 'Sin observaciones');
 
-                            // Inyectar enlace dinámico al archivo maestro S3 de la compra
                             if(d.id_InvCompras) {
                                 $('#fileContainer').html(`
                                     <a href="/inventario/compras/${d.id_InvCompras}/archivo" target="_blank" 
                                        style="display: flex; align-items: center; justify-content: center; gap: 8px; background: var(--slate-100); color: var(--slate-900); padding: 12px; border-radius: 10px; text-decoration: none; font-weight: 700; border: 1px solid var(--slate-200); margin-top: 15px;">
-                                        📄 Ver Archivo S3 (Factura/Egreso)
+                                        Ver Factura
                                     </a>
                                 `);
                             } else {

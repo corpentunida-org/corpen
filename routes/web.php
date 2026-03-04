@@ -683,6 +683,9 @@ Route::middleware(['auth'])
         // Crear nueva Referencia (Producto) desde el Modal (AJAX)
         Route::post('referencias/ajax', [CompraController::class, 'storeReferenciaAjax'])->name('referencias.ajax');
 
+        // Actualizar Referencia existente desde el Modal (AJAX) <-- RUTA AÑADIDA
+        Route::put('referencias/ajax/{id}', [CompraController::class, 'updateReferenciaAjax'])->name('referencias.ajax.update');
+
         // CRUD Completo de Compras
         Route::resource('compras', CompraController::class)->parameters(['compras' => 'invCompra']);
 
@@ -692,6 +695,9 @@ Route::middleware(['auth'])
 
         // Generar PDF del Acta (Entrega/Devolución)
         Route::get('movimientos/{id}/pdf', [MovimientoController::class, 'generarPdf'])->name('movimientos.pdf');
+
+        // Subir PDF Firmado a AWS S3 <-- RUTA NUEVA AGREGADA AQUÍ
+        Route::post('movimientos/{id}/upload', [MovimientoController::class, 'uploadActaFirmada'])->name('movimientos.upload');
 
         // CRUD Completo de Movimientos
         Route::resource('movimientos', MovimientoController::class)->parameters(['movimientos' => 'invMovimiento']);
