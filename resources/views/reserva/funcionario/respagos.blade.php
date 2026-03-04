@@ -11,52 +11,52 @@
                     <i class="bi bi-check2-circle fs-1 text-success mb-3"></i>
                     <p class="text-muted">No hay reservas pendientes de verificación de pago</p>
                 </div>
-            @else                
-            <ul class="list-unstyled mb-0">
-                @foreach ($reservas as $res)
-                    <li class="p-3 mb-3 border border-dashed rounded-3 item-reserva">
-                        <div class="d-flex align-items-center justify-content-between">
-                            <div class="d-flex align-items-center gap-3 me-3">
-                                <div class="custom-control custom-checkbox me-2">
-                                    <input class="custom-control-input checkconfirmres"
-                                        id="checkReserva_{{ $res->id }}" type="checkbox"
-                                        data-id="{{ $res->id }}">
-                                    <label class="custom-control-label c-pointer"
-                                        for="checkReserva_{{ $res->id }}"></label>
+            @else
+                <ul class="list-unstyled mb-0">
+                    @foreach ($reservas as $res)
+                        <li class="p-3 mb-3 border border-dashed rounded-3 item-reserva">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center gap-3 me-3">
+                                    <div class="custom-control custom-checkbox me-2">
+                                        <input class="custom-control-input checkconfirmres"
+                                            id="checkReserva_{{ $res->id }}" type="checkbox"
+                                            data-id="{{ $res->id }}">
+                                        <label class="custom-control-label c-pointer"
+                                            for="checkReserva_{{ $res->id }}"></label>
+                                    </div>
+
+                                    <div class="d-flex align-items-center gap-3">
+
+                                        <div class="lh-base txt-nid">{{ $res->nid }}</div>
+
+                                        <a href="#">
+                                            <div class="fs-13 fw-bold text-truncate-1-line">
+                                                <span class="txt-usuario">{{ $res->user->name }}</span>
+                                                <span
+                                                    class="ms-2 badge bg-soft-primary text-primary text-capitalize txt-inmueble">
+                                                    {{ $res->res_inmueble->name }}
+                                                </span>
+                                            </div>
+                                            <div class="fs-12 fw-normal text-truncate-1-line txt-fechas">
+                                                {{ $res->fecha_inicio }} a {{ $res->fecha_fin }}
+                                            </div>
+                                        </a>
+                                    </div>
                                 </div>
-
-                                <div class="d-flex align-items-center gap-3">
-
-                                    <div class="lh-base txt-nid">{{ $res->nid }}</div>
-
-                                    <a href="#">
-                                        <div class="fs-13 fw-bold text-truncate-1-line">
-                                            <span class="txt-usuario">{{ $res->user->name }}</span>
-                                            <span
-                                                class="ms-2 badge bg-soft-primary text-primary text-capitalize txt-inmueble">
-                                                {{ $res->res_inmueble->name }}
-                                            </span>
-                                        </div>
-                                        <div class="fs-12 fw-normal text-truncate-1-line txt-fechas">
-                                            {{ $res->fecha_inicio }} a {{ $res->fecha_fin }}
-                                        </div>
+                                <div class="d-flex flex-shrink-0 align-items-center gap-3">
+                                    <a href="{{ $res->getFile($res->soporte_pago) }}"
+                                        class="badge bg-soft-primary text-primary text-capitalize p-2 link-soporte"
+                                        target="_blank">
+                                        <i class="bi bi-paperclip"></i> Soporte de pago
                                     </a>
+                                    <div class="d-md-inline-block d-none me-3 txt-solicitud">
+                                        {{ $res->fecha_solicitud->format('d M, Y') }}
+                                    </div>
                                 </div>
                             </div>
-                            <div class="d-flex flex-shrink-0 align-items-center gap-3">
-                                <a href="{{ $res->getFile($res->soporte_pago) }}"
-                                    class="badge bg-soft-primary text-primary text-capitalize p-2 link-soporte"
-                                    target="_blank">
-                                    <i class="bi bi-paperclip"></i> Soporte de pago
-                                </a>
-                                <div class="d-md-inline-block d-none me-3 txt-solicitud">
-                                    {{ $res->fecha_solicitud->format('d M, Y') }}
-                                </div>
-                            </div>
-                        </div>
-                    </li>
-                @endforeach
-            </ul>
+                        </li>
+                    @endforeach
+                </ul>
             @endif
         </div>
     </div>
@@ -65,43 +65,60 @@
         <a class="card-header">
             <h5 class="mb-0">Historial de Reservas Verificadas</h5>
         </a>
-        <div class="card-body" style="">
-            <ul class="list-unstyled mb-0">
-                @foreach ($reservascon as $res)
-                    <li class="p-3 mb-3 border border-dashed rounded-3 item-reserva">
-                        <div class="d-flex align-items-center justify-content-between">
-                            <div class="d-flex align-items-center gap-3 me-3">
-                                <div class="d-flex align-items-center gap-3">
-                                    <div class="lh-base txt-nid">{{ $res->nid }}</div>
+        <div class="card-body" style="m-0 p-0">
+            <table id="projectList" class="table">
+                <thead>
+                    <tr>
+                        <th>Lista</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach ($reservascon as $res)
+                        <tr class="border border-dashed rounded-3 item-reserva">
+                            <td class="p-3">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <!-- IZQUIERDA -->
+                                    <div class="d-flex align-items-center gap-3 me-3">
+                                        <div class="lh-base txt-nid">
+                                            {{ $res->nid }}
+                                        </div>
+                                        <div>
+                                            <div class="fs-13 fw-bold text-truncate-1-line">
+                                                <span class="txt-usuario">{{ $res->user->name }}</span>
+                                                <span
+                                                    class="ms-2 badge bg-soft-primary text-primary text-capitalize txt-inmueble">
+                                                    {{ $res->res_inmueble->name }}
+                                                </span>
+                                            </div>
+                                            <div class="fs-12 fw-normal text-truncate-1-line txt-fechas">
+                                                {{ $res->fecha_inicio }} a {{ $res->fecha_fin }}
+                                            </div>
+                                        </div>
 
-                                    <a href="#">
-                                        <div class="fs-13 fw-bold text-truncate-1-line">
-                                            <span class="txt-usuario">{{ $res->user->name }}</span>
-                                            <span
-                                                class="ms-2 badge bg-soft-primary text-primary text-capitalize txt-inmueble">
-                                                {{ $res->res_inmueble->name }}
-                                            </span>
+                                    </div>
+
+                                    <!-- DERECHA -->
+                                    <div class="d-flex flex-shrink-0 align-items-center gap-3">
+
+                                        <a href="{{ $res->getFile($res->soporte_pago) }}"
+                                            class="badge bg-soft-primary text-primary text-capitalize p-2 link-soporte"
+                                            target="_blank">
+                                            <i class="bi bi-paperclip"></i> Soporte de pago
+                                        </a>
+
+                                        <div class="d-md-inline-block d-none me-3 txt-solicitud">
+                                            {{ \Carbon\Carbon::parse($res->fecha_solicitud)->format('d M, Y') }}
                                         </div>
-                                        <div class="fs-12 fw-normal text-truncate-1-line txt-fechas">
-                                            {{ $res->fecha_inicio }} a {{ $res->fecha_fin }}
-                                        </div>
-                                    </a>
+
+                                    </div>
+
                                 </div>
-                            </div>
-                            <div class="d-flex flex-shrink-0 align-items-center gap-3">
-                                <a href="{{ $res->getFile($res->soporte_pago) }}"
-                                    class="badge bg-soft-primary text-primary text-capitalize p-2 link-soporte"
-                                    target="_blank">
-                                    <i class="bi bi-paperclip"></i> Soporte de pago
-                                </a>
-                                <div class="d-md-inline-block d-none me-3 txt-solicitud">
-                                    {{ $res->fecha_solicitud->format('d M, Y') }}
-                                </div>
-                            </div>
-                        </div>
-                    </li>
-                @endforeach
-            </ul>
+
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
         </div>
     </div>
 
@@ -117,7 +134,7 @@
                         <div class="col-xl-12 mb-4 mb-sm-0">
                             <div class="mb-2">
                                 <h6 class="fw-bold">Detalle Reserva:</h6><span class="fs-12 text-muted">Si el soporte
-                                    anexado coincide con el registro del pago, presione el botón azul inferior para
+                                    anexado coincide con el registro del pago, presione el botón verde inferior para
                                     confirmar.</span>
                             </div>
                             @csrf
@@ -152,7 +169,8 @@
                             <div class="form-group row mb-3">
                                 <label for="fecha_fin" class="col-sm-3 col-form-label">Fin</label>
                                 <div class="col-sm-9">
-                                    <input class="form-control" id="fecha_fin" name="fecha_fin" type="text" readonly>
+                                    <input class="form-control" id="fecha_fin" name="fecha_fin" type="text"
+                                        readonly>
                                 </div>
                             </div>
                             <div class="form-group row mb-3">
@@ -173,7 +191,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary cerrarModal" id="cancelBtn">Cancelar</button>
-                        <button type="submit" class="btn btn-primary" id="confirmBtn">Confirmar</button>
+                        <button type="submit" class="btn btn-success" id="confirmBtn">Confirmar</button>
                     </div>
                 </form>
             </div>
