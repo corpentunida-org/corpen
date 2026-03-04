@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\Inventario\InvActivo;
+use App\Models\Inventario\InvEstado;
 use App\Models\Inventario\InvReferencia; 
 
 class InvBodega extends Model
@@ -38,5 +39,10 @@ class InvBodega extends Model
     public function referencias()
     {
         return $this->hasMany(InvReferencia::class, 'id_InvBodegas');
+    }
+
+    public function estados()
+    {
+        return $this->hasMany(InvEstado::class, 'id_bodega');
     }
 }
