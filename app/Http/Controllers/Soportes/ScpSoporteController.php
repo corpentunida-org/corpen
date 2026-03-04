@@ -347,7 +347,7 @@ class ScpSoporteController extends Controller
                 if ($request->filled('id_scp_usuario_asignado') && $request->id_scp_usuario_asignado != 0) {
                     $usuarioEscalado = ScpUsuario::with('UserApp')->find($request->id_scp_usuario_asignado);
                     if ($usuarioEscalado && $usuarioEscalado->UserApp && !empty($usuarioEscalado->UserApp->email)) {
-                        ($usuarioEscalado->UserApp->email)-Mail::to>send(new SoporteEscaladoMail($scpSoporte, 'escalado'));
+                         Mail::to($usuarioEscalado->UserApp->email)->send(new SoporteEscaladoMail($scpSoporte, 'escalado'));
                     }
                 }
                 if ($scpSoporte->usuario && !empty($scpSoporte->usuario->email)) {
