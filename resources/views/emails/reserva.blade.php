@@ -219,7 +219,7 @@
                                             <td class="center-text" data-text-style="Paragraphs" align="center" style="font-family:'Barlow',Arial,Helvetica,sans-serif;font-size:16px;line-height:26px;font-weight:400;font-style:normal;color:#333333;text-decoration:none;letter-spacing:0px;">
                                                 <singleline>
                                                     <div mc:edit data-text-edit>
-                                                        {{ $texto }}
+                                                         {!! $texto !!} 
                                                     </div>
                                                 </singleline>
                                             </td>
