@@ -370,7 +370,7 @@
             </div>
 
             <div class="action-bar">
-                <a href="{{ route('inventario.activos.index') }}" style="color: white; text-decoration: none; font-weight: 600; font-size: 0.9rem;">← Volver al Listado</a>
+                <a href="{{ route('inventario.activos.show', $activo->id) }}" style="color: white; text-decoration: none; font-weight: 600; font-size: 0.9rem;">← Volver al Expediente</a>
                 <button type="submit" class="btn-submit">Actualizar Expediente Completo</button>
             </div>
         </form>

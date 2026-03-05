@@ -220,8 +220,8 @@
                 </p>
             </div>
             <div class="header-actions">
-                <a href="{{ route('inventario.activos.edit', $activo->id) }}" class="btn-action" style="background: var(--slate-900); color: white;">Editar</a>
-                <a href="{{ route('inventario.activos.index') }}" class="btn-action" style="background: var(--slate-100); color: var(--slate-600);">Cerrar</a>
+                <a href="{{ route('inventario.activos.edit', $activo->id) }}" class="btn-action" style="background: var(--slate-900); color: white;">Configuración</a>
+                <a href="{{ route('inventario.activos.index') }}" class="btn-action" style="background: var(--slate-100); color: var(--slate-600);">Inventario de Activos</a>
             </div>
         </div>
 
