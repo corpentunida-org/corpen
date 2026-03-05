@@ -53,6 +53,9 @@ class ResReservaController extends Controller implements HasMiddleware
     public function createReserva($id)
     {
         $inmueble = Res_inmueble::findOrFail($id);
+        if(!$inmueble->active){
+            return redirect()->route('reserva.reserva.index')->with('error', 'El inmueble seleccionado no está disponible para reservas en este momento.');
+        }
         date_default_timezone_set('America/Bogota');
         $fecha = date('Y-m-d');
         $reservas = Res_reserva::where('res_inmueble_id', $id)->where('fecha_fin', '>=', $fecha)->where('nid', '!=', '0000000000')->orderBy('fecha_inicio', 'asc')->get();
@@ -243,9 +246,8 @@ class ResReservaController extends Controller implements HasMiddleware
     public function indexConfirmacion()
     {
         $reservas = Res_reserva::select('id', 'res_inmueble_id', 'res_status_id', 'user_id', 'nid', 'fecha_inicio', 'fecha_fin')
-            ->whereIn('res_status_id', [2])
+            ->where('res_status_id', [2])
             ->where('nid', '<>', '0000000000')
-            ->where('fecha_fin', '>=', today())
             ->orderBy('fecha_inicio', 'asc')
             ->with(['tercero', 'user'])
             ->get();
@@ -310,9 +312,8 @@ class ResReservaController extends Controller implements HasMiddleware
             $titulomail = 'Confirmación de la reserva';
             $condicionesmail = true;
         }
-        if ($request->boolean('notificar')) {       
-            //Mail::to($reserva->user->email)->send(new ReservaInmueble($reserva->user->name, $texto, $titulomail, true));
-            Mail::to('vanessag@corpentunida.org.co')->send(new ReservaInmueble($reserva->user->name, $texto, $titulomail, $condicionesmail));
+        if ($request->boolean('notificar')) {
+            Mail::to($reserva->user->email)->send(new ReservaInmueble($reserva->user->name, $texto, $titulomail, $condicionesmail));
         }
         return redirect()->route('reserva.inmueble.confirmacion')->with('success', 'Comentario registrado con éxito.');
     }

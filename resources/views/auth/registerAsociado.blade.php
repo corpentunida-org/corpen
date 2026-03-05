@@ -1,13 +1,11 @@
 <x-guest-layout>
 
-
     <x-validation-errors class="mb-4" />
     <p style="font-size: 20px;
                 font-weight: bold;
                 color: #254684;
                 text-align: center;
                 padding-bottom: 15px;">Registro Asociado Corpentunida</p>
-
     <form method="POST" class="w-100 mt-4 pt-2" action="{{ route('register') }}">
         @csrf
         <input type="hidden" name="aux" value="asociado">
