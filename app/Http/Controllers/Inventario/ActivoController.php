@@ -16,27 +16,56 @@ use Illuminate\Support\Facades\DB;
 
 class ActivoController extends Controller
 {
-    /**
-     * Listado principal con filtros de búsqueda
+/**
+     * Listado principal con filtros de búsqueda en tiempo real
      */
     public function index(Request $request)
     {
-        // Al tener hasOneThrough en el modelo, 'marca' y 'subgrupo' funcionan automáticamente
         $query = InvActivo::with(['marca', 'estado', 'usuarioAsignado', 'municipio', 'subgrupo', 'referencia']);
         
-        if($request->has('search') && $request->search != ''){
+        // 1. Filtro por Búsqueda de Texto (Placa, Serial, Nombre Y RESPONSABLE)
+        if($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
-                $q->where('nombre', 'like', '%'.$search.'%')
-                  ->orWhere('codigo_activo', 'like', '%'.$search.'%')
-                  ->orWhere('serial', 'like', '%'.$search.'%');
+                $q->where('nombre', 'like', "%{$search}%")
+                  ->orWhere('codigo_activo', 'like', "%{$search}%")
+                  ->orWhere('serial', 'like', "%{$search}%")
+                  // ESTA LÍNEA ES LA QUE PERMITE BUSCAR POR RESPONSABLE
+                  ->orWhereHas('usuarioAsignado', function($qUser) use ($search) {
+                      $qUser->where('name', 'like', "%{$search}%");
+                  });
             });
         }
 
-        $activos = $query->latest()->paginate(15);
-        return view('inventario.activos.index', compact('activos'));
-    }
+        // 2. Filtro por Estado
+        if($request->filled('estado_id')) {
+            $query->where('id_Estado', $request->estado_id);
+        }
 
+        // 3. Filtro por Marca 
+        if($request->filled('marca_id')) {
+            $query->whereHas('marca', function($q) use ($request) {
+                $q->where('id', $request->marca_id);
+            });
+        }
+
+        // 4. Filtro por Subgrupo (Categoría)
+        if($request->filled('subgrupo_id')) {
+            $query->whereHas('subgrupo', function($q) use ($request) {
+                $q->where('id', $request->subgrupo_id);
+            });
+        }
+
+        // Paginación 
+        $activos = $query->latest()->paginate(15)->withQueryString();
+
+        // Cargar catálogos
+        $estados = InvEstado::orderBy('nombre')->get();
+        $marcas = InvMarca::orderBy('nombre')->get();
+        $subgrupos = InvSubgrupo::orderBy('nombre')->get();
+
+        return view('inventario.activos.index', compact('activos', 'estados', 'marcas', 'subgrupos'));
+    }
     /**
      * Formulario de edición: Carga el expediente completo
      */
