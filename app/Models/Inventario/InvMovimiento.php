@@ -22,7 +22,8 @@ class InvMovimiento extends Model
         'observacion_general',
         'id_InvTiposRegistros', 
         'id_usersAsignado', 
-        'id_usersRegistro'
+        'id_usersRegistro',
+        'id_mantenimiento'
     ];
 
     public function getFile($nameFile)
@@ -66,5 +67,13 @@ class InvMovimiento extends Model
     public function detalles() 
     { 
         return $this->hasMany(InvMovimientoDetalle::class, 'id_InvMovimientos'); 
+    }
+
+    /**
+     * Relación con el Mantenimiento asociado
+     */
+    public function mantenimiento() 
+    { 
+        return $this->belongsTo(InvMantenimiento::class, 'id_mantenimiento'); 
     }
 }
