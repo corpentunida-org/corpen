@@ -39,9 +39,9 @@ class MovimientoController extends Controller
         $tipos = InvEstado::all(); // Estados que actúan como "Tipo de Movimiento"
         $bodegas = InvBodega::all(); // Bodegas para el filtro visual de la vista
 
-        // Cargamos solo activos que actualmente estén en estado "Disponible" (ID 1 por defecto)
-        $activosDisponibles = InvActivo::with('referencia.marca')
-            ->where('id_Estado', 1)
+        // CAMBIO: Ahora cargamos TODOS los activos (no solo los disponibles)
+        // para poder hacer devoluciones, mantenimientos o reasignaciones.
+        $activosDisponibles = InvActivo::with(['referencia.marca', 'estado', 'usuarioAsignado'])
             ->get();
 
         return view('inventario.movimientos.create', compact('usuarios', 'tipos', 'activosDisponibles', 'bodegas'));
