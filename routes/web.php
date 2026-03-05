@@ -259,6 +259,8 @@ Route::get('/inventario', [UserController::class, 'inventario'])
 //RESERVAS
 Route::get('user/validation/asociado', [UserController::class, 'validarAsociadoCreate'])->name('user.validar.asociado');
 Route::get('/consumir-api', [UserController::class, 'consumirEndpoint']);
+
+Route::get('validar/asociado', function () {return view('auth.validarAsociado');})->name('validar.asociado.form');
 Route::post('validar/asociado', [UserController::class, 'validarAsociado'])->name('validar.asociado');
 
 Route::prefix('reservas')->name('reserva.')->group(function () {

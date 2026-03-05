@@ -174,7 +174,7 @@ class UserController extends Controller
 
     public function consumirEndpoint($nid)
     {
-        $url = "https://www.siasoftapp.com:7006/api/Pastors"; // URL del endpoint
+        $url = env('API_PRODUCCION') . "/api/Pastors"; // URL del endpoint
         $token = env('TOKEN_ADMIN');
 
         // Realizar la solicitud GET
@@ -208,7 +208,6 @@ class UserController extends Controller
 
         // Asegúrate de convertirlo a un array si es un objeto (por seguridad)
         $asociadoArray = is_array($asociado) ? $asociado : (array) $asociado;
-
         //print_r($asociadoArray);
         if ($asociadoArray['original']['status'] == "success") {
             $birthdate = $asociadoArray['original']['data']['birthdate'];
@@ -221,7 +220,8 @@ class UserController extends Controller
             return view('auth.registerAsociado', compact('nid', 'birthdate', 'asociadoArray'));
 
         } else {
-            return Redirect::back()->withErrors(['Los datos proporcionados no coinciden con nuestros registros. Por favor, comuníquese con nuestro soporte técnico para recibir asistencia.']);
+            return redirect()->route('validar.asociado.form')->withErrors(['Los datos proporcionados no coinciden con nuestros registros. Por favor, comuníquese con soporte técnico.']);
+            //eturn Redirect::back()->withErrors(['Los datos proporcionados no coinciden con nuestros registros. Por favor, comuníquese con nuestro soporte técnico para recibir asistencia.']);
         }
     }
 
