@@ -706,8 +706,10 @@ Route::middleware(['auth'])
         // 4. MANTENIMIENTOS Y REPARACIONES
         // ---------------------------------------------------
 
-        Route::resource('mantenimientos', MantenimientoController::class)->parameters(['mantenimientos' => 'invMantenimiento']);
+        // Subir Factura/Acta de Mantenimiento a AWS S3 <-- RUTA NUEVA AGREGADA AQUÍ
+        Route::post('mantenimientos/{id}/upload', [MantenimientoController::class, 'uploadActa'])->name('mantenimientos.upload');
 
+        Route::resource('mantenimientos', MantenimientoController::class)->parameters(['mantenimientos' => 'invMantenimiento']);
         // ---------------------------------------------------
         // 5. ALMACÉN DE ACTIVOS (Núcleo)
         // ---------------------------------------------------

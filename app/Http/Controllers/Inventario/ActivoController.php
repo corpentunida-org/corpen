@@ -87,7 +87,7 @@ class ActivoController extends Controller
         // Actualización masiva de campos (nombre, serial, descripción, fechas, etc.)
         $activo->update($request->all());
         
-        return redirect()->route('inventario.activos.index')
+        return redirect()->route('inventario.activos.show', $activo->id)
                          ->with('success', 'Expediente del activo actualizado con éxito');
     }
 
@@ -136,5 +136,25 @@ class ActivoController extends Controller
             'success' => true,
             'data'    => $detalle
         ]);
+    }
+
+    /**
+     * Muestra el panel de alertas (ej. Garantías por vencer)
+     */
+    public function alertas()
+    {
+        // 1. Equipos cuya garantía vence en los próximos 30 días
+        $porVencer = InvActivo::whereNotNull('fecha_fin_garantia')
+            ->whereDate('fecha_fin_garantia', '>=', now())
+            ->whereDate('fecha_fin_garantia', '<=', now()->addDays(30))
+            ->get();
+
+        // 2. Equipos cuya garantía ya se venció
+        $vencidos = InvActivo::whereNotNull('fecha_fin_garantia')
+            ->whereDate('fecha_fin_garantia', '<', now())
+            ->get();
+
+        // Retornamos la vista pasándole estas dos listas
+        return view('inventario.activos.alertas', compact('porVencer', 'vencidos'));
     }
 }
