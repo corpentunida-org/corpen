@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\Exequiales\ExMonitoria;
 use App\Models\Exequiales\Parentescos;
 use App\Models\Exequiales\ExServicioComentarios;
+use App\Models\Exequiales\ComaeExCli;
 use Illuminate\Support\Facades\Http;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
