@@ -212,13 +212,10 @@ class UserController extends Controller
         if ($asociadoArray['original']['status'] == "success") {
             $birthdate = $asociadoArray['original']['data']['birthdate'];
             $formattedBirthdate = Carbon::parse($birthdate)->format('Y-m-d');
-
             if ($formattedBirthdate != $request->input('fecha')) {
                 return Redirect::back()->withErrors(['Los datos proporcionados no coinciden con nuestros registros. Por favor, comuníquese con nuestro soporte técnico para recibir asistencia.']);
             }
-
             return view('auth.registerAsociado', compact('nid', 'birthdate', 'asociadoArray'));
-
         } else {
             return redirect()->route('validar.asociado.form')->withErrors(['Los datos proporcionados no coinciden con nuestros registros. Por favor, comuníquese con soporte técnico.']);
             //eturn Redirect::back()->withErrors(['Los datos proporcionados no coinciden con nuestros registros. Por favor, comuníquese con nuestro soporte técnico para recibir asistencia.']);
