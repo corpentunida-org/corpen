@@ -105,10 +105,7 @@ class Interaction extends Model
     /**
      * Obtiene el área asociada a la interacción.
      */
-    public function area()
-    {
-        return $this->belongsTo(GdoArea::class, 'id_area','id');
-    }
+    
     
     /**
      * Obtiene el área de asignación asociada a la interacción.
