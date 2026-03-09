@@ -32,8 +32,8 @@ class InteractionController extends Controller
     {
         // --- 1. CONSTRUIMOS LA CONSULTA BASE (sin paginar aún) ---
         $baseQuery = Interaction::with([
-            'client', 'agent', 'channel', 'type', 'outcomeRelation', 'nextAction',
-            'area', 'areaDeAsignacion', 'cargo', 'lineaDeObligacion','DistritoDeObligacion'
+            'client', 'agent.cargoRelation.gdoArea', 'channel', 'type', 'outcomeRelation', 'nextAction',
+            'areaDeAsignacion', 'cargo', 'lineaDeObligacion','DistritoDeObligacion'
         ]);
 
         // --- 2. APLICAMOS TODOS LOS FILTROS (BÚSQUEDA Y FILTROS ADICIONALES) ---
@@ -111,16 +111,18 @@ class InteractionController extends Controller
             'total' => $countQuery->count(),
             'successful' => (clone $countQuery)->whereHas('outcomeRelation', fn($q) => $q->where('name', 'Exitoso'))->count(),
             'pending' => (clone $countQuery)->whereHas('outcomeRelation', fn($q) => $q->where('name', 'Pendiente'))->count(),
-            'today' => (clone $countQuery)->whereDate('interaction_date', today())->count(),
+            'today' => (clone $countQuery)->where(function ($q) {$q->whereDate('interaction_date', today())->orWhereDate('updated_at', today());})->count(),
+            'overdue' => (clone $countQuery)->whereHas('outcomeRelation', fn($q) => $q->where('name', 'Pendiente'))->where('next_action_date', '<', today()->startOfDay())->count(),
         ];
 
         // CAMBIO: Aplicar los mismos filtros a las colecciones de las pestañas
         $collectionsForTabs = [
             'successful' => (clone $baseQuery)->whereHas('outcomeRelation', fn($q) => $q->where('name', 'Exitoso'))->get(),
             'pending' => (clone $baseQuery)->whereHas('outcomeRelation', fn($q) => $q->where('name', 'Pendiente'))->get(),
-            'today' => (clone $baseQuery)->whereDate('interaction_date', today())->get(),
+            'today' => (clone $baseQuery)->where(function ($q) {$q->whereDate('interaction_date', today())->orWhereDate('updated_at', today());})->get(),
+            
         ];
-
+        
         // --- 4. OBTENEMOS LA COLECCIÓN PAGINADA PARA LA PESTAÑA "TODOS" ---
         $interactions = $baseQuery->orderBy('id', 'desc')->paginate(100);
         $interactions->appends($request->query());
