@@ -455,60 +455,86 @@
             let dictRefs = {};
             let dictMuni = {};
             let dictUser = {};
+            let dictionariesLoaded = false;
 
-            function initDictionaries() {
-                $('#referenciasDataList option').each(function() {
-                    dictRefs[$(this).val()] = {
-                        id: $(this).attr('data-id'),
-                        pureName: $(this).attr('data-pure-name'),
-                        marcaNom: $(this).attr('data-marca-nom'),
-                        marcaId: $(this).attr('data-marca-id'),
-                        subNom: $(this).attr('data-sub-nom'),
-                        subId: $(this).attr('data-sub-id'),
-                        bodegaId: $(this).attr('data-bodega-id'),
-                        detalle: $(this).attr('data-detalle') // <-- NUEVO: CAPTURA EL DETALLE
-                    };
+            // OPTIMIZACIÓN: Solo leer el valor actual al inicio para el botón de editar
+            let initialRefId = $('#hidden_referencia_id').val();
+            if (initialRefId) $('#btnEditRef').css('display', 'inline-flex'); else $('#btnEditRef').css('display', 'none');
+
+            // OPTIMIZACIÓN: Función para cargar diccionarios bajo demanda
+            function loadDictionaries() {
+                if (dictionariesLoaded) return;
+                
+                // Usar requestAnimationFrame para no bloquear la interfaz mientras el usuario escribe
+                requestAnimationFrame(() => {
+                    $('#referenciasDataList option').each(function() {
+                        dictRefs[$(this).val()] = {
+                            id: $(this).attr('data-id'),
+                            pureName: $(this).attr('data-pure-name'),
+                            marcaNom: $(this).attr('data-marca-nom'),
+                            marcaId: $(this).attr('data-marca-id'),
+                            subNom: $(this).attr('data-sub-nom'),
+                            subId: $(this).attr('data-sub-id'),
+                            bodegaId: $(this).attr('data-bodega-id'),
+                            detalle: $(this).attr('data-detalle')
+                        };
+                    });
+                    $('#municipiosDataList option').each(function() { dictMuni[$(this).val()] = $(this).attr('data-id'); });
+                    $('#usuariosDataList option').each(function() { dictUser[$(this).val()] = $(this).attr('data-id'); });
+                    
+                    dictionariesLoaded = true;
                 });
-                $('#municipiosDataList option').each(function() { dictMuni[$(this).val()] = $(this).attr('data-id'); });
-                $('#usuariosDataList option').each(function() { dictUser[$(this).val()] = $(this).attr('data-id'); });
-
-                let idRef = $('#hidden_referencia_id').val();
-                if (idRef) $('#btnEditRef').css('display', 'inline-flex'); else $('#btnEditRef').css('display', 'none');
             }
-            initDictionaries();
+
+            // OPTIMIZACIÓN: Solo cargar los diccionarios cuando el usuario interactúa con los inputs
+            $('#search_referencia, #search_municipio, #search_usuario, #btnEditRef').on('focus click', function() {
+                loadDictionaries();
+            });
 
             $(document).on('input change', '#search_referencia', function() {
+                loadDictionaries(); // Asegurar que estén cargados
+                
                 let val = $(this).val();
-                if (dictRefs[val]) {
-                    $('#hidden_referencia_id').val(dictRefs[val].id);
-                    $('#display_marca').val(dictRefs[val].marcaNom);
-                    $('#display_subgrupo').val(dictRefs[val].subNom);
-                    $(this).css('border-color', 'var(--slate-200)');
-                } else {
-                    $('#hidden_referencia_id').val('');
-                    if(val) $(this).css('border-color', 'var(--danger)');
-                }
-                initDictionaries(); 
+                
+                // Pequeño timeout para permitir que el diccionario se cargue si fue la primera interacción
+                setTimeout(() => {
+                    if (dictRefs[val]) {
+                        $('#hidden_referencia_id').val(dictRefs[val].id);
+                        $('#display_marca').val(dictRefs[val].marcaNom);
+                        $('#display_subgrupo').val(dictRefs[val].subNom);
+                        $(this).css('border-color', 'var(--slate-200)');
+                        $('#btnEditRef').css('display', 'inline-flex');
+                    } else {
+                        $('#hidden_referencia_id').val('');
+                        if(val) $(this).css('border-color', 'var(--danger)');
+                        $('#btnEditRef').css('display', 'none');
+                    }
+                }, 10);
             });
 
             $(document).on('input change', '#search_municipio', function() {
-                let val = $(this).val();
-                if (dictMuni[val]) { $('#hidden_municipio_id').val(dictMuni[val]); $(this).css('border-color', 'var(--slate-200)'); } 
-                else { $('#hidden_municipio_id').val(''); if(val) $(this).css('border-color', 'var(--danger)'); }
+                loadDictionaries();
+                setTimeout(() => {
+                    let val = $(this).val();
+                    if (dictMuni[val]) { $('#hidden_municipio_id').val(dictMuni[val]); $(this).css('border-color', 'var(--slate-200)'); } 
+                    else { $('#hidden_municipio_id').val(''); if(val) $(this).css('border-color', 'var(--danger)'); }
+                }, 10);
             });
 
             $(document).on('input change', '#search_usuario', function() {
-                let val = $(this).val();
-                if (dictUser[val]) { $('#hidden_usuario_id').val(dictUser[val]); $(this).css('border-color', 'var(--slate-200)'); } 
-                else { $('#hidden_usuario_id').val(''); if(val) $(this).css('border-color', 'var(--danger)'); }
+                loadDictionaries();
+                setTimeout(() => {
+                    let val = $(this).val();
+                    if (dictUser[val]) { $('#hidden_usuario_id').val(dictUser[val]); $(this).css('border-color', 'var(--slate-200)'); } 
+                    else { $('#hidden_usuario_id').val(''); if(val) $(this).css('border-color', 'var(--danger)'); }
+                }, 10);
             });
 
             // MODAL REFERENCIAS: CREAR NUEVA
             $('#btnNewRef').click(function() {
-                // <-- MEJORA: LIMPIAR LOS 5 CAMPOS
                 $('#modal_ref_id').val('');
                 $('#modal_ref_nombre').val('');
-                $('#modal_ref_detalle').val(''); // <-- NUEVO: Limpia el detalle
+                $('#modal_ref_detalle').val(''); 
                 $('#modal_ref_marca').val('');
                 $('#modal_ref_subgrupo').val('');
                 $('#ref_id_InvBodegas').val('');
@@ -519,21 +545,24 @@
 
             // MODAL REFERENCIAS: EDITAR ACTUAL
             $('#btnEditRef').click(function() {
-                let searchVal = $('#search_referencia').val();
-                let refData = dictRefs[searchVal];
+                loadDictionaries();
                 
-                if(!refData || !refData.id) return alert('Seleccione una referencia válida primero.');
+                setTimeout(() => {
+                    let searchVal = $('#search_referencia').val();
+                    let refData = dictRefs[searchVal];
+                    
+                    if(!refData || !refData.id) return alert('Seleccione una referencia válida primero.');
 
-                // <-- MEJORA: CARGAR LOS 5 CAMPOS
-                $('#modal_ref_id').val(refData.id);
-                $('#modal_ref_nombre').val(refData.pureName);
-                $('#modal_ref_detalle').val(refData.detalle); // <-- NUEVO: Carga el detalle existente
-                $('#modal_ref_marca').val(refData.marcaId);
-                $('#modal_ref_subgrupo').val(refData.subId);
-                $('#ref_id_InvBodegas').val(refData.bodegaId); 
-                
-                $('#modalTitle').text('Editar Referencia Actual');
-                $('#modalRef').fadeIn('fast').css('display', 'flex');
+                    $('#modal_ref_id').val(refData.id);
+                    $('#modal_ref_nombre').val(refData.pureName);
+                    $('#modal_ref_detalle').val(refData.detalle); 
+                    $('#modal_ref_marca').val(refData.marcaId);
+                    $('#modal_ref_subgrupo').val(refData.subId);
+                    $('#ref_id_InvBodegas').val(refData.bodegaId); 
+                    
+                    $('#modalTitle').text('Editar Referencia Actual');
+                    $('#modalRef').fadeIn('fast').css('display', 'flex');
+                }, 10);
             });
 
             $('#btnCloseModal').click(() => $('#modalRef').fadeOut('fast'));
@@ -546,13 +575,12 @@
                 let data = {
                     _token: '{{ csrf_token() }}',
                     referencia: $('#modal_ref_nombre').val(),
-                    detalle: $('#modal_ref_detalle').val(), // <-- NUEVO: Envía el detalle al backend
+                    detalle: $('#modal_ref_detalle').val(), 
                     id_MaeMarcas: $('#modal_ref_marca').val(),
                     id_MaeSubgrupo: $('#modal_ref_subgrupo').val(),
                     id_InvBodegas: $('#ref_id_InvBodegas').val()
                 };
 
-                // Añadido data.detalle a la validación frontal
                 if(!data.referencia || !data.detalle || !data.id_MaeMarcas || !data.id_MaeSubgrupo || !data.id_InvBodegas) {
                     return alert('Por favor, completa todos los campos requeridos.');
                 }
