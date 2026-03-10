@@ -71,7 +71,7 @@ class ActivoController extends Controller
      */
     public function edit($id)
     {
-        // Agregamos carga de relaciones anidadas para el expediente técnico y la compra
+        // 1. Cargar el activo
         $activo = InvActivo::with([
             'detalleCompra.compra', 
             'detalleCompra.referencia',
@@ -80,21 +80,26 @@ class ActivoController extends Controller
             'referencia.subgrupo'
         ])->findOrFail($id);
         
-        // Carga de catálogos para los selects del formulario
-        $marcas = InvMarca::orderBy('nombre')->get();
-        $subgrupos = InvSubgrupo::orderBy('nombre')->get();
-        $estados = InvEstado::all();
-        $referencias = InvReferencia::orderBy('referencia')->get(); 
-        $bodegas = DB::table('inv_bodegas')->orderBy('nombre')->get(); 
-        $municipios = MaeMunicipios::orderBy('nombre')->get();
-        $usuarios = User::orderBy('name')->get();
+        // 2. LA SOLUCIÓN AL N+1 (Versión Segura)
+        // Traemos las referencias con sus relaciones para evitar las 15,000 consultas,
+        // pero dejamos que traiga todas las columnas para evitar errores de SQL.
+        $referencias = InvReferencia::with(['marca', 'subgrupo', 'bodega'])
+            ->orderBy('referencia')
+            ->get(); 
+
+        // 3. DIETA DE MEMORIA para el resto de catálogos
+        $marcas = InvMarca::select('id', 'nombre')->orderBy('nombre')->get();
+        $subgrupos = InvSubgrupo::select('id', 'nombre')->orderBy('nombre')->get();
+        $estados = InvEstado::select('id', 'nombre')->get();
+        $bodegas = DB::table('inv_bodegas')->select('id', 'nombre')->orderBy('nombre')->get(); 
+        $municipios = MaeMunicipios::select('id', 'nombre')->orderBy('nombre')->get();
+        $usuarios = User::select('id', 'name')->orderBy('name')->get();
 
         return view('inventario.activos.edit', compact(
             'activo', 'marcas', 'subgrupos', 'estados', 
             'municipios', 'referencias', 'usuarios', 'bodegas'
         ));
     }
-
     /**
      * Actualizar los datos del activo (Expediente Técnico)
      */
