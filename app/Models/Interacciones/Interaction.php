@@ -20,36 +20,26 @@ class Interaction extends Model
     use HasFactory;
 
     protected $fillable = [
-        'client_id',                // 1) ID del cliente asociado a la interacción
-        'agent_id',                 // 2) ID del agente o usuario que realizó la interacción
-        'interaction_date',         // 3) Fecha y hora en que ocurrió la interacción
-        'interaction_channel',      // 4)* Canal de comunicación (ej: teléfono, email, chat, presencial)
-        'interaction_type',         // 5)* Tipo de interacción (ej: contacto inicial, seguimiento, reclamo)
-        'duration',                 // 6)) Duración de la interacción (en minutos, segundos u otro formato)
-        'outcome',                  // 7)* Resultado de la interacción (ej: exitoso, pendiente, sin respuesta)
-        'notes',                    // 8) Notas o detalles adicionales sobre la interacción
-
-        'parent_interaction_id',    // *** ID de la interacción relacionada o anterior (en caso de seguimiento)
-        'id_distrito_interaccion',
-
-        'next_action_date',         // 9) Fecha programada para la próxima acción o seguimiento
-        'next_action_type',         // 10)* Tipo de próxima acción (ej: llamada, reunión, envío de correo)
-        'next_action_notes',        // 11) Notas o detalles sobre la próxima acción 
-        'parentezco_quien_llama',
-
-        'cedula_quien_llama', 
-        'nombre_quien_llama', 
-        'celular_quien_llama', 
-
-        'attachment_urls',          // 12) URLs de archivos adjuntos relacionados a la interacción
-        'interaction_url',          // 13) URL del registro o recurso externo vinculado a la interacción
-
-        //NUEVOS CAMPOS (AGREGADOS POR TI)
-        'id_area',
-        'id_cargo',
+        'client_id',
+        'agent_id',
+        'interaction_date',
+        'interaction_channel',
+        'interaction_type',
+        'duration',
+        'outcome',
+        'notes',
+        'parent_interaction_id',
+        'next_action_date',
+        'next_action_type',
+        'next_action_notes',
+        'attachment_urls',
+        'interaction_url',
         'id_linea_de_obligacion',
-        'id_area_de_asignacion',
-        'id_funciones',
+        'id_user_asignacion',
+        'cedula_quien_llama',
+        'nombre_quien_llama',
+        'celular_quien_llama',
+        'parentezco_quien_llama'
     ];
 
     protected $casts = [
