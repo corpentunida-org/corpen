@@ -18,7 +18,7 @@
     @endif
 
     {{-- Filtros mejorados --}}
-    <div class="card shadow-sm mb-3 glassmorphism-card">
+    {{-- <div class="card shadow-sm mb-3 glassmorphism-card">
         <div class="d-flex justify-content-between align-items-center py-2 px-3 border-bottom">
             <div>
                 <h6 class="mb-0 fw-semibold">
@@ -202,7 +202,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> --}}
 
     {{-- Tabla mejorada --}}
     <div class="card shadow-sm mb-3 glassmorphism-card">
@@ -327,7 +327,7 @@
                                         $isFuture = $nextActionDate->isFuture();
                                     @endphp
 
-                                    <tr class="table table-hover" data-outcome="{{ $outcome }}">
+                                    <tr class="table table-hover">
                                         {{-- ID --}}
                                         <td class="py-2">
                                             <a class="interaction-id fw-bold text-decoration-none pastel-link"
@@ -473,7 +473,7 @@
                                         $isFuture = $nextActionDate->isFuture();
                                     @endphp
 
-                                    <tr class="table table-hover" data-outcome="{{ $outcome }}">
+                                    <tr class="table table-hover">
                                         {{-- ID --}}
                                         <td class="py-2">
                                             <a class="interaction-id fw-bold text-decoration-none pastel-link"
@@ -620,7 +620,7 @@
                                         $isFuture = $nextActionDate->isFuture();
                                     @endphp
 
-                                    <tr class="table table-hover" data-outcome="{{ $outcome }}">
+                                    <tr class="table table-hover">
                                         {{-- ID --}}
                                         <td class="py-2">
                                             <a class="interaction-id fw-bold text-decoration-none pastel-link"
@@ -767,7 +767,7 @@
                                         $isFuture = $nextActionDate->isFuture();
                                     @endphp
 
-                                    <tr class="table table-hover" data-outcome="{{ $outcome }}">
+                                    <tr class="table table-hover">
                                         {{-- ID --}}
                                         <td class="py-2">
                                             <a class="interaction-id fw-bold text-decoration-none pastel-link"
@@ -914,7 +914,7 @@
                                         $isFuture = $nextActionDate->isFuture();
                                     @endphp
 
-                                    <tr class="table table-hover" data-outcome="{{ $outcome }}">
+                                    <tr class="table table-hover">
                                         {{-- ID --}}
                                         <td class="py-2">
                                             <a class="interaction-id fw-bold text-decoration-none pastel-link"
