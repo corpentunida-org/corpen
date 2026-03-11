@@ -71,7 +71,7 @@ public function create()
                 'codigo_acta' => 'MANT-' . date('Ymd') . '-' . $mantenimiento->id, 
                 'acta_archivo' => null, 
                 'observacion_general' => 'Salida a mantenimiento: ' . $request->detalle,
-                'id_InvTiposRegistros' => 5, 
+                'id_InvTiposRegistros' => 12, // Este esta unicamente para mantenimiento tegnologica falta anidarlo y acondicionarlo.
                 'id_usersAsignado' => $request->id_usersAsignado, // <-- DATO MANUAL
                 'id_usersRegistro' => $request->id_usersRegistro, // <-- DATO MANUAL
                 'id_mantenimiento' => $mantenimiento->id 
@@ -82,12 +82,12 @@ public function create()
                 'estado_individual' => 'Enviado a revisión', 
                 'id_InvMovimientos' => $movimiento->id, 
                 'id_InvActivos' => $activo->id,
-                'id_estado' => 4, 
+                'id_estado' => 12, // Este esta unicamente para mantenimiento tegnologica falta anidarlo y acondicionarlo.
                 'id_usersDelActivo' => $request->id_usersAsignado // <-- DATO MANUAL
             ]);
 
             // 6. Actualizar estado del activo
-            $activo->id_Estado = 4;
+            $activo->id_Estado = 12; // Este esta unicamente para mantenimiento tegnologica falta anidarlo y acondicionarlo.
             $activo->save();
 
             DB::commit();
