@@ -1,127 +1,172 @@
 <x-base-layout>
     <style>
         :root {
-            --primary: #4f46e5;
-            --primary-hover: #4338ca;
+            /* Paleta Pastel Minimalista UX */
+            --primary-pastel: #eef2ff;
+            --primary-text: #4f46e5;
+            --primary-hover: #e0e7ff;
+            
+            --secondary-pastel: #f1f5f9;
+            --secondary-text: #475569;
+            
+            --accent-pastel: #f0fdf4; /* Verde pastel para ingresos */
+            --accent-text: #16a34a;
+            
+            --danger-pastel: #fef2f2; /* Rojo pastel para alertas */
+            --danger-text: #dc2626;
+
             --slate-50: #f8fafc;
             --slate-100: #f1f5f9;
             --slate-200: #e2e8f0;
+            --slate-600: #475569;
             --slate-700: #334155;
             --slate-900: #0f172a;
         }
 
-        .container { max-width: 1400px; margin: 0 auto; padding: 40px 20px; font-family: 'Inter', system-ui, sans-serif; color: var(--slate-900); }
+        .container { max-width: 1400px; margin: 0 auto; padding: 40px 20px; font-family: 'Inter', system-ui, sans-serif; color: var(--slate-900); background-color: #fdfdfd; }
         
-        /* Header */
-        .header-section { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px; gap: 20px; flex-wrap: wrap; }
-        .page-title { font-size: 2rem; font-weight: 800; letter-spacing: -0.025em; margin-top: 5px; }
-        
-        /* Barra de Filtros */
-        .filter-section { background: #fff; padding: 20px; border-radius: 16px; border: 1px solid var(--slate-200); margin-bottom: 30px; display: flex; gap: 15px; flex-wrap: wrap; align-items: flex-end; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.02); }
-        .filter-group { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 200px; }
-        .filter-label { font-size: 0.8rem; font-weight: 700; color: var(--slate-700); text-transform: uppercase; letter-spacing: 0.05em; }
-        .filter-input, .filter-select { padding: 12px 16px; border: 1px solid var(--slate-200); border-radius: 10px; font-size: 0.9rem; background: var(--slate-50); transition: all 0.2s; color: var(--slate-900); }
-        .filter-input:focus, .filter-select:focus { outline: none; border-color: var(--primary); background: #fff; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
-        
-        /* Contenedor de la tabla (Para el efecto de carga) */
-        #table-container { transition: opacity 0.3s ease; }
-        .loading { opacity: 0.4; pointer-events: none; }
+        /* ==========================================
+           HEADER & ACTIONS
+           ========================================== */
+        .header-section { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 25px; gap: 20px; flex-wrap: wrap; }
+        .page-title { font-size: 2.2rem; font-weight: 800; letter-spacing: -0.025em; margin: 0; line-height: 1; color: var(--slate-900); }
+        .counter-badge { background: white; color: var(--slate-600); padding: 6px 14px; border-radius: 12px; font-size: 0.9rem; font-weight: 600; border: 1px solid var(--slate-200); display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        .counter-dot { width: 8px; height: 8px; background: var(--primary-text); border-radius: 50%; display: inline-block; animation: pulse 2s infinite; }
 
-        /* Table Styling */
-        .t-card { background: #fff; border-radius: 20px; border: 1px solid var(--slate-200); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); overflow: hidden; }
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(79, 70, 229, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
+        }
+
+        /* ==========================================
+           BARRA DE FILTROS MINIMALISTA
+           ========================================== */
+        .filter-section { background: #fff; padding: 24px; border-radius: 24px; border: 1px solid var(--slate-100); margin-bottom: 35px; display: flex; gap: 18px; flex-wrap: wrap; align-items: flex-end; box-shadow: 0 4px 20px -5px rgba(0,0,0,0.05); }
+        .filter-group { display: flex; flex-direction: column; gap: 10px; flex: 1; min-width: 200px; }
+        .filter-label { font-size: 0.7rem; font-weight: 700; color: var(--slate-400); text-transform: uppercase; letter-spacing: 0.1em; }
+        .filter-input, .filter-select { padding: 12px 16px; border: 1px solid var(--slate-100); border-radius: 14px; font-size: 0.9rem; background: var(--slate-50); transition: all 0.2s ease; color: var(--slate-700); width: 100%; }
+        .filter-input:focus, .filter-select:focus { outline: none; border-color: var(--primary-text); background: #fff; box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.05); }
+        
+        /* Deshabilitado Soft */
+        .filter-select:disabled { background: #f8fafc; cursor: not-allowed; opacity: 0.5; color: #cbd5e1; border: 1px dashed var(--slate-200); }
+
+        /* Contenedor de la tabla y efectos de carga */
+        #table-container { transition: all 0.3s ease; position: relative; }
+        .loading { opacity: 0.5; pointer-events: none; filter: grayscale(1); }
+
+        /* ==========================================
+           TABLE CARD MINIMAL
+           ========================================== */
+        .t-card { background: #fff; border-radius: 28px; border: 1px solid var(--slate-100); box-shadow: 0 10px 30px -10px rgba(0,0,0,0.04); overflow: hidden; }
         .t-min { width: 100%; border-collapse: collapse; table-layout: auto; }
-        .t-min th { background: var(--slate-50); text-align: left; padding: 16px 24px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #64748b; border-bottom: 1px solid var(--slate-200); }
-        .t-min tr:hover { background-color: #fcfcfd; }
-        .t-min td { padding: 16px 24px; border-bottom: 1px solid var(--slate-200); vertical-align: middle; }
+        .t-min th { background: #fafafa; text-align: left; padding: 18px 24px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: #94a3b8; border-bottom: 1px solid var(--slate-50); letter-spacing: 0.05em; }
+        .t-min tr { transition: background 0.2s; }
+        .t-min tr:hover { background-color: #fcfdfe; }
+        .t-min td { padding: 20px 24px; border-bottom: 1px solid var(--slate-50); vertical-align: middle; }
 
-        /* Badges & Pills */
-        .pill { padding: 5px 12px; border-radius: 9999px; font-size: 0.7rem; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
-        .st-ok { background: #dcfce7; color: #15803d; }
-        .st-busy { background: #e0f2fe; color: #0369a1; }
-        .st-bad { background: #fef2f2; color: #b91c1c; }
-        .st-fix { background: #fffbeb; color: #b45309; }
+        /* Pills Pastel */
+        .pill { padding: 6px 14px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; }
+        .st-ok { background: #ecfdf5; color: #059669; }
+        .st-busy { background: #eff6ff; color: #2563eb; }
+        .st-bad { background: #fef2f2; color: #dc2626; }
+        .st-fix { background: #fffbeb; color: #d97706; }
         
-        .warranty-tag { font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; background: var(--slate-100); color: var(--slate-700); font-weight: 600; }
-        .expired { background: #fee2e2; color: #ef4444; }
+        .warranty-tag { font-size: 0.7rem; padding: 4px 10px; border-radius: 8px; background: #f1f5f9; color: #475569; font-weight: 700; }
+        .expired { background: #fff1f2; color: #e11d48; }
 
-        /* Action Buttons */
-        .actions-wrapper { display: flex; gap: 8px; justify-content: flex-end; }
-        .btn-action { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--slate-200); color: var(--slate-700); transition: 0.2s; background: white; cursor: pointer;}
-        .btn-view { width: auto; padding: 0 15px; font-size: 0.85rem; font-weight: 600; text-decoration: none; gap: 6px; }
-        .btn-view:hover { background: var(--slate-900); color: white; border-color: var(--slate-900); }
-        .btn-edit:hover { background: #f0f9ff; color: #0284c7; border-color: #0284c7; }
+        /* ==========================================
+           BOTONES UX PASTEL
+           ========================================== */
+        .btn-action { display: inline-flex; align-items: center; justify-content: center; height: 42px; border-radius: 14px; border: 1px solid transparent; transition: all 0.2s ease; cursor: pointer; text-decoration: none; padding: 0 18px; font-size: 0.85rem; font-weight: 700; gap: 8px; }
         
-        .empty-state { padding: 60px; text-align: center; color: #64748b; }
+        /* Botón PDF - Azul Pastel */
+        .btn-pdf-pastel { background-color: var(--primary-pastel); color: var(--primary-text); }
+        .btn-pdf-pastel:hover { background-color: var(--primary-hover); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(79, 70, 229, 0.1); }
         
-        .btn-clear-filters { color: #ef4444; font-size: 0.85rem; font-weight: 600; text-decoration: none; display: none; margin-left: auto; }
-        .btn-clear-filters:hover { text-decoration: underline; }
+        /* Botón Registro - Verde Pastel */
+        .btn-success-pastel { background-color: var(--accent-pastel); color: var(--accent-text); }
+        .btn-success-pastel:hover { background-color: #dcfce7; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(22, 163, 74, 0.1); }
 
-        /* Encabezado especial que solo se ve al imprimir */
-        .print-only-header { display: none; text-align: center; margin-bottom: 30px; }
-        .print-only-header h2 { margin: 0; font-size: 24px; color: #000; }
-        .print-only-header p { margin: 5px 0 0 0; color: #555; font-size: 14px; }
+        /* Botón Tabla - Gris/White Minimal */
+        .btn-table { background-color: #fff; border: 1px solid var(--slate-200); color: var(--slate-600); height: 36px; padding: 0 12px; border-radius: 10px; }
+        .btn-table:hover { background-color: var(--slate-900); color: #fff; border-color: var(--slate-900); }
+        
+        .btn-clear-filters { color: var(--danger-text); font-size: 0.8rem; font-weight: 700; text-decoration: none; display: none; margin-left: auto; padding: 8px 12px; border-radius: 10px; background: var(--danger-pastel); }
 
-        /* --- LA MAGIA PARA IMPRESIÓN (PDF o Físico) --- */
+        /* ==========================================
+           ESTILOS IMPRESIÓN
+           ========================================== */
+        .print-only-header { display: none; text-align: center; margin-bottom: 30px; border-bottom: 2px solid #f1f5f9; padding-bottom: 20px; }
         @media print {
-            @page { size: landscape; margin: 10mm; } /* Formato horizontal para tablas anchas */
-            body { background: white !important; -webkit-print-color-adjust: exact; }
-            
-            /* Ocultar elementos interactivos y de navegación */
-            nav, header, footer, aside, .filter-section, .btn-action, .actions-wrapper, .t-min th:last-child, .t-min td:last-child, .pagination {
-                display: none !important;
-            }
-
-            /* Mostrar el encabezado formal */
+            @page { size: landscape; margin: 10mm; }
+            body { background: white !important; }
+            nav, header, footer, .filter-section, .btn-action, .actions-wrapper, .t-min th:last-child, .t-min td:last-child, .pagination { display: none !important; }
             .print-only-header { display: block; }
             .header-section { display: none; }
-
-            /* Ajustar contenedores al 100% de la hoja */
-            .container { padding: 0 !important; margin: 0 !important; max-width: 100% !important; }
-            .t-card { box-shadow: none !important; border: 1px solid #ccc !important; border-radius: 0 !important; }
-            .t-min th { background: #f1f5f9 !important; color: #000 !important; }
-            .t-min td, .t-min th { border-color: #ddd !important; padding: 10px !important; }
+            .container { padding: 0 !important; margin: 0 !important; }
+            .t-card { box-shadow: none !important; border: 1px solid #eee !important; border-radius: 0 !important; }
         }
     </style>
 
     <div class="container">
         
         <div class="print-only-header">
-            <h2>Reporte de Inventario de Activos</h2>
-            <p>Generado el: {{ date('d/m/Y h:i A') }}</p>
-            <hr style="border: 0; border-top: 1px solid #ccc; margin-top: 15px;">
+            <h1 style="margin:0; font-size: 24px; color: #0f172a;">REPORTE DE INVENTARIO FÍSICO</h1>
+            <p style="margin:8px 0 0 0; font-size: 14px; color: #64748b;">Fecha de consulta: {{ date('d/m/Y h:i A') }}</p>
+            <p style="margin:4px 0 0 0; font-size: 12px; color: #94a3b8;">Registros encontrados: {{ $activos->total() }}</p>
         </div>
 
         <div class="header-section">
             <div>
-                <span style="font-size: 0.75rem; font-weight: 800; color: var(--primary); text-transform: uppercase; letter-spacing: 0.1em;">
-                    Módulo de Inventario
+                <span style="font-size: 0.75rem; font-weight: 800; color: var(--primary-text); text-transform: uppercase; letter-spacing: 0.2em; display: block; margin-bottom: 10px; opacity: 0.8;">
+                    Sistema de Gestión de Activos
                 </span>
-                <h1 class="page-title">Almacén de Activos</h1>
+                <div style="display: flex; align-items: center; gap: 20px;">
+                    <h1 class="page-title">Almacén de Activos</h1>
+                    <div class="counter-badge">
+                        <span class="counter-dot"></span>
+                        <span id="total-count">{{ $activos->total() }}</span> registros
+                    </div>
+                </div>
             </div>
-            <div style="display: flex; gap: 10px;">
-                <button type="button" onclick="window.print()" class="btn-action btn-view shadow-sm" title="Imprimir o guardar como PDF">
-                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
-                    Imprimir Reporte
-                </button>
-
-                <a href="{{ route('inventario.compras.create') }}" class="btn-action btn-view shadow-sm" style="background: var(--primary); color: white; border: none;">
-                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                    Registrar Compra
+            <div style="display: flex; gap: 12px;">
+                <a href="#" id="btn-generate-pdf" class="btn-action btn-pdf-pastel">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    Exportar Reporte
+                </a>
+                <a href="{{ route('inventario.compras.create') }}" class="btn-action btn-success-pastel">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    Nuevo Ingreso
                 </a>
             </div>
         </div>
 
         <form id="live-search-form" action="{{ route('inventario.activos.index') }}" method="GET" class="filter-section">
             
-            <div class="filter-group" style="flex: 2;">
-                <label class="filter-label">Búsqueda General</label>
-                <input type="text" name="search" class="filter-input" placeholder="Buscar placa, nombre o responsable..." value="{{ request('search') }}" autocomplete="off">
+            <div class="filter-group" style="flex: 2.5;">
+                <label class="filter-label">Búsqueda Inteligente</label>
+                <input type="text" name="search" class="filter-input" placeholder="Buscar por placa, serial, nombre..." value="{{ request('search') }}" autocomplete="off">
+            </div>
+
+            <div class="filter-group">
+                <label class="filter-label">Bodega / Sede</label>
+                <select name="bodega_id" id="bodega_id" class="filter-select">
+                    <option value="">-- Todas las Bodegas --</option>
+                    @foreach($bodegas as $bodega)
+                        <option value="{{ $bodega->id }}" {{ request('bodega_id') == $bodega->id ? 'selected' : '' }}>
+                            {{ $bodega->nombre }}
+                        </option>
+                    @endforeach
+                </select>
             </div>
 
             <div class="filter-group">
                 <label class="filter-label">Estado</label>
-                <select name="estado_id" class="filter-select">
-                    <option value="">Todos los estados</option>
+                <select name="estado_id" id="estado_id" class="filter-select" {{ empty(request('bodega_id')) ? 'disabled' : '' }}>
+                    <option value="">
+                        {{ empty(request('bodega_id')) ? 'Elija Bodega...' : '-- Todos los Estados --' }}
+                    </option>
                     @foreach($estados as $estado)
                         <option value="{{ $estado->id }}" {{ request('estado_id') == $estado->id ? 'selected' : '' }}>
                             {{ $estado->nombre }}
@@ -133,29 +178,25 @@
             <div class="filter-group">
                 <label class="filter-label">Marca</label>
                 <select name="marca_id" class="filter-select">
-                    <option value="">Todas las marcas</option>
+                    <option value="">-- Todas --</option>
                     @foreach($marcas as $marca)
-                        <option value="{{ $marca->id }}" {{ request('marca_id') == $marca->id ? 'selected' : '' }}>
-                            {{ $marca->nombre }}
-                        </option>
+                        <option value="{{ $marca->id }}" {{ request('marca_id') == $marca->id ? 'selected' : '' }}>{{ $marca->nombre }}</option>
                     @endforeach
                 </select>
             </div>
 
             <div class="filter-group">
-                <label class="filter-label">Categoría / Subgrupo</label>
+                <label class="filter-label">Categoría</label>
                 <select name="subgrupo_id" class="filter-select">
-                    <option value="">Todas las categorías</option>
+                    <option value="">-- Todas --</option>
                     @foreach($subgrupos as $subgrupo)
-                        <option value="{{ $subgrupo->id }}" {{ request('subgrupo_id') == $subgrupo->id ? 'selected' : '' }}>
-                            {{ $subgrupo->nombre }}
-                        </option>
+                        <option value="{{ $subgrupo->id }}" {{ request('subgrupo_id') == $subgrupo->id ? 'selected' : '' }}>{{ $subgrupo->nombre }}</option>
                     @endforeach
                 </select>
             </div>
             
-            <a href="{{ route('inventario.activos.index') }}" id="btn-reset" class="btn-clear-filters" style="{{ request()->hasAny(['search', 'estado_id', 'marca_id', 'subgrupo_id']) ? 'display: block;' : 'display: none;' }}">
-                ✖ Limpiar filtros
+            <a href="{{ route('inventario.activos.index') }}" id="btn-reset" class="btn-clear-filters" style="{{ request()->hasAny(['search', 'bodega_id', 'estado_id']) ? 'display: flex;' : 'display: none;' }}">
+                ✖ Limpiar
             </a>
         </form>
 
@@ -164,9 +205,9 @@
                 <table class="t-min">
                     <thead>
                         <tr>
-                            <th>Activo / Clasificación</th>
-                            <th>Identificación & Serial</th>
-                            <th>Ubicación</th>
+                            <th>Descripción / Marca</th>
+                            <th>Identificación</th>
+                            <th>Ubicación Actual</th>
                             <th>Estado</th>
                             <th>Garantía</th>
                             <th>Responsable</th>
@@ -177,37 +218,32 @@
                         @forelse($activos as $activo)
                         <tr>
                             <td>
-                                <div style="font-weight: 700; color: var(--slate-900);">{{ $activo->nombre }}</div>
-                                <div style="display: flex; flex-direction: column; gap: 2px; margin-top: 4px;">
-                                    <div style="display: flex; align-items: center; gap: 5px;">
-                                        <span style="font-size: 0.7rem; color: #475569; background: #f1f5f9; padding: 1px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">
-                                            {{ $activo->marca->nombre ?? 'Sin Marca' }}
-                                        </span>
-                                        <span style="font-size: 0.7rem; color: #64748b; font-weight: 500;">
-                                            {{ $activo->subgrupo->nombre ?? '' }}
-                                        </span>
-                                    </div>
-                                    @if($activo->referencia)
-                                        <span style="font-size: 0.75rem; color: #94a3b8;">Ref: {{ $activo->referencia->referencia ?? 'N/A' }}</span>
-                                    @endif
+                                <div style="font-weight: 700; color: var(--slate-900); font-size: 0.95rem;">{{ $activo->nombre }}</div>
+                                <div style="display: flex; align-items: center; gap: 8px; margin-top: 6px;">
+                                    <span style="font-size: 0.65rem; color: var(--primary-text); background: var(--primary-pastel); padding: 2px 8px; border-radius: 6px; font-weight: 800;">
+                                        {{ $activo->marca->nombre ?? 'N/A' }}
+                                    </span>
+                                    <span style="font-size: 0.7rem; color: #94a3b8; font-weight: 500;">
+                                        {{ $activo->subgrupo->nombre ?? '' }}
+                                    </span>
                                 </div>
                             </td>
 
                             <td>
-                                <div style="font-family: 'Mono', monospace; font-weight: 700; color: var(--primary); font-size: 0.95rem;">
+                                <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--primary-text); font-size: 0.9rem;">
                                     {{ $activo->codigo_activo }}
                                 </div>
-                                <div style="font-size: 0.75rem; color: #64748b; margin-top: 2px;">
-                                    <span style="font-weight: 500;">S/N:</span> {{ $activo->serial ?? 'No registra' }}
+                                <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 4px;">
+                                    S/N: <span style="color: #475569; font-weight: 600;">{{ $activo->serial ?? 'S/R' }}</span>
                                 </div>
                             </td>
 
                             <td>
-                                <div style="font-size: 0.85rem; font-weight: 500;">
-                                    {{ $activo->municipio->nombre ?? 'No asignado' }}
+                                <div style="font-size: 0.85rem; font-weight: 600; color: #334155;">
+                                    {{ $activo->referencia->bodega->nombre ?? 'Sin Bodega' }}
                                 </div>
-                                <div style="font-size: 0.75rem; color: #94a3b8;">
-                                    {{ $activo->referencia->bodega->nombre ?? 'Sin bodega' }}
+                                <div style="font-size: 0.7rem; color: #94a3b8; margin-top: 2px;">
+                                    {{ $activo->municipio->nombre ?? 'Local' }}
                                 </div>
                             </td>
 
@@ -223,40 +259,40 @@
                                 @endphp
                                 <span class="pill {{ $statusClass }}">
                                     <span style="width: 6px; height: 6px; border-radius: 50%; background: currentColor;"></span>
-                                    {{ $activo->estado->nombre ?? 'N/A' }}
+                                    {{ $activo->estado->nombre ?? 'N/D' }}
                                 </span>
                             </td>
 
                             <td>
                                 @if($activo->fecha_fin_garantia)
                                     <div class="warranty-tag {{ \Carbon\Carbon::parse($activo->fecha_fin_garantia)->isPast() ? 'expired' : '' }}">
-                                        Exp: {{ \Carbon\Carbon::parse($activo->fecha_fin_garantia)->format('d/m/Y') }}
+                                        {{ \Carbon\Carbon::parse($activo->fecha_fin_garantia)->format('d/m/Y') }}
                                     </div>
                                 @else
-                                    <span style="color: #cbd5e1; font-size: 0.75rem;">Sin registro</span>
+                                    <span style="color: #e2e8f0; font-size: 0.65rem; font-weight: 800;">---</span>
                                 @endif
                             </td>
 
                             <td>
                                 @if($activo->usuarioAsignado)
-                                    <div style="display: flex; align-items: center; gap: 8px;">
-                                        <div style="width: 24px; height: 24px; border-radius: 50%; background: var(--primary); color: white; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 800;">
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <div style="width: 26px; height: 26px; border-radius: 9px; background: #f1f5f9; color: #475569; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 800; border: 1px solid #e2e8f0;">
                                             {{ strtoupper(substr($activo->usuarioAsignado->name, 0, 2)) }}
                                         </div>
-                                        <div style="font-size: 0.85rem; font-weight: 500;">{{ $activo->usuarioAsignado->name }}</div>
+                                        <div style="font-size: 0.8rem; font-weight: 600; color: #475569;">{{ $activo->usuarioAsignado->name }}</div>
                                     </div>
                                 @else
-                                    <span style="color: #94a3b8; font-style: italic; font-size: 0.8rem;">-- Disponible --</span>
+                                    <span style="color: #94a3b8; font-weight: 600; font-size: 0.7rem; letter-spacing: 0.05em;">DISPONIBLE</span>
                                 @endif
                             </td>
 
                             <td style="text-align: right;">
                                 <div class="actions-wrapper">
-                                    <a href="{{ route('inventario.activos.show', $activo->id) }}" class="btn-action btn-view" title="Ver Hoja de Vida">
-                                        <span>Ver Detalle</span>
+                                    <a href="{{ route('inventario.activos.show', $activo->id) }}" class="btn-action btn-table" title="Ver Hoja de Vida">
+                                        Detalle
                                     </a>
-                                    <a href="{{ route('inventario.activos.edit', $activo->id) }}" class="btn-action btn-edit" title="Editar Activo">
-                                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                    <a href="{{ route('inventario.activos.edit', $activo->id) }}" class="btn-action btn-table" style="padding: 0 10px;">
+                                        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                                     </a>
                                 </div>
                             </td>
@@ -265,9 +301,9 @@
                         <tr>
                             <td colspan="7">
                                 <div class="empty-state">
-                                    <svg width="48" height="48" fill="none" stroke="#cbd5e1" viewBox="0 0 24 24" style="margin-bottom: 10px; margin-left: auto; margin-right: auto;"><path d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
-                                    <h3>No se encontraron resultados</h3>
-                                    <p>Intenta cambiar los filtros o buscar a otra persona.</p>
+                                    <div style="opacity: 0.5; margin-bottom: 10px;">📭</div>
+                                    <h3 style="margin: 0; color: #94a3b8; font-size: 1.1rem;">No hay activos para mostrar</h3>
+                                    <p style="margin: 5px 0 0 0; color: #cbd5e1; font-size: 0.9rem;">Ajusta los filtros de búsqueda</p>
                                 </div>
                             </td>
                         </tr>
@@ -276,7 +312,7 @@
                 </table>
                 
                 @if($activos->hasPages())
-                    <div style="padding: 20px; border-top: 1px solid var(--slate-200); background: var(--slate-50);" class="pagination">
+                    <div style="padding: 24px; border-top: 1px solid #f8fafc; background: #fff;" class="pagination">
                         {{ $activos->links() }}
                     </div>
                 @endif
@@ -285,20 +321,35 @@
     </div>
 
     <script>
+        // Lógica de Exportación PDF con parámetros actuales
+        document.getElementById('btn-generate-pdf').addEventListener('click', function(e) {
+            e.preventDefault();
+            const form = document.getElementById('live-search-form');
+            const formData = new FormData(form);
+            const searchParams = new URLSearchParams(formData).toString();
+            window.location.href = "{{ route('inventario.activos.pdf') }}?" + searchParams;
+        });
+
         document.addEventListener('DOMContentLoaded', function() {
             const form = document.getElementById('live-search-form');
             const tableContainer = document.getElementById('table-container');
+            const bodegaSelect = document.getElementById('bodega_id');
+            const estadoSelect = document.getElementById('estado_id');
+            const countDisplay = document.getElementById('total-count');
             const btnReset = document.getElementById('btn-reset');
             let timeout = null;
 
+            /**
+             * Función de refresco Ajax para filtros
+             */
             function fetchResults() {
                 const url = new URL(form.action);
                 const formData = new FormData(form);
-                const searchParams = new URLSearchParams(formData);
-                url.search = searchParams.toString();
+                url.search = new URLSearchParams(formData).toString();
 
-                let hasFilters = Array.from(formData.values()).some(val => val !== '');
-                btnReset.style.display = hasFilters ? 'block' : 'none';
+                // Manejo visual del botón de reset
+                const filtersActive = Array.from(formData.values()).some(val => val !== '');
+                btnReset.style.display = filtersActive ? 'flex' : 'none';
 
                 tableContainer.classList.add('loading');
 
@@ -307,29 +358,46 @@
                 .then(html => {
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(html, 'text/html');
+                    
+                    // Actualización de la tabla
                     tableContainer.innerHTML = doc.getElementById('table-container').innerHTML;
+                    
+                    // Sincronización del contador dinámico
+                    countDisplay.innerText = doc.getElementById('total-count').innerText;
+                    
+                    // Actualización del select de estados (Anidación)
+                    const newEstadoSelect = doc.getElementById('estado_id');
+                    estadoSelect.innerHTML = newEstadoSelect.innerHTML;
+                    estadoSelect.disabled = newEstadoSelect.disabled;
+
                     tableContainer.classList.remove('loading');
                     window.history.pushState({}, '', url);
                 })
                 .catch(error => {
-                    console.error("Error cargando los filtros:", error);
+                    console.error("Error en la petición Ajax:", error);
                     tableContainer.classList.remove('loading');
                 });
             }
 
-            form.querySelector('input[name="search"]').addEventListener('input', function() {
+            // Escucha para búsqueda por texto (Debounce de 450ms)
+            form.querySelector('input[name="search"]').addEventListener('input', () => {
                 clearTimeout(timeout);
-                timeout = setTimeout(fetchResults, 400); 
+                timeout = setTimeout(fetchResults, 450); 
             });
 
-            form.querySelectorAll('select').forEach(select => {
-                select.addEventListener('change', fetchResults);
-            });
-
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
+            // Escucha para cambio de bodega
+            bodegaSelect.addEventListener('change', () => {
+                estadoSelect.value = ""; // Limpieza de estado al cambiar bodega
                 fetchResults();
             });
+
+            // Escucha para el resto de selectores
+            form.querySelectorAll('select:not(#bodega_id)').forEach(el => {
+                el.addEventListener('change', fetchResults);
+            });
+
+            // Prevención de envío tradicional del formulario
+            form.addEventListener('submit', (e) => e.preventDefault());
         });
     </script>
 </x-base-layout>
