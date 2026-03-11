@@ -1,3 +1,8 @@
+@php
+    /** @var int|null $idAreaAgente */
+    /** @var int|null $idCargoAgente */
+@endphp
+
 <style>
     /* =========================================================
        VARIABLES GLOBALES (Diseño Minimalista y Plano)
