@@ -47,18 +47,19 @@
         <div class="stats-grid">
             <div class="stat-item">
                 <span class="stat-label">Total Equipos</span>
-                <span class="stat-num">{{ $totalActivos ?? 0 }}</span>
+                <span class="stat-num">{{ $totalActivos }}</span>
             </div>
             <div class="stat-item">
                 <span class="stat-label">Valor Inventario</span>
-                <span class="stat-num">$0.00</span> </div>
+                <span class="stat-num">${{ number_format($valorInventario, 2) }}</span> 
+            </div>
             <div class="stat-item">
                 <span class="stat-label">Asignados</span>
-                <span class="stat-num">{{ isset($totalActivos) && $totalActivos > 0 ? round(($activosPorEstado->where('id_Estado', 2)->count() / $totalActivos) * 100) : 0 }}%</span>
+                <span class="stat-num">{{ $porcentajeAsignados }}%</span>
             </div>
             <div class="stat-item">
                 <span class="stat-label">En Reparación</span>
-                <span class="stat-num" style="color: #d97706;">{{ $activosPorEstado->where('id_Estado', 4)->count() ?? 0 }}</span>
+                <span class="stat-num" style="color: #d97706;">{{ $enReparacion }}</span>
             </div>
         </div>
 
@@ -81,12 +82,20 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($ultimosMovimientos ?? [] as $mov)
+                        @forelse($ultimosMovimientos as $mov)
                         <tr>
-                            <td style="font-family: monospace; font-weight: 700;">{{ $mov->codigo_acta }}</td>
-                            <td><span class="badge {{ $mov->tipoRegistro->id == 1 ? 'bg-green' : 'bg-gray' }}">{{ $mov->tipoRegistro->nombre }}</span></td>
-                            <td>{{ $mov->responsable->name }}</td>
-                            <td>{{ $mov->created_at->format('d M, Y') }}</td>
+                            <td style="font-family: monospace; font-weight: 700;">{{ $mov->codigo_acta ?? 'N/A' }}</td>
+                            <td>
+                                @if($mov->tipoRegistro)
+                                    <span class="badge {{ $mov->tipoRegistro->id == 1 ? 'bg-green' : 'bg-gray' }}">
+                                        {{ $mov->tipoRegistro->nombre }}
+                                    </span>
+                                @else
+                                    <span class="badge bg-gray">Desconocido</span>
+                                @endif
+                            </td>
+                            <td>{{ $mov->responsable->name ?? 'Sistema' }}</td>
+                            <td>{{ $mov->created_at ? $mov->created_at->format('d M, Y') : 'Sin fecha' }}</td>
                         </tr>
                         @empty
                         <tr><td colspan="4" style="text-align:center; padding: 30px; color: #94a3b8;">Sin movimientos registrados</td></tr>
