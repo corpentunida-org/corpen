@@ -14,17 +14,34 @@ class TableroInventarioController extends Controller
         // 1. Total de Activos
         $totalActivos = InvActivo::count();
 
-        // 2. Activos por Estado (Usamos pluck para obtener un array de clave = id_Estado, valor = total)
-        $activosPorEstado = InvActivo::selectRaw('id_Estado, count(*) as total')
+        // 2. Consultamos agrupando e incluyendo la relación 'estado' para los nombres de la gráfica
+        $activosAgrupados = InvActivo::selectRaw('id_Estado, count(*) as total')
+                                     ->with('estado')
                                      ->groupBy('id_Estado')
-                                     ->pluck('total', 'id_Estado');
+                                     ->get();
 
-        // Extraemos los valores específicos usando el ID del estado (2 = Asignados, 4 = En Reparación)
+        // Preparamos los datos para la gráfica y recreamos tu array original $activosPorEstado
+        $labelsGrafica = [];
+        $dataGrafica = [];
+        $activosPorEstado = [];
+
+        foreach ($activosAgrupados as $item) {
+            // Llenamos para la gráfica
+            $labelsGrafica[] = $item->estado ? $item->estado->nombre : 'Estado ' . $item->id_Estado;
+            $dataGrafica[]   = $item->total;
+            
+            // Recreamos tu array [id_Estado => total] para no dañar tu lógica
+            $activosPorEstado[$item->id_Estado] = $item->total;
+        }
+
+        // --- TU CÓDIGO INTACTO AQUÍ ---
+        // Extraemos los valores específicos usando el ID del estado (9 = Asignados, 12 = En Reparación)
         $asignados = $activosPorEstado[9] ?? 0;
         $enReparacion = $activosPorEstado[12] ?? 0;
         
         // Calculamos el porcentaje de forma segura
         $porcentajeAsignados = $totalActivos > 0 ? round(($asignados / $totalActivos) * 100) : 0;
+        // ------------------------------
 
         // 3. Valor Total del Inventario 
         // Unimos los activos con su detalle de compra para sumar el precio unitario de cada activo existente.
@@ -43,7 +60,9 @@ class TableroInventarioController extends Controller
             'porcentajeAsignados', 
             'enReparacion', 
             'valorInventario', 
-            'ultimosMovimientos'
+            'ultimosMovimientos',
+            'labelsGrafica', // <-- Agregado para la gráfica
+            'dataGrafica'    // <-- Agregado para la gráfica
         ));
     }
 }
