@@ -37,7 +37,7 @@ class InteractionController extends Controller
         ]);
 
         // --- 2. APLICAMOS TODOS LOS FILTROS (BÚSQUEDA Y FILTROS ADICIONALES) ---
-        if ($request->filled('q')) {
+        /*if ($request->filled('q')) {
             $q = $request->q;
             $baseQuery->where(function ($sub) use ($q) {
                 $sub->where('notes', 'like', "%{$q}%")
@@ -102,7 +102,7 @@ class InteractionController extends Controller
 
         if ($request->filled('date_to')) {
             $baseQuery->whereDate('interaction_date', '<=', $request->date_to);
-        }
+        }*/
 
         // --- 3. OBTENEMOS LOS DATOS PARA LAS ESTADÍSTICAS Y PESTAÑAS (SIN PAGINAR) ---
         $countQuery = clone $baseQuery;
