@@ -46,11 +46,13 @@ class InteractionController extends Controller
             'overdue' => (clone $countQuery)->whereHas('outcomeRelation', fn($q) => $q->where('name', 'Pendiente'))->where('next_action_date', '<', today()->startOfDay())->count(),
         ];
 
-        $collectionsForTabs = [
+        $collectionsForTabs = [           
             'successful' => (clone $baseQuery)->whereHas('outcomeRelation', fn($q) => $q->where('name', 'Exitoso'))->get(),
             'pending' => (clone $baseQuery)->whereHas('outcomeRelation', fn($q) => $q->where('name', 'Pendiente'))->get(),
             'today' => (clone $baseQuery)->where(function ($q) {$q->whereDate('interaction_date', today())->orWhereDate('updated_at', today());})->get(),
+            'overdue' => (clone $baseQuery)->whereHas('outcomeRelation', fn($q) => $q->where('name', 'Pendiente'))->where('next_action_date', '<', today()->startOfDay())->get(),
         ];
+        
         
         // --- 4. OBTENEMOS LA COLECCIÓN PAGINADA PARA LA PESTAÑA "TODOS" ---
         $interactions = $baseQuery->orderBy('id', 'desc')->paginate(100);
