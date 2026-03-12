@@ -33,7 +33,7 @@ class GdoEmpleadoController extends Controller
             })
             ->orderBy('apellido1')
             ->orderBy('apellido2')
-            ->paginate(1)
+            ->paginate(10)
             ->appends(['search' => $search]);
         
         $empleadoSeleccionado = null;
