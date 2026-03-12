@@ -4,86 +4,6 @@
 @endphp
 
 <style>
-    /* =========================================================
-       VARIABLES GLOBALES (Diseño Minimalista y Plano)
-       ========================================================= */
-
-    /* =========================================================
-       NAVEGACIÓN POR PESTAÑAS (Estilo Texto Subrayado)
-       ========================================================= */
-    /*.tab-navigation {
-        display: flex;
-        gap: 2rem;
-        padding: 0 1rem;
-        background-color: transparent;
-        border-bottom: 1px solid var(--border-color);
-        overflow-x: auto;
-        scrollbar-width: none;
-    }
-
-    .tab-navigation::-webkit-scrollbar {
-        display: none;
-    }*/
-
-    /*.tab-button {
-        background: transparent;
-        border: none;
-        padding: 1rem 0;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        color: var(--text-muted);
-        transition: var(--transition-fast);
-        position: relative;
-        font-weight: 500;
-        font-size: 0.95rem;
-    }
-
-    .tab-button::after {
-        content: '';
-        position: absolute;
-        bottom: -1px;
-        left: 0;
-        right: 0;
-        height: 2px;
-        background-color: transparent;
-        transition: var(--transition-fast);
-    }
-
-    .tab-button:hover:not(.active) {
-        color: var(--text-main);
-    }
-
-    .tab-button.active {
-        color: var(--crm-primary);
-        font-weight: 600;
-    }
-
-    .tab-button.active::after {
-        background-color: var(--crm-primary);
-    }
-
-    .tab-button.active i {
-        color: var(--crm-primary);
-    }*/
-
-    /* =========================================================
-       CONTENIDO Y ANIMACIONES DE PESTAÑAS
-       ========================================================= */
-    .form-content {
-        padding: 1.5rem 0;
-    }
-
-    .tab-panel {
-        display: none;
-        animation: fadeIn 0.3s ease-in forwards;
-    }
-
-    .tab-panel.active {
-        display: block;
-    }
-
     @keyframes fadeIn {
         from {
             opacity: 0;
@@ -98,22 +18,14 @@
        TARJETAS Y CONTENEDORES (Minimalistas, sin sombra)
        ========================================================= */
     .category-container {
-        margin-bottom: 1.5rem;
-        background: var(--bg-card);
-        border: 1px solid var(--border-color);
+        border: 1px solid #EFF0F6;
         border-radius: 6px;
         overflow: hidden;
-    }
-
-    .category-header {
-        background: var(--bg-card);
-        border-bottom: 1px solid var(--border-color);
     }
 
     .category-title {
         font-size: 1.1rem;
         font-weight: 600;
-        color: var(--text-main);
     }
 
     /* =========================================================
@@ -121,58 +33,46 @@
        ========================================================= */
     .form-label {
         font-weight: 500;
-        color: var(--text-main);
         font-size: 0.85rem;
         margin-bottom: 0.4rem;
     }
 
     .form-control,
     .form-select {
-        border: 1px solid var(--border-color);
+        border: 1px solid #EFF0F6;
         border-radius: 4px;
         padding: 0.6rem 0.8rem;
         font-size: 0.95rem;
-        color: var(--text-main);
-        background-color: var(--bg-card);
         transition: var(--transition-fast);
         box-shadow: none !important;
     }
 
-    .form-control:focus,
-    .form-select:focus {
-        border-color: var(--crm-primary);
-        background-color: var(--bg-card);
-        box-shadow: 0 0 0 1px var(--crm-primary) !important;
-        outline: none;
-    }
-
-    /*.required-field::after {
-        color: var(--text-muted);
-        margin-left: 4px;
-    }*/
 
     /* =========================================================
        TARJETAS VISUALES INTERACTIVAS (Radio/Checks flat)
        ========================================================= */
     .visual-card {
-        background: var(--bg-card);
-        border: 1px solid var(--border-color);
         border-radius: 6px;
         cursor: pointer;
         transition: var(--transition-fast);
+        border-color: #EFF0F6;
     }
 
     .visual-card:hover {
-        border-color: var(--border-hover);
+        background-color: #F1F1FC;
+    }
+
+    .visual-card:checked {
+        background-color: #3454D1;
     }
 
     .btn-check:checked+.visual-card {
-        border-color: var(--crm-primary);
-        background-color: var(--crm-primary-light);
+        color: #3454D1;
     }
 
     .btn-check:checked+.visual-card .card-icon {
-        color: var(--crm-primary) !important;
+        color: #3454D1 !important;
+
     }
 
     .check-badge {
@@ -186,16 +86,14 @@
 
     /* Etiquetas/Tags Inteligentes */
     .smart-tag {
-        border: 1px solid var(--border-color);
-        color: var(--text-muted);
-        background: var(--bg-card);
+        border: 1px solid #64748B;
+        background: #EFF0F6;
         border-radius: 4px;
     }
 
     .btn-check:checked+.smart-tag {
-        background-color: var(--crm-primary);
+        background-color: #64748B;
         color: white;
-        border-color: var(--crm-primary);
     }
 
     /* =========================================================
@@ -308,25 +206,15 @@
 <ul class="nav nav-tabs w-100 text-center customers-nav-tabs" id="TabMenu" role="tablist">
 
     <li class="nav-item flex-fill" role="presentation">
-        <button class="nav-link active border-0 w-100"
-            id="home-tab"
-            data-bs-toggle="tab"
-            data-bs-target="#principal-tab"
-            type="button"
-            role="tab"
-            data-progress="50">
+        <button class="nav-link active border-0 w-100" id="home-tab" data-bs-toggle="tab"
+            data-bs-target="#principal-tab" type="button" role="tab" data-progress="50">
             <i class="bi bi-info-circle"></i> Principal
         </button>
     </li>
 
     <li class="nav-item flex-fill" role="presentation">
-        <button class="nav-link border-0 w-100"
-            id="profile-tab"
-            data-bs-toggle="tab"
-            data-bs-target="#resultado-tab"
-            type="button"
-            role="tab"
-            data-progress="100">
+        <button class="nav-link border-0 w-100" id="profile-tab" data-bs-toggle="tab" data-bs-target="#resultado-tab"
+            type="button" role="tab" data-progress="100">
             <i class="bi bi-check2-circle"></i> Resultado
         </button>
     </li>
@@ -355,34 +243,38 @@
                     <label class="form-label text-muted text-uppercase mb-3">¿Quién inicia la interacción?</label>
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <input type="radio" class="btn-check" name="caller_type" id="caller_client" value="client"
-                                checked>
-                            <label
-                                class="visual-card d-flex flex-row align-items-center p-3 gap-3 position-relative h-100"
-                                for="caller_client">
-                                <i class="bi bi-person card-icon mb-0 fs-3 text-muted"></i>
-                                <div class="text-start flex-grow-1">
-                                    <div class="fw-bold mb-0 text-dark">Titular</div>
-                                    <small class="text-muted">Cliente registrado</small>
-                                </div>
-                                <i class="bi bi-check L check-badge fs-5 position-absolute end-0 me-3 text-dark"
-                                    style="opacity: 0;"></i>
-                            </label>
+                            <div class="border border-dashed rounded-3">
+                                <input type="radio" class="btn-check" name="caller_type" id="caller_client"
+                                    value="client" checked>
+                                <label
+                                    class="visual-card d-flex flex-row align-items-center p-3 gap-3 position-relative h-100"
+                                    for="caller_client">
+                                    <i class="bi bi-person card-icon mb-0 fs-3 text-muted"></i>
+                                    <div class="text-start flex-grow-1">
+                                        <div class="fw-bold mb-0 text-dark">Titular</div>
+                                        <small class="text-muted">Cliente registrado</small>
+                                    </div>
+                                    <i class="bi bi-check L check-badge fs-5 position-absolute end-0 me-3 text-dark"
+                                        style="opacity: 0;"></i>
+                                </label>
+                            </div>
                         </div>
                         <div class="col-md-6">
-                            <input type="radio" class="btn-check" name="caller_type" id="caller_third"
-                                value="third_party">
-                            <label
-                                class="visual-card d-flex flex-row align-items-center p-3 gap-3 position-relative h-100"
-                                for="caller_third">
-                                <i class="bi bi-people card-icon mb-0 fs-3 text-muted"></i>
-                                <div class="text-start flex-grow-1">
-                                    <div class="fw-bold mb-0 text-dark">Tercero</div>
-                                    <small class="text-muted">Familiar o autorizado</small>
-                                </div>
-                                <i class="bi bi-check check-badge fs-5 position-absolute end-0 me-3 text-dark"
-                                    style="opacity: 0;"></i>
-                            </label>
+                            <div class="border border-dashed rounded-3">
+                                <input type="radio" class="btn-check" name="caller_type" id="caller_third"
+                                    value="third_party">
+                                <label
+                                    class="visual-card d-flex flex-row align-items-center p-3 gap-3 position-relative h-100"
+                                    for="caller_third">
+                                    <i class="bi bi-people card-icon mb-0 fs-3 text-muted"></i>
+                                    <div class="text-start flex-grow-1">
+                                        <div class="fw-bold mb-0 text-dark">Tercero</div>
+                                        <small class="text-muted">Familiar o autorizado</small>
+                                    </div>
+                                    <i class="bi bi-check check-badge fs-5 position-absolute end-0 me-3 text-dark"
+                                        style="opacity: 0;"></i>
+                                </label>
+                            </div>
                         </div>
                     </div>
 
@@ -646,7 +538,7 @@
                     <div id="panel-me">
                         <div class="bg-light border px-3 py-2 rounded">
                             <p class="text-dark small mb-0">Asignado a ti:
-                                <strong>{{ $idAreaAgente ? $areas[$idAreaAgente] ?? 'Área' : 'Sin Área' }}</strong> -
+                                <strong>{{ Auth::user()->name ?? '' }}</strong> -
                                 <strong>{{ $idCargoAgente ? $cargos[$idCargoAgente] ?? 'Cargo' : 'Sin Cargo' }}</strong>
                             </p>
                         </div>
@@ -658,6 +550,9 @@
                                     class="text-muted">*</span></label>
                             <select class="form-select" id="id_user_asignacion" name="id_user_asignacion" required>
                                 <option value="">Buscar usuario por nombre o correo...</option>
+                                <option value="{{ Auth::id() }}" id="option-me">
+                                    -
+                                </option>
                                 @if (isset($interaction) && $interaction->usuarioAsignado)
                                     <option value="{{ $interaction->id_user_asignacion }}" selected>
                                         {{ $interaction->usuarioAsignado->name }}
@@ -860,7 +755,6 @@
                     <p class="text-muted small mb-0">Busca un cliente en la pestaña "Principal" para cargar su
                         historial.</p>
                 </div>
-
                 <div id="history-section" style="display:none;">
                     <input type="hidden" id="parent_interaction_id" name="parent_interaction_id" value="">
 
@@ -967,31 +861,40 @@
             this.classList.add('active');
         });
     });
-    document.addEventListener("DOMContentLoaded", function() {
-        document.getElementById('btn-volver').addEventListener('click', function() {
-            document.getElementById('home-tab').click();
-        });
-        $('#btn-siguiente-paso').click(function() {
 
-            let hayError = false;
-            $('#principal-tab').find('input, select, textarea').each(function() {
-                if ($(this).prop('required') && $(this).val() === '') {
-                    validator.markError(this);
-                    hayError = true;
 
-                } else {
-                    validator.cleanError(this);
-                }
-            });
 
-            if (!hayError) {
-                var tab = new bootstrap.Tab(document.getElementById('profile-tab'));
-                tab.show();
-            }
+    const myUserId = "{{ Auth::id() }}";
 
-        });
+    function toggleAssignment() {
 
-    });
+        if ($('#handled_by_me').is(':checked')) {
+
+            $('#panel-me').show();
+            $('#panel-other').hide();
+
+            $('#id_user_asignacion')
+                .prop('required', false)
+                .val(myUserId)
+                .trigger('change');
+
+        } else {
+
+            $('#panel-me').hide();
+            $('#panel-other').show();
+
+            $('#id_user_asignacion')
+                .prop('required', true)
+                .val('')
+                .trigger('change');
+
+        }
+
+    }
+
+    $('input[name="handled_by_agent"]').on('change', toggleAssignment);
+    toggleAssignment();
+
 
     const CRMApp = (function($) {
         'use strict';
@@ -1087,20 +990,24 @@
                 }
             },
 
-            /*showTab: function(tabId) {
-                $('.tab-button').removeClass('active');
-                $(`.tab-button[data-tab="${tabId}"]`).addClass('active');
-                $('.tab-panel').removeClass('active');
-                $(`#${tabId}-tab`).addClass('active');
+            showTab: function(tabId) {
 
-                // INYECTADO: Animación y cálculo de la Barra de Progreso
+                let tabElement;
+                if (tabId === 'resultado-tab') {
+                    tabElement = document.getElementById('profile-tab');
+                } else {
+                    tabElement = document.getElementById('home-tab');
+                }
+                const tab = new bootstrap.Tab(tabElement);
+                tab.show();
+
                 const progress = tabId === 'principal-tab' ? 50 : 100;
-                $('#form-progress').css('width', progress + '%').attr('aria-valuenow', progress);
+                $('#form-progress')
+                    .css('width', progress + '%')
+                    .attr('aria-valuenow', progress);
 
-                if (tabId === 'resultado') HistoryManager.updateVisibility();
-                if (typeof updateProgress === 'function') updateProgress();
                 DraftManager.save();
-            },*/
+            },
 
 
             handleFileSelect: function(input) {
@@ -1542,14 +1449,15 @@
             },
 
             submitForm: function(e) {
+                console.log('submit ejecutado');
                 e.preventDefault();
                 Timer.stop(); // Fija la duración final
 
                 // Validar HTML5 Nativo
-                if (!$(DOM.form)[0].checkValidity()) {
+                /*if (!$(DOM.form)[0].checkValidity()) {
                     $(DOM.form)[0].reportValidity();
                     return;
-                }
+                }*/
 
                 Swal.fire({
                     title: 'Confirmar guardado',
@@ -1559,16 +1467,11 @@
                     confirmButtonText: 'Guardar',
                     cancelButtonText: 'Cancelar',
                     confirmButtonColor: '#111827',
-                    cancelButtonColor: '#d1d5db'
+                    cancelButtonColor: '#d1d5db',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false
                 }).then((result) => {
-                    if (result.isConfirmed) {
-                        $('#loading-overlay').removeClass('d-none');
-                        $(DOM.btnSubmit).prop('disabled', true).text('Guardando...');
-                        DraftManager.clear();
-                        $(DOM.form).off('submit').submit();
-                    } else {
-                        Timer.start(true); // Si cancela, reanuda el cronómetro
-                    }
+                    document.querySelector(DOM.form).submit();
                 });
             }
         };
@@ -1723,7 +1626,7 @@
             $(DOM.btnSiguiente1).on('click', e => {
                 e.preventDefault();
                 const v = Validation.validateStep1();
-                v.isValid ? UI.showTab('resultado') : v.firstErr[0].scrollIntoView({
+                v.isValid ? UI.showTab('resultado-tab') : v.firstErr[0].scrollIntoView({
                     behavior: 'smooth',
                     block: 'center'
                 });
@@ -1823,8 +1726,14 @@
     document.addEventListener("DOMContentLoaded", CRMApp.init);
 
     // Exponer métodos globales
-    window.showTab = CRMApp.showTab;
+    //window.showTab = CRMApp.showTab;
     window.handleFileSelect = CRMApp.handleFileSelect;
     window.selectParentInteraction = CRMApp.selectParentInteraction;
     window.clearParentSelection = CRMApp.clearParentSelection;
+
+    document.addEventListener("DOMContentLoaded", function() {
+        document.getElementById('btn-volver').addEventListener('click', function() {
+            document.getElementById('home-tab').click();
+        });
+    });
 </script>
