@@ -465,7 +465,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse ($interactions as $interaction)
+                                @forelse ($collectionsForTabs['successful'] as $interaction)
                                     @php
                                         $nextActionDate = optional($interaction->next_action_date);
                                         $isPast = $nextActionDate->isPast() && !$nextActionDate->isToday();
@@ -612,7 +612,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse ($interactions as $interaction)
+                                @forelse ($collectionsForTabs['pending'] as $interaction)
                                     @php
                                         $nextActionDate = optional($interaction->next_action_date);
                                         $isPast = $nextActionDate->isPast() && !$nextActionDate->isToday();
@@ -759,7 +759,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse ($interactions as $interaction)
+                                @forelse ($collectionsForTabs['today'] as $interaction)
                                     @php
                                         $nextActionDate = optional($interaction->next_action_date);
                                         $isPast = $nextActionDate->isPast() && !$nextActionDate->isToday();
@@ -906,7 +906,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse ($interactions as $interaction)
+                                @forelse ($collectionsForTabs['overdue'] as $interaction)
                                     @php
                                         $nextActionDate = optional($interaction->next_action_date);
                                         $isPast = $nextActionDate->isPast() && !$nextActionDate->isToday();
