@@ -36,7 +36,7 @@
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/vendors/css/tagify-data.min.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/vendors/css/quill.min.css') }}">
 
-    <link rel="stylesheet" type="text/css" href="{{ asset('assets/vendors/css/datepicker.min.css') }}">
+    {{-- <link rel="stylesheet" type="text/css" href="{{ asset('assets/vendors/css/datepicker.min.css') }}"> --}}
 
     <!-- FullCalendar CSS -->
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
@@ -57,9 +57,7 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     @stack('style')
 
-    <!--  -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
 </head>
 
 <body>
@@ -254,7 +252,6 @@
             {{-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script> --}}
 
             <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
             <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
             <script src="{{ asset('assets/vendors/js/vendors.min.js') }}"></script>
             <!-- vendors.min.js {always must need to be top} -->
@@ -301,7 +298,7 @@
             <script src="{{ asset('assets/vendors/js/tagify.min.js') }}"></script>
             <script src="{{ asset('assets/vendors/js/tagify-data.min.js') }}"></script>
             <script src="{{ asset('assets/vendors/js/quill.min.js') }}"></script>
-            <script src="{{ asset('assets/vendors/js/datepicker.min.js') }}"></script>            
+            {{-- <script src="{{ asset('assets/vendors/js/datepicker.min.js') }}"></script>             --}}
 
             <script src="{{ asset('assets/js/proposal-create-init.min.js') }}"></script>
             <!--! END: Apps Init !-->
