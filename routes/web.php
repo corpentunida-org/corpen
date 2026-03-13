@@ -495,6 +495,10 @@ Route::prefix('interactions')
                 Route::put('/{action}', [IntNextActionController::class, 'update'])->name('update');
                 Route::delete('/{action}', [IntNextActionController::class, 'destroy'])->name('destroy');
             });
+
+        // 🆕 RUTA DE SEGUIMIENTOS (AQUÍ LA AGREGUÉ)
+        // Se coloca aquí para que herede el middleware auth y el prefijo
+        Route::post('/seguimientos/store', [\App\Http\Controllers\Interacciones\IntSeguimientoController::class, 'store'])->name('seguimientos.store');
     });
 //FIN INTERACCIONES
 
