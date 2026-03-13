@@ -24,7 +24,7 @@ use App\Models\Creditos\LineaCredito;
 
 class InteractionController extends Controller
 {
-    /**
+/**
      * Muestra la lista de interacciones con filtros y búsqueda.
      */
     public function index(Request $request)
@@ -35,7 +35,42 @@ class InteractionController extends Controller
             'lineaDeObligacion', 'usuarioAsignado'
         ]);
 
-        // --- 3. OBTENEMOS LOS DATOS PARA LAS ESTADÍSTICAS Y PESTAÑAS (SIN PAGINAR) ---
+        // --- 2. APLICAMOS LOS FILTROS (Solo Búsqueda y Rango de Fechas) ---
+        
+        // A. Filtro de Búsqueda General
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $baseQuery->where(function ($q) use ($search) {
+                // Busca en campos de la tabla interacciones
+                $q->where('notes', 'LIKE', "%{$search}%")
+                  ->orWhere('cedula_quien_llama', 'LIKE', "%{$search}%")
+                  ->orWhere('nombre_quien_llama', 'LIKE', "%{$search}%")
+                  // Busca en la relación del cliente (maeTerceros)
+                  ->orWhereHas('client', function ($query) use ($search) {
+                      $query->where('nom_ter', 'LIKE', "%{$search}%")
+                            ->orWhere('cod_ter', 'LIKE', "%{$search}%");
+                  })
+                  // Busca en la relación del agente (User)
+                  ->orWhereHas('agent', function ($query) use ($search) {
+                      $query->where('name', 'LIKE', "%{$search}%"); // Asume que tu modelo User usa 'name'
+                  });
+            });
+        }
+
+        // B. Filtro de Rango de Fechas (Interacción)
+        if ($request->filled('start_date') && $request->filled('end_date')) {
+            $baseQuery->whereBetween('interaction_date', [
+                $request->input('start_date') . ' 00:00:00', 
+                $request->input('end_date') . ' 23:59:59'
+            ]);
+        } elseif ($request->filled('start_date')) {
+            $baseQuery->where('interaction_date', '>=', $request->input('start_date') . ' 00:00:00');
+        } elseif ($request->filled('end_date')) {
+            $baseQuery->where('interaction_date', '<=', $request->input('end_date') . ' 23:59:59');
+        }
+
+
+        // --- 3. OBTENEMOS LOS DATOS PARA LAS ESTADÍSTICAS Y PESTAÑAS (Con filtros aplicados) ---
         $countQuery = clone $baseQuery;
 
         $stats = [
@@ -56,9 +91,12 @@ class InteractionController extends Controller
         
         // --- 4. OBTENEMOS LA COLECCIÓN PAGINADA PARA LA PESTAÑA "TODOS" ---
         $interactions = $baseQuery->orderBy('id', 'desc')->paginate(100);
+        
+        // appends() asegura que al cambiar de página en la paginación, no se pierdan los filtros
         $interactions->appends($request->query());
 
         // --- 5. DATOS PARA LOS SELECT DE LA VISTA ---
+        // (Aunque ya no filtres por estos en el backend, los pasamos por si los usas para crear/editar en la misma vista)
         $channels = IntChannel::orderBy('name')->pluck('name', 'id');
         $types = IntType::orderBy('name')->pluck('name', 'id');
         $outcomes = IntOutcome::orderBy('name')->pluck('name', 'id');
@@ -79,7 +117,6 @@ class InteractionController extends Controller
             'lineas'
         ));
     }
-
     /**
      * Muestra detalles y estadísticas de una interacción.
      */
