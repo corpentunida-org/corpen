@@ -65,7 +65,7 @@ class Interaction extends Model
     
     public function client()
     {
-        return $this->belongsTo(maeTerceros::class, 'client_id', 'cod_ter');
+        return $this->belongsTo(maeTerceros::class, 'client_id', 'cod_ter'); //campo "nom_ter"
     }
     
     public function channel()
@@ -110,4 +110,8 @@ class Interaction extends Model
     // NOTA: Se eliminaron las relaciones de areaDeAsignacion(), cargo() y DistritoDeObligacion() 
     // porque las columnas correspondientes (id_area_de_asignacion, id_cargo, id_distrito_interaccion) 
     // ya NO existen en tu tabla de base de datos actual.
+    public function seguimientos()
+    {
+        return $this->hasMany(IntSeguimiento::class, 'id_interaction');
+    }
 }

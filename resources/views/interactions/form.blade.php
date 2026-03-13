@@ -1,3 +1,8 @@
+@php
+    /** @var int|null $idAreaAgente */
+    /** @var int|null $idCargoAgente */
+@endphp
+
 <style>
     @keyframes fadeIn {
         from {
@@ -145,683 +150,670 @@
         background: var(--crm-primary-light);
     }
 
-    /* Sobreescribiendo botones Bootstrap para que sean flat */
-    /*.btn {
-        border-radius: 4px;
-        font-weight: 500;
-        box-shadow: none !important;
+    #btn-submit-interaccion:disabled {
+        background-color: #64748B !important; /* Color gris suave */
+        border-color: #64748B !important;
+        cursor: not-allowed;
+        opacity: 0.8;
     }
-    .btn-outline-primary {
-        color: var(--crm-primary);
-        border-color: var(--border-color);
-    }
-    .btn-outline-primary:hover {
-        background-color: var(--crm-primary-light);
-        color: var(--crm-primary);
-        border-color: var(--crm-primary);
-    }
-    /*.btn-primary {
-        background-color: var(--crm-primary);
-        border-color: var(--crm-primary);
-        color: white;
-    }
-    .btn-primary:hover {
-        background-color: var(--crm-primary-hover);
-        border-color: var(--crm-primary-hover);
-    }*/
 </style>
 
-<div
-    class="bg-white border-bottom p-4 mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
-    <div class="d-flex align-items-center gap-3">
-        <div>
-            <i class="bi bi-headset fs-2"></i>
+<form id="interaction-form" method="POST" action="{{ $modoEdicion ? route('interactions.update', $interaction->id) : route('interactions.store') }}" enctype="multipart/form-data">
+    @csrf
+    @if($modoEdicion)
+        @method('PUT')
+    @endif
+
+    <div
+        class="bg-white border-bottom p-4 mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+        <div class="d-flex align-items-center gap-3">
+            <div>
+                <i class="bi bi-headset fs-2"></i>
+            </div>
+            <div>
+                <h4 class="fw-bold mb-1 text-dark" style="font-size: 1.25rem;">
+                    {{ $modoEdicion ? 'Editar Interacción #' . $interaction->id : 'Registro de Seguimiento Diario' }}
+                </h4>
+                <p class="text-muted small mb-0">
+                    <i class="bi bi-clock me-1"></i> Sesión iniciada • Completa la gestión
+                </p>
+            </div>
         </div>
-        <div>
-            <h4 class="fw-bold mb-1 text-dark" style="font-size: 1.25rem;">
-                {{ $modoEdicion ? 'Editar Interacción #' . $interaction->id : 'Registro de Seguimiento Diario' }}
-            </h4>
-            <p class="text-muted small mb-0">
-                <i class="bi bi-clock me-1"></i> Sesión iniciada • Completa la gestión
-            </p>
-        </div>
+
+        @if ($modoEdicion && $interaction->id)
+            <div>
+                <a href="{{ route('interactions.show', $interaction->id) }}"
+                    class="btn btn-outline-secondary px-3 py-2 d-inline-flex align-items-center gap-2">
+                    <i class="bi bi-eye"></i> Ver Detalles
+                </a>
+            </div>
+        @endif
     </div>
 
-    @if ($modoEdicion && $interaction->id)
-        <div>
-            <a href="{{ route('interactions.show', $interaction->id) }}"
-                class="btn btn-outline-secondary px-3 py-2 d-inline-flex align-items-center gap-2">
-                <i class="bi bi-eye"></i> Ver Detalles
-            </a>
-        </div>
-    @endif
-</div>
+    <ul class="nav nav-tabs w-100 text-center customers-nav-tabs" id="TabMenu" role="tablist">
 
+        <li class="nav-item flex-fill" role="presentation">
+            <button class="nav-link active border-0 w-100" id="home-tab" data-bs-toggle="tab"
+                data-bs-target="#principal-tab" type="button" role="tab" data-progress="50">
+                <i class="bi bi-info-circle"></i> Principal
+            </button>
+        </li>
 
-<ul class="nav nav-tabs w-100 text-center customers-nav-tabs" id="TabMenu" role="tablist">
+        <li class="nav-item flex-fill" role="presentation">
+            <button class="nav-link border-0 w-100" id="profile-tab" data-bs-toggle="tab" data-bs-target="#resultado-tab"
+                type="button" role="tab" data-progress="100">
+                <i class="bi bi-check2-circle"></i> Resultado
+            </button>
+        </li>
 
-    <li class="nav-item flex-fill" role="presentation">
-        <button class="nav-link active border-0 w-100" id="home-tab" data-bs-toggle="tab"
-            data-bs-target="#principal-tab" type="button" role="tab" data-progress="50">
-            <i class="bi bi-info-circle"></i> Principal
-        </button>
-    </li>
+    </ul>
 
-    <li class="nav-item flex-fill" role="presentation">
-        <button class="nav-link border-0 w-100" id="profile-tab" data-bs-toggle="tab" data-bs-target="#resultado-tab"
-            type="button" role="tab" data-progress="100">
-            <i class="bi bi-check2-circle"></i> Resultado
-        </button>
-    </li>
+    <div class="progress mt-0 mb-4" style="height: 2px; border-radius: 0; background-color: var(--border-color);">
+        <div id="form-progress" class="progress-bar bg-primary" role="progressbar"
+            style="width: 50%; transition: width 0.3s ease;" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
+    </div>
 
-</ul>
+    <div class="tab-content position-relative px-4">
+        <div class="tab-pane fade show active" id="principal-tab" role="tabpanel">
+            <div class="category-container mb-4">
+                <div class="category-header p-3 d-flex justify-content-between align-items-center cursor-pointer"
+                    data-bs-toggle="collapse" data-bs-target="#originCollapse" aria-expanded="true"
+                    aria-controls="originCollapse" style="user-select: none;">
+                    <h5 class="category-title mb-0">
+                        Origen del Contacto
+                    </h5>
+                    <i class="bi bi-chevron-down text-muted accordion-arrow transition-all"></i>
+                </div>
 
-<div class="progress mt-0 mb-4" style="height: 2px; border-radius: 0; background-color: var(--border-color);">
-    <div id="form-progress" class="progress-bar bg-primary" role="progressbar"
-        style="width: 50%; transition: width 0.3s ease;" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
-</div>
-
-<div class="tab-content position-relative px-4">
-    <div class="tab-pane fade show active" id="principal-tab" role="tabpanel">
-        <div class="category-container mb-4">
-            <div class="category-header p-3 d-flex justify-content-between align-items-center cursor-pointer"
-                data-bs-toggle="collapse" data-bs-target="#originCollapse" aria-expanded="true"
-                aria-controls="originCollapse" style="user-select: none;">
-                <h5 class="category-title mb-0">
-                    Origen del Contacto
-                </h5>
-                <i class="bi bi-chevron-down text-muted accordion-arrow transition-all"></i>
-            </div>
-
-            <div class="collapse show" id="originCollapse">
-                <div class="category-content p-4">
-                    <label class="form-label text-muted text-uppercase mb-3">¿Quién inicia la interacción?</label>
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <div class="border border-dashed rounded-3">
-                                <input type="radio" class="btn-check" name="caller_type" id="caller_client"
-                                    value="client" checked>
-                                <label
-                                    class="visual-card d-flex flex-row align-items-center p-3 gap-3 position-relative h-100"
-                                    for="caller_client">
-                                    <i class="bi bi-person card-icon mb-0 fs-3 text-muted"></i>
-                                    <div class="text-start flex-grow-1">
-                                        <div class="fw-bold mb-0 text-dark">Titular</div>
-                                        <small class="text-muted">Cliente registrado</small>
-                                    </div>
-                                    <i class="bi bi-check L check-badge fs-5 position-absolute end-0 me-3 text-dark"
-                                        style="opacity: 0;"></i>
-                                </label>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="border border-dashed rounded-3">
-                                <input type="radio" class="btn-check" name="caller_type" id="caller_third"
-                                    value="third_party">
-                                <label
-                                    class="visual-card d-flex flex-row align-items-center p-3 gap-3 position-relative h-100"
-                                    for="caller_third">
-                                    <i class="bi bi-people card-icon mb-0 fs-3 text-muted"></i>
-                                    <div class="text-start flex-grow-1">
-                                        <div class="fw-bold mb-0 text-dark">Tercero</div>
-                                        <small class="text-muted">Familiar o autorizado</small>
-                                    </div>
-                                    <i class="bi bi-check check-badge fs-5 position-absolute end-0 me-3 text-dark"
-                                        style="opacity: 0;"></i>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="third-party-fields" class="mt-4 p-4 bg-light border"
-                        style="display: none; border-radius: 4px;">
-                        <h6 class="text-dark fw-bold small text-uppercase mb-3">Datos de quien llama</h6>
+                <div class="collapse show" id="originCollapse">
+                    <div class="category-content p-4">
+                        <label class="form-label text-muted text-uppercase mb-3">¿Quién inicia la interacción?</label>
                         <div class="row g-3">
-                            <div class="col-md-4">
-                                <label class="form-label">Nombre Completo <span class="text-muted">*</span></label>
-                                <input type="text" class="form-control" id="nombre_quien_llama"
-                                    name="nombre_quien_llama" placeholder="Ej. Juan Pérez">
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Identificación <span class="text-muted">*</span></label>
-                                <input type="text" class="form-control" id="cedula_quien_llama"
-                                    name="cedula_quien_llama" placeholder="Número de documento">
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Teléfono <span class="text-muted">*</span></label>
-                                <input type="text" class="form-control" id="celular_quien_llama"
-                                    name="celular_quien_llama" placeholder="Número de contacto">
-                            </div>
-                            <div class="col-12 pt-2" id="container-parentezco">
-                                <label class="form-label mb-2">Relación con el titular: <span
-                                        class="text-muted">*</span></label>
-                                <div class="d-flex flex-wrap gap-2">
-                                    @foreach (['familiar' => 'Familiar', 'amigo' => 'Amigo', 'representante' => 'Representante', 'otro' => 'Otro'] as $v => $l)
-                                        <input type="radio" class="btn-check" name="parentezco_quien_llama"
-                                            id="rel_{{ $v }}" value="{{ $v }}">
-                                        <label class="smart-tag py-1 px-3 small cursor-pointer"
-                                            for="rel_{{ $v }}">{{ $l }}</label>
-                                    @endforeach
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="category-container mb-4 p-4">
-            <div class="row align-items-start g-4">
-                <div class="col-md-8">
-                    <label for="client_id" class="form-label required-field text-uppercase text-muted mb-2">
-                        Buscar Cliente <span class="text-muted">*</span>
-                    </label>
-                    <select class="form-select select2" id="client_id" name="client_id" required>
-                        <option value="">Buscar por nombre, documento o código...</option>
-                        @if ($modoEdicion && $interaction->client_id)
-                            <option value="{{ $interaction->client_id }}" selected>{{ $interaction->client->nom_ter }}
-                            </option>
-                        @endif
-                    </select>
-                    <div id="error-client-msg" class="text-danger small mt-2" style="display:none;">
-                        Debes seleccionar un cliente.
-                    </div>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="bg-white border p-3 d-flex flex-column justify-content-center h-100"
-                        style="border-radius: 4px;">
-                        <div class="d-flex align-items-center mb-2">
-                            <div class="lh-sm">
-                                <div class="small text-muted" style="font-size: 0.70rem;">AGENTE RESPONSABLE</div>
-                                <div class="fw-bold text-dark text-truncate" style="max-width: 150px;"
-                                    title="{{ auth()->user()->name }}">{{ auth()->user()->name }}</div>
-                            </div>
-                        </div>
-
-                        <div class="border-top pt-2 mt-1 d-flex justify-content-between align-items-center">
-                            <div>
-                                <small class="text-muted d-block" style="font-size: 0.70rem;">DURACIÓN</small>
-                                <div class="d-flex align-items-center mt-1">
-                                    <span id="timer-indicator" class="me-2"
-                                        style="width: 8px; height: 8px; background-color: #333; border-radius: 50%;"></span>
-                                    <div class="fw-bold text-dark font-monospace fs-5 lh-1" id="timer">00:00</div>
-                                </div>
-                            </div>
-                            <div class="d-flex gap-1">
-                                <button type="button" class="btn btn-sm btn-light border py-1 px-2"
-                                    id="btn-timer-toggle" title="Pausar/Reanudar">
-                                    <i class="bi bi-pause"></i>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-light border py-1 px-2"
-                                    id="btn-timer-reset" title="Reiniciar">
-                                    <i class="bi bi-arrow-counterclockwise"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                    <input type="hidden" name="agent_id" value="{{ auth()->user()->id }}">
-                    <input type="hidden" name="interaction_date" value="{{ now()->toDateTimeString() }}">
-                    <input type="hidden" name="duration" id="duration" value="0">
-                </div>
-
-                <div id="client-info-card" class="col-12 mt-4" style="display:none;">
-                    <div class="border p-4 bg-light"
-                        style="border-radius: 4px; border-left: 3px solid var(--text-main) !important;">
-                        <div class="row align-items-center" id="client-info-content">
-                            <div class="col-md-5 border-end border-secondary border-opacity-10">
-                                <div class="d-flex align-items-center mb-3">
-                                    <div>
-                                        <h6 class="fw-bold text-dark mb-1" id="info-nombre">Nombre Cliente</h6>
-                                        <div class="text-muted small">ID: <span id="info-id"
-                                                class="text-dark">-</span></div>
-                                    </div>
-                                </div>
-                                <div class="d-flex gap-2">
-                                    <span class="smart-tag px-2 py-1 small border"><span
-                                            id="info-categoria">Cat</span></span>
-                                    <span class="smart-tag px-2 py-1 small border"><span
-                                            id="info-distrito">Zona</span></span>
-                                </div>
-                            </div>
-                            <div class="col-md-7 ps-md-4 mt-3 mt-md-0">
-                                <div class="row g-2">
-                                    <div class="col-sm-6">
-                                        <label class="small text-muted d-block mb-0">Email</label>
-                                        <span class="text-dark small" id="info-email">...</span>
-                                    </div>
-                                    <div class="col-sm-6">
-                                        <label class="small text-muted d-block mb-0">Teléfono</label>
-                                        <span class="text-dark small" id="info-telefono">...</span>
-                                    </div>
-                                    <div class="col-12">
-                                        <label class="small text-muted d-block mb-0">Dirección</label>
-                                        <span class="text-dark small" id="info-direccion">...</span>
-                                    </div>
-                                </div>
-                                <div class="d-flex justify-content-end gap-2 mt-2 pt-2 border-top">
-                                    <a id="btn-editar-cliente" href="#" target="_blank"
-                                        class="btn btn-sm btn-light border text-dark">Editar</a>
-                                    <a id="btn-ver-cliente" href="#" target="_blank"
-                                        class="btn btn-sm btn-dark">Ver Ficha</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="category-container mb-4">
-            <div class="category-header p-3 d-flex justify-content-between align-items-center cursor-pointer"
-                data-bs-toggle="collapse" data-bs-target="#historyCollapse" aria-expanded="false"
-                aria-controls="historyCollapse" style="user-select: none;">
-                <h5 class="category-title mb-0">
-                    Historial del Cliente
-                </h5>
-                <i class="bi bi-chevron-down text-muted accordion-arrow transition-all"></i>
-            </div>
-
-            <div class="collapse" id="historyCollapse">
-                <div class="category-content p-4">
-                    <div id="history-content" class="position-relative bg-white border p-3"
-                        style="border-radius: 4px;">
-                        <div class="timeline-container">
-                            <div id="interaction-history-list" class="history-list pe-2"
-                                style="max-height: 300px; overflow-y: auto; min-height: 100px;">
-                                <div id="history-loading-skeleton" class="py-3 px-2 text-muted small">
-                                    Cargando historial...
-                                </div>
-
-                                <div id="history-empty-state" class="text-center py-4 d-none">
-                                    <p class="text-muted small mb-0">No se encontraron interacciones previas.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="category-container mb-4">
-            <div class="category-header p-3 d-flex justify-content-between align-items-center cursor-pointer"
-                data-bs-toggle="collapse" data-bs-target="#paramCollapse" aria-expanded="true"
-                aria-controls="paramCollapse" style="user-select: none;">
-                <h5 class="category-title mb-0">
-                    Parametrización
-                </h5>
-                <i class="bi bi-chevron-down text-muted accordion-arrow transition-all"></i>
-            </div>
-
-            <div class="collapse show" id="paramCollapse">
-                <div class="category-content p-4">
-
-                    <div class="mb-4" id="container-channel">
-                        <label class="form-label text-uppercase text-muted mb-2 d-block">
-                            Canal de Entrada <span class="text-muted">*</span>
-                        </label>
-                        <div class="grid-gallery d-flex flex-wrap gap-2">
-                            @foreach ($channels as $channel)
-                                <div class="position-relative">
-                                    <input type="radio" class="btn-check" name="interaction_channel"
-                                        id="ch_{{ $channel->id }}" value="{{ $channel->id }}"
-                                        {{ old('interaction_channel', $interaction->interaction_channel ?? '') == $channel->id ? 'checked' : '' }}
-                                        required>
-                                    <label class="smart-tag py-1 px-3 border cursor-pointer text-center transition-all"
-                                        for="ch_{{ $channel->id }}">
-                                        <span class="small">{{ $channel->name }}</span>
+                            <div class="col-md-6">
+                                <div class="border border-dashed rounded-3">
+                                    <input type="radio" class="btn-check" name="caller_type" id="caller_client"
+                                        value="client" checked>
+                                    <label
+                                        class="visual-card d-flex flex-row align-items-center p-3 gap-3 position-relative h-100"
+                                        for="caller_client">
+                                        <i class="bi bi-person card-icon mb-0 fs-3 text-muted"></i>
+                                        <div class="text-start flex-grow-1">
+                                            <div class="fw-bold mb-0 text-dark">Titular</div>
+                                            <small class="text-muted">Cliente registrado</small>
+                                        </div>
+                                        <i class="bi bi-check L check-badge fs-5 position-absolute end-0 me-3 text-dark"
+                                            style="opacity: 0;"></i>
                                     </label>
                                 </div>
-                            @endforeach
+                            </div>
+                            <div class="col-md-6">
+                                <div class="border border-dashed rounded-3">
+                                    <input type="radio" class="btn-check" name="caller_type" id="caller_third"
+                                        value="third_party">
+                                    <label
+                                        class="visual-card d-flex flex-row align-items-center p-3 gap-3 position-relative h-100"
+                                        for="caller_third">
+                                        <i class="bi bi-people card-icon mb-0 fs-3 text-muted"></i>
+                                        <div class="text-start flex-grow-1">
+                                            <div class="fw-bold mb-0 text-dark">Tercero</div>
+                                            <small class="text-muted">Familiar o autorizado</small>
+                                        </div>
+                                        <i class="bi bi-check check-badge fs-5 position-absolute end-0 me-3 text-dark"
+                                            style="opacity: 0;"></i>
+                                    </label>
+                                </div>
+                            </div>
                         </div>
-                        @error('interaction_channel')
-                            <div class="text-danger small mt-2">{{ $message }}</div>
-                        @enderror
-                    </div>
 
-                    <div class="mb-2" id="container-type">
-                        <label class="form-label text-uppercase text-muted mb-2 d-block">
-                            Motivo / Tipificación <span class="text-muted">*</span>
-                        </label>
-                        <div class="d-flex flex-wrap gap-2">
-                            @foreach ($types as $type)
-                                <input type="radio" class="btn-check" name="interaction_type"
-                                    id="tp_{{ $type->id }}" value="{{ $type->id }}"
-                                    {{ old('interaction_type', $interaction->interaction_type ?? '') == $type->id ? 'checked' : '' }}
-                                    required>
-                                <label class="smart-tag py-1 px-3 border cursor-pointer transition-all small"
-                                    for="tp_{{ $type->id }}">
-                                    {{ $type->name }}
-                                </label>
-                            @endforeach
+                        <div id="third-party-fields" class="mt-4 p-4 bg-light border"
+                            style="display: none; border-radius: 4px;">
+                            <h6 class="text-dark fw-bold small text-uppercase mb-3">Datos de quien llama</h6>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Nombre Completo <span class="text-muted">*</span></label>
+                                    <input type="text" class="form-control" id="nombre_quien_llama"
+                                        name="nombre_quien_llama" placeholder="Ej. Juan Pérez">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Identificación <span class="text-muted">*</span></label>
+                                    <input type="text" class="form-control" id="cedula_quien_llama"
+                                        name="cedula_quien_llama" placeholder="Número de documento">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Teléfono <span class="text-muted">*</span></label>
+                                    <input type="text" class="form-control" id="celular_quien_llama"
+                                        name="celular_quien_llama" placeholder="Número de contacto">
+                                </div>
+                                <div class="col-12 pt-2" id="container-parentezco">
+                                    <label class="form-label mb-2">Relación con el titular: <span
+                                            class="text-muted">*</span></label>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        @foreach (['familiar' => 'Familiar', 'amigo' => 'Amigo', 'representante' => 'Representante', 'otro' => 'Otro'] as $v => $l)
+                                            <input type="radio" class="btn-check" name="parentezco_quien_llama"
+                                                id="rel_{{ $v }}" value="{{ $v }}">
+                                            <label class="smart-tag py-1 px-3 small cursor-pointer"
+                                                for="rel_{{ $v }}">{{ $l }}</label>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        @error('interaction_type')
-                            <div class="text-danger small mt-2">{{ $message }}</div>
-                        @enderror
                     </div>
-
                 </div>
             </div>
-        </div>
 
-        <div class="category-container mb-4">
-            <div class="category-header p-3">
-                <h5 class="category-title mb-1">Asignación y Contexto</h5>
+            <div class="category-container mb-4 p-4">
+                <div class="row align-items-start g-4">
+                    <div class="col-md-8">
+                        <label for="client_id" class="form-label required-field text-uppercase text-muted mb-2">
+                            Buscar Cliente <span class="text-muted">*</span>
+                        </label>
+                        <select class="form-select select2" id="client_id" name="client_id" required>
+                            <option value="">Buscar por nombre, documento o código...</option>
+                            @if ($modoEdicion && $interaction->client_id)
+                                <option value="{{ $interaction->client_id }}" selected>{{ $interaction->client->nom_ter }}
+                                </option>
+                            @endif
+                        </select>
+                        <div id="error-client-msg" class="text-danger small mt-2" style="display:none;">
+                            Debes seleccionar un cliente.
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="bg-white border p-3 d-flex flex-column justify-content-center h-100"
+                            style="border-radius: 4px;">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="lh-sm">
+                                    <div class="small text-muted" style="font-size: 0.70rem;">AGENTE RESPONSABLE</div>
+                                    <div class="fw-bold text-dark text-truncate" style="max-width: 150px;"
+                                        title="{{ auth()->user()->name }}">{{ auth()->user()->name }}</div>
+                                </div>
+                            </div>
+
+                            <div class="border-top pt-2 mt-1 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <small class="text-muted d-block" style="font-size: 0.70rem;">DURACIÓN</small>
+                                    <div class="d-flex align-items-center mt-1">
+                                        <span id="timer-indicator" class="me-2"
+                                            style="width: 8px; height: 8px; background-color: #333; border-radius: 50%;"></span>
+                                        <div class="fw-bold text-dark font-monospace fs-5 lh-1" id="timer">00:00</div>
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-1">
+                                    <button type="button" class="btn btn-sm btn-light border py-1 px-2"
+                                        id="btn-timer-toggle" title="Pausar/Reanudar">
+                                        <i class="bi bi-pause"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-light border py-1 px-2"
+                                        id="btn-timer-reset" title="Reiniciar">
+                                        <i class="bi bi-arrow-counterclockwise"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" name="agent_id" value="{{ auth()->user()->id }}">
+                        <input type="hidden" name="interaction_date" value="{{ now()->toDateTimeString() }}">
+                        <input type="hidden" name="duration" id="duration" value="0">
+                    </div>
+
+                    <div id="client-info-card" class="col-12 mt-4" style="display:none;">
+                        <div class="border p-4 bg-light"
+                            style="border-radius: 4px; border-left: 3px solid var(--text-main) !important;">
+                            <div class="row align-items-center" id="client-info-content">
+                                <div class="col-md-5 border-end border-secondary border-opacity-10">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <div>
+                                            <h6 class="fw-bold text-dark mb-1" id="info-nombre">Nombre Cliente</h6>
+                                            <div class="text-muted small">ID: <span id="info-id"
+                                                    class="text-dark">-</span></div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <span class="smart-tag px-2 py-1 small border"><span
+                                                id="info-categoria">Cat</span></span>
+                                        <span class="smart-tag px-2 py-1 small border"><span
+                                                id="info-distrito">Zona</span></span>
+                                    </div>
+                                </div>
+                                <div class="col-md-7 ps-md-4 mt-3 mt-md-0">
+                                    <div class="row g-2">
+                                        <div class="col-sm-6">
+                                            <label class="small text-muted d-block mb-0">Email</label>
+                                            <span class="text-dark small" id="info-email">...</span>
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <label class="small text-muted d-block mb-0">Teléfono</label>
+                                            <span class="text-dark small" id="info-telefono">...</span>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="small text-muted d-block mb-0">Dirección</label>
+                                            <span class="text-dark small" id="info-direccion">...</span>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex justify-content-end gap-2 mt-2 pt-2 border-top">
+                                        <a id="btn-editar-cliente" href="#" target="_blank"
+                                            class="btn btn-sm btn-light border text-dark">Editar</a>
+                                        <a id="btn-ver-cliente" href="#" target="_blank"
+                                            class="btn btn-sm btn-dark">Ver Ficha</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div class="category-content p-4">
-                <div class="mb-4">
-                    <label class="form-label text-muted mb-3 d-block">¿Quién es el responsable de esta gestión?</label>
+            <div class="category-container mb-4">
+                <div class="category-header p-3 d-flex justify-content-between align-items-center cursor-pointer"
+                    data-bs-toggle="collapse" data-bs-target="#historyCollapse" aria-expanded="false"
+                    aria-controls="historyCollapse" style="user-select: none;">
+                    <h5 class="category-title mb-0">
+                        Historial del Cliente
+                    </h5>
+                    <i class="bi bi-chevron-down text-muted accordion-arrow transition-all"></i>
+                </div>
 
-                    <div class="d-flex gap-3 mb-4">
-                        <div>
-                            <input type="radio" class="btn-check" name="handled_by_agent" id="handled_by_me"
-                                value="yes" checked>
-                            <label class="btn btn-outline-dark px-4 py-2" for="handled_by_me">
-                                Yo me encargo
-                            </label>
-                        </div>
-                        <div>
-                            <input type="radio" class="btn-check" name="handled_by_agent" id="handled_by_other"
-                                value="no">
-                            <label class="btn btn-outline-secondary px-4 py-2" for="handled_by_other">
-                                Delegar a otro
-                            </label>
+                <div class="collapse" id="historyCollapse">
+                    <div class="category-content p-4">
+                        <div id="history-content" class="position-relative bg-white border p-3"
+                            style="border-radius: 4px;">
+                            <div class="timeline-container">
+                                <div id="interaction-history-list" class="history-list pe-2"
+                                    style="max-height: 300px; overflow-y: auto; min-height: 100px;">
+                                    <div id="history-loading-skeleton" class="py-3 px-2 text-muted small">
+                                        Cargando historial...
+                                    </div>
+
+                                    <div id="history-empty-state" class="text-center py-4 d-none">
+                                        <p class="text-muted small mb-0">No se encontraron interacciones previas.</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <div id="panel-me">
-                        <div class="bg-light border px-3 py-2 rounded">
-                            <p class="text-dark small mb-0">Asignado a ti:
-                                <strong>{{ Auth::user()->name ?? '' }}</strong> -
-                                <strong>{{ $idCargoAgente ? $cargos[$idCargoAgente] ?? 'Cargo' : 'Sin Cargo' }}</strong>
-                            </p>
+            <div class="category-container mb-4">
+                <div class="category-header p-3 d-flex justify-content-between align-items-center cursor-pointer"
+                    data-bs-toggle="collapse" data-bs-target="#paramCollapse" aria-expanded="true"
+                    aria-controls="paramCollapse" style="user-select: none;">
+                    <h5 class="category-title mb-0">
+                        Parametrización
+                    </h5>
+                    <i class="bi bi-chevron-down text-muted accordion-arrow transition-all"></i>
+                </div>
+
+                <div class="collapse show" id="paramCollapse">
+                    <div class="category-content p-4">
+
+                        <div class="mb-4" id="container-channel">
+                            <label class="form-label text-uppercase text-muted mb-2 d-block">
+                                Canal de Entrada <span class="text-muted">*</span>
+                            </label>
+                            <div class="grid-gallery d-flex flex-wrap gap-2">
+                                @foreach ($channels as $channel)
+                                    <div class="position-relative">
+                                        <input type="radio" class="btn-check" name="interaction_channel"
+                                            id="ch_{{ $channel->id }}" value="{{ $channel->id }}"
+                                            {{ old('interaction_channel', $interaction->interaction_channel ?? '') == $channel->id ? 'checked' : '' }}
+                                            required>
+                                        <label class="smart-tag py-1 px-3 border cursor-pointer text-center transition-all"
+                                            for="ch_{{ $channel->id }}">
+                                            <span class="small">{{ $channel->name }}</span>
+                                        </label>
+                                    </div>
+                                @endforeach
+                            </div>
+                            @error('interaction_channel')
+                                <div class="text-danger small mt-2">{{ $message }}</div>
+                            @enderror
                         </div>
-                    </div>
 
-                    <div id="panel-other" style="display: none;">
-                        <div class="bg-white border rounded p-3">
-                            <label for="id_user_asignacion" class="form-label small">Buscar Usuario <span
-                                    class="text-muted">*</span></label>
-                            <select class="form-select" id="id_user_asignacion" name="id_user_asignacion" required>
-                                <option value="">Buscar usuario por nombre o correo...</option>
-                                <option value="{{ Auth::id() }}" id="option-me">
-                                    -
-                                </option>
-                                @if (isset($interaction) && $interaction->usuarioAsignado)
-                                    <option value="{{ $interaction->id_user_asignacion }}" selected>
-                                        {{ $interaction->usuarioAsignado->name }}
+                        <div class="mb-2" id="container-type">
+                            <label class="form-label text-uppercase text-muted mb-2 d-block">
+                                Motivo / Tipificación <span class="text-muted">*</span>
+                            </label>
+                            <div class="d-flex flex-wrap gap-2">
+                                @foreach ($types as $type)
+                                    <input type="radio" class="btn-check" name="interaction_type"
+                                        id="tp_{{ $type->id }}" value="{{ $type->id }}"
+                                        {{ old('interaction_type', $interaction->interaction_type ?? '') == $type->id ? 'checked' : '' }}
+                                        required>
+                                    <label class="smart-tag py-1 px-3 border cursor-pointer transition-all small"
+                                        for="tp_{{ $type->id }}">
+                                        {{ $type->name }}
+                                    </label>
+                                @endforeach
+                            </div>
+                            @error('interaction_type')
+                                <div class="text-danger small mt-2">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="category-container mb-4">
+                <div class="category-header p-3">
+                    <h5 class="category-title mb-1">Asignación y Contexto</h5>
+                </div>
+
+                <div class="category-content p-4">
+                    <div class="mb-4">
+                        <label class="form-label text-muted mb-3 d-block">¿Quién es el responsable de esta gestión?</label>
+
+                        <div class="d-flex gap-3 mb-4">
+                            <div>
+                                <input type="radio" class="btn-check" name="handled_by_agent" id="handled_by_me"
+                                    value="yes" checked>
+                                <label class="btn btn-outline-dark px-4 py-2" for="handled_by_me">
+                                    Yo me encargo
+                                </label>
+                            </div>
+                            <div>
+                                <input type="radio" class="btn-check" name="handled_by_agent" id="handled_by_other"
+                                    value="no">
+                                <label class="btn btn-outline-secondary px-4 py-2" for="handled_by_other">
+                                    Delegar a otro
+                                </label>
+                            </div>
+                        </div>
+
+                        <div id="panel-me">
+                            <div class="bg-light border px-3 py-2 rounded">
+                                <p class="text-dark small mb-0">Asignado a ti:
+                                    <strong>{{ Auth::user()->name ?? '' }}</strong> -
+                                    <strong>{{ $idCargoAgente ? $cargos[$idCargoAgente] ?? 'Cargo' : 'Sin Cargo' }}</strong>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div id="panel-other" style="display: none;">
+                            <div class="bg-white border rounded p-3">
+                                <label for="id_user_asignacion" class="form-label small">Buscar Usuario <span
+                                        class="text-muted">*</span></label>
+                                <select class="form-select" id="id_user_asignacion" name="id_user_asignacion" required>
+                                    <option value="">Buscar usuario por nombre o correo...</option>
+                                    <option value="{{ Auth::id() }}" id="option-me">
+                                        -
                                     </option>
+                                    @if (isset($interaction) && $interaction->usuarioAsignado)
+                                        <option value="{{ $interaction->id_user_asignacion }}" selected>
+                                            {{ $interaction->usuarioAsignado->name }}
+                                        </option>
+                                    @endif
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-4 mt-2">
+                        <div class="col-md-6">
+                            <label for="id_linea_de_obligacion" class="form-label text-uppercase text-muted mb-2">Línea de
+                                Obligación <span class="text-muted">*</span></label>
+                            <select class="form-select select2" id="id_linea_de_obligacion" name="id_linea_de_obligacion"
+                                required>
+                                <option value="">Selecciona la línea...</option>
+                                @if (isset($lineasCredito))
+                                    @foreach ($lineasCredito as $id => $nombre)
+                                        <option value="{{ $id }}">{{ $nombre }}</option>
+                                    @endforeach
                                 @endif
                             </select>
                         </div>
                     </div>
                 </div>
-
-                <div class="row g-4 mt-2">
-                    <div class="col-md-6">
-                        <label for="id_linea_de_obligacion" class="form-label text-uppercase text-muted mb-2">Línea de
-                            Obligación <span class="text-muted">*</span></label>
-                        <select class="form-select select2" id="id_linea_de_obligacion" name="id_linea_de_obligacion"
-                            required>
-                            <option value="">Selecciona la línea...</option>
-                            @if (isset($lineasCredito))
-                                @foreach ($lineasCredito as $id => $nombre)
-                                    <option value="{{ $id }}">{{ $nombre }}</option>
-                                @endforeach
-                            @endif
-                        </select>
-                    </div>
-                </div>
+            </div>
+            <div class="text-end mb-4">
+                <button type="button" class="btn btn-dark px-4 py-2" id="btn-siguiente-paso">
+                    Continuar
+                </button>
             </div>
         </div>
-        <div class="text-end mb-4">
-            <button type="button" class="btn btn-dark px-4 py-2" id="btn-siguiente-paso">
-                Continuar
-            </button>
-        </div>
-    </div>
 
-    <div class="tab-pane fade" id="resultado-tab" role="tabpanel">
-        <div class="category-container mb-4 p-4">
-            <div class="mb-4 pb-3 border-bottom">
-                <h5 class="fw-bold text-dark mb-0">Cierre de Gestión</h5>
-            </div>
-
-            <div class="row g-4">
-                <div class="col-lg-6">
-                    <div class="border h-100 bg-white" style="border-radius: 4px;">
-                        <div class="p-4">
-                            <label class="form-label text-muted text-uppercase mb-3">
-                                Resultado de Interacción <span class="text-muted">*</span>
-                            </label>
-                            <div class="row g-2">
-                                @foreach ($outcomes as $outcome)
-                                    <div class="col-sm-6">
-                                        <input type="radio" class="btn-check outcome-radio" name="outcome"
-                                            id="outcome_{{ $outcome->id }}" value="{{ $outcome->id }}"
-                                            data-requires-planning="{{ in_array($outcome->id, [2]) ? 'true' : 'false' }}"
-                                            {{ old('outcome', $interaction->outcome ?? '') == $outcome->id ? 'checked' : '' }}
-                                            required>
-                                        <label class="btn btn-outline-secondary w-100 text-start "
-                                            for="outcome_{{ $outcome->id }}">
-                                            {{ $outcome->name }}
-                                        </label>
-                                    </div>
-                                @endforeach
-                            </div>
-                            @error('outcome')
-                                <div class="text-danger small mt-2">{{ $message }}</div>
-                            @enderror
-                        </div>
-                    </div>
+        <div class="tab-pane fade" id="resultado-tab" role="tabpanel">
+            <div class="category-container mb-4 p-4">
+                <div class="mb-4 pb-3 border-bottom">
+                    <h5 class="fw-bold text-dark mb-0">Cierre de Gestión</h5>
                 </div>
 
-                <div class="col-lg-6" id="planning-section" style="display:none;">
-                    <div class="border h-100 bg-light" style="border-radius: 4px;">
-                        <div class="p-4">
-                            <div class="mb-3 border-bottom pb-2">
-                                <h6 class="text-dark mb-0">Agenda de Seguimiento</h6>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label small text-muted">Acción a realizar</label>
+                <div class="row g-4">
+                    <div class="col-lg-6">
+                        <div class="border h-100 bg-white" style="border-radius: 4px;">
+                            <div class="p-4">
+                                <label class="form-label text-muted text-uppercase mb-3">
+                                    Resultado de Interacción <span class="text-muted">*</span>
+                                </label>
                                 <div class="row g-2">
-                                    @foreach ($nextActions as $action)
-                                        <div class="col-6 col-sm-4">
-                                            <input type="radio" class="btn-check" name="next_action_type"
-                                                id="action_{{ $action->id }}" value="{{ $action->id }}"
-                                                {{ old('next_action_type', $interaction->next_action_type ?? '') == $action->id ? 'checked' : '' }}>
-                                            <label class="btn btn-outline-dark w-100 border small text-truncate"
-                                                for="action_{{ $action->id }}" title="{{ $action->name }}">
-                                                {{ $action->name }}
+                                    @foreach ($outcomes as $outcome)
+                                        <div class="col-sm-6">
+                                            <input type="radio" class="btn-check outcome-radio" name="outcome"
+                                                id="outcome_{{ $outcome->id }}" value="{{ $outcome->id }}"
+                                                data-requires-planning="{{ in_array($outcome->id, [2]) ? 'true' : 'false' }}"
+                                                {{ old('outcome', $interaction->outcome ?? '') == $outcome->id ? 'checked' : '' }}
+                                                required>
+                                            <label class="btn btn-outline-secondary w-100 text-start "
+                                                for="outcome_{{ $outcome->id }}">
+                                                {{ $outcome->name }}
                                             </label>
                                         </div>
                                     @endforeach
                                 </div>
-                                @error('next_action_type')
-                                    <div class="text-danger small mt-1">{{ $message }}</div>
+                                @error('outcome')
+                                    <div class="text-danger small mt-2">{{ $message }}</div>
                                 @enderror
                             </div>
+                        </div>
+                    </div>
 
-                            <div class="mb-3">
-                                <label for="next_action_date" class="form-label small text-muted">Fecha y Hora
-                                    Programada</label>
-                                <input type="datetime-local"
-                                    class="form-control @error('next_action_date') is-invalid @enderror"
-                                    id="next_action_date" name="next_action_date"
-                                    value="{{ old('next_action_date', $interaction->next_action_date ?? '') }}">
-
-                                <div class="d-flex gap-2 mt-2">
-                                    <button type="button" class="btn btn-sm btn-light border flex-grow-1"
-                                        onclick="addDays(1)">Mañana</button>
-                                    <button type="button" class="btn btn-sm btn-light border flex-grow-1"
-                                        onclick="addDays(3)">En 3 días</button>
-                                    <button type="button" class="btn btn-sm btn-light border flex-grow-1"
-                                        onclick="addDays(7)">En 1 sem</button>
+                    <div class="col-lg-6" id="planning-section" style="display:none;">
+                        <div class="border h-100 bg-light" style="border-radius: 4px;">
+                            <div class="p-4">
+                                <div class="mb-3 border-bottom pb-2">
+                                    <h6 class="text-dark mb-0">Agenda de Seguimiento</h6>
                                 </div>
-                                @error('next_action_date')
-                                    <div class="text-danger small mt-1">{{ $message }}</div>
-                                @enderror
-                            </div>
 
-                            <div class="form-group mb-0">
-                                <label for="next_action_notes"
-                                    class="form-label small text-muted">Instrucciones</label>
-                                <textarea class="form-control bg-white @error('next_action_notes') is-invalid @enderror" id="next_action_notes"
-                                    name="next_action_notes" rows="2" style="resize: vertical;" placeholder="Ej. Llamar para confirmar..."></textarea>
+                                <div class="mb-3">
+                                    <label class="form-label small text-muted">Acción a realizar</label>
+                                    <div class="row g-2">
+                                        @foreach ($nextActions as $action)
+                                            <div class="col-6 col-sm-4">
+                                                <input type="radio" class="btn-check" name="next_action_type"
+                                                    id="action_{{ $action->id }}" value="{{ $action->id }}"
+                                                    {{ old('next_action_type', $interaction->next_action_type ?? '') == $action->id ? 'checked' : '' }}>
+                                                <label class="btn btn-outline-dark w-100 border small text-truncate"
+                                                    for="action_{{ $action->id }}" title="{{ $action->name }}">
+                                                    {{ $action->name }}
+                                                </label>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                    @error('next_action_type')
+                                        <div class="text-danger small mt-1">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="next_action_date" class="form-label small text-muted">Fecha y Hora
+                                        Programada</label>
+                                    <input type="datetime-local"
+                                        class="form-control @error('next_action_date') is-invalid @enderror"
+                                        id="next_action_date" name="next_action_date"
+                                        value="{{ old('next_action_date', $interaction->next_action_date ?? '') }}">
+
+                                    <div class="d-flex gap-2 mt-2">
+                                        <button type="button" class="btn btn-sm btn-light border flex-grow-1"
+                                            onclick="addDays(1)">Mañana</button>
+                                        <button type="button" class="btn btn-sm btn-light border flex-grow-1"
+                                            onclick="addDays(3)">En 3 días</button>
+                                        <button type="button" class="btn btn-sm btn-light border flex-grow-1"
+                                            onclick="addDays(7)">En 1 sem</button>
+                                    </div>
+                                    @error('next_action_date')
+                                        <div class="text-danger small mt-1">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                <div class="form-group mb-0">
+                                    <label for="next_action_notes"
+                                        class="form-label small text-muted">Instrucciones</label>
+                                    <textarea class="form-control bg-white @error('next_action_notes') is-invalid @enderror" id="next_action_notes"
+                                        name="next_action_notes" rows="2" style="resize: vertical;" placeholder="Ej. Llamar para confirmar..."></textarea>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
 
-        <div class="category-container mb-4 p-4">
-            <div class="mb-4 pb-2 border-bottom">
-                <h5 class="fw-bold text-dark mb-0">Documentación de Soporte (Opcional)</h5>
-            </div>
-
-            <div class="row g-4">
-                <div class="col-lg-6">
-                    <label class="form-label text-muted d-block">Archivo Físico</label>
-                    <div class="drop-zone-pro position-relative bg-light p-4 text-center cursor-pointer"
-                        id="drop-zone" style="border-radius: 4px;">
-                        <input type="file" id="attachment" name="attachment"
-                            class="drop-zone-input position-absolute w-100 h-100 top-0 start-0 opacity-0 cursor-pointer @error('attachment') is-invalid @enderror"
-                            accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" onchange="handleFileSelect(this)">
-                        <div class="dz-message d-flex flex-column align-items-center justify-content-center"
-                            style="min-height: 80px;" id="upload-icon-wrapper">
-                            <h6 class="text-dark mb-1" id="file-label">Adjuntar archivo</h6>
-                            <p class="text-muted small mb-0">PDF, Word, Excel, Img (Max 10MB)</p>
-                        </div>
-                    </div>
-
-                    @error('attachment')
-                        <div class="text-danger small mt-2">{{ $message }}</div>
-                    @enderror
-
-                    <div id="image-preview-wrapper" class="mt-3 text-center" style="display: none;">
-                        <img id="img-preview-element" class="img-fluid border p-1"
-                            style="max-height: 100px; object-fit: contain;" alt="Vista Previa">
-                    </div>
-
-                    @if ($modoEdicion && $interaction->attachment_urls)
-                        <div class="mt-3">
-                            <label class="form-label small text-dark">Archivo Guardado</label>
-                            <div class="d-flex align-items-center p-2 bg-light border">
-                                <div class="flex-grow-1 overflow-hidden me-2">
-                                    <div class="text-dark text-truncate small">
-                                        {{ basename($interaction->attachment_urls) }}</div>
-                                </div>
-                                <div class="d-flex gap-1">
-                                    <a href="{{ route('interactions.download', basename($interaction->attachment_urls)) }}"
-                                        class="btn btn-sm btn-light border" target="_blank">Descargar</a>
-                                </div>
-                            </div>
-                        </div>
-                    @endif
+            <div class="category-container mb-4 p-4">
+                <div class="mb-4 pb-2 border-bottom">
+                    <h5 class="fw-bold text-dark mb-0">Documentación de Soporte (Opcional)</h5>
                 </div>
 
-                <div class="col-lg-6">
-                    <label class="form-label text-muted d-block">Enlace Externo (URL)</label>
-                    <input type="url" class="form-control @error('interaction_url') is-invalid @enderror"
-                        id="interaction_url" name="interaction_url" placeholder="https://..."
-                        value="{{ old('interaction_url', $interaction->interaction_url ?? '') }}">
-                    @error('interaction_url')
+                <div class="row g-4">
+                    <div class="col-lg-6">
+                        <label class="form-label text-muted d-block">Archivo Físico</label>
+                        <div class="drop-zone-pro position-relative bg-light p-4 text-center cursor-pointer"
+                            id="drop-zone" style="border-radius: 4px;">
+                            <input type="file" id="attachment" name="attachment"
+                                class="drop-zone-input position-absolute w-100 h-100 top-0 start-0 opacity-0 cursor-pointer @error('attachment') is-invalid @enderror"
+                                accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" onchange="handleFileSelect(this)">
+                            <div class="dz-message d-flex flex-column align-items-center justify-content-center"
+                                style="min-height: 80px;" id="upload-icon-wrapper">
+                                <h6 class="text-dark mb-1" id="file-label">Adjuntar archivo</h6>
+                                <p class="text-muted small mb-0">PDF, Word, Excel, Img (Max 10MB)</p>
+                            </div>
+                        </div>
+
+                        @error('attachment')
+                            <div class="text-danger small mt-2">{{ $message }}</div>
+                        @enderror
+
+                        <div id="image-preview-wrapper" class="mt-3 text-center" style="display: none;">
+                            <img id="img-preview-element" class="img-fluid border p-1"
+                                style="max-height: 100px; object-fit: contain;" alt="Vista Previa">
+                        </div>
+
+                        @if ($modoEdicion && $interaction->attachment_urls)
+                            <div class="mt-3">
+                                <label class="form-label small text-dark">Archivo Guardado</label>
+                                <div class="d-flex align-items-center p-2 bg-light border">
+                                    <div class="flex-grow-1 overflow-hidden me-2">
+                                        <div class="text-dark text-truncate small">
+                                            {{ basename($interaction->attachment_urls) }}</div>
+                                    </div>
+                                    <div class="d-flex gap-1">
+                                        <a href="{{ route('interactions.download', basename($interaction->attachment_urls)) }}"
+                                            class="btn btn-sm btn-light border" target="_blank">Descargar</a>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+
+                    <div class="col-lg-6">
+                        <label class="form-label text-muted d-block">Enlace Externo (URL)</label>
+                        <input type="url" class="form-control @error('interaction_url') is-invalid @enderror"
+                            id="interaction_url" name="interaction_url" placeholder="https://..."
+                            value="{{ old('interaction_url', $interaction->interaction_url ?? '') }}">
+                        @error('interaction_url')
+                            <div class="text-danger small mt-1">{{ $message }}</div>
+                        @enderror
+                    </div>
+                </div>
+            </div>
+
+            <div class="category-container mb-4">
+                <div class="category-header p-3 bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="category-title mb-0">Vincular a Caso Anterior</h5>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="refresh-history"
+                        title="Recargar lista">
+                        Actualizar
+                    </button>
+                </div>
+
+                <div class="category-content p-0">
+
+                    <div id="no-client-selected" class="text-center py-4 bg-white">
+                        <p class="text-muted small mb-0">Busca un cliente en la pestaña "Principal" para cargar su
+                            historial.</p>
+                    </div>
+                    <div id="history-section" style="display:none;">
+                        <input type="hidden" id="parent_interaction_id" name="parent_interaction_id" value="">
+
+                        <div class="p-3 bg-white border-bottom">
+                            <div id="selected-parent-info"
+                                class="bg-light border p-2 d-flex align-items-center justify-content-between"
+                                style="display:none; border-radius: 4px;">
+                                <div class="small">
+                                    <strong class="text-dark">Escalando de:</strong> <span id="selected-parent-text"
+                                        class="text-muted">...</span>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-light border text-danger"
+                                    id="clear-parent-selection">
+                                    Desvincular
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="history-content" class="p-3 bg-white">
+                            <div id="interaction-history-list-bottom" class="history-list pe-2"
+                                style="max-height: 250px; overflow-y: auto;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-12">
+                    <label class="form-label text-muted d-block">
+                        Notas Finales <span class="text-muted">*</span>
+                    </label>
+                    <textarea class="form-control bg-white" name="notes" id="notes" rows="4"
+                        placeholder="Resumen de la interacción..." required>{{ old('notes', $interaction->notes ?? '') }}</textarea>
+                    @error('notes')
                         <div class="text-danger small mt-1">{{ $message }}</div>
                     @enderror
                 </div>
             </div>
-        </div>
 
-        <div class="category-container mb-4">
-            <div class="category-header p-3 bg-light d-flex justify-content-between align-items-center">
-                <h5 class="category-title mb-0">Vincular a Caso Anterior</h5>
-                <button type="button" class="btn btn-sm btn-outline-secondary" id="refresh-history"
-                    title="Recargar lista">
-                    Actualizar
-                </button>
-            </div>
+            <div class="d-flex justify-content-between mb-4">
+                <button type="button" class="btn btn-light border px-4" id="btn-volver">Volver</button>
 
-            <div class="category-content p-0">
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-light border text-danger px-3 btn-limpiar-borrador">
+                        <i class="bi bi-trash me-1"></i> Borrar Borrador
+                    </button>
 
-                <div id="no-client-selected" class="text-center py-4 bg-white">
-                    <p class="text-muted small mb-0">Busca un cliente en la pestaña "Principal" para cargar su
-                        historial.</p>
-                </div>
-                <div id="history-section" style="display:none;">
-                    <input type="hidden" id="parent_interaction_id" name="parent_interaction_id" value="">
-
-                    <div class="p-3 bg-white border-bottom">
-                        <div id="selected-parent-info"
-                            class="bg-light border p-2 d-flex align-items-center justify-content-between"
-                            style="display:none; border-radius: 4px;">
-                            <div class="small">
-                                <strong class="text-dark">Escalando de:</strong> <span id="selected-parent-text"
-                                    class="text-muted">...</span>
-                            </div>
-                            <button type="button" class="btn btn-sm btn-light border text-danger"
-                                id="clear-parent-selection">
-                                Desvincular
-                            </button>
-                        </div>
-                    </div>
-
-                    <div id="history-content" class="p-3 bg-white">
-                        <div id="interaction-history-list-bottom" class="history-list pe-2"
-                            style="max-height: 250px; overflow-y: auto;">
-                        </div>
-                    </div>
+                    <button type="submit" id="btn-submit-interaccion" class="btn btn-dark px-4">
+                        {{ $modoEdicion ? 'Actualizar' : 'Guardar' }}
+                    </button>
                 </div>
             </div>
+
         </div>
 
-        <div class="row mb-4">
-            <div class="col-12">
-                <label class="form-label text-muted d-block">
-                    Notas Finales <span class="text-muted">*</span>
-                </label>
-                <textarea class="form-control bg-white" name="notes" id="notes" rows="4"
-                    placeholder="Resumen de la interacción..." required>{{ old('notes', $interaction->notes ?? '') }}</textarea>
-                @error('notes')
-                    <div class="text-danger small mt-1">{{ $message }}</div>
-                @enderror
-            </div>
+        <div id="loading-overlay" class="d-none"
+            style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            <div class="spinner-border text-dark" role="status"></div>
+            <div class="mt-2 small text-dark">Procesando...</div>
         </div>
 
-        <div class="d-flex justify-content-between mb-4">
-            <button type="button" class="btn btn-light border px-4" id="btn-volver">Volver</button>
-
-            <div class="d-flex gap-2">
-                <button id="clear-draft" type="button" class="btn btn-light border text-danger px-3">
-                    Borrar Borrador
-                </button>
-
-                <button type="submit" id="btn-submit-interaccion" class="btn btn-dark px-4">
-                    {{ $modoEdicion ? 'Actualizar' : 'Guardar' }}
-                </button>
+        <div id="ajax-loader" class="ajax-loader" aria-hidden="true"
+            style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,0.9);z-index:9999;align-items:center;justify-content:center;">
+            <div class="text-center p-4">
+                <div class="spinner-border text-dark mb-2" role="status"></div>
+                <div class="small text-muted">Consultando base de datos...</div>
             </div>
         </div>
 
     </div>
-
-    <div id="loading-overlay" class="d-none"
-        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-        <div class="spinner-border text-dark" role="status"></div>
-        <div class="mt-2 small text-dark">Procesando...</div>
-    </div>
-
-    <div id="ajax-loader" class="ajax-loader" aria-hidden="true"
-        style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,0.9);z-index:9999;align-items:center;justify-content:center;">
-        <div class="text-center p-4">
-            <div class="spinner-border text-dark mb-2" role="status"></div>
-            <div class="small text-muted">Consultando base de datos...</div>
-        </div>
-    </div>
-
-</div>
-
+</form>
 
 <script>
     // Exponer función global para calcular fechas automáticas de la agenda
@@ -1360,6 +1352,7 @@
 
             clear: function() {
                 localStorage.removeItem(CONFIG.storageKey);
+                console.log("Memoria borrada"); // Esto es para que veas en la consola que sí funcionó
             }
         };
 
@@ -1673,17 +1666,33 @@
             // Submit
             $(DOM.form).on('submit', Validation.submitForm);
 
-            // Limpiar Borrador Botón
-            $('#clear-draft').on('click', () => {
+            // =================================================================
+            // BOTÓN LIMPIAR (A prueba de balas y versiones de SweetAlert)
+            // =================================================================
+            $(document).on('click', '.btn-limpiar-borrador', function(e) {
+                e.preventDefault(); 
+
                 Swal.fire({
-                    title: '¿Limpiar?',
+                    title: '¿Limpiar el borrador?',
+                    text: "Se perderán todos los datos que hayas escrito.",
                     icon: 'warning',
                     showCancelButton: true,
-                    confirmButtonColor: '#111827'
-                }).then(r => {
-                    if (r.isConfirmed) {
-                        DraftManager.clear();
-                        location.reload();
+                    confirmButtonColor: '#111827',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Sí, borrar',
+                    cancelButtonText: 'Cancelar'
+                }).then((r) => {
+                    // Validamos isConfirmed, value o si es un simple true (cubre todas las versiones de SweetAlert)
+                    if (r.isConfirmed || r.value || r === true) {
+                        
+                        // 1. Apagamos el auto-guardado para que no intente guardar mientras borramos
+                        $('#interaction-form').off(); 
+                        
+                        // 2. Borramos la memoria local de tu llave
+                        localStorage.removeItem('interaction_form_draft_v1');
+                        
+                        // 3. Forzamos la recarga de la página
+                        window.location.reload();
                     }
                 });
             });
@@ -1730,5 +1739,16 @@
         document.getElementById('btn-volver').addEventListener('click', function() {
             document.getElementById('home-tab').click();
         });
+    });
+
+    // Este bloque detecta cuando el formulario se envía y bloquea el botón
+    document.getElementById('interaction-form').addEventListener('submit', function(e) {
+        const btn = document.getElementById('btn-submit-interaccion');
+        
+        // Solo deshabilitamos si el formulario es válido
+        if (this.checkValidity()) {
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Guardando...';
+        }
     });
 </script>
