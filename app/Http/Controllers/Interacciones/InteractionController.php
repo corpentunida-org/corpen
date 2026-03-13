@@ -85,6 +85,7 @@ class InteractionController extends Controller
      */
     public function show(Interaction $interaction)
     {
+        // 1. Cargamos todas las relaciones, incluyendo las del timeline de seguimientos
         $interaction->load([
             'agent',
             'client',
@@ -93,12 +94,17 @@ class InteractionController extends Controller
             'outcomeRelation',
             'nextAction',
             'lineaDeObligacion',
-            'usuarioAsignado'
+            'usuarioAsignado',
+            // Cargamos relaciones de seguimientos para el Timeline
+            'seguimientos.outcome',
+            'seguimientos.creator',
+            'seguimientos.assignedUser',
+            'seguimientos.nextAction'
         ]);
 
+        // 2. Lógica del Gráfico (Rendimiento del Agente)
         $agentId = $interaction->agent_id;
         $range = request()->get('range', 'day');
-
         $query = Interaction::where('agent_id', $agentId);
 
         switch ($range) {
@@ -123,6 +129,7 @@ class InteractionController extends Controller
         $labels = $chartData->pluck('label');
         $totals = $chartData->pluck('total');
 
+        // 3. Histórico del Cliente
         $clientHistory = collect();
         if ($interaction->client_id) {
             $clientHistory = Interaction::with([
@@ -139,8 +146,20 @@ class InteractionController extends Controller
                 ->get();
         }
 
+        // 4. DATOS PARA EL MODAL (Nuevos campos para que el modal funcione)
+        $outcomes = \App\Models\Interacciones\IntOutcome::all();
+        $nextActions = \App\Models\Interacciones\IntNextAction::all();
+        $users = \App\Models\User::orderBy('name')->get();
+
         return view('interactions.show', compact(
-            'interaction', 'labels', 'totals', 'range', 'clientHistory'
+            'interaction', 
+            'labels', 
+            'totals', 
+            'range', 
+            'clientHistory',
+            'outcomes',    // <--- Para el modal
+            'nextActions', // <--- Para el modal
+            'users'        // <--- Para el modal
         ));
     }
 
