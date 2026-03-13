@@ -1458,8 +1458,16 @@
                     cancelButtonColor: '#d1d5db',
                     allowOutsideClick: false,
                     allowEscapeKey: false
-                }).then((result) => {
-                    document.querySelector(DOM.form).submit();
+                    }).then((result) => {
+                    // Usamos la misma lógica de validación que mostraste
+                    if (result.isConfirmed || result.value || result === true) {
+                        
+                        // 1. Limpieza del borrador antes de enviar
+                        DraftManager.clear(); 
+                        
+                        // 2. Envío físico del formulario
+                        document.querySelector(DOM.form).submit();
+                    }
                 });
             }
         };
@@ -1745,8 +1753,11 @@
     document.getElementById('interaction-form').addEventListener('submit', function(e) {
         const btn = document.getElementById('btn-submit-interaccion');
         
-        // Solo deshabilitamos si el formulario es válido
+        // Si el formulario es válido, nos aseguramos de matar el caché
         if (this.checkValidity()) {
+            // Limpieza de seguridad: si por alguna razón el paso anterior falló, este no falla.
+            localStorage.removeItem('interaction_form_draft_v1'); 
+            
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Guardando...';
         }
