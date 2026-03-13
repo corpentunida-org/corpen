@@ -49,7 +49,6 @@ class SegConvenioController extends Controller
 
     public function store(Request $request)
     {
-
         $idConvenio = $request->anio . $request->idAseguradora;
         $validacion = SegConvenio::where('idConvenio', $idConvenio)->exists();
         if ($validacion) {
