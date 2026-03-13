@@ -27,10 +27,16 @@ class maeTerceros extends Model
     public $timestamps = false;
 
     protected $casts = [
-        'fec_minis' => 'datetime',
-        'fecha_ipuc' => 'datetime',
-        'fec_aport' => 'datetime',
-        'fec_nac' => 'datetime',
+        'fec_nac' => 'date',
+        'fec_falle' => 'date',
+        'fec_minis' => 'date',
+        'fecha_lice' => 'date',
+        'fecha_ipuc' => 'date',
+        'fecha_aded' => 'datetime',
+        'fec_aport' => 'date',
+        'fec_cump' => 'date',
+        'fec_expcc' => 'date',
+        'fec_dat' => 'date',
     ];
 
     protected $fillable = [
