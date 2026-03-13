@@ -17,4 +17,9 @@ class IntOutcome extends Model
     {
         return $this->hasMany(Interaction::class, 'outcome');
     }
+    public function seguimientos()
+    {
+        // Un resultado (ej. "No contesta") aparece en muchos seguimientos
+        return $this->hasMany(IntSeguimiento::class, 'outcome');
+    }
 }

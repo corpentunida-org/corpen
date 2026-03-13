@@ -1,375 +1,372 @@
 <x-base-layout>
-
     <style>
-        /* === Estilos Pastel Modernos === */
+        /* === Sistema de Diseño Pastel Pro === */
         :root {
-            --primary-pastel: #A2D2FF;
-            --secondary-pastel: #BDE0FE;
-            --success-pastel: #C7F9CC;
-            --error-pastel: #FFC7B2;
-            --warning-pastel: #FFECB3;
-            --text-dark: #495057;
-            --text-light: #6c757d;
-            --background-light: #F8F9FA;
-            --card-bg: #FFFFFF;
-            --border-light: #e9ecef;
-            --shadow-subtle: 0 2px 10px rgba(0, 0, 0, 0.05);
+            --p-blue: #A2D2FF;
+            --p-blue-light: #BDE0FE;
+            --p-green: #C7F9CC;
+            --p-red: #FFC7B2;
+            --p-yellow: #FFECB3;
+            --p-purple: #E0C3FC;
+            --text-main: #2D3436;
+            --text-muted: #636E72;
+            --bg-body: #F4F7F9;
+            --card-radius: 18px;
         }
 
-        body {
-            font-family: 'Inter', sans-serif;
-            color: var(--text-dark);
-            background-color: var(--background-light);
-        }
-
-        .container {
-            max-width: 1000px;
-            margin: 2rem auto;
-            padding: 0 1rem;
-        }
-
-        .card {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-light);
-            border-radius: 12px;
-            margin-bottom: 1.5rem;
-            box-shadow: var(--shadow-subtle);
-            overflow: hidden;
-            transition: all 0.2s ease-in-out;
-        }
-
-        .card-header {
-            background-color: var(--background-light);
-            padding: 1rem 1.5rem;
-            border-bottom: 1px solid var(--border-light);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .card-header .title {
-            margin: 0;
-            font-size: 1.15rem;
-            color: var(--text-dark);
-            font-weight: 600;
-        }
-
-        .card-body {
-            padding: 1.5rem;
-        }
-
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-body); color: var(--text-main); }
+        
+        .glass-card {
+            background: #ffffff;
+            border-radius: var(--card-radius);
+            border: 1px solid rgba(0,0,0,0.03);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
             margin-bottom: 1.5rem;
         }
 
-        .page-header .title {
-            font-size: 1.8rem;
+        /* Timeline de Seguimientos */
+        .followup-timeline {
+            position: relative;
+            padding-left: 45px;
+        }
+        .followup-timeline::before {
+            content: '';
+            position: absolute;
+            left: 19px;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: var(--p-blue-light);
+            border-radius: 3px;
+        }
+        .followup-node {
+            position: relative;
+            margin-bottom: 30px;
+        }
+        .followup-marker {
+            position: absolute;
+            left: -37px;
+            top: 5px;
+            width: 22px;
+            height: 22px;
+            background: #fff;
+            border: 5px solid var(--p-blue);
+            border-radius: 50%;
+            z-index: 2;
+        }
+        .followup-body {
+            background: #fff;
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid #f1f3f5;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+        }
+
+        /* Estilos de Datos */
+        .data-label { font-size: 0.75rem; text-uppercase: uppercase; color: var(--text-muted); font-weight: 800; display: block; margin-bottom: 3px; }
+        .data-value { font-size: 0.95rem; font-weight: 600; color: var(--text-main); }
+        
+        .badge-soft {
+            padding: 6px 16px;
+            border-radius: 50px;
             font-weight: 700;
-            color: var(--text-dark);
+            font-size: 0.75rem;
+            display: inline-block;
         }
 
-        .btn-action {
-            background-color: var(--primary-pastel);
-            color: var(--text-dark);
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            text-decoration: none;
-            font-size: 0.9rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: background-color 0.2s ease;
-            font-weight: 500;
+        .caller-box {
+            background: var(--p-blue-light);
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px dashed var(--p-blue);
         }
 
-        .btn-action:hover {
-            background-color: #8ac0f5;
-        }
-
-        .alert {
-            padding: 0.75rem 1.25rem;
-            margin-bottom: 1.5rem;
-            border-radius: 8px;
+        .avatar-init {
+            width: 45px;
+            height: 45px;
+            background: var(--p-purple);
+            color: var(--text-main);
             display: flex;
             align-items: center;
-            gap: 0.75rem;
-            font-size: 0.95rem;
+            justify-content: center;
+            border-radius: 50%;
+            font-weight: bold;
         }
 
-        .alert-success {
-            background-color: var(--success-pastel);
-            color: #285a30;
-            border: 1px solid #9adea4;
-        }
-
-        .alert-error {
-            background-color: var(--error-pastel);
-            color: #7b2a2a;
-            border: 1px solid #f29c87;
-        }
-
-        .details-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1.25rem;
-        }
-
-        .detail-item {
-            display: flex;
-            align-items: flex-start;
-            gap: 0.75rem;
-            font-size: 0.95rem;
-        }
-
-        .detail-item i {
-            color: var(--primary-pastel);
-            font-size: 1.2rem;
-            width: 25px;
-            text-align: center;
-            padding-top: 3px;
-        }
-
-        .detail-item .content strong {
-            display: block;
-            color: var(--text-light);
-            font-size: 0.8rem;
-            margin-bottom: 0.15rem;
-            font-weight: 500;
-        }
-
-        .attachment-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.75rem;
-            margin-top: 0.5rem;
-        }
-
-        .attachment-list a {
-            background-color: var(--secondary-pastel);
-            padding: 0.4rem 0.8rem;
-            border-radius: 6px;
-            text-decoration: none;
-            color: var(--text-dark);
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            font-size: 0.85rem;
-        }
-
-        .attachment-list a:hover {
-            background-color: #9acafc;
-        }
-
-        hr {
-            border: none;
-            border-top: 1px solid var(--border-light);
-            margin: 1.5rem 0;
-        }
-
-        .chart-filter {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .chart-filter select {
-            padding: 0.4rem 0.7rem;
-            border-radius: 6px;
-            border: 1px solid var(--border-light);
-            background-color: var(--card-bg);
-            font-size: 0.9rem;
-            color: var(--text-dark);
-            padding-right: 2rem;
-        }
-
-        .history-table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            margin-top: 1rem;
-        }
-
-        .history-table th,
-        .history-table td {
-            padding: 0.75rem 1rem;
-            text-align: left;
-            border-bottom: 1px solid var(--border-light);
-        }
-
-        .history-table thead th {
-            background-color: var(--background-light);
-            color: var(--text-light);
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-
-        .history-table tbody tr:hover {
-            background-color: #f0f3f6;
-        }
-
-        .history-table tbody tr.current-interaction {
-            background-color: var(--warning-pastel);
-            font-weight: 600;
-            color: #6a4f00;
-        }
+        /* Modal Custom */
+        .modal-content { border-radius: 20px; border: none; }
+        .form-control-pastel { border: none; background: #f8f9fa; border-radius: 10px; padding: 10px 15px; }
+        .form-control-pastel:focus { background: #fff; box-shadow: 0 0 0 3px var(--p-blue-light); }
     </style>
 
-    <div class="container">
-        <div class="page-header">
-            <h1 class="title">Detalle de Interacción</h1>
-            <a href="{{ route('interactions.index') }}" class="btn-action">
-                <i class="fas fa-arrow-left"></i> Volver
-            </a>
+    <div class="container py-4">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-5 gap-3">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-1">
+                        <li class="breadcrumb-item"><a href="{{ route('interactions.index') }}" class="text-decoration-none">CRM</a></li>
+                        <li class="breadcrumb-item active">Interacción #{{ $interaction->id }}</li>
+                    </ol>
+                </nav>
+                <h1 class="fw-bold h2 mb-0">Gestión de Interacción</h1>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ route('interactions.index') }}" class="btn btn-white shadow-sm border-0 rounded-pill px-4">
+                    <i class="fas fa-arrow-left me-2"></i>Regresar
+                </a>
+            </div>
         </div>
 
-        @if (session('success'))
-            <div class="alert alert-success">
-                <i class="fas fa-check-circle"></i> {{ session('success') }}
+        @if(session('success'))
+            <div class="alert alert-success border-0 shadow-sm rounded-3 mb-4">
+                <i class="fas fa-check-circle me-2"></i> {{ session('success') }}
             </div>
         @endif
 
-        @if (session('error'))
-            <div class="alert alert-error">
-                <i class="fas fa-times-circle"></i> {{ session('error') }}
-            </div>
-        @endif
+        <div class="row g-4">
+            <div class="col-lg-8">
+                
+                <div class="glass-card p-4">
+                    <div class="row g-4">
+                        <div class="col-md-7">
+                            <div class="section-title mb-3" style="font-weight: 700;"><i class="fas fa-id-card text-primary me-2"></i>Datos del Titular</div>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="avatar-init" style="width: 60px; height: 60px; font-size: 1.4rem;">
+                                    {{ substr($interaction->client->nom_ter ?? 'C', 0, 1) }}
+                                </div>
+                                <div>
+                                    <h4 class="fw-bold mb-0 text-primary">{{ $interaction->client->nom_ter ?? 'Sin Nombre' }}</h4>
+                                    <span class="text-muted">Documento: <strong>{{ $interaction->client->cod_ter }}</strong></span>
+                                </div>
+                            </div>
+                        </div>
 
-        <div class="card">
-            <div class="card-header">
-                <h2 class="title">Interacción #{{ $interaction->id }}</h2>
-            </div>
-            <div class="card-body">
-                <div class="details-grid">
-                    <div class="detail-item"><i class="fas fa-user"></i>
-                        <div class="content">
-                            <strong>Cliente</strong>
-                            @if ($interaction->client)
-                                <span><strong>{{ $interaction->client->cod_ter }}</strong> -
-                                    {{ $interaction->client->apl1 }} {{ $interaction->client->nom1 }}</span>
-                            @else
-                                <span>N/A</span>
-                            @endif
+                        <div class="col-md-5">
+                            <div class="caller-box">
+                                <span class="data-label text-primary">Persona que Inicia el Contacto</span>
+                                <div class="fw-bold text-dark">{{ $interaction->nombre_quien_llama ?? 'El Titular' }}</div>
+                                <div class="d-flex flex-column gap-1 mt-1 small text-muted">
+                                    <span><i class="fas fa-users me-2"></i>Relación: <strong>{{ ucfirst($interaction->parentezco_quien_llama ?? 'Titular') }}</strong></span>
+                                    <span><i class="fas fa-phone-alt me-2"></i>Tel: {{ $interaction->celular_quien_llama ?? 'N/A' }}</span>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <div class="detail-item"><i class="fas fa-headset"></i>
-                        <div class="content">
-                            <strong>Agente</strong>
-                            <span>{{ $interaction->agent->name ?? 'Sin asignar' }}</span>
-                        </div>
-                    </div>
-                    <div class="detail-item"><i class="fas fa-calendar-alt"></i>
-                        <div class="content">
-                            <strong>Fecha y Hora</strong>
-                            <span>{{ $interaction->interaction_date->format('d/m/Y H:i A') }}</span>
-                        </div>
-                    </div>
-                    <div class="detail-item"><i class="fas fa-tag"></i>
-                        <div class="content">
-                            <strong>Tipo</strong>
-                            <span>{{ $interaction->type?->name ?? '—' }}</span>
-                        </div>
-                    </div>
-                    <div class="detail-item"><i class="fas fa-clipboard-check"></i>
-                        <div class="content">
-                            <strong>Resultado</strong>
-                            <span>{{ $interaction->outcomeRelation?->name ?? '—' }}</span>
-                        </div>
-                    </div>
 
-                </div>
-                <hr>
-                <div class="detail-item">
-                    <i class="fas fa-paperclip"></i>
-                    <div class="content">
-                        <strong>Archivos Adjuntos</strong>
-                        <div class="attachment-list">                            
-                            @if ($interaction->attachment_urls)
-                                <a href="{{ $interaction->getFile($interaction->attachment_urls) }}" target="_blank">Ver archivo</a>
-                            @else
-                                <span>No hay archivos adjuntos.</span>
-                            @endif
+                        <div class="col-12"><hr class="my-2 opacity-50"></div>
+
+                        <div class="col-md-3">
+                            <span class="data-label">Canal</span>
+                            <div class="data-value">{{ $interaction->channel->name ?? 'N/A' }}</div>
+                        </div>
+                        <div class="col-md-3">
+                            <span class="data-label">Motivo</span>
+                            <div class="data-value">{{ $interaction->type->name ?? 'N/A' }}</div>
+                        </div>
+                        <div class="col-md-3">
+                            <span class="data-label">Duración</span>
+                            <div class="data-value">{{ floor($interaction->duration / 60) }}m {{ $interaction->duration % 60 }}s</div>
+                        </div>
+                        <div class="col-md-3 text-md-end">
+                            <span class="badge-soft" style="background: var(--p-green); color: #1e4620;">
+                                {{ $interaction->outcomeRelation->name ?? 'Finalizado' }}
+                            </span>
+                        </div>
+
+                        <div class="col-12 mt-4">
+                            <span class="data-label">Notas Iniciales de la Gestión</span>
+                            <div class="p-3 bg-light rounded-3 mb-0" style="border-left: 4px solid var(--p-blue); font-style: italic;">
+                                "{{ $interaction->notes }}"
+                            </div>
                         </div>
                     </div>
                 </div>
-                <hr>
-                <div class="detail-item">
-                    <i class="fas fa-pen-to-square"></i>
-                    <div class="content">
-                        <strong>Notas</strong>
-                        <p>{{ $interaction->notes ?? 'Sin notas.' }}</p>
+
+                <div class="glass-card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="fw-bold mb-0"><i class="fas fa-stream text-warning me-2"></i>Línea de Tiempo de Seguimiento</h5>
+                        <button type="button" class="btn btn-primary rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalSeguimiento">
+                            <i class="fas fa-plus-circle me-2"></i>Registrar Gestión
+                        </button>
                     </div>
+
+                    @if($interaction->seguimientos->isEmpty())
+                        <div class="text-center py-5">
+                            <i class="fas fa-history fa-3x text-light mb-3"></i>
+                            <p class="text-muted">No se han registrado seguimientos posteriores.</p>
+                        </div>
+                    @else
+                        <div class="followup-timeline">
+                            @foreach($interaction->seguimientos as $seguimiento)
+                                <div class="followup-node">
+                                    <div class="followup-marker"></div>
+                                    <div class="followup-body">
+                                        <div class="d-flex justify-content-between align-items-start mb-3">
+                                            <div>
+                                                <span class="badge-soft" style="background: var(--p-blue-light); color: #004085;">
+                                                    <i class="fas fa-check me-1"></i> {{ $seguimiento->outcome->name ?? 'Gestión Realizada' }}
+                                                </span>
+                                            </div>
+                                            <div class="text-end">
+                                                <div class="fw-bold small">{{ $seguimiento->created_at->format('d/m/Y') }}</div>
+                                                <small class="text-muted">{{ $seguimiento->created_at->format('h:i A') }}</small>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <span class="data-label">Descripción del avance:</span>
+                                            <p class="mb-0 text-secondary" style="font-size: 0.95rem;">
+                                                {{ $seguimiento->next_action_notes }}
+                                            </p>
+                                        </div>
+
+                                        <div class="row g-3 pt-3 border-top mt-2">
+                                            <div class="col-sm-6">
+                                                <span class="data-label">Gestionado por:</span>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <div class="avatar-init" style="width: 24px; height: 24px; font-size: 0.6rem;">
+                                                        {{ substr($seguimiento->creator->name ?? 'S', 0, 1) }}
+                                                    </div>
+                                                    <span class="small fw-bold">{{ $seguimiento->creator->name ?? 'Sistema' }}</span>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-6 text-sm-end">
+                                                <span class="data-label">Asignado a:</span>
+                                                <div class="d-flex align-items-center gap-2 justify-content-sm-end">
+                                                    <span class="small fw-bold text-primary">{{ $seguimiento->assignedUser->name ?? 'Sin asignar' }}</span>
+                                                    <i class="fas fa-user-tag text-muted small"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        @if($seguimiento->next_action_date)
+                                            <div class="mt-3 p-2 rounded-3 d-flex align-items-center justify-content-between" style="background: var(--p-yellow); border: 1px solid #ffe69c;">
+                                                <div class="small fw-bold"><i class="fas fa-calendar-alt me-2"></i>Agenda: {{ $seguimiento->nextAction->name ?? 'Acción' }}</div>
+                                                <div class="small badge bg-white text-dark border">{{ $seguimiento->next_action_date->format('d/m/Y') }}</div>
+                                            </div>
+                                        @endif
+                                        
+                                        @if($seguimiento->attachment_urls)
+                                            <div class="mt-3">
+                                                <a href="{{ Storage::url($seguimiento->attachment_urls) }}" target="_blank" class="btn btn-sm btn-light border py-1">
+                                                    <i class="fas fa-paperclip me-1 text-primary"></i> Ver Anexo
+                                                </a>
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="glass-card p-4">
+                    <h6 class="fw-bold mb-3"><i class="fas fa-user-shield me-2 text-primary"></i>Responsabilidad</h6>
+                    <div class="mb-4">
+                        <span class="data-label">Usuario Asignado (Analista)</span>
+                        <div class="d-flex align-items-center gap-3 p-2 bg-light rounded-3">
+                            <div class="avatar-init" style="background: var(--p-blue);">
+                                {{ substr($interaction->usuarioAsignado->name ?? 'A', 0, 1) }}
+                            </div>
+                            <div class="data-value text-truncate">{{ $interaction->usuarioAsignado->name ?? 'Sin Asignación' }}</div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <span class="data-label">Línea de Obligación</span>
+                        <div class="data-value text-primary">
+                            <i class="fas fa-file-invoice-dollar me-2"></i>{{ $interaction->lineaDeObligacion->linea ?? 'General' }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card p-4 text-center">
+                    <h6 class="fw-bold mb-3"><i class="fas fa-file-pdf me-2 text-danger"></i>Soporte Adjunto</h6>
+                    @if($interaction->attachment_urls)
+                        <div class="d-grid"><a href="{{ $interaction->getFile($interaction->attachment_urls) }}" target="_blank" class="btn btn-light border py-2 rounded-pill shadow-sm">Abrir Soporte S3</a></div>
+                    @else
+                        <div class="py-3 border border-dashed rounded text-muted small">Sin archivos adjuntos.</div>
+                    @endif
+                </div>
+
+                <div class="glass-card p-4">
+                    <h6 class="fw-bold mb-3"><i class="fas fa-chart-line me-2 text-success"></i>Actividad Semanal</h6>
+                    <div style="height: 180px;"><canvas id="agentChart"></canvas></div>
                 </div>
             </div>
         </div>
+    </div>
 
-        {{-- === Gráfico de Rendimiento del Agente === --}}
-        <div class="card">
-            <div class="card-header">
-                <h2 class="title">Rendimiento del Agente</h2>
-            </div>
-            <div class="card-body">
-                <div class="chart-filter">
-                    <form method="GET" action="{{ route('interactions.show', $interaction) }}">
-                        <label for="range"><strong>Ver por:</strong></label>
-                        <select name="range" id="range" onchange="this.form.submit()">
-                            <option value="day" {{ $range == 'day' ? 'selected' : '' }}>Día</option>
-                            <option value="month" {{ $range == 'month' ? 'selected' : '' }}>Mes</option>
-                            <option value="year" {{ $range == 'year' ? 'selected' : '' }}>Año</option>
-                        </select>
-                    </form>
+    <div class="modal fade" id="modalSeguimiento" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content shadow-lg">
+                <div class="modal-header border-0 pt-4 px-4">
+                    <h5 class="modal-title fw-bold"><i class="fas fa-plus-circle text-primary me-2"></i>Nuevo Seguimiento</h5>
+                    <button type="button" class="btn-close" data-bs-close="modal" aria-label="Close"></button>
                 </div>
-                <div style="height: 300px;">
-                    <canvas id="agentChart"></canvas>
-                </div>
-            </div>
-        </div>
+                <form action="{{ route('interactions.seguimientos.store') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <input type="hidden" name="id_interaction" value="{{ $interaction->id }}">
+                    <input type="hidden" name="agent_id" value="{{ auth()->id() }}">
 
-        {{-- === Histórico del Cliente === --}}
-        <div class="card">
-            <div class="card-header">
-                <h2 class="title">Histórico del Cliente</h2>
-            </div>
-            <div class="card-body">
-                @if ($clientHistory->isEmpty())
-                    <p>No hay interacciones anteriores para este cliente.</p>
-                @else
-                    <div class="table-responsive">
-                        <table class="history-table">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Agente</th>
-                                    <th>Fecha</th>
-                                    <th>Tipo</th>
-                                    <th>Resultado</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($clientHistory as $history)
-                                    <tr class="{{ $history->id == $interaction->id ? 'current-interaction' : '' }}">
-                                        <td>{{ $history->id }}</td>
-                                        <td>{{ $history->agent->name ?? 'Sin asignar' }}</td>
-                                        <td>{{ $history->interaction_date->format('d/m/Y') }}</td>
-                                        <td>{{ $history->interaction_type }}</td>
-                                        <td>{{ $history->outcome }}</td>
-                                        <td>
-                                            <a href="{{ route('interactions.show', $history) }}" class="btn-action"
-                                                style="padding:4px 8px; font-size:0.8rem;">
-                                                <i class="fas fa-eye"></i> Ver
-                                            </a>
-                                        </td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                        </table>
+                    <div class="modal-body p-4">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="data-label">Resultado <span class="text-danger">*</span></label>
+                                <select name="outcome" class="form-select form-control-pastel" required>
+                                    <option value="">Seleccione...</option>
+                                    @foreach($outcomes as $out)
+                                        <option value="{{ $out->id }}">{{ $out->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="data-label">Asignar a <span class="text-danger">*</span></label>
+                                <select name="id_user_asignacion" class="form-select form-control-pastel" required>
+                                    <option value="{{ $interaction->id_user_asignacion }}" selected>Mantener actual ({{ $interaction->usuarioAsignado->name ?? 'Usuario' }})</option>
+                                    @foreach($users as $u)
+                                        <option value="{{ $u->id }}">{{ $u->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="data-label">Notas del Seguimiento <span class="text-danger">*</span></label>
+                                <textarea name="next_action_notes" class="form-control form-control-pastel" rows="3" placeholder="¿Qué se habló en esta nueva gestión?" required></textarea>
+                            </div>
+                            <div class="col-12">
+                                <div class="p-3 rounded-3" style="background: var(--p-yellow);">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="data-label">Tipo Próxima Acción</label>
+                                            <select name="next_action_type" class="form-select border-0">
+                                                <option value="">Sin agenda</option>
+                                                @foreach($nextActions as $na)
+                                                    <option value="{{ $na->id }}">{{ $na->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="data-label">Fecha Próxima Acción</label>
+                                            <input type="datetime-local" name="next_action_date" class="form-control border-0">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="data-label">Soporte (Opcional)</label>
+                                <input type="file" name="attachment" class="form-control form-control-pastel">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="data-label">URL / Link</label>
+                                <input type="url" name="interaction_url" class="form-control form-control-pastel" placeholder="https://...">
+                            </div>
+                        </div>
                     </div>
-                @endif
+                    <div class="modal-footer border-0 pb-4 px-4">
+                        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4 shadow-sm">Guardar Gestión</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -377,94 +374,25 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         const ctx = document.getElementById('agentChart').getContext('2d');
-
-        const gradientBar = ctx.createLinearGradient(0, 0, 0, 300);
-        gradientBar.addColorStop(0, '#BDE0FE');
-        gradientBar.addColorStop(1, '#A2D2FF');
-
-        const gradientLine = ctx.createLinearGradient(0, 0, 0, 200);
-        gradientLine.addColorStop(0, '#C77DFF');
-        gradientLine.addColorStop(1, '#9D4EDD');
-
         new Chart(ctx, {
+            type: 'line',
             data: {
                 labels: @json($labels),
                 datasets: [{
-                        type: 'bar',
-                        label: 'Interacciones',
-                        data: @json($totals),
-                        backgroundColor: gradientBar,
-                        borderColor: '#A2D2FF',
-                        borderWidth: 1,
-                        borderRadius: 8,
-                        barPercentage: 0.6,
-                        categoryPercentage: 0.7
-                    },
-                    {
-                        type: 'line',
-                        label: 'Promedio de Rendimiento',
-                        data: @json($averages ?? array_fill(0, count($labels), 0)),
-                        borderColor: '#C77DFF',
-                        backgroundColor: gradientLine,
-                        fill: false,
-                        tension: 0.3,
-                        pointBackgroundColor: '#9D4EDD',
-                        pointBorderColor: '#fff',
-                        pointRadius: 4,
-                        borderWidth: 2
-                    }
-                ]
+                    data: @json($totals),
+                    borderColor: '#A2D2FF',
+                    backgroundColor: 'rgba(162, 210, 255, 0.2)',
+                    fill: true,
+                    tension: 0.4
+                }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: {
-                    title: {
-                        display: true,
-                        text: 'Interacciones y Rendimiento de {{ $interaction->agent->name ?? 'Agente' }}',
-                        color: 'var(--text-dark)',
-                        font: {
-                            size: 16,
-                            weight: '600'
-                        }
-                    },
-                    tooltip: {
-                        mode: 'index',
-                        intersect: false,
-                        backgroundColor: 'rgba(73, 80, 87, 0.9)',
-                        titleColor: '#fff',
-                        bodyColor: '#fff',
-                        padding: 10,
-                        cornerRadius: 6
-                    },
-                    legend: {
-                        position: 'top',
-                        labels: {
-                            color: 'var(--text-light)'
-                        }
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            color: 'var(--text-light)',
-                            stepSize: 1
-                        },
-                        grid: {
-                            color: 'var(--border-light)',
-                            borderDash: [5, 5],
-                            drawBorder: false
-                        }
-                    },
-                    x: {
-                        ticks: {
-                            color: 'var(--text-light)'
-                        },
-                        grid: {
-                            display: false
-                        }
-                    }
+                plugins: { legend: { display: false } },
+                scales: { 
+                    y: { display: false }, 
+                    x: { grid: { display: false }, ticks: { font: { size: 10 } } } 
                 }
             }
         });
