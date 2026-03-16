@@ -66,6 +66,10 @@
         background-color: #3454D1;
     }
 
+    .option-card-titular input:checked+label {
+        border: 1px dashed #3454D1;
+    }
+
     .btn-check:checked+.visual-card {
         color: #3454D1;
     }
@@ -151,16 +155,21 @@
     }
 
     #btn-submit-interaccion:disabled {
-        background-color: #64748B !important; /* Color gris suave */
+        background-color: #64748B !important;
+        /* Color gris suave */
         border-color: #64748B !important;
         cursor: not-allowed;
         opacity: 0.8;
     }
+
+    
 </style>
 
-<form id="interaction-form" method="POST" action="{{ $modoEdicion ? route('interactions.update', $interaction->id) : route('interactions.store') }}" enctype="multipart/form-data">
+<form id="interaction-form" method="POST"
+    action="{{ $modoEdicion ? route('interactions.update', $interaction->id) : route('interactions.store') }}"
+    enctype="multipart/form-data">
     @csrf
-    @if($modoEdicion)
+    @if ($modoEdicion)
         @method('PUT')
     @endif
 
@@ -200,8 +209,8 @@
         </li>
 
         <li class="nav-item flex-fill" role="presentation">
-            <button class="nav-link border-0 w-100" id="profile-tab" data-bs-toggle="tab" data-bs-target="#resultado-tab"
-                type="button" role="tab" data-progress="100">
+            <button class="nav-link border-0 w-100" id="profile-tab" data-bs-toggle="tab"
+                data-bs-target="#resultado-tab" type="button" role="tab" data-progress="100">
                 <i class="bi bi-check2-circle"></i> Resultado
             </button>
         </li>
@@ -210,7 +219,8 @@
 
     <div class="progress mt-0 mb-4" style="height: 2px; border-radius: 0; background-color: var(--border-color);">
         <div id="form-progress" class="progress-bar bg-primary" role="progressbar"
-            style="width: 50%; transition: width 0.3s ease;" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
+            style="width: 50%; transition: width 0.3s ease;" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100">
+        </div>
     </div>
 
     <div class="tab-content position-relative px-4">
@@ -230,11 +240,10 @@
                         <label class="form-label text-muted text-uppercase mb-3">¿Quién inicia la interacción?</label>
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <div class="border border-dashed rounded-3">
+                                <div class="border border-dashed rounded-3 option-card-titular">
                                     <input type="radio" class="btn-check" name="caller_type" id="caller_client"
                                         value="client" checked>
-                                    <label
-                                        class="visual-card d-flex flex-row align-items-center p-3 gap-3 position-relative h-100"
+                                    <label class="visual-card d-flex flex-row align-items-center p-3 gap-3 position-relative h-100"
                                         for="caller_client">
                                         <i class="bi bi-person card-icon mb-0 fs-3 text-muted"></i>
                                         <div class="text-start flex-grow-1">
@@ -247,7 +256,7 @@
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <div class="border border-dashed rounded-3">
+                                <div class="border border-dashed rounded-3 option-card-titular">
                                     <input type="radio" class="btn-check" name="caller_type" id="caller_third"
                                         value="third_party">
                                     <label
@@ -270,7 +279,8 @@
                             <h6 class="text-dark fw-bold small text-uppercase mb-3">Datos de quien llama</h6>
                             <div class="row g-3">
                                 <div class="col-md-4">
-                                    <label class="form-label">Nombre Completo <span class="text-muted">*</span></label>
+                                    <label class="form-label">Nombre Completo <span
+                                            class="text-muted">*</span></label>
                                     <input type="text" class="form-control" id="nombre_quien_llama"
                                         name="nombre_quien_llama" placeholder="Ej. Juan Pérez">
                                 </div>
@@ -311,7 +321,8 @@
                         <select class="form-select select2" id="client_id" name="client_id" required>
                             <option value="">Buscar por nombre, documento o código...</option>
                             @if ($modoEdicion && $interaction->client_id)
-                                <option value="{{ $interaction->client_id }}" selected>{{ $interaction->client->nom_ter }}
+                                <option value="{{ $interaction->client_id }}" selected>
+                                    {{ $interaction->client->nom_ter }}
                                 </option>
                             @endif
                         </select>
@@ -337,7 +348,8 @@
                                     <div class="d-flex align-items-center mt-1">
                                         <span id="timer-indicator" class="me-2"
                                             style="width: 8px; height: 8px; background-color: #333; border-radius: 50%;"></span>
-                                        <div class="fw-bold text-dark font-monospace fs-5 lh-1" id="timer">00:00</div>
+                                        <div class="fw-bold text-dark font-monospace fs-5 lh-1" id="timer">00:00
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="d-flex gap-1">
@@ -459,7 +471,8 @@
                                             id="ch_{{ $channel->id }}" value="{{ $channel->id }}"
                                             {{ old('interaction_channel', $interaction->interaction_channel ?? '') == $channel->id ? 'checked' : '' }}
                                             required>
-                                        <label class="smart-tag py-1 px-3 border cursor-pointer text-center transition-all"
+                                        <label
+                                            class="smart-tag py-1 px-3 border cursor-pointer text-center transition-all"
                                             for="ch_{{ $channel->id }}">
                                             <span class="small">{{ $channel->name }}</span>
                                         </label>
@@ -503,7 +516,8 @@
 
                 <div class="category-content p-4">
                     <div class="mb-4">
-                        <label class="form-label text-muted mb-3 d-block">¿Quién es el responsable de esta gestión?</label>
+                        <label class="form-label text-muted mb-3 d-block">¿Quién es el responsable de esta
+                            gestión?</label>
 
                         <div class="d-flex gap-3 mb-4">
                             <div>
@@ -514,8 +528,8 @@
                                 </label>
                             </div>
                             <div>
-                                <input type="radio" class="btn-check" name="handled_by_agent" id="handled_by_other"
-                                    value="no">
+                                <input type="radio" class="btn-check" name="handled_by_agent"
+                                    id="handled_by_other" value="no">
                                 <label class="btn btn-outline-secondary px-4 py-2" for="handled_by_other">
                                     Delegar a otro
                                 </label>
@@ -535,7 +549,8 @@
                             <div class="bg-white border rounded p-3">
                                 <label for="id_user_asignacion" class="form-label small">Buscar Usuario <span
                                         class="text-muted">*</span></label>
-                                <select class="form-select" id="id_user_asignacion" name="id_user_asignacion" required>
+                                <select class="form-select" id="id_user_asignacion" name="id_user_asignacion"
+                                    required>
                                     <option value="">Buscar usuario por nombre o correo...</option>
                                     <option value="{{ Auth::id() }}" id="option-me">
                                         -
@@ -552,10 +567,11 @@
 
                     <div class="row g-4 mt-2">
                         <div class="col-md-6">
-                            <label for="id_linea_de_obligacion" class="form-label text-uppercase text-muted mb-2">Línea de
+                            <label for="id_linea_de_obligacion"
+                                class="form-label text-uppercase text-muted mb-2">Línea de
                                 Obligación <span class="text-muted">*</span></label>
-                            <select class="form-select select2" id="id_linea_de_obligacion" name="id_linea_de_obligacion"
-                                required>
+                            <select class="form-select select2" id="id_linea_de_obligacion"
+                                name="id_linea_de_obligacion" required>
                                 <option value="">Selecciona la línea...</option>
                                 @if (isset($lineasCredito))
                                     @foreach ($lineasCredito as $id => $nombre)
@@ -592,7 +608,7 @@
                                         <div class="col-sm-6">
                                             <input type="radio" class="btn-check outcome-radio" name="outcome"
                                                 id="outcome_{{ $outcome->id }}" value="{{ $outcome->id }}"
-                                                data-requires-planning="{{ in_array($outcome->id, [2]) ? 'true' : 'false' }}"
+                                                data-requires-planning="{{ !$outcome->estado ? 'true' : 'false' }}"
                                                 {{ old('outcome', $interaction->outcome ?? '') == $outcome->id ? 'checked' : '' }}
                                                 required>
                                             <label class="btn btn-outline-secondary w-100 text-start "
@@ -743,7 +759,8 @@
                             historial.</p>
                     </div>
                     <div id="history-section" style="display:none;">
-                        <input type="hidden" id="parent_interaction_id" name="parent_interaction_id" value="">
+                        <input type="hidden" id="parent_interaction_id" name="parent_interaction_id"
+                            value="">
 
                         <div class="p-3 bg-white border-bottom">
                             <div id="selected-parent-info"
@@ -1458,13 +1475,13 @@
                     cancelButtonColor: '#d1d5db',
                     allowOutsideClick: false,
                     allowEscapeKey: false
-                    }).then((result) => {
+                }).then((result) => {
                     // Usamos la misma lógica de validación que mostraste
                     if (result.isConfirmed || result.value || result === true) {
-                        
+
                         // 1. Limpieza del borrador antes de enviar
-                        DraftManager.clear(); 
-                        
+                        DraftManager.clear();
+
                         // 2. Envío físico del formulario
                         document.querySelector(DOM.form).submit();
                     }
@@ -1678,7 +1695,7 @@
             // BOTÓN LIMPIAR (A prueba de balas y versiones de SweetAlert)
             // =================================================================
             $(document).on('click', '.btn-limpiar-borrador', function(e) {
-                e.preventDefault(); 
+                e.preventDefault();
 
                 Swal.fire({
                     title: '¿Limpiar el borrador?',
@@ -1692,13 +1709,13 @@
                 }).then((r) => {
                     // Validamos isConfirmed, value o si es un simple true (cubre todas las versiones de SweetAlert)
                     if (r.isConfirmed || r.value || r === true) {
-                        
+
                         // 1. Apagamos el auto-guardado para que no intente guardar mientras borramos
-                        $('#interaction-form').off(); 
-                        
+                        $('#interaction-form').off();
+
                         // 2. Borramos la memoria local de tu llave
                         localStorage.removeItem('interaction_form_draft_v1');
-                        
+
                         // 3. Forzamos la recarga de la página
                         window.location.reload();
                     }
@@ -1752,12 +1769,12 @@
     // Este bloque detecta cuando el formulario se envía y bloquea el botón
     document.getElementById('interaction-form').addEventListener('submit', function(e) {
         const btn = document.getElementById('btn-submit-interaccion');
-        
+
         // Si el formulario es válido, nos aseguramos de matar el caché
         if (this.checkValidity()) {
             // Limpieza de seguridad: si por alguna razón el paso anterior falló, este no falla.
-            localStorage.removeItem('interaction_form_draft_v1'); 
-            
+            localStorage.removeItem('interaction_form_draft_v1');
+
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Guardando...';
         }

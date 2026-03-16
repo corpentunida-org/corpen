@@ -65,34 +65,66 @@ class InteractionController extends Controller
         // --- 3. OBTENEMOS LOS DATOS PARA LAS ESTADÍSTICAS Y PESTAÑAS (Con filtros aplicados) ---
         $countQuery = clone $baseQuery;
         if (!auth()->user()->hasPermission('interacciones.listado.todos')) {
-            $countQuery->where('agent_id', Auth::id())->orWhere('id_user_asignacion', Auth::id());
-            $baseQuery->where('agent_id', Auth::id())->orWhere('id_user_asignacion', Auth::id());
+            $countQuery->where(function ($q) {
+                $q->where('agent_id', Auth::id())->orWhere('id_user_asignacion', Auth::id());
+            });
+            $baseQuery->where(function ($q) {
+                $q->where('agent_id', Auth::id())->orWhere('id_user_asignacion', Auth::id());
+            });
         }
         $stats = [
             'total' => $countQuery->count(),
-            'successful' => (clone $countQuery)->whereHas('outcomeRelation', fn($q) => $q->where('name', 'Exitoso'))->count(),
-            'pending' => (clone $countQuery)->whereHas('outcomeRelation', fn($q) => $q->where('name', 'Pendiente'))->count(),
+            'successful' => (clone $countQuery)->whereHas('outcomeRelation', fn($q) => $q->where('estado', 1))->count(),
+            'pending' => (clone $countQuery)->whereHas('outcomeRelation', fn($q) => $q->where('estado', 0))->count(),
             'today' => (clone $countQuery)
                 ->where(function ($q) {
                     $q->whereDate('interaction_date', today())->orWhereDate('updated_at', today());
                 })
                 ->count(),
             'overdue' => (clone $countQuery)
-                ->whereHas('outcomeRelation', fn($q) => $q->where('name', 'Pendiente'))
+                ->whereHas('outcomeRelation', fn($q) => $q->where('estado', 0))
                 ->where('next_action_date', '<', today()->startOfDay())
                 ->count(),
         ];
 
         $collectionsForTabs = [
-            'successful' => (clone $baseQuery)->whereHas('outcomeRelation', fn($q) => $q->where('name', 'Exitoso'))->get(),
-            'pending' => (clone $baseQuery)->whereHas('outcomeRelation', fn($q) => $q->where('name', 'Pendiente'))->get(),
+            'successful' => (clone $baseQuery)->whereHas('outcomeRelation', fn($q) => $q->where('estado', 1))->get(),
+            'pending' => (clone $baseQuery)->whereHas('outcomeRelation', fn($q) => $q->where('estado', 0))->get(),
+
             'today' => (clone $baseQuery)
                 ->where(function ($q) {
                     $q->whereDate('interaction_date', today())->orWhereDate('updated_at', today());
                 })
                 ->get(),
             'overdue' => (clone $baseQuery)
-                ->whereHas('outcomeRelation', fn($q) => $q->where('name', 'Pendiente'))
+                ->whereHas('outcomeRelation', fn($q) => $q->where('estado', 0))
+                ->where('next_action_date', '<', today()->startOfDay())
+                ->get(),
+        ];
+
+        $collectionsForTabs = [
+            'successful' => (clone $baseQuery)
+                ->whereHas('outcomeRelation', function ($q) {
+                    $q->where('estado', 1);
+                })
+                ->get(),
+
+            'pending' => (clone $baseQuery)
+                ->whereHas('outcomeRelation', function ($q) {
+                    $q->where('estado', 0);
+                })
+                ->get(),
+
+            'today' => (clone $baseQuery)
+                ->where(function ($q) {
+                    $q->whereDate('interaction_date', today())->orWhereDate('updated_at', today());
+                })
+                ->get(),
+
+            'overdue' => (clone $baseQuery)
+                ->whereHas('outcomeRelation', function ($q) {
+                    $q->where('estado', 0);
+                })
                 ->where('next_action_date', '<', today()->startOfDay())
                 ->get(),
         ];
