@@ -169,18 +169,18 @@ class CompraController extends Controller
             $request->validate([
                 'referencia'     => 'required|string|max:255|unique:inv_referencias,referencia',
                 'detalle'        => 'nullable|string|max:255',
-                'id_MaeSubgrupo' => 'required|exists:inv_subgrupos,id',
+                'id_InvSubGrupos' => 'required|exists:inv_subgrupos,id',
                 'id_InvBodegas'  => 'required|exists:inv_bodegas,id', 
-                'id_MaeMarcas'   => 'required|exists:inv_marcas,id', 
+                'id_InvMarcas'   => 'required|exists:inv_marcas,id', 
             ]);
 
             // Guardamos usando los campos correctos de la Base de Datos
             $referencia = InvReferencia::create([
                 'referencia'      => $request->referencia,
                 'detalle'         => $request->detalle,
-                'id_InvSubGrupos' => $request->id_MaeSubgrupo, // Traducido
+                'id_InvSubGrupos' => $request->id_InvSubGrupos, // Traducido
                 'id_InvBodegas'   => $request->id_InvBodegas,
-                'id_InvMarcas'    => $request->id_MaeMarcas,   // Traducido
+                'id_InvMarcas'    => $request->id_InvMarcas,   // Traducido
             ]);
 
             return response()->json([
@@ -211,18 +211,18 @@ class CompraController extends Controller
             $request->validate([
                 'referencia'     => 'required|string|max:255|unique:inv_referencias,referencia,' . $id,
                 'detalle'        => 'nullable|string|max:255',
-                'id_MaeSubgrupo' => 'required|exists:inv_subgrupos,id',
+                'id_InvSubGrupos' => 'required|exists:inv_subgrupos,id',
                 'id_InvBodegas'  => 'required|exists:inv_bodegas,id', 
-                'id_MaeMarcas'   => 'required|exists:inv_marcas,id', 
+                'id_InvMarcas'   => 'required|exists:inv_marcas,id', 
             ]);
 
             // Actualizamos la base de datos
             $referencia->update([
                 'referencia'      => $request->referencia,
                 'detalle'         => $request->detalle,
-                'id_InvSubGrupos' => $request->id_MaeSubgrupo, // Traducido
+                'id_InvSubGrupos' => $request->id_InvSubGrupos, // Traducido
                 'id_InvBodegas'   => $request->id_InvBodegas,
-                'id_InvMarcas'    => $request->id_MaeMarcas,   // Traducido
+                'id_InvMarcas'    => $request->id_InvMarcas,   // Traducido
             ]);
 
             return response()->json([
