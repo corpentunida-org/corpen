@@ -1,6 +1,6 @@
 @props(['id', 'title', 'open' => false])
 
-<div class="accordion-item border">
+<div class="accordion-item">
     <h2 class="accordion-header" id="heading-{{ $id }}">
         <button class="accordion-button {{ !$open ? 'collapsed' : '' }}" type="button"
             data-bs-toggle="collapse" data-bs-target="#collapse-{{ $id }}" aria-expanded="{{ $open ? 'true' : 'false' }}"

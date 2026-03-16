@@ -78,8 +78,10 @@
 
                     <a href="{{ route('dashboard') }}" class="b-brand d-flex justify-content-center align-items-center">
                         <!-- ========   change your logo here   ============ -->
-                        <img src="https://www.fecp.org.co/images/CORPENTUNIDA_LOGO_PRINCIPAL.png" alt=""
-                            class="logo logo-sm" width="200px" />
+              {{--           <img src="https://www.fecp.org.co/images/CORPENTUNIDA_LOGO_PRINCIPAL.png" alt=""
+                            class="logo logo-sm" width="200px" /> --}}
+                            
+                        <img src="{{asset('img/logo.png')}}" alt="logo" class="logo logo-sm" width="200px">
                     </a>
                     <div class="navbar-content">
                         <ul class="nxl-navbar">
@@ -138,8 +140,7 @@
                                 <a href="javascript:void(0);" class="nxl-head-link me-0 dark-button">
                                     <i class="feather-moon"></i>
                                 </a>
-                                <a href="javascript:void(0);" class="nxl-head-link me-0 light-button"
-                                    style="display: none">
+                                <a href="javascript:void(0);" class="nxl-head-link me-0 light-button" style="display: none">
                                     <i class="feather-sun"></i>
                                 </a>
                             </div>
@@ -152,7 +153,7 @@
                                         <i class="feather-minimize minimize"></i>
                                     </a>
                                 </div>
-                            </div>                            
+                            </div>
                             <div class="dropdown nxl-h-item">
                                 <a href="javascript:void(0);" data-bs-toggle="dropdown" role="button"
                                     data-bs-auto-close="outside">
@@ -185,7 +186,7 @@
                                         </button>
                                     </form>
                                 </div>
-                            </div>                        
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -255,7 +256,14 @@
             <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
             <script src="{{ asset('assets/vendors/js/vendors.min.js') }}"></script>
             <!-- vendors.min.js {always must need to be top} -->
+            <!-- daterangepicker -->
+            <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
 
+            <!-- circle progress -->
+            <script src="https://cdn.jsdelivr.net/npm/jquery-circle-progress@1.2.2/dist/circle-progress.min.js"></script>
+
+            <!-- datepicker -->
+            <script src="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/js/datepicker.min.js"></script>
             <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
             <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
@@ -292,7 +300,7 @@
 
             <script src="{{ asset('assets/js/projects-init.min.js') }}"></script>
             <script src="{{ asset('assets/js/payment-init.min.js') }}"></script>
-            
+
             <!--! END: Apps Init !-->
 
             <script src="{{ asset('assets/vendors/js/tagify.min.js') }}"></script>

@@ -1,6 +1,6 @@
 <x-base-layout>
     @section('titlepage', 'Editar Tercero')
-
+    <x-success />
     <div class="col-lg-12">
         <div class="card stretch stretch-full">
             <div class="card-body task-header d-lg-flex align-items-center justify-content-between">
@@ -22,6 +22,6 @@
         'action' => route('maestras.terceros.update', $tercero->cod_ter),
         'method' => 'PUT',
         'tercero' => $tercero,
-        'buttonText' => 'Actualizar Tercero'
+        'buttonText' => 'Actualizar'
     ])
 </x-base-layout>

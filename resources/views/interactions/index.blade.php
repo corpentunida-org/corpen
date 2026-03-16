@@ -167,7 +167,6 @@
             @endphp
             {{-- Contenido --}}
             <div class="tab-content" id="interactionTabsContent">
-                
                 {{-- TAB TODOS --}}
                 <div class="tab-pane fade show active" id="tab-all" role="tabpanel" aria-labelledby="tab-all-tab">
                     <div class="table-responsive">
@@ -191,7 +190,6 @@
                                         $isPast = $nextActionDate->isPast() && !$nextActionDate->isToday();
                                         $isToday = $nextActionDate->isToday();
                                     @endphp
-
                                     <tr class="table table-hover">
                                         <td class="py-2">
                                             <a class="interaction-id fw-bold text-decoration-none pastel-link" href="#"
@@ -222,7 +220,6 @@
                                                 </a>
                                             @endif
                                         </td>
-
                                         <td>
                                             <span class="fw-semibold mb-1">{{ $interaction->agent->name ?? '—' }}</span>
                                             <span class="badge bg-soft-primary text-primary ms-2">{{ $interaction->agent->cargoRelation->gdoArea->nombre ?? '' }}</span>
@@ -273,18 +270,7 @@
                                             </div>
                                         </td>
                                     </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="8">
-                                            <div class="text-center py-4">
-                                                <div class="empty-state">
-                                                    <i class="feather-inbox empty-icon"></i>
-                                                    <h6 class="mt-2">No hay interacciones registradas</h6>
-                                                    <p class="text-muted">Aún no se han creado interacciones o no coinciden con los filtros.</p>
-                                                </div>
-                                            </div>
-                                        </td>
-                                    </tr>
+                                @empty                                    
                                 @endforelse
                             </tbody>
                         </table>
@@ -375,18 +361,7 @@
                                             </div>
                                         </td>
                                     </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="8">
-                                            <div class="text-center py-4">
-                                                <div class="empty-state">
-                                                    <i class="feather-check-circle empty-icon text-success"></i>
-                                                    <h6 class="mt-2">No hay interacciones exitosas</h6>
-                                                    <p class="text-muted">No se encontraron interacciones con resultado exitoso.</p>
-                                                </div>
-                                            </div>
-                                        </td>
-                                    </tr>
+                                @empty                                    
                                 @endforelse
                             </tbody>
                         </table>
@@ -472,18 +447,7 @@
                                             </div>
                                         </td>
                                     </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="8">
-                                            <div class="text-center py-4">
-                                                <div class="empty-state">
-                                                    <i class="feather-clock empty-icon text-warning"></i>
-                                                    <h6 class="mt-2">No hay interacciones pendientes</h6>
-                                                    <p class="text-muted">¡Todo al día! No se encontraron interacciones en estado pendiente.</p>
-                                                </div>
-                                            </div>
-                                        </td>
-                                    </tr>
+                                @empty                                    
                                 @endforelse
                             </tbody>
                         </table>
@@ -569,18 +533,7 @@
                                             </div>
                                         </td>
                                     </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="8">
-                                            <div class="text-center py-4">
-                                                <div class="empty-state">
-                                                    <i class="feather-calendar empty-icon text-primary"></i>
-                                                    <h6 class="mt-2">No hay interacciones hoy</h6>
-                                                    <p class="text-muted">Aún no se han registrado interacciones en el día de hoy.</p>
-                                                </div>
-                                            </div>
-                                        </td>
-                                    </tr>
+                                @empty                                    
                                 @endforelse
                             </tbody>
                         </table>
@@ -610,7 +563,6 @@
                                         $isPast = $nextActionDate->isPast() && !$nextActionDate->isToday();
                                         $isToday = $nextActionDate->isToday();
                                     @endphp
-
                                     <tr class="table table-hover">
                                         <td class="py-2">
                                             <a class="interaction-id fw-bold text-decoration-none pastel-link" href="#"
@@ -666,8 +618,8 @@
                                             </div>
                                         </td>
                                     </tr>
-                                @empty
-                                    <tr>
+                                    @empty
+                                    {{-- <tr>
                                         <td colspan="8">
                                             <div class="text-center py-4">
                                                 <div class="empty-state">
@@ -677,7 +629,7 @@
                                                 </div>
                                             </div>
                                         </td>
-                                    </tr>
+                                    </tr> --}}
                                 @endforelse
                             </tbody>
                         </table>
@@ -730,7 +682,7 @@
     @push('styles')
         <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
         <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css" />
-        <style>
+        {{-- <style>
             /* Tus estilos anteriores se mantienen intactos */
             .glassmorphism-card { background: rgba(255, 255, 255, 0.25); backdrop-filter: blur(10px); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.18); box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.1); }
             .glassmorphism-alert { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(5px); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.3); }
@@ -751,7 +703,7 @@
             .pastel-link:hover { color: #4C63D2; transform: scale(1.02); }
             .empty-state { padding: 1.5rem; text-align: center; }
             .empty-icon { font-size: 2.5rem; color: #85929e; }
-        </style>
+        </style> --}}
     @endpush
 
     @push('scripts')
