@@ -16,6 +16,6 @@
 
     @include('maestras.terceros.form', [
         'action' => route('maestras.terceros.store'),
-        'buttonText' => 'Guardar Tercero'
+        'buttonText' => 'Agregar'
     ])
 </x-base-layout>

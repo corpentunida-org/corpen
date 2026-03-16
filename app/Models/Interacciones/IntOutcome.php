@@ -11,7 +11,7 @@ class IntOutcome extends Model
 
     protected $table = 'int_outcomes';
 
-    protected $fillable = ['id','name'];
+    protected $fillable = ['id','name','estado'];
 
     public function interactions()
     {
