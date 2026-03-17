@@ -321,11 +321,28 @@
                 <div class="panel-section">
                     <div class="panel-title">4. Control de Estado y Ubicación</div>
                     <div class="input-grid">
+                        
+                        {{-- NUEVO: Bodega de Origen (Filtro Visual) --}}
+                        <div class="field-group">
+                            <label>Bodega (Filtro de Estados)</label>
+                            <select id="bodega_estado_select">
+                                <option value="">Mostrar todos los estados...</option>
+                                @foreach($bodegas as $bodega)
+                                    <option value="{{ $bodega->id }}">{{ $bodega->nombre }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
                         <div class="field-group">
                             <label>Estado Actual</label>
-                            <select name="id_Estado" required>
+                            {{-- Se agregó id="estado_select" --}}
+                            <select name="id_Estado" id="estado_select" required>
+                                <option value="">Seleccione un estado...</option>
                                 @foreach($estados as $est)
-                                    <option value="{{ $est->id }}" {{ $activo->id_Estado == $est->id ? 'selected' : '' }}>{{ $est->nombre }}</option>
+                                    {{-- Se agregó data-bodega --}}
+                                    <option value="{{ $est->id }}" data-bodega="{{ $est->id_bodega }}" {{ $activo->id_Estado == $est->id ? 'selected' : '' }}>
+                                        {{ $est->nombre }}
+                                    </option>
                                 @endforeach
                             </select>
                         </div>
@@ -654,6 +671,58 @@
             $('.modal-overlay').click(function(e) {
                 if(e.target === this) { $(this).fadeOut('fast'); }
             });
+            // =========================================================
+            // LÓGICA DE ANIDAMIENTO: BODEGA -> ESTADO (SECCIÓN 4)
+            // =========================================================
+            let $bodegaSelect = $('#bodega_estado_select');
+            let $estadoSelect = $('#estado_select');
+            
+            // 1. Guardamos una copia exacta de todas las opciones originales en memoria
+            let todasOpcionesEstado = $estadoSelect.find('option').clone();
+
+            function filtrarEstados(bodegaId, estadoIdASeleccionar = null) {
+                $estadoSelect.empty(); // Limpiamos el select actual
+                
+                if (bodegaId) {
+                    // Filtramos: dejamos la opción vacía y las que coincidan con la bodega
+                    let opcionesFiltradas = todasOpcionesEstado.filter(function() {
+                        return $(this).val() === "" || $(this).attr('data-bodega') == bodegaId;
+                    });
+                    $estadoSelect.append(opcionesFiltradas);
+                } else {
+                    // Si no elige bodega, mostramos todos los estados
+                    $estadoSelect.append(todasOpcionesEstado);
+                }
+
+                // Si se pasó un estado para preseleccionar (en la carga inicial), lo aplicamos
+                if (estadoIdASeleccionar) {
+                    $estadoSelect.val(estadoIdASeleccionar);
+                } else {
+                    $estadoSelect.val(''); // Dejar en "Seleccione..."
+                }
+            }
+
+            // 2. Evento: Al cambiar la bodega manualmente
+            $bodegaSelect.on('change', function() {
+                filtrarEstados($(this).val());
+            });
+
+            // 3. Ejecución Inicial (Al cargar la página):
+            // Necesitamos detectar qué estado tiene guardado el activo actualmente
+            // para auto-seleccionar la "Bodega" correspondiente a ese estado en el filtro visual.
+            let estadoActualOption = todasOpcionesEstado.filter(':selected');
+            
+            if (estadoActualOption.length > 0 && estadoActualOption.val() !== "") {
+                let bodegaDelEstadoActual = estadoActualOption.attr('data-bodega');
+                
+                if (bodegaDelEstadoActual) {
+                    // Auto-seleccionamos la bodega en el filtro visual
+                    $bodegaSelect.val(bodegaDelEstadoActual);
+                    // Ejecutamos el filtro para ocultar los demás estados, pero manteniendo seleccionado el estado actual
+                    filtrarEstados(bodegaDelEstadoActual, estadoActualOption.val());
+                }
+            }
+            // =========================================================
         });
     </script>
 </x-base-layout>
