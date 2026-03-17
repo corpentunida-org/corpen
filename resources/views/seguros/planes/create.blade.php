@@ -10,10 +10,10 @@
                             aria-selected="true">Crear Plan</a>
                     </li>
                     @candirect('seguros.cobertura.store')
-                        <li class="nav-item flex-fill border-top" role="presentation">
-                            <a class="nav-link" data-bs-toggle="tab" data-bs-target="#taskTab" aria-selected="false">Crear
-                                Cobertura</a>
-                        </li>
+                    <li class="nav-item flex-fill border-top" role="presentation">
+                        <a class="nav-link" data-bs-toggle="tab" data-bs-target="#taskTab" aria-selected="false">Crear
+                            Cobertura</a>
+                    </li>
                     @endcandirect
                 </ul>
             </div>
@@ -31,17 +31,20 @@
                                             @foreach ($convenios as $convenio)
                                                 <option value="{{ $convenio->idConvenio }}"
                                                     data-idaseguradora="{{ $convenio->idAseguradora }}"
-                                                    data-id="{{ $convenio->id }}">{{ $convenio->nombre }}</option>
+                                                    data-id="{{ $convenio->id }}" @selected(isset($convenio_id) && $convenio_id == $convenio->idConvenio)>
+                                                    {{ $convenio->nombre }}
+                                                </option>
                                             @endforeach
                                         </select>
                                     </div>
                                     <div class="col-lg-5">
                                         <label class="form-label">Nombre Plan<span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control uppercase-input" name="name" required>
+                                        <input type="text" class="form-control uppercase-input" name="name"
+                                            required>
                                     </div>
                                     <div class="col-lg-4">
                                         <label class="form-label">Condición<span class="text-danger">*</span></label>
-                                        <select class="form-control" name="condicion_id">                                            
+                                        <select class="form-control" name="condicion_id">
                                             @foreach ($condiciones as $condicion)
                                                 <option value="{{ $condicion->id }}">
                                                     {{ $condicion->descripcion }}
@@ -62,7 +65,8 @@
                                     <div class="col-lg-6">
                                         <label class="form-label">Total Valor Prima<span
                                                 class="text-danger">*</span></label>
-                                        <input type="number" class="form-control" name="prima" id="prima" required>
+                                        <input type="number" class="form-control" name="prima" id="prima"
+                                            required>
                                         <div class="invalid-feedback">
                                             La suma de las coberturas debe dar el valor total de la prima.
                                         </div>
@@ -91,8 +95,8 @@
                                         <div class="col-lg-2">
                                             <label class="form-label">Porcentaje al Valor Total</label>
                                             <div class="input-group">
-                                                <input type="number" class="form-control" name="poralvalorasegurado[]" min="0"
-                                                    max="100" value="100" id="inputporcober">
+                                                <input type="number" class="form-control" name="poralvalorasegurado[]"
+                                                    min="0" max="100" value="100" id="inputporcober">
                                                 <span class="input-group-text">%</span>
                                             </div>
                                         </div>
@@ -116,36 +120,38 @@
                             </div>
                         </form>
                         <script>
-                            $(document).ready(function () {
-                                $('#convenio_id').on('change', function () {
+                            $(document).ready(function() {
+                                $('#convenio_id').on('change', function() {
                                     idAseguradora = $(this).find(':selected').data('idaseguradora');
                                     idBusqueda = $(this).find(':selected').data('id');
                                     $('#idConveniobusqueda').val(idBusqueda);
                                     $('#cobertura_id').empty();
-                                    var url = '{{ route("seguros.cobertura.show", ":cobertura") }}';
+                                    var url = '{{ route('seguros.cobertura.show', ':cobertura') }}';
                                     $.ajax({
                                         url: url.replace(':cobertura', idAseguradora),
                                         method: 'GET',
-                                        success: function (data) {
-                                            data.forEach(function (cobertura) {
+                                        success: function(data) {
+                                            data.forEach(function(cobertura) {
                                                 $('#cobertura_id').append(
-                                                    '<option value="' + cobertura.id + '" data-porcentaje="' + cobertura.porcentajeReclamacion + '">' +
+                                                    '<option value="' + cobertura.id +
+                                                    '" data-porcentaje="' + cobertura
+                                                    .porcentajeReclamacion + '">' +
                                                     cobertura.nombre +
                                                     '</option>'
                                                 );
                                             });
                                         },
-                                        error: function () {
+                                        error: function() {
                                             alert('Hubo un error al cargar las coberturas.');
                                         }
                                     });
                                 });
-                                $('#cobertura_id').on('change', function () {
+                                $('#cobertura_id').on('change', function() {
                                     var porcentaje = $(this).find('option:selected').data('porcentaje');
                                     $('#inputporcober').val(porcentaje ?? '');
                                 });
 
-                                $('#formAddPlan').submit(function (event) {
+                                $('#formAddPlan').submit(function(event) {
                                     var form = this;
                                     if (!form.checkValidity()) {
                                         $(form).addClass('was-validated');
@@ -153,7 +159,7 @@
                                         event.stopPropagation();
                                     } else {
                                         var totalValorPrima = 0;
-                                        $('input[name="valorPrima[]"]').each(function () {
+                                        $('input[name="valorPrima[]"]').each(function() {
                                             var valor = parseFloat($(this).val()) || 0;
                                             totalValorPrima += valor;
                                         });
@@ -170,7 +176,7 @@
                                         }
                                     }
                                 });
-                                $('#add-cobertura').click(function () {
+                                $('#add-cobertura').click(function() {
                                     const container = document.getElementById('coberturas-container');
                                     const coberturaRow = document.querySelector('.cobertura-row');
 
@@ -206,7 +212,8 @@
                                     <div class="col-lg-6">
                                         <label class="form-label">Nombre Cobertura<span
                                                 class="text-danger">*</span></label>
-                                        <input type="text" class="form-control uppercase-input" name="cobname" required>
+                                        <input type="text" class="form-control uppercase-input" name="cobname"
+                                            required>
                                     </div>
                                     <div class="col-lg-2">
                                         <label class="form-label">Porcentaje Reclamacion<span
@@ -236,7 +243,7 @@
 
                         </form>
                         <script>
-                            $('#formAddCobertura').submit(function (event) {
+                            $('#formAddCobertura').submit(function(event) {
                                 var form = this;
                                 if (!form.checkValidity()) {
                                     $(form).addClass('was-validated');
