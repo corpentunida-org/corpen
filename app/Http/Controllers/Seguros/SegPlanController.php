@@ -34,12 +34,13 @@ class SegPlanController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(Request $request)
     {
         $coberturas = SegCobertura::all();
         $convenios = SegConvenio::all();
         $condiciones = SegCondicion::all();
-        return view('seguros.planes.create', compact('coberturas', 'convenios', 'condiciones'));
+        $convenio_id = $request->convenio_id;
+        return view('seguros.planes.create', compact('coberturas', 'convenios', 'condiciones','convenio_id'));
     }
 
     /**
