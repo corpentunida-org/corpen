@@ -103,12 +103,6 @@
     /* =========================================================
        LÍNEA DE TIEMPO (TIMELINE) Limpia
        ========================================================= */
-    .timeline-container {
-        border-left: 1px solid var(--border-color);
-        margin-left: 15px;
-        padding-left: 20px;
-        position: relative;
-    }
 
     .timeline-item {
         position: relative;
@@ -173,8 +167,7 @@
         @method('PUT')
     @endif
 
-    <div
-        class="bg-white border-bottom p-4 mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+    <div class="bg-white border-bottom p-4 mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
         <div class="d-flex align-items-center gap-3">
             <div>
                 <i class="bi bi-headset fs-2"></i>
@@ -426,24 +419,21 @@
                     <i class="bi bi-chevron-down text-muted accordion-arrow transition-all"></i>
                 </div>
 
-                <div class="collapse" id="historyCollapse">
-                    <div class="category-content p-4">
-                        <div id="history-content" class="position-relative bg-white border p-3"
-                            style="border-radius: 4px;">
-                            <div class="timeline-container">
-                                <div id="interaction-history-list" class="history-list pe-2"
+                <div class="collapse m-2" id="historyCollapse">
+                        <div id="history-content" class="position-relative bg-white">
+                            <div>
+                                <div id="interaction-history-list" class="history-list"
                                     style="max-height: 300px; overflow-y: auto; min-height: 100px;">
                                     <div id="history-loading-skeleton" class="py-3 px-2 text-muted small">
                                         Cargando historial...
                                     </div>
-
                                     <div id="history-empty-state" class="text-center py-4 d-none">
                                         <p class="text-muted small mb-0">No se encontraron interacciones previas.</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    
                 </div>
             </div>
 
@@ -759,9 +749,7 @@
                             historial.</p>
                     </div>
                     <div id="history-section" style="display:none;">
-                        <input type="hidden" id="parent_interaction_id" name="parent_interaction_id"
-                            value="">
-
+                        <input type="hidden" id="parent_interaction_id" name="parent_interaction_id" value="">
                         <div class="p-3 bg-white border-bottom">
                             <div id="selected-parent-info"
                                 class="bg-light border p-2 d-flex align-items-center justify-content-between"
@@ -778,7 +766,7 @@
                         </div>
 
                         <div id="history-content" class="p-3 bg-white">
-                            <div id="interaction-history-list-bottom" class="history-list pe-2"
+                            <div id="interaction-history-list-bottom" class="history-list"
                                 style="max-height: 250px; overflow-y: auto;">
                             </div>
                         </div>
@@ -791,7 +779,7 @@
                     <label class="form-label text-muted d-block">
                         Notas Finales <span class="text-muted">*</span>
                     </label>
-                    <textarea class="form-control bg-white" name="notes" id="notes" rows="4"
+                    <textarea class="form-control bg-white" name="notes" id="notes" rows="4" spellcheck="true" autocorrect="on" autocapitalize="sentences"
                         placeholder="Resumen de la interacción..." required>{{ old('notes', $interaction->notes ?? '') }}</textarea>
                     @error('notes')
                         <div class="text-danger small mt-1">{{ $message }}</div>
@@ -1234,11 +1222,9 @@
 
             buildCardHtml: function(item) {
                 const url = `/interactions/${item.id}/show`;
-                const isSuccess = ['Exitoso', 'Resuelto', 'Cerrado', 'Venta', 'Finalizado'].includes(
-                    item.outcome);
-                const isPending = ['Pendiente', 'Seguimiento', 'En Proceso', 'Abierto'].includes(item
-                    .outcome);
-                const badgeColor = isSuccess ? '#059669' : (isPending ? '#D97706' : '#6b7280');
+                const isSuccess = ['2', '3', '5'].includes(item.outcome);
+                const isPending = ['1', '4'].includes(item.outcome);
+                const badgeColor = isSuccess ? '#39C666' : (isPending ? '#FFA21D' : '#596CD8');
 
                 const safeNotes = item.notes ? $('<div>').text(item.notes).html() :
                     '<em>Sin notas.</em>';
@@ -1248,8 +1234,7 @@
                     <div class="border" style="border-radius: 4px;">
                         <div class="bg-light d-flex justify-content-between align-items-center py-2 px-3 collapsed" 
                              data-bs-toggle="collapse" data-bs-target="#collapseInteraction-${item.id}" style="cursor:pointer">
-                            <div class="d-flex align-items-center gap-2 small">
-                                <strong>ID: ${item.id}</strong>
+                            <div class="d-flex align-items-center gap-2 small">                                
                                 <span style="color: ${badgeColor}; font-weight: bold;">[${item.outcome}]</span>
                                 <span class="text-muted border-start ps-2">${item.type}</span>
                             </div>
