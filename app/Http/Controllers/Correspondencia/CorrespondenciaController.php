@@ -20,7 +20,6 @@ use Carbon\Carbon;
 use Carbon\CarbonInterval;
 use App\Http\Controllers\AuditoriaController;
 
-
 class CorrespondenciaController extends Controller
 {
     /**
@@ -40,8 +39,7 @@ class CorrespondenciaController extends Controller
         $estados = Estado::all();
         $procesos_disponibles = Proceso::with(['estadosProcesos.estado'])->get();
 
-        $query = Correspondencia::with(['trd', 'flujo', 'estado', 'usuario', 'remitente', 'medioRecepcion'])
-            ->latest();
+        $query = Correspondencia::with(['trd', 'flujo', 'estado', 'usuario', 'remitente', 'medioRecepcion'])->latest();
 
         // 1. FILTRO DE CATEGORÍAS (Esto era lo que te faltaba)
         if ($request->filled('flujo_id')) {
@@ -56,22 +54,30 @@ class CorrespondenciaController extends Controller
         // 3. BUSCADOR MEJORADO (Ahora coincide con la lógica de tu Blade)
         if ($request->filled('search')) {
             $words = explode(' ', $request->search);
-            $query->where(function($q) use ($words) {
+            $query->where(function ($q) use ($words) {
                 foreach ($words as $word) {
-                    $q->where(function($subQ) use ($word) {
-                        $subQ->orWhere('id_radicado', 'LIKE', "%$word%")
-                            ->orWhere('asunto', 'LIKE', "%$word%");
+                    $q->where(function ($subQ) use ($word) {
+                        $subQ->orWhere('id_radicado', 'LIKE', "%$word%")->orWhere('asunto', 'LIKE', "%$word%");
                     });
                 }
             });
         }
-        if(auth()->user()->hasPermission('correspondencia.lista.todos')){
+        if (auth()->user()->hasPermission('correspondencia.lista.todos')) {
             $correspondencias = $query->paginate(15)->appends($request->all());
-        }else{
-            $correspondencias = $query->where('remitente_id',auth()->user()->nid)->paginate(15)->appends($request->all());
+        } else {
+            //$correspondencias = $query->where('remitente_id',auth()->user()->nid)->paginate(15)->appends($request->all());
+            $correspondencias = $query
+                ->where(function ($q) {
+                    $q->where('remitente_id', auth()->user()->nid)->orWhereHas('flujo.procesos.usuariosAsignados', function ($q2) {
+                        $q2->where('user_id', auth()->id())->orWhere('usuario_id', auth()->id());
+                    });
+                })
+                ->paginate(15)
+                ->appends($request->all());
         }
-
-        return view('correspondencia.correspondencias.index', compact('correspondencias', 'estados', 'procesos_disponibles'));
+        $flujos_disponibles = $flujos = $correspondencias->getCollection()->groupBy('flujo_id')->map(function ($items) {
+            return ['id' => $items->first()->flujo_id,'nombre' => optional($items->first()->flujo)->nombre,'count' => $items->count(),];})->values();
+        return view('correspondencia.correspondencias.index', compact('correspondencias', 'estados', 'procesos_disponibles','flujos_disponibles'));
     }
 
     /**
@@ -99,17 +105,17 @@ class CorrespondenciaController extends Controller
     {
         // 1. Validación de datos de entrada
         $data = $request->validate([
-            'id_radicado'        => 'required|string|unique:corr_correspondencia,id_radicado',
-            'fecha_solicitud'    => 'required|date',
-            'asunto'             => 'required|string|max:500',
-            'medio_recibido'     => 'required|exists:corr_medio_recepcion,id',
-            'remitente_id'       => 'required',
-            'trd_id'             => 'required',
-            'flujo_id'           => 'required',
-            'estado_id'          => 'required',
+            'id_radicado' => 'required|string|unique:corr_correspondencia,id_radicado',
+            'fecha_solicitud' => 'required|date',
+            'asunto' => 'required|string|max:500',
+            'medio_recibido' => 'required|exists:corr_medio_recepcion,id',
+            'remitente_id' => 'required',
+            'trd_id' => 'required',
+            'flujo_id' => 'required',
+            'estado_id' => 'required',
             'observacion_previa' => 'nullable|string',
-            'final_descripcion'  => 'nullable|string', // Validación del nuevo campo
-            'documento_arc'      => 'nullable|file|mimes:pdf,doc,docx|max:10240',
+            'final_descripcion' => 'nullable|string', // Validación del nuevo campo
+            'documento_arc' => 'nullable|file|mimes:pdf,doc,docx|max:10240',
         ]);
 
         // 2. Asignación de valores automáticos y booleanos
@@ -130,7 +136,7 @@ class CorrespondenciaController extends Controller
 
             // 4. Creación del registro
             Correspondencia::create($data);
-            
+
             // 5. Auditoría
             $this->auditoria('ADD CORRESPONDENCIA ID ' . $data['id_radicado']);
 
@@ -152,14 +158,14 @@ class CorrespondenciaController extends Controller
     {
         // 1. Carga la correspondencia con relaciones anidadas, incluyendo 'comunicacionSalida'
         $correspondencia = Correspondencia::with([
-            'procesos.usuario', 
-            'procesos.proceso.flujo', 
-            'trd', 
-            'estado', 
-            'remitente', 
+            'procesos.usuario',
+            'procesos.proceso.flujo',
+            'trd',
+            'estado',
+            'remitente',
             'flujo',
             'medioRecepcion',
-            'comunicacionSalida' // <-- RELACIÓN CLAVE: Para ver si ya hay respuesta
+            'comunicacionSalida', // <-- RELACIÓN CLAVE: Para ver si ya hay respuesta
         ])->findOrFail($id);
 
         $flujo = null;
@@ -168,9 +174,9 @@ class CorrespondenciaController extends Controller
         // 2. Lógica de procesos según el flujo asignado
         if ($correspondencia->flujo_id) {
             $flujo = FlujoDeTrabajo::with(['usuario'])->find($correspondencia->flujo_id);
-            
+
             $procesos_disponibles = Proceso::where('flujo_id', $correspondencia->flujo_id)
-                ->with(['flujo', 'usuariosAsignados.usuario', 'estadosProcesos.estado']) 
+                ->with(['flujo', 'usuariosAsignados.usuario', 'estadosProcesos.estado'])
                 ->get();
         } else {
             $procesos_disponibles = Proceso::with(['flujo', 'usuariosAsignados.usuario', 'estadosProcesos.estado'])->get();
@@ -185,20 +191,23 @@ class CorrespondenciaController extends Controller
         $tiempoGestion = $correspondencia->trd->tiempo_gestion ?? 0;
         $fechaInicio = Carbon::parse($correspondencia->fecha_solicitud);
         $limite = $fechaInicio->copy()->addYears($tiempoGestion);
-        
+
         // Evitamos error si la fecha actual ya superó el límite (vencido)
         $diferenciatrd = CarbonInterval::instance(now()->diff($limite));
 
         // 5. Retornamos la vista con las nuevas variables 'usuarios' y 'plantillas'
-        return view('correspondencia.correspondencias.show', compact(
-            'correspondencia', 
-            'procesos_disponibles', 
-            'flujo', 
-            'diferenciatrd',
-            'limite',
-            'usuarios', // <-- Para el select de firmantes en el modal
-            'plantillas' // <-- Para el select de plantillas en el modal
-        ));
+        return view(
+            'correspondencia.correspondencias.show',
+            compact(
+                'correspondencia',
+                'procesos_disponibles',
+                'flujo',
+                'diferenciatrd',
+                'limite',
+                'usuarios', // <-- Para el select de firmantes en el modal
+                'plantillas', // <-- Para el select de plantillas en el modal
+            ),
+        );
     }
 
     /**
@@ -224,24 +233,27 @@ class CorrespondenciaController extends Controller
     public function update(Request $request, Correspondencia $correspondencia)
     {
         // 1. VALIDACIÓN
-        $data = $request->validate([
-            'fecha_solicitud'    => 'required|date',
-            'asunto'             => 'required|string|max:500',
-            'medio_recibido'     => 'required|exists:corr_medio_recepcion,id',
-            'remitente_id'       => 'required',
-            'trd_id'             => 'required',
-            'flujo_id'           => 'required',
-            'estado_id'          => 'required',
-            'observacion_previa' => 'nullable|string',
-            
-            // LÓGICA CLAVE: Si se marca 'finalizado', la descripción es OBLIGATORIA
-            'final_descripcion'  => 'nullable|string|required_if:finalizado,1', 
-            
-            'documento_arc'      => 'nullable|file|mimes:pdf,doc,docx|max:10240',
-        ], [
-            // Mensaje personalizado por si intentan finalizar sin escribir
-            'final_descripcion.required_if' => 'Debe escribir una descripción de cierre si va a finalizar el radicado.'
-        ]);
+        $data = $request->validate(
+            [
+                'fecha_solicitud' => 'required|date',
+                'asunto' => 'required|string|max:500',
+                'medio_recibido' => 'required|exists:corr_medio_recepcion,id',
+                'remitente_id' => 'required',
+                'trd_id' => 'required',
+                'flujo_id' => 'required',
+                'estado_id' => 'required',
+                'observacion_previa' => 'nullable|string',
+
+                // LÓGICA CLAVE: Si se marca 'finalizado', la descripción es OBLIGATORIA
+                'final_descripcion' => 'nullable|string|required_if:finalizado,1',
+
+                'documento_arc' => 'nullable|file|mimes:pdf,doc,docx|max:10240',
+            ],
+            [
+                // Mensaje personalizado por si intentan finalizar sin escribir
+                'final_descripcion.required_if' => 'Debe escribir una descripción de cierre si va a finalizar el radicado.',
+            ],
+        );
 
         // 2. BOOLEANOS
         $data['es_confidencial'] = $request->boolean('es_confidencial');
@@ -265,14 +277,12 @@ class CorrespondenciaController extends Controller
 
         // 4. ACTUALIZAR BASE DE DATOS
         $correspondencia->update($data);
-        
+
         // 5. AUDITORÍA
         $this->auditoria('UPDATE CORRESPONDENCIA ID ' . $correspondencia->id_radicado);
 
         // 6. REDIRECCIÓN CORRECTA AL SHOW
-        return redirect()
-            ->route('correspondencia.correspondencias.show', $correspondencia)
-            ->with('success', 'Radicado actualizado correctamente.');
+        return redirect()->route('correspondencia.correspondencias.show', $correspondencia)->with('success', 'Radicado actualizado correctamente.');
     }
 
     /**
@@ -293,47 +303,44 @@ class CorrespondenciaController extends Controller
      * Genera el tablero de control (Dashboard) con KPIs y gráficas.
      * Corregido para soportar la gestión rápida desde el tablero.
      */
-public function tablero(Request $request)
-{
-    // Carga base con relaciones necesarias
-    $query = Correspondencia::with(['trd', 'estado', 'usuario', 'flujo.procesos.usuariosAsignados']);
+    public function tablero(Request $request)
+    {
+        // Carga base con relaciones necesarias
+        $query = Correspondencia::with(['trd', 'estado', 'usuario', 'flujo.procesos.usuariosAsignados']);
 
-    // Filtros dinámicos
-    if ($request->filled('search')) {
-        $query->where(function($q) use ($request) {
-            $q->where('id_radicado', 'LIKE', "%{$request->search}%")
-              ->orWhere('asunto', 'LIKE', "%{$request->search}%");
-        });
+        // Filtros dinámicos
+        if ($request->filled('search')) {
+            $query->where(function ($q) use ($request) {
+                $q->where('id_radicado', 'LIKE', "%{$request->search}%")->orWhere('asunto', 'LIKE', "%{$request->search}%");
+            });
+        }
+        if ($request->filled('flujo_id')) {
+            $query->where('flujo_id', $request->flujo_id);
+        }
+        if ($request->filled('usuario_id')) {
+            $query->where('usuario_id', $request->usuario_id);
+        }
+        if ($request->filled('condicion') && $request->condicion == 'vencido') {
+            $query->whereHas('trd', fn($q) => $q->whereRaw('DATE_ADD(corr_correspondencia.fecha_solicitud, INTERVAL corr_trd.tiempo_gestion DAY) < NOW()'))->where('finalizado', false);
+        }
+
+        // KPIs (Calculados sobre la base filtrada para coherencia visual)
+        $kpis = [
+            'total' => (clone $query)->count(),
+            'vencidos' => (clone $query)->where('finalizado', false)->whereHas('trd', fn($q) => $q->whereRaw('DATE_ADD(corr_correspondencia.fecha_solicitud, INTERVAL corr_trd.tiempo_gestion DAY) < NOW()'))->count(),
+            'pendientes' => (clone $query)->where('finalizado', false)->count(),
+            'finalizados' => (clone $query)->where('finalizado', true)->count(),
+        ];
+
+        $correspondencias = $query->orderBy('fecha_solicitud', 'desc')->paginate(15)->appends($request->all());
+
+        // Data para filtros y gráficas
+        $flujos = FlujoDeTrabajo::withCount('correspondencias')->get();
+        $usuarios = User::orderBy('name')->get();
+        $estados = Estado::withCount('correspondencias')->get();
+
+        return view('correspondencia.tablero.index', compact('correspondencias', 'kpis', 'flujos', 'usuarios', 'estados'));
     }
-    if ($request->filled('flujo_id')) $query->where('flujo_id', $request->flujo_id);
-    if ($request->filled('usuario_id')) $query->where('usuario_id', $request->usuario_id);
-    if ($request->filled('condicion') && $request->condicion == 'vencido') {
-        $query->whereHas('trd', fn($q) => 
-            $q->whereRaw("DATE_ADD(corr_correspondencia.fecha_solicitud, INTERVAL corr_trd.tiempo_gestion DAY) < NOW()")
-        )->where('finalizado', false);
-    }
-
-    // KPIs (Calculados sobre la base filtrada para coherencia visual)
-    $kpis = [
-        'total' => (clone $query)->count(),
-        'vencidos' => (clone $query)->where('finalizado', false)->whereHas('trd', fn($q) => 
-            $q->whereRaw("DATE_ADD(corr_correspondencia.fecha_solicitud, INTERVAL corr_trd.tiempo_gestion DAY) < NOW()")
-        )->count(),
-        'pendientes' => (clone $query)->where('finalizado', false)->count(),
-        'finalizados' => (clone $query)->where('finalizado', true)->count(),
-    ];
-
-    $correspondencias = $query->orderBy('fecha_solicitud', 'desc')->paginate(15)->appends($request->all());
-    
-    // Data para filtros y gráficas
-    $flujos = FlujoDeTrabajo::withCount('correspondencias')->get();
-    $usuarios = User::orderBy('name')->get();
-    $estados = Estado::withCount('correspondencias')->get();
-
-    return view('correspondencia.tablero.index', compact(
-        'correspondencias', 'kpis', 'flujos', 'usuarios', 'estados'
-    ));
-}
 
     /**
      * API: Obtiene las TRD vinculadas a un flujo específico (para carga dinámica en vistas).
@@ -352,6 +359,4 @@ public function tablero(Request $request)
         }
         return response()->json($tercero);
     }
-
-
 }

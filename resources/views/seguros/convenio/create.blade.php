@@ -83,7 +83,7 @@
                                                     name="planes[{{ $plan->id }}][vprima]"
                                                     value="{{ $plan->prima_aseguradora }}" required>
                                             </div>
-                                            <div class="col-lg-4">
+                                            <div class="col-lg-3">
                                                 <label class="form-label">Condición<span
                                                         class="text-danger">*</span></label>
                                                 <select class="form-control"
@@ -95,6 +95,11 @@
                                                         </option>
                                                     @endforeach
                                                 </select>
+                                            </div>
+                                            <div class="col-lg-1 d-flex align-items-end pb-3">
+                                                <button type="button" class="btn btn-danger btn-sm py-2 eliminar-plan">
+                                                    <i class="feather-trash-2"></i>
+                                                </button>
                                             </div>
                                         </div>
                                     @endforeach
@@ -112,7 +117,8 @@
                                     <div class="d-flex align-items-center gap-3">
                                         <a href="javascript:void(0);" class="single-task-list-link"
                                             data-bs-toggle="offcanvas" data-bs-target="#tasksDetailsOffcanvas">
-                                            <div class="fs-13 fw-bold text-truncate-1-line">Configurar este convenio como
+                                            <div class="fs-13 fw-bold text-truncate-1-line">Configurar este convenio
+                                                como
                                                 <span class="ms-2 badge bg-soft-success text-success"> Vigente</span>
                                             </div>
                                             <div class="fs-12 fw-normal text-muted text-truncate-1-line">Se actualizará

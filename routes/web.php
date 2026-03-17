@@ -434,10 +434,16 @@ Route::prefix('interactions')
 
         // 📌 AJAX: Buscar clientes para Select2
         Route::get('/search-clients', [InteractionController::class, 'searchClients'])->name('search-clients');
+        
+        // 🆕 NUEVA RUTA: Buscar usuarios para Select2 (Delegar a otro)
+        Route::get('/search-users', [InteractionController::class, 'searchUsers'])->name('searchUsers');
+
         // 🆕 NUEVA RUTA: Obtener el distrito de un cliente
         Route::get('/clientes/{client_id}/distrito', [InteractionController::class, 'getClientDistrict'])->name('clientes.distrito');
+        
         // 🆕 NUEVA RUTA: Actualizar el distrito de un cliente
         Route::put('/clientes/{client_id}/actualizar-distrito', [InteractionController::class, 'updateClientDistrict'])->name('clientes.actualizar-distrito');
+        
         // --- 📡 GRUPO DE RUTAS PARA CANALES DE INTERACCIÓN ---
         Route::prefix('channels')
             ->name('channels.')
@@ -489,6 +495,10 @@ Route::prefix('interactions')
                 Route::put('/{action}', [IntNextActionController::class, 'update'])->name('update');
                 Route::delete('/{action}', [IntNextActionController::class, 'destroy'])->name('destroy');
             });
+
+        // 🆕 RUTA DE SEGUIMIENTOS (AQUÍ LA AGREGUÉ)
+        // Se coloca aquí para que herede el middleware auth y el prefijo
+        Route::post('/seguimientos/store', [\App\Http\Controllers\Interacciones\IntSeguimientoController::class, 'store'])->name('seguimientos.store');
     });
 //FIN INTERACCIONES
 

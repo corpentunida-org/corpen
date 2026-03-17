@@ -17,4 +17,9 @@ class IntNextAction extends Model
     {
         return $this->hasMany(Interaction::class, 'next_action_type');
     }
+    public function seguimientos()
+    {
+        // Un tipo de acción (ej. "Llamar") aparece en muchos seguimientos
+        return $this->hasMany(IntSeguimiento::class, 'next_action_type');
+    }
 }

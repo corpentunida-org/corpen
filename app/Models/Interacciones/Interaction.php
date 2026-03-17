@@ -7,18 +7,14 @@ use Illuminate\Database\Eloquent\Model;
 
 use App\Models\Maestras\maeTerceros;
 use App\Models\User;
-// Asumimos que existen estos modelos para las nuevas relaciones
-use App\Models\Archivo\GdoArea;
-use App\Models\Archivo\GdoCargo;
-// use App\Models\Archivo\GdoFuncione;
 use App\Models\Creditos\LineaCredito;
-use App\Models\Maestras\maeDistritos;
 use Illuminate\Support\Facades\Storage;
 
 class Interaction extends Model
 {
     use HasFactory;
 
+    // Actualizado exactamente a las columnas que indicaste que tiene tu tabla
     protected $fillable = [
         'client_id',
         'agent_id',
@@ -43,15 +39,11 @@ class Interaction extends Model
     ];
 
     protected $casts = [
-        'attachment_urls'   => 'array',
-        'interaction_date'  => 'datetime',
-        'next_action_date'  => 'datetime',
-        // --- CASTS PARA LOS NUEVOS CAMPOS ---
-        'id_area'               => 'integer',
-        'id_cargo'              => 'integer',
-        'id_linea_de_obligacion'=> 'integer',
-        'id_area_de_asignacion' => 'integer',
-        'id_funciones'          => 'integer',
+        'attachment_urls'  => 'array',
+        'interaction_date' => 'datetime',
+        'next_action_date' => 'datetime',
+        'id_linea_de_obligacion' => 'integer',
+        'id_user_asignacion'     => 'integer',
     ];
 
     public function getFile($nameFile)
@@ -70,68 +62,56 @@ class Interaction extends Model
     {
         return $this->belongsTo(User::class, 'agent_id', 'id');
     }
+    
     public function client()
     {
-        return $this->belongsTo(maeTerceros::class, 'client_id', 'cod_ter');
+        return $this->belongsTo(maeTerceros::class, 'client_id', 'cod_ter'); //campo "nom_ter"
     }
+    
     public function channel()
     {
-        return $this->belongsTo(IntChannel::class, 'interaction_channel','id');
+        return $this->belongsTo(IntChannel::class, 'interaction_channel', 'id');
     }
+    
     public function type()
     {
-        return $this->belongsTo(IntType::class, 'interaction_type','id');
+        return $this->belongsTo(IntType::class, 'interaction_type', 'id');
     }
+    
     public function outcomeRelation()
     {
-        return $this->belongsTo(IntOutcome::class, 'outcome','id');
+        return $this->belongsTo(IntOutcome::class, 'outcome', 'id');
     }
+    
     public function nextAction()
     {
-        return $this->belongsTo(IntNextAction::class, 'next_action_type','id');
+        return $this->belongsTo(IntNextAction::class, 'next_action_type', 'id');
     }
 
-    // ------------------- NUEVAS RELACIONES -------------------
-    /**
-     * Obtiene el área asociada a la interacción.
-     */
+    // ------------------- NUEVAS RELACIONES CORREGIDAS -------------------
     
-    
-    /**
-     * Obtiene el área de asignación asociada a la interacción.
-     */
-    public function areaDeAsignacion()
-    {
-        return $this->belongsTo(GdoArea::class, 'id_area_de_asignacion','id');
-    }
-
-    /**
-     * Obtiene el cargo asociado a la interacción.
-     */
-    public function cargo()
-    {
-        return $this->belongsTo(GdoCargo::class, 'id_cargo','id');
-    }
-
     /**
      * Obtiene la línea de obligación asociada a la interacción.
      */
     public function lineaDeObligacion()
     {
-        return $this->belongsTo(LineaCredito::class, 'id_linea_de_obligacion','id');
+        return $this->belongsTo(LineaCredito::class, 'id_linea_de_obligacion', 'id');
     }
-    public function DistritoDeObligacion()
-    {
-        return $this->belongsTo(maeDistritos::class, 'id_distrito_interaccion','COD_DIST');
-    }
-
 
     /**
-     * Obtiene la función asociada a la interacción.
+     * Obtiene el usuario al que se le asignó (escaló) la interacción.
+     * Reemplaza las antiguas relaciones de area y cargo.
      */
-    
-/*     public function funcion()
+    public function usuarioAsignado()
     {
-        return $this->belongsTo(GdoFuncione::class, 'id_funciones');
-    }  */
+        return $this->belongsTo(User::class, 'id_user_asignacion', 'id');
+    }
+    
+    // NOTA: Se eliminaron las relaciones de areaDeAsignacion(), cargo() y DistritoDeObligacion() 
+    // porque las columnas correspondientes (id_area_de_asignacion, id_cargo, id_distrito_interaccion) 
+    // ya NO existen en tu tabla de base de datos actual.
+    public function seguimientos()
+    {
+        return $this->hasMany(IntSeguimiento::class, 'id_interaction');
+    }
 }

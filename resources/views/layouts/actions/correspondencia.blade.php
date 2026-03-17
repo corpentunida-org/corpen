@@ -8,7 +8,7 @@
 
     <ul class="nxl-submenu">
         {{-- 1. DASHBOARD ESTRATÉGICO --}}
-        @candirect('correspondencia.usuario.agente')
+        @candirect('correspondencia.usuario.admin')
         <li class="nxl-item">
             <a class="nxl-link" href="{{ route('correspondencia.tablero') }}">
                 <i class="bi bi-speedometer2 me-2"></i> Tablero de Control
