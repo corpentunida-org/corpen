@@ -22,7 +22,7 @@ class SegConvenioController extends Controller
 
     public function index()
     {
-        $convenios = SegConvenio::orderBy('fecha_inicio', 'asc')->get();
+        $convenios = SegConvenio::orderBy('fecha_inicio', 'desc')->get();
         return view('seguros.convenio.index', compact('convenios'));
     }
     public function show($id)

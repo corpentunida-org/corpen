@@ -11,9 +11,9 @@
                         <h5 class="fw-bold">Convenios:</h5>
                         <a href="javascript:void(0);" class="btn btn-sm btn-light-brand">Listar Todos</a>
                     </div>
-                    <ul class="list-unstyled activity-feed">
-                        @foreach ($convenios as $i => $convenio)
-                            {{-- <li
+
+                    @foreach ($convenios as $i => $convenio)
+                        {{-- <li
                                 class="d-flex justify-content-between feed-item feed-item-{{ $colors[$i % count($colors)] }}">
                                 <div>
                                     <span class="text-truncate-1-line lead_date">Fecha de inicio
@@ -34,32 +34,33 @@
                                             class="feather feather-eye fs-12"></i></a>
                                 </div>
                             </li> --}}
-                            <div class="hstack gap-3 justify-content-between">
-                                <div class="hstack gap-3">
-                                    <div class="wd-7 ht-7 bg-{{ $colors[$i % count($colors)] }} rounded-circle"></div>
-                                    <div>
-                                        <span class="text-truncate-1-line lead_date">Fecha de inicio
-                                            {{ $convenio->fecha_inicio }} A fecha fin {{ $convenio->fecha_fin }}</span>
-                                        <span class="fw-bold">
-                                            Contrato {{ substr($convenio->nombre, 0, -4) }}
-                                            <a href="javascript:void(0);"
-                                                class="fw-bold text-{{ $colors[$i % count($colors)] }}">{{ substr($convenio->nombre, -4) }}</a>
-                                        </span>
-                                    </div>
-                                </div>
-                                <div class="hstack gap-3 justify-content-between">
-                                    @if ($convenio->vigente)
-                                        <a class="badge bg-soft-success text-success ms-1">Vigente</a>
-                                    @endif
-                                    <a href="{{ route('seguros.convenio.show', ['convenio' => $convenio->id]) }}"
-                                        class="avatar-text avatar-sm" data-bs-toggle="tooltip" data-bs-trigger="hover"
-                                        title="" data-bs-original-title="Ver Detalle"><i
-                                            class="feather feather-eye fs-12"></i></a>
+                        <div class="hstack gap-3 justify-content-between">
+                            <div class="hstack gap-3">
+                                <div class="wd-7 ht-7 bg-{{ $colors[$i % count($colors)] }} rounded-circle"></div>
+                                <div>
+                                    <span class="text-truncate-1-line lead_date">Fecha de inicio
+                                        {{ $convenio->fecha_inicio }}</span>
+                                    <span class="text-truncate-1-line lead_date">Fecha fin {{ $convenio->fecha_fin }}</span>
+                                    <span class="fw-bold text-black">
+                                        Contrato {{ substr($convenio->nombre, 0, -4) }}
+                                        <a href="{{ route('seguros.convenio.show', ['convenio' => $convenio->id]) }}"
+                                            class="fw-bold text-{{ $colors[$i % count($colors)] }}">{{ substr($convenio->nombre, -4) }}</a>
+                                    </span>
                                 </div>
                             </div>
-                            <hr class="border-dashed my-3">
-                        @endforeach
-                    </ul>
+                            <div class="hstack gap-3 justify-content-between">
+                                @if ($convenio->vigente)
+                                    <a class="badge bg-soft-success text-success ms-1">Vigente</a>
+                                @endif
+                                <a href="{{ route('seguros.convenio.show', ['convenio' => $convenio->id]) }}"
+                                    class="avatar-text avatar-sm" data-bs-toggle="tooltip" data-bs-trigger="hover"
+                                    title="" data-bs-original-title="Ver Detalle"><i
+                                        class="feather feather-eye fs-12"></i></a>
+                            </div>
+                        </div>
+                        <hr class="border-dashed my-3">
+                    @endforeach
+
                 </div>
             </div>
         </div>
