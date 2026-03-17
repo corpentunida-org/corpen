@@ -195,4 +195,17 @@ class User extends Authenticatable
         // Un usuario tiene muchos registros de gestión/seguimiento
         return $this->hasMany(CorrespondenciaProceso::class, 'fk_usuario'); 
     }
+
+    // Seguimientos registrados por el usuario (como agente)
+    public function seguimientosRegistrados()
+    {
+        return $this->hasMany(\App\Models\Interacciones\IntSeguimiento::class, 'agent_id');
+    }
+
+    // Seguimientos que le han sido asignados al usuario
+    public function seguimientosAsignados()
+    {
+        return $this->hasMany(\App\Models\Interacciones\IntSeguimiento::class, 'id_user_asignacion');
+    }
+
 }

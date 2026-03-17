@@ -18,7 +18,7 @@
                         class="btn btn-light-brand">Copiar Convenio</a>
                     @endcandirect
                     @candirect('seguros.planes.store')
-                    <a href="{{ route('seguros.planes.create') }}" class="btn btn-success" data-bs-toggle="tooltip"
+                    <a href="{{ route('seguros.planes.create', ['convenio_id' => $convenio->idConvenio]) }}" class="btn btn-success" data-bs-toggle="tooltip"
                         title="" data-bs-original-title="{{ $convenio->nombre }}">
                         <i class="feather-plus me-2"></i>
                         <span>Agregar Plan</span>

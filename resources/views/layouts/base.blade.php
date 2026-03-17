@@ -36,7 +36,7 @@
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/vendors/css/tagify-data.min.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/vendors/css/quill.min.css') }}">
 
-    <link rel="stylesheet" type="text/css" href="{{ asset('assets/vendors/css/datepicker.min.css') }}">
+    {{-- <link rel="stylesheet" type="text/css" href="{{ asset('assets/vendors/css/datepicker.min.css') }}"> --}}
 
     <!-- FullCalendar CSS -->
     <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.css" rel="stylesheet">
@@ -57,9 +57,7 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     @stack('style')
 
-    <!--  -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
 </head>
 
 <body>
@@ -80,8 +78,10 @@
 
                     <a href="{{ route('dashboard') }}" class="b-brand d-flex justify-content-center align-items-center">
                         <!-- ========   change your logo here   ============ -->
-                        <img src="https://www.fecp.org.co/images/CORPENTUNIDA_LOGO_PRINCIPAL.png" alt=""
-                            class="logo logo-sm" width="200px" />
+              {{--           <img src="https://www.fecp.org.co/images/CORPENTUNIDA_LOGO_PRINCIPAL.png" alt=""
+                            class="logo logo-sm" width="200px" /> --}}
+                            
+                        <img src="{{asset('img/logo.png')}}" alt="logo" class="logo logo-sm" width="200px">
                     </a>
                     <div class="navbar-content">
                         <ul class="nxl-navbar">
@@ -140,8 +140,7 @@
                                 <a href="javascript:void(0);" class="nxl-head-link me-0 dark-button">
                                     <i class="feather-moon"></i>
                                 </a>
-                                <a href="javascript:void(0);" class="nxl-head-link me-0 light-button"
-                                    style="display: none">
+                                <a href="javascript:void(0);" class="nxl-head-link me-0 light-button" style="display: none">
                                     <i class="feather-sun"></i>
                                 </a>
                             </div>
@@ -154,7 +153,7 @@
                                         <i class="feather-minimize minimize"></i>
                                     </a>
                                 </div>
-                            </div>                            
+                            </div>
                             <div class="dropdown nxl-h-item">
                                 <a href="javascript:void(0);" data-bs-toggle="dropdown" role="button"
                                     data-bs-auto-close="outside">
@@ -187,7 +186,7 @@
                                         </button>
                                     </form>
                                 </div>
-                            </div>                        
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -253,9 +252,18 @@
             {{-- Bootstrap CDN --}}
             {{-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script> --}}
 
+            <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
             <script src="{{ asset('assets/vendors/js/vendors.min.js') }}"></script>
             <!-- vendors.min.js {always must need to be top} -->
+            <!-- daterangepicker -->
+            <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
 
+            <!-- circle progress -->
+            <script src="https://cdn.jsdelivr.net/npm/jquery-circle-progress@1.2.2/dist/circle-progress.min.js"></script>
+
+            <!-- datepicker -->
+            <script src="https://cdn.jsdelivr.net/npm/vanillajs-datepicker@1.3.4/dist/js/datepicker.min.js"></script>
             <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
             <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
@@ -292,17 +300,16 @@
 
             <script src="{{ asset('assets/js/projects-init.min.js') }}"></script>
             <script src="{{ asset('assets/js/payment-init.min.js') }}"></script>
-            
+
             <!--! END: Apps Init !-->
 
             <script src="{{ asset('assets/vendors/js/tagify.min.js') }}"></script>
             <script src="{{ asset('assets/vendors/js/tagify-data.min.js') }}"></script>
             <script src="{{ asset('assets/vendors/js/quill.min.js') }}"></script>
-            <script src="{{ asset('assets/vendors/js/datepicker.min.js') }}"></script>            
+            {{-- <script src="{{ asset('assets/vendors/js/datepicker.min.js') }}"></script>             --}}
 
             <script src="{{ asset('assets/js/proposal-create-init.min.js') }}"></script>
             <!--! END: Apps Init !-->
-            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
             @stack('scripts')
         @endif
     @endauth
