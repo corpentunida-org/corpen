@@ -146,7 +146,7 @@ class ActivoController extends Controller
         // 3. DIETA DE MEMORIA para el resto de catálogos
         $marcas = InvMarca::select('id', 'nombre')->orderBy('nombre')->get();
         $subgrupos = InvSubgrupo::select('id', 'nombre')->orderBy('nombre')->get();
-        $estados = InvEstado::select('id', 'nombre')->get();
+        $estados = InvEstado::select('id', 'nombre', 'id_bodega')->get();
         $bodegas = DB::table('inv_bodegas')->select('id', 'nombre')->orderBy('nombre')->get(); 
         $municipios = MaeMunicipios::select('id', 'nombre')->orderBy('nombre')->get();
         $usuarios = User::select('id', 'name')->orderBy('name')->get();
