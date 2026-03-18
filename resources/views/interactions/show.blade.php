@@ -146,7 +146,7 @@
                                 <span class="data-label text-primary">Persona que Inicia el Contacto</span>
                                 <div class="fw-bold text-dark">{{ $interaction->nombre_quien_llama ?? 'El Titular' }}</div>
                                 <div class="d-flex flex-column gap-1 mt-1 small text-muted">
-                                    <span><i class="fas fa-users me-2"></i>Relación: <strong>{{ ucfirst($interaction->parentezco_quien_llama ?? 'Titular') }}</strong></span>
+                                    <span><i class="fas fa-users me-2"></i>Relación: <strong>{{ ucfirst($interaction->parentesco_quien_llama ?? 'Titular') }}</strong></span>
                                     <span><i class="fas fa-phone-alt me-2"></i>Tel: {{ $interaction->celular_quien_llama ?? 'N/A' }}</span>
                                 </div>
                             </div>
