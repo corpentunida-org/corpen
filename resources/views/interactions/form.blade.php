@@ -994,7 +994,7 @@
                     .css('width', progress + '%')
                     .attr('aria-valuenow', progress);
 
-                DraftManager.save();
+                //DraftManager.save();
             },
 
             handleFileSelect: function(input) {
@@ -1225,7 +1225,7 @@
                 const badgeColor = isSuccess ? '#39C666' : (isPending ? '#FFA21D' : '#596CD8');
 
                 const safeNotes = item.notes ? $('<div>').text(item.notes).html() :
-                    '<em>Sin notas.</em>';
+                    '<em>Sin notas.</em>';           
 
                 return `
                 <div class="history-item mb-3 timeline-item" id="history-item-${item.id}">
@@ -1266,7 +1266,7 @@
                 $('.history-item > div').removeClass('border-dark');
                 $(`.history-list #history-item-${id} > div`).addClass('border-dark');
 
-                DraftManager.save();
+                //DraftManager.save();
                 toastr.info('Interacción vinculada');
             },
 
@@ -1274,7 +1274,7 @@
                 $(DOM.parentIdInp).val('');
                 $('#selected-parent-info').fadeOut();
                 $('.history-item > div').removeClass('border-dark');
-                DraftManager.save();
+                //DraftManager.save();
             },
 
             restoreParentSelection: function() {
@@ -1304,58 +1304,7 @@
         // =====================================================================
         // 6. MÓDULO DE BORRADORES (Auto-Guardado)
         // =====================================================================
-        const DraftManager = {
-            debounceTimer: null,
-            save: function() {
-                try {
-                    const data = {};
-                    $(DOM.form).find('input,textarea,select').each(function() {
-                        if (!this.name || this.type === 'file') return;
-                        if (this.type === 'checkbox' || this.type === 'radio') {
-                            if (this.checked) data[this.name] = this.value;
-                        } else {
-                            data[this.name] = $(this).val();
-                        }
-                    });
-                    data.activeTab = $('.tab-button.active').data('tab');
-                    localStorage.setItem(CONFIG.storageKey, JSON.stringify(data));
-                } catch (e) {
-                    console.warn('Borrador no guardado', e);
-                }
-            },
-
-            debouncedSave: function() {
-                clearTimeout(this.debounceTimer);
-                this.debounceTimer = setTimeout(() => this.save(), 700);
-            },
-
-            load: function() {
-                const raw = localStorage.getItem(CONFIG.storageKey);
-                if (!raw) return;
-                try {
-                    const data = JSON.parse(raw);
-                    Object.keys(data).forEach(name => {
-                        if (name === 'activeTab') return;
-                        const $el = $(DOM.form).find(`[name="${name}"]`);
-                        if ($el.is('select')) $el.val(data[name]).trigger('change');
-                        else if ($el.length) $el.val(data[name]);
-                    });
-
-                    if (data.start_time && data.client_id) {
-                        state.startTime = new Date(data.start_time);
-                        Timer.start(); // Retoma cronómetro
-                    }
-
-                    if (data.activeTab) UI.showTab(data.activeTab);
-                } catch (e) {}
-            },
-
-            clear: function() {
-                localStorage.removeItem(CONFIG.storageKey);
-                console.log("Memoria borrada"); 
-            }
-        };
-
+        
         // =====================================================================
         // 7. MÓDULO DE VALIDACIÓN Y SINCRONIZACIÓN (Form Validator)
         // =====================================================================
@@ -1599,7 +1548,7 @@
             // Auto-Guardado y Limpieza Visual
             $(DOM.form).on('input change', 'input, textarea, select', function() {
                 UI.cleanError(this);
-                DraftManager.debouncedSave();
+                //DraftManager.debouncedSave();
             });
 
             // Select2 Limpieza visual
@@ -1703,7 +1652,7 @@
             initPlugins();
             bindEvents();
             Validation.toggleResponsibility();
-            DraftManager.load();
+            //DraftManager.load();
 
             // Disparar triggers iniciales
             if (!$(DOM.clientSelect).val()) Timer.reset();

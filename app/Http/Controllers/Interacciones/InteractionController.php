@@ -297,38 +297,25 @@ class InteractionController extends Controller
             ]);
 
             // Lógica para subir archivo (Si el usuario adjuntó uno)
-            $attachmentUrls = null;
+            $path = null;
             if ($request->hasFile('attachment')) {
-                try {
-                    $file = $request->file('attachment');
-                    if ($file->isValid()) {
-                        $fileName = time() . '_' . str_replace(' ', '_', $file->getClientOriginalName());
-                        $ruta = Storage::disk('s3')->putFileAs('corpentunida/daytrack/' . $interaction->id, $file, $fileName, 'public');
-
-                        if ($ruta) {
-                            $attachmentUrls = [$ruta];
-                        }
-                    }
-                } catch (\Exception $e) {
-                    Log::error('Excepción al subir archivo en store: ' . $e->getMessage());
-                }
+                $file = $request->file('attachment');     
+                $safeName = time() . '_' . str_replace(' ', '_', $file->getClientOriginalName());     
+                $folderPath = "corpentunida/daytrack/" . $interaction->id;
+                $path = Storage::disk('s3')->putFileAs($folderPath, $file, $safeName);
             }
-
-            // 2. Guardar el Seguimiento (TABLA 2) 
-            // Solo si se programó una acción, se subió un archivo, o se puso una URL externa
-            if ($request->filled('next_action_type') || $attachmentUrls !== null || $request->filled('interaction_url')) {
-
+           
                 $interaction->seguimientos()->create([
                     'agent_id' => $agentId,
                     'id_user_asignacion' => $validatedData['id_user_asignacion'] ?? null,
                     'outcome' => $validatedData['outcome'],
                     'next_action_type' => $request->input('next_action_type') ?? 1, // Por si acaso enviamos un fallback
-                    'next_action_date' => $request->input('next_action_date'),
-                    'next_action_notes' => $request->input('next_action_notes'),
+                    'next_action_date' => $request->input('next_action_date') ?? now(),
+                    'next_action_notes' => $request->input('next_action_notes') ?? $request->input('notes'),
                     'interaction_url' => $request->input('interaction_url'),
-                    'attachment_urls' => $attachmentUrls,
+                    'attachment_urls' => $path,
                 ]);
-            }
+            
 
             return redirect()->route('interactions.index')->with('success', 'Interacción creada exitosamente.');
         });

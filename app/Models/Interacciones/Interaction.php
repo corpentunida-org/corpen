@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Maestras\maeTerceros;
 use App\Models\User;
 use App\Models\Creditos\LineaCredito;
+use Illuminate\Support\Facades\Storage;
 
 class Interaction extends Model
 {
@@ -35,6 +36,19 @@ class Interaction extends Model
         'id_linea_de_obligacion'   => 'integer',
         'id_user_asignacion'       => 'integer',
     ];
+
+    public function getFile ($nameFile)
+    {
+        $url = '#';
+        if($nameFile) {
+            if (Storage::disk('s3')->exists($nameFile)) {
+                $url = Storage::disk('s3')->temporaryUrl(
+                    $nameFile, now()->addMinutes(5)
+                );
+            }
+        }
+        return $url;
+    }
 
     // ------------------- RELACIONES -------------------
     public function agent()
