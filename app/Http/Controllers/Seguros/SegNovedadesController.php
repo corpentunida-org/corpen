@@ -264,7 +264,7 @@ class SegNovedadesController extends Controller
         /*$request->validate([
             'formulario_nov' => 'required|mimes:pdf|max:2048',
         ]);*/
-        dd($request->all());
+        //dd($request->all());
         $formulario = null;
         if ($request->hasFile('formulario_nov')) {
             $formulario = Storage::disk('s3')->put('corpentunida/seguros_vida/novedades/' . $id, $request->file('formulario_nov'));
