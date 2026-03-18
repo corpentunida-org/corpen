@@ -1052,7 +1052,7 @@
                     let nombreDelDocumento = nombresArchivos[i-1] ? nombresArchivos[i-1] : `Documento Requerido #${i}`;
 
                     containerArchivos.innerHTML += `
-                        <div class="position-relative d-flex align-items-center p-2 rounded-4 border-2 border-dashed" style="border-color: #dee2e6; background-color: #fcfcfc;">
+                        <div class="position-relative d-flex align-items-center p-2 rounded-4 border-2 border-dashed" style="border-color: #dee2e6; background-color: #fcfcfc; transition: all 0.3s ease;">
                             <div class="p-2 bg-white rounded-circle shadow-sm me-3 text-danger d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
                                 <i class="bi bi-file-earmark-pdf-fill fs-5"></i>
                             </div>
@@ -1069,13 +1069,13 @@
                 labelBadge.textContent = "Opcional";
                 
                 containerArchivos.innerHTML = `
-                    <div class="upload-box position-relative d-flex align-items-center p-3 rounded-4 border-2 border-dashed" style="border-color: #dee2e6; background-color: #fcfcfc;">
+                    <div class="upload-box position-relative d-flex align-items-center p-3 rounded-4 border-2 border-dashed" style="border-color: #dee2e6; background-color: #fcfcfc; transition: all 0.3s ease;">
                         <div class="p-3 bg-white rounded-circle shadow-sm me-3 text-primary d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
                             <i class="bi bi-cloud-arrow-up-fill fs-4"></i>
                         </div>
                         <div>
                             <h6 class="mb-0 fw-bold text-dark">Subir archivos opcionales</h6>
-                            <p class="text-muted small mb-0" style="font-size: 0.75rem;">Puede seleccionar varios PDF/Imágenes</p>
+                            <p class="text-muted small mb-0" style="font-size: 0.75rem;">Haz clic, o presiona <b>Ctrl+V</b> para pegar</p>
                         </div>
                         <input type="file" name="documento_arc[]" class="position-absolute w-100 h-100 top-0 start-0 opacity-0 cursor-pointer" multiple accept=".pdf,.doc,.docx,.jpg,.png" title="Seleccionar archivos">
                     </div>
@@ -1107,6 +1107,137 @@
                     });
                 });
             }
+
+            // =================================================================
+            // LÓGICA PARA CARGA TRADICIONAL (HACIENDO CLIC Y SELECCIONANDO ARCHIVO)
+            // =================================================================
+            const contenedorArchivos = document.getElementById('container_archivos_dinamicos');
+            if (contenedorArchivos) {
+                contenedorArchivos.addEventListener('change', function(e) {
+                    if (e.target && e.target.type === 'file') {
+                        let input = e.target;
+                        let files = input.files;
+                        
+                        if (files.length === 0) return; // Si cancela la selección, no hacer nada
+
+                        if (input.hasAttribute('multiple')) {
+                            let box = input.closest('.upload-box');
+                            let titleElement = box.querySelector('h6');
+                            let descElement = box.querySelector('p');
+                            let iconElement = box.querySelector('.rounded-circle');
+
+                            titleElement.innerHTML = `<span class="text-success"><i class="bi bi-check-circle-fill me-1"></i> ${files.length} archivo(s) seleccionado(s)</span>`;
+                            descElement.innerHTML = '<span class="text-success fw-bold">¡Archivos listos para subir!</span>';
+                            box.style.borderColor = '#198754';
+                            box.style.backgroundColor = '#f8fff9';
+                            
+                            if(iconElement) {
+                                iconElement.className = 'p-3 bg-white rounded-circle shadow-sm me-3 text-success d-flex align-items-center justify-content-center';
+                                iconElement.innerHTML = '<i class="bi bi-check-lg fs-4"></i>';
+                            }
+                        } else {
+                            let box = input.closest('.position-relative');
+                            let label = box.querySelector('h6');
+                            let iconElement = box.querySelector('.rounded-circle');
+                            let nombreArchivo = files[0].name;
+                            
+                            if (!input.dataset.nombreOriginal) {
+                                input.dataset.nombreOriginal = label.innerText.replace('*', '').trim();
+                            }
+                            
+                            label.innerHTML = `<span class="text-success"><i class="bi bi-check-all me-1"></i> ${input.dataset.nombreOriginal}: ${nombreArchivo}</span>`;
+                            box.style.borderColor = '#198754';
+                            box.style.backgroundColor = '#f8fff9';
+                            
+                            if(iconElement) {
+                                iconElement.className = 'p-2 bg-white rounded-circle shadow-sm me-3 text-success d-flex align-items-center justify-content-center';
+                                iconElement.innerHTML = '<i class="bi bi-file-earmark-check-fill fs-5"></i>';
+                            }
+                        }
+                    }
+                });
+            }
         });
-    </script>
+
+        // =================================================================
+        // LÓGICA PARA PEGAR ARCHIVOS CON CTRL+V (PORTAPAPELES)
+        // =================================================================
+        document.addEventListener('paste', function(e) {
+            // 1. Verificar si el modal de gestión está abierto
+            if (!$('#modalSeguimiento').hasClass('show')) return;
+
+            // 2. Obtener los archivos del portapapeles
+            let pastedFiles = e.clipboardData.files;
+            if (pastedFiles.length === 0) return; // Si es texto, ignorar
+
+            // 3. Buscar escenario Opcional (Múltiple)
+            let inputMultiple = document.querySelector('#container_archivos_dinamicos input[type="file"][multiple]');
+
+            if (inputMultiple) {
+                const dt = new DataTransfer();
+                
+                // Conservar archivos previos
+                for (let i = 0; i < inputMultiple.files.length; i++) {
+                    dt.items.add(inputMultiple.files[i]);
+                }
+                // Agregar archivos pegados
+                for (let i = 0; i < pastedFiles.length; i++) {
+                    dt.items.add(pastedFiles[i]);
+                }
+                inputMultiple.files = dt.files;
+
+                // Feedback visual múltiple
+                let box = inputMultiple.closest('.upload-box');
+                let titleElement = box.querySelector('h6');
+                let descElement = box.querySelector('p');
+                let iconElement = box.querySelector('.rounded-circle');
+
+                titleElement.innerHTML = `<span class="text-success"><i class="bi bi-check-circle-fill me-1"></i> ${inputMultiple.files.length} archivo(s) cargado(s)</span>`;
+                descElement.innerHTML = '<span class="text-success fw-bold">¡Pegado exitoso desde el portapapeles!</span>';
+                box.style.borderColor = '#198754';
+                box.style.backgroundColor = '#f8fff9';
+                
+                if(iconElement) {
+                    iconElement.className = 'p-3 bg-white rounded-circle shadow-sm me-3 text-success d-flex align-items-center justify-content-center';
+                    iconElement.innerHTML = '<i class="bi bi-check-lg fs-4"></i>';
+                }
+
+                alert("¡Imagen(es) agregada(s) correctamente al anexo opcional!");
+                return;
+            }
+
+            // 4. Buscar escenario Obligatorio (Individuales)
+            let inputsIndividuales = document.querySelectorAll('#container_archivos_dinamicos input[type="file"]:not([multiple])');
+
+            for (let input of inputsIndividuales) {
+                if (input.files.length === 0) {
+                    const dt = new DataTransfer();
+                    dt.items.add(pastedFiles[0]); // Solo tomar la primera imagen por caja
+                    input.files = dt.files;
+
+                    // Feedback visual individual
+                    let box = input.closest('.position-relative');
+                    let label = box.querySelector('h6');
+                    let iconElement = box.querySelector('.rounded-circle');
+                    let nombreArchivo = pastedFiles[0].name || 'captura_pegada.png';
+                    
+                    if (!input.dataset.nombreOriginal) {
+                        input.dataset.nombreOriginal = label.innerText.replace('*', '').trim();
+                    }
+                    
+                    label.innerHTML = `<span class="text-success"><i class="bi bi-check-all me-1"></i> ${input.dataset.nombreOriginal}: ${nombreArchivo}</span>`;
+                    box.style.borderColor = '#198754';
+                    box.style.backgroundColor = '#f8fff9';
+                    
+                    if(iconElement) {
+                        iconElement.className = 'p-2 bg-white rounded-circle shadow-sm me-3 text-success d-flex align-items-center justify-content-center';
+                        iconElement.innerHTML = '<i class="bi bi-file-earmark-check-fill fs-5"></i>';
+                    }
+                    
+                    alert("¡Archivo insertado correctamente en la casilla requerida!");
+                    break;
+                }
+            }
+        });
+</script>
 </x-base-layout>
