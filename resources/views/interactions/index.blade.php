@@ -176,9 +176,9 @@
                                     <th class="py-2">ID</th>
                                     <th class="py-2">Usuario</th>
                                     <th class="py-2">Cliente</th>
-                                    <th class="py-2">Fecha</th>
-                                    <th class="py-2">Canal</th>
-                                    <th class="py-2">Resultado</th>
+                                    <th class="py-2">Distrito</th>
+                                    <th class="py-2">Fecha y Canal</th>
+                                    <th class="py-2">Línea y Resultado</th>
                                     <th class="py-2">Próxima Acción</th>
                                     <th class="py-2 text-end">Acciones</th>
                                 </tr>
@@ -196,21 +196,28 @@
                                                 data-id="{{ $interaction->id }}"
                                                 data-fecha="{{ optional($interaction->interaction_date)->format('d/m/Y H:i') }}"
                                                 data-cliente="{{ $interaction->client->nom_ter ?? '—' }}"
-                                                data-canal="{{ $interaction->channel?->name ?? '—' }}"
-                                                data-tipo="{{ $interaction->type?->name ?? '—' }}"
-                                                data-area="{{ $interaction->agent->cargoRelation->gdoArea->nombre ?? '—' }}" 
-                                                data-cargo="{{ $interaction->agent->cargoRelation->nombre_cargo ?? '—' }}"
-                                                data-linea="{{ $interaction->lineaDeObligacion?->nombre ?? '—' }}"
-                                                data-area-asig="{{ $interaction->usuarioAsignado?->name ?? '—' }}"
-                                                data-outcome="{{ $interaction->outcomeRelation?->name ?? '—' }}"
+                                                data-client-id="{{ $interaction->client_id ?? '—' }}"
+                                                data-agent="{{ $interaction->agent->name ?? '—' }}"
                                                 data-duracion="{{ $interaction->duration ? $interaction->duration . ' min' : '—' }}"
+                                                data-outcome="{{ $interaction->outcomeRelation?->name ?? '—' }}"
                                                 data-notas="{{ $interaction->notes ?? 'Sin notas.' }}"
-                                                data-proxima-fecha="{{ optional($interaction->next_action_date)->format('d/m/Y H:i') }}"
-                                                data-proxima-tipo="{{ $interaction->nextAction?->name ?? '—' }}"
-                                                data-url="{{ $interaction->interaction_url }}"
-                                                data-agent="{{ $interaction->agent->name ?? 'Sin asignar' }}"
-                                                data-edit-url="{{ route('interactions.edit', $interaction->id) }}"
-                                                data-show-url="{{ route('interactions.show', $interaction->id) }}">
+                                                data-linea="{{ $interaction->lineaDeObligacion?->nombre ?? '—' }}"
+                                                data-asignado="{{ $interaction->usuarioAsignado?->name ?? '—' }}"
+                                                data-llamante-nombre="{{ $interaction->nombre_quien_llama ?? '—' }}"
+                                                data-llamante-cedula="{{ $interaction->cedula_quien_llama ?? '—' }}"
+                                                data-llamante-celular="{{ $interaction->celular_quien_llama ?? '—' }}"
+                                                data-llamante-parentesco="{{ $interaction->parentesco_quien_llama ?? '—' }}"
+                                                {{-- NUEVO: Empaquetamos los seguimientos en JSON --}}
+                                                data-seguimientos="{{ json_encode($interaction->seguimientos->map(function($seg) {
+                                                    return [
+                                                        'fecha_creacion' => $seg->created_at ? $seg->created_at->format('d/m/Y H:i') : '',
+                                                        'agente' => $seg->creator->name ?? '—',
+                                                        'resultado' => $seg->outcomeRelation->name ?? '—',
+                                                        'accion' => $seg->nextAction->name ?? '—',
+                                                        'fecha_accion' => $seg->next_action_date ? $seg->next_action_date->format('d/m/Y H:i') : '—',
+                                                        'notas' => $seg->next_action_notes ?? 'Sin notas.'
+                                                    ];
+                                                })) }}">
                                                 #{{ $interaction->id }}
                                             </a>
                                             @if ($interaction->attachment_urls)
@@ -220,6 +227,7 @@
                                                 </a>
                                             @endif
                                         </td>
+                                        
                                         <td>
                                             <span class="fw-semibold mb-1">{{ $interaction->agent->name ?? '—' }}</span>
                                             <span class="badge bg-soft-primary text-primary ms-2">{{ $interaction->agent->cargoRelation->gdoArea->nombre ?? '' }}</span>
@@ -232,15 +240,22 @@
                                             <span class="fw-semibold mb-1">{{ $interaction->client->nom_ter ?? '—' }}</span>
                                             <p class="d-flex gap-3 fs-12 text-muted text-truncate-1-line tickets-sort-desc">
                                                 CC: <span class="m-0 fw-semibold">{{ $interaction->client_id }}</span>
-                                                <span>{{ $interaction->client->distrito->NOM_DIST ?? '' }}</span>
                                             </p>
                                         </td>
 
-                                        <td>{{ optional($interaction->interaction_date)->format('d/m/Y H:i') }}</td>
-
-                                        <td><span class="small">{{ $interaction->channel?->name ?? '—' }}</span></td>
+                                        <td>
+                                            <span class="small">{{ $interaction->client->distrito->NOM_DIST ?? '—' }}</span>
+                                        </td>
 
                                         <td>
+                                            <div class="mb-1 text-dark">{{ optional($interaction->interaction_date)->format('d/m/Y H:i') }}</div>
+                                            <div class="small text-muted">{{ $interaction->channel?->name ?? '—' }}</div>
+                                        </td>
+
+                                        <td>
+                                            <div class="small mb-1 text-truncate-2-lines text-dark" style="max-width: 200px;" title="{{ $interaction->lineaDeObligacion?->nombre ?? $interaction->id_linea_de_obligacion ?? '—' }}">
+                                                {{ $interaction->lineaDeObligacion?->nombre ?? $interaction->id_linea_de_obligacion ?? '—' }}
+                                            </div>
                                             <span class="badge bg-soft-{{ $priorityColors[$interaction->outcome] ?? 'secondary' }} text-{{ $priorityColors[$interaction->outcome] ?? 'secondary' }}">
                                                 {{ $interaction->outcomeRelation?->name ?? '—' }}
                                             </span>
@@ -291,9 +306,9 @@
                                     <th class="py-2">ID</th>
                                     <th class="py-2">Usuario</th>
                                     <th class="py-2">Cliente</th>
-                                    <th class="py-2">Fecha</th>
-                                    <th class="py-2">Canal</th>
-                                    <th class="py-2">Resultado</th>
+                                    <th class="py-2">Distrito</th>
+                                    <th class="py-2">Fecha y Canal</th>
+                                    <th class="py-2">Línea y Resultado</th>
                                     <th class="py-2">Próxima Acción</th>
                                     <th class="py-2 text-end">Acciones</th>
                                 </tr>
@@ -305,59 +320,97 @@
                                         $isPast = $nextActionDate->isPast() && !$nextActionDate->isToday();
                                         $isToday = $nextActionDate->isToday();
                                     @endphp
-
                                     <tr class="table table-hover">
                                         <td class="py-2">
                                             <a class="interaction-id fw-bold text-decoration-none pastel-link" href="#"
                                                 data-id="{{ $interaction->id }}"
                                                 data-fecha="{{ optional($interaction->interaction_date)->format('d/m/Y H:i') }}"
                                                 data-cliente="{{ $interaction->client->nom_ter ?? '—' }}"
-                                                data-canal="{{ $interaction->channel?->name ?? '—' }}"
-                                                data-tipo="{{ $interaction->type?->name ?? '—' }}"
-                                                data-area="{{ $interaction->agent->cargoRelation->gdoArea->nombre ?? '—' }}" 
-                                                data-cargo="{{ $interaction->agent->cargoRelation->nombre_cargo ?? '—' }}"
-                                                data-linea="{{ $interaction->lineaDeObligacion?->nombre ?? '—' }}"
-                                                data-area-asig="{{ $interaction->usuarioAsignado?->name ?? '—' }}"
-                                                data-outcome="{{ $interaction->outcomeRelation?->name ?? '—' }}"
+                                                data-client-id="{{ $interaction->client_id ?? '—' }}"
+                                                data-agent="{{ $interaction->agent->name ?? '—' }}"
                                                 data-duracion="{{ $interaction->duration ? $interaction->duration . ' min' : '—' }}"
+                                                data-outcome="{{ $interaction->outcomeRelation?->name ?? '—' }}"
                                                 data-notas="{{ $interaction->notes ?? 'Sin notas.' }}"
-                                                data-proxima-fecha="{{ optional($interaction->next_action_date)->format('d/m/Y H:i') }}"
-                                                data-proxima-tipo="{{ $interaction->nextAction?->name ?? '—' }}"
-                                                data-url="{{ $interaction->interaction_url }}"
-                                                data-agent="{{ $interaction->agent->name ?? 'Sin asignar' }}"
-                                                data-edit-url="{{ route('interactions.edit', $interaction->id) }}"
-                                                data-show-url="{{ route('interactions.show', $interaction->id) }}">
+                                                data-linea="{{ $interaction->lineaDeObligacion?->nombre ?? '—' }}"
+                                                data-asignado="{{ $interaction->usuarioAsignado?->name ?? '—' }}"
+                                                data-llamante-nombre="{{ $interaction->nombre_quien_llama ?? '—' }}"
+                                                data-llamante-cedula="{{ $interaction->cedula_quien_llama ?? '—' }}"
+                                                data-llamante-celular="{{ $interaction->celular_quien_llama ?? '—' }}"
+                                                data-llamante-parentesco="{{ $interaction->parentesco_quien_llama ?? '—' }}"
+                                                data-seguimientos="{{ json_encode($interaction->seguimientos->map(function($seg) {
+                                                    return [
+                                                        'fecha_creacion' => $seg->created_at ? $seg->created_at->format('d/m/Y H:i') : '',
+                                                        'agente' => $seg->creator->name ?? '—',
+                                                        'resultado' => $seg->outcomeRelation->name ?? '—',
+                                                        'accion' => $seg->nextAction->name ?? '—',
+                                                        'fecha_accion' => $seg->next_action_date ? $seg->next_action_date->format('d/m/Y H:i') : '—',
+                                                        'notas' => $seg->next_action_notes ?? 'Sin notas.'
+                                                    ];
+                                                })) }}">
                                                 #{{ $interaction->id }}
                                             </a>
+                                            @if ($interaction->attachment_urls)
+                                                <a href="{{ $interaction->getFile($interaction->attachment_urls) }}" target="_blank"
+                                                    class="ms-2 text-info" title="Ver archivo adjunto">
+                                                    <i class="fas fa-paperclip"></i>
+                                                </a>
+                                            @endif
                                         </td>
+                                        
                                         <td>
                                             <span class="fw-semibold mb-1">{{ $interaction->agent->name ?? '—' }}</span>
                                             <span class="badge bg-soft-primary text-primary ms-2">{{ $interaction->agent->cargoRelation->gdoArea->nombre ?? '' }}</span>
-                                            <p class="fs-12 text-muted text-truncate-1-line tickets-sort-desc">{{ $interaction->agent->cargoRelation->nombre_cargo ?? '' }}</p>
+                                            <p class="fs-12 text-muted text-truncate-1-line tickets-sort-desc">
+                                                {{ $interaction->agent->cargoRelation->nombre_cargo ?? '' }}
+                                            </p>
                                         </td>
+
                                         <td>
                                             <span class="fw-semibold mb-1">{{ $interaction->client->nom_ter ?? '—' }}</span>
                                             <p class="d-flex gap-3 fs-12 text-muted text-truncate-1-line tickets-sort-desc">
                                                 CC: <span class="m-0 fw-semibold">{{ $interaction->client_id }}</span>
                                             </p>
                                         </td>
-                                        <td>{{ optional($interaction->interaction_date)->format('d/m/Y H:i') }}</td>
-                                        <td><span class="small">{{ $interaction->channel?->name ?? '—' }}</span></td>
+
                                         <td>
+                                            <span class="small">{{ $interaction->client->distrito->NOM_DIST ?? '—' }}</span>
+                                        </td>
+
+                                        <td>
+                                            <div class="mb-1 text-dark">{{ optional($interaction->interaction_date)->format('d/m/Y H:i') }}</div>
+                                            <div class="small text-muted">{{ $interaction->channel?->name ?? '—' }}</div>
+                                        </td>
+
+                                        <td>
+                                            <div class="small mb-1 text-truncate-2-lines text-dark" style="max-width: 200px;" title="{{ $interaction->lineaDeObligacion?->nombre ?? $interaction->id_linea_de_obligacion ?? '—' }}">
+                                                {{ $interaction->lineaDeObligacion?->nombre ?? $interaction->id_linea_de_obligacion ?? '—' }}
+                                            </div>
                                             <span class="badge bg-soft-{{ $priorityColors[$interaction->outcome] ?? 'secondary' }} text-{{ $priorityColors[$interaction->outcome] ?? 'secondary' }}">
                                                 {{ $interaction->outcomeRelation?->name ?? '—' }}
                                             </span>
                                         </td>
+
                                         <td>
                                             @if ($interaction->next_action_date)
-                                                <div class="fs-12 {{ $isPast ? 'text-danger' : ($isToday ? 'text-warning' : 'text-success') }} text-truncate-1-line">{{ $interaction->client->nom_ter ?? '' }}</div>
+                                                <div class="fs-12 {{ $isPast ? 'text-danger' : ($isToday ? 'text-warning' : 'text-success') }} text-truncate-1-line">
+                                                    {{ $interaction->client->nom_ter ?? '' }}
+                                                </div>
+                                                <div class="fs-12 text-muted text-truncate-1-line">
+                                                    {{ optional($interaction->next_action_date)->format('H:i') }}
+                                                    @if ($interaction->nextAction)
+                                                        ({{ $interaction->nextAction->name }})
+                                                    @endif
+                                                </div>
                                             @else
                                                 <span class="text-muted small">—</span>
                                             @endif
                                         </td>
+
                                         <td class="text-end py-2">
                                             <div class="btn-group btn-group-sm" role="group">
-                                                <a class="btn btn-sm btn-light" title="Ver detalles" href="{{ route('interactions.show', $interaction->id) }}"><i class="feather-eye"></i></a>
+                                                <a class="btn btn-sm btn-light" title="Ver detalles" href="{{ route('interactions.show', $interaction->id) }}">
+                                                    <i class="feather-eye"></i>
+                                                </a>
                                             </div>
                                         </td>
                                     </tr>
@@ -377,9 +430,9 @@
                                     <th class="py-2">ID</th>
                                     <th class="py-2">Usuario</th>
                                     <th class="py-2">Cliente</th>
-                                    <th class="py-2">Fecha</th>
-                                    <th class="py-2">Canal</th>
-                                    <th class="py-2">Resultado</th>
+                                    <th class="py-2">Distrito</th>
+                                    <th class="py-2">Fecha y Canal</th>
+                                    <th class="py-2">Línea y Resultado</th>
                                     <th class="py-2">Próxima Acción</th>
                                     <th class="py-2 text-end">Acciones</th>
                                 </tr>
@@ -391,59 +444,97 @@
                                         $isPast = $nextActionDate->isPast() && !$nextActionDate->isToday();
                                         $isToday = $nextActionDate->isToday();
                                     @endphp
-
                                     <tr class="table table-hover">
                                         <td class="py-2">
                                             <a class="interaction-id fw-bold text-decoration-none pastel-link" href="#"
                                                 data-id="{{ $interaction->id }}"
                                                 data-fecha="{{ optional($interaction->interaction_date)->format('d/m/Y H:i') }}"
                                                 data-cliente="{{ $interaction->client->nom_ter ?? '—' }}"
-                                                data-canal="{{ $interaction->channel?->name ?? '—' }}"
-                                                data-tipo="{{ $interaction->type?->name ?? '—' }}"
-                                                data-area="{{ $interaction->agent->cargoRelation->gdoArea->nombre ?? '—' }}" 
-                                                data-cargo="{{ $interaction->agent->cargoRelation->nombre_cargo ?? '—' }}"
-                                                data-linea="{{ $interaction->lineaDeObligacion?->nombre ?? '—' }}"
-                                                data-area-asig="{{ $interaction->usuarioAsignado?->name ?? '—' }}"
-                                                data-outcome="{{ $interaction->outcomeRelation?->name ?? '—' }}"
+                                                data-client-id="{{ $interaction->client_id ?? '—' }}"
+                                                data-agent="{{ $interaction->agent->name ?? '—' }}"
                                                 data-duracion="{{ $interaction->duration ? $interaction->duration . ' min' : '—' }}"
+                                                data-outcome="{{ $interaction->outcomeRelation?->name ?? '—' }}"
                                                 data-notas="{{ $interaction->notes ?? 'Sin notas.' }}"
-                                                data-proxima-fecha="{{ optional($interaction->next_action_date)->format('d/m/Y H:i') }}"
-                                                data-proxima-tipo="{{ $interaction->nextAction?->name ?? '—' }}"
-                                                data-url="{{ $interaction->interaction_url }}"
-                                                data-agent="{{ $interaction->agent->name ?? 'Sin asignar' }}"
-                                                data-edit-url="{{ route('interactions.edit', $interaction->id) }}"
-                                                data-show-url="{{ route('interactions.show', $interaction->id) }}">
+                                                data-linea="{{ $interaction->lineaDeObligacion?->nombre ?? '—' }}"
+                                                data-asignado="{{ $interaction->usuarioAsignado?->name ?? '—' }}"
+                                                data-llamante-nombre="{{ $interaction->nombre_quien_llama ?? '—' }}"
+                                                data-llamante-cedula="{{ $interaction->cedula_quien_llama ?? '—' }}"
+                                                data-llamante-celular="{{ $interaction->celular_quien_llama ?? '—' }}"
+                                                data-llamante-parentesco="{{ $interaction->parentesco_quien_llama ?? '—' }}"
+                                                data-seguimientos="{{ json_encode($interaction->seguimientos->map(function($seg) {
+                                                    return [
+                                                        'fecha_creacion' => $seg->created_at ? $seg->created_at->format('d/m/Y H:i') : '',
+                                                        'agente' => $seg->creator->name ?? '—',
+                                                        'resultado' => $seg->outcomeRelation->name ?? '—',
+                                                        'accion' => $seg->nextAction->name ?? '—',
+                                                        'fecha_accion' => $seg->next_action_date ? $seg->next_action_date->format('d/m/Y H:i') : '—',
+                                                        'notas' => $seg->next_action_notes ?? 'Sin notas.'
+                                                    ];
+                                                })) }}">
                                                 #{{ $interaction->id }}
                                             </a>
+                                            @if ($interaction->attachment_urls)
+                                                <a href="{{ $interaction->getFile($interaction->attachment_urls) }}" target="_blank"
+                                                    class="ms-2 text-info" title="Ver archivo adjunto">
+                                                    <i class="fas fa-paperclip"></i>
+                                                </a>
+                                            @endif
                                         </td>
+                                        
                                         <td>
                                             <span class="fw-semibold mb-1">{{ $interaction->agent->name ?? '—' }}</span>
                                             <span class="badge bg-soft-primary text-primary ms-2">{{ $interaction->agent->cargoRelation->gdoArea->nombre ?? '' }}</span>
-                                            <p class="fs-12 text-muted text-truncate-1-line tickets-sort-desc">{{ $interaction->agent->cargoRelation->nombre_cargo ?? '' }}</p>
+                                            <p class="fs-12 text-muted text-truncate-1-line tickets-sort-desc">
+                                                {{ $interaction->agent->cargoRelation->nombre_cargo ?? '' }}
+                                            </p>
                                         </td>
+
                                         <td>
                                             <span class="fw-semibold mb-1">{{ $interaction->client->nom_ter ?? '—' }}</span>
                                             <p class="d-flex gap-3 fs-12 text-muted text-truncate-1-line tickets-sort-desc">
                                                 CC: <span class="m-0 fw-semibold">{{ $interaction->client_id }}</span>
                                             </p>
                                         </td>
-                                        <td>{{ optional($interaction->interaction_date)->format('d/m/Y H:i') }}</td>
-                                        <td><span class="small">{{ $interaction->channel?->name ?? '—' }}</span></td>
+
                                         <td>
+                                            <span class="small">{{ $interaction->client->distrito->NOM_DIST ?? '—' }}</span>
+                                        </td>
+
+                                        <td>
+                                            <div class="mb-1 text-dark">{{ optional($interaction->interaction_date)->format('d/m/Y H:i') }}</div>
+                                            <div class="small text-muted">{{ $interaction->channel?->name ?? '—' }}</div>
+                                        </td>
+
+                                        <td>
+                                            <div class="small mb-1 text-truncate-2-lines text-dark" style="max-width: 200px;" title="{{ $interaction->lineaDeObligacion?->nombre ?? $interaction->id_linea_de_obligacion ?? '—' }}">
+                                                {{ $interaction->lineaDeObligacion?->nombre ?? $interaction->id_linea_de_obligacion ?? '—' }}
+                                            </div>
                                             <span class="badge bg-soft-{{ $priorityColors[$interaction->outcome] ?? 'secondary' }} text-{{ $priorityColors[$interaction->outcome] ?? 'secondary' }}">
                                                 {{ $interaction->outcomeRelation?->name ?? '—' }}
                                             </span>
                                         </td>
+
                                         <td>
                                             @if ($interaction->next_action_date)
-                                                <div class="fs-12 {{ $isPast ? 'text-danger' : ($isToday ? 'text-warning' : 'text-success') }} text-truncate-1-line">{{ $interaction->client->nom_ter ?? '' }}</div>
+                                                <div class="fs-12 {{ $isPast ? 'text-danger' : ($isToday ? 'text-warning' : 'text-success') }} text-truncate-1-line">
+                                                    {{ $interaction->client->nom_ter ?? '' }}
+                                                </div>
+                                                <div class="fs-12 text-muted text-truncate-1-line">
+                                                    {{ optional($interaction->next_action_date)->format('H:i') }}
+                                                    @if ($interaction->nextAction)
+                                                        ({{ $interaction->nextAction->name }})
+                                                    @endif
+                                                </div>
                                             @else
                                                 <span class="text-muted small">—</span>
                                             @endif
                                         </td>
+
                                         <td class="text-end py-2">
                                             <div class="btn-group btn-group-sm" role="group">
-                                                <a class="btn btn-sm btn-light" title="Ver detalles" href="{{ route('interactions.show', $interaction->id) }}"><i class="feather-eye"></i></a>
+                                                <a class="btn btn-sm btn-light" title="Ver detalles" href="{{ route('interactions.show', $interaction->id) }}">
+                                                    <i class="feather-eye"></i>
+                                                </a>
                                             </div>
                                         </td>
                                     </tr>
@@ -463,9 +554,9 @@
                                     <th class="py-2">ID</th>
                                     <th class="py-2">Usuario</th>
                                     <th class="py-2">Cliente</th>
-                                    <th class="py-2">Fecha</th>
-                                    <th class="py-2">Canal</th>
-                                    <th class="py-2">Resultado</th>
+                                    <th class="py-2">Distrito</th>
+                                    <th class="py-2">Fecha y Canal</th>
+                                    <th class="py-2">Línea y Resultado</th>
                                     <th class="py-2">Próxima Acción</th>
                                     <th class="py-2 text-end">Acciones</th>
                                 </tr>
@@ -477,59 +568,97 @@
                                         $isPast = $nextActionDate->isPast() && !$nextActionDate->isToday();
                                         $isToday = $nextActionDate->isToday();
                                     @endphp
-
                                     <tr class="table table-hover">
                                         <td class="py-2">
                                             <a class="interaction-id fw-bold text-decoration-none pastel-link" href="#"
                                                 data-id="{{ $interaction->id }}"
                                                 data-fecha="{{ optional($interaction->interaction_date)->format('d/m/Y H:i') }}"
                                                 data-cliente="{{ $interaction->client->nom_ter ?? '—' }}"
-                                                data-canal="{{ $interaction->channel?->name ?? '—' }}"
-                                                data-tipo="{{ $interaction->type?->name ?? '—' }}"
-                                                data-area="{{ $interaction->agent->cargoRelation->gdoArea->nombre ?? '—' }}" 
-                                                data-cargo="{{ $interaction->agent->cargoRelation->nombre_cargo ?? '—' }}"
-                                                data-linea="{{ $interaction->lineaDeObligacion?->nombre ?? '—' }}"
-                                                data-area-asig="{{ $interaction->usuarioAsignado?->name ?? '—' }}"
-                                                data-outcome="{{ $interaction->outcomeRelation?->name ?? '—' }}"
+                                                data-client-id="{{ $interaction->client_id ?? '—' }}"
+                                                data-agent="{{ $interaction->agent->name ?? '—' }}"
                                                 data-duracion="{{ $interaction->duration ? $interaction->duration . ' min' : '—' }}"
+                                                data-outcome="{{ $interaction->outcomeRelation?->name ?? '—' }}"
                                                 data-notas="{{ $interaction->notes ?? 'Sin notas.' }}"
-                                                data-proxima-fecha="{{ optional($interaction->next_action_date)->format('d/m/Y H:i') }}"
-                                                data-proxima-tipo="{{ $interaction->nextAction?->name ?? '—' }}"
-                                                data-url="{{ $interaction->interaction_url }}"
-                                                data-agent="{{ $interaction->agent->name ?? 'Sin asignar' }}"
-                                                data-edit-url="{{ route('interactions.edit', $interaction->id) }}"
-                                                data-show-url="{{ route('interactions.show', $interaction->id) }}">
+                                                data-linea="{{ $interaction->lineaDeObligacion?->nombre ?? '—' }}"
+                                                data-asignado="{{ $interaction->usuarioAsignado?->name ?? '—' }}"
+                                                data-llamante-nombre="{{ $interaction->nombre_quien_llama ?? '—' }}"
+                                                data-llamante-cedula="{{ $interaction->cedula_quien_llama ?? '—' }}"
+                                                data-llamante-celular="{{ $interaction->celular_quien_llama ?? '—' }}"
+                                                data-llamante-parentesco="{{ $interaction->parentesco_quien_llama ?? '—' }}"
+                                                data-seguimientos="{{ json_encode($interaction->seguimientos->map(function($seg) {
+                                                    return [
+                                                        'fecha_creacion' => $seg->created_at ? $seg->created_at->format('d/m/Y H:i') : '',
+                                                        'agente' => $seg->creator->name ?? '—',
+                                                        'resultado' => $seg->outcomeRelation->name ?? '—',
+                                                        'accion' => $seg->nextAction->name ?? '—',
+                                                        'fecha_accion' => $seg->next_action_date ? $seg->next_action_date->format('d/m/Y H:i') : '—',
+                                                        'notas' => $seg->next_action_notes ?? 'Sin notas.'
+                                                    ];
+                                                })) }}">
                                                 #{{ $interaction->id }}
                                             </a>
+                                            @if ($interaction->attachment_urls)
+                                                <a href="{{ $interaction->getFile($interaction->attachment_urls) }}" target="_blank"
+                                                    class="ms-2 text-info" title="Ver archivo adjunto">
+                                                    <i class="fas fa-paperclip"></i>
+                                                </a>
+                                            @endif
                                         </td>
+                                        
                                         <td>
                                             <span class="fw-semibold mb-1">{{ $interaction->agent->name ?? '—' }}</span>
                                             <span class="badge bg-soft-primary text-primary ms-2">{{ $interaction->agent->cargoRelation->gdoArea->nombre ?? '' }}</span>
-                                            <p class="fs-12 text-muted text-truncate-1-line tickets-sort-desc">{{ $interaction->agent->cargoRelation->nombre_cargo ?? '' }}</p>
+                                            <p class="fs-12 text-muted text-truncate-1-line tickets-sort-desc">
+                                                {{ $interaction->agent->cargoRelation->nombre_cargo ?? '' }}
+                                            </p>
                                         </td>
+
                                         <td>
                                             <span class="fw-semibold mb-1">{{ $interaction->client->nom_ter ?? '—' }}</span>
                                             <p class="d-flex gap-3 fs-12 text-muted text-truncate-1-line tickets-sort-desc">
                                                 CC: <span class="m-0 fw-semibold">{{ $interaction->client_id }}</span>
                                             </p>
                                         </td>
-                                        <td>{{ optional($interaction->interaction_date)->format('d/m/Y H:i') }}</td>
-                                        <td><span class="small">{{ $interaction->channel?->name ?? '—' }}</span></td>
+
                                         <td>
+                                            <span class="small">{{ $interaction->client->distrito->NOM_DIST ?? '—' }}</span>
+                                        </td>
+
+                                        <td>
+                                            <div class="mb-1 text-dark">{{ optional($interaction->interaction_date)->format('d/m/Y H:i') }}</div>
+                                            <div class="small text-muted">{{ $interaction->channel?->name ?? '—' }}</div>
+                                        </td>
+
+                                        <td>
+                                            <div class="small mb-1 text-truncate-2-lines text-dark" style="max-width: 200px;" title="{{ $interaction->lineaDeObligacion?->nombre ?? $interaction->id_linea_de_obligacion ?? '—' }}">
+                                                {{ $interaction->lineaDeObligacion?->nombre ?? $interaction->id_linea_de_obligacion ?? '—' }}
+                                            </div>
                                             <span class="badge bg-soft-{{ $priorityColors[$interaction->outcome] ?? 'secondary' }} text-{{ $priorityColors[$interaction->outcome] ?? 'secondary' }}">
                                                 {{ $interaction->outcomeRelation?->name ?? '—' }}
                                             </span>
                                         </td>
+
                                         <td>
                                             @if ($interaction->next_action_date)
-                                                <div class="fs-12 {{ $isPast ? 'text-danger' : ($isToday ? 'text-warning' : 'text-success') }} text-truncate-1-line">{{ $interaction->client->nom_ter ?? '' }}</div>
+                                                <div class="fs-12 {{ $isPast ? 'text-danger' : ($isToday ? 'text-warning' : 'text-success') }} text-truncate-1-line">
+                                                    {{ $interaction->client->nom_ter ?? '' }}
+                                                </div>
+                                                <div class="fs-12 text-muted text-truncate-1-line">
+                                                    {{ optional($interaction->next_action_date)->format('H:i') }}
+                                                    @if ($interaction->nextAction)
+                                                        ({{ $interaction->nextAction->name }})
+                                                    @endif
+                                                </div>
                                             @else
                                                 <span class="text-muted small">—</span>
                                             @endif
                                         </td>
+
                                         <td class="text-end py-2">
                                             <div class="btn-group btn-group-sm" role="group">
-                                                <a class="btn btn-sm btn-light" title="Ver detalles" href="{{ route('interactions.show', $interaction->id) }}"><i class="feather-eye"></i></a>
+                                                <a class="btn btn-sm btn-light" title="Ver detalles" href="{{ route('interactions.show', $interaction->id) }}">
+                                                    <i class="feather-eye"></i>
+                                                </a>
                                             </div>
                                         </td>
                                     </tr>
@@ -549,9 +678,9 @@
                                     <th class="py-2">ID</th>
                                     <th class="py-2">Usuario</th>
                                     <th class="py-2">Cliente</th>
-                                    <th class="py-2">Fecha</th>
-                                    <th class="py-2">Canal</th>
-                                    <th class="py-2">Resultado</th>
+                                    <th class="py-2">Distrito</th>
+                                    <th class="py-2">Fecha y Canal</th>
+                                    <th class="py-2">Línea y Resultado</th>
                                     <th class="py-2">Próxima Acción</th>
                                     <th class="py-2 text-end">Acciones</th>
                                 </tr>
@@ -569,67 +698,95 @@
                                                 data-id="{{ $interaction->id }}"
                                                 data-fecha="{{ optional($interaction->interaction_date)->format('d/m/Y H:i') }}"
                                                 data-cliente="{{ $interaction->client->nom_ter ?? '—' }}"
-                                                data-canal="{{ $interaction->channel?->name ?? '—' }}"
-                                                data-tipo="{{ $interaction->type?->name ?? '—' }}"
-                                                data-area="{{ $interaction->agent->cargoRelation->gdoArea->nombre ?? '—' }}" 
-                                                data-cargo="{{ $interaction->agent->cargoRelation->nombre_cargo ?? '—' }}"
-                                                data-linea="{{ $interaction->lineaDeObligacion?->nombre ?? '—' }}"
-                                                data-area-asig="{{ $interaction->usuarioAsignado?->name ?? '—' }}"
-                                                data-outcome="{{ $interaction->outcomeRelation?->name ?? '—' }}"
+                                                data-client-id="{{ $interaction->client_id ?? '—' }}"
+                                                data-agent="{{ $interaction->agent->name ?? '—' }}"
                                                 data-duracion="{{ $interaction->duration ? $interaction->duration . ' min' : '—' }}"
+                                                data-outcome="{{ $interaction->outcomeRelation?->name ?? '—' }}"
                                                 data-notas="{{ $interaction->notes ?? 'Sin notas.' }}"
-                                                data-proxima-fecha="{{ optional($interaction->next_action_date)->format('d/m/Y H:i') }}"
-                                                data-proxima-tipo="{{ $interaction->nextAction?->name ?? '—' }}"
-                                                data-url="{{ $interaction->interaction_url }}"
-                                                data-agent="{{ $interaction->agent->name ?? 'Sin asignar' }}"
-                                                data-edit-url="{{ route('interactions.edit', $interaction->id) }}"
-                                                data-show-url="{{ route('interactions.show', $interaction->id) }}">
+                                                data-linea="{{ $interaction->lineaDeObligacion?->nombre ?? '—' }}"
+                                                data-asignado="{{ $interaction->usuarioAsignado?->name ?? '—' }}"
+                                                data-llamante-nombre="{{ $interaction->nombre_quien_llama ?? '—' }}"
+                                                data-llamante-cedula="{{ $interaction->cedula_quien_llama ?? '—' }}"
+                                                data-llamante-celular="{{ $interaction->celular_quien_llama ?? '—' }}"
+                                                data-llamante-parentesco="{{ $interaction->parentesco_quien_llama ?? '—' }}"
+                                                data-seguimientos="{{ json_encode($interaction->seguimientos->map(function($seg) {
+                                                    return [
+                                                        'fecha_creacion' => $seg->created_at ? $seg->created_at->format('d/m/Y H:i') : '',
+                                                        'agente' => $seg->creator->name ?? '—',
+                                                        'resultado' => $seg->outcomeRelation->name ?? '—',
+                                                        'accion' => $seg->nextAction->name ?? '—',
+                                                        'fecha_accion' => $seg->next_action_date ? $seg->next_action_date->format('d/m/Y H:i') : '—',
+                                                        'notas' => $seg->next_action_notes ?? 'Sin notas.'
+                                                    ];
+                                                })) }}">
                                                 #{{ $interaction->id }}
                                             </a>
+                                            @if ($interaction->attachment_urls)
+                                                <a href="{{ $interaction->getFile($interaction->attachment_urls) }}" target="_blank"
+                                                    class="ms-2 text-info" title="Ver archivo adjunto">
+                                                    <i class="fas fa-paperclip"></i>
+                                                </a>
+                                            @endif
                                         </td>
+                                        
                                         <td>
                                             <span class="fw-semibold mb-1">{{ $interaction->agent->name ?? '—' }}</span>
                                             <span class="badge bg-soft-primary text-primary ms-2">{{ $interaction->agent->cargoRelation->gdoArea->nombre ?? '' }}</span>
-                                            <p class="fs-12 text-muted text-truncate-1-line tickets-sort-desc">{{ $interaction->agent->cargoRelation->nombre_cargo ?? '' }}</p>
+                                            <p class="fs-12 text-muted text-truncate-1-line tickets-sort-desc">
+                                                {{ $interaction->agent->cargoRelation->nombre_cargo ?? '' }}
+                                            </p>
                                         </td>
+
                                         <td>
                                             <span class="fw-semibold mb-1">{{ $interaction->client->nom_ter ?? '—' }}</span>
                                             <p class="d-flex gap-3 fs-12 text-muted text-truncate-1-line tickets-sort-desc">
                                                 CC: <span class="m-0 fw-semibold">{{ $interaction->client_id }}</span>
                                             </p>
                                         </td>
-                                        <td>{{ optional($interaction->interaction_date)->format('d/m/Y H:i') }}</td>
-                                        <td><span class="small">{{ $interaction->channel?->name ?? '—' }}</span></td>
+
                                         <td>
+                                            <span class="small">{{ $interaction->client->distrito->NOM_DIST ?? '—' }}</span>
+                                        </td>
+
+                                        <td>
+                                            <div class="mb-1 text-dark">{{ optional($interaction->interaction_date)->format('d/m/Y H:i') }}</div>
+                                            <div class="small text-muted">{{ $interaction->channel?->name ?? '—' }}</div>
+                                        </td>
+
+                                        <td>
+                                            <div class="small mb-1 text-truncate-2-lines text-dark" style="max-width: 200px;" title="{{ $interaction->lineaDeObligacion?->nombre ?? $interaction->id_linea_de_obligacion ?? '—' }}">
+                                                {{ $interaction->lineaDeObligacion?->nombre ?? $interaction->id_linea_de_obligacion ?? '—' }}
+                                            </div>
                                             <span class="badge bg-soft-{{ $priorityColors[$interaction->outcome] ?? 'secondary' }} text-{{ $priorityColors[$interaction->outcome] ?? 'secondary' }}">
                                                 {{ $interaction->outcomeRelation?->name ?? '—' }}
                                             </span>
                                         </td>
+
                                         <td>
                                             @if ($interaction->next_action_date)
-                                                <div class="fs-12 {{ $isPast ? 'text-danger' : ($isToday ? 'text-warning' : 'text-success') }} text-truncate-1-line">{{ $interaction->client->nom_ter ?? '' }}</div>
+                                                <div class="fs-12 {{ $isPast ? 'text-danger' : ($isToday ? 'text-warning' : 'text-success') }} text-truncate-1-line">
+                                                    {{ $interaction->client->nom_ter ?? '' }}
+                                                </div>
+                                                <div class="fs-12 text-muted text-truncate-1-line">
+                                                    {{ optional($interaction->next_action_date)->format('H:i') }}
+                                                    @if ($interaction->nextAction)
+                                                        ({{ $interaction->nextAction->name }})
+                                                    @endif
+                                                </div>
                                             @else
                                                 <span class="text-muted small">—</span>
                                             @endif
                                         </td>
+
                                         <td class="text-end py-2">
                                             <div class="btn-group btn-group-sm" role="group">
-                                                <a class="btn btn-sm btn-light" title="Ver detalles" href="{{ route('interactions.show', $interaction->id) }}"><i class="feather-eye"></i></a>
+                                                <a class="btn btn-sm btn-light" title="Ver detalles" href="{{ route('interactions.show', $interaction->id) }}">
+                                                    <i class="feather-eye"></i>
+                                                </a>
                                             </div>
                                         </td>
                                     </tr>
-                                    @empty
-                                    {{-- <tr>
-                                        <td colspan="8">
-                                            <div class="text-center py-4">
-                                                <div class="empty-state">
-                                                    <i class="feather-smile empty-icon text-success"></i>
-                                                    <h6 class="mt-2">¡Genial! No hay interacciones vencidas</h6>
-                                                    <p class="text-muted">Estás al día con todos tus seguimientos pendientes.</p>
-                                                </div>
-                                            </div>
-                                        </td>
-                                    </tr> --}}
+                                @empty                                    
                                 @endforelse
                             </tbody>
                         </table>
@@ -639,7 +796,7 @@
         </div>
     </div>
 
-    {{-- Modal mejorado (Se mantiene igual pero compactado para brevedad) --}}
+    {{-- Modal de Detalles (Mantiene tu diseño Pastel/Glassmorphism) --}}
     <div class="modal fade" id="detalleInteractionModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content glassmorphism-modal">
@@ -648,29 +805,71 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
+                    
                     <div class="row mb-3">
-                        <div class="col-md-8">
+                        <div class="col-md-12">
                             <h6 class="fw-bold text-primary mb-1" id="modal-id"></h6>
                             <p class="text-muted mb-0" id="modal-fecha"></p>
                         </div>
-                        <div class="col-md-4 text-end"><div id="modal-resultado" class="d-inline-block"></div></div>
                     </div>
-                    {{-- Tarjetas del Modal --}}
+
+                    {{-- Tarjeta 1: Info General --}}
                     <div class="card mb-3 pastel-card">
                         <div class="card-header pastel-card-header py-2"><h6 class="mb-0 fw-semibold">Información General</h6></div>
-                        <div class="card-body">
+                        <div class="card-body py-2">
                             <div class="row">
-                                <div class="col-md-6 mb-3"><small class="text-muted d-block">Cliente</small><span id="modal-cliente"></span></div>
-                                <div class="col-md-6 mb-3"><small class="text-muted d-block">Agente</small><span id="modal-agent"></span></div>
-                                <div class="col-md-6 mb-3"><small class="text-muted d-block">Canal</small><span id="modal-canal"></span></div>
-                                <div class="col-md-6 mb-3"><small class="text-muted d-block">Tipo</small><span id="modal-tipo"></span></div>
+                                <div class="col-md-4 my-2"><small class="text-muted d-block">Cliente</small><span id="modal-cliente"></span> <span class="text-muted small" id="modal-client-id"></span></div>
+                                <div class="col-md-4 my-2"><small class="text-muted d-block">Asesor</small><span id="modal-agent"></span></div>
+                                <div class="col-md-4 my-2"><small class="text-muted d-block">Duración</small><span id="modal-duracion"></span></div>
                             </div>
                         </div>
                     </div>
-                    <div class="card pastel-card">
-                        <div class="card-header pastel-card-header py-2"><h6 class="mb-0 fw-semibold">Notas</h6></div>
-                        <div class="card-body"><p id="modal-notas"></p></div>
+
+                    {{-- Tarjeta 2: Quien Llama --}}
+                    <div class="card mb-3 pastel-card">
+                        <div class="card-header pastel-card-header py-2"><h6 class="mb-0 fw-semibold">Datos de Quien Llama</h6></div>
+                        <div class="card-body py-2">
+                            <div class="row">
+                                <div class="col-md-3 my-2"><small class="text-muted d-block">Nombre</small><span id="modal-llamante-nombre"></span></div>
+                                <div class="col-md-3 my-2"><small class="text-muted d-block">Cédula</small><span id="modal-llamante-cedula"></span></div>
+                                <div class="col-md-3 my-2"><small class="text-muted d-block">Celular</small><span id="modal-llamante-celular"></span></div>
+                                <div class="col-md-3 my-2"><small class="text-muted d-block">Parentesco</small><span id="modal-llamante-parentesco"></span></div>
+                            </div>
+                        </div>
                     </div>
+
+                    {{-- Tarjeta 3: Gestión --}}
+                    <div class="card mb-3 pastel-card">
+                        <div class="card-header pastel-card-header py-2"><h6 class="mb-0 fw-semibold">Gestión</h6></div>
+                        <div class="card-body py-2">
+                            <div class="row">
+                                <div class="col-md-4 my-2"><small class="text-muted d-block">Línea de Obligación</small><span id="modal-linea"></span></div>
+                                <div class="col-md-4 my-2"><small class="text-muted d-block">Resultado</small><span id="modal-outcome"></span></div>
+                                <div class="col-md-4 my-2"><small class="text-muted d-block">Asignado a</small><span id="modal-asignado"></span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Tarjeta 4: Notas --}}
+                    <div class="card pastel-card mb-0">
+                        <div class="card-header pastel-card-header py-2"><h6 class="mb-0 fw-semibold">Notas</h6></div>
+                        <div class="card-body py-2">
+                            <p id="modal-notas" class="mb-0" style="white-space: pre-wrap; font-size: 0.9rem;"></p>
+                        </div>
+                    </div>
+
+                    {{-- Tarjeta 5: Historial de Seguimientos --}}
+                    <div class="card pastel-card mt-3 mb-0">
+                        <div class="card-header pastel-card-header py-2 d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0 fw-semibold">Historial de Seguimientos</h6>
+                            <span class="badge bg-white text-primary" id="modal-seguimientos-count">0</span>
+                        </div>
+                        <div class="card-body py-2" style="max-height: 250px; overflow-y: auto;">
+                            <div id="modal-seguimientos-container">
+                                </div>
+                        </div>
+                    </div>
+
                 </div>
                 <div class="modal-footer pastel-modal-footer">
                     <button type="button" class="btn pastel-btn-light" data-bs-dismiss="modal">Cerrar</button>
@@ -682,42 +881,28 @@
     @push('styles')
         <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
         <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css" />
-        {{-- <style>
-            /* Tus estilos anteriores se mantienen intactos */
-            .glassmorphism-card { background: rgba(255, 255, 255, 0.25); backdrop-filter: blur(10px); border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.18); box-shadow: 0 4px 16px 0 rgba(31, 38, 135, 0.1); }
-            .glassmorphism-alert { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(5px); border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.3); }
-            .glassmorphism-modal { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(15px); border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.3); box-shadow: 0 10px 25px rgba(50, 50, 93, 0.1), 0 3px 10px rgba(0, 0, 0, 0.05); }
-            .pastel-btn-gradient { background: linear-gradient(135deg, #E8F5E8, #E6F3FF) !important; color: #2c3e50 !important; border: none; border-radius: 20px; padding: 6px 16px; font-weight: 600; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(152, 216, 200, 0.2); }
-            .pastel-btn-gradient:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(152, 216, 200, 0.3); }
-            .pastel-btn-light { background: rgba(255, 255, 255, 0.7) !important; color: #2c3e50 !important; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 16px; padding: 4px 12px; transition: all 0.3s ease; font-weight: 500; }
-            .pastel-select, .pastel-input { background: rgba(255, 255, 255, 0.7) !important; border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 8px; transition: all 0.3s ease; font-weight: 500; color: #2c3e50 !important; font-size: 0.875rem; }
-            .pastel-select:focus, .pastel-input:focus { background: rgba(255, 255, 255, 0.9); border-color: #E6F3FF; box-shadow: 0 0 0 0.15rem rgba(230, 243, 255, 0.25); }
-            .pastel-tabs .nav-link { color: #2c3e50 !important; background: rgba(255, 255, 255, 0.5); border-radius: 12px 12px 0 0; margin-right: 4px; transition: all 0.3s ease; font-weight: 500; padding: 8px 16px; font-size: 0.875rem; }
-            .pastel-tabs .nav-link.active { background: rgba(255, 255, 255, 0.9); font-weight: 700; }
-            .pastel-thead { background: rgba(255, 255, 255, 0.5); }
-            .pastel-modal-header { background: linear-gradient(135deg, #E6F3FF, #F8E8FF) !important; color: #2c3e50 !important; border-radius: 16px 16px 0 0; border: none; }
-            .pastel-modal-footer { background: rgba(255, 255, 255, 0.5); border-radius: 0 0 16px 16px; border: none; }
-            .pastel-card { background: rgba(255, 255, 255, 0.3); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: 12px; }
-            .pastel-card-header { background: rgba(255, 255, 255, 0.5); border-radius: 12px 12px 0 0; border: none; }
-            .pastel-link { color: #5C7CFA !important; transition: all 0.2s ease; font-weight: 600; font-size: 0.875rem; }
-            .pastel-link:hover { color: #4C63D2; transform: scale(1.02); }
-            .empty-state { padding: 1.5rem; text-align: center; }
-            .empty-icon { font-size: 2.5rem; color: #85929e; }
-        </style> --}}
+        <style>
+            /* Oculta los botones nativos de DataTables para usar solo tu Dropdown */
+            .dt-buttons { display: none !important; }
+        </style>
     @endpush
-
+    
     @push('scripts')
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+        
+        <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+        <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
+
         <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
         <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
 
         <script>
             document.addEventListener('DOMContentLoaded', function() {
                 let currentTable = null;
-                let currentInteractionId = null;
 
                 function initializeDataTable(tableId) {
                     if (currentTable) {
@@ -726,16 +911,37 @@
                     }
 
                     let isServerPaginated = (tableId === '#tablaPrincipal');
-
+                    // Generamos una fecha para el nombre del archivo (Ej: 19-03-2026)
+                    let fechaHoy = new Date().toLocaleDateString('es-CO').replace(/\//g, '-');
+                    let nombrePersonalizado = 'Reporte_Interacciones_' + fechaHoy;
                     currentTable = $(tableId).DataTable({
                         dom: 'Bfrtip',
                         paging: !isServerPaginated,
                         info: !isServerPaginated,
                         buttons: [
-                            { extend: 'excelHtml5', className: 'btn btn-sm pastel-btn-gradient', text: '<i class="feather-file-text me-1"></i>Excel' },
-                            { extend: 'pdfHtml5', className: 'btn btn-sm pastel-btn-gradient', text: '<i class="feather-file me-1"></i>PDF' },
-                            { extend: 'csvHtml5', className: 'btn btn-sm pastel-btn-gradient', text: '<i class="feather-file-text me-1"></i>CSV' }
-                        ],
+                                { 
+                                    extend: 'excelHtml5', 
+                                    className: 'buttons-excel',
+                                    title: 'Reporte de Interacciones', // Título dentro del Excel
+                                    filename: nombrePersonalizado,      // Nombre del archivo descargado
+                                    exportOptions: { modifier: { search: 'applied' } }
+                                },
+                                { 
+                                    extend: 'pdfHtml5', 
+                                    className: 'buttons-pdf',
+                                    title: 'Reporte de Interacciones',  // Título dentro del PDF
+                                    filename: nombrePersonalizado,      // Nombre del archivo descargado
+                                    orientation: 'landscape',           // Acuesta el PDF (horizontal) para que quepan las columnas
+                                    pageSize: 'LEGAL',                  // Tamaño oficio para dar más espacio
+                                    exportOptions: { modifier: { search: 'applied' } }
+                                },
+                                { 
+                                    extend: 'csvHtml5', 
+                                    className: 'buttons-csv',
+                                    filename: nombrePersonalizado,      // Nombre del archivo descargado
+                                    exportOptions: { modifier: { search: 'applied' } }
+                                }
+                            ],
                         pageLength: 20,
                         order: [[0, 'desc']],
                         language: {
@@ -761,30 +967,23 @@
                     });
                 });
 
-                // ==========================================
-                // LÓGICA DE FILTROS ACTUALIZADA (TIEMPO REAL)
-                // ==========================================
+                // Lógica de Filtros
                 function applyFilters() {
                     const searchParams = new URLSearchParams();
-                    
-                    // Solo tomamos los 3 valores que nos importan
                     const searchVal = $('#filterSearch').val();
                     const startDateVal = $('#filterFechaInicio').val();
                     const endDateVal = $('#filterFechaFin').val();
 
-                    // Mapeamos a los nombres EXACTOS del Controller
                     if (searchVal) searchParams.set('search', searchVal);
                     if (startDateVal) searchParams.set('start_date', startDateVal);
                     if (endDateVal) searchParams.set('end_date', endDateVal);
                     
-                    // Disparamos la búsqueda. Esto recarga la página y el backend hace el resto
                     window.location.href = `${window.location.pathname}?${searchParams.toString()}`;
                 }
 
                 $('#applyFilters').on('click', applyFilters);
                 $('#clearFilters').on('click', () => window.location.href = window.location.pathname);
                 
-                // Atajos de teclado para aplicar filtros presionando "Enter"
                 document.addEventListener('keydown', function(e) {
                     if (e.key === 'Enter' && (e.target.id === 'filterSearch' || e.target.id === 'filterFechaInicio' || e.target.id === 'filterFechaFin')) {
                         e.preventDefault();
@@ -792,26 +991,82 @@
                     }
                 });
 
-                // Lógica del modal...
+                // Lógica del modal
                 document.addEventListener('click', function(e) {
                     const interactionIdLink = e.target.closest('.interaction-id');
+                    
                     if (interactionIdLink) {
                         e.preventDefault();
-                        const el = interactionIdLink;
-                        document.getElementById('modal-id').textContent = `RADICADO ${el.dataset.id}`;
-                        document.getElementById('modal-fecha').textContent = el.dataset.fecha;
-                        document.getElementById('modal-cliente').textContent = el.dataset.cliente;
-                        document.getElementById('modal-agent').textContent = el.dataset.agent;
-                        document.getElementById('modal-notas').textContent = el.dataset.notas;
+                        const el = interactionIdLink.dataset;
+
+                        document.getElementById('modal-id').textContent = `RADICADO #${el.id}`;
+                        document.getElementById('modal-fecha').textContent = el.fecha;
+                        document.getElementById('modal-cliente').textContent = el.cliente || '—';
+                        document.getElementById('modal-client-id').textContent = el.clientId ? `(CC: ${el.clientId})` : '';
+                        document.getElementById('modal-agent').textContent = el.agent || '—';
+                        document.getElementById('modal-duracion').textContent = el.duracion || '—';
+                        document.getElementById('modal-llamante-nombre').textContent = el.llamanteNombre || '—';
+                        document.getElementById('modal-llamante-cedula').textContent = el.llamanteCedula || '—';
+                        document.getElementById('modal-llamante-celular').textContent = el.llamanteCelular || '—';
+                        document.getElementById('modal-llamante-parentesco').textContent = el.llamanteParentesco || '—';
+                        document.getElementById('modal-linea').textContent = el.linea || '—';
+                        document.getElementById('modal-outcome').textContent = el.outcome || '—';
+                        document.getElementById('modal-asignado').textContent = el.asignado || '—';
+                        document.getElementById('modal-notas').textContent = el.notas || 'Sin notas.';
+
+                        const container = document.getElementById('modal-seguimientos-container');
+                        const counter = document.getElementById('modal-seguimientos-count');
+                        container.innerHTML = ''; 
+
+                        try {
+                            const seguimientos = JSON.parse(el.seguimientos || '[]');
+                            counter.textContent = seguimientos.length;
+
+                            if (seguimientos.length > 0) {
+                                let html = '<div class="list-group list-group-flush">';
+                                seguimientos.forEach(seg => {
+                                    html += `
+                                        <div class="list-group-item px-0 bg-transparent border-bottom">
+                                            <div class="d-flex w-100 justify-content-between mb-1">
+                                                <strong class="text-dark" style="font-size: 0.9rem;">${seg.resultado}</strong>
+                                                <small class="text-muted">${seg.fecha_creacion}</small>
+                                            </div>
+                                            <p class="mb-2 text-muted" style="font-size: 0.85rem;">${seg.notas}</p>
+                                            <div class="bg-light p-2 rounded" style="font-size: 0.8rem;">
+                                                <span class="d-block text-secondary mb-1"><i class="feather-user me-1"></i> Agente: <strong>${seg.agente}</strong></span>
+                                                <span class="d-block text-secondary"><i class="feather-calendar me-1"></i> Próx. Acción: <strong>${seg.accion}</strong> (${seg.fecha_accion})</span>
+                                            </div>
+                                        </div>
+                                    `;
+                                });
+                                html += '</div>';
+                                container.innerHTML = html;
+                            } else {
+                                container.innerHTML = '<p class="text-muted small mb-0 py-2 text-center">No hay seguimientos registrados para esta interacción.</p>';
+                            }
+                        } catch (error) {
+                            console.error('Error al analizar los seguimientos:', error);
+                            container.innerHTML = '<p class="text-danger small mb-0 py-2">Error al cargar el historial de seguimientos.</p>';
+                            counter.textContent = '0';
+                        }
                         
                         new bootstrap.Modal(document.getElementById('detalleInteractionModal')).show();
                     }
                 });
 
-                // Exportaciones...
-                $('#exportExcel').on('click', () => { if (currentTable) currentTable.button(0).trigger(); });
-                $('#exportPDF').on('click', () => { if (currentTable) currentTable.button(1).trigger(); });
-                $('#exportCSV').on('click', () => { if (currentTable) currentTable.button(2).trigger(); });
+                // Exportaciones funcionando correctamente
+                $('#exportExcel').on('click', function(e) { 
+                    e.preventDefault(); 
+                    if (currentTable) currentTable.button('.buttons-excel').trigger(); 
+                });
+                $('#exportPDF').on('click', function(e) { 
+                    e.preventDefault(); 
+                    if (currentTable) currentTable.button('.buttons-pdf').trigger(); 
+                });
+                $('#exportCSV').on('click', function(e) { 
+                    e.preventDefault(); 
+                    if (currentTable) currentTable.button('.buttons-csv').trigger(); 
+                });
             });
         </script>
     @endpush
