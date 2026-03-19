@@ -49,7 +49,8 @@ class SegConvenioController extends Controller
 
     public function store(Request $request)
     {
-        $idConvenio = $request->anio . $request->idAseguradora;
+        
+        /*$idConvenio = $request->anio . $request->idAseguradora;
         $validacion = SegConvenio::where('idConvenio', $idConvenio)->exists();
         if ($validacion) {
             return redirect()->back()->with('error', 'Ya existe un convenio con el mismo año y aseguradora');
@@ -68,7 +69,8 @@ class SegConvenioController extends Controller
                 'seg_convenio_id' => $convenio->idConvenio,
                 'name' => strtoupper($planData['name']),
                 'valor' => $planData['vasegurado'],
-                'prima' => $planData['vprima'],
+                'prima_aseguradora' => $planData['vprimaase'],
+                'prima_asegurado' => $planData['vprimacor'],
                 'condicion_id' => $planData['condicion'],
             ]);
             $coberturas = SegPlan_cobertura::where('plan_id', $planId)->get();
@@ -85,19 +87,18 @@ class SegConvenioController extends Controller
                 SegPlan_cobertura::create($coberturaData);
             }
         }
-        $this->auditoria("CONVENIO CREADO " . $convenio->nombre);
+        $this->auditoria("CONVENIO CREADO " . $convenio->nombre);*/
         if ($request->has('CheckVigencia')) {
+            
             $this->updateVigencia($request->idAseguradora, $request->anio);
-            SegConvenio::where('idAseguradora', $request->idAseguradora)
-                ->where('vigente', true)
-                ->update(['vigente' => false]);
-            SegConvenio::where('idConvenio', $idConvenio)
-                ->update(['vigente' => true]);
+dd("hola?");
+            /*SegConvenio::where('idAseguradora', $request->idAseguradora)->where('vigente', true)->update(['vigente' => false]);
+            SegConvenio::where('idConvenio', $idConvenio)->update(['vigente' => true]);
             SegPlan::where('seg_convenio_id', 'like', '%' . $request->idAseguradora)
                 ->update(['vigente' => false]);
             SegPlan::where('seg_convenio_id', $idConvenio)
                 ->update(['vigente' => true]);
-            $this->auditoria("Novedad en polizas, convenios y planes con nueva vigencia " . $convenio->nombre);
+            $this->auditoria("Novedad en polizas, convenios y planes con nueva vigencia " . $convenio->nombre);*/
         }
 
         return redirect()->route('seguros.convenio.index')->with('success', 'Convenio creado correctamente');
@@ -106,10 +107,9 @@ class SegConvenioController extends Controller
 
     private function updateVigencia($convenioid, $convenioanio)
     {
-        $polizas = SegPoliza::where('seg_convenio_id', $convenioid)
-            ->where('active', true)->where('reclamacion', 0)->get();
+        $polizas = SegPoliza::where('seg_convenio_id', $convenioid)->where('active', true)->whereNull('reclamacion')->get();
+        dd($polizas);
         foreach ($polizas as $poliza) {
-            
             $planOriginal = SegPlan::find($poliza->seg_plan_id);
             $plan = SegPlan::where('name', $planOriginal->name)
                 ->where('condicion_id', $planOriginal->condicion_id)

@@ -61,7 +61,7 @@
                             @foreach ($planes as $i => $segPlans)
                                 <div class="mb-4 cobertura-row">
                                     @foreach ($segPlans as $plan)
-                                        <div class="row my-2">
+                                        <div class="row my-2 plan-row">
                                             <div class="col-lg-2">
                                                 <label class="form-label">Nombre Plan<span
                                                         class="text-danger">*</span></label>
@@ -69,19 +69,26 @@
                                                     name="planes[{{ $plan->id }}][name]" value="{{ $plan->name }}"
                                                     required>
                                             </div>
-                                            <div class="col-lg-3">
+                                            <div class="col-lg-2">
                                                 <label class="form-label">Valor Asegurado<span
                                                         class="text-danger">*</span></label>
                                                 <input type="number" class="form-control"
                                                     name="planes[{{ $plan->id }}][vasegurado]"
                                                     value="{{ $plan->valor }}" required>
                                             </div>
-                                            <div class="col-lg-3">
-                                                <label class="form-label">Valor Prima<span
+                                            <div class="col-lg-2">
+                                                <label class="form-label">Prima Aseguradora <span
                                                         class="text-danger">*</span></label>
                                                 <input type="number" class="form-control"
-                                                    name="planes[{{ $plan->id }}][vprima]"
+                                                    name="planes[{{ $plan->id }}][vprimaase]"
                                                     value="{{ $plan->prima_aseguradora }}" required>
+                                            </div>
+                                            <div class="col-lg-2">
+                                                <label class="form-label">Prima Corpen<span
+                                                        class="text-danger">*</span></label>
+                                                <input type="number" class="form-control"
+                                                    name="planes[{{ $plan->id }}][vprimacor]"
+                                                    value="{{ $plan->prima_asegurado }}" required>
                                             </div>
                                             <div class="col-lg-3">
                                                 <label class="form-label">Condición<span
@@ -97,7 +104,8 @@
                                                 </select>
                                             </div>
                                             <div class="col-lg-1 d-flex align-items-end pb-3">
-                                                <button type="button" class="btn btn-danger btn-sm py-2 eliminar-plan">
+                                                <button type="button"
+                                                    class="btn btn-danger btn-sm py-2 eliminar-plan">
                                                     <i class="feather-trash-2"></i>
                                                 </button>
                                             </div>
@@ -136,18 +144,7 @@
                                 </button>
                             </div>
                         </form>
-                        <script>
-                            $(document).ready(function() {
-                                $('#formAddPlan').submit(function(event) {
-                                    var form = this;
-                                    if (!form.checkValidity()) {
-                                        $(form).addClass('was-validated');
-                                        event.preventDefault();
-                                        event.stopPropagation();
-                                    }
-                                });
-                            });
-                        </script>
+
                     </div>
                 </div>
                 <div class="tab-pane fade p-4" id="taskTab" role="tabpanel">
@@ -210,5 +207,38 @@
             </div>
         </div>
     </div>
+    <script>
+        $('#formAddPlan').submit(function(event) {
+            var form = this;
+            if (!form.checkValidity()) {
+                $(form).addClass('was-validated');
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        });
 
+        document.addEventListener("click", function(e) {
+            const btn = e.target.closest(".eliminar-plan");
+            if (!btn) return;
+
+            const fila = btn.closest(".plan-row");
+
+            console.log(fila); // 🔍 DEBUG
+
+            Swal.fire({
+                title: "Eliminar de la lista",
+                text: "Solo se eliminará del formulario para crear el convenio",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Sí, eliminar",
+                cancelButtonText: "Cancelar",
+                confirmButtonColor: "#d33"
+            }).then((result) => {
+                console.log(fila.parentNode);
+                fila.remove();
+                console.log("Eliminado");
+            });
+
+        });
+    </script>
 </x-base-layout>

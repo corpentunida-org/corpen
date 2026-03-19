@@ -56,14 +56,11 @@
                                                     href="{{ route('seguros.planes.edit', ['plan' => $plan->id]) }}">Editar</a>
                                                 @endcandirect
                                                 @candirect('seguros.planes.destroy')
-                                                <form
-                                                    action="{{ route('seguros.planes.destroy', ['plan' => $plan->id]) }}"
-                                                    method="POST">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="dropdown-item btnAbrirModalDestroy"
-                                                        data-text="plan ">Eliminar</button>
-                                                </form>
+                                                    <form action="{{ route('seguros.planes.destroy', ['plan' => $plan->id]) }}" method="POST">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="dropdown-item btnAbrirModalDestroy" data-text="plan ">Eliminar</button>
+                                                    </form>
                                                 @endcandirect
                                             </div>
                                         </div>
