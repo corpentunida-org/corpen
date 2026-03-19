@@ -411,6 +411,9 @@ Route::prefix('interactions')
         // 📄 Página principal (lista de interacciones)
         Route::get('/', [InteractionController::class, 'index'])->name('index');
 
+        // 📊 Informe / Dashboard de interacciones
+        Route::get('/report', [InteractionController::class, 'report'])->name('report');
+
         // ➕ Crear nueva interacción
         Route::get('/create', [InteractionController::class, 'create'])->name('create');
         Route::post('/', [InteractionController::class, 'store'])->name('store');
