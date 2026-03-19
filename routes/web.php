@@ -797,7 +797,7 @@ Route::middleware(['auth'])->prefix('correspondencia')->name('correspondencia.')
         // ---------------------------------------------------
         // 1. DASHBOARD (TABLERO UNIFICADO)
         // ---------------------------------------------------
-        Route::get('tablero', [CorrespondenciaController::class, 'tablero'])->name('tablero');
+        Route::get('tablero', [CorrespondenciaController::class, 'tablero'])->name('tablero')->middleware('candirect:correspondencia.usuario.admin');
 
         // ---------------------------------------------------
         // 2. GESTIÓN DE CORRESPONDENCIA (CRUD)

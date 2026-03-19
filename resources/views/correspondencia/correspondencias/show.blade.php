@@ -1003,6 +1003,36 @@
             @endforeach
         };
 
+        // ---> NUEVO: FUNCIÓN PARA PREVISUALIZAR IMÁGENES <---
+        function generarVistaPrevia(file, boxContainer, esMultiple) {
+            if (!file || !file.type.startsWith('image/')) return;
+            
+            let imgUrl = URL.createObjectURL(file);
+
+            if (esMultiple) {
+                let gallery = boxContainer.querySelector('.preview-gallery');
+                if (!gallery) {
+                    gallery = document.createElement('div');
+                    gallery.className = 'preview-gallery d-flex gap-2 mt-3 flex-wrap w-100 justify-content-center';
+                    boxContainer.appendChild(gallery);
+                }
+                let img = document.createElement('img');
+                img.src = imgUrl;
+                img.className = 'rounded-3 shadow-sm border border-2 border-white';
+                img.style.width = '65px';
+                img.style.height = '65px';
+                img.style.objectFit = 'cover';
+                gallery.appendChild(img);
+            } else {
+                let iconElement = boxContainer.querySelector('.rounded-circle');
+                if (iconElement) {
+                    iconElement.classList.remove('p-2', 'p-3');
+                    iconElement.innerHTML = `<img src="${imgUrl}" class="rounded-circle w-100 h-100 shadow-sm" style="object-fit: cover;">`;
+                }
+            }
+        }
+        // -------------------------------------------------------------
+
         function abrirModalGestion(idProceso) {
             var myModal = new bootstrap.Modal(document.getElementById('modalSeguimiento'));
             
@@ -1135,6 +1165,12 @@
                                 iconElement.className = 'p-3 bg-white rounded-circle shadow-sm me-3 text-success d-flex align-items-center justify-content-center';
                                 iconElement.innerHTML = '<i class="bi bi-check-lg fs-4"></i>';
                             }
+
+                            // ---> NUEVO: Generar vistas previas para carga múltiple <---
+                            let oldGallery = box.querySelector('.preview-gallery');
+                            if (oldGallery) oldGallery.remove();
+                            Array.from(files).forEach(file => generarVistaPrevia(file, box, true));
+
                         } else {
                             let box = input.closest('.position-relative');
                             let label = box.querySelector('h6');
@@ -1153,6 +1189,9 @@
                                 iconElement.className = 'p-2 bg-white rounded-circle shadow-sm me-3 text-success d-flex align-items-center justify-content-center';
                                 iconElement.innerHTML = '<i class="bi bi-file-earmark-check-fill fs-5"></i>';
                             }
+
+                            // ---> NUEVO: Generar vista previa para carga individual <---
+                            generarVistaPrevia(files[0], box, false);
                         }
                     }
                 });
@@ -1202,6 +1241,9 @@
                     iconElement.innerHTML = '<i class="bi bi-check-lg fs-4"></i>';
                 }
 
+                // ---> NUEVO: Generar vistas previas al pegar múltiples archivos <---
+                Array.from(pastedFiles).forEach(file => generarVistaPrevia(file, box, true));
+
                 alert("¡Imagen(es) agregada(s) correctamente al anexo opcional!");
                 return;
             }
@@ -1234,6 +1276,9 @@
                         iconElement.innerHTML = '<i class="bi bi-file-earmark-check-fill fs-5"></i>';
                     }
                     
+                    // ---> NUEVO: Generar vista previa al pegar archivo individual <---
+                    generarVistaPrevia(pastedFiles[0], box, false);
+
                     alert("¡Archivo insertado correctamente en la casilla requerida!");
                     break;
                 }

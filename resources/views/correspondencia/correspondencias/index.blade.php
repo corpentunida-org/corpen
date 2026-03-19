@@ -408,7 +408,7 @@
                             <tr>
                                 <th width="10%">Radicado</th>
                                 <th>Asunto</th>
-                                <th width="20%">Remitente</th>
+                                <th width="25%">Remitente</th>
                                 <th width="15%">Estado</th>
                                 <th width="10%">Fecha</th>
                                 @candirect('correspondencia.index.accion')
@@ -459,12 +459,15 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <div class="d-flex align-items-center gap-2">
-                                            <div class="avatar-tiny">
-                                                {{ substr($corr->remitente->nom_ter ?? '?', 0, 1) }}</div>
-                                            <span class="text-truncate"
-                                                style="max-width: 150px;">{{ Str::limit($corr->remitente->nom_ter ?? 'N/A', 20) }}</span>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="avatar-tiny">
+                                            {{ substr($corr->remitente->nom_ter ?? '?', 0, 1) }}
                                         </div>
+                                        {{-- Quitamos 'text-truncate', el 'max-width' y el 'Str::limit' --}}
+                                        <span class="fw-medium text-dark">
+                                            {{ $corr->remitente->nom_ter ?? 'N/A' }}
+                                        </span>
+                                    </div>
                                     </td>
                                     <td>
                                         @if ($corr->finalizado)
