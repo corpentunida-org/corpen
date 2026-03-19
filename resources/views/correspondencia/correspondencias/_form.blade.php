@@ -480,8 +480,8 @@
             if (this.files && this.files[0]) {
                 let file = this.files[0];
 
-                if (file.size > 10 * 1024 * 1024) {
-                    alert("El archivo supera los 10MB");
+                if (file.size > 50 * 1024 * 1024) {
+                    alert("El archivo supera los 50MB");
                     this.value = '';
                     return;
                 }
