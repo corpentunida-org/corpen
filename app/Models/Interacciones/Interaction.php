@@ -61,6 +61,7 @@ class Interaction extends Model
         return $this->belongsTo(maeTerceros::class, 'client_id', 'cod_ter'); 
     }
     
+    
     public function channel()
     {
         return $this->belongsTo(IntChannel::class, 'interaction_channel', 'id');
