@@ -40,16 +40,53 @@ class InteractionController extends Controller
         if ($request->filled('search')) {
             $search = $request->input('search');
             $baseQuery->where(function ($q) use ($search) {
-                // Busca en campos de la tabla interacciones
-                $q->where('notes', 'LIKE', "%{$search}%")
+                // 1. Busca en campos directos de la tabla interacciones
+                $q->where('id', 'LIKE', "%{$search}%")
+                    ->orWhere('notes', 'LIKE', "%{$search}%")
                     ->orWhere('cedula_quien_llama', 'LIKE', "%{$search}%")
                     ->orWhere('nombre_quien_llama', 'LIKE', "%{$search}%")
-                    // Busca en la relación del cliente (maeTerceros)
+                    ->orWhere('celular_quien_llama', 'LIKE', "%{$search}%")
+                    ->orWhere('parentesco_quien_llama', 'LIKE', "%{$search}%")
+                    ->orWhere('id_linea_de_obligacion', 'LIKE', "%{$search}%")
+                    
+                    // 2. Busca en Cliente y su Distrito
                     ->orWhereHas('client', function ($query) use ($search) {
-                        $query->where('nom_ter', 'LIKE', "%{$search}%")->orWhere('cod_ter', 'LIKE', "%{$search}%");
+                        $query->where('nom_ter', 'LIKE', "%{$search}%")
+                              ->orWhere('cod_ter', 'LIKE', "%{$search}%")
+                              // Relación anidada: Cliente -> Distrito
+                              ->orWhereHas('distrito', function ($qDistrito) use ($search) {
+                                  $qDistrito->where('NOM_DIST', 'LIKE', "%{$search}%");
+                              });
                     })
-                    // Busca en la relación del agente (User)
+                    
+                    // 3. Busca en Agente y su Cargo/Área
                     ->orWhereHas('agent', function ($query) use ($search) {
+                        $query->where('name', 'LIKE', "%{$search}%")
+                              ->orWhereHas('cargoRelation', function($qCargo) use ($search) {
+                                  $qCargo->where('nombre_cargo', 'LIKE', "%{$search}%")
+                                         ->orWhereHas('gdoArea', function($qArea) use ($search) {
+                                             $qArea->where('nombre', 'LIKE', "%{$search}%");
+                                         });
+                              });
+                    })
+
+                    // 4. Busca por Canal
+                    ->orWhereHas('channel', function ($query) use ($search) {
+                        $query->where('name', 'LIKE', "%{$search}%");
+                    })
+
+                    // 5. Busca por Resultado (Outcome)
+                    ->orWhereHas('outcomeRelation', function ($query) use ($search) {
+                        $query->where('name', 'LIKE', "%{$search}%");
+                    })
+
+                    // 6. Busca por Línea de Obligación
+                    ->orWhereHas('lineaDeObligacion', function ($query) use ($search) {
+                        $query->where('nombre', 'LIKE', "%{$search}%");
+                    })
+
+                    // 7. Busca por el Usuario al que fue Asignado
+                    ->orWhereHas('usuarioAsignado', function ($query) use ($search) {
                         $query->where('name', 'LIKE', "%{$search}%");
                     });
             });
