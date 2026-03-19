@@ -17,6 +17,10 @@
                 <i class="bi bi-list-check me-2"></i> Listado de Interacciones
             </a>
         </li>
+        <li class="nxl-item">
+            <a class="nxl-link" href="{{ route('interactions.report') }}"> <i class="bi bi-pie-chart me-2"></i> Informe
+            </a>
+        </li>
         @candirect('interacciones.parametros.index')
         <li class="nxl-item nxl-hasmenu">
             <a class="nxl-link" href="javascript:void(0)">

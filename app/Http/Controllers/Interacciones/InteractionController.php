@@ -26,6 +26,15 @@ use App\Models\Creditos\LineaCredito;
 
 class InteractionController extends Controller
 {
+    public function report()
+    {
+        // Más adelante, aquí haremos las consultas a la base de datos
+        // para contar interacciones, agruparlas por mes, por usuario, etc.
+        // $totalInteracciones = Interaction::count();
+        
+        // La ruta de la vista usa puntos para separar carpetas: interactions/reportes/report.blade.php
+        return view('interactions.reportes.report');
+    }
     /**
      * Muestra la lista de interacciones con filtros y búsqueda.
      */
