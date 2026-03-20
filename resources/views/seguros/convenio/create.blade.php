@@ -57,12 +57,14 @@
                                     <input type="date" class="form-control" name="fechaFin" required>
                                 </div>
                             </div>
-                            <h5 class="fw-bold my-4">Los planes se copian con cada una de las coberturas. </h5>
+                            <h5 class="fw-bold my-4">Los planes se copian con cada una de las coberturas.</h5>
                             @foreach ($planes as $i => $segPlans)
                                 <div class="mb-4 cobertura-row">
                                     @foreach ($segPlans as $plan)
                                         <div class="row my-2 plan-row">
                                             <div class="col-lg-2">
+                                                <input type="hidden" name="planes[{{ $plan->id }}][idOriginal]"
+                                                    value="{{ $plan->id }}">
                                                 <label class="form-label">Nombre Plan<span
                                                         class="text-danger">*</span></label>
                                                 <input type="text" class="form-control"
@@ -201,7 +203,6 @@
                                 </button>
                             </div>
                         </form>
-
                     </div>
                 </div>
             </div>
@@ -220,25 +221,20 @@
         document.addEventListener("click", function(e) {
             const btn = e.target.closest(".eliminar-plan");
             if (!btn) return;
-
             const fila = btn.closest(".plan-row");
-
-            console.log(fila); // 🔍 DEBUG
-
             Swal.fire({
                 title: "Eliminar de la lista",
                 text: "Solo se eliminará del formulario para crear el convenio",
                 icon: "warning",
                 showCancelButton: true,
-                confirmButtonText: "Sí, eliminar",
                 cancelButtonText: "Cancelar",
+                confirmButtonText: "Sí, eliminar",
                 confirmButtonColor: "#d33"
             }).then((result) => {
-                console.log(fila.parentNode);
-                fila.remove();
-                console.log("Eliminado");
+                if (result.value) {
+                    fila.remove();
+                }
             });
-
         });
     </script>
 </x-base-layout>

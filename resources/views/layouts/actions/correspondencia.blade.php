@@ -93,11 +93,10 @@
             </a>
         </li>
         @endcandirect
-
         {{-- SEPARADOR FINAL --}}
-       {{--  <li class="nxl-item-separator" style="height:1px; background: rgba(0,0,0,0.04); margin:10px 20px;"></li> --}}
+        {{--  <li class="nxl-item-separator" style="height:1px; background: rgba(0,0,0,0.04); margin:10px 20px;"></li> --}}
 
         {{-- ESPACIADO PARA SCROLL --}}
-{{--         <li class="nxl-item" style="height: 80px; pointer-events: none; list-style: none;"></li> --}}
+        {{--<li class="nxl-item" style="height: 80px; pointer-events: none; list-style: none;"></li> --}}
     </ul>
 </li>

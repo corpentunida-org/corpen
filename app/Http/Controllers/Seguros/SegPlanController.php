@@ -48,7 +48,6 @@ class SegPlanController extends Controller
      */
     public function store(Request $request)
     {
-        dd($request->all());
         $plan = SegPlan::create([
             'name' => strtoupper($request->input('name')),
             'valor' => $request->input('valorPlanAsegurado'),
@@ -59,7 +58,6 @@ class SegPlanController extends Controller
         if (!$plan->exists) {
             return redirect()->back()->with('error', 'No se pudo procesar el plan.');
         }
-
         $coberturaIds = $request->input('cobertura_id');
         $valoresAse = $request->input('valorAsegurado');
         $valoresCob = $request->input('valorPrima');
@@ -74,9 +72,7 @@ class SegPlanController extends Controller
         }
         $idConvenio = $request->input('idConveniobusqueda');
         $this->auditoria('PLAN CREADO ID ' . $plan->id);
-        return redirect()
-            ->action([SegConvenioController::class, 'show'], ['convenio' => $idConvenio])
-            ->with('success', 'Plan creado correctamente.');
+        return redirect()->action([SegConvenioController::class, 'show'], ['convenio' => $idConvenio])->with('success', 'Plan creado correctamente.');
     }
 
     /**
