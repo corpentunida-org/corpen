@@ -405,6 +405,9 @@ Route::prefix('interactions')
 
         // 📊 Informe / Dashboard de interacciones
         Route::get('/report', [InteractionController::class, 'report'])->name('report');
+        
+        // 📄 NUEVO: Descargar/Ver PDF del Informe de interacciones
+        Route::get('/report/pdf', [InteractionController::class, 'reportPdf'])->name('report.pdf');
 
         // ➕ Crear nueva interacción
         Route::get('/create', [InteractionController::class, 'create'])->name('create');
