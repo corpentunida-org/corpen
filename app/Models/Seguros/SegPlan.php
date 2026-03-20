@@ -8,8 +8,8 @@ use Illuminate\Database\Eloquent\Model;
 class SegPlan extends Model
 {
     use HasFactory;
-    //protected $table = 'SEG_plans';
-    protected $table = 'SEG_planestwoo';
+    protected $table = 'SEG_plans';
+    //protected $table = 'SEG_planestwoo';
     protected $primaryKey = 'id';
     public $incrementing = true;
     protected $keyType = 'int';
