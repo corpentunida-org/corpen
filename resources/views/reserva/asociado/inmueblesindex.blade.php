@@ -43,13 +43,10 @@
 
                     {{-- Body --}}
                     <div class="card-body d-flex flex-column">
-
                         <h5 class="card-title">{{ $inmueble->name }}</h5>
-
                         <p class="card-text text-muted text-truncate-multiline">
                             {{ $inmueble->description }}
                         </p>
-
                         <div class="mt-auto d-flex justify-content-between">
                             <a href="{{ route('reserva.crudinmuebles.show', $inmueble) }}" target="_blank" class="btn btn-sm btn-outline-primary">Ver</a>
                             <div class="d-flex gap-2">
@@ -59,7 +56,6 @@
                                 @endcandirect
                             </div>
                         </div>
-
                     </div>
                 </div>
             </div>

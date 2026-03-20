@@ -17,7 +17,7 @@ class SegConvenioController extends Controller
     private function auditoria($accion)
     {
         $auditoriaController = app(AuditoriaController::class);
-        $auditoriaController->create($accion, "SEGUROS");
+        $auditoriaController->create($accion, 'SEGUROS');
     }
 
     public function index()
@@ -32,9 +32,13 @@ class SegConvenioController extends Controller
         $convenio = SegConvenio::with(['plan.condicioncorpen'])
             ->where('idConvenio', $idConvenio)
             ->first();
-        $planes = $convenio->plan->filter(function ($plan) {
-                return $plan->condicioncorpen !== null && $plan->condicioncorpen->descripcion !== null;})
-            ->groupBy(function ($plan) {return $plan->condicioncorpen->descripcion;});
+        $planes = $convenio->plan
+            ->filter(function ($plan) {
+                return $plan->condicioncorpen !== null && $plan->condicioncorpen->descripcion !== null;
+            })
+            ->groupBy(function ($plan) {
+                return $plan->condicioncorpen->descripcion;
+            });
         return view('seguros.convenio.show', compact('convenio', 'planes'));
     }
 
@@ -49,31 +53,33 @@ class SegConvenioController extends Controller
 
     public function store(Request $request)
     {
-        
-        /*$idConvenio = $request->anio . $request->idAseguradora;
+        //dd($request->all());
+        $idConvenio = $request->anio . $request->idAseguradora;
         $validacion = SegConvenio::where('idConvenio', $idConvenio)->exists();
         if ($validacion) {
             return redirect()->back()->with('error', 'Ya existe un convenio con el mismo año y aseguradora');
         }
-        $convenio = SegConvenio::create([
+        /*$convenio = SegConvenio::create([
             'idConvenio' => $idConvenio,
             'seg_proveedor_id' => $request->proveedor,
             'idAseguradora' => $request->idAseguradora,
             'nombre' => strtoupper($request->nombre) . " " . $request->anio,
             'fecha_inicio' => $request->fechaInicio,
             'fecha_fin' => $request->fechaFin,
-        ]);
+        ]);*/
+        $mapeoplanes = [];
         $planes = $request->input('planes');
         foreach ($planes as $planId => $planData) {
             $nuevoPlan = SegPlan::create([
-                'seg_convenio_id' => $convenio->idConvenio,
+                //'seg_convenio_id' => $convenio->idConvenio,
                 'name' => strtoupper($planData['name']),
                 'valor' => $planData['vasegurado'],
                 'prima_aseguradora' => $planData['vprimaase'],
                 'prima_asegurado' => $planData['vprimacor'],
                 'condicion_id' => $planData['condicion'],
             ]);
-            $coberturas = SegPlan_cobertura::where('plan_id', $planId)->get();
+            $mapaPlanes[$planId] = $nuevoPlan; //mapeo planes
+            /*$coberturas = SegPlan_cobertura::where('plan_id', $planId)->get();
             foreach ($coberturas as $cobertura) {
                 $coberturaData = [
                     'plan_id' => $nuevoPlan->id,
@@ -85,14 +91,24 @@ class SegConvenioController extends Controller
                     $coberturaData['valorCobertura'] = $nuevoPlan->prima;
                 }
                 SegPlan_cobertura::create($coberturaData);
-            }
+            }*/
         }
-        $this->auditoria("CONVENIO CREADO " . $convenio->nombre);*/
+        //$this->auditoria("CONVENIO CREADO " . $convenio->nombre);
         if ($request->has('CheckVigencia')) {
-            
-            $this->updateVigencia($request->idAseguradora, $request->anio);
-dd("hola?");
-            /*SegConvenio::where('idAseguradora', $request->idAseguradora)->where('vigente', true)->update(['vigente' => false]);
+            //$this->updateVigencia($request->idAseguradora, $request->anio);
+
+            //$convenioid = $request->idAseguradora;
+            //$convenioanio = $request->anio;
+            foreach ($mapaPlanes as $planViejoId => $planNuevo) {
+                $polizas=SegPoliza::where('seg_convenio_id', $request->idAseguradora)
+                    ->where('seg_plan_id', $planViejoId)
+                    ->where('active', true)
+                    ->whereNull('reclamacion')
+                    ->get();
+                dd($polizas);
+            }
+            /*
+            SegConvenio::where('idAseguradora', $request->idAseguradora)->where('vigente', true)->update(['vigente' => false]);
             SegConvenio::where('idConvenio', $idConvenio)->update(['vigente' => true]);
             SegPlan::where('seg_convenio_id', 'like', '%' . $request->idAseguradora)
                 ->update(['vigente' => false]);
@@ -104,7 +120,6 @@ dd("hola?");
         return redirect()->route('seguros.convenio.index')->with('success', 'Convenio creado correctamente');
     }
 
-
     private function updateVigencia($convenioid, $convenioanio)
     {
         $polizas = SegPoliza::where('seg_convenio_id', $convenioid)->where('active', true)->whereNull('reclamacion')->get();
@@ -113,17 +128,18 @@ dd("hola?");
             $planOriginal = SegPlan::find($poliza->seg_plan_id);
             $plan = SegPlan::where('name', $planOriginal->name)
                 ->where('condicion_id', $planOriginal->condicion_id)
-                ->where('seg_convenio_id', $convenioanio . $convenioid)->first();
+                ->where('seg_convenio_id', $convenioanio . $convenioid)
+                ->first();
             if ($plan) {
                 if ($poliza->extra_prima != 0) {
-                    $planprima = (($plan->prima_aseguradora * $poliza->extra_prima) / 100) + $plan->prima_aseguradora;
+                    $planprima = ($plan->prima_aseguradora * $poliza->extra_prima) / 100 + $plan->prima_aseguradora;
                 } else {
                     $planprima = $plan->prima_aseguradora;
                 }
                 $poliza->update([
                     'seg_plan_id' => $plan->id,
                     'valor_asegurado' => $plan->valor,
-                    'valor_prima' => $planprima
+                    'valor_prima' => $planprima,
                 ]);
             }
         }
