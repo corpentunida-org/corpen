@@ -13,6 +13,7 @@ use Exception;
 
 use App\Models\Maestras\maeTerceros;
 use App\Models\Maestras\maeDistritos;
+use App\Models\User;
 use App\Models\Interacciones\Interaction;
 use App\Models\Interacciones\IntSeguimiento;
 use App\Models\Interacciones\IntChannel;
@@ -35,6 +36,10 @@ class InteractionController extends Controller
         
         $filtroDistrito = $request->input('distrito_id');
         $filtroLinea    = $request->input('linea_id');
+        
+        // NUEVO: Capturar los inputs de Agente y Cliente
+        $filtroAgente   = $request->input('agent_id');
+        $filtroCliente  = $request->input('client_id');
 
         $start = Carbon::parse($startDate)->startOfDay();
         $end   = Carbon::parse($endDate)->endOfDay();
@@ -54,6 +59,16 @@ class InteractionController extends Controller
             $baseQuery->where('id_linea_de_obligacion', $filtroLinea);
         }
 
+        // NUEVO: Aplicar Filtro de Agente si existe
+        if ($filtroAgente) {
+            $baseQuery->where('agent_id', $filtroAgente);
+        }
+
+        // NUEVO: Aplicar Filtro de Cliente si existe
+        if ($filtroCliente) {
+            $baseQuery->where('client_id', $filtroCliente);
+        }
+
         // 3. Cálculos de Tarjetas (KPIs)
         $totalInteracciones = (clone $baseQuery)->count();
 
@@ -65,7 +80,8 @@ class InteractionController extends Controller
             $q->where('estado', '!=', 1)->orWhereNull('estado');
         })->count();
 
-        $vencidas = IntSeguimiento::whereHas('interaction', function($q) use ($start, $end, $filtroDistrito, $filtroLinea) {
+        // NUEVO: Se agregaron $filtroAgente y $filtroCliente al use() de la subconsulta
+        $vencidas = IntSeguimiento::whereHas('interaction', function($q) use ($start, $end, $filtroDistrito, $filtroLinea, $filtroAgente, $filtroCliente) {
                 $q->whereBetween('interaction_date', [$start, $end])
                   ->whereHas('outcomeRelation', function($q2) {
                       $q2->where('estado', '!=', 1)->orWhereNull('estado');
@@ -79,6 +95,14 @@ class InteractionController extends Controller
                 }
                 if ($filtroLinea) {
                     $q->where('id_linea_de_obligacion', $filtroLinea);
+                }
+                
+                // NUEVO: Replicar filtros de Agente y Cliente en seguimientos
+                if ($filtroAgente) {
+                    $q->where('agent_id', $filtroAgente);
+                }
+                if ($filtroCliente) {
+                    $q->where('client_id', $filtroCliente);
                 }
             })
             ->whereNotNull('next_action_date')
@@ -142,7 +166,7 @@ class InteractionController extends Controller
             ->get();
 
         $chartClientes = [
-            'labels' => $clientesData->map(fn($item) => $item->client->nombre ?? 'Cliente '.$item->client_id)->toArray(),
+            'labels' => $clientesData->map(fn($item) => $item->client->nom_ter ?? 'Cliente '.$item->client_id)->toArray(),
             'data'   => $clientesData->pluck('total')->toArray(),
         ];
 
@@ -179,10 +203,45 @@ class InteractionController extends Controller
             'data'   => $distritosAgrupados->values()->toArray(),
         ];
 
+        // g. (NUEVO) Top 5 Agentes por Seguimientos
+        $seguimientosAgentesData = IntSeguimiento::whereHas('interaction', function($q) use ($start, $end, $filtroDistrito, $filtroLinea, $filtroAgente, $filtroCliente) {
+                $q->whereBetween('interaction_date', [$start, $end]);
+                if ($filtroDistrito) {
+                    $q->whereHas('client', function($q3) use ($filtroDistrito) {
+                        $q3->where('cod_dist', $filtroDistrito);
+                    });
+                }
+                if ($filtroLinea) {
+                    $q->where('id_linea_de_obligacion', $filtroLinea);
+                }
+                if ($filtroAgente) {
+                    $q->where('agent_id', $filtroAgente);
+                }
+                if ($filtroCliente) {
+                    $q->where('client_id', $filtroCliente);
+                }
+            })
+            ->select('agent_id', DB::raw('count(*) as total'))
+            ->with('creator') 
+            ->groupBy('agent_id')
+            ->orderByDesc('total')
+            ->limit(5)
+            ->get();
+
+        $chartSeguimientosAgentes = [
+            'labels' => $seguimientosAgentesData->map(fn($item) => optional($item->creator)->name ?? 'Sin Agente')->toArray(),
+            'data'   => $seguimientosAgentesData->pluck('total')->toArray(),
+        ];
+
         // 5. Listas para los select de Filtro
         // Asegúrate de tener el modelo maeDistritos importado arriba
-        $listDistritos = \App\Models\Maestras\maeDistritos::all(); 
+        $listDistritos = maeDistritos::all(); 
         $listLineas    = LineaCredito::all();
+        
+        // NUEVO: Consultas para los selects de Agentes y Clientes
+        $listAgentes   = User::select('id', 'name')->get(); 
+        // Límite de 1000 agregado por seguridad de rendimiento si tu base de clientes es muy grande.
+        $listClientes  = maeTerceros::select('cod_ter', 'nom_ter')->limit(1000)->get(); 
 
         // 6. Retornar Vista 
         return view('interactions.reportes.report', compact(
@@ -193,12 +252,17 @@ class InteractionController extends Controller
             'chartClientes',
             'chartLineas',
             'chartDistritos',
+            'chartSeguimientosAgentes', // <-- NUEVO GRÁFICO AGREGADO AQUÍ
             'startDate',
             'endDate',
             'filtroDistrito',
             'filtroLinea',
+            'filtroAgente',  // NUEVO
+            'filtroCliente', // NUEVO
             'listDistritos',
-            'listLineas'
+            'listLineas',
+            'listAgentes',   // NUEVO
+            'listClientes'   // NUEVO
         ));
     }
 
@@ -401,9 +465,9 @@ class InteractionController extends Controller
         }
 
         // 4. DATOS PARA EL MODAL
-        $outcomes = \App\Models\Interacciones\IntOutcome::all();
-        $nextActions = \App\Models\Interacciones\IntNextAction::all();
-        $users = \App\Models\User::orderBy('name')->get();
+        $outcomes = IntOutcome::all();
+        $nextActions = IntNextAction::all();
+        $users = User::orderBy('name')->get();
 
         return view(
             'interactions.show',
@@ -850,7 +914,7 @@ class InteractionController extends Controller
     {
         $search = $request->get('q');
 
-        $users = \App\Models\User::select('id', 'name', 'email')
+        $users = User::select('id', 'name', 'email')
             ->where(function ($query) use ($search) {
                 $query->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%");
             })
