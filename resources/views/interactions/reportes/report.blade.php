@@ -23,10 +23,11 @@
             <h4 class="fw-bold mb-1"><i class="feather-pie-chart me-2"></i>Informe de Interacciones</h4>
             <p class="text-muted mb-0 small">Dashboard analítico y métricas de rendimiento (Daytrack)</p>
         </div>
-        <div>
-            <button class="btn btn-outline-secondary btn-sm me-2 shadow-sm" onclick="window.print()" style="border-radius: 8px;">
+            <div>
+            {{-- Enlace al PDF con los mismos filtros actuales en la URL --}}
+            <a href="{{ route('interactions.report.pdf', request()->all()) }}" target="_blank" class="btn btn-outline-secondary btn-sm me-2 shadow-sm" style="border-radius: 8px;">
                 <i class="feather-printer me-1"></i>Imprimir
-            </button>
+            </a>
         </div>
     </div>
 
