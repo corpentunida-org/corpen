@@ -68,8 +68,8 @@
                 {{-- Filtro: Distrito --}}
                 <div class="col-md-2">
                     <label class="form-label fw-semibold text-muted small mb-1">Distrito</label>
-                    <select name="distrito_id" class="form-select form-select-sm">
-                        <option value="">Todos</option>
+                    <select name="distrito_id" class="form-select form-select-sm select2-search" data-placeholder="Todos">
+                        <option value=""></option>
                         @foreach($listDistritos as $distrito)
                             <option value="{{ $distrito->COD_DIST }}" {{ ($filtroDistrito ?? '') == $distrito->COD_DIST ? 'selected' : '' }}>
                                 {{ $distrito->NOM_DIST ?? 'Distrito '.$distrito->COD_DIST }}
@@ -81,11 +81,37 @@
                 {{-- Filtro: Línea de Crédito --}}
                 <div class="col-md-2">
                     <label class="form-label fw-semibold text-muted small mb-1">Línea de Crédito</label>
-                    <select name="linea_id" class="form-select form-select-sm">
-                        <option value="">Todas</option>
+                    <select name="linea_id" class="form-select form-select-sm select2-search" data-placeholder="Todas">
+                        <option value=""></option>
                         @foreach($listLineas as $linea)
                             <option value="{{ $linea->id }}" {{ ($filtroLinea ?? '') == $linea->id ? 'selected' : '' }}>
                                 {{ $linea->nombre ?? 'Línea '.$linea->id }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                {{-- Filtro: Agente --}}
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold text-muted small mb-1">Agente</label>
+                    <select name="agent_id" class="form-select form-select-sm select2-search" data-placeholder="Todos">
+                        <option value=""></option>
+                        @foreach($listAgentes as $agente)
+                            <option value="{{ $agente->id }}" {{ ($filtroAgente ?? '') == $agente->id ? 'selected' : '' }}>
+                                {{ $agente->name ?? 'Agente '.$agente->id }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                {{-- Filtro: Cliente --}}
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold text-muted small mb-1">Cliente</label>
+                    <select name="client_id" class="form-select form-select-sm select2-search" data-placeholder="Todos">
+                        <option value=""></option>
+                        @foreach($listClientes as $cliente)
+                            <option value="{{ $cliente->cod_ter }}" {{ ($filtroCliente ?? '') == $cliente->cod_ter ? 'selected' : '' }}>
+                                {{ $cliente->nom_ter ?? 'Cliente '.$cliente->cod_ter }}
                             </option>
                         @endforeach
                     </select>
@@ -183,7 +209,7 @@
         <div class="col-md-6">
             <div class="card shadow-sm" style="border-radius: 12px;">
                 <div class="card-header py-3 border-bottom-0 bg-transparent">
-                    <h6 class="mb-0 fw-bold"><i class="feather-users me-2 text-info"></i>Top 5 Agentes</h6>
+                    <h6 class="mb-0 fw-bold"><i class="feather-users me-2 text-info"></i>Top 5 Agentes (Interacciones)</h6>
                 </div>
                 <div class="card-body">
                     <div style="position: relative; height: 300px; width: 100%;">
@@ -236,7 +262,71 @@
         </div>
     </div>
 
+    {{-- Cuarta Fila de Gráficos: Seguimientos Agentes (NUEVA) --}}
+    <div class="row mb-4 g-3">
+        <div class="col-md-6">
+            <div class="card shadow-sm" style="border-radius: 12px;">
+                <div class="card-header py-3 border-bottom-0 bg-transparent">
+                    <h6 class="mb-0 fw-bold"><i class="feather-user-check me-2" style="color: #14b8a6;"></i>Top 5 Agentes (Seguimientos)</h6>
+                </div>
+                <div class="card-body">
+                    <div style="position: relative; height: 300px; width: 100%;">
+                        <canvas id="chartSeguimientosAgentes"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     @push('scripts')
+
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+        <style>
+            /* Ajuste visual mejorado de Select2 para centrado vertical perfecto */
+            .select2-container--default .select2-selection--single {
+                height: 31px !important; /* Altura de form-select-sm de Bootstrap */
+                border: 1px solid #dee2e6 !important;
+                border-radius: 0.25rem !important;
+                display: flex !important;
+                align-items: center !important; /* Centra el contenido verticalmente */
+            }
+            .select2-container--default .select2-selection--single .select2-selection__rendered {
+                line-height: normal !important; /* Anula el line-height por defecto */
+                color: #495057 !important;
+                font-size: 0.875rem;
+                padding-left: 0.5rem !important;
+                padding-right: 2rem !important;
+                width: 100%;
+            }
+            .select2-container--default .select2-selection--single .select2-selection__arrow {
+                height: 100% !important;
+                top: 0 !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                right: 5px !important;
+            }
+            .select2-container--default .select2-selection--single .select2-selection__clear {
+                display: flex;
+                align-items: center;
+                margin-right: 5px;
+                color: #999;
+                font-weight: bold;
+            }
+        </style>
+
+        <script>
+            // Inicializar Select2 en los filtros
+            $(document).ready(function() {
+                $('.select2-search').select2({
+                    width: '100%',
+                    allowClear: true // Permite borrar la selección con una "X"
+                });
+            });
+        </script>
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
         <style>
@@ -301,6 +391,8 @@
                 const lineasData = @json($chartLineas['data'] ?? []);
                 const distritosLabels = @json($chartDistritos['labels'] ?? []);
                 const distritosData = @json($chartDistritos['data'] ?? []);
+                const seguimientosAgentesLabels = @json($chartSeguimientosAgentes['labels'] ?? []);
+                const seguimientosAgentesData = @json($chartSeguimientosAgentes['data'] ?? []);
 
                 // 1. Canales (Barras Verticales)
                 const ctxCanales = document.getElementById('chartCanales').getContext('2d');
@@ -384,12 +476,13 @@
                     });
                 };
 
-                // 3, 4, 5. Top Agentes, Clientes y Distritos
+                // 3, 4, 5, 6, 7. Gráficos Horizontales
                 createHBar('chartAgentes', agentesLabels, agentesData, 'rgba(155, 89, 182, 0.8)', 'rgba(155, 89, 182, 0.2)');
                 createHBar('chartClientes', clientesLabels, clientesData, 'rgba(52, 152, 219, 0.8)', 'rgba(52, 152, 219, 0.2)');
                 createHBar('chartDistritos', distritosLabels, distritosData, 'rgba(46, 204, 113, 0.8)', 'rgba(46, 204, 113, 0.2)');
+                createHBar('chartSeguimientosAgentes', seguimientosAgentesLabels, seguimientosAgentesData, 'rgba(20, 184, 166, 0.8)', 'rgba(20, 184, 166, 0.2)');
 
-                // 6. Líneas de Crédito (Barras Verticales)
+                // Líneas de Crédito (Barras Verticales)
                 const ctxLineas = document.getElementById('chartLineas').getContext('2d');
                 new Chart(ctxLineas, {
                     type: 'bar',
