@@ -167,16 +167,6 @@
         @method('PUT')
     @endif
 
-    @if ($errors->any())
-        <div class="alert alert-danger mx-4 mt-4 mb-0" style="border-radius: 4px;">
-            <h6 class="fw-bold mb-2"><i class="bi bi-exclamation-triangle-fill me-2"></i>Laravel rechazó el guardado por esto:</h6>
-            <ul class="mb-0 small">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
     <div class="bg-white border-bottom p-4 mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
         <div class="d-flex align-items-center gap-3">
             <div>
@@ -297,7 +287,7 @@
                                     <input type="text" class="form-control" id="celular_quien_llama"
                                         name="celular_quien_llama" placeholder="Número de contacto">
                                 </div>
-                                <div class="col-12 pt-2" id="container-parentezco">
+                                <div class="col-12 pt-2" id="container-parentesco">
                                     <label class="form-label mb-2">Relación con el titular: <span
                                             class="text-muted">*</span></label>
                                     <div class="d-flex flex-wrap gap-2">
@@ -864,10 +854,14 @@
         });
     });
 
+
+
     const myUserId = "{{ Auth::id() }}";
 
     function toggleAssignment() {
+
         if ($('#handled_by_me').is(':checked')) {
+
             $('#panel-me').show();
             $('#panel-other').hide();
 
@@ -875,7 +869,9 @@
                 .prop('required', false)
                 .val(myUserId)
                 .trigger('change');
+
         } else {
+
             $('#panel-me').hide();
             $('#panel-other').show();
 
@@ -883,7 +879,9 @@
                 .prop('required', true)
                 .val('')
                 .trigger('change');
+
         }
+
     }
 
     $('input[name="handled_by_agent"]').on('change', toggleAssignment);
@@ -896,9 +894,10 @@
         // 1. CONFIGURACIÓN Y SELECTORES (DOM Cache)
         // =====================================================================
         const CONFIG = {
-            storageKey: 'interaction_form_draft_v2', // Cambiado a v2 para evitar conflictos
+            storageKey: 'interaction_form_draft_v1',
             urls: {
                 searchClients: @json(route('interactions.search-clients') ?? ''),
+                // La ruta cliente show se genera dinámicamente en HistoryManager
             }
         };
 
@@ -929,7 +928,10 @@
             panelOther: '#panel-other',
 
             // Selects Paso 2
+            areaSelect: '#id_area_de_asignacion',
+            cargoSelect: '#id_cargo_asignacion',
             lineaSelect: '#id_linea_de_obligacion',
+            distritoSelect: '#id_distrito_interaccion',
 
             // Sincronización
             btnSyncFrom: '#sync-from-client-btn',
@@ -946,6 +948,7 @@
         let state = {
             startTimeInterval: null,
             startTime: null,
+            // INYECTADO: Variables para la pausa del cronómetro
             accumulatedTime: 0,
             isPaused: false
         };
@@ -980,6 +983,7 @@
             },
 
             showTab: function(tabId) {
+
                 let tabElement;
                 if (tabId === 'resultado-tab') {
                     tabElement = document.getElementById('profile-tab');
@@ -994,8 +998,9 @@
                     .css('width', progress + '%')
                     .attr('aria-valuenow', progress);
 
-                //DraftManager.save();
+                DraftManager.save();
             },
+
 
             handleFileSelect: function(input) {
                 const label = document.getElementById('file-label');
@@ -1045,7 +1050,7 @@
                     // Limpiar errores
                     ['#nombre_quien_llama', '#cedula_quien_llama', '#celular_quien_llama'].forEach(s =>
                         UI.cleanError(s));
-                    UI.cleanError('#container-parentezco', true);
+                    UI.cleanError('#container-parentesco', true);
                 }
             },
 
@@ -1113,7 +1118,7 @@
         };
 
         // =====================================================================
-        // 4. MÓDULO DEL CRONÓMETRO
+        // 4. MÓDULO DEL CRONÓMETRO (MODIFICADO PARA PAUSA/REANUDAR)
         // =====================================================================
         const Timer = {
             start: function(resume = false) {
@@ -1220,15 +1225,12 @@
 
             buildCardHtml: function(item) {
                 const url = `/interactions/${item.id}/show`;
-                
-                // Nueva validación visual de historial por string en lugar de número de ID
-                const outcomeName = item.outcome || 'No definido';
-                const isSuccess = ['exitoso', 'promesa', 'acuerdo'].some(w => outcomeName.toLowerCase().includes(w));
-                const isPending = ['pendiente', 'llamar', 'seguimiento', 'no contesta'].some(w => outcomeName.toLowerCase().includes(w));
+                const isSuccess = ['2', '3', '5'].includes(item.outcome);
+                const isPending = ['1', '4'].includes(item.outcome);
                 const badgeColor = isSuccess ? '#39C666' : (isPending ? '#FFA21D' : '#596CD8');
 
                 const safeNotes = item.notes ? $('<div>').text(item.notes).html() :
-                    '<em>Sin notas.</em>';           
+                    '<em>Sin notas.</em>';
 
                 return `
                 <div class="history-item mb-3 timeline-item" id="history-item-${item.id}">
@@ -1236,7 +1238,7 @@
                         <div class="bg-light d-flex justify-content-between align-items-center py-2 px-3 collapsed" 
                              data-bs-toggle="collapse" data-bs-target="#collapseInteraction-${item.id}" style="cursor:pointer">
                             <div class="d-flex align-items-center gap-2 small">                                
-                                <span style="color: ${badgeColor}; font-weight: bold;">[${outcomeName}]</span>
+                                <span style="color: ${badgeColor}; font-weight: bold;">[${item.outcome}]</span>
                                 <span class="text-muted border-start ps-2">${item.type}</span>
                             </div>
                             <small class="text-muted">${item.date}</small>
@@ -1269,7 +1271,7 @@
                 $('.history-item > div').removeClass('border-dark');
                 $(`.history-list #history-item-${id} > div`).addClass('border-dark');
 
-                //DraftManager.save();
+                DraftManager.save();
                 toastr.info('Interacción vinculada');
             },
 
@@ -1277,7 +1279,7 @@
                 $(DOM.parentIdInp).val('');
                 $('#selected-parent-info').fadeOut();
                 $('.history-item > div').removeClass('border-dark');
-                //DraftManager.save();
+                DraftManager.save();
             },
 
             restoreParentSelection: function() {
@@ -1307,12 +1309,66 @@
         // =====================================================================
         // 6. MÓDULO DE BORRADORES (Auto-Guardado)
         // =====================================================================
-        
+        const DraftManager = {
+            debounceTimer: null,
+            save: function() {
+                try {
+                    const data = {};
+                    $(DOM.form).find('input,textarea,select').each(function() {
+                        if (!this.name || this.type === 'file') return;
+                        if (this.type === 'checkbox' || this.type === 'radio') {
+                            if (this.checked) data[this.name] = this.value;
+                        } else {
+                            data[this.name] = $(this).val();
+                        }
+                    });
+                    data.activeTab = $('.tab-button.active').data('tab');
+                    localStorage.setItem(CONFIG.storageKey, JSON.stringify(data));
+                } catch (e) {
+                    console.warn('Borrador no guardado', e);
+                }
+            },
+
+            debouncedSave: function() {
+                clearTimeout(this.debounceTimer);
+                this.debounceTimer = setTimeout(() => this.save(), 700);
+            },
+
+            load: function() {
+                const raw = localStorage.getItem(CONFIG.storageKey);
+                if (!raw) return;
+                try {
+                    const data = JSON.parse(raw);
+                    Object.keys(data).forEach(name => {
+                        if (name === 'activeTab') return;
+                        const $el = $(DOM.form).find(`[name="${name}"]`);
+                        if ($el.is('select')) $el.val(data[name]).trigger('change');
+                        else if ($el.length) $el.val(data[name]);
+                    });
+
+                    if (data.start_time && data.client_id) {
+                        state.startTime = new Date(data.start_time);
+                        Timer.start(); // Retoma cronómetro
+                    }
+
+                    if (data.activeTab) UI.showTab(data.activeTab);
+                } catch (e) {}
+            },
+
+            clear: function() {
+                localStorage.removeItem(CONFIG.storageKey);
+                console.log("Memoria borrada"); // Esto es para que veas en la consola que sí funcionó
+            }
+        };
+
         // =====================================================================
         // 7. MÓDULO DE VALIDACIÓN Y SINCRONIZACIÓN (Form Validator)
         // =====================================================================
         const Validation = {
             toggleResponsibility: function() {
+                UI.cleanError(DOM.areaSelect);
+                UI.cleanError(DOM.cargoSelect);
+
                 if ($(DOM.handledByMe).is(':checked')) {
                     $(DOM.panelMe).show();
                     $(DOM.panelOther).hide();
@@ -1345,9 +1401,9 @@
                             }
                         });
                     if (!$('input[name="parentesco_quien_llama"]:checked').length) {
-                        UI.markError('#container-parentezco', true);
+                        UI.markError('#container-parentesco', true);
                         isValid = false;
-                        firstErr = firstErr || $('#container-parentezco');
+                        firstErr = firstErr || $('#container-parentesco');
                     }
                 }
 
@@ -1390,6 +1446,12 @@
                 e.preventDefault();
                 Timer.stop(); // Fija la duración final
 
+                // Validar HTML5 Nativo
+                /*if (!$(DOM.form)[0].checkValidity()) {
+                    $(DOM.form)[0].reportValidity();
+                    return;
+                }*/
+
                 Swal.fire({
                     title: 'Confirmar guardado',
                     text: "¿Deseas guardar la interacción ahora?",
@@ -1402,17 +1464,13 @@
                     allowOutsideClick: false,
                     allowEscapeKey: false
                 }).then((result) => {
+                    // Usamos la misma lógica de validación que mostraste
                     if (result.isConfirmed || result.value || result === true) {
 
                         // 1. Limpieza del borrador antes de enviar
-                        // DraftManager.clear(); // COMENTADO PARA NO PERDER DATOS SI HAY ERROR
+                        DraftManager.clear();
 
-                        // 2. Activar spinner en el botón (Para que el usuario sepa que está trabajando)
-                        const btn = document.getElementById('btn-submit-interaccion');
-                        btn.disabled = true;
-                        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Guardando...';
-                        
-                        // 3. Envío físico del formulario
+                        // 2. Envío físico del formulario
                         document.querySelector(DOM.form).submit();
                     }
                 });
@@ -1442,8 +1500,10 @@
             },
             syncToClient: function() {
                 const clientId = $(DOM.clientSelect).val();
+                const distId = $(DOM.distritoSelect).val();
 
                 if (!clientId) return Swal.fire('Aviso', 'Falta cliente', 'warning');
+                if (!distId) return Swal.fire('Aviso', 'Selecciona dato a guardar', 'warning');
 
                 Swal.fire({
                     title: 'Actualizar',
@@ -1580,7 +1640,7 @@
             // Auto-Guardado y Limpieza Visual
             $(DOM.form).on('input change', 'input, textarea, select', function() {
                 UI.cleanError(this);
-                //DraftManager.debouncedSave();
+                DraftManager.debouncedSave();
             });
 
             // Select2 Limpieza visual
@@ -1618,7 +1678,7 @@
                     const map = {
                         interaction_channel: '#container-channel',
                         interaction_type: '#container-type',
-                        parentesco_quien_llama: '#container-parentezco'
+                        parentesco_quien_llama: '#container-parentesco'
                     };
                     UI.cleanError($(map[name]).find('.grid-gallery, .bg-light')[0] || map[name],
                         true);
@@ -1645,7 +1705,7 @@
             $('#clear-parent-selection').on('click', HistoryManager.clearParent);
             $('#refresh-history').on('click', () => ClientManager.updateClientCard($(DOM.clientSelect).val()));
 
-            // Submit del formulario validado por JS
+            // Submit
             $(DOM.form).on('submit', Validation.submitForm);
 
             // =================================================================
@@ -1653,7 +1713,6 @@
             // =================================================================
             $(document).on('click', '.btn-limpiar-borrador', function(e) {
                 e.preventDefault();
-
                 Swal.fire({
                     title: '¿Limpiar el borrador?',
                     text: "Se perderán todos los datos que hayas escrito.",
@@ -1664,13 +1723,13 @@
                     confirmButtonText: 'Sí, borrar',
                     cancelButtonText: 'Cancelar'
                 }).then((r) => {
+                    // Validamos isConfirmed, value o si es un simple true (cubre todas las versiones de SweetAlert)
                     if (r.isConfirmed || r.value || r === true) {
-
                         // 1. Apagamos el auto-guardado para que no intente guardar mientras borramos
                         $('#interaction-form').off();
 
                         // 2. Borramos la memoria local de tu llave
-                        localStorage.removeItem(CONFIG.storageKey);
+                        localStorage.removeItem('interaction_form_draft_v1');
 
                         // 3. Forzamos la recarga de la página
                         window.location.reload();
@@ -1684,7 +1743,7 @@
             initPlugins();
             bindEvents();
             Validation.toggleResponsibility();
-            //DraftManager.load();
+            DraftManager.load();
 
             // Disparar triggers iniciales
             if (!$(DOM.clientSelect).val()) Timer.reset();
@@ -1711,6 +1770,7 @@
     document.addEventListener("DOMContentLoaded", CRMApp.init);
 
     // Exponer métodos globales
+    //window.showTab = CRMApp.showTab;
     window.handleFileSelect = CRMApp.handleFileSelect;
     window.selectParentInteraction = CRMApp.selectParentInteraction;
     window.clearParentSelection = CRMApp.clearParentSelection;
@@ -1721,4 +1781,17 @@
         });
     });
 
+    // Este bloque detecta cuando el formulario se envía y bloquea el botón
+    document.getElementById('interaction-form').addEventListener('submit', function(e) {
+        const btn = document.getElementById('btn-submit-interaccion');
+
+        // Si el formulario es válido, nos aseguramos de matar el caché
+        if (this.checkValidity()) {
+            // Limpieza de seguridad: si por alguna razón el paso anterior falló, este no falla.
+            localStorage.removeItem('interaction_form_draft_v1');
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Guardando...';
+        }
+    });
 </script>

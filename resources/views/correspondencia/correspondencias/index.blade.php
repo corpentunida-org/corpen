@@ -332,7 +332,6 @@
         }
     </style>
 
-
     <div class="app-container">
         {{-- HEADER --}}
         <div class="d-flex justify-content-between align-items-center mb-4">
@@ -944,10 +943,9 @@
                 }
 
                 let line = idx < data.pasos.length - 1 ? `<div class="route-line"></div>` : '';
-                let avatars = paso.usuarios.map(u => `
-                    <div class="avatar-circle-sm position-relative" title="${u.name}" data-bs-toggle="tooltip" style="border: 2px solid ${u.status === 'success' ? '#a5d6a7' : '#ef9a9a'} !important;">
+                let avatars = paso.usuarios.map(u => `   
+                    <div class="avatar-image avatar-md border border-soft-primary" data-bs-toggle="tooltip" data-bs-trigger="hover" title="${u.name}">
                         ${u.initial}
-                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-circle bg-${u.status} p-1" style="width: 8px; height: 8px;"></span>
                     </div>
                 `).join('');
 
@@ -961,12 +959,15 @@
                             <div class="d-flex justify-content-between align-items-start">
                                 <div>
                                     <div class="small ${textClass}">${paso.nombre}</div>
-                                    <div class="d-flex align-items-center mt-2 flex-wrap gap-1">${avatars}</div>
+                                    <div class="img-group lh-0 mt-2 justify-content-start d-none d-sm-flex">${avatars}</div>
                                 </div>
                                 ${paso.es_responsable ? `<button onclick="event.stopPropagation(); saltarAGestionDirecta('${idRadicado}', '${data.asunto}', '${paso.id_proceso}')" class="btn btn-sm btn-primary rounded-pill px-3 py-1 shadow-sm"><i class="bi bi-pencil-fill me-1"></i>Gestionar</button>` : ''}
                             </div>
                         </div>
                     </div>`;
+            });
+            document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+                new bootstrap.Tooltip(el);
             });
             new bootstrap.Modal(document.getElementById('modalRuta')).show();
         }
