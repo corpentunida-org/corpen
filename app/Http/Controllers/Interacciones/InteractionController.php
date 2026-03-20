@@ -12,6 +12,7 @@ use Carbon\Carbon;
 use Exception;
 
 use App\Models\Maestras\maeTerceros;
+use App\Models\Maestras\maeDistritos;
 use App\Models\Interacciones\Interaction;
 use App\Models\Interacciones\IntSeguimiento;
 use App\Models\Interacciones\IntChannel;
@@ -28,32 +29,57 @@ class InteractionController extends Controller
 {
     public function report(Request $request)
     {
-        // 1. Definir rango de fechas (Por defecto: mes actual)
+        // 1. Definir rango de fechas y filtros adicionales
         $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->toDateString());
         $endDate   = $request->input('end_date', Carbon::now()->endOfMonth()->toDateString());
+        
+        $filtroDistrito = $request->input('distrito_id');
+        $filtroLinea    = $request->input('linea_id');
 
-        // Parsear a fin del día para incluir todas las horas del último día
         $start = Carbon::parse($startDate)->startOfDay();
         $end   = Carbon::parse($endDate)->endOfDay();
 
         // 2. Query Base para interacciones dentro del rango
         $baseQuery = Interaction::whereBetween('interaction_date', [$start, $end]);
 
+        // Aplicar Filtro de Distrito (A través del cliente) si existe
+        if ($filtroDistrito) {
+            $baseQuery->whereHas('client', function($q) use ($filtroDistrito) {
+                $q->where('cod_dist', $filtroDistrito);
+            });
+        }
+
+        // Aplicar Filtro de Línea de Crédito si existe
+        if ($filtroLinea) {
+            $baseQuery->where('id_linea_de_obligacion', $filtroLinea);
+        }
+
         // 3. Cálculos de Tarjetas (KPIs)
         $totalInteracciones = (clone $baseQuery)->count();
 
-        // NOTA: Ajusta el 'like' según los nombres exactos que tengas en la tabla int_outcomes
         $exitosas = (clone $baseQuery)->whereHas('outcomeRelation', function($q) {
-            $q->where('name', 'like', '%Exitoso%')->orWhere('name', 'like', '%Cerrado%');
+            $q->where('estado', 1);
         })->count();
 
         $pendientes = (clone $baseQuery)->whereHas('outcomeRelation', function($q) {
-            $q->where('name', 'like', '%Pendiente%')->orWhere('name', 'like', '%Seguimiento%');
+            $q->where('estado', '!=', 1)->orWhereNull('estado');
         })->count();
 
-        // Acciones Vencidas consultando la tabla de seguimientos
-        $vencidas = IntSeguimiento::whereHas('interaction', function($q) use ($start, $end) {
-                $q->whereBetween('interaction_date', [$start, $end]);
+        $vencidas = IntSeguimiento::whereHas('interaction', function($q) use ($start, $end, $filtroDistrito, $filtroLinea) {
+                $q->whereBetween('interaction_date', [$start, $end])
+                  ->whereHas('outcomeRelation', function($q2) {
+                      $q2->where('estado', '!=', 1)->orWhereNull('estado');
+                  });
+                
+                // Replicar filtros en seguimientos
+                if ($filtroDistrito) {
+                    $q->whereHas('client', function($q3) use ($filtroDistrito) {
+                        $q3->where('cod_dist', $filtroDistrito);
+                    });
+                }
+                if ($filtroLinea) {
+                    $q->where('id_linea_de_obligacion', $filtroLinea);
+                }
             })
             ->whereNotNull('next_action_date')
             ->where('next_action_date', '<', Carbon::now())
@@ -71,7 +97,7 @@ class InteractionController extends Controller
         // a. Agrupación por Canal
         $canalesData = (clone $baseQuery)
             ->select('interaction_channel', DB::raw('count(*) as total'))
-            ->with('channel') // Carga la relación para obtener el nombre
+            ->with('channel') 
             ->groupBy('interaction_channel')
             ->get();
 
@@ -95,7 +121,7 @@ class InteractionController extends Controller
         // c. Top 5 Agentes con más interacciones
         $agentesData = (clone $baseQuery)
             ->select('agent_id', DB::raw('count(*) as total'))
-            ->with('agent') // Carga la relación agent (User)
+            ->with('agent') 
             ->groupBy('agent_id')
             ->orderByDesc('total')
             ->limit(5)
@@ -109,45 +135,73 @@ class InteractionController extends Controller
         // d. Top 5 Clientes
         $clientesData = (clone $baseQuery)
             ->select('client_id', DB::raw('count(*) as total'))
-            ->with('client') // Carga la relación client (maeTerceros)
+            ->with('client') 
             ->groupBy('client_id')
             ->orderByDesc('total')
             ->limit(5)
             ->get();
 
         $chartClientes = [
-            // OJO: Cambia 'nombre' por el campo real que uses en maeTerceros (ej. razon_social, nombres)
             'labels' => $clientesData->map(fn($item) => $item->client->nombre ?? 'Cliente '.$item->client_id)->toArray(),
             'data'   => $clientesData->pluck('total')->toArray(),
         ];
 
-        // e. Agrupación por Distrito / Área
-        // NOTA: Reemplaza 'distrito_id' y la relación 'distrito' por la que uses realmente (ej. GdoArea)
-        /* $distritosData = (clone $baseQuery)
-            ->select('distrito_id', DB::raw('count(*) as total'))
-            ->groupBy('distrito_id')
+        // e. Agrupación por Línea de Crédito
+        $lineasData = (clone $baseQuery)
+            ->select('id_linea_de_obligacion', DB::raw('count(*) as total'))
+            ->with('lineaDeObligacion') 
+            ->groupBy('id_linea_de_obligacion')
             ->orderByDesc('total')
-            ->limit(5)
+            ->limit(5) // Top 5 para el gráfico
             ->get();
 
-        $chartDistritos = [
-            'labels' => $distritosData->map(fn($item) => 'Distrito '.$item->distrito_id)->toArray(),
-            'data'   => $distritosData->pluck('total')->toArray(),
+        $chartLineas = [
+            'labels' => $lineasData->map(fn($item) => optional($item->lineaDeObligacion)->nombre ?? 'Sin Línea')->toArray(), 
+            'data'   => $lineasData->pluck('total')->toArray(),
         ];
-        */
 
-        // 5. Retornar Vista 
+        // f. Agrupación por Distrito (Relación anidada)
+        $distritosInteracciones = (clone $baseQuery)
+            ->with(['client.distrito'])
+            ->get();
+
+        $distritosAgrupados = $distritosInteracciones->groupBy(function ($item) {
+            // CORRECCIÓN AQUÍ: Usamos NOM_DIST según tu modelo maeDistritos
+            return optional(optional($item->client)->distrito)->NOM_DIST ?? 'Sin Distrito';
+        })->map(function ($row) {
+            return $row->count();
+        })->sortByDesc(function ($count) {
+            return $count;
+        })->take(5);
+
+        $chartDistritos = [
+            'labels' => $distritosAgrupados->keys()->toArray(),
+            'data'   => $distritosAgrupados->values()->toArray(),
+        ];
+
+        // 5. Listas para los select de Filtro
+        // Asegúrate de tener el modelo maeDistritos importado arriba
+        $listDistritos = \App\Models\Maestras\maeDistritos::all(); 
+        $listLineas    = LineaCredito::all();
+
+        // 6. Retornar Vista 
         return view('interactions.reportes.report', compact(
             'stats', 
             'chartCanales', 
             'chartResultados',
             'chartAgentes',
             'chartClientes',
-            // 'chartDistritos', <-- Descomenta cuando configures la consulta de distritos
+            'chartLineas',
+            'chartDistritos',
             'startDate',
-            'endDate'
+            'endDate',
+            'filtroDistrito',
+            'filtroLinea',
+            'listDistritos',
+            'listLineas'
         ));
     }
+
     /**
      * Muestra la lista de interacciones con filtros y búsqueda.
      */
