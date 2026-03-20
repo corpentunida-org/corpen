@@ -999,32 +999,35 @@
 
             handleFileSelect: function(input) {
                 const label = document.getElementById('file-label');
-                const iconWrapper = document.getElementById('upload-icon-wrapper');
+                const dropZone = document.getElementById('drop-zone');
                 const previewWrapper = document.getElementById('image-preview-wrapper');
                 const previewImg = document.getElementById('img-preview-element');
-                const dropZone = document.getElementById('drop-zone');
 
                 if (input.files && input.files[0]) {
-                    label.innerText = input.files[0].name;
-                    label.classList.add('text-success');
-                    dropZone.style.borderColor = '#059669';
-                    dropZone.style.backgroundColor = '#f0fff4';
+                    let file = input.files[0];
+                    
+                    // ---> NUEVO: Feedback visual estilo "Carga Exitosa" <---
+                    label.innerHTML = `<span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i> ${file.name}</span>`;
+                    dropZone.style.borderColor = '#198754';
+                    dropZone.style.backgroundColor = '#f8fff9';
 
-                    if (input.files[0].type.startsWith('image/')) {
+                    // ---> NUEVO: Generar vista previa <---
+                    if (file.type.startsWith('image/')) {
                         const reader = new FileReader();
                         reader.onload = e => {
                             previewImg.src = e.target.result;
                             previewWrapper.style.display = 'block';
                         }
-                        reader.readAsDataURL(input.files[0]);
+                        reader.readAsDataURL(file);
                     } else {
                         previewWrapper.style.display = 'none';
                     }
                 } else {
+                    // Restaurar estado por defecto si el usuario cancela
                     label.innerText = 'Adjuntar archivo';
                     label.classList.remove('text-success');
-                    dropZone.style.borderColor = '#d1d5db';
-                    dropZone.style.backgroundColor = '#f9fafb';
+                    dropZone.style.borderColor = ''; 
+                    dropZone.style.backgroundColor = ''; 
                     previewWrapper.style.display = 'none';
                 }
             }
@@ -1540,6 +1543,35 @@
         }
 
         function bindEvents() {
+            // =================================================================
+            // NUEVO: LÓGICA PARA PEGAR ARCHIVOS CON CTRL+V (PORTAPAPELES)
+            // =================================================================
+            document.addEventListener('paste', function(e) {
+                // 1. Obtener archivos del portapapeles
+                let pastedFiles = e.clipboardData.files;
+                if (pastedFiles.length === 0) return; // Si es solo texto, lo ignoramos
+
+                // 2. Buscar el input de archivo de esta vista
+                let inputDocumento = document.getElementById('attachment');
+                
+                if (inputDocumento) {
+                    // 3. Transferir el archivo pegado al input
+                    const dt = new DataTransfer();
+                    dt.items.add(pastedFiles[0]); // Tomamos solo el primero (carga individual)
+                    inputDocumento.files = dt.files;
+
+                    // 4. Disparar la función de la UI para actualizar diseño y vista previa
+                    UI.handleFileSelect(inputDocumento);
+
+                    // 5. Notificación usando el toastr que ya tienes configurado
+                    toastr.success("¡Archivo adjuntado desde el portapapeles!");
+                }
+            });
+
+            // Navegación Tabs (Tu código existente sigue aquí abajo...)
+            $('.tab-button').on('click', function() {
+                UI.showTab($(this).data('tab'));
+            });
             // Navegación Tabs
             $('.tab-button').on('click', function() {
                 UI.showTab($(this).data('tab'));
