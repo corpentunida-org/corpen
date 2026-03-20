@@ -7,15 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Exception;
 
 use App\Models\Maestras\maeTerceros;
-use App\Models\Maestras\maeDistritos;
-use App\Models\User;
 use App\Models\Interacciones\Interaction;
-use App\Models\Interacciones\IntSeguimiento;
 use App\Models\Interacciones\IntChannel;
 use App\Models\Interacciones\IntType;
 use App\Models\Interacciones\IntOutcome;
@@ -28,6 +24,7 @@ use App\Models\Creditos\LineaCredito;
 
 class InteractionController extends Controller
 {
+<<<<<<< HEAD
     public function report(Request $request)
     {
         // 1. Definir rango de fechas y filtros adicionales
@@ -414,13 +411,15 @@ class InteractionController extends Controller
         // Retorna el PDF en el navegador para visualizar/imprimir
         return $pdf->stream('informe_interacciones_' . Carbon::now()->format('Ymd_Hi') . '.pdf');
     }
+=======
+>>>>>>> 3cca380c387947ef0a683c05b567de7305e41472
     /**
      * Muestra la lista de interacciones con filtros y búsqueda.
      */
     public function index(Request $request)
     {
         // --- 1. CONSTRUIMOS LA CONSULTA BASE ---
-        $baseQuery = Interaction::with(['client', 'agent.cargoRelation.gdoArea', 'channel', 'type', 'outcomeRelation', 'lineaDeObligacion', 'usuarioAsignado', 'seguimientos']);
+        $baseQuery = Interaction::with(['client', 'agent.cargoRelation.gdoArea', 'channel', 'type', 'outcomeRelation', 'nextAction', 'lineaDeObligacion', 'usuarioAsignado']);
 
         // --- 2. APLICAMOS LOS FILTROS (Solo Búsqueda y Rango de Fechas) ---
 
@@ -428,54 +427,17 @@ class InteractionController extends Controller
         if ($request->filled('search')) {
             $search = $request->input('search');
             $baseQuery->where(function ($q) use ($search) {
-                // 1. Busca en campos directos de la tabla interacciones
-                $q->where('id', 'LIKE', "%{$search}%")
-                    ->orWhere('notes', 'LIKE', "%{$search}%")
+                // Busca en campos de la tabla interacciones
+                $q->where('notes', 'LIKE', "%{$search}%")
                     ->orWhere('cedula_quien_llama', 'LIKE', "%{$search}%")
                     ->orWhere('nombre_quien_llama', 'LIKE', "%{$search}%")
-                    ->orWhere('celular_quien_llama', 'LIKE', "%{$search}%")
-                    ->orWhere('parentesco_quien_llama', 'LIKE', "%{$search}%")
-                    ->orWhere('id_linea_de_obligacion', 'LIKE', "%{$search}%")
-                    
-                    // 2. Busca en Cliente y su Distrito
+                    // Busca en la relación del cliente (maeTerceros)
                     ->orWhereHas('client', function ($query) use ($search) {
-                        $query->where('nom_ter', 'LIKE', "%{$search}%")
-                              ->orWhere('cod_ter', 'LIKE', "%{$search}%")
-                              // Relación anidada: Cliente -> Distrito
-                              ->orWhereHas('distrito', function ($qDistrito) use ($search) {
-                                  $qDistrito->where('NOM_DIST', 'LIKE', "%{$search}%");
-                              });
+                        $query->where('nom_ter', 'LIKE', "%{$search}%")->orWhere('cod_ter', 'LIKE', "%{$search}%");
                     })
-                    
-                    // 3. Busca en Agente y su Cargo/Área
+                    // Busca en la relación del agente (User)
                     ->orWhereHas('agent', function ($query) use ($search) {
-                        $query->where('name', 'LIKE', "%{$search}%")
-                              ->orWhereHas('cargoRelation', function($qCargo) use ($search) {
-                                  $qCargo->where('nombre_cargo', 'LIKE', "%{$search}%")
-                                         ->orWhereHas('gdoArea', function($qArea) use ($search) {
-                                             $qArea->where('nombre', 'LIKE', "%{$search}%");
-                                         });
-                              });
-                    })
-
-                    // 4. Busca por Canal
-                    ->orWhereHas('channel', function ($query) use ($search) {
-                        $query->where('name', 'LIKE', "%{$search}%");
-                    })
-
-                    // 5. Busca por Resultado (Outcome)
-                    ->orWhereHas('outcomeRelation', function ($query) use ($search) {
-                        $query->where('name', 'LIKE', "%{$search}%");
-                    })
-
-                    // 6. Busca por Línea de Obligación
-                    ->orWhereHas('lineaDeObligacion', function ($query) use ($search) {
-                        $query->where('nombre', 'LIKE', "%{$search}%");
-                    })
-
-                    // 7. Busca por el Usuario al que fue Asignado
-                    ->orWhereHas('usuarioAsignado', function ($query) use ($search) {
-                        $query->where('name', 'LIKE', "%{$search}%");
+                        $query->where('name', 'LIKE', "%{$search}%"); // Asume que tu modelo User usa 'name'
                     });
             });
         }
@@ -510,8 +472,23 @@ class InteractionController extends Controller
                 ->count(),
             'overdue' => (clone $countQuery)
                 ->whereHas('outcomeRelation', fn($q) => $q->where('estado', 0))
-                ->whereHas('seguimientos', fn($q) => $q->where('next_action_date', '<', today()->startOfDay()))
+                ->where('next_action_date', '<', today()->startOfDay())
                 ->count(),
+        ];
+
+        $collectionsForTabs = [
+            'successful' => (clone $baseQuery)->whereHas('outcomeRelation', fn($q) => $q->where('estado', 1))->get(),
+            'pending' => (clone $baseQuery)->whereHas('outcomeRelation', fn($q) => $q->where('estado', 0))->get(),
+
+            'today' => (clone $baseQuery)
+                ->where(function ($q) {
+                    $q->whereDate('interaction_date', today())->orWhereDate('updated_at', today());
+                })
+                ->get(),
+            'overdue' => (clone $baseQuery)
+                ->whereHas('outcomeRelation', fn($q) => $q->where('estado', 0))
+                ->where('next_action_date', '<', today()->startOfDay())
+                ->get(),
         ];
 
         $collectionsForTabs = [
@@ -537,9 +514,7 @@ class InteractionController extends Controller
                 ->whereHas('outcomeRelation', function ($q) {
                     $q->where('estado', 0);
                 })
-                ->whereHas('seguimientos', function ($q) {
-                    $q->where('next_action_date', '<', today()->startOfDay());
-                })
+                ->where('next_action_date', '<', today()->startOfDay())
                 ->get(),
         ];
 
@@ -550,6 +525,7 @@ class InteractionController extends Controller
         $interactions->appends($request->query());
 
         // --- 5. DATOS PARA LOS SELECT DE LA VISTA ---
+        // (Aunque ya no filtres por estos en el backend, los pasamos por si los usas para crear/editar en la misma vista)
         $channels = IntChannel::orderBy('name')->pluck('name', 'id');
         $types = IntType::orderBy('name')->pluck('name', 'id');
         $outcomes = IntOutcome::orderBy('name')->pluck('name', 'id');
@@ -560,7 +536,6 @@ class InteractionController extends Controller
         // --- 6. PASAMOS TODAS LAS VARIABLES A LA VISTA ---
         return view('interactions.index', compact('interactions', 'stats', 'collectionsForTabs', 'channels', 'types', 'outcomes', 'areas', 'cargos', 'lineas'));
     }
-
     /**
      * Muestra detalles y estadísticas de una interacción.
      */
@@ -573,10 +548,11 @@ class InteractionController extends Controller
             'channel',
             'type',
             'outcomeRelation',
+            'nextAction',
             'lineaDeObligacion',
             'usuarioAsignado',
             // Cargamos relaciones de seguimientos para el Timeline
-            'seguimientos.outcomeRelation',
+            'seguimientos.outcome',
             'seguimientos.creator',
             'seguimientos.assignedUser',
             'seguimientos.nextAction',
@@ -606,16 +582,16 @@ class InteractionController extends Controller
         // 3. Histórico del Cliente
         $clientHistory = collect();
         if ($interaction->client_id) {
-            $clientHistory = Interaction::with(['agent', 'channel', 'type', 'outcomeRelation', 'lineaDeObligacion', 'usuarioAsignado'])
+            $clientHistory = Interaction::with(['agent', 'channel', 'type', 'outcomeRelation', 'nextAction', 'lineaDeObligacion', 'usuarioAsignado'])
                 ->where('client_id', $interaction->client_id)
                 ->orderByDesc('interaction_date')
                 ->get();
         }
 
-        // 4. DATOS PARA EL MODAL
-        $outcomes = IntOutcome::all();
-        $nextActions = IntNextAction::all();
-        $users = User::orderBy('name')->get();
+        // 4. DATOS PARA EL MODAL (Nuevos campos para que el modal funcione)
+        $outcomes = \App\Models\Interacciones\IntOutcome::all();
+        $nextActions = \App\Models\Interacciones\IntNextAction::all();
+        $users = \App\Models\User::orderBy('name')->get();
 
         return view(
             'interactions.show',
@@ -625,10 +601,10 @@ class InteractionController extends Controller
                 'totals',
                 'range',
                 'clientHistory',
-                'outcomes',
-                'nextActions',
-                'users',
-            )
+                'outcomes', // <--- Para el modal
+                'nextActions', // <--- Para el modal
+                'users', // <--- Para el modal
+            ),
         );
     }
 
@@ -687,63 +663,42 @@ class InteractionController extends Controller
             'next_action_notes' => 'nullable|string',
             'interaction_url' => 'nullable|url',
             'attachment' => 'nullable|file|mimes:jpeg,png,pdf,jpg,doc,docx|max:10240',
+
             'cedula_quien_llama' => 'nullable|string|max:50',
             'nombre_quien_llama' => 'nullable|string|max:255',
             'celular_quien_llama' => 'nullable|string|max:50',
             'parentesco_quien_llama' => 'nullable|string|max:50',
+
             'id_linea_de_obligacion' => 'nullable|integer|exists:cre_lineas_creditos,id',
             'id_user_asignacion' => 'nullable|integer|exists:users,id',
+
             'start_time' => 'nullable|date',
             'duration' => 'nullable|integer|min:0',
             'parent_interaction_id' => 'nullable|integer|exists:interactions,id',
         ]);
 
-        return DB::transaction(function () use ($request, $validatedData) {
-            $duration = $validatedData['duration'] ?? 0;
-            $agentId = Auth::id();
+        $validatedData['agent_id'] = Auth::id();
+        $validatedData['next_action_type'] = $request->input('next_action_type') ?? 1;
+        $validatedData['duration'] = $validatedData['duration'] ?? 0;
 
-            // 1. Guardar Interaction (TABLA 1)
-            $interaction = Interaction::create([
-                'client_id' => $validatedData['client_id'],
-                'agent_id' => $agentId,
-                'interaction_date' => $validatedData['interaction_date'],
-                'interaction_channel' => $validatedData['interaction_channel'],
-                'interaction_type' => $validatedData['interaction_type'],
-                'duration' => $duration,
-                'outcome' => $validatedData['outcome'],
-                'notes' => $validatedData['notes'] ?? '',
-                'parent_interaction_id' => $validatedData['parent_interaction_id'] ?? null,
-                'id_linea_de_obligacion' => $validatedData['id_linea_de_obligacion'] ?? null,
-                'id_user_asignacion' => $validatedData['id_user_asignacion'] ?? null,
-                'cedula_quien_llama' => $validatedData['cedula_quien_llama'] ?? null,
-                'nombre_quien_llama' => $validatedData['nombre_quien_llama'] ?? null,
-                'celular_quien_llama' => $validatedData['celular_quien_llama'] ?? null,
-                'parentesco_quien_llama' => $validatedData['parentesco_quien_llama'] ?? null,
-            ]);
+        unset($validatedData['start_time']);
 
-            // Lógica para subir archivo (Si el usuario adjuntó uno)
-            $path = null;
-            if ($request->hasFile('attachment')) {
-                $file = $request->file('attachment');     
-                $safeName = time() . '_' . str_replace(' ', '_', $file->getClientOriginalName());     
-                $folderPath = "corpentunida/daytrack/" . $interaction->id;
-                $path = Storage::disk('s3')->putFileAs($folderPath, $file, $safeName);
+        if ($request->hasFile('attachment')) {
+            try {
+                $file = $request->file('attachment');
+            } catch (\Exception $e) {
+                Log::error('Excepción al subir archivo: ' . $e->getMessage());
             }
-           
-                $interaction->seguimientos()->create([
-                    'agent_id' => $agentId,
-                    'id_user_asignacion' => $validatedData['id_user_asignacion'] ?? null,
-                    'outcome' => $validatedData['outcome'],
-                    'next_action_type' => $request->input('next_action_type') ?? 1, // Por si acaso enviamos un fallback
-                    'next_action_date' => $request->input('next_action_date') ?? now(),
-                    'next_action_notes' => $request->input('next_action_notes') ?? $request->input('notes'),
-                    'interaction_url' => $request->input('interaction_url'),
-                    'attachment_urls' => $path,
-                ]);
-            
+        }
 
-            return redirect()->route('interactions.index')->with('success', 'Interacción creada exitosamente.');
-        });
+        $interaction = Interaction::create($validatedData);
+
+        if ($request->file('attachment')) {
+            $ruta = Storage::disk('s3')->put('corpentunida/daytrack/' . $interaction->id, $file);
+            $interaction->update(['attachment_urls' => $ruta]);
+        }
+
+        return redirect()->route('interactions.index')->with('success', 'Interacción creada exitosamente.');
     }
 
     /**
@@ -798,85 +753,61 @@ class InteractionController extends Controller
             'next_action_notes' => 'nullable|string',
             'interaction_url' => 'nullable|url',
             'attachment' => 'nullable|file|mimes:jpeg,png,pdf,jpg,doc,docx|max:10240',
+
             'cedula_quien_llama' => 'nullable|string|max:50',
             'nombre_quien_llama' => 'nullable|string|max:255',
             'celular_quien_llama' => 'nullable|string|max:50',
             'parentesco_quien_llama' => 'nullable|string|max:50',
+
             'id_linea_de_obligacion' => 'nullable|integer|exists:cre_lineas_creditos,id',
             'id_user_asignacion' => 'nullable|integer|exists:users,id',
+
             'start_time' => 'nullable|date',
             'duration' => 'nullable|integer|min:0',
             'parent_interaction_id' => 'nullable|integer|exists:interactions,id',
         ]);
 
-        return DB::transaction(function () use ($request, $validatedData, $interaction) {
-            $duration = $validatedData['duration'] ?? $interaction->duration;
+        $validatedData['next_action_type'] = $request->input('next_action_type') ?? 1;
+        $validatedData['duration'] = $validatedData['duration'] ?? 0;
 
-            // 1. Actualizar Interaction (TABLA 1)
-            $interaction->update([
-                'client_id' => $validatedData['client_id'],
-                'interaction_date' => $validatedData['interaction_date'],
-                'interaction_channel' => $validatedData['interaction_channel'],
-                'interaction_type' => $validatedData['interaction_type'],
-                'duration' => $duration,
-                'outcome' => $validatedData['outcome'],
-                'notes' => $validatedData['notes'] ?? $interaction->notes,
-                'parent_interaction_id' => $validatedData['parent_interaction_id'] ?? $interaction->parent_interaction_id,
-                'id_linea_de_obligacion' => $validatedData['id_linea_de_obligacion'] ?? null,
-                'id_user_asignacion' => $validatedData['id_user_asignacion'] ?? null,
-                'cedula_quien_llama' => $validatedData['cedula_quien_llama'] ?? null,
-                'nombre_quien_llama' => $validatedData['nombre_quien_llama'] ?? null,
-                'celular_quien_llama' => $validatedData['celular_quien_llama'] ?? null,
-                'parentesco_quien_llama' => $validatedData['parentesco_quien_llama'] ?? null,
-            ]);
+        unset($validatedData['start_time']);
 
-            // Lógica para subir nuevo archivo si lo hay
-            $path = null;
-            if ($request->hasFile('attachment')) {
-                $file = $request->file('attachment');     
-                $safeName = time() . '_' . str_replace(' ', '_', $file->getClientOriginalName());     
-                $folderPath = "corpentunida/daytrack/" . $interaction->id;
-                $path = Storage::disk('s3')->putFileAs($folderPath, $file, $safeName);
+        if ($request->hasFile('attachment')) {
+            try {
+                $file = $request->file('attachment');
+
+                if ($file->isValid()) {
+                    $fileName = time() . '_' . str_replace(' ', '_', $file->getClientOriginalName());
+
+                    $ruta = Storage::disk('s3')->putFileAs('corpentunida/daytrack', $file, $fileName, 'public');
+
+                    if ($ruta) {
+                        Log::info('Nuevo archivo guardado exitosamente en S3: ' . $ruta);
+                        $validatedData['attachment_urls'] = $ruta;
+                    } else {
+                        Log::error('Fallo al guardar el nuevo archivo en S3: ' . $file->getClientOriginalName());
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::error('Excepción al subir nuevo archivo: ' . $e->getMessage());
             }
+        }
 
-            // 2. Crear nueva línea de evolución en Seguimiento (TABLA 2)
-            // Siempre que se edita, se crea un nuevo seguimiento para dejar el historial
-            if ($request->filled('next_action_type') || $path !== null || $request->filled('interaction_url') || $interaction->wasChanged('outcome')) {
-                $interaction->seguimientos()->create([
-                    'agent_id' => Auth::id(), // Quien hizo la actualización
-                    'id_user_asignacion' => $validatedData['id_user_asignacion'] ?? Auth::id(),
-                    'outcome' => $validatedData['outcome'],
-                    'next_action_type' => $request->input('next_action_type') ?? 1,
-                    'next_action_date' => $request->input('next_action_date'),
-                    'next_action_notes' => $request->input('next_action_notes'),
-                    'interaction_url' => $request->input('interaction_url'),
-                    'attachment_urls' => $path,
-                ]);
-            }
+        $interaction->update($validatedData);
 
-            return redirect()->route('interactions.index')->with('success', 'Interacción actualizada exitosamente.');
-        });
+        return redirect()->route('interactions.index')->with('success', 'Interacción actualizada exitosamente.');
     }
 
     public function destroy(Interaction $interaction)
     {
         try {
-            return DB::transaction(function () use ($interaction) {
+            if ($interaction->attachment_urls) {
+                Storage::disk('s3')->delete($interaction->attachment_urls);
+            }
 
-                // Recorremos los seguimientos para borrar todos los archivos en S3
-                foreach ($interaction->seguimientos as $seguimiento) {
-                    if (!empty($seguimiento->attachment_urls)) {
-                        foreach ($seguimiento->attachment_urls as $ruta) {
-                            Storage::disk('s3')->delete($ruta);
-                        }
-                    }
-                    $seguimiento->delete();
-                }
+            $interaction->delete();
 
-                $interaction->delete();
-
-                return redirect()->route('interactions.index')->with('success', 'Interacción eliminada exitosamente.');
-            });
+            return redirect()->route('interactions.index')->with('success', 'Interacción eliminada exitosamente.');
         } catch (Exception $e) {
             Log::error('Error al eliminar interacción ' . $interaction->id . ': ' . $e->getMessage());
             return redirect()->back()->with('error', 'Hubo un error al eliminar la interacción.');
@@ -886,7 +817,6 @@ class InteractionController extends Controller
     public function downloadAttachment($fileName)
     {
         try {
-            // Ajustar ruta según corresponda si pasaste un nombre de archivo o ruta completa
             $path = 'corpentunida/daytrack/' . $fileName;
 
             if (!Storage::disk('s3')->exists($path)) {
@@ -925,6 +855,7 @@ class InteractionController extends Controller
     public function getCliente($cod_ter)
     {
         try {
+            // Mantenemos distrito aquí SOLO para mostrarlo en la tarjeta de información del cliente
             $cliente = maeTerceros::where('cod_ter', $cod_ter)
                 ->with(['maeTipos', 'distrito', 'congregaciones'])
                 ->first();
@@ -933,16 +864,12 @@ class InteractionController extends Controller
                 return response()->json(['error' => 'Cliente no encontrado'], 404);
             }
 
-            // AQUI TAMBIEN SE AJUSTÓ LA RELACIÓN CON SEGUIMIENTOS
-            $history = Interaction::with(['agent', 'channel', 'type', 'outcomeRelation', 'lineaDeObligacion', 'usuarioAsignado', 'seguimientos'])
+            $history = Interaction::with(['agent', 'channel', 'type', 'outcomeRelation', 'lineaDeObligacion', 'usuarioAsignado'])
                 ->where('client_id', $cod_ter)
                 ->orderByDesc('interaction_date')
                 ->limit(10)
                 ->get()
                 ->map(function ($item) {
-                    // Extraemos el último seguimiento activo para esta interacción
-                    $ultimoSeg = $item->seguimientos->sortByDesc('created_at')->first();
-
                     return [
                         'id' => $item->id,
                         'client_id' => $item->client_id,
@@ -956,17 +883,17 @@ class InteractionController extends Controller
                         'notes' => $item->notes,
                         'parent_interaction_id' => $item->parent_interaction_id,
 
-                        // DATOS EXTRAIDOS DEL SEGUIMIENTO
-                        'next_action_date' => ($ultimoSeg && $ultimoSeg->next_action_date) ? $ultimoSeg->next_action_date->format('d/m/Y H:i') : null,
-                        'next_action_type' => $ultimoSeg->next_action_type ?? null,
-                        'next_action_notes' => $ultimoSeg->next_action_notes ?? null,
-                        'attachment_urls' => $ultimoSeg->attachment_urls ?? [],
-                        'interaction_url' => $ultimoSeg->interaction_url ?? null,
+                        'next_action_date' => $item->next_action_date ? $item->next_action_date->format('d/m/Y H:i') : null,
+                        'next_action_type' => $item->next_action_type,
+                        'next_action_notes' => $item->next_action_notes,
 
                         'parentesco_quien_llama' => $item->parentesco_quien_llama,
                         'cedula_quien_llama' => $item->cedula_quien_llama,
                         'nombre_quien_llama' => $item->nombre_quien_llama,
                         'celular_quien_llama' => $item->celular_quien_llama,
+
+                        'attachment_urls' => $item->attachment_urls ?? [],
+                        'interaction_url' => $item->interaction_url,
 
                         'id_linea_de_obligacion' => $item->id_linea_de_obligacion,
                         'linea_obligacion_name' => $item->lineaDeObligacion ? $item->lineaDeObligacion->nombre ?? $item->lineaDeObligacion->name : null,
@@ -1062,7 +989,7 @@ class InteractionController extends Controller
     {
         $search = $request->get('q');
 
-        $users = User::select('id', 'name', 'email')
+        $users = \App\Models\User::select('id', 'name', 'email')
             ->where(function ($query) use ($search) {
                 $query->where('name', 'like', "%{$search}%")->orWhere('email', 'like', "%{$search}%");
             })

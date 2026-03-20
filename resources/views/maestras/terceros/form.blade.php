@@ -216,9 +216,18 @@
                                         <i
                                             class="feather-{{ $icon }} me-1 text-primary"></i>{{ str_replace('_', ' ', $field) }}
                                     </label>
-                                    @if ($field === 'cod_ter')                                        
+                                    @if ($field === 'cod_ter')
+                                        @if (isset($tercero->cod_ter) && $tercero->cod_ter)
                                             <input type="text" class="form-control bg-light-subtle"
-                                                value="{{ $tercero->cod_ter }}" disabled>                                        
+                                                value="{{ $tercero->cod_ter }}" disabled>
+                                        @else
+                                            <input type="text" name="cod_ter"
+                                                class="form-control @error('cod_ter') is-invalid @enderror"
+                                                placeholder="Ingrese código" value="{{ $value }}">
+                                            @error('cod_ter')
+                                                <div class="invalid-feedback">{{ $message }}</div>
+                                            @enderror
+                                        @endif
                                     @elseif($field === 'tip_prv')
                                         <select name="tip_prv"
                                             class="form-select @error('tip_prv') is-invalid @enderror">
@@ -231,7 +240,8 @@
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     @elseif($field === 'cod_dist')
-                                        <select name="{{$field}}"class="form-select @error('cod_dist') is-invalid @enderror">
+                                        <select
+                                            name="{{ $field }}"class="form-select @error('cod_dist') is-invalid @enderror">
                                             @foreach ($distritos as $distrito)
                                                 <option value="{{ $distrito->COD_DIST }}" @selected($value == $distrito->COD_DIST)>
                                                     {{ $distrito->NOM_DIST }}</option>
@@ -239,7 +249,7 @@
                                         </select>
                                         @error('cod_dist')
                                             <div class="invalid-feedback">{{ $message }}</div>
-                                        @enderror                                        
+                                        @enderror
                                     @elseif($field === 'sexo')
                                         <select name="sexo" class="form-select @error('sexo') is-invalid @enderror">
                                             <option value="">Seleccione...</option>
