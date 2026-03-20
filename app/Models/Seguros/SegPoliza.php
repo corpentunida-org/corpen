@@ -9,8 +9,8 @@ use App\Models\Maestras\maeTerceros;
 class SegPoliza extends Model
 {
     use HasFactory;
-    //protected $table = 'SEG_polizas';
-    protected $table = '';
+    protected $table = 'SEG_polizas';
+    //protected $table = '';
     protected $fillable = ['seg_asegurado_id', 'seg_convenio_id', 'numero', 'active', 'fecha_inicio', 'fecha_fin', 'fecha_novedad', 'extra_prima', 'seg_plan_id', 'valor_prima', 'reclamacion', 'descuento', 'descuentopor', 'valor_asegurado', 'valorpagaraseguradora', 'primapagar', 'created_at', 'updated_at'];
 
     public function asegurado()
