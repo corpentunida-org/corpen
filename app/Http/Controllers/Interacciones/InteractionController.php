@@ -26,14 +26,127 @@ use App\Models\Creditos\LineaCredito;
 
 class InteractionController extends Controller
 {
-    public function report()
+    public function report(Request $request)
     {
-        // Más adelante, aquí haremos las consultas a la base de datos
-        // para contar interacciones, agruparlas por mes, por usuario, etc.
-        // $totalInteracciones = Interaction::count();
+        // 1. Definir rango de fechas (Por defecto: mes actual)
+        $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->toDateString());
+        $endDate   = $request->input('end_date', Carbon::now()->endOfMonth()->toDateString());
+
+        // Parsear a fin del día para incluir todas las horas del último día
+        $start = Carbon::parse($startDate)->startOfDay();
+        $end   = Carbon::parse($endDate)->endOfDay();
+
+        // 2. Query Base para interacciones dentro del rango
+        $baseQuery = Interaction::whereBetween('interaction_date', [$start, $end]);
+
+        // 3. Cálculos de Tarjetas (KPIs)
+        $totalInteracciones = (clone $baseQuery)->count();
+
+        // NOTA: Ajusta el 'like' según los nombres exactos que tengas en la tabla int_outcomes
+        $exitosas = (clone $baseQuery)->whereHas('outcomeRelation', function($q) {
+            $q->where('name', 'like', '%Exitoso%')->orWhere('name', 'like', '%Cerrado%');
+        })->count();
+
+        $pendientes = (clone $baseQuery)->whereHas('outcomeRelation', function($q) {
+            $q->where('name', 'like', '%Pendiente%')->orWhere('name', 'like', '%Seguimiento%');
+        })->count();
+
+        // Acciones Vencidas consultando la tabla de seguimientos
+        $vencidas = IntSeguimiento::whereHas('interaction', function($q) use ($start, $end) {
+                $q->whereBetween('interaction_date', [$start, $end]);
+            })
+            ->whereNotNull('next_action_date')
+            ->where('next_action_date', '<', Carbon::now())
+            ->count();
+
+        $stats = [
+            'total'      => $totalInteracciones,
+            'successful' => $exitosas,
+            'pending'    => $pendientes,
+            'overdue'    => $vencidas,
+        ];
+
+        // 4. Datos para Gráficos
         
-        // La ruta de la vista usa puntos para separar carpetas: interactions/reportes/report.blade.php
-        return view('interactions.reportes.report');
+        // a. Agrupación por Canal
+        $canalesData = (clone $baseQuery)
+            ->select('interaction_channel', DB::raw('count(*) as total'))
+            ->with('channel') // Carga la relación para obtener el nombre
+            ->groupBy('interaction_channel')
+            ->get();
+
+        $chartCanales = [
+            'labels' => $canalesData->map(fn($item) => $item->channel->name ?? 'Desconocido')->toArray(),
+            'data'   => $canalesData->pluck('total')->toArray(),
+        ];
+
+        // b. Agrupación por Resultado (Outcome)
+        $resultadosData = (clone $baseQuery)
+            ->select('outcome', DB::raw('count(*) as total'))
+            ->with('outcomeRelation')
+            ->groupBy('outcome')
+            ->get();
+
+        $chartResultados = [
+            'labels' => $resultadosData->map(fn($item) => $item->outcomeRelation->name ?? 'Sin Estado')->toArray(),
+            'data'   => $resultadosData->pluck('total')->toArray(),
+        ];
+
+        // c. Top 5 Agentes con más interacciones
+        $agentesData = (clone $baseQuery)
+            ->select('agent_id', DB::raw('count(*) as total'))
+            ->with('agent') // Carga la relación agent (User)
+            ->groupBy('agent_id')
+            ->orderByDesc('total')
+            ->limit(5)
+            ->get();
+
+        $chartAgentes = [
+            'labels' => $agentesData->map(fn($item) => $item->agent->name ?? 'Sin Agente')->toArray(),
+            'data'   => $agentesData->pluck('total')->toArray(),
+        ];
+
+        // d. Top 5 Clientes
+        $clientesData = (clone $baseQuery)
+            ->select('client_id', DB::raw('count(*) as total'))
+            ->with('client') // Carga la relación client (maeTerceros)
+            ->groupBy('client_id')
+            ->orderByDesc('total')
+            ->limit(5)
+            ->get();
+
+        $chartClientes = [
+            // OJO: Cambia 'nombre' por el campo real que uses en maeTerceros (ej. razon_social, nombres)
+            'labels' => $clientesData->map(fn($item) => $item->client->nombre ?? 'Cliente '.$item->client_id)->toArray(),
+            'data'   => $clientesData->pluck('total')->toArray(),
+        ];
+
+        // e. Agrupación por Distrito / Área
+        // NOTA: Reemplaza 'distrito_id' y la relación 'distrito' por la que uses realmente (ej. GdoArea)
+        /* $distritosData = (clone $baseQuery)
+            ->select('distrito_id', DB::raw('count(*) as total'))
+            ->groupBy('distrito_id')
+            ->orderByDesc('total')
+            ->limit(5)
+            ->get();
+
+        $chartDistritos = [
+            'labels' => $distritosData->map(fn($item) => 'Distrito '.$item->distrito_id)->toArray(),
+            'data'   => $distritosData->pluck('total')->toArray(),
+        ];
+        */
+
+        // 5. Retornar Vista 
+        return view('interactions.reportes.report', compact(
+            'stats', 
+            'chartCanales', 
+            'chartResultados',
+            'chartAgentes',
+            'chartClientes',
+            // 'chartDistritos', <-- Descomenta cuando configures la consulta de distritos
+            'startDate',
+            'endDate'
+        ));
     }
     /**
      * Muestra la lista de interacciones con filtros y búsqueda.

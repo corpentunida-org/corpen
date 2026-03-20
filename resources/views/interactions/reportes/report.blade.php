@@ -50,7 +50,7 @@
                     <div class="input-group input-group-sm">
                         <span class="input-group-text"><i class="feather-calendar"></i></span>
                         <input type="date" name="start_date" id="filterFechaInicio" class="form-control pastel-input"
-                            value="{{ request('start_date') }}" />
+                            value="{{ $startDate ?? request('start_date') }}" />
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -58,7 +58,7 @@
                     <div class="input-group input-group-sm">
                         <span class="input-group-text"><i class="feather-calendar"></i></span>
                         <input type="date" name="end_date" id="filterFechaFin" class="form-control pastel-input"
-                            value="{{ request('end_date') }}" />
+                            value="{{ $endDate ?? request('end_date') }}" />
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -118,16 +118,14 @@
         </div>
     </div>
 
-    {{-- Gráficos --}}
+    {{-- Primera Fila de Gráficos: Canales y Resultados --}}
     <div class="row mb-4 g-3">
-        {{-- Gráfico de Canales --}}
         <div class="col-md-6">
-            <div class="card shadow-sm glassmorphism-card"> {{-- Quité el h-100 --}}
+            <div class="card shadow-sm glassmorphism-card">
                 <div class="card-header py-3 border-bottom-0 bg-transparent">
                     <h6 class="mb-0 fw-bold"><i class="feather-bar-chart-2 me-2"></i>Interacciones por Canal</h6>
                 </div>
                 <div class="card-body">
-                    {{-- WRAPPER MÁGICO: Controla la altura exacta y evita que se estire --}}
                     <div style="position: relative; height: 300px; width: 100%;">
                         <canvas id="chartCanales"></canvas>
                     </div>
@@ -135,16 +133,43 @@
             </div>
         </div>
 
-        {{-- Gráfico de Resultados --}}
         <div class="col-md-6">
-            <div class="card shadow-sm glassmorphism-card"> {{-- Quité el h-100 --}}
+            <div class="card shadow-sm glassmorphism-card">
                 <div class="card-header py-3 border-bottom-0 bg-transparent">
                     <h6 class="mb-0 fw-bold"><i class="feather-pie-chart me-2"></i>Distribución de Resultados</h6>
                 </div>
                 <div class="card-body">
-                    {{-- WRAPPER MÁGICO: Controla la altura exacta y evita que se estire --}}
                     <div style="position: relative; height: 300px; width: 100%; display: flex; justify-content: center;">
                         <canvas id="chartResultados"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Segunda Fila de Gráficos: Agentes y Clientes --}}
+    <div class="row mb-4 g-3">
+        <div class="col-md-6">
+            <div class="card shadow-sm glassmorphism-card">
+                <div class="card-header py-3 border-bottom-0 bg-transparent">
+                    <h6 class="mb-0 fw-bold"><i class="feather-users me-2"></i>Top 5 Agentes</h6>
+                </div>
+                <div class="card-body">
+                    <div style="position: relative; height: 300px; width: 100%;">
+                        <canvas id="chartAgentes"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow-sm glassmorphism-card">
+                <div class="card-header py-3 border-bottom-0 bg-transparent">
+                    <h6 class="mb-0 fw-bold"><i class="feather-briefcase me-2"></i>Top 5 Clientes</h6>
+                </div>
+                <div class="card-body">
+                    <div style="position: relative; height: 300px; width: 100%;">
+                        <canvas id="chartClientes"></canvas>
                     </div>
                 </div>
             </div>
@@ -157,19 +182,37 @@
 
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-                // Configuración Global para Chart.js para combinar con colores pastel
+                // Funcionalidad del botón "Mes Actual"
+                document.getElementById('clearFilters').addEventListener('click', function() {
+                    window.location.href = "{{ route('interactions.report') }}";
+                });
+
+                // Configuración Global para Chart.js
                 Chart.defaults.color = '#6c757d';
                 Chart.defaults.font.family = "'Inter', sans-serif";
+
+                // Variables inyectadas desde PHP a JS
+                const canalesLabels = @json($chartCanales['labels'] ?? []);
+                const canalesData = @json($chartCanales['data'] ?? []);
+                
+                const resultadosLabels = @json($chartResultados['labels'] ?? []);
+                const resultadosData = @json($chartResultados['data'] ?? []);
+
+                const agentesLabels = @json($chartAgentes['labels'] ?? []);
+                const agentesData = @json($chartAgentes['data'] ?? []);
+
+                const clientesLabels = @json($chartClientes['labels'] ?? []);
+                const clientesData = @json($chartClientes['data'] ?? []);
 
                 // 1. Gráfico de Barras (Canales)
                 const ctxCanales = document.getElementById('chartCanales').getContext('2d');
                 new Chart(ctxCanales, {
                     type: 'bar',
                     data: {
-                        labels: ['Llamada', 'WhatsApp', 'Email', 'Presencial', 'Redes Sociales'], // Esto se reemplazará luego con datos dinámicos
+                        labels: canalesLabels,
                         datasets: [{
                             label: 'Cantidad de Interacciones',
-                            data: [12, 19, 3, 5, 2], // Datos de prueba
+                            data: canalesData,
                             backgroundColor: 'rgba(74, 144, 226, 0.6)',
                             borderColor: 'rgba(74, 144, 226, 1)',
                             borderWidth: 1,
@@ -180,24 +223,28 @@
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: { legend: { display: false } },
-                        scales: { y: { beginAtZero: true } }
+                        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
                     }
                 });
 
                 // 2. Gráfico de Dona (Resultados)
+                const pastelColors = [
+                    'rgba(46, 204, 113, 0.7)',  // Verde pastel
+                    'rgba(243, 156, 18, 0.7)',  // Naranja pastel
+                    'rgba(149, 165, 166, 0.7)', // Gris pastel
+                    'rgba(231, 76, 60, 0.7)',   // Rojo pastel
+                    'rgba(52, 152, 219, 0.7)',  // Azul pastel
+                    'rgba(155, 89, 182, 0.7)'   // Morado pastel
+                ];
+
                 const ctxResultados = document.getElementById('chartResultados').getContext('2d');
                 new Chart(ctxResultados, {
                     type: 'doughnut',
                     data: {
-                        labels: ['Exitoso', 'Pendiente', 'No Contactado', 'Rechazado'], // Datos de prueba
+                        labels: resultadosLabels,
                         datasets: [{
-                            data: [50, 25, 15, 10], // Datos de prueba
-                            backgroundColor: [
-                                'rgba(46, 204, 113, 0.7)',  // Verde pastel
-                                'rgba(243, 156, 18, 0.7)',  // Naranja pastel
-                                'rgba(149, 165, 166, 0.7)', // Gris pastel
-                                'rgba(231, 76, 60, 0.7)'    // Rojo pastel
-                            ],
+                            data: resultadosData,
+                            backgroundColor: pastelColors.slice(0, Math.max(resultadosData.length, 1)), 
                             borderWidth: 0
                         }]
                     },
@@ -210,8 +257,55 @@
                         }
                     }
                 });
+
+                // 3. Gráfico de Top Agentes (Barra Horizontal)
+                const ctxAgentes = document.getElementById('chartAgentes').getContext('2d');
+                new Chart(ctxAgentes, {
+                    type: 'bar',
+                    data: {
+                        labels: agentesLabels,
+                        datasets: [{
+                            label: 'Interacciones',
+                            data: agentesData,
+                            backgroundColor: 'rgba(155, 89, 182, 0.6)', // Morado pastel
+                            borderColor: 'rgba(155, 89, 182, 1)',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y', // Convertir a barras horizontales
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                    }
+                });
+
+                // 4. Gráfico de Top Clientes (Barra Horizontal)
+                const ctxClientes = document.getElementById('chartClientes').getContext('2d');
+                new Chart(ctxClientes, {
+                    type: 'bar',
+                    data: {
+                        labels: clientesLabels,
+                        datasets: [{
+                            label: 'Interacciones',
+                            data: clientesData,
+                            backgroundColor: 'rgba(52, 152, 219, 0.6)', // Azul pastel
+                            borderColor: 'rgba(52, 152, 219, 1)',
+                            borderWidth: 1,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y', // Convertir a barras horizontales
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                    }
+                });
             });
         </script>
     @endpush
-
 </x-base-layout>
