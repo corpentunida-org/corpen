@@ -17,12 +17,12 @@ class SegConvenioController extends Controller
     private function auditoria($accion)
     {
         $auditoriaController = app(AuditoriaController::class);
-        $auditoriaController->create($accion, "SEGUROS");
+        $auditoriaController->create($accion, 'SEGUROS');
     }
 
     public function index()
     {
-        $convenios = SegConvenio::orderBy('fecha_inicio', 'asc')->get();
+        $convenios = SegConvenio::orderBy('fecha_inicio', 'desc')->get();
         return view('seguros.convenio.index', compact('convenios'));
     }
     public function show($id)
@@ -32,9 +32,13 @@ class SegConvenioController extends Controller
         $convenio = SegConvenio::with(['plan.condicioncorpen'])
             ->where('idConvenio', $idConvenio)
             ->first();
-        $planes = $convenio->plan->filter(function ($plan) {
-                return $plan->condicioncorpen !== null && $plan->condicioncorpen->descripcion !== null;})
-            ->groupBy(function ($plan) {return $plan->condicioncorpen->descripcion;});
+        $planes = $convenio->plan
+            ->filter(function ($plan) {
+                return $plan->condicioncorpen !== null && $plan->condicioncorpen->descripcion !== null;
+            })
+            ->groupBy(function ($plan) {
+                return $plan->condicioncorpen->descripcion;
+            });
         return view('seguros.convenio.show', compact('convenio', 'planes'));
     }
 
@@ -49,29 +53,33 @@ class SegConvenioController extends Controller
 
     public function store(Request $request)
     {
+        //dd($request->all());
         $idConvenio = $request->anio . $request->idAseguradora;
         $validacion = SegConvenio::where('idConvenio', $idConvenio)->exists();
         if ($validacion) {
             return redirect()->back()->with('error', 'Ya existe un convenio con el mismo año y aseguradora');
         }
-        $convenio = SegConvenio::create([
+        /*$convenio = SegConvenio::create([
             'idConvenio' => $idConvenio,
             'seg_proveedor_id' => $request->proveedor,
             'idAseguradora' => $request->idAseguradora,
             'nombre' => strtoupper($request->nombre) . " " . $request->anio,
             'fecha_inicio' => $request->fechaInicio,
             'fecha_fin' => $request->fechaFin,
-        ]);
+        ]);*/
+        $mapeoplanes = [];
         $planes = $request->input('planes');
         foreach ($planes as $planId => $planData) {
             $nuevoPlan = SegPlan::create([
-                'seg_convenio_id' => $convenio->idConvenio,
+                //'seg_convenio_id' => $convenio->idConvenio,
                 'name' => strtoupper($planData['name']),
                 'valor' => $planData['vasegurado'],
-                'prima' => $planData['vprima'],
+                'prima_aseguradora' => $planData['vprimaase'],
+                'prima_asegurado' => $planData['vprimacor'],
                 'condicion_id' => $planData['condicion'],
             ]);
-            $coberturas = SegPlan_cobertura::where('plan_id', $planId)->get();
+            $mapaPlanes[$planId] = $nuevoPlan; //mapeo planes
+            /*$coberturas = SegPlan_cobertura::where('plan_id', $planId)->get();
             foreach ($coberturas as $cobertura) {
                 $coberturaData = [
                     'plan_id' => $nuevoPlan->id,
@@ -83,47 +91,55 @@ class SegConvenioController extends Controller
                     $coberturaData['valorCobertura'] = $nuevoPlan->prima;
                 }
                 SegPlan_cobertura::create($coberturaData);
-            }
+            }*/
         }
-        $this->auditoria("CONVENIO CREADO " . $convenio->nombre);
+        //$this->auditoria("CONVENIO CREADO " . $convenio->nombre);
         if ($request->has('CheckVigencia')) {
-            $this->updateVigencia($request->idAseguradora, $request->anio);
-            SegConvenio::where('idAseguradora', $request->idAseguradora)
-                ->where('vigente', true)
-                ->update(['vigente' => false]);
-            SegConvenio::where('idConvenio', $idConvenio)
-                ->update(['vigente' => true]);
+            //$this->updateVigencia($request->idAseguradora, $request->anio);
+
+            //$convenioid = $request->idAseguradora;
+            //$convenioanio = $request->anio;
+            foreach ($mapaPlanes as $planViejoId => $planNuevo) {
+                $polizas=SegPoliza::where('seg_convenio_id', $request->idAseguradora)
+                    ->where('seg_plan_id', $planViejoId)
+                    ->where('active', true)
+                    ->whereNull('reclamacion')
+                    ->get();
+                dd($polizas);
+            }
+            /*
+            SegConvenio::where('idAseguradora', $request->idAseguradora)->where('vigente', true)->update(['vigente' => false]);
+            SegConvenio::where('idConvenio', $idConvenio)->update(['vigente' => true]);
             SegPlan::where('seg_convenio_id', 'like', '%' . $request->idAseguradora)
                 ->update(['vigente' => false]);
             SegPlan::where('seg_convenio_id', $idConvenio)
                 ->update(['vigente' => true]);
-            $this->auditoria("Novedad en polizas, convenios y planes con nueva vigencia " . $convenio->nombre);
+            $this->auditoria("Novedad en polizas, convenios y planes con nueva vigencia " . $convenio->nombre);*/
         }
 
         return redirect()->route('seguros.convenio.index')->with('success', 'Convenio creado correctamente');
     }
 
-
     private function updateVigencia($convenioid, $convenioanio)
     {
-        $polizas = SegPoliza::where('seg_convenio_id', $convenioid)
-            ->where('active', true)->where('reclamacion', 0)->get();
+        $polizas = SegPoliza::where('seg_convenio_id', $convenioid)->where('active', true)->whereNull('reclamacion')->get();
+        dd($polizas);
         foreach ($polizas as $poliza) {
-            
             $planOriginal = SegPlan::find($poliza->seg_plan_id);
             $plan = SegPlan::where('name', $planOriginal->name)
                 ->where('condicion_id', $planOriginal->condicion_id)
-                ->where('seg_convenio_id', $convenioanio . $convenioid)->first();
+                ->where('seg_convenio_id', $convenioanio . $convenioid)
+                ->first();
             if ($plan) {
                 if ($poliza->extra_prima != 0) {
-                    $planprima = (($plan->prima_aseguradora * $poliza->extra_prima) / 100) + $plan->prima_aseguradora;
+                    $planprima = ($plan->prima_aseguradora * $poliza->extra_prima) / 100 + $plan->prima_aseguradora;
                 } else {
                     $planprima = $plan->prima_aseguradora;
                 }
                 $poliza->update([
                     'seg_plan_id' => $plan->id,
                     'valor_asegurado' => $plan->valor,
-                    'valor_prima' => $planprima
+                    'valor_prima' => $planprima,
                 ]);
             }
         }

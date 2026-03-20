@@ -135,18 +135,10 @@ Route::get('/probar-middleware-alias', function () {
 })->middleware('candirect:seguros.reclamacion.index');
 
 //ADMIN
-Route::resource('users', UserController::class)
-    ->names('admin.users')
-    ->middleware(['auth', 'can:admin.users.index']);
-Route::resource('admin', AuditoriaController::class)
-    ->names('admin.auditoria')
-    ->middleware(['auth', 'candirect:admin.auditoria.index']);
-Route::resource('roles', RoleController::class)
-    ->names('admin.roles')
-    ->middleware(['auth']);
-Route::resource('permisos', PermissionsController::class)
-    ->names('admin.permisos')
-    ->middleware(['auth']);
+Route::resource('users', UserController::class)->names('admin.users')->middleware(['auth', 'can:admin.users.index']);
+Route::resource('admin', AuditoriaController::class)->names('admin.auditoria')->middleware(['auth', 'candirect:admin.auditoria.index']);
+Route::resource('roles', RoleController::class)->names('admin.roles')->middleware(['auth']);
+Route::resource('permisos', PermissionsController::class)->names('admin.permisos')->middleware(['auth']);
 
 //RUTAS DE EXEQUIALES
 Route::prefix('exequiales')->group(function () {

@@ -44,6 +44,7 @@ class Res_reserva extends Model
 
     protected $casts = [
         'fecha_solicitud' => 'date',
+        'fecha_inicio' => 'date',
         'fecha_fin' => 'date',
     ];
 
