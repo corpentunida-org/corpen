@@ -32,7 +32,8 @@ class ResReservaController extends Controller implements HasMiddleware
     public function index()
     {
         $reservas = Res_reserva::where('user_id', auth()->user()->id)
-            ->where('nid', '!=', '0000000000')->where('puntuacion_asociado', null)
+            ->where('nid', '!=', '0000000000')
+            ->where('puntuacion_asociado', null)
             ->orderBy('fecha_inicio', 'desc')
             ->get();
         $inmuebles = Res_inmueble::where('active', 1)
@@ -53,9 +54,9 @@ class ResReservaController extends Controller implements HasMiddleware
     public function createReserva($id)
     {
         $inmueble = Res_inmueble::findOrFail($id);
-        if(!$inmueble->active){
+        /*if(!$inmueble->active){
             return redirect()->route('reserva.reserva.index')->with('error', 'El inmueble seleccionado no está disponible para reservas en este momento.');
-        }
+        }*/
         date_default_timezone_set('America/Bogota');
         $fecha = date('Y-m-d');
         $reservas = Res_reserva::where('res_inmueble_id', $id)->where('fecha_fin', '>=', $fecha)->where('nid', '!=', '0000000000')->orderBy('fecha_inicio', 'asc')->get();
@@ -64,7 +65,6 @@ class ResReservaController extends Controller implements HasMiddleware
 
     public function storeReserva(Request $request)
     {
-        //dd($request->all());
         $request->validate([
             'fechaInicio' => 'required|date',
             'endDate' => 'required|date|after:fechaInicio',
@@ -133,9 +133,8 @@ class ResReservaController extends Controller implements HasMiddleware
             'celular' => $request->celular,
             'celular_respaldo' => $request->celulartwo,
         ]);
-
         $texto = 'Hemos recibido su solicitud de reserva con ingreso el ' . $request->input('fechaInicio') . ' y salida el ' . $request->input('endDate') . '. En las próximas horas, un funcionario se comunicará con usted para validar los datos de la reserva. ¡Dios le bendiga!.';
-        Mail::to(auth()->user()->email)->send(new ReservaInmueble(auth()->user()->name, $texto, 'Reserva de Inmueble'));
+        Mail::to(auth()->user()->email)->send(new ReservaInmueble(auth()->user()->name, $texto, 'Reserva de Inmueble', true));
         return redirect()->route('reserva.reserva.index')->with('success', 'Reserva creada con éxito');
 
         //INSERT CODIGO ANTERIOR
@@ -220,6 +219,9 @@ class ResReservaController extends Controller implements HasMiddleware
     public function createSoporte($id)
     {
         $reserva = Res_reserva::findOrFail($id);
+        if (!auth()->user()->hasPermission('reservas.soportes.todos') && $reserva->user_id != auth()->id()) {
+            abort(403);
+        }        
         return view('reserva.asociado.createSoporte', compact('reserva'));
     }
 
@@ -239,7 +241,6 @@ class ResReservaController extends Controller implements HasMiddleware
 
         $texto = 'Hemos recibido el comprobante de pago del servicio de aseo correspondiente a su reserva. En las próximas horas, uno de nuestros funcionarios se comunicará con usted para verificar el pago y brindarle las recomendaciones necesarias para confirmar su reserva. ¡Dios le bendiga!';
         Mail::to(auth()->user()->email)->send(new ReservaInmueble(auth()->user()->name, $texto, 'Soporte pago del Aseo - Reserva'));
-
         return redirect()->route('reserva.reserva.index')->with('success', 'Soporte de pago cargado con éxito');
     }
 
@@ -273,7 +274,6 @@ class ResReservaController extends Controller implements HasMiddleware
 
         $texto = 'Estimado asociado, revisando el soporte de pago del aseo de su reserva se ha encontrado lo siguiente: ' . $request->input('comentario') . '. Por favor, revise el soporte y envíenos uno nuevo. ¡Dios le bendiga!';
         Mail::to($reserva->user->email)->send(new ReservaInmueble($reserva->user->name, $texto, 'Revisión soporte pago del Aseo'));
-
         return redirect()->route('reserva.inmueble.confirmacion')->with('success', 'Reserva enviada a revisión con éxito');
     }*/
 
@@ -295,7 +295,7 @@ class ResReservaController extends Controller implements HasMiddleware
             'res_reserva_id' => $reserva->id,
             'description' => $request->input('comentario'),
             'user_id' => auth()->user()->id,
-        ]);        
+        ]);
         if ($request->filled('calificacion')) {
             $reserva->update([
                 'res_status_id' => 3,
@@ -307,7 +307,7 @@ class ResReservaController extends Controller implements HasMiddleware
             $texto = 'Queremos agradecerle por haber elegido nuestro ' . $reserva->res_inmueble->name . ' Ha sido un placer recibirle y esperamos que haya disfrutado de su tiempo y que su experiencia haya sido cómoda y agradable. <br> Su opinión es muy importante para nosotros, ya que nos ayuda a seguir mejorando nuestro servicio. Le invitamos cordialmente a dejar una reseña sobre su estadía dentro de la <a href="https://app.corpentunida.org.co" target="_blank">app.corpentunida.org.co</a>. ¡Dios le bendiga!';
             $titulomail = 'Califica tu estadía';
             $condicionesmail = false;
-        }else{
+        } else {
             $texto = 'Felicitaciones su reserva fue confirmada ingresando el día ' . $reserva->fecha_inicio . ' y saliendo el día: ' . $reserva->fecha_fin . ', por favor tener en cuenta las siguientes recomendaciones: ' . $request->input('comentario') . '. ¡Dios le bendiga!';
             $titulomail = 'Confirmación de la reserva';
             $condicionesmail = true;
@@ -321,7 +321,10 @@ class ResReservaController extends Controller implements HasMiddleware
     public function indexHistorico()
     {
         $historicosres = Res_reserva::select('id', 'res_inmueble_id', 'res_status_id', 'user_id', 'nid', 'fecha_inicio', 'fecha_fin')
-            ->where('nid', '!=', '0000000000')->with(['tercero:nom_ter'])->orderby('fecha_solicitud', 'desc')->get();
+            ->where('nid', '!=', '0000000000')
+            ->with(['tercero:nom_ter'])
+            ->orderby('fecha_solicitud', 'desc')
+            ->get();
         return view('reserva.funcionario.historico', compact('historicosres'));
     }
 
