@@ -17,7 +17,7 @@
                     <h5 class="modal-title" id="reservaModalLabel">Crear Reserva</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form id="reservaForm" action="{{ route('reserva.inmueble.store') }}" method="POST">
+                <form id="reservaForm" action="{{ route('reserva.inmueble.store') }}" method="POST" novalidate>
                     @csrf
                     <div class="modal-body">
                         <input type="hidden" name="inmueble_id" id="inmueble_id" value="{{ $inmueble->id }}">
@@ -39,7 +39,8 @@
                         </div>
                         <div class="mb-3">
                             <label for="endDate" class="form-label">Fecha de Fin</label>
-                            <input type="text" class="form-control" id="endDate" name="endDate" required>
+                            <input type="text" class="form-control" id="endDate" name="endDate"
+                                placeholder="Seleccione una fecha" required readonly>
                         </div>
                         <div class="row">
                             <div class="col-lg-6 mb-3">
@@ -60,9 +61,91 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-success"><i class="bi bi-plus"></i>Crear Reserva</button>
+                        <button type="button" class="btn btn-success" id="btnConfirmar"><i class="bi bi-plus"></i>
+                            Crear Reserva</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="confirmModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title mb-0">
+                        Lineamientos para el uso de los apartamentos
+
+                        <span class="d-block fs-12 fw-normal text-muted" style="line-height:1.2; margin-top:2px;">
+                            Con el fin de garantizar un uso adecuado, equitativo y organizado de estos espacios,
+                            se establecen las siguientes condiciones:
+                        </span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <h6 class="fw-bold">Reservas</h6>
+                    <ul class="mb-3">
+                        <li>Las reservas deben realizarse con anticipación a través del enlace publicado en los grupos
+                            oficiales.</li>
+                        <li>El asociado debe estar presente durante la estadía.</li>
+                        <li>❌ No se permite reservar para familiares, amigos o terceros.</li>
+                    </ul>
+                    <h6 class="fw-bold">Proceso de pago</h6>
+                    <p>
+                        El asociado debe realizar el aporte correspondiente de manera oportuna.
+                        Una vez hecha la pre-reserva, el sistema bloqueará automáticamente los días seleccionados.
+                    </p>
+                    <p>
+                        Tendrá <span class="text-danger">3 días</span> para realizar el pago y cargar el comprobante.
+                        De lo contrario, la fecha quedará libre para otro asociado.
+                    </p>
+                    <p>
+                        <strong class="text-danger">Importante:</strong><br>
+                        El aporte no corresponde a un alquiler, ya que el uso del apartamento es gratuito.
+                        Este valor cubre únicamente gastos de aseo y administración.
+                    </p>
+
+                    <h6 class="fw-bold">Condiciones de uso</h6>
+                    <ul>
+                        <li>⏳ Estadía máxima: 5 días / 4 noches</li>
+                        <li>Capacidad máxima: 6 personas</li>
+                        <li>No se permite el ingreso de mascotas</li>
+                        <li>El asociado es responsable del cuidado de menores y adultos mayores</li>
+                    </ul>
+                    <h6 class="fw-bold">Cancelaciones y cambios</h6>
+                    <ul>
+                        <li>No se realizarán devoluciones de dinero</li>
+                        <li>Reprogramaciones solo en casos de fuerza mayor, sujetas a evaluación</li>
+                    </ul>
+                    <h6 class="fw-bold">Entrega y cuidado del inmueble</h6>
+                    <p>
+                        El apartamento se entrega en óptimas condiciones y debe devolverse en el mismo estado.
+                        Cualquier daño será responsabilidad del asociado.
+                    </p>
+                    <h6 class="fw-bold">Logística de ingreso</h6>
+                    <p>
+                        En cada ciudad (Santa Marta y Armenia) hay un encargado de la entrega de llaves.
+                        Se contactará previamente al asociado.
+                    </p>
+                    <p>
+                        Se debe firmar un acta al momento de ingreso y salida del inmueble.
+                    </p>
+                    <p class="small text-danger">
+                        Nota: El valor aportado no incluye costos adicionales de administración o uso de zonas comunes.
+                    </p>
+                    <p class="text-muted small">
+                        Deseamos que estos espacios sean de bendición, descanso y renovación para cada familia pastoral.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                        id="cerrarTodo">Cancelar</button>
+
+                    <button type="button" class="btn btn-success" id="confirmSubmit">
+                        Confirmar crear reserva
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -173,23 +256,40 @@
     @endpush
 
     @push('scripts')
-        <script src="{{ asset('assets/vendors/js/datepicker.min.js') }}"></script>
         <script>
             document.addEventListener("DOMContentLoaded", function() {
                 const $start = $('#fechaInicio');
                 const $end = $('#endDate');
+                const today = new Date();
 
                 if (!$start.length || !$end.length) return;
 
-                // Instancias datepicker
-                const startPicker = new Datepicker($start[0], {
-                    format: 'yyyy-mm-dd',
-                    autohide: true
+                /* =========================
+                   BLOQUEOS INPUT
+                ========================= */
+                $start.on('keydown paste', function(e) {
+                    e.preventDefault();
                 });
 
+                $end.on('keydown paste', function(e) {
+                    e.preventDefault();
+                });
+
+                $start.on('change', function() {
+                    $(this).val($(this).data('locked') || '');
+                });
+
+                const startPicker = new Datepicker($start[0], {
+                    format: 'yyyy-mm-dd',
+                    autohide: true,
+                    minDate: today
+                });
+                $start.prop('readonly', true);
+                $start.css('pointer-events', 'none');
                 const endPicker = new Datepicker($end[0], {
                     format: 'yyyy-mm-dd',
-                    autohide: true
+                    autohide: true,
+                    minDate: today
                 });
 
                 /* =========================
@@ -198,12 +298,14 @@
                 const calendarEl = document.getElementById('calendar');
 
                 if (calendarEl) {
+
                     const calendar = new FullCalendar.Calendar(calendarEl, {
                         height: "auto",
                         locale: 'es',
                         contentHeight: "auto",
                         expandRows: false,
-                        validRange: function(nowDate) {
+
+                        validRange: function() {
                             let start = new Date();
                             start.setHours(0, 0, 0, 0);
 
@@ -211,19 +313,21 @@
                             end.setDate(end.getDate() + 365);
 
                             return {
-                                start: start,
-                                end: end
+                                start,
+                                end
                             };
                         },
+
                         headerToolbar: {
                             left: 'prev,next today',
                             center: 'title',
                             right: 'dayGridMonth'
                         },
+
                         initialView: 'dayGridMonth',
+
                         events: [
                             @foreach ($reservas as $r)
-                                // RESERVA
                                 {
                                     title: 'Reservado',
                                     start: '{{ $r->fecha_inicio }}',
@@ -233,10 +337,7 @@
                                     extendedProps: {
                                         tipo: 'reserva'
                                     }
-                                },
-
-                                // ALISTAMIENTO ANTES
-                                {
+                                }, {
                                     title: 'Alistamiento',
                                     start: '{{ \Carbon\Carbon::parse($r->fecha_inicio)->subDay()->format('Y-m-d') }}',
                                     end: '{{ $r->fecha_inicio }}',
@@ -245,10 +346,7 @@
                                     extendedProps: {
                                         tipo: 'alistamiento'
                                     }
-                                },
-
-                                // ALISTAMIENTO DESPUES
-                                {
+                                }, {
                                     title: 'Alistamiento',
                                     start: '{{ \Carbon\Carbon::parse($r->fecha_fin)->addDay()->format('Y-m-d') }}',
                                     end: '{{ \Carbon\Carbon::parse($r->fecha_fin)->addDays(2)->format('Y-m-d') }}',
@@ -260,39 +358,25 @@
                                 },
                             @endforeach
                         ],
+
                         eventContent: function(arg) {
-                            let icon = '';
-
-                            if (arg.event.extendedProps.tipo === 'reserva') {
-                                icon = 'bi-calendar-check';
-                            }
-
-                            if (arg.event.extendedProps.tipo === 'alistamiento') {
-                                icon = 'bi-clock-history';
-                            }
+                            let icon = arg.event.extendedProps.tipo === 'reserva' ?
+                                'bi-calendar-check' :
+                                'bi-clock-history';
 
                             return {
                                 html: `<i class="bi ${icon} me-1 ms-2"></i> ${arg.event.title}`
                             };
                         },
+
                         eventClick(info) {
                             let tipo = info.event.extendedProps.tipo;
 
-                            let icono = "info";
-                            let color = "#3085d6";
-                            let titulo = " ";
-
-                            if (tipo === "reserva") {
-                                icono = "error";
-                                color = "#6f42c1";
-                                titulo = "Ya se encuentra reservado";
-                            }
-
-                            if (tipo === "alistamiento") {
-                                icono = "warning";
-                                color = "#6c757d";
-                                titulo = "Inumeble en " + info.event.title;
-                            }
+                            let icono = tipo === "reserva" ? "error" : "warning";
+                            let color = tipo === "reserva" ? "#6f42c1" : "#6c757d";
+                            let titulo = tipo === "reserva" ?
+                                "Ya se encuentra reservado" :
+                                "Inmueble en " + info.event.title;
 
                             Swal.fire({
                                 title: titulo,
@@ -304,20 +388,23 @@
                         },
 
                         dateClick(info) {
+
                             const events = info.view.calendar.getEvents();
 
-                            const ocupado = events.some(e => {
-                                return info.date >= e.start && info.date < e.end;
-                            });
+                            const ocupado = events.some(e =>
+                                info.date >= e.start && info.date < e.end
+                            );
 
                             if (ocupado) return;
+
                             const today = new Date();
                             today.setHours(0, 0, 0, 0);
+
                             const clicked = new Date(info.dateStr);
                             clicked.setHours(0, 0, 0, 0);
-                            if (clicked < today) {
-                                return;
-                            }
+
+                            if (clicked < today) return;
+
                             const modal = new bootstrap.Modal(
                                 document.getElementById('reservaModal'), {
                                     backdrop: 'static',
@@ -326,12 +413,17 @@
                             );
 
                             modal.show();
+
                             const startDate = new Date(info.dateStr);
 
-                            $('#fechaInicio').val(info.dateStr);
+                            // 🔥 fecha inicio bloqueada correctamente
+                            $('#fechaInicio')
+                                .val(info.dateStr)
+                                .data('locked', info.dateStr);
+
                             $('#endDate').val('');
 
-                            // calcular mínimo permitido = inicio +1 día
+                            // 🔥 fin mínimo = inicio + 1 día
                             const minEnd = new Date(startDate);
                             minEnd.setDate(minEnd.getDate() + 1);
 
@@ -339,11 +431,14 @@
                                 minDate: minEnd
                             });
                         },
+
                         dayCellDidMount(arg) {
                             const today = new Date();
                             today.setHours(0, 0, 0, 0);
+
                             const cellDate = new Date(arg.date);
                             cellDate.setHours(0, 0, 0, 0);
+
                             if (cellDate < today) {
                                 arg.el.style.backgroundColor = "#f1f1f1";
                                 arg.el.style.opacity = "0.6";
@@ -352,24 +447,56 @@
                         }
 
                     });
+
                     calendar.render();
                 }
 
                 /* =========================
                    VALIDACIÓN FORM
                 ========================= */
-                const form = document.getElementById('reservaForm');
 
-                if (form) {
-                    form.addEventListener('submit', function(event) {
-                        const celular = document.getElementById('celular').value;
-                        const diffDays = (end - start) / (1000 * 60 * 60 * 24);
-                        if (!/^\d{10}$/.test(celular)) {
-                            event.preventDefault();
-                            alert('El celular debe tener exactamente 10 dígitos.');
-                        }
+                document.getElementById('btnConfirmar').addEventListener('click', function() {
+
+                    const form = document.getElementById('reservaForm');
+                    if (!form.checkValidity()) {
+                        form.classList.add('was-validated');
+                        return;
+                    }
+                    const celular = document.getElementById('celular').value;
+
+                    if (!/^\d{10}$/.test(celular)) {
+                        alert('El celular debe tener exactamente 10 dígitos.');
+                        return;
+                    }
+
+                    const modal1El = document.getElementById('reservaModal');
+                    const modal1 = bootstrap.Modal.getInstance(modal1El);
+                    modal1.hide();
+
+                    // 🟢 ABRIR MODAL 2
+                    const modal2 = new bootstrap.Modal(document.getElementById('confirmModal'));
+                    modal2.show();
+                });
+
+                $('#cerrarTodo').on('click', function() {
+
+                    $('.modal.show').each(function() {
+                        $(this).modal('hide');
                     });
-                }
+
+                    const form = $('#reservaForm');
+                    if (form.length) {
+                        form[0].reset();
+                        form.removeClass('was-validated');
+                    }
+                });
+                $('#confirmSubmit').on('click', function() {
+                    const form = $('#reservaForm');
+                    if (form.length) {
+                        form.submit();
+                    }
+                });
+
             });
         </script>
     @endpush
