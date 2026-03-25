@@ -16,39 +16,38 @@ class IntMessageController extends Controller
     {
         $validated = $request->validate([
             'conversation_id' => 'required|exists:int_conversations,id',
-            'body' => 'required|string',
-            'attachment' => 'nullable|string',
-            'parent_id' => 'nullable|exists:int_messages,id' // Para responder mensajes (Hilos)
+            'body'            => 'nullable|string',
+            'attachment'      => 'nullable|file|max:20480', // 20MB para S3 es razonable
+            'parent_id'       => 'nullable|exists:int_messages,id' 
         ]);
 
-        // Seguridad: Verificar que el usuario pertenezca a este chat antes de dejarlo escribir
+        // Verificar seguridad
         $isParticipant = IntConversationParticipant::where('conversation_id', $validated['conversation_id'])
                             ->where('user_id', auth()->id())
                             ->exists();
 
         if (!$isParticipant) {
-            // REDIRECCIÓN WEB: Devuelve al usuario a la vista anterior con un mensaje de error
-            return back()->with('error', 'No tienes permiso para escribir en este chat.');
+            return back()->with('error', 'No tienes permiso.');
         }
 
-        // Crear el mensaje
-        $message = IntMessage::create([
+        $attachmentPath = null;
+        if ($request->hasFile('attachment')) {
+            // CAMBIO: Guardamos directamente en el disco S3
+            $attachmentPath = $request->file('attachment')->store('chat_attachments', 's3');
+        }
+
+        if (empty($validated['body']) && !$attachmentPath) {
+            return back();
+        }
+
+        IntMessage::create([
             'conversation_id' => $validated['conversation_id'],
-            'user_id' => auth()->id(), // Automático: Quién lo envía
-            'body' => $validated['body'],
-            'attachment' => $validated['attachment'] ?? null,
-            'parent_id' => $validated['parent_id'] ?? null, // Automático/Manual: Si es un hilo
+            'user_id'         => auth()->id(),
+            'body'            => $validated['body'] ?? '',
+            'attachment'      => $attachmentPath, // Guardamos la ruta del bucket
+            'parent_id'       => $validated['parent_id'] ?? null,
         ]);
 
-        // (Opcional) Aquí podrías actualizar el campo 'updated_at' de la conversación 
-        // para que suba al principio de la lista de chats recientes.
-
-        /* return response()->json([
-            'message' => 'Mensaje enviado.',
-            'data' => $message
-        ], 201); */
-
-        // REDIRECCIÓN WEB: Recarga la página actual de la sala para que aparezca el nuevo mensaje
         return back();
     }
 }
