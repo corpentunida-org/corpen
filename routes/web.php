@@ -60,6 +60,11 @@ use App\Http\Controllers\Interacciones\IntChannelController;
 use App\Http\Controllers\Interacciones\IntTypeController;
 use App\Http\Controllers\Interacciones\IntOutcomeController;
 use App\Http\Controllers\Interacciones\IntNextActionController;
+use App\Http\Controllers\Interacciones\IntSeguimientoController;
+use App\Http\Controllers\Interacciones\IntWorkspaceController;
+use App\Http\Controllers\Interacciones\IntConversationController;
+use App\Http\Controllers\Interacciones\IntMessageController;
+use App\Http\Controllers\Interacciones\IntChatController;
 
 // FLUJO
 use App\Http\Controllers\Flujo\WorkflowController;
@@ -494,9 +499,40 @@ Route::prefix('interactions')
                 Route::delete('/{action}', [IntNextActionController::class, 'destroy'])->name('destroy');
             });
 
-        // 🆕 RUTA DE SEGUIMIENTOS (AQUÍ LA AGREGUÉ)
+        // 🆕 RUTA DE SEGUIMIENTOS
         // Se coloca aquí para que herede el middleware auth y el prefijo
-        Route::post('/seguimientos/store', [\App\Http\Controllers\Interacciones\IntSeguimientoController::class, 'store'])->name('seguimientos.store');
+        Route::post('/seguimientos/store', [IntSeguimientoController::class, 'store'])->name('seguimientos.store');
+
+
+        // ==========================================================
+        // 💬 NUEVO: MÓDULO DE CHAT / MENSAJERÍA (CASOS DE USO)
+        // ==========================================================
+        
+        // --- 🖥️ 0. RUTA PRINCIPAL (LA QUE FALTABA) ---
+        Route::get('/chat', [IntChatController::class, 'index'])->name('chat.index');
+        // --- 📂 1. RUTAS PARA WORKSPACES (Espacios de trabajo) ---
+        Route::prefix('workspaces')
+            ->name('workspaces.')
+            ->group(function () {
+                Route::post('/', [IntWorkspaceController::class, 'store'])->name('store');
+            });
+
+        // --- 🗣️ 2. RUTAS PARA CONVERSACIONES (Salas de Chat) ---
+        Route::prefix('conversations')
+            ->name('conversations.')
+            ->group(function () {
+                Route::post('/contextual', [IntConversationController::class, 'storeContextual'])->name('storeContextual');
+                // RUTA: Para invitar participantes a un chat existente
+                Route::post('/add-participants', [IntConversationController::class, 'addParticipants'])->name('addParticipants');
+            });
+
+        // --- ✉️ 3. RUTAS PARA MENSAJES (Envío e Hilos) ---
+        Route::prefix('messages')
+            ->name('messages.')
+            ->group(function () {
+                Route::post('/', [IntMessageController::class, 'store'])->name('store');
+            });
+
     });
 //FIN INTERACCIONES
 
