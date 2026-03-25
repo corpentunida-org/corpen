@@ -5,6 +5,7 @@ namespace App\Models\Interacciones;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 use App\Models\User;
 
 class IntMessage extends Model
@@ -18,7 +19,18 @@ class IntMessage extends Model
         'attachment',
         'parent_id'
     ];
-
+    public function getFile ($nameFile)
+    {
+        $url = '#';
+        if($nameFile) {
+            if (Storage::disk('s3')->exists($nameFile)) {
+                $url = Storage::disk('s3')->temporaryUrl(
+                    $nameFile, now()->addMinutes(5)
+                );
+            }
+        }
+        return $url;
+    }
     public function conversation(): BelongsTo
     {
         return $this->belongsTo(IntConversation::class, 'conversation_id');

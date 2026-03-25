@@ -13,18 +13,18 @@ class IntConversationController extends Controller
 {
     public function storeContextual(Request $request)
     {
-        // 1. Añadimos 'user_ids' a la validación
         $validated = $request->validate([
             'workspace_id' => 'required|exists:int_workspaces,id',
             'name' => 'required|string|max:255',
             'visibility' => 'required|in:internal,external',
             'chatable_type' => 'nullable|string', 
             'chatable_id' => 'nullable|integer',
-            'user_ids' => 'nullable|array', // Es un array de IDs
-            'user_ids.*' => 'exists:users,id' // Verificamos que los usuarios existan
+            'user_ids' => 'nullable|array',
+            'user_ids.*' => 'exists:users,id',
+            'role_id' => 'required_with:user_ids|exists:int_roles,id' // Obligatorio si se invitan usuarios
         ]);
 
-        $conversation = DB::transaction(function () use ($validated) {
+        $conversation = \Illuminate\Support\Facades\DB::transaction(function () use ($validated) {
             
             $type = (!empty($validated['chatable_type']) && !empty($validated['chatable_id'])) 
                     ? 'contextual' 
@@ -39,27 +39,26 @@ class IntConversationController extends Controller
                 'chatable_id' => $validated['chatable_id'] ?? null,
             ]);
 
-            // Obtener roles
+            // El creador de la sala siempre será 'admin'
             $adminRole = IntRole::where('slug', 'admin')->first();
-            // Asumimos que tienes un rol 'empleado' o 'miembro' en tu tabla int_roles
-            $empleadoRole = IntRole::where('slug', 'empleado')->first() ?? $adminRole; 
 
-            // 1. Vincular al creador como ADMIN
             if ($adminRole) {
                 IntConversationParticipant::create([
                     'conversation_id' => $chat->id,
                     'user_id' => auth()->id(), 
-                    'role_id' => $adminRole->id, 
+                    'role_id' => $adminRole->id,
+                    'joined_at' => now(), // <-- FECHA EXACTA REQUERIDA POR TU MODELO
                 ]);
             }
 
-            // 2. Vincular a los INVITADOS que el creador seleccionó en el modal
-            if (!empty($validated['user_ids'])) {
+            // A los invitados se les asigna el rol que seleccionaste en el modal
+            if (!empty($validated['user_ids']) && !empty($validated['role_id'])) {
                 foreach ($validated['user_ids'] as $invitadoId) {
                     IntConversationParticipant::create([
                         'conversation_id' => $chat->id,
                         'user_id' => $invitadoId, 
-                        'role_id' => $empleadoRole->id, // Entran como rol normal, no admin
+                        'role_id' => $validated['role_id'], // <-- ROL SELECCIONADO
+                        'joined_at' => now(), // <-- FECHA EXACTA
                     ]);
                 }
             }
@@ -70,7 +69,7 @@ class IntConversationController extends Controller
         return redirect()->route('interactions.chat.index', [
             'workspace_id' => $validated['workspace_id'],
             'chat_id' => $conversation->id
-        ])->with('success', 'Sala creada e invitados agregados exitosamente.');
+        ])->with('success', 'Sala creada exitosamente con sus participantes.');
     }
     /**
      * Caso de Uso: Agregar nuevos participantes a una sala existente
@@ -107,5 +106,26 @@ class IntConversationController extends Controller
         } else {
             return back()->with('info', 'Los usuarios seleccionados ya pertenecen a la sala.');
         }
+    }
+    public function removeParticipant(IntConversationParticipant $participant)
+    {
+        // 1. Seguridad: Verificar que el usuario que intenta eliminar sea ADMIN en esta sala
+        $currentUserRole = IntConversationParticipant::where('conversation_id', $participant->conversation_id)
+            ->where('user_id', auth()->id())
+            ->first();
+
+        if (!$currentUserRole || $currentUserRole->role->slug !== 'admin') {
+            return back()->with('error', 'No tienes permisos de Administrador para quitar personas.');
+        }
+
+        // 2. No permitir que el Admin se elimine a sí mismo (opcional, por seguridad)
+        if ($participant->user_id === auth()->id()) {
+            return back()->with('error', 'No puedes eliminarte a ti mismo de la sala.');
+        }
+
+        // 3. Proceder con la eliminación
+        $participant->delete();
+
+        return back()->with('success', 'Participante removido de la sala.');
     }
 }
