@@ -524,6 +524,7 @@ Route::prefix('interactions')
                 Route::post('/contextual', [IntConversationController::class, 'storeContextual'])->name('storeContextual');
                 // RUTA: Para invitar participantes a un chat existente
                 Route::post('/add-participants', [IntConversationController::class, 'addParticipants'])->name('addParticipants');
+                Route::delete('/remove-participant/{participant}', [IntConversationController::class, 'removeParticipant'])->name('removeParticipant');
             });
 
         // --- ✉️ 3. RUTAS PARA MENSAJES (Envío e Hilos) ---
