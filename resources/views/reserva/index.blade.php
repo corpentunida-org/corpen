@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+{{-- <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -505,7 +505,7 @@
 
         <div class="carousel-container">
             <div class="carousel" id="apartment-carousel">
-                @foreach($inmueble->fotosrel as $foto)
+                @foreach ($inmueble->fotosrel as $foto)
                     <div class="carousel-slide">
                         <img src="{{$foto->ruta}}" alt="photo">
                     </div>
@@ -551,7 +551,7 @@
     </div>
 </section>
 
-<!--     <section id="testimonios" style="background-color: #eef2f7;">
+<!--<section id="testimonios" style="background-color: #eef2f7;">
     <div class="container">
         <h2>Lo que Dicen Nuestros Huéspedes</h2>
         <div class="testimonials">
@@ -740,3 +740,60 @@
 </script>
 </body>
 </html>
+ --}}
+<x-base-layout>
+    <style>
+        #inicio {
+            background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('{{ asset('img/9.jpeg') }}') no-repeat center;
+            background-size: cover;
+            color: white;
+            text-align: center;
+            padding: 150px 20px;
+            position: relative;
+        }
+        .feature:hover {
+            transform: translateY(-10px);
+        }
+    </style>
+    <div id="inicio">
+        <div>
+            <h1 class="page-title fs-1" style="text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); color:white;">
+                {{ $inmueble->name }}</h1>
+            <p>Querido asociado disfrute de un apartamento completamente amoblado con todas las comodidades para una
+                estadía inolvidable</p>
+        </div>
+    </div>
+    <div class="row g-3">
+    
+    <div class="col-12 col-md-4">
+        <div class="card h-100 feature">
+            <div class="card-body rounded-3 text-center">
+                <i class="fas fa-bed fs-1 text-primary"></i>
+                <h3 class="mt-2">Confort Inigualable</h3>
+                <p class="m-0">Habitaciones diseñadas para ofrecer el máximo confort y descanso.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-md-4">
+        <div class="card h-100 feature">
+            <div class="card-body rounded-3 text-center">
+                <i class="fas fa-wifi fs-1 text-primary"></i>
+                <h3 class="mt-2">Internet de Alta Velocidad</h3>
+                <p>Conexión Wi-Fi gratuita en todo el apartamento para mantenerse conectado.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-md-4">
+        <div class="card h-100 feature">
+            <div class="card-body rounded-3 text-center">
+                <i class="fas fa-utensils fs-1 text-primary"></i>
+                <h3 class="mt-2">Cocina Equipada</h3>
+                <p>Cocina completamente equipada con electrodomésticos modernos y utensilios.</p>
+            </div>
+        </div>
+    </div>
+
+</div>
+</x-base-layout>
