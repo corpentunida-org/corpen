@@ -496,7 +496,6 @@
                         form.submit();
                     }
                 });
-
             });
         </script>
     @endpush
