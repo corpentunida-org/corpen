@@ -1,4 +1,3 @@
-<!-- MÓDULO INTERACCIONES (SEPARADO) -->
 <li class="nxl-item nxl-hasmenu">
     <a class="nxl-link" href="javascript:void(0)">
         <span class="nxl-micon"><i class="bi bi-chat-dots"></i></span>
@@ -18,9 +17,10 @@
             </a>
         </li>
         <li class="nxl-item">
-            <a class="nxl-link" href="{{ route('interactions.report') }}"> <i class="bi bi-pie-chart me-2"></i> Informe
+            <a class="nxl-link" href="{{ route('interactions.report') }}"> 
+                <i class="bi bi-pie-chart me-2"></i> Informe
             </a>
-        </li>
+        </li>     
         @candirect('interacciones.parametros.index')
         <li class="nxl-item nxl-hasmenu">
             <a class="nxl-link" href="javascript:void(0)">
@@ -47,6 +47,12 @@
                 <li class="nxl-item">
                     <a class="nxl-link" href="{{ route('interactions.next_actions.index') }}">
                         <i class="bi bi-calendar2-check me-2"></i> Próxima Acción
+                    </a>
+                </li>
+
+                <li class="nxl-item">
+                    <a class="nxl-link" href="{{ route('interactions.chat.index') }}">
+                        <i class="bi bi-chat-square-text me-2"></i> Centro de Chat
                     </a>
                 </li>
             </ul>
