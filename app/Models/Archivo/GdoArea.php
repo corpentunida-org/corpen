@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Archivo\GdoCargo;
 use App\Models\Interacciones\Interaction;
+use App\Models\Interacciones\IntWorkspace;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Builder;
@@ -112,5 +113,15 @@ class GdoArea extends Model
     {
         return $this->hasMany(\App\Models\Correspondencia\FlujoDeTrabajo::class, 'id_area', 'id');
     }
-
+    
+    
+    // --- 2. NUEVA RELACIÓN HACIA EL CHAT ---
+    
+    /**
+     * Espacios de trabajo (Workspaces) del chat que pertenecen a esta área.
+     */
+    public function workspaces(): HasMany
+    {
+        return $this->hasMany(IntWorkspace::class, 'area_id', 'id');
+    }
 }
