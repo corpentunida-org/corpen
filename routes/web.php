@@ -521,7 +521,11 @@ Route::prefix('interactions')
         Route::prefix('conversations')
             ->name('conversations.')
             ->group(function () {
+                // Iniciar o recuperar chat privado (Messenger Style)
+                Route::post('/private', [IntConversationController::class, 'iniciarChatPrivado'])->name('startPrivate');
+
                 Route::post('/contextual', [IntConversationController::class, 'storeContextual'])->name('storeContextual');
+                
                 // RUTA: Para invitar participantes a un chat existente
                 Route::post('/add-participants', [IntConversationController::class, 'addParticipants'])->name('addParticipants');
                 Route::delete('/remove-participant/{participant}', [IntConversationController::class, 'removeParticipant'])->name('removeParticipant');
