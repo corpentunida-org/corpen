@@ -11,6 +11,9 @@ use App\Models\Interacciones\IntRole;
 
 class IntConversationController extends Controller
 {
+    /**
+     * Crear una sala contextual vinculada a un modelo (Seguimiento, Interacción, etc.)
+     */
     public function storeContextual(Request $request)
     {
         $validated = $request->validate([
@@ -21,10 +24,10 @@ class IntConversationController extends Controller
             'chatable_id' => 'nullable|integer',
             'user_ids' => 'nullable|array',
             'user_ids.*' => 'exists:users,id',
-            'role_id' => 'required_with:user_ids|exists:int_roles,id' // Obligatorio si se invitan usuarios
+            'role_id' => 'required_with:user_ids|exists:int_roles,id' 
         ]);
 
-        $conversation = \Illuminate\Support\Facades\DB::transaction(function () use ($validated) {
+        $conversation = DB::transaction(function () use ($validated) {
             
             $type = (!empty($validated['chatable_type']) && !empty($validated['chatable_id'])) 
                     ? 'contextual' 
@@ -39,7 +42,6 @@ class IntConversationController extends Controller
                 'chatable_id' => $validated['chatable_id'] ?? null,
             ]);
 
-            // El creador de la sala siempre será 'admin'
             $adminRole = IntRole::where('slug', 'admin')->first();
 
             if ($adminRole) {
@@ -47,18 +49,17 @@ class IntConversationController extends Controller
                     'conversation_id' => $chat->id,
                     'user_id' => auth()->id(), 
                     'role_id' => $adminRole->id,
-                    'joined_at' => now(), // <-- FECHA EXACTA REQUERIDA POR TU MODELO
+                    'joined_at' => now(),
                 ]);
             }
 
-            // A los invitados se les asigna el rol que seleccionaste en el modal
             if (!empty($validated['user_ids']) && !empty($validated['role_id'])) {
                 foreach ($validated['user_ids'] as $invitadoId) {
                     IntConversationParticipant::create([
                         'conversation_id' => $chat->id,
                         'user_id' => $invitadoId, 
-                        'role_id' => $validated['role_id'], // <-- ROL SELECCIONADO
-                        'joined_at' => now(), // <-- FECHA EXACTA
+                        'role_id' => $validated['role_id'],
+                        'joined_at' => now(),
                     ]);
                 }
             }
@@ -69,10 +70,83 @@ class IntConversationController extends Controller
         return redirect()->route('interactions.chat.index', [
             'workspace_id' => $validated['workspace_id'],
             'chat_id' => $conversation->id
-        ])->with('success', 'Sala creada exitosamente con sus participantes.');
+        ])->with('success', 'Sala creada exitosamente.');
     }
+
     /**
-     * Caso de Uso: Agregar nuevos participantes a una sala existente
+     * Caso de Uso: Iniciar o recuperar un chat privado entre dos personas (Messenger Style)
+     */
+    public function iniciarChatPrivado(Request $request)
+    {
+        $validated = $request->validate([
+            'target_user_id' => 'required|exists:users,id'
+        ]);
+
+        $miId = auth()->id();
+        $suId = $validated['target_user_id'];
+
+        if ($miId == $suId) {
+            return back()->with('error', 'No puedes iniciar un chat privado contigo mismo.');
+        }
+
+        // 1. Buscar si ya existe una conversación privada entre estos dos usuarios en el Workspace 1
+        $conversacion = IntConversation::where('type', 'private')
+            ->where('workspace_id', 1) 
+            ->whereHas('participants', function ($q) use ($miId) {
+                $q->where('user_id', $miId);
+            })
+            ->whereHas('participants', function ($q) use ($suId) {
+                $q->where('user_id', $suId);
+            })
+            ->first();
+
+        // 2. Si existe, redirigir directamente
+        if ($conversacion) {
+            return redirect()->route('interactions.chat.index', [
+                'workspace_id' => $conversacion->workspace_id,
+                'chat_id' => $conversacion->id
+            ]);
+        }
+
+        // 3. Si no existe, crearla en una transacción
+        $nuevaSala = DB::transaction(function () use ($miId, $suId) {
+            $chat = IntConversation::create([
+                'workspace_id' => 4, // Workspace dedicado a DMs
+                'type' => 'private',
+                'visibility' => 'internal',
+                'name' => null, // El nombre se maneja dinámicamente en la vista
+            ]);
+
+            $adminRole = IntRole::where('slug', 'admin')->first();
+
+            if ($adminRole) {
+                // Agregar a ambos como administradores de su conversación privada
+                IntConversationParticipant::create([
+                    'conversation_id' => $chat->id,
+                    'user_id' => $miId,
+                    'role_id' => $adminRole->id,
+                    'joined_at' => now(),
+                ]);
+
+                IntConversationParticipant::create([
+                    'conversation_id' => $chat->id,
+                    'user_id' => $suId,
+                    'role_id' => $adminRole->id,
+                    'joined_at' => now(),
+                ]);
+            }
+
+            return $chat;
+        });
+
+        return redirect()->route('interactions.chat.index', [
+            'workspace_id' => 1,
+            'chat_id' => $nuevaSala->id
+        ])->with('success', 'Conversación privada iniciada.');
+    }
+
+    /**
+     * Agregar nuevos participantes a una sala existente
      */
     public function addParticipants(Request $request)
     {
@@ -86,7 +160,6 @@ class IntConversationController extends Controller
         $agregados = 0;
 
         foreach ($validated['user_ids'] as $userId) {
-            // Verificar si el usuario ya está en esa sala
             $yaEsParticipante = IntConversationParticipant::where('conversation_id', $validated['conversation_id'])
                                     ->where('user_id', $userId)
                                     ->exists();
@@ -96,36 +169,36 @@ class IntConversationController extends Controller
                     'conversation_id' => $validated['conversation_id'],
                     'user_id' => $userId,
                     'role_id' => $validated['role_id'],
+                    'joined_at' => now(),
                 ]);
                 $agregados++;
             }
         }
 
-        if ($agregados > 0) {
-            return back()->with('success', $agregados . ' participante(s) agregado(s) correctamente.');
-        } else {
-            return back()->with('info', 'Los usuarios seleccionados ya pertenecen a la sala.');
-        }
+        return $agregados > 0 
+            ? back()->with('success', $agregados . ' participante(s) agregado(s).')
+            : back()->with('info', 'Los usuarios ya pertenecen a la sala.');
     }
+
+    /**
+     * Eliminar participante de una sala
+     */
     public function removeParticipant(IntConversationParticipant $participant)
     {
-        // 1. Seguridad: Verificar que el usuario que intenta eliminar sea ADMIN en esta sala
         $currentUserRole = IntConversationParticipant::where('conversation_id', $participant->conversation_id)
             ->where('user_id', auth()->id())
             ->first();
 
         if (!$currentUserRole || $currentUserRole->role->slug !== 'admin') {
-            return back()->with('error', 'No tienes permisos de Administrador para quitar personas.');
+            return back()->with('error', 'No tienes permisos de Administrador.');
         }
 
-        // 2. No permitir que el Admin se elimine a sí mismo (opcional, por seguridad)
         if ($participant->user_id === auth()->id()) {
-            return back()->with('error', 'No puedes eliminarte a ti mismo de la sala.');
+            return back()->with('error', 'No puedes eliminarte a ti mismo.');
         }
 
-        // 3. Proceder con la eliminación
         $participant->delete();
 
-        return back()->with('success', 'Participante removido de la sala.');
+        return back()->with('success', 'Participante removido.');
     }
 }
