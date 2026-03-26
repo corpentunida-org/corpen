@@ -129,21 +129,30 @@
                 <div class="glass-card p-4">
                     <div class="row g-4">
                         <div class="col-md-7">
-                            <div class="section-title mb-3" style="font-weight: 700;"><i class="fas fa-id-card text-primary me-2"></i>Datos del Titular</div>
+                            <div class="mb-3 fw-bold"><i class="fas fa-id-card text-primary me-2"></i>Datos del Titular</div>
+                            
                             <div class="d-flex align-items-center gap-3">
-                                <div class="avatar-init" style="width: 60px; height: 60px; font-size: 1.4rem;">
+                                <div class="d-flex align-items-center justify-content-center bg-primary text-white rounded-circle flex-shrink-0 fw-bold shadow-sm" style="width: 60px; height: 60px; font-size: 1.4rem;">
                                     {{ substr($interaction->client->nom_ter ?? 'C', 0, 1) }}
                                 </div>
-                            <div>
-                                <h4 class="fw-bold mb-0 text-primary">{{ $interaction->client->nom_ter ?? 'Sin Nombre' }}</h4>
-                                <div class="d-flex align-items-center gap-3 mt-1 text-muted" style="font-size: 0.9rem;">
-                                    <span>Documento: <strong>{{ $interaction->client->cod_ter }}</strong></span>
-                                    <span>
-                                        <i class="fas fa-map-marker-alt me-1 text-danger"></i>
-                                        Distrito: <strong>{{ $interaction->client?->distrito?->NOM_DIST ?? 'Sin Distrito' }}</strong>
-                                    </span>
+                                
+                                <div>
+                                    <h4 class="fw-bold mb-1 text-primary">{{ $interaction->client->nom_ter ?? 'Sin Nombre' }}</h4>
+                                    
+                                    <div class="d-flex flex-wrap align-items-center gap-3 text-muted mt-1" style="font-size: 0.9rem;">
+                                        <span>Documento <strong class="text-dark">{{ $interaction->client->cod_ter }}</strong></span>
+                                        
+                                        <span class="border-start ps-3">
+                                            <i class="fas fa-map-marker-alt me-1 text-danger"></i>
+                                            Distrito <strong class="text-dark">{{ $interaction->client?->distrito?->NOM_DIST ?? 'Sin Distrito' }}</strong>
+                                        </span>
+                                        
+                                        <span class="border-start ps-3">
+                                            <i class="feather-tag me-1 text-primary"></i>
+                                            Línea <strong class="text-dark">{{ $interaction->lineaDeObligacion?->nombre ?? $interaction->id_linea_de_obligacion ?? '—' }}</strong>
+                                        </span>
+                                    </div>
                                 </div>
-                            </div>
                             </div>
                         </div>
 

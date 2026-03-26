@@ -178,6 +178,7 @@
                                     <th class="py-2">Cliente</th>
                                     <th class="py-2">Distrito</th>
                                     <th class="py-2">Fecha y Canal</th>
+                                    <th class="py-2">Motivo</th>
                                     <th class="py-2">Línea y Resultado</th>
                                     <th class="py-2">Próxima Acción</th>
                                     <th class="py-2 text-end">Acciones</th>
@@ -198,6 +199,7 @@
                                                 data-cliente="{{ $interaction->client->nom_ter ?? '—' }}"
                                                 data-client-id="{{ $interaction->client_id ?? '—' }}"
                                                 data-agent="{{ $interaction->agent->name ?? '—' }}"
+                                                data-motivo="{{ $interaction->type->name ?? 'N/A' }}"
                                                 data-duracion="{{ $interaction->duration ? $interaction->duration . ' min' : '—' }}"
                                                 data-outcome="{{ $interaction->outcomeRelation?->name ?? '—' }}"
                                                 data-notas="{{ $interaction->notes ?? 'Sin notas.' }}"
@@ -250,6 +252,10 @@
                                         <td>
                                             <div class="mb-1 text-dark">{{ optional($interaction->interaction_date)->format('d/m/Y H:i') }}</div>
                                             <div class="small text-muted">{{ $interaction->channel?->name ?? '—' }}</div>
+                                        </td>
+
+                                        <td>
+                                            <span class="small text-dark fw-medium">{{ $interaction->type->name ?? 'N/A' }}</span>
                                         </td>
 
                                         <td>
@@ -308,6 +314,7 @@
                                     <th class="py-2">Cliente</th>
                                     <th class="py-2">Distrito</th>
                                     <th class="py-2">Fecha y Canal</th>
+                                    <th class="py-2">Motivo</th>
                                     <th class="py-2">Línea y Resultado</th>
                                     <th class="py-2">Próxima Acción</th>
                                     <th class="py-2 text-end">Acciones</th>
@@ -328,6 +335,7 @@
                                                 data-cliente="{{ $interaction->client->nom_ter ?? '—' }}"
                                                 data-client-id="{{ $interaction->client_id ?? '—' }}"
                                                 data-agent="{{ $interaction->agent->name ?? '—' }}"
+                                                data-motivo="{{ $interaction->type->name ?? 'N/A' }}"
                                                 data-duracion="{{ $interaction->duration ? $interaction->duration . ' min' : '—' }}"
                                                 data-outcome="{{ $interaction->outcomeRelation?->name ?? '—' }}"
                                                 data-notas="{{ $interaction->notes ?? 'Sin notas.' }}"
@@ -379,6 +387,10 @@
                                         <td>
                                             <div class="mb-1 text-dark">{{ optional($interaction->interaction_date)->format('d/m/Y H:i') }}</div>
                                             <div class="small text-muted">{{ $interaction->channel?->name ?? '—' }}</div>
+                                        </td>
+
+                                        <td>
+                                            <span class="small text-dark fw-medium">{{ $interaction->type->name ?? 'N/A' }}</span>
                                         </td>
 
                                         <td>
@@ -432,6 +444,7 @@
                                     <th class="py-2">Cliente</th>
                                     <th class="py-2">Distrito</th>
                                     <th class="py-2">Fecha y Canal</th>
+                                    <th class="py-2">Motivo</th>
                                     <th class="py-2">Línea y Resultado</th>
                                     <th class="py-2">Próxima Acción</th>
                                     <th class="py-2 text-end">Acciones</th>
@@ -452,6 +465,7 @@
                                                 data-cliente="{{ $interaction->client->nom_ter ?? '—' }}"
                                                 data-client-id="{{ $interaction->client_id ?? '—' }}"
                                                 data-agent="{{ $interaction->agent->name ?? '—' }}"
+                                                data-motivo="{{ $interaction->type->name ?? 'N/A' }}"
                                                 data-duracion="{{ $interaction->duration ? $interaction->duration . ' min' : '—' }}"
                                                 data-outcome="{{ $interaction->outcomeRelation?->name ?? '—' }}"
                                                 data-notas="{{ $interaction->notes ?? 'Sin notas.' }}"
@@ -503,6 +517,10 @@
                                         <td>
                                             <div class="mb-1 text-dark">{{ optional($interaction->interaction_date)->format('d/m/Y H:i') }}</div>
                                             <div class="small text-muted">{{ $interaction->channel?->name ?? '—' }}</div>
+                                        </td>
+
+                                        <td>
+                                            <span class="small text-dark fw-medium">{{ $interaction->type->name ?? 'N/A' }}</span>
                                         </td>
 
                                         <td>
@@ -556,6 +574,7 @@
                                     <th class="py-2">Cliente</th>
                                     <th class="py-2">Distrito</th>
                                     <th class="py-2">Fecha y Canal</th>
+                                    <th class="py-2">Motivo</th>
                                     <th class="py-2">Línea y Resultado</th>
                                     <th class="py-2">Próxima Acción</th>
                                     <th class="py-2 text-end">Acciones</th>
@@ -576,6 +595,7 @@
                                                 data-cliente="{{ $interaction->client->nom_ter ?? '—' }}"
                                                 data-client-id="{{ $interaction->client_id ?? '—' }}"
                                                 data-agent="{{ $interaction->agent->name ?? '—' }}"
+                                                data-motivo="{{ $interaction->type->name ?? 'N/A' }}"
                                                 data-duracion="{{ $interaction->duration ? $interaction->duration . ' min' : '—' }}"
                                                 data-outcome="{{ $interaction->outcomeRelation?->name ?? '—' }}"
                                                 data-notas="{{ $interaction->notes ?? 'Sin notas.' }}"
@@ -627,6 +647,10 @@
                                         <td>
                                             <div class="mb-1 text-dark">{{ optional($interaction->interaction_date)->format('d/m/Y H:i') }}</div>
                                             <div class="small text-muted">{{ $interaction->channel?->name ?? '—' }}</div>
+                                        </td>
+
+                                        <td>
+                                            <span class="small text-dark fw-medium">{{ $interaction->type->name ?? 'N/A' }}</span>
                                         </td>
 
                                         <td>
@@ -680,6 +704,7 @@
                                     <th class="py-2">Cliente</th>
                                     <th class="py-2">Distrito</th>
                                     <th class="py-2">Fecha y Canal</th>
+                                    <th class="py-2">Motivo</th>
                                     <th class="py-2">Línea y Resultado</th>
                                     <th class="py-2">Próxima Acción</th>
                                     <th class="py-2 text-end">Acciones</th>
@@ -700,6 +725,7 @@
                                                 data-cliente="{{ $interaction->client->nom_ter ?? '—' }}"
                                                 data-client-id="{{ $interaction->client_id ?? '—' }}"
                                                 data-agent="{{ $interaction->agent->name ?? '—' }}"
+                                                data-motivo="{{ $interaction->type->name ?? 'N/A' }}"
                                                 data-duracion="{{ $interaction->duration ? $interaction->duration . ' min' : '—' }}"
                                                 data-outcome="{{ $interaction->outcomeRelation?->name ?? '—' }}"
                                                 data-notas="{{ $interaction->notes ?? 'Sin notas.' }}"
@@ -751,6 +777,10 @@
                                         <td>
                                             <div class="mb-1 text-dark">{{ optional($interaction->interaction_date)->format('d/m/Y H:i') }}</div>
                                             <div class="small text-muted">{{ $interaction->channel?->name ?? '—' }}</div>
+                                        </td>
+
+                                        <td>
+                                            <span class="small text-dark fw-medium">{{ $interaction->type->name ?? 'N/A' }}</span>
                                         </td>
 
                                         <td>
@@ -818,9 +848,10 @@
                         <div class="card-header pastel-card-header py-2"><h6 class="mb-0 fw-semibold">Información General</h6></div>
                         <div class="card-body py-2">
                             <div class="row">
-                                <div class="col-md-4 my-2"><small class="text-muted d-block">Cliente</small><span id="modal-cliente"></span> <span class="text-muted small" id="modal-client-id"></span></div>
-                                <div class="col-md-4 my-2"><small class="text-muted d-block">Asesor</small><span id="modal-agent"></span></div>
-                                <div class="col-md-4 my-2"><small class="text-muted d-block">Duración</small><span id="modal-duracion"></span></div>
+                                <div class="col-md-3 my-2"><small class="text-muted d-block">Cliente</small><span id="modal-cliente"></span> <span class="text-muted small" id="modal-client-id"></span></div>
+                                <div class="col-md-3 my-2"><small class="text-muted d-block">Asesor</small><span id="modal-agent"></span></div>
+                                <div class="col-md-3 my-2"><small class="text-muted d-block">Motivo</small><span id="modal-motivo"></span></div>
+                                <div class="col-md-3 my-2"><small class="text-muted d-block">Duración</small><span id="modal-duracion"></span></div>
                             </div>
                         </div>
                     </div>
@@ -1004,6 +1035,7 @@
                         document.getElementById('modal-cliente').textContent = el.cliente || '—';
                         document.getElementById('modal-client-id').textContent = el.clientId ? `(CC: ${el.clientId})` : '';
                         document.getElementById('modal-agent').textContent = el.agent || '—';
+                        document.getElementById('modal-motivo').textContent = el.motivo || '—';
                         document.getElementById('modal-duracion').textContent = el.duracion || '—';
                         document.getElementById('modal-llamante-nombre').textContent = el.llamanteNombre || '—';
                         document.getElementById('modal-llamante-cedula').textContent = el.llamanteCedula || '—';
