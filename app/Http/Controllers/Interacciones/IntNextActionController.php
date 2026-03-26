@@ -9,11 +9,18 @@ use Illuminate\Http\Request;
 class IntNextActionController extends Controller
 {
     /**
-     * Mostrar lista de próximas acciones
+     * Mostrar lista de próximas acciones (Vista SaaS Pro)
      */
-    public function index()
+    public function index(Request $request)
     {
-        $nextActions = IntNextAction::paginate(10);
+        // Mantenemos solo seguimientos para evitar error SQL en tabla interactions
+        $nextActions = IntNextAction::withCount('seguimientos') 
+            ->when($request->search, function($query, $search) {
+                $query->where('name', 'like', "%{$search}%");
+            })
+            ->orderBy('name', 'asc')
+            ->paginate(12);
+
         return view('interactions.next_actions.index', compact('nextActions'));
     }
 
@@ -44,25 +51,26 @@ class IntNextActionController extends Controller
     }
 
     /**
-     * Mostrar una próxima acción específica
+     * Mostrar detalle (Mantenemos variable $nextAction y withCount)
      */
     public function show($id)
     {
-        $action = IntNextAction::findOrFail($id);
-        return view('interactions.next_actions.show', compact('action'));
+        $nextAction = IntNextAction::withCount('seguimientos')->findOrFail($id);
+        
+        return view('interactions.next_actions.show', compact('nextAction'));
     }
 
     /**
-     * Mostrar formulario de edición
+     * Formulario de edición (Estandarizado a variable $nextAction)
      */
     public function edit($id)
     {
-        $action = IntNextAction::findOrFail($id);
-        return view('interactions.next_actions.edit', compact('action'));
+        $nextAction = IntNextAction::findOrFail($id);
+        return view('interactions.next_actions.edit', compact('nextAction'));
     }
 
     /**
-     * Actualizar una próxima acción
+     * Actualizar registro (Estandarizado a variable $nextAction)
      */
     public function update(Request $request, $id)
     {
@@ -70,8 +78,8 @@ class IntNextActionController extends Controller
             'name' => 'required|string|max:255',
         ]);
 
-        $action = IntNextAction::findOrFail($id);
-        $action->update([
+        $nextAction = IntNextAction::findOrFail($id);
+        $nextAction->update([
             'name' => $request->name,
         ]);
 
@@ -81,15 +89,18 @@ class IntNextActionController extends Controller
     }
 
     /**
-     * Eliminar una próxima acción
+     * Eliminar registro (Mantenemos lógica de protección de integridad)
      */
     public function destroy($id)
     {
-        $action = IntNextAction::findOrFail($id);
-        $action->delete();
+        // Solo verificamos seguimientos_count para evitar el error de columna inexistente
+        $nextAction = IntNextAction::withCount('seguimientos')->findOrFail($id);
 
-        return redirect()
-            ->route('interactions.next_actions.index')
-            ->with('success', 'Próxima acción eliminada correctamente');
+        if ($nextAction->seguimientos_count > 0) {
+            return redirect()->back()->with('error', "No se puede eliminar: esta acción está programada en {$nextAction->seguimientos_count} seguimientos.");
+        }
+
+        $nextAction->delete();
+        return redirect()->route('interactions.next_actions.index')->with('success', 'Eliminado correctamente.');
     }
 }

@@ -13,10 +13,6 @@ class IntNextAction extends Model
 
     protected $fillable = ['id','name'];
 
-    public function interactions()
-    {
-        return $this->hasMany(Interaction::class, 'next_action_type');
-    }
     public function seguimientos()
     {
         // Un tipo de acción (ej. "Llamar") aparece en muchos seguimientos
