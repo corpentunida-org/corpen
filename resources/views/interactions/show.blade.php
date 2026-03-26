@@ -148,6 +148,8 @@
                                 <div class="d-flex flex-column gap-1 mt-1 small text-muted">
                                     <span><i class="fas fa-users me-2"></i>Relación: <strong>{{ ucfirst($interaction->parentesco_quien_llama ?? 'Titular') }}</strong></span>
                                     <span><i class="fas fa-phone-alt me-2"></i>Tel: {{ $interaction->celular_quien_llama ?? 'N/A' }}</span>
+                                    
+                                    <span><i class="fas fa-map-marker-alt me-2"></i>Distrito: <strong>{{ $interaction->client?->distrito?->NOM_DIST ?? 'Sin Distrito' }}</strong></span>
                                 </div>
                             </div>
                         </div>
@@ -245,9 +247,9 @@
                                             </div>
                                         @endif
                                         
-                                        @if($seguimiento->attachment_urls)
+                                        @if(!empty($seguimiento->attachment_urls))
                                             <div class="mt-3">
-                                                <a href="{{ Storage::url($seguimiento->attachment_urls) }}" target="_blank" class="btn btn-sm btn-light border py-1">
+                                                <a href="{{ $interaction->getFile($seguimiento->attachment_urls) }}" target="_blank" class="btn btn-sm btn-light border py-1">
                                                     <i class="fas fa-paperclip me-1 text-primary"></i> Ver Anexo
                                                 </a>
                                             </div>
@@ -282,8 +284,18 @@
 
                 <div class="glass-card p-4 text-center">
                     <h6 class="fw-bold mb-3"><i class="fas fa-file-pdf me-2 text-danger"></i>Soporte Adjunto</h6>
-                    @if($interaction->attachment_urls)
-                        <div class="d-grid"><a href="{{ $interaction->getFile($interaction->attachment_urls) }}" target="_blank" class="btn btn-light border py-2 rounded-pill shadow-sm">Abrir Soporte S3</a></div>
+                    
+                    @php
+                        // Buscamos el primer seguimiento que tenga un archivo adjunto
+                        $seguimientoConArchivo = $interaction->seguimientos->whereNotNull('attachment_urls')->where('attachment_urls', '!=', '[]')->first();
+                    @endphp
+
+                    @if($seguimientoConArchivo && !empty($seguimientoConArchivo->attachment_urls))
+                        <div class="d-grid">
+                            <a href="{{ $interaction->getFile($seguimientoConArchivo->attachment_urls) }}" target="_blank" class="btn btn-light border py-2 rounded-pill shadow-sm">
+                                Abrir Soporte
+                            </a>
+                        </div>
                     @else
                         <div class="py-3 border border-dashed rounded text-muted small">Sin archivos adjuntos.</div>
                     @endif
