@@ -569,7 +569,7 @@ class InteractionController extends Controller
         // 1. Cargamos todas las relaciones, incluyendo las del timeline de seguimientos
         $interaction->load([
             'agent',
-            'client',
+            'client.distrito', // <-- MODIFICACIÓN: Se agregó '.distrito' para cargar la relación
             'channel',
             'type',
             'outcomeRelation',
