@@ -11,9 +11,17 @@ class IntOutcomeController extends Controller
     /**
      * Mostrar lista de resultados de interacción
      */
-    public function index()
+    public function index(Request $request)
     {
-        $outcomes = IntOutcome::paginate(10);
+        // UX: Contamos interacciones y seguimientos para proteger la integridad
+        $outcomes = IntOutcome::withCount(['interactions', 'seguimientos'])
+            ->when($request->search, function($query, $search) {
+                $query->where('name', 'like', "%{$search}%");
+            })
+            ->orderBy('name', 'asc')
+            ->paginate(12)
+            ->withQueryString();
+
         return view('interactions.outcomes.index', compact('outcomes'));
     }
 
@@ -48,7 +56,9 @@ class IntOutcomeController extends Controller
      */
     public function show($id)
     {
-        $outcome = IntOutcome::findOrFail($id);
+        $outcome = IntOutcome::withCount(['interactions', 'seguimientos'])
+            ->findOrFail($id);
+
         return view('interactions.outcomes.show', compact('outcome'));
     }
 
@@ -85,11 +95,16 @@ class IntOutcomeController extends Controller
      */
     public function destroy($id)
     {
-        $outcome = IntOutcome::findOrFail($id);
-        $outcome->delete();
+        $outcome = IntOutcome::withCount(['interactions', 'seguimientos'])->findOrFail($id);
 
-        return redirect()
-            ->route('interactions.outcomes.index')
-            ->with('success', 'Resultado eliminado correctamente');
+        // UX: Sumamos ambos conteos para la validación
+        $totalRelaciones = $outcome->interactions_count + $outcome->seguimientos_count;
+
+        if ($totalRelaciones > 0) {
+            return redirect()->back()->with('error', "No se puede eliminar '{$outcome->name}'. Está siendo usado en {$outcome->interactions_count} interacciones y {$outcome->seguimientos_count} seguimientos.");
+        }
+
+        $outcome->delete();
+        return redirect()->route('interactions.outcomes.index')->with('success', 'Resultado eliminado correctamente.');
     }
 }
