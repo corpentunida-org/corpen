@@ -37,13 +37,19 @@ class Interaction extends Model
         'id_user_asignacion'       => 'integer',
     ];
 
-    public function getFile ($nameFile)
+    public function getFile($nameFile)
     {
         $url = '#';
-        if($nameFile) {
+
+        // Si nameFile llega como un array (por un cast en el modelo), tomamos el primer elemento
+        if (is_array($nameFile) && count($nameFile) > 0) {
+            $nameFile = $nameFile[0];
+        }
+
+        if ($nameFile) {
             if (Storage::disk('s3')->exists($nameFile)) {
                 $url = Storage::disk('s3')->temporaryUrl(
-                    $nameFile, now()->addMinutes(5)
+                    $nameFile, now()->addMinutes(10) // Aumentado a 10 min por comodidad del usuario
                 );
             }
         }
