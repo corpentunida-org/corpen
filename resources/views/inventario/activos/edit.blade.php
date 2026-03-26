@@ -584,7 +584,7 @@
 
             $('#btnCloseModal').click(() => $('#modalRef').fadeOut('fast'));
 
-            // BOTÓN GUARDAR AJAX
+            /*// BOTÓN GUARDAR AJAX
             $('#btnSaveRefAjax').click(function() {
                 let id = $('#modal_ref_id').val();
                 let isUpdate = id !== '';
@@ -625,6 +625,77 @@
                     error: function(err) {
                         console.error(err);
                         alert('Ocurrió un error en el servidor. Revisa la consola o los logs de Laravel.');
+                        $btn.prop('disabled', false).text('Guardar');
+                    }
+                });
+            }); */
+            // BOTÓN GUARDAR AJAX
+            $('#btnSaveRefAjax').click(function() {
+                let id = $('#modal_ref_id').val();
+                let isUpdate = id !== '';
+                
+                // Capturamos los valores directamente
+                let valMarca = $('#modal_ref_marca').val();
+                let valSubgrupo = $('#modal_ref_subgrupo').val();
+                let valBodega = $('#ref_id_InvBodegas').val();
+                let valRef = $('#modal_ref_nombre').val();
+                let valDet = $('#modal_ref_detalle').val();
+
+                if(!valRef || !valDet || !valMarca || !valSubgrupo || !valBodega) {
+                    return alert('Por favor, selecciona opciones en todos los combos del modal.');
+                }
+
+                // EL COMODÍN: Mandamos las llaves con ambos nombres (el viejo y el nuevo)
+                // Así Laravel toma la que necesite y descarta la otra sin chistar.
+                let data = {
+                    _token: '{{ csrf_token() }}',
+                    referencia: valRef,
+                    detalle: valDet, 
+                    
+                    id_inv_marcas: valMarca,
+                    id_MaeMarcas: valMarca,
+                    
+                    id_inv_sub_grupos: valSubgrupo,
+                    id_MaeSubgrupo: valSubgrupo,
+                    
+                    id_InvBodegas: valBodega
+                };
+
+                // CHIVATO: Esto nos dirá qué sale exactamente de tu pantalla
+                console.log("🚀 ENVIANDO AL SERVIDOR:", data);
+
+                let url = isUpdate ? `/inventario/referencias/ajax/${id}` : '/inventario/referencias/ajax';
+                let method = isUpdate ? 'PUT' : 'POST';
+
+                let $btn = $(this);
+                $btn.prop('disabled', true).text('Guardando...');
+
+                $.ajax({
+                    url: url,
+                    type: method,
+                    data: data,
+                    success: function(res) {
+                        if(res.success) {
+                            alert(isUpdate ? 'Referencia actualizada con éxito.' : 'Referencia creada con éxito.');
+                            $('#modalRef').fadeOut('fast');
+                            location.reload(); 
+                        } else {
+                            alert('Error: ' + (res.message || 'No se pudo procesar.'));
+                            $btn.prop('disabled', false).text('Guardar');
+                        }
+                    },
+                    error: function(err) {
+                        console.error("❌ ERROR DEL SERVIDOR:", err);
+                        if (err.status === 422) {
+                            let errors = err.responseJSON.errors;
+                            let msg = '';
+                            for (let key in errors) {
+                                msg += errors[key][0] + '\n';
+                            }
+                            alert('Errores de validación:\n\n' + msg);
+                        } else {
+                            alert('Ocurrió un error en el servidor. Revisa la consola.');
+                        }
                         $btn.prop('disabled', false).text('Guardar');
                     }
                 });
