@@ -1,19 +1,35 @@
 <x-base-layout>
-    <div class="card shadow-sm border-0">
-        <div class="card-body">
-            <div class="mb-4 px-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
-                <h5 class="fw-bold mb-0 text-primary">
-                    <i class="feather-plus me-2"></i> Crear Próxima Acción
-                </h5>
-                <a href="{{ route('interactions.next_actions.index') }}" class="btn btn-secondary d-flex align-items-center gap-2">
-                    <i class="feather-arrow-left"></i> <span>Volver</span>
-                </a>
-            </div>
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-7 col-md-9">
+                
+                {{-- Breadcrumbs --}}
+                <nav aria-label="breadcrumb" class="mb-4">
+                    <ol class="breadcrumb breadcrumb-dots">
+                        <li class="breadcrumb-item"><a href="{{ route('interactions.next_actions.index') }}" class="text-muted text-decoration-none">Próximas Acciones</a></li>
+                        <li class="breadcrumb-item active">Nueva</li>
+                    </ol>
+                </nav>
 
-            <form action="{{ route('interactions.next_actions.store') }}" method="POST">
-                @csrf
-                @include('interactions.next_actions._form', ['nextAction' => null])
-            </form>
+                <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                    <div class="card-body p-4 p-md-5">
+                        
+                        {{-- Header Form --}}
+                        <div class="text-center mb-5">
+                            <div class="icon-shape bg-indigo-soft text-indigo rounded-circle mb-3 mx-auto shadow-sm" style="width: 70px; height: 70px;">
+                                <i class="feather-plus-circle fs-2"></i>
+                            </div>
+                            <h3 class="fw-black tracking-tight text-dark mb-1">Nueva Acción</h3>
+                            <p class="text-secondary opacity-75">Define un nuevo paso para la planificación de gestiones.</p>
+                        </div>
+
+                        <form action="{{ route('interactions.next_actions.store') }}" method="POST">
+                            @csrf
+                            @include('interactions.next_actions._form', ['nextAction' => null, 'buttonText' => 'Crear Acción'])
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </x-base-layout>

@@ -11,9 +11,16 @@ class IntTypeController extends Controller
     /**
      * Mostrar lista de tipos de interacción
      */
-    public function index()
+    public function index(Request $request)
     {
-        $types = IntType::paginate(10);
+        $types = IntType::withCount('interactions')
+            ->when($request->search, function($query, $search) {
+                $query->where('name', 'like', "%{$search}%");
+            })
+            ->orderBy('name', 'asc')
+            ->paginate(12)
+            ->withQueryString();
+
         return view('interactions.types.index', compact('types'));
     }
 
@@ -48,7 +55,7 @@ class IntTypeController extends Controller
      */
     public function show($id)
     {
-        $type = IntType::findOrFail($id);
+        $type = IntType::withCount('interactions')->findOrFail($id);
         return view('interactions.types.show', compact('type'));
     }
 
@@ -85,11 +92,13 @@ class IntTypeController extends Controller
      */
     public function destroy($id)
     {
-        $type = IntType::findOrFail($id);
-        $type->delete();
+        $type = IntType::withCount('interactions')->findOrFail($id);
 
-        return redirect()
-            ->route('interactions.types.index')
-            ->with('success', 'Tipo de interacción eliminado correctamente');
+        if ($type->interactions_count > 0) {
+            return redirect()->back()->with('error', "El tipo '{$type->name}' no se puede eliminar porque tiene {$type->interactions_count} interacciones asociadas.");
+        }
+
+        $type->delete();
+        return redirect()->route('interactions.types.index')->with('success', 'Tipo de interacción eliminado correctamente.');
     }
 }

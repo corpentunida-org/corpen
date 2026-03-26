@@ -11,9 +11,15 @@ class IntChannelController extends Controller
     /**
      * Mostrar lista de canales
      */
-    public function index()
+    public function index(Request $request)
     {
-        $channels = IntChannel::paginate(10);
+        $channels = IntChannel::withCount('interactions')
+            ->when($request->search, function($query, $search) {
+                return $query->where('name', 'like', "%{$search}%");
+            })
+            ->latest()
+            ->paginate(10);
+
         return view('interactions.channels.index', compact('channels'));
     }
 
@@ -48,10 +54,9 @@ class IntChannelController extends Controller
      */
     public function show($id)
     {
-        $channel = IntChannel::findOrFail($id);
+        $channel = IntChannel::withCount('interactions')->findOrFail($id);
         return view('interactions.channels.show', compact('channel'));
     }
-
     /**
      * Mostrar formulario de edición
      */
@@ -85,11 +90,14 @@ class IntChannelController extends Controller
      */
     public function destroy($id)
     {
-        $channel = IntChannel::findOrFail($id);
-        $channel->delete();
+        $channel = IntChannel::withCount('interactions')->findOrFail($id);
 
-        return redirect()
-            ->route('interactions.channels.index')
-            ->with('success', 'Canal eliminado correctamente');
+        // UX: Validación de seguridad
+        if ($channel->interactions_count > 0) {
+            return redirect()->back()->with('error', 'El canal tiene registros vinculados y no puede eliminarse.');
+        }
+
+        $channel->delete();
+        return redirect()->route('interactions.channels.index')->with('success', 'Eliminado correctamente.');
     }
 }
