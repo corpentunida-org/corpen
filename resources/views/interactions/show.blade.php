@@ -134,10 +134,16 @@
                                 <div class="avatar-init" style="width: 60px; height: 60px; font-size: 1.4rem;">
                                     {{ substr($interaction->client->nom_ter ?? 'C', 0, 1) }}
                                 </div>
-                                <div>
-                                    <h4 class="fw-bold mb-0 text-primary">{{ $interaction->client->nom_ter ?? 'Sin Nombre' }}</h4>
-                                    <span class="text-muted">Documento: <strong>{{ $interaction->client->cod_ter }}</strong></span>
+                            <div>
+                                <h4 class="fw-bold mb-0 text-primary">{{ $interaction->client->nom_ter ?? 'Sin Nombre' }}</h4>
+                                <div class="d-flex align-items-center gap-3 mt-1 text-muted" style="font-size: 0.9rem;">
+                                    <span>Documento: <strong>{{ $interaction->client->cod_ter }}</strong></span>
+                                    <span>
+                                        <i class="fas fa-map-marker-alt me-1 text-danger"></i>
+                                        Distrito: <strong>{{ $interaction->client?->distrito?->NOM_DIST ?? 'Sin Distrito' }}</strong>
+                                    </span>
                                 </div>
+                            </div>
                             </div>
                         </div>
 
@@ -149,7 +155,7 @@
                                     <span><i class="fas fa-users me-2"></i>Relación: <strong>{{ ucfirst($interaction->parentesco_quien_llama ?? 'Titular') }}</strong></span>
                                     <span><i class="fas fa-phone-alt me-2"></i>Tel: {{ $interaction->celular_quien_llama ?? 'N/A' }}</span>
                                     
-                                    <span><i class="fas fa-map-marker-alt me-2"></i>Distrito: <strong>{{ $interaction->client?->distrito?->NOM_DIST ?? 'Sin Distrito' }}</strong></span>
+
                                 </div>
                             </div>
                         </div>
