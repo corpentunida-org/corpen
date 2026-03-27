@@ -3,15 +3,16 @@
     <div style="color: red">
         <x-validation-errors class="mb-4" />
     </div>
-    <h4 class="fs-13 fw-bold mb-2">Ingresa con tu cuenta</h4>
+    <h4 class="fs-13 fw-bold mb-2">Ingresa con tu correo y contraseña</h4>
     <!-- <p class="fs-12 fw-medium text-muted">Thank you for get back <strong>Nelel</strong> web applications, let's access our the best recommendation for you.</p> -->
     <form method="POST" class="w-100 mt-4 pt-2" action="{{ route('login') }}">
         @csrf
         <div class="mb-4">
-            <input type="email" name="email" class="form-control" placeholder="Email" value="{{old('email')}}" required>
+            <input type="email" name="email" class="form-control" placeholder="Email" value="{{ old('email') }}"
+                required>
         </div>
         <div class="mb-3">
-            <input type="password" name="password"  class="form-control" placeholder="Contraseña" required>
+            <input type="password" name="password" class="form-control" placeholder="Contraseña" required>
         </div>
         <div class="d-flex align-items-center justify-content-between">
             <div>
@@ -26,6 +27,10 @@
         </div>
         <div class="mt-5">
             <button type="submit" class="btn btn-lg btn-primary w-100">Ingresar</button>
+        </div>
+        <div class="mt-5 text-muted">
+            <span>¿No tienes una cuenta?</span>
+            <a href="{{route('user.validar.asociado')}}" class="fw-bold">Click aqui para crear una cuenta.</a>
         </div>
     </form>
 </x-guest-layout>

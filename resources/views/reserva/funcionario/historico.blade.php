@@ -6,7 +6,6 @@
             table thead {
                 display: none;
             }
-
             table,
             table tbody,
             table tr,
@@ -138,7 +137,7 @@
         </div>
     @endif
 
-    {{-- <div class="col-lg-12">
+    <div class="col-lg-12">
             <div class="card stretch stretch-full">
                 <div class="card-header cursor-pointer" data-bs-toggle="collapse" data-bs-target="#calendarCollapse">
                     <h5 class="fw-bold mb-1">Reservas Calendario</h5>
@@ -152,7 +151,7 @@
                     <div id="calendar" class="flex-fill"></div>
                 </div>
             </div>
-        </div> --}}
+    </div>
 
     <script>
         $('#customerList').DataTable({
@@ -185,7 +184,8 @@
                         calendar.addEvent({
                             title: title,
                             start: info.dateStr,
-                            allDay: true
+                            allDay: true,
+                            height: 600,
                         });
                     }
                 },

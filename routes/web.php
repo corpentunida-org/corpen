@@ -283,10 +283,7 @@ Route::prefix('maestras')
     ->name('maestras.')
     ->group(function () {
         // TERCEROS
-        Route::resource('terceros', MaeTercerosController::class)
-            ->names('terceros')
-            ->parameters(['terceros' => 'tercero']);
-
+        Route::resource('terceros', MaeTercerosController::class)->names('terceros')->parameters(['terceros' => 'tercero']);
         Route::get('terceros/{tercero}/pdf', [MaeTercerosController::class, 'generarPdf'])->name('terceros.generarPdf');
 
         // TIPO
