@@ -11,90 +11,93 @@
     </div>
 </noscript>
 
-<div class="dropdown nxl-h-item d-none" id="notificationComponent">
-    <!-- Botón de activación del dropdown -->
-    <div class="nxl-head-link me-3 position-relative" data-bs-toggle="dropdown" role="button" data-bs-auto-close="outside"
-        aria-haspopup="true" aria-expanded="false" id="notificationDropdownButton">
-        <i class="feather-bell notification-bell"></i>
-        <span class="badge bg-danger nxl-h-badge pulse-animation" id="contadorNotificaciones"
-            aria-label="Notificaciones no leídas"></span>
-        <div class="notification-indicator" id="notificationIndicator" aria-hidden="true"></div>
-    </div>
+<div class="d-flex align-items-center">
 
-    <!-- Panel de notificaciones -->
-    <div class="dropdown-menu dropdown-menu-end nxl-h-dropdown nxl-notifications-menu notification-panel" role="region"
-        aria-labelledby="notificationDropdownButton" aria-live="polite">
-        <!-- Cabecera del panel -->
-        <div class="notifications-header">
-            <div class="d-flex justify-content-between align-items-center notifications-head">
-                <h6 class="fw-bold text-dark mb-0">Centro de Soportes</h6>
-                <div>
-                    <!-- MEJORA 13: Control de Lectura por Voz -->
-                    <button class="btn btn-sm btn-icon me-1" id="speechToggle"
-                        title="Activar/Desactivar lectura por voz" aria-label="Activar lectura por voz"
-                        aria-pressed="false">
-                        <i class="feather-message-circle" id="speechIcon"></i>
-                    </button>
-                    <!-- MEJORA 5: Control de Sonido -->
-                    <button class="btn btn-sm btn-icon me-1" id="soundToggle" title="Activar/Desactivar sonido"
-                        aria-label="Activar sonido de notificación" aria-pressed="false">
-                        <i class="feather-volume-2" id="soundIcon"></i>
-                    </button>
-                    <button class="btn btn-sm btn-icon refresh-btn" id="refreshBtn" title="Actualizar"
-                        aria-label="Actualizar notificaciones">
-                        <i class="feather-refresh-cw"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Pestañas de categorías -->
-            <div class="notification-tabs" role="tablist">
-                <div class="tab-item active" data-category="sinAsignar" role="tab" aria-selected="true"
-                    aria-controls="listaNotificaciones" tabindex="0">
-                    <i class="feather-user-x tab-icon"></i>
-                    <span class="tab-label">Sin Asignar</span>
-                    <span class="tab-count" id="countSinAsignar" aria-label="Conteo de sin asignar">0</span>
-                </div>
-                <div class="tab-item" data-category="enProceso" role="tab" aria-selected="false"
-                    aria-controls="listaNotificaciones" tabindex="-1">
-                    <i class="feather-loader tab-icon"></i>
-                    <span class="tab-label">En Proceso</span>
-                    <span class="tab-count" id="countEnProceso" aria-label="Conteo de en proceso">0</span>
-                </div>
-                <div class="tab-item" data-category="revision" role="tab" aria-selected="false"
-                    aria-controls="listaNotificaciones" tabindex="-1">
-                    <i class="feather-eye tab-icon"></i>
-                    <span class="tab-label">Revisión</span>
-                    <span class="tab-count" id="countRevision" aria-label="Conteo en revisión">0</span>
-                </div>
-                <div class="tab-item" data-category="cerrados" role="tab" aria-selected="false"
-                    aria-controls="listaNotificaciones" tabindex="-1">
-                    <i class="feather-check-circle tab-icon"></i>
-                    <span class="tab-label">Cerrados</span>
-                    <span class="tab-count" id="countCerrados" aria-label="Conteo de cerrados">0</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Lista de notificaciones -->
-        <div id="listaNotificaciones" class="notifications-list" role="tabpanel" aria-label="Lista de notificaciones">
-            <!-- MEJORA 15: Contenedor para Skeleton Loading -->
-            <div id="skeletonLoader" class="skeleton-loader d-none">
-                <!-- Los skeletons se generarán dinámicamente -->
-            </div>
-            <!-- Las notificaciones se cargarán aquí -->
-        </div>
-
-        <!-- Pie de página del panel -->
-        <div class="text-center notifications-footer">
-            <!-- MEJORA 16: Timestamp de última sincronización -->
-            <small class="text-muted d-block mb-2" id="lastSyncTimestamp">Actualizando...</small>
-            <a href="{{ route('soportes.soportes.index') }}" class="fs-13 fw-semibold text-dark view-all-link">
-                VER TODOS SOPORTES
-                <i class="feather-arrow-right"></i>
-            </a>
+    <div class="nxl-h-item d-none d-sm-flex me-2" id="messengerComponent">
+        <div class="nxl-head-link position-relative" 
+             data-bs-toggle="offcanvas" 
+             data-bs-target="#offcanvasMessenger" 
+             aria-controls="offcanvasMessenger" 
+             role="button" 
+             title="Mensajes Directos">
+            <i class="feather-message-square notification-bell"></i>
         </div>
     </div>
+
+    <div class="dropdown nxl-h-item d-none" id="notificationComponent">
+        <div class="nxl-head-link me-3 position-relative" data-bs-toggle="dropdown" role="button" data-bs-auto-close="outside"
+            aria-haspopup="true" aria-expanded="false" id="notificationDropdownButton">
+            <i class="feather-bell notification-bell"></i>
+            <span class="badge bg-danger nxl-h-badge pulse-animation" id="contadorNotificaciones"
+                aria-label="Notificaciones no leídas"></span>
+            <div class="notification-indicator" id="notificationIndicator" aria-hidden="true"></div>
+        </div>
+
+        <div class="dropdown-menu dropdown-menu-end nxl-h-dropdown nxl-notifications-menu notification-panel" role="region"
+            aria-labelledby="notificationDropdownButton" aria-live="polite">
+            <div class="notifications-header">
+                <div class="d-flex justify-content-between align-items-center notifications-head">
+                    <h6 class="fw-bold text-dark mb-0">Centro de Soportes</h6>
+                    <div>
+                        <button class="btn btn-sm btn-icon me-1" id="speechToggle"
+                            title="Activar/Desactivar lectura por voz" aria-label="Activar lectura por voz"
+                            aria-pressed="false">
+                            <i class="feather-message-circle" id="speechIcon"></i>
+                        </button>
+                        <button class="btn btn-sm btn-icon me-1" id="soundToggle" title="Activar/Desactivar sonido"
+                            aria-label="Activar sonido de notificación" aria-pressed="false">
+                            <i class="feather-volume-2" id="soundIcon"></i>
+                        </button>
+                        <button class="btn btn-sm btn-icon refresh-btn" id="refreshBtn" title="Actualizar"
+                            aria-label="Actualizar notificaciones">
+                            <i class="feather-refresh-cw"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="notification-tabs" role="tablist">
+                    <div class="tab-item active" data-category="sinAsignar" role="tab" aria-selected="true"
+                        aria-controls="listaNotificaciones" tabindex="0">
+                        <i class="feather-user-x tab-icon"></i>
+                        <span class="tab-label">Sin Asignar</span>
+                        <span class="tab-count" id="countSinAsignar" aria-label="Conteo de sin asignar">0</span>
+                    </div>
+                    <div class="tab-item" data-category="enProceso" role="tab" aria-selected="false"
+                        aria-controls="listaNotificaciones" tabindex="-1">
+                        <i class="feather-loader tab-icon"></i>
+                        <span class="tab-label">En Proceso</span>
+                        <span class="tab-count" id="countEnProceso" aria-label="Conteo de en proceso">0</span>
+                    </div>
+                    <div class="tab-item" data-category="revision" role="tab" aria-selected="false"
+                        aria-controls="listaNotificaciones" tabindex="-1">
+                        <i class="feather-eye tab-icon"></i>
+                        <span class="tab-label">Revisión</span>
+                        <span class="tab-count" id="countRevision" aria-label="Conteo en revisión">0</span>
+                    </div>
+                    <div class="tab-item" data-category="cerrados" role="tab" aria-selected="false"
+                        aria-controls="listaNotificaciones" tabindex="-1">
+                        <i class="feather-check-circle tab-icon"></i>
+                        <span class="tab-label">Cerrados</span>
+                        <span class="tab-count" id="countCerrados" aria-label="Conteo de cerrados">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="listaNotificaciones" class="notifications-list" role="tabpanel" aria-label="Lista de notificaciones">
+                <div id="skeletonLoader" class="skeleton-loader d-none">
+                    </div>
+                </div>
+
+            <div class="text-center notifications-footer">
+                <small class="text-muted d-block mb-2" id="lastSyncTimestamp">Actualizando...</small>
+                <a href="{{ route('soportes.soportes.index') }}" class="fs-13 fw-semibold text-dark view-all-link">
+                    VER TODOS SOPORTES
+                    <i class="feather-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <!-- ============================================
