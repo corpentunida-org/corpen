@@ -13,10 +13,6 @@
             opacity: 1;
         }
     }
-
-    /* =========================================================
-       TARJETAS Y CONTENEDORES (Minimalistas, sin sombra)
-       ========================================================= */
     .category-container {
         border: 1px solid #EFF0F6;
         border-radius: 6px;
@@ -28,9 +24,7 @@
         font-weight: 600;
     }
 
-    /* =========================================================
-       FORMULARIOS Y UX INPUTS (Líneas finas)
-       ========================================================= */
+
     .form-label {
         font-weight: 500;
         font-size: 0.85rem;
@@ -47,10 +41,6 @@
         box-shadow: none !important;
     }
 
-
-    /* =========================================================
-       TARJETAS VISUALES INTERACTIVAS (Radio/Checks flat)
-       ========================================================= */
     .visual-card {
         border-radius: 6px;
         cursor: pointer;
@@ -88,7 +78,6 @@
         opacity: 1;
     }
 
-    /* Etiquetas/Tags Inteligentes */
     .smart-tag {
         border: 1px solid #64748B;
         background: #EFF0F6;
@@ -100,9 +89,6 @@
         color: white;
     }
 
-    /* =========================================================
-       LÍNEA DE TIEMPO (TIMELINE) Limpia
-       ========================================================= */
 
     .timeline-item {
         position: relative;
@@ -121,9 +107,6 @@
         z-index: 2;
     }
 
-    /* =========================================================
-       UTILIDADES, ERRORES Y OVERLAYS
-       ========================================================= */
     .input-error,
     .select2-error+.select2-container .select2-selection {
         border-color: var(--crm-danger) !important;
@@ -134,9 +117,6 @@
         transition: opacity 0.3s ease;
     }
 
-    /* =========================================================
-       ZONA DE ARRASTRE (DROPZONE)
-       ========================================================= */
     .drop-zone-pro {
         border: 1px dashed var(--border-hover);
         background: var(--bg-card);
@@ -149,8 +129,7 @@
     }
 
     #btn-submit-interaccion:disabled {
-        background-color: #64748B !important;
-        /* Color gris suave */
+        background-color: #64748B !important
         border-color: #64748B !important;
         cursor: not-allowed;
         opacity: 0.8;
@@ -779,7 +758,7 @@
                     <label class="form-label text-muted d-block">
                         Notas Finales <span class="text-muted">*</span>
                     </label>
-                    <textarea class="form-control bg-white" name="notes" id="notes" rows="4" spellcheck="true" autocorrect="on" autocapitalize="sentences"
+                    <textarea class="form-control bg-white" name="notes" id="notes" rows="4" lang="es" spellcheck="true" autocorrect="on" autocapitalize="sentences"
                         placeholder="Resumen de la interacción..." required>{{ old('notes', $interaction->notes ?? '') }}</textarea>
                     @error('notes')
                         <div class="text-danger small mt-1">{{ $message }}</div>
@@ -886,15 +865,13 @@
 
     $('input[name="handled_by_agent"]').on('change', toggleAssignment);
     toggleAssignment();
-
-
+   
     const CRMApp = (function($) {
         'use strict';
         // =====================================================================
         // 1. CONFIGURACIÓN Y SELECTORES (DOM Cache)
         // =====================================================================
         const CONFIG = {
-            storageKey: 'interaction_form_draft_v1',
             urls: {
                 searchClients: @json(route('interactions.search-clients') ?? ''),
                 // La ruta cliente show se genera dinámicamente en HistoryManager
@@ -998,7 +975,6 @@
                     .css('width', progress + '%')
                     .attr('aria-valuenow', progress);
 
-                DraftManager.save();
             },
 
 
@@ -1271,7 +1247,6 @@
                 $('.history-item > div').removeClass('border-dark');
                 $(`.history-list #history-item-${id} > div`).addClass('border-dark');
 
-                DraftManager.save();
                 toastr.info('Interacción vinculada');
             },
 
@@ -1279,7 +1254,6 @@
                 $(DOM.parentIdInp).val('');
                 $('#selected-parent-info').fadeOut();
                 $('.history-item > div').removeClass('border-dark');
-                DraftManager.save();
             },
 
             restoreParentSelection: function() {
@@ -1309,57 +1283,7 @@
         // =====================================================================
         // 6. MÓDULO DE BORRADORES (Auto-Guardado)
         // =====================================================================
-        const DraftManager = {
-            debounceTimer: null,
-            save: function() {
-                try {
-                    const data = {};
-                    $(DOM.form).find('input,textarea,select').each(function() {
-                        if (!this.name || this.type === 'file') return;
-                        if (this.type === 'checkbox' || this.type === 'radio') {
-                            if (this.checked) data[this.name] = this.value;
-                        } else {
-                            data[this.name] = $(this).val();
-                        }
-                    });
-                    data.activeTab = $('.tab-button.active').data('tab');
-                    localStorage.setItem(CONFIG.storageKey, JSON.stringify(data));
-                } catch (e) {
-                    console.warn('Borrador no guardado', e);
-                }
-            },
-
-            debouncedSave: function() {
-                clearTimeout(this.debounceTimer);
-                this.debounceTimer = setTimeout(() => this.save(), 700);
-            },
-
-            load: function() {
-                const raw = localStorage.getItem(CONFIG.storageKey);
-                if (!raw) return;
-                try {
-                    const data = JSON.parse(raw);
-                    Object.keys(data).forEach(name => {
-                        if (name === 'activeTab') return;
-                        const $el = $(DOM.form).find(`[name="${name}"]`);
-                        if ($el.is('select')) $el.val(data[name]).trigger('change');
-                        else if ($el.length) $el.val(data[name]);
-                    });
-
-                    if (data.start_time && data.client_id) {
-                        state.startTime = new Date(data.start_time);
-                        Timer.start(); // Retoma cronómetro
-                    }
-
-                    if (data.activeTab) UI.showTab(data.activeTab);
-                } catch (e) {}
-            },
-
-            clear: function() {
-                localStorage.removeItem(CONFIG.storageKey);
-                console.log("Memoria borrada"); // Esto es para que veas en la consola que sí funcionó
-            }
-        };
+        
 
         // =====================================================================
         // 7. MÓDULO DE VALIDACIÓN Y SINCRONIZACIÓN (Form Validator)
@@ -1468,7 +1392,6 @@
                     if (result.isConfirmed || result.value || result === true) {
 
                         // 1. Limpieza del borrador antes de enviar
-                        DraftManager.clear();
 
                         // 2. Envío físico del formulario
                         document.querySelector(DOM.form).submit();
@@ -1640,7 +1563,6 @@
             // Auto-Guardado y Limpieza Visual
             $(DOM.form).on('input change', 'input, textarea, select', function() {
                 UI.cleanError(this);
-                DraftManager.debouncedSave();
             });
 
             // Select2 Limpieza visual
@@ -1729,7 +1651,6 @@
                         $('#interaction-form').off();
 
                         // 2. Borramos la memoria local de tu llave
-                        localStorage.removeItem('interaction_form_draft_v1');
 
                         // 3. Forzamos la recarga de la página
                         window.location.reload();
@@ -1743,11 +1664,9 @@
             initPlugins();
             bindEvents();
             Validation.toggleResponsibility();
-            DraftManager.load();
 
             // Disparar triggers iniciales
             if (!$(DOM.clientSelect).val()) Timer.reset();
-            $('#notes').trigger('input');
             $('input[name="outcome"]:checked').trigger('change');
         }
 
@@ -1788,7 +1707,6 @@
         // Si el formulario es válido, nos aseguramos de matar el caché
         if (this.checkValidity()) {
             // Limpieza de seguridad: si por alguna razón el paso anterior falló, este no falla.
-            localStorage.removeItem('interaction_form_draft_v1');
 
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Guardando...';

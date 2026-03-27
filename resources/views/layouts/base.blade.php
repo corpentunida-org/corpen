@@ -22,7 +22,7 @@
 
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vanillajs-datepicker/dist/css/datepicker.min.css">
-    
+
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/vendors/css/dataTables.bs5.min.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/vendors/css/select2.min.css') }}">
     <link rel="stylesheet" type="text/css" href="{{ asset('assets/vendors/css/select2-theme.min.css') }}">
@@ -59,6 +59,48 @@
     @stack('style')
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        /* Estilo general del panel */
+        #panelNotificaciones.mostrar {
+            display: block !important;
+            opacity: 1 !important;
+            transform: translateY(0);
+            animation: fadeIn 0.25s ease;
+        }
+
+        /* Scroll moderno */
+        #panelNotificaciones::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #panelNotificaciones::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+        }
+
+        /* Animación de aparición */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .list-group-item {
+            border: none !important;
+            border-bottom: 1px solid #eee !important;
+        }
+
+        .list-group-item:hover {
+            background-color: #f8f9fa !important;
+            cursor: pointer;
+        }
+    </style>
 </head>
 
 <body>
@@ -79,10 +121,10 @@
 
                     <a href="{{ route('dashboard') }}" class="b-brand d-flex justify-content-center align-items-center">
                         <!-- ========   change your logo here   ============ -->
-              {{--           <img src="https://www.fecp.org.co/images/CORPENTUNIDA_LOGO_PRINCIPAL.png" alt=""
+                        {{--           <img src="https://www.fecp.org.co/images/CORPENTUNIDA_LOGO_PRINCIPAL.png" alt=""
                             class="logo logo-sm" width="200px" /> --}}
-                            
-                        <img src="{{asset('img/logo.png')}}" alt="logo" class="logo logo-sm" width="200px">
+
+                        <img src="{{ asset('img/logo.png') }}" alt="logo" class="logo logo-sm" width="200px">
                     </a>
                     <div class="navbar-content">
                         <ul class="nxl-navbar">
@@ -252,114 +294,121 @@
 
             {{-- Bootstrap CDN --}}
             {{-- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script> --}}
-
-            <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
-            <script src="{{ asset('assets/vendors/js/vendors.min.js') }}"></script>
-            <!-- vendors.min.js {always must need to be top} -->
-            <!-- daterangepicker -->
-            <script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
-            
-
-            <!-- circle progress -->
-            <script src="https://cdn.jsdelivr.net/npm/jquery-circle-progress@1.2.2/dist/circle-progress.min.js"></script>
-
-            <!-- datepicker -->
-            <script src="https://cdn.jsdelivr.net/npm/vanillajs-datepicker/dist/js/datepicker.min.js"></script>
-            <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-            <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-
-            <script src="{{ asset('assets/vendors/js/dataTables.min.js') }}"></script>
-            <script src="{{ asset('assets/vendors/js/dataTables.bs5.min.js') }}"></script>
-            <script src="{{ asset('assets/vendors/js/select2.min.js') }}"></script>
-            <script src="{{ asset('assets/vendors/js/select2-active.min.js') }}"></script>
-
-            <script src="{{ asset('assets/js/customers-init.min.js') }}"></script>
-            <script src="{{ asset('assets/js/theme-customizer-init.min.js') }}"></script>
-            <!--! BEGIN: Vendors JS !-->
-
-            <script src="{{ asset('assets/vendors/js/daterangepicker.min.js') }}"></script>
-            <script src="{{ asset('assets/vendors/js/apexcharts.min.js') }}"></script>
-            <script src="{{ asset('assets/vendors/js/circle-progress.min.js') }}"></script>
-
-            <!--! END: Vendors JS !-->
-
-            <script src="{{ asset('assets/vendors/js/tui-code-snippet.min.js') }}"></script>
-            <script src="{{ asset('assets/vendors/js/tui-time-picker.min.js') }}"></script>
-            <script src="{{ asset('assets/vendors/js/tui-date-picker.min.js') }}"></script>
-            <script src="{{ asset('assets/vendors/js/moment.min.js') }}"></script>
-            <script src="{{ asset('assets/vendors/js/chance.min.js') }}"></script>
-            <script src="{{ asset('assets/vendors/js/tui-calendar.min.js') }}"></script>
-            <script src="{{ asset('assets/vendors/js/tui-calendars.min.js') }}"></script>
-            <script src="{{ asset('assets/vendors/js/tui-schedules.min.js') }}"></script>
-
-
-            <!--! BEGIN: Apps Init  !-->
-            <script src="{{ asset('assets/js/common-init.min.js') }}"></script>
-            <script src="{{ asset('assets/js/invoice-view-init.min.js') }}"></script>
-            <script src="{{ asset('assets/js/dashboard-init.min.js') }}"></script>
-            <script src="{{ asset('assets/js/theme-customizer-init.min.js') }}"></script>
-
-            <script src="{{ asset('assets/js/projects-init.min.js') }}"></script>
-            <script src="{{ asset('assets/js/payment-init.min.js') }}"></script>
-
-            <!--! END: Apps Init !-->
-
-            <script src="{{ asset('assets/vendors/js/tagify.min.js') }}"></script>
-            <script src="{{ asset('assets/vendors/js/tagify-data.min.js') }}"></script>
-            <script src="{{ asset('assets/vendors/js/quill.min.js') }}"></script>
-            {{-- <script src="{{ asset('assets/vendors/js/datepicker.min.js') }}"></script>             --}}
-
-            <script src="{{ asset('assets/js/proposal-create-init.min.js') }}"></script>
-            <!--! END: Apps Init !-->
-            @stack('scripts')
         @endif
-    @endauth
-    @auth
         @include('components.messenger-sidebar')
     @endauth
+    @guest()
+        <nav class="nxl-navigation">
+            <div class="navbar-wrapper">
+                <a href="{{ route('dashboard') }}" class="b-brand d-flex justify-content-center align-items-center">
+                    <img src="{{ asset('img/logo.png') }}" alt="logo" class="logo logo-sm" width="200px">
+                </a>
+                <div class="navbar-content">
+                    <ul class="nxl-navbar">
+                        <li class="nxl-item nxl-caption">
+                            <label>Menu</label>
+                        </li>
+                        @include('layouts.actions.Asociado')
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <header class="nxl-header">
+            <div class="header-wrapper">
+                <!--! [Start] Header Left !-->
+                <div class="header-left d-flex align-items-center gap-4 mt-3">
+                    <!--! [Start] nxl-head-mobile-toggler !-->
+                    <a href="javascript:void(0);" class="nxl-head-mobile-toggler" id="mobile-collapse">
+                        <div class="hamburger hamburger--arrowturn">
+                            <div class="hamburger-box">
+                                <div class="hamburger-inner"></div>
+                            </div>
+                        </div>
+                    </a>
+                    <div class="nxl-navigation-toggle">
+                        <a href="javascript:void(0);" id="menu-mini-button">
+                            <i class="feather-align-left"></i>
+                        </a>
+                        <a href="javascript:void(0);" id="menu-expend-button" style="display: none">
+                            <i class="feather-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="header-right ms-auto">
+                    <div class="d-flex align-items-center">
+
+                    </div>
+                </div>
+            </div>
+        </header>
+        <main class="nxl-container">
+            <div class="nxl-content">
+                {{ $slot }}
+            </div>
+        </main>
+    @endguest
 </body>
 
-<style>
-    /* Estilo general del panel */
-    #panelNotificaciones.mostrar {
-        display: block !important;
-        opacity: 1 !important;
-        transform: translateY(0);
-        animation: fadeIn 0.25s ease;
-    }
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+<script src="{{ asset('assets/vendors/js/vendors.min.js') }}"></script>
+<!-- vendors.min.js {always must need to be top} -->
+<!-- daterangepicker -->
+<script src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
 
-    /* Scroll moderno */
-    #panelNotificaciones::-webkit-scrollbar {
-        width: 6px;
-    }
 
-    #panelNotificaciones::-webkit-scrollbar-thumb {
-        background-color: rgba(0, 0, 0, 0.2);
-        border-radius: 4px;
-    }
+<!-- circle progress -->
+<script src="https://cdn.jsdelivr.net/npm/jquery-circle-progress@1.2.2/dist/circle-progress.min.js"></script>
 
-    /* Animación de aparición */
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(-5px);
-        }
+<!-- datepicker -->
+<script src="https://cdn.jsdelivr.net/npm/vanillajs-datepicker/dist/js/datepicker.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
+<script src="{{ asset('assets/vendors/js/dataTables.min.js') }}"></script>
+<script src="{{ asset('assets/vendors/js/dataTables.bs5.min.js') }}"></script>
+<script src="{{ asset('assets/vendors/js/select2.min.js') }}"></script>
+<script src="{{ asset('assets/vendors/js/select2-active.min.js') }}"></script>
 
-    .list-group-item {
-        border: none !important;
-        border-bottom: 1px solid #eee !important;
-    }
+<script src="{{ asset('assets/js/customers-init.min.js') }}"></script>
+<script src="{{ asset('assets/js/theme-customizer-init.min.js') }}"></script>
+<!--! BEGIN: Vendors JS !-->
 
-    .list-group-item:hover {
-        background-color: #f8f9fa !important;
-        cursor: pointer;
-    }
-</style>
+<script src="{{ asset('assets/vendors/js/daterangepicker.min.js') }}"></script>
+<script src="{{ asset('assets/vendors/js/apexcharts.min.js') }}"></script>
+<script src="{{ asset('assets/vendors/js/circle-progress.min.js') }}"></script>
+
+<!--! END: Vendors JS !-->
+
+<script src="{{ asset('assets/vendors/js/tui-code-snippet.min.js') }}"></script>
+<script src="{{ asset('assets/vendors/js/tui-time-picker.min.js') }}"></script>
+<script src="{{ asset('assets/vendors/js/tui-date-picker.min.js') }}"></script>
+<script src="{{ asset('assets/vendors/js/moment.min.js') }}"></script>
+<script src="{{ asset('assets/vendors/js/chance.min.js') }}"></script>
+<script src="{{ asset('assets/vendors/js/tui-calendar.min.js') }}"></script>
+<script src="{{ asset('assets/vendors/js/tui-calendars.min.js') }}"></script>
+<script src="{{ asset('assets/vendors/js/tui-schedules.min.js') }}"></script>
+
+
+<!--! BEGIN: Apps Init  !-->
+<script src="{{ asset('assets/js/common-init.min.js') }}"></script>
+<script src="{{ asset('assets/js/invoice-view-init.min.js') }}"></script>
+<script src="{{ asset('assets/js/dashboard-init.min.js') }}"></script>
+<script src="{{ asset('assets/js/theme-customizer-init.min.js') }}"></script>
+
+<script src="{{ asset('assets/js/projects-init.min.js') }}"></script>
+<script src="{{ asset('assets/js/payment-init.min.js') }}"></script>
+
+<!--! END: Apps Init !-->
+
+<script src="{{ asset('assets/vendors/js/tagify.min.js') }}"></script>
+<script src="{{ asset('assets/vendors/js/tagify-data.min.js') }}"></script>
+<script src="{{ asset('assets/vendors/js/quill.min.js') }}"></script>
+{{-- <script src="{{ asset('assets/vendors/js/datepicker.min.js') }}"></script>             --}}
+
+<script src="{{ asset('assets/js/proposal-create-init.min.js') }}"></script>
+<!--! END: Apps Init !-->
+@stack('scripts')
+
 </html>

@@ -842,6 +842,24 @@
         .carousel-dot.active {
             background-color: #3a7bd5;
         }
+
+        .btn-pulse {
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
     </style>
     <div id="inicio">
         <div>
@@ -903,9 +921,9 @@
             <div class="carousel-dots" id="carousel-dots"></div>
         </div>
     </div>
-    <div class="row justify-content-center mb-4" style="margin-bottom: 50px;">
-        <div class="col-md-8">
-            <div class="card stretch stretch-full mt-5">
+    <div class="row justify-content-center mb-4">
+        <div class="col-md-8 py-4">
+            <div class="card stretch stretch-full mt-5" style="margin-bottom: 50px;">
                 <div class="card-header">
                     <div>
                         <h5>Lineamientos para el uso de los apartamentos</h5>
@@ -915,7 +933,7 @@
                         </span>
                     </div>
                 </div>
-                <div class="card-body mb-1">
+                <div class="card-body pb-0">
                     <h6 class="fw-bold">Reservas</h6>
                     <ul class="mb-2">
                         <li>Las reservas deben realizarse con anticipación a través del enlace publicado en los
@@ -974,22 +992,20 @@
                         Deseamos que estos espacios sean de bendición, descanso y renovación para cada familia
                         pastoral.
                     </p>
+                    <div class="d-flex justify-content-end mb-0">
+                        <a class="btn btn-success btn-pulse" href="{{ route('reserva.reserva.index') }}"><i class="bi bi-plus
+                            me-2"></i> Hacer una reserva</a>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+    <div style="height: 50px;"></div>
     <script>
         // Navegación suave
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function(e) {
                 e.preventDefault();
-
-                // Si estamos en móvil, cerrar el menú al hacer clic en un enlace
-                const mobileMenu = document.getElementById('mobile-menu');
-                if (window.innerWidth <= 768) {
-                    mobileMenu.classList.remove('active');
-                }
-
                 document.querySelector(this.getAttribute('href')).scrollIntoView({
                     behavior: 'smooth'
                 });
@@ -1014,12 +1030,6 @@
              }
          });*/
 
-        // Ajustar menú al cambiar el tamaño de la pantalla
-        window.addEventListener('resize', function() {
-            if (window.innerWidth > 768 && mobileMenu.classList.contains('active')) {
-                mobileMenu.classList.remove('active');
-            }
-        });
 
         // Carrusel de imágenes
         document.addEventListener('DOMContentLoaded', function() {
