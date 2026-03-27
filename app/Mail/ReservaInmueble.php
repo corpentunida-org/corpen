@@ -23,7 +23,7 @@ class ReservaInmueble extends Mailable
     /**
      * Create a new message instance.
      */
-    public function __construct(string $nombre, string $texto, string $asunto = 'Sistema de reservas Corpentunida', string $condiciones = null)
+    public function __construct(string $nombre, string $texto, string $asunto = 'Sistema de reservas Corpentunida', bool $condiciones = false)
     {
         $this->nombre = $nombre;
         $this->texto = $texto;

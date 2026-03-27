@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+{{-- <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -505,7 +505,7 @@
 
         <div class="carousel-container">
             <div class="carousel" id="apartment-carousel">
-                @foreach($inmueble->fotosrel as $foto)
+                @foreach ($inmueble->fotosrel as $foto)
                     <div class="carousel-slide">
                         <img src="{{$foto->ruta}}" alt="photo">
                     </div>
@@ -551,7 +551,7 @@
     </div>
 </section>
 
-<!--     <section id="testimonios" style="background-color: #eef2f7;">
+<!--<section id="testimonios" style="background-color: #eef2f7;">
     <div class="container">
         <h2>Lo que Dicen Nuestros Huéspedes</h2>
         <div class="testimonials">
@@ -740,3 +740,348 @@
 </script>
 </body>
 </html>
+ --}}
+<x-base-layout>
+    <style>
+        #inicio {
+            background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('{{ asset('img/9.jpeg') }}') no-repeat center;
+            background-size: cover;
+            color: white;
+            text-align: center;
+            padding: 150px 20px;
+            position: relative;
+        }
+
+        .feature:hover {
+            transform: translateY(-10px);
+        }
+
+        .carousel-container {
+            max-width: 800px;
+            margin: 0 auto;
+            position: relative;
+            overflow: hidden;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .carousel {
+            display: flex;
+            transition: transform 0.5s ease;
+            height: 450px;
+        }
+
+        .carousel-slide {
+            min-width: 100%;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .carousel-slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .carousel-caption {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .carousel-nav {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .carousel-nav button {
+            background: none;
+            border: none;
+            font-size: 24px;
+            margin: 0 10px;
+            cursor: pointer;
+            color: #3a7bd5;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .carousel-nav button:hover {
+            background-color: #3a7bd5;
+            color: white;
+        }
+
+        .carousel-dots {
+            display: flex;
+            justify-content: center;
+            margin-top: 15px;
+        }
+
+        .carousel-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #ccc;
+            margin: 0 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .carousel-dot.active {
+            background-color: #3a7bd5;
+        }
+
+        .btn-pulse {
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+        }
+    </style>
+    <div id="inicio">
+        <div>
+            <h1 class="page-title fs-1" style="text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); color:white;">
+                {{ $inmueble->name }}</h1>
+            <p>Querido asociado disfrute de un apartamento completamente amoblado con todas las comodidades para una
+                estadía inolvidable</p>
+        </div>
+    </div>
+    <div class="row g-3">
+        <div class="col-12 col-md-4">
+            <div class="card h-100 feature">
+                <div class="card-body rounded-3 text-center">
+                    <i class="fas fa-bed fs-1 text-primary"></i>
+                    <h3 class="mt-2">Confort Inigualable</h3>
+                    <p class="m-0">Habitaciones diseñadas para ofrecer el máximo confort y descanso.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-4">
+            <div class="card h-100 feature">
+                <div class="card-body rounded-3 text-center">
+                    <i class="fas fa-wifi fs-1 text-primary"></i>
+                    <h3 class="mt-2">Internet de Alta Velocidad</h3>
+                    <p>Conexión Wi-Fi gratuita en todo el apartamento para mantenerse conectado.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-4">
+            <div class="card h-100 feature">
+                <div class="card-body rounded-3 text-center">
+                    <i class="fas fa-utensils fs-1 text-primary"></i>
+                    <h3 class="mt-2">Cocina Equipada</h3>
+                    <p>Cocina completamente equipada con electrodomésticos modernos y utensilios.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="container text-center mt-5">
+        <h2 class="page-title fs-1 text-primary mt-2 mb-4">
+            Galería
+        </h2>
+        <div class="col-12">
+            <div class="carousel-container">
+                <div class="carousel" id="apartment-carousel">
+                    @foreach ($inmueble->fotosrel as $foto)
+                        <div class="carousel-slide">
+                            <img src="{{ $foto->ruta }}" alt="photo">
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+            <div class="carousel-nav">
+                <button id="prev-slide"><i class="fas fa-chevron-left"></i></button>
+                <button id="next-slide"><i class="fas fa-chevron-right"></i></button>
+            </div>
+            <div class="carousel-dots" id="carousel-dots"></div>
+        </div>
+    </div>
+    <div class="row justify-content-center mb-4">
+        <div class="col-md-8 py-4">
+            <div class="card stretch stretch-full mt-5" style="margin-bottom: 50px;">
+                <div class="card-header">
+                    <div>
+                        <h5>Lineamientos para el uso de los apartamentos</h5>
+                        <span class="fs-12 text-muted">
+                            Con el fin de garantizar un uso adecuado, equitativo y organizado de estos espacios,
+                            se establecen las siguientes condiciones:
+                        </span>
+                    </div>
+                </div>
+                <div class="card-body pb-0">
+                    <h6 class="fw-bold">Reservas</h6>
+                    <ul class="mb-2">
+                        <li>Las reservas deben realizarse con anticipación a través del enlace publicado en los
+                            grupos
+                            oficiales.</li>
+                        <li>El asociado debe estar presente durante la estadía.</li>
+                        <li>❌ No se permite reservar para familiares, amigos o terceros.</li>
+                    </ul>
+                    <h6 class="fw-bold">Proceso de pago</h6>
+                    <p>
+                        El asociado debe realizar el aporte correspondiente de manera oportuna.
+                        Una vez hecha la pre-reserva, el sistema bloqueará automáticamente los días
+                        seleccionados.
+                    </p>
+                    <p>
+                        Tendrá <span class="text-danger">3 días</span> para realizar el pago y cargar el
+                        comprobante.
+                        De lo contrario, la fecha quedará libre para otro asociado.
+                    </p>
+                    <p>
+                        <strong class="text-danger">Importante:</strong><br>
+                        El aporte no corresponde a un alquiler, ya que el uso del apartamento es gratuito.
+                        Este valor cubre únicamente gastos de aseo y administración.
+                    </p>
+
+                    <h6 class="fw-bold">Condiciones de uso</h6>
+                    <ul>
+                        <li>⏳ Estadía máxima: 5 días / 4 noches</li>
+                        <li>Capacidad máxima: 6 personas</li>
+                        <li>No se permite el ingreso de mascotas</li>
+                        <li>El asociado es responsable del cuidado de menores y adultos mayores</li>
+                    </ul>
+                    <h6 class="fw-bold">Cancelaciones y cambios</h6>
+                    <ul>
+                        <li>No se realizarán devoluciones de dinero</li>
+                        <li>Reprogramaciones solo en casos de fuerza mayor, sujetas a evaluación</li>
+                    </ul>
+                    <h6 class="fw-bold">Entrega y cuidado del inmueble</h6>
+                    <p>
+                        El apartamento se entrega en óptimas condiciones y debe devolverse en el mismo estado.
+                        Cualquier daño será responsabilidad del asociado.
+                    </p>
+                    <h6 class="fw-bold">Logística de ingreso</h6>
+                    <p>
+                        En cada ciudad (Santa Marta y Armenia) hay un encargado de la entrega de llaves.
+                        Se contactará previamente al asociado.
+                    </p>
+                    <p>
+                        Se debe firmar un acta al momento de ingreso y salida del inmueble.
+                    </p>
+                    <p class="small text-danger">
+                        Nota: El valor aportado no incluye costos adicionales de administración o uso de zonas
+                        comunes.
+                    </p>
+                    <p class="text-muted small">
+                        Deseamos que estos espacios sean de bendición, descanso y renovación para cada familia
+                        pastoral.
+                    </p>
+                    <div class="d-flex justify-content-end mb-0">
+                        <a class="btn btn-success btn-pulse" href="{{ route('reserva.reserva.index') }}"><i class="bi bi-plus
+                            me-2"></i> Hacer una reserva</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div style="height: 50px;"></div>
+    <script>
+        // Navegación suave
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Menú móvil
+        /*const menuToggle = document.getElementById('menu-toggle');
+        const mobileMenu = document.getElementById('mobile-menu');*/
+
+        /*menuToggle.addEventListener('click', function() {
+            mobileMenu.classList.toggle('active');
+        });*/
+
+        // Cerrar menú móvil cuando se hace clic fuera de él
+        /* document.addEventListener('click', function(event) {
+             const isClickInsideMenu = mobileMenu.contains(event.target);
+             const isClickOnToggle = menuToggle.contains(event.target);
+
+             if (!isClickInsideMenu && !isClickOnToggle && mobileMenu.classList.contains('active')) {
+                 mobileMenu.classList.remove('active');
+             }
+         });*/
+
+
+        // Carrusel de imágenes
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log("hola?");
+            const carousel = document.getElementById('apartment-carousel');
+            const slides = carousel.querySelectorAll('.carousel-slide');
+            const prevBtn = document.getElementById('prev-slide');
+            const nextBtn = document.getElementById('next-slide');
+            const dotsContainer = document.getElementById('carousel-dots');
+
+            let currentIndex = 0;
+
+            slides.forEach((_, index) => {
+                const dot = document.createElement('div');
+                dot.classList.add('carousel-dot');
+
+                if (index === 0) dot.classList.add('active');
+
+                dot.addEventListener('click', () => {
+                    goToSlide(index);
+                });
+
+                dotsContainer.appendChild(dot);
+            });
+
+            const dots = dotsContainer.querySelectorAll('.carousel-dot');
+
+            function updateCarousel() {
+                carousel.style.transform = `translateX(-${currentIndex * 100}%)`;
+                dots.forEach((dot, index) => {
+                    dot.classList.toggle('active', index === currentIndex);
+                });
+            }
+
+            function nextSlide() {
+                currentIndex = (currentIndex + 1) % slides.length;
+                updateCarousel();
+            }
+
+            function prevSlide() {
+                currentIndex = (currentIndex - 1 + slides.length) % slides.length;
+                updateCarousel();
+            }
+
+            function goToSlide(index) {
+                currentIndex = index;
+                updateCarousel();
+            }
+
+            nextBtn.addEventListener('click', nextSlide);
+            prevBtn.addEventListener('click', prevSlide);
+
+        });
+    </script>
+</x-base-layout>
