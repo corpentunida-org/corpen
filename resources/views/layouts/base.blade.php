@@ -320,8 +320,6 @@
     @endauth
 </body>
 
-
-
 <style>
     /* Estilo general del panel */
     #panelNotificaciones.mostrar {
@@ -364,8 +362,4 @@
         cursor: pointer;
     }
 </style>
-
-
-
-
 </html>
