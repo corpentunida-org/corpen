@@ -313,6 +313,9 @@
             @stack('scripts')
         @endif
     @endauth
+    @auth
+        @include('components.messenger-sidebar')
+    @endauth
 </body>
 
 
