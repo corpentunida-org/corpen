@@ -32,7 +32,6 @@ class ResReservaController extends Controller implements HasMiddleware
     public function index()
     {
         $reservas = Res_reserva::where('user_id', auth()->user()->id)
-            ->where('nid', '!=', '0000000000')
             ->where('puntuacion_asociado', null)
             ->orderBy('fecha_inicio', 'desc')
             ->get();
@@ -59,7 +58,7 @@ class ResReservaController extends Controller implements HasMiddleware
         }
         date_default_timezone_set('America/Bogota');
         $fecha = date('Y-m-d');
-        $reservas = Res_reserva::where('res_inmueble_id', $id)->where('fecha_fin', '>=', $fecha)->where('nid', '!=', '0000000000')->orderBy('fecha_inicio', 'asc')->get();
+        $reservas = Res_reserva::where('res_inmueble_id', $id)->where('fecha_fin', '>=', $fecha)->orderBy('fecha_inicio', 'asc')->get();
         return view('reserva.asociado.create', compact('inmueble', 'reservas'));
     }
 
@@ -199,19 +198,6 @@ class ResReservaController extends Controller implements HasMiddleware
     public function destroy($id)
     {
         $reserva = Res_reserva::findOrFail($id);
-        $reserva->res_status_id = 4;
-        $reserva->save();
-
-        $reserva_antes = Res_reserva::find($reserva->reserva_antes);
-        if ($reserva_antes) {
-            $reserva_antes->delete();
-        }
-
-        $reserva_despues = Res_reserva::find($reserva->reserva_despues);
-        if ($reserva_despues) {
-            $reserva_despues->delete();
-        }
-
         $reserva->delete();
 
         return redirect()->route('reserva.reserva.index')->with('success', 'Reserva eliminada con éxito');
@@ -248,8 +234,7 @@ class ResReservaController extends Controller implements HasMiddleware
     public function indexConfirmacion()
     {
         $reservas = Res_reserva::select('id', 'res_inmueble_id', 'res_status_id', 'user_id', 'nid', 'fecha_inicio', 'fecha_fin')
-            ->where('res_status_id', [2])
-            ->where('nid', '<>', '0000000000')
+            ->where('res_status_id', [2])            
             ->orderBy('fecha_inicio', 'asc')
             ->with(['tercero', 'user'])
             ->get();
@@ -301,9 +286,9 @@ class ResReservaController extends Controller implements HasMiddleware
             $reserva->update([
                 'res_status_id' => 3,
                 'puntuacion_admin' => (int) $request->calificacion,
-                'observacion_recibo' => $request->input('comentario'),
-                'fecha_recibo' => now()->toDateString(),
-                'user_id_recibo' => auth()->user()->id,
+                'observacion_recibido' => $request->input('comentario'),
+                'fecha_recibido' => now()->toDateString(),
+                'user_id_recibido' => auth()->user()->id,
             ]);
             $texto = 'Queremos agradecerle por haber elegido nuestro ' . $reserva->res_inmueble->name . ' Ha sido un placer recibirle y esperamos que haya disfrutado de su tiempo y que su experiencia haya sido cómoda y agradable. <br> Su opinión es muy importante para nosotros, ya que nos ayuda a seguir mejorando nuestro servicio. Le invitamos cordialmente a dejar una reseña sobre su estadía dentro de la <a href="https://app.corpentunida.org.co" target="_blank">app.corpentunida.org.co</a>. ¡Dios le bendiga!';
             $titulomail = 'Califica tu estadía';
@@ -322,7 +307,6 @@ class ResReservaController extends Controller implements HasMiddleware
     public function indexHistorico()
     {
         $historicosres = Res_reserva::select('id', 'res_inmueble_id', 'res_status_id', 'user_id', 'nid', 'fecha_inicio', 'fecha_fin')
-            ->where('nid', '!=', '0000000000')
             ->with(['tercero:nom_ter'])
             ->orderby('fecha_solicitud', 'desc')
             ->get();
