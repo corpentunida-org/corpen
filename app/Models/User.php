@@ -28,6 +28,7 @@ use App\Models\Soportes\ScpSoporte;
 use App\Models\Flujo\WorUsuario;
 use App\Models\Correspondencia\CorrespondenciaProceso;
 use App\Models\Correspondencia\ComunicacionSalida;
+use App\Models\Archivo\GdoEmpleado;
 
 class User extends Authenticatable
 {
@@ -119,7 +120,35 @@ class User extends Authenticatable
     {
         return GdoCargo::where('correo_corporativo', $this->email)->first();
     }
+    // ==========================================
+    // NUEVA RELACIÓN: USER -> EMPLEADO
+    // ==========================================
+    /**
+     * Relación con el modelo GdoEmpleado.
+     * Un usuario tiene un perfil de empleado asociado por cédula.
+     */
+    public function perfilEmpleado()
+    {
+        // hasOne(ModeloDestino, 'llave_foranea_destino', 'llave_local_origen')
+        return $this->hasOne(GdoEmpleado::class, 'cedula', 'nid');
+    }
 
+    /**
+     * Accessor para obtener directamente la URL de la foto desde S3 si existe.
+     * Facilita llamar a $user->foto_perfil en cualquier vista.
+     */
+    public function getFotoPerfilAttribute()
+    {
+        $empleado = $this->perfilEmpleado;
+        
+        if ($empleado && $empleado->ubicacion_foto) {
+            // Usa la ruta que definiste en web.php
+            return route('archivo.empleado.verFoto', ['id' => $empleado->id]);
+        }
+        
+        return null; // Retorna null si no tiene foto, así puedes manejar el "fallback" (iniciales) en la vista
+    }
+    // ==========================================
     public function soportesEscalados()
     {
         return $this->hasMany(ScpSoporte::class, 'usuario_escalado', 'id');
