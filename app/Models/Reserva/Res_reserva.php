@@ -34,9 +34,9 @@ class Res_reserva extends Model
         'revision_fecha',
         'revision_comentario',
         'puntuacion_admin', //reseña admin
-        'observacion_recibo', //reseña admin
-        'fecha_recibo', //reseña admin
-        'user_id_recibo', //reseña admin
+        'observacion_recibido', //reseña admin
+        'fecha_recibido', //reseña admin
+        'user_id_recibido', //reseña admin
         'retroalimentacion', //reseña asociado
         'fecha_retroalimentacion', //reseña asociado
         'puntuacion_asociado', //reseña asociado
