@@ -133,8 +133,9 @@ class ResReservaController extends Controller implements HasMiddleware
             'celular' => $request->celular,
             'celular_respaldo' => $request->celulartwo,
         ]);
+        $inmueble = Res_inmueble::findOrFail($inmueble_id);
         $texto = 'Hemos recibido su solicitud de reserva con ingreso el ' . $request->input('fechaInicio') . ' y salida el ' . $request->input('endDate') . '. En las próximas horas, un funcionario se comunicará con usted para validar los datos de la reserva. ¡Dios le bendiga!.';
-        Mail::to(auth()->user()->email)->send(new ReservaInmueble(auth()->user()->name, $texto, 'Reserva de Inmueble', true));
+        Mail::to(auth()->user()->email)->send(new ReservaInmueble(auth()->user()->name, $texto, 'Reserva de Inmueble ' . $inmueble->name, true, $inmueble));
         return redirect()->route('reserva.reserva.index')->with('success', 'Reserva creada con éxito');
 
         //INSERT CODIGO ANTERIOR

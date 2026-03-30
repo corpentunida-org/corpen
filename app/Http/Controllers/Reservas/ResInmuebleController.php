@@ -7,6 +7,8 @@ use App\Models\Reserva\Res_inmueble;
 use App\Models\Reserva\Res_inmueble_foto;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ReservaInmueble;
 
 class ResInmuebleController extends Controller
 {
@@ -25,8 +27,7 @@ class ResInmuebleController extends Controller
                     return $foto;
                 });
                 return $inmueble;
-            });
-
+            });        
         return view('reserva.inmuebles.index', compact('inmuebles'));
     }
 
@@ -84,6 +85,7 @@ class ResInmuebleController extends Controller
             $foto->ruta = Storage::disk('s3')->temporaryUrl($foto->attached, now()->addMinutes(5));
             return $foto;
         });
+
         return view('reserva.index', compact('inmueble'));
     }
 
