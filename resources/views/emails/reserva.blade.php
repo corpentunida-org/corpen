@@ -639,31 +639,37 @@
 
                                                             <h4 style="margin-top:15px; margin-bottom:5px;">Reservas
                                                             </h4>
+
                                                             <p style="margin-bottom:10px;">
                                                                 Las reservas deben realizarse con anticipación a través
                                                                 del enlace que será publicado en los grupos oficiales de
                                                                 pastores.
                                                             </p>
-                                                            <ul style="padding-left:20px; margin-bottom:10px;">
-                                                                <li>El asociado debe estar presente durante la estadía.
-                                                                </li>
-                                                                <li style="color:#d9534f;"><strong>No se permite
-                                                                        reservar para familiares, amigos o
-                                                                        terceros.</strong></li>
-                                                            </ul>
+
+                                                            <p style="margin-bottom:10px;">
+                                                                El asociado debe estar presente durante la estadía.
+                                                                <br>
+                                                                <strong style="color:#d9534f;">
+                                                                    No se permite reservar para familiares, amigos o
+                                                                    terceros.
+                                                                </strong>
+                                                            </p>
 
                                                             <h4 style="margin-top:15px; margin-bottom:5px;">Proceso de
                                                                 pago</h4>
+
                                                             <p style="margin-bottom:10px;">
                                                                 El asociado debe realizar el aporte correspondiente de
                                                                 manera oportuna.
                                                             </p>
+
                                                             <p style="margin-bottom:10px;">
                                                                 Una vez hecha la pre-reserva, el sistema bloqueará
                                                                 automáticamente los días seleccionados. El asociado
-                                                                contará con <strong>3 días</strong> para realizar el
-                                                                aporte y cargar el comprobante. De lo contrario, la
-                                                                fecha quedará libre para otro asociado.
+                                                                contará
+                                                                con <strong>3 días</strong> para realizar el aporte y
+                                                                cargar el comprobante. De lo contrario, la fecha quedará
+                                                                libre para otro asociado.
                                                             </p>
 
                                                             <p style="margin-bottom:10px;">
@@ -679,28 +685,35 @@
 
                                                             <h4 style="margin-top:15px; margin-bottom:5px;">Condiciones
                                                                 de uso</h4>
-                                                            <ul style="padding-left:20px; margin-bottom:10px;">
-                                                                <li>Capacidad máxima: 6 personas.</li>
-                                                                <li>No se permite el ingreso de mascotas.</li>
-                                                                <li>El asociado es responsable del cuidado de menores de
-                                                                    edad y adultos mayores que le acompañen.</li>
-                                                            </ul>
+
+                                                            <p style="margin-bottom:10px;">Capacidad máxima: 6
+                                                                personas.</p>
+                                                            <p style="margin-bottom:10px;">No se permite el ingreso de
+                                                                mascotas.</p>
+                                                            <p style="margin-bottom:10px;">
+                                                                El asociado es responsable del cuidado de menores de
+                                                                edad y adultos mayores que le acompañen.
+                                                            </p>
 
                                                             <h4 style="margin-top:15px; margin-bottom:5px;">
                                                                 Cancelaciones y cambios</h4>
-                                                            <ul style="padding-left:20px; margin-bottom:10px;">
-                                                                <li>No se realizarán devoluciones de dinero.</li>
-                                                                <li>Se permitirá reprogramación únicamente en casos de
-                                                                    fuerza mayor, previa evaluación de la Junta y
-                                                                    disponibilidad de fechas.</li>
-                                                            </ul>
+
+                                                            <p style="margin-bottom:10px;">No se realizarán
+                                                                devoluciones de dinero.</p>
+                                                            <p style="margin-bottom:10px;">
+                                                                Se permitirá reprogramación únicamente en casos de
+                                                                fuerza mayor, previa evaluación de la Junta y
+                                                                disponibilidad de fechas.
+                                                            </p>
 
                                                             <h4 style="margin-top:15px; margin-bottom:5px;">Entrega y
                                                                 cuidado del inmueble</h4>
+
                                                             <p style="margin-bottom:10px;">
                                                                 El apartamento se entrega en óptimas condiciones, y se
                                                                 espera recibirlo en el mismo estado.
                                                             </p>
+
                                                             <p style="margin-bottom:10px;">
                                                                 Cualquier daño o deterioro será responsabilidad del
                                                                 asociado que esté haciendo uso del inmueble en ese
@@ -709,11 +722,13 @@
 
                                                             <h4 style="margin-top:15px; margin-bottom:5px;">Logística
                                                                 de ingreso</h4>
+
                                                             <p style="margin-bottom:10px;">
                                                                 En cada ciudad (Santa Marta y Armenia) hay una persona
                                                                 encargada de la entrega de llaves, quien se pondrá en
                                                                 contacto con el asociado antes de la fecha de ingreso.
                                                             </p>
+
                                                             <p style="margin-bottom:10px;">
                                                                 Al momento del ingreso, el asociado debe firmar un acta
                                                                 del estado en que recibe el inmueble, y lo mismo al
@@ -722,8 +737,8 @@
 
                                                             <p style="margin-top:15px;">
                                                                 Deseamos que estos espacios sean de bendición, descanso
-                                                                y renovación para cada familia pastoral, permitiendo que
-                                                                continúen su labor ministerial con nuevas fuerzas y
+                                                                y renovación para cada familia pastoral, permitiendo
+                                                                que continúen su labor ministerial con nuevas fuerzas y
                                                                 mayor eficiencia.
                                                             </p>
 
@@ -776,8 +791,8 @@
                                             <td align="center" height="50" style="height:50px;">
                                     <![endif]-->
                                         <singleline>
-                                            <a href="https://app.corpentunida.org.co/apto-santamarta" mc:edit
-                                                data-button data-text-style="Buttons"
+                                            <a href="{{ url(route('reserva.crudinmuebles.show', $inmueble->id)) }}"
+                                                mc:edit data-button data-text-style="Buttons"
                                                 style="font-family:'Barlow',Arial,Helvetica,sans-serif;font-size:16px;line-height:20px;font-weight:700;font-style:normal;color:#FFFFFF;text-decoration:none;letter-spacing:0px;padding: 15px 35px 15px 35px;display: inline-block;"><span>Ver
                                                     detalles del Apartamento</span></a>
                                         </singleline>
