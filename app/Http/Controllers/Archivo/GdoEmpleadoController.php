@@ -8,6 +8,7 @@ use App\Models\Archivo\GdoDocsEmpleados;
 use App\Models\Archivo\GdoTipoDocumento;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log; // Importar la clase Log para mejor manejo de errores
 
@@ -198,7 +199,7 @@ class GdoEmpleadoController extends Controller
         $empleado = GdoEmpleado::findOrFail($id);
         if (!$empleado->ubicacion_foto || !Storage::disk('s3')->exists($empleado->ubicacion_foto)) {
             // Devolver una imagen por defecto si no existe la foto
-            return response()->file(public_path('assets/media/avatars/blank.png'));
+            return Response::file(public_path('assets/media/avatars/blank.png'));
         }
         // Redirigir a la URL temporal de S3
         return redirect(Storage::disk('s3')->temporaryUrl($empleado->ubicacion_foto, now()->addMinutes(20)));
