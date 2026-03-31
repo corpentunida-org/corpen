@@ -26,6 +26,7 @@ use App\Models\Correspondencia\Trd;
 use App\Models\Correspondencia\Correspondencia;
 use App\Models\Soportes\ScpSoporte;
 use App\Models\Flujo\WorUsuario;
+use App\Models\Flujo\Workflow;
 use App\Models\Correspondencia\CorrespondenciaProceso;
 use App\Models\Correspondencia\ComunicacionSalida;
 use App\Models\Archivo\GdoEmpleado;
