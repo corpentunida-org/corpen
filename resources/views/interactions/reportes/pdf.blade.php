@@ -2,9 +2,8 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Informe de Interacciones - PDF</title>
+    <title>Informe de Auditoría de Interacciones - PDF</title>
     <style>
-        /* Estilos optimizados para la generación de PDF */
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
             font-size: 12px;
@@ -29,7 +28,6 @@
             font-size: 14px;
         }
         
-        /* Contenedor de KPIs usando tablas para asegurar compatibilidad en PDFs */
         .kpi-table {
             width: 100%;
             margin-bottom: 30px;
@@ -62,7 +60,6 @@
         .kpi-warning { border-top: 3px solid #f39c12; }
         .kpi-danger  { border-top: 3px solid #e74c3c; }
 
-        /* Estilos de las tablas de datos */
         .section-title {
             font-size: 14px;
             color: #2d3748;
@@ -71,6 +68,7 @@
             margin-top: 20px;
             margin-bottom: 10px;
             font-weight: bold;
+            text-transform: uppercase;
         }
         table.data-table {
             width: 100%;
@@ -91,15 +89,18 @@
             color: #4a5568;
             font-size: 12px;
         }
-        table.data-table td.text-right, table.data-table th.text-right {
-            text-align: right;
-        }
+        table.data-table td.text-right, table.data-table th.text-right { text-align: right; }
+        table.data-table td.text-center, table.data-table th.text-center { text-align: center; }
 
-        /* Sistema de columnas simple para dompdf */
         .row { width: 100%; clear: both; overflow: hidden; }
         .col-half { width: 48%; float: left; }
         .col-spacer { width: 4%; float: left; height: 1px; }
         
+        .page-break { page-break-before: always; }
+        .badge-success { color: #2ecc71; font-weight: bold; }
+        .badge-danger { color: #e74c3c; font-weight: bold; }
+        .badge-warning { color: #f39c12; font-weight: bold; }
+
         .footer {
             position: fixed;
             bottom: -10px;
@@ -116,11 +117,12 @@
 <body>
 
     <div class="header">
-        <h1>Informe Analítico de Interacciones</h1>
-        <p>Periodo reportado: <strong>{{ \Carbon\Carbon::parse($startDate)->format('d/m/Y') }}</strong> al <strong>{{ \Carbon\Carbon::parse($endDate)->format('d/m/Y') }}</strong></p>
+        <h1>Auditoría y Rendimiento de Interacciones</h1>
+        <p>Periodo evaluado: <strong>{{ \Carbon\Carbon::parse($startDate)->format('d/m/Y') }}</strong> al <strong>{{ \Carbon\Carbon::parse($endDate)->format('d/m/Y') }}</strong></p>
     </div>
 
-    {{-- Tarjetas de Métricas (KPIs) --}}
+    {{-- Resumen Ejecutivo General --}}
+    <div class="section-title">Resumen Ejecutivo General</div>
     <table class="kpi-table">
         <tr>
             <td class="kpi-box kpi-primary">
@@ -142,7 +144,7 @@
         </tr>
     </table>
 
-    {{-- Primera Fila de Tablas --}}
+    {{-- Fila de Tablas Resumen --}}
     <div class="row">
         <div class="col-half">
             <div class="section-title">Interacciones por Canal</div>
@@ -195,63 +197,58 @@
         </div>
     </div>
 
-    {{-- Segunda Fila de Tablas --}}
-    <div class="row">
-        <div class="col-half">
-            <div class="section-title">Top 5 Agentes (Interacciones)</div>
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Agente</th>
-                        <th class="text-right">Cantidad</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if(isset($chartAgentes['labels']) && count($chartAgentes['labels']) > 0)
-                        @foreach($chartAgentes['labels'] as $index => $label)
-                            <tr>
-                                <td>{{ $label }}</td>
-                                <td class="text-right">{{ $chartAgentes['data'][$index] }}</td>
-                            </tr>
-                        @endforeach
-                    @else
-                        <tr><td colspan="2" class="text-center">No hay datos disponibles</td></tr>
-                    @endif
-                </tbody>
-            </table>
-        </div>
+    {{-- SALTO DE PÁGINA PARA LA AUDITORÍA DE AGENTES --}}
+    <div class="page-break"></div>
 
-        <div class="col-spacer"></div>
-
-        <div class="col-half">
-            <div class="section-title">Top 5 Agentes (Seguimientos)</div>
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Agente</th>
-                        <th class="text-right">Cantidad</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if(isset($chartSeguimientosAgentes['labels']) && count($chartSeguimientosAgentes['labels']) > 0)
-                        @foreach($chartSeguimientosAgentes['labels'] as $index => $label)
-                            <tr>
-                                <td>{{ $label }}</td>
-                                <td class="text-right">{{ $chartSeguimientosAgentes['data'][$index] }}</td>
-                            </tr>
-                        @endforeach
-                    @else
-                        <tr><td colspan="2" class="text-center">No hay datos disponibles</td></tr>
-                    @endif
-                </tbody>
-            </table>
-        </div>
+    <div class="header">
+        <h1>Detalle de Auditoría por Agente</h1>
+        <p>Desglose de rendimiento y cumplimiento por asesor</p>
     </div>
 
-    {{-- Tercera Fila de Tablas --}}
-    <div class="row">
+    {{-- NUEVA SECCIÓN: Tabla Maestra de Auditoría por Agente --}}
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Nombre del Agente</th>
+                <th class="text-center">Total Gestiones</th>
+                <th class="text-center">Exitosas</th>
+                <th class="text-center">Pendientes</th>
+                <th class="text-center">Vencidas</th>
+                <th class="text-center">Seguimientos</th>
+                <th class="text-right">Efectividad (%)</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if(isset($agentesAuditoria) && count($agentesAuditoria) > 0)
+                @foreach($agentesAuditoria as $agente)
+                    @php
+                        // Calculando el porcentaje de éxito para colorearlo
+                        $total = $agente->total > 0 ? $agente->total : 1;
+                        $efectividad = round(($agente->exitosas / $total) * 100, 1);
+                        
+                        $claseEfectividad = 'badge-warning';
+                        if($efectividad >= 80) $claseEfectividad = 'badge-success';
+                        if($efectividad < 50) $claseEfectividad = 'badge-danger';
+                    @endphp
+                    <tr>
+                        <td><strong>{{ $agente->nombre }}</strong></td>
+                        <td class="text-center">{{ $agente->total }}</td>
+                        <td class="text-center badge-success">{{ $agente->exitosas }}</td>
+                        <td class="text-center">{{ $agente->pendientes }}</td>
+                        <td class="text-center badge-danger">{{ $agente->vencidas }}</td>
+                        <td class="text-center">{{ $agente->seguimientos }}</td>
+                        <td class="text-right {{ $claseEfectividad }}">{{ $efectividad }}%</td>
+                    </tr>
+                @endforeach
+            @else
+                <tr><td colspan="7" class="text-center">No hay datos suficientes para auditar agentes en este periodo.</td></tr>
+            @endif
+        </tbody>
+    </table>
+
+    <div class="row" style="margin-top: 30px;">
         <div class="col-half">
-            <div class="section-title">Top 5 Clientes</div>
+            <div class="section-title">Top 5 Clientes Impactados</div>
             <table class="data-table">
                 <thead>
                     <tr>
@@ -291,33 +288,6 @@
                             <tr>
                                 <td>{{ $label }}</td>
                                 <td class="text-right">{{ $chartLineas['data'][$index] }}</td>
-                            </tr>
-                        @endforeach
-                    @else
-                        <tr><td colspan="2" class="text-center">No hay datos disponibles</td></tr>
-                    @endif
-                </tbody>
-            </table>
-        </div>
-    </div>
-
-    {{-- Cuarta Fila (Última) --}}
-    <div class="row">
-        <div class="col-half">
-            <div class="section-title">Top 5 Distritos</div>
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Distrito</th>
-                        <th class="text-right">Cantidad</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if(isset($chartDistritos['labels']) && count($chartDistritos['labels']) > 0)
-                        @foreach($chartDistritos['labels'] as $index => $label)
-                            <tr>
-                                <td>{{ $label }}</td>
-                                <td class="text-right">{{ $chartDistritos['data'][$index] }}</td>
                             </tr>
                         @endforeach
                     @else

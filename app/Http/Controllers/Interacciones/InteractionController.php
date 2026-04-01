@@ -267,7 +267,7 @@ class InteractionController extends Controller
     }
     public function reportPdf(Request $request)
     {
-        // 1. Definir rango de fechas y filtros adicionales (Igual que en report)
+        // 1. Definir rango de fechas y filtros adicionales
         $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->toDateString());
         $endDate   = $request->input('end_date', Carbon::now()->endOfMonth()->toDateString());
         
@@ -297,7 +297,7 @@ class InteractionController extends Controller
             $baseQuery->where('client_id', $filtroCliente);
         }
 
-        // 3. Cálculos de Tarjetas (KPIs)
+        // 3. Cálculos de Tarjetas (KPIs Generales)
         $totalInteracciones = (clone $baseQuery)->count();
 
         $exitosas = (clone $baseQuery)->whereHas('outcomeRelation', function($q) {
@@ -319,15 +319,9 @@ class InteractionController extends Controller
                         $q3->where('cod_dist', $filtroDistrito);
                     });
                 }
-                if ($filtroLinea) {
-                    $q->where('id_linea_de_obligacion', $filtroLinea);
-                }
-                if ($filtroAgente) {
-                    $q->where('agent_id', $filtroAgente);
-                }
-                if ($filtroCliente) {
-                    $q->where('client_id', $filtroCliente);
-                }
+                if ($filtroLinea) $q->where('id_linea_de_obligacion', $filtroLinea);
+                if ($filtroAgente) $q->where('agent_id', $filtroAgente);
+                if ($filtroCliente) $q->where('client_id', $filtroCliente);
             })
             ->whereNotNull('next_action_date')
             ->where('next_action_date', '<', Carbon::now())
@@ -341,7 +335,6 @@ class InteractionController extends Controller
         ];
 
         // 4. Datos para Tablas del PDF
-        
         $canalesData = (clone $baseQuery)->select('interaction_channel', DB::raw('count(*) as total'))->with('channel')->groupBy('interaction_channel')->get();
         $chartCanales = [
             'labels' => $canalesData->map(fn($item) => $item->channel->name ?? 'Desconocido')->toArray(),
@@ -393,8 +386,62 @@ class InteractionController extends Controller
             'data'   => $seguimientosAgentesData->pluck('total')->toArray(),
         ];
 
-        // 5. Generar PDF
-        // Usamos el facade de Barryvdh\DomPDF
+        // ==========================================================
+        // 5. NUEVA SECCIÓN: Cálculos de Auditoría por Agente
+        // ==========================================================
+        $agentesList = (clone $baseQuery)->select('agent_id')->distinct()->pluck('agent_id');
+        $agentesAuditoria = collect();
+
+        foreach ($agentesList as $agente_id) {
+            $qAgente = (clone $baseQuery)->where('agent_id', $agente_id);
+            
+            $totalAgente = (clone $qAgente)->count();
+            
+            $exitosasAgente = (clone $qAgente)->whereHas('outcomeRelation', function($q) {
+                $q->where('estado', 1);
+            })->count();
+            
+            $pendientesAgente = (clone $qAgente)->whereHas('outcomeRelation', function($q) {
+                $q->where('estado', '!=', 1)->orWhereNull('estado');
+            })->count();
+            
+            $vencidasAgente = IntSeguimiento::whereHas('interaction', function($q) use ($start, $end, $filtroDistrito, $filtroLinea, $filtroCliente, $agente_id) {
+                $q->whereBetween('interaction_date', [$start, $end])
+                  ->where('agent_id', $agente_id) // Forzar agente actual
+                  ->whereHas('outcomeRelation', function($q2) {
+                      $q2->where('estado', '!=', 1)->orWhereNull('estado');
+                  });
+                if ($filtroDistrito) $q->whereHas('client', function($q3) use ($filtroDistrito) { $q3->where('cod_dist', $filtroDistrito); });
+                if ($filtroLinea) $q->where('id_linea_de_obligacion', $filtroLinea);
+                if ($filtroCliente) $q->where('client_id', $filtroCliente);
+            })->whereNotNull('next_action_date')->where('next_action_date', '<', Carbon::now())->count();
+
+            $seguimientosAgente = IntSeguimiento::whereHas('interaction', function($q) use ($start, $end, $filtroDistrito, $filtroLinea, $filtroCliente, $agente_id) {
+                $q->whereBetween('interaction_date', [$start, $end])
+                  ->where('agent_id', $agente_id); // Forzar agente actual
+                if ($filtroDistrito) $q->whereHas('client', function($q3) use ($filtroDistrito) { $q3->where('cod_dist', $filtroDistrito); });
+                if ($filtroLinea) $q->where('id_linea_de_obligacion', $filtroLinea);
+                if ($filtroCliente) $q->where('client_id', $filtroCliente);
+            })->count();
+
+            $interaccionEjemplo = (clone $qAgente)->with('agent')->first();
+            $nombreAgente = $interaccionEjemplo->agent->name ?? 'Sin Agente';
+
+            $agentesAuditoria->push((object)[
+                'nombre'       => $nombreAgente,
+                'total'        => $totalAgente,
+                'exitosas'     => $exitosasAgente,
+                'pendientes'   => $pendientesAgente,
+                'vencidas'     => $vencidasAgente,
+                'seguimientos' => $seguimientosAgente,
+            ]);
+        }
+        
+        // Ordenamos la auditoría de mayor a menor total de interacciones
+        $agentesAuditoria = $agentesAuditoria->sortByDesc('total')->values();
+
+
+        // 6. Generar PDF
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('interactions.reportes.pdf', compact(
             'stats', 
             'chartCanales', 
@@ -404,14 +451,13 @@ class InteractionController extends Controller
             'chartLineas',
             'chartDistritos',
             'chartSeguimientosAgentes',
+            'agentesAuditoria', // <-- SE ENVÍA LA NUEVA VARIABLE A LA VISTA
             'startDate',
             'endDate'
         ));
 
-        // Formato vertical A4
         $pdf->setPaper('A4', 'portrait');
 
-        // Retorna el PDF en el navegador para visualizar/imprimir
         return $pdf->stream('informe_interacciones_' . Carbon::now()->format('Ymd_Hi') . '.pdf');
     }
     /**
