@@ -97,6 +97,43 @@
         .modal-content { border-radius: 20px; border: none; }
         .form-control-pastel { border: none; background: #f8f9fa; border-radius: 10px; padding: 10px 15px; }
         .form-control-pastel:focus { background: #fff; box-shadow: 0 0 0 3px var(--p-blue-light); }
+
+        /* === Adaptación de Select2 al tema Pastel Pro === */
+        .select2-container--default .select2-selection--single {
+            background-color: #f8f9fa;
+            border: none;
+            border-radius: 10px;
+            height: 44px; /* Misma altura que form-control-pastel */
+            padding: 6px 5px;
+            transition: all 0.2s ease;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: var(--text-main);
+            font-weight: 500;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 42px;
+            right: 10px;
+        }
+        .select2-container--default.select2-container--open .select2-selection--single {
+            background: #fff;
+            box-shadow: 0 0 0 3px var(--p-blue-light);
+        }
+        .select2-dropdown {
+            border: 1px solid var(--p-blue-light);
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+        .select2-search--dropdown .select2-search__field {
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 8px;
+        }
+        .select2-results__option--highlighted[aria-selected] {
+            background-color: var(--p-blue) !important;
+            color: #fff !important;
+        }
     </style>
 
     <div class="container py-4">
@@ -349,7 +386,7 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="data-label">Asignar a <span class="text-danger">*</span></label>
-                                <select name="id_user_asignacion" class="form-select form-control-pastel" required>
+                                <select name="id_user_asignacion" id="select_asignacion" class="form-select form-control-pastel" required style="width: 100%;">
                                     <option value="{{ $interaction->id_user_asignacion }}" selected>Mantener actual ({{ $interaction->usuarioAsignado->name ?? 'Usuario' }})</option>
                                     @foreach($users as $u)
                                         <option value="{{ $u->id }}">{{ $u->name }}</option>
@@ -380,8 +417,16 @@
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <label class="data-label">Soporte (Opcional)</label>
-                                <input type="file" name="attachment" class="form-control form-control-pastel">
+                                <label class="data-label">
+                                    Soporte (Opcional) 
+                                    <span class="text-primary text-lowercase fw-normal ms-1" style="font-size: 0.65rem;">(Soporta Ctrl+V)</span>
+                                </label>
+                                <div class="position-relative">
+                                    <input type="file" name="attachment" id="attachment" class="form-control form-control-pastel" accept=".pdf,image/*">
+                                    <div id="file-feedback" class="small mt-1 text-primary d-none fw-bold" style="font-size: 0.75rem;">
+                                        <i class="fas fa-check-circle me-1"></i> <span></span>
+                                    </div>
+                                </div>
                             </div>
                             <div class="col-md-6">
                                 <label class="data-label">URL / Link</label>
@@ -422,6 +467,75 @@
                     x: { grid: { display: false }, ticks: { font: { size: 10 } } } 
                 }
             }
+        });
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputAttachment = document.getElementById('attachment');
+            const feedbackDiv = document.getElementById('file-feedback');
+            const feedbackText = feedbackDiv.querySelector('span');
+
+            // =================================================================
+            // LÓGICA PARA PEGAR ARCHIVOS CON CTRL+V (PORTAPAPELES)
+            // =================================================================
+            document.addEventListener('paste', function(e) {
+                // Solo ejecutamos si el modal de seguimiento está abierto
+                if (!$('#modalSeguimiento').hasClass('show')) return;
+
+                let pastedFiles = e.clipboardData.files;
+                if (pastedFiles.length === 0) return; // Si pegan texto, lo ignoramos
+
+                // Creamos un DataTransfer para asignar el archivo al input
+                const dt = new DataTransfer();
+                dt.items.add(pastedFiles[0]); // Tomamos la primera imagen
+                inputAttachment.files = dt.files;
+
+                let nombreArchivo = pastedFiles[0].name || 'captura_pegada.png';
+
+                // Feedback visual pastel
+                inputAttachment.style.backgroundColor = 'var(--p-blue-light)';
+                inputAttachment.style.boxShadow = '0 0 0 3px var(--p-blue-light)';
+                feedbackText.textContent = nombreArchivo;
+                feedbackDiv.classList.remove('d-none');
+            });
+
+            // =================================================================
+            // FEEDBACK VISUAL SI SELECCIONAN MANUALMENTE
+            // =================================================================
+            inputAttachment.addEventListener('change', function(e) {
+                if (e.target.files.length > 0) {
+                    this.style.backgroundColor = 'var(--p-blue-light)';
+                    this.style.boxShadow = '0 0 0 3px var(--p-blue-light)';
+                    feedbackText.textContent = e.target.files[0].name;
+                    feedbackDiv.classList.remove('d-none');
+                } else {
+                    // Si cancelan la selección, reseteamos estilos
+                    this.style.backgroundColor = '';
+                    this.style.boxShadow = '';
+                    feedbackDiv.classList.add('d-none');
+                }
+            });
+
+            $(document).ready(function() {
+                // Inicializamos el buscador cuando el modal termina de abrirse
+                $('#modalSeguimiento').on('shown.bs.modal', function () {
+                    $('#select_asignacion').select2({
+                        dropdownParent: $('#modalSeguimiento'), // Vital para que funcione en modales
+                        placeholder: 'Buscar usuario...',
+                        width: '100%',
+                        language: {
+                            noResults: function() {
+                                return "No se encontraron usuarios";
+                            }
+                        }
+                    });
+                });
+
+                // Opcional: Destruir la instancia cuando se cierra el modal para evitar bugs visuales si se abre varias veces
+                $('#modalSeguimiento').on('hidden.bs.modal', function () {
+                    if ($('#select_asignacion').hasClass("select2-hidden-accessible")) {
+                        $('#select_asignacion').select2('destroy');
+                    }
+                });
+            });
         });
     </script>
 </x-base-layout>
