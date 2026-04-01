@@ -380,8 +380,16 @@
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <label class="data-label">Soporte (Opcional)</label>
-                                <input type="file" name="attachment" class="form-control form-control-pastel">
+                                <label class="data-label">
+                                    Soporte (Opcional) 
+                                    <span class="text-primary text-lowercase fw-normal ms-1" style="font-size: 0.65rem;">(Soporta Ctrl+V)</span>
+                                </label>
+                                <div class="position-relative">
+                                    <input type="file" name="attachment" id="attachment" class="form-control form-control-pastel" accept=".pdf,image/*">
+                                    <div id="file-feedback" class="small mt-1 text-primary d-none fw-bold" style="font-size: 0.75rem;">
+                                        <i class="fas fa-check-circle me-1"></i> <span></span>
+                                    </div>
+                                </div>
                             </div>
                             <div class="col-md-6">
                                 <label class="data-label">URL / Link</label>
@@ -422,6 +430,52 @@
                     x: { grid: { display: false }, ticks: { font: { size: 10 } } } 
                 }
             }
+        });
+        document.addEventListener('DOMContentLoaded', function() {
+            const inputAttachment = document.getElementById('attachment');
+            const feedbackDiv = document.getElementById('file-feedback');
+            const feedbackText = feedbackDiv.querySelector('span');
+
+            // =================================================================
+            // LÓGICA PARA PEGAR ARCHIVOS CON CTRL+V (PORTAPAPELES)
+            // =================================================================
+            document.addEventListener('paste', function(e) {
+                // Solo ejecutamos si el modal de seguimiento está abierto
+                if (!$('#modalSeguimiento').hasClass('show')) return;
+
+                let pastedFiles = e.clipboardData.files;
+                if (pastedFiles.length === 0) return; // Si pegan texto, lo ignoramos
+
+                // Creamos un DataTransfer para asignar el archivo al input
+                const dt = new DataTransfer();
+                dt.items.add(pastedFiles[0]); // Tomamos la primera imagen
+                inputAttachment.files = dt.files;
+
+                let nombreArchivo = pastedFiles[0].name || 'captura_pegada.png';
+
+                // Feedback visual pastel
+                inputAttachment.style.backgroundColor = 'var(--p-blue-light)';
+                inputAttachment.style.boxShadow = '0 0 0 3px var(--p-blue-light)';
+                feedbackText.textContent = nombreArchivo;
+                feedbackDiv.classList.remove('d-none');
+            });
+
+            // =================================================================
+            // FEEDBACK VISUAL SI SELECCIONAN MANUALMENTE
+            // =================================================================
+            inputAttachment.addEventListener('change', function(e) {
+                if (e.target.files.length > 0) {
+                    this.style.backgroundColor = 'var(--p-blue-light)';
+                    this.style.boxShadow = '0 0 0 3px var(--p-blue-light)';
+                    feedbackText.textContent = e.target.files[0].name;
+                    feedbackDiv.classList.remove('d-none');
+                } else {
+                    // Si cancelan la selección, reseteamos estilos
+                    this.style.backgroundColor = '';
+                    this.style.boxShadow = '';
+                    feedbackDiv.classList.add('d-none');
+                }
+            });
         });
     </script>
 </x-base-layout>
