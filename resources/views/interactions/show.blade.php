@@ -97,6 +97,43 @@
         .modal-content { border-radius: 20px; border: none; }
         .form-control-pastel { border: none; background: #f8f9fa; border-radius: 10px; padding: 10px 15px; }
         .form-control-pastel:focus { background: #fff; box-shadow: 0 0 0 3px var(--p-blue-light); }
+
+        /* === Adaptación de Select2 al tema Pastel Pro === */
+        .select2-container--default .select2-selection--single {
+            background-color: #f8f9fa;
+            border: none;
+            border-radius: 10px;
+            height: 44px; /* Misma altura que form-control-pastel */
+            padding: 6px 5px;
+            transition: all 0.2s ease;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: var(--text-main);
+            font-weight: 500;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 42px;
+            right: 10px;
+        }
+        .select2-container--default.select2-container--open .select2-selection--single {
+            background: #fff;
+            box-shadow: 0 0 0 3px var(--p-blue-light);
+        }
+        .select2-dropdown {
+            border: 1px solid var(--p-blue-light);
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+        .select2-search--dropdown .select2-search__field {
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 8px;
+        }
+        .select2-results__option--highlighted[aria-selected] {
+            background-color: var(--p-blue) !important;
+            color: #fff !important;
+        }
     </style>
 
     <div class="container py-4">
@@ -349,7 +386,7 @@
                             </div>
                             <div class="col-md-6">
                                 <label class="data-label">Asignar a <span class="text-danger">*</span></label>
-                                <select name="id_user_asignacion" class="form-select form-control-pastel" required>
+                                <select name="id_user_asignacion" id="select_asignacion" class="form-select form-control-pastel" required style="width: 100%;">
                                     <option value="{{ $interaction->id_user_asignacion }}" selected>Mantener actual ({{ $interaction->usuarioAsignado->name ?? 'Usuario' }})</option>
                                     @foreach($users as $u)
                                         <option value="{{ $u->id }}">{{ $u->name }}</option>
@@ -475,6 +512,29 @@
                     this.style.boxShadow = '';
                     feedbackDiv.classList.add('d-none');
                 }
+            });
+
+            $(document).ready(function() {
+                // Inicializamos el buscador cuando el modal termina de abrirse
+                $('#modalSeguimiento').on('shown.bs.modal', function () {
+                    $('#select_asignacion').select2({
+                        dropdownParent: $('#modalSeguimiento'), // Vital para que funcione en modales
+                        placeholder: 'Buscar usuario...',
+                        width: '100%',
+                        language: {
+                            noResults: function() {
+                                return "No se encontraron usuarios";
+                            }
+                        }
+                    });
+                });
+
+                // Opcional: Destruir la instancia cuando se cierra el modal para evitar bugs visuales si se abre varias veces
+                $('#modalSeguimiento').on('hidden.bs.modal', function () {
+                    if ($('#select_asignacion').hasClass("select2-hidden-accessible")) {
+                        $('#select_asignacion').select2('destroy');
+                    }
+                });
             });
         });
     </script>
