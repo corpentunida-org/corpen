@@ -481,19 +481,19 @@ class InteractionController extends Controller
                 ->whereHas('outcomeRelation', function ($q) {
                     $q->where('estado', 1);
                 })
-                ->get(),
+                ->paginate(50, ['*'], 'success_page'), // <-- Cambiamos get() por paginate()
 
             'pending' => (clone $baseQuery)
                 ->whereHas('outcomeRelation', function ($q) {
                     $q->where('estado', 0);
                 })
-                ->get(),
+                ->paginate(50, ['*'], 'pending_page'), // <-- Cambiamos get() por paginate()
 
             'today' => (clone $baseQuery)
                 ->where(function ($q) {
                     $q->whereDate('interaction_date', today())->orWhereDate('updated_at', today());
                 })
-                ->get(),
+                ->paginate(50, ['*'], 'today_page'), // <-- Cambiamos get() por paginate()
 
             'overdue' => (clone $baseQuery)
                 ->whereHas('outcomeRelation', function ($q) {
@@ -502,7 +502,7 @@ class InteractionController extends Controller
                 ->whereHas('seguimientos', function ($q) {
                     $q->where('next_action_date', '<', today()->startOfDay());
                 })
-                ->get(),
+                ->paginate(50, ['*'], 'overdue_page'), // <-- Cambiamos get() por paginate()
         ];
 
         // --- 4. OBTENEMOS LA COLECCIÓN PAGINADA PARA LA PESTAÑA "TODOS" ---
