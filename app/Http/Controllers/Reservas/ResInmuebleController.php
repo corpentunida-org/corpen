@@ -7,6 +7,8 @@ use App\Models\Reserva\Res_inmueble;
 use App\Models\Reserva\Res_inmueble_foto;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ReservaInmueble;
 
 class ResInmuebleController extends Controller
 {
@@ -15,8 +17,8 @@ class ResInmuebleController extends Controller
      */
     public function index()
     {
-        $inmuebles = Res_inmueble::where('active', 1)
-            ->with('fotosrel')->get()
+        $inmuebles = Res_inmueble::with('fotosrel')
+            ->get()
             ->map(function ($inmueble) {
                 $inmueble->fotosrel->map(function ($foto) {
                     if (Storage::disk('s3')->exists($foto->attached)) {
@@ -26,7 +28,6 @@ class ResInmuebleController extends Controller
                 });
                 return $inmueble;
             });
-
         return view('reserva.inmuebles.index', compact('inmuebles'));
     }
 
@@ -79,12 +80,24 @@ class ResInmuebleController extends Controller
      */
     public function show(Res_inmueble $inmueble)
     {
+        if (!$inmueble->active) {
+            return redirect()->route('reserva.reserva.index')->with('error', 'El inmueble seleccionado no está disponible para reservas en este momento.');
+        }
         $inmueble->load('fotosrel');
         $inmueble->fotosrel->transform(function ($foto) {
             $foto->ruta = Storage::disk('s3')->temporaryUrl($foto->attached, now()->addMinutes(5));
             return $foto;
         });
+
         return view('reserva.index', compact('inmueble'));
+    }
+
+    public function toggle($id)
+    {
+        $inmueble = Res_inmueble::findOrFail($id);
+        $inmueble->active = !$inmueble->active;
+        $inmueble->save();
+        return back()->with('success', 'El estado del inmueble ha sido actualizado correctamente.');
     }
 
     /**

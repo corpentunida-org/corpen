@@ -327,7 +327,7 @@
                         initialView: 'dayGridMonth',
 
                         events: [
-                            @foreach ($reservas as $r)
+                             @foreach ($reservas as $r)
                                 {
                                     title: 'Reservado',
                                     start: '{{ $r->fecha_inicio }}',

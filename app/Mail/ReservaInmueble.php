@@ -19,17 +19,19 @@ class ReservaInmueble extends Mailable
     public $asunto;
     public $condiciones;
     public $lista_condiciones;
+    public $inmueble;
 
     /**
      * Create a new message instance.
      */
-    public function __construct(string $nombre, string $texto, string $asunto = 'Sistema de reservas Corpentunida', bool $condiciones = false)
+    public function __construct(string $nombre, string $texto, string $asunto = 'Sistema de reservas Corpentunida', bool $condiciones = false, $inmueble = null)
     {
         $this->nombre = $nombre;
         $this->texto = $texto;
         $this->asunto = $asunto;
         $this->condiciones = $condiciones;
         $this->lista_condiciones = Res_condicion::all();
+        $this->inmueble = $inmueble;
     }
 
     /**
