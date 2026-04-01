@@ -141,9 +141,9 @@
                             <textarea name="comentario" class="form-input mb-3" rows="9" placeholder="Escriba una actualización..." required></textarea>
                         </div>
                         <div class="soporte-dropzone" onclick="document.getElementById('soporte').click()">
-                            <input type="file" name="soporte" id="soporte" class="hidden-input"accept=".pdf,image/*">
+                            <input type="file" name="soporte" id="soporte" class="hidden-input" accept=".pdf,image/*">
                             <i class="fas fa-paperclip"></i>
-                            <span id="file-name-preview">Adjuntar Soporte (PDF/Imagen)</span>
+                            <span id="file-name-preview">Adjuntar Soporte (PDF/Imagen) o presiona <b>Ctrl+V</b></span>
                         </div>
 
                         <button type="submit" class="btn-save-corporate w-full mt-3">
@@ -216,6 +216,52 @@
                     "Adjuntar Soporte (PDF/Imagen)";
                 document.getElementById('file-name-preview').innerText = fileName;
             });
+
+            // Preview de nombre de archivo (Tu código actual)
+            document.getElementById('soporte').addEventListener('change', function(e) {
+                const fileName = e.target.files[0] ? e.target.files[0].name : "Adjuntar Soporte (PDF/Imagen) o presiona Ctrl+V";
+                document.getElementById('file-name-preview').innerHTML = fileName;
+                
+                // Feedback visual al seleccionar manualmente
+                let dropzone = document.querySelector('.soporte-dropzone');
+                if(e.target.files[0]) {
+                    dropzone.style.borderColor = 'var(--accent-blue)';
+                    dropzone.style.background = '#f5f3ff';
+                    dropzone.style.color = 'var(--accent-blue)';
+                } else {
+                    dropzone.style.borderColor = '';
+                    dropzone.style.background = '';
+                    dropzone.style.color = '';
+                }
+            });
+
+            // =================================================================
+            // LÓGICA PARA PEGAR ARCHIVOS CON CTRL+V (PORTAPAPELES)
+            // =================================================================
+            document.addEventListener('paste', function(e) {
+                // Obtener los archivos del portapapeles
+                let pastedFiles = e.clipboardData.files;
+                if (pastedFiles.length === 0) return; // Si es texto plano, lo ignoramos
+
+                let inputFile = document.getElementById('soporte');
+                let dropzone = document.querySelector('.soporte-dropzone');
+                let previewText = document.getElementById('file-name-preview');
+
+                // Crear un DataTransfer para asignar el archivo al input type="file"
+                const dt = new DataTransfer();
+                dt.items.add(pastedFiles[0]); // Tomamos solo la primera imagen pegada
+                inputFile.files = dt.files;
+
+                // Definir un nombre por defecto si viene del portapapeles
+                let nombreArchivo = pastedFiles[0].name || 'captura_pegada.png';
+
+                // Feedback Visual
+                previewText.innerHTML = `<strong><i class="fas fa-check-circle me-1"></i> ${nombreArchivo}</strong>`;
+                dropzone.style.borderColor = 'var(--accent-blue)';
+                dropzone.style.background = '#f5f3ff';
+                dropzone.style.color = 'var(--accent-blue)';
+            });
+
         });
     </script>
 
