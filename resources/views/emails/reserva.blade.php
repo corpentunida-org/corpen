@@ -791,7 +791,7 @@
                                             <td align="center" height="50" style="height:50px;">
                                     <![endif]-->
                                         <singleline>
-                                            <a href="{{ url(route('reserva.crudinmuebles.show', $inmueble->id)) }}"
+                                            <a href="{{ url(route('reserva.crudinmuebles.show', $inmueble->id ?? $inmueble)) }}"
                                                 mc:edit data-button data-text-style="Buttons"
                                                 style="font-family:'Barlow',Arial,Helvetica,sans-serif;font-size:16px;line-height:20px;font-weight:700;font-style:normal;color:#FFFFFF;text-decoration:none;letter-spacing:0px;padding: 15px 35px 15px 35px;display: inline-block;"><span>Ver
                                                     detalles del Apartamento</span></a>
