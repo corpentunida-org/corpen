@@ -135,10 +135,6 @@ Route::get('/base', function () {
 });
 
 
-Route::get('/probar-middleware-alias', function () {
-    return 'Middleware con alias ejecutado ✅';
-})->middleware('candirect:seguros.reclamacion.index');
-
 //ADMIN
 Route::resource('users', UserController::class)->names('admin.users')->middleware(['auth', 'can:admin.users.index']);
 Route::resource('admin', AuditoriaController::class)->names('admin.auditoria')->middleware(['auth', 'candirect:admin.auditoria.index']);
@@ -220,19 +216,19 @@ Route::prefix('seguros')->group(function () {
 Route::prefix('cinco')->group(function () {
     Route::resource('terceros', TercerosController::class)
         ->names('cinco.tercero')
-        ->middleware(['auth', 'can:cinco.tercero.index']);
+        ->middleware(['auth', 'candirect:cinco.tercero.index']);
     Route::resource('cinco', MoviContCincoController::class)
         ->names('cinco.movcontables')
-        ->middleware(['auth', 'can:cinco.movcontables.index']);
+        ->middleware(['auth', 'candirect:cinco.movcontables.index']);
     Route::get('movcontables/{id}/reportepdf/', [MoviContCincoController::class, 'generarpdf'])->name('cinco.reportepdf');
 });
 Route::prefix('retiros')->group(function () {
     Route::resource('calculoretiros', RetirosListadoController::class)
         ->names('cinco.retiros')
-        ->middleware(['auth', 'can:cinco.retiros.index']);
+        ->middleware(['auth', 'candirect:cinco.retiros.index']);
     Route::resource('condicionRetiros', CondicionesRetirosController::class)
         ->names('cinco.condicionRetiros')
-        ->middleware(['auth', 'can:cinco.retiros.index']);
+        ->middleware(['auth', 'candirect:cinco.retiros.index']);
     Route::get('/retirosname/{name}', [RetirosListadoController::class, 'namesearch'])->name('cinco.retiros.search');
     Route::get('condicionRetiros/{id}/reportepdf/', [CondicionesRetirosController::class, 'generarpdf'])->name('cinco.liquidacionretiro');
 });
@@ -262,18 +258,20 @@ Route::post('validar/asociado', [UserController::class, 'validarAsociado'])->nam
 
 Route::prefix('reservas')->name('reserva.')->group(function () {
     Route::resource('reserva', ResReservaController::class)->names('reserva');
-    Route::get('reservaI/{id}/create', [ResReservaController::class, 'createReserva'])->name('inmueble.create');
-    Route::post('reservaI/store', [ResReservaController::class, 'storeReserva'])->name('inmueble.store');
-    Route::get('reservaI/{id}/soporte', [ResReservaController::class, 'createSoporte'])->name('inmueble.soporte.create');
-    Route::post('reservaI/storeSoporte', [ResReservaController::class, 'storeSoporte'])->name('inmueble.soporte.store');
+    Route::get('reservaI/{id}/create', [ResReservaController::class, 'createReserva'])->name('inmueble.create')->middleware('auth');
+    Route::post('reservaI/store', [ResReservaController::class, 'storeReserva'])->name('inmueble.store')->middleware('auth');
+    Route::get('reservaI/{id}/soporte', [ResReservaController::class, 'createSoporte'])->name('inmueble.soporte.create')->middleware('auth');
+    Route::post('reservaI/storeSoporte', [ResReservaController::class, 'storeSoporte'])->name('inmueble.soporte.store')->middleware('auth');
     Route::get('verificar/comprobante', [ResReservaController::class, 'reservaspagos'])->name('reservas.pago')->middleware(['auth', 'candirect:reservas.Reserva.pagos']);
     Route::get('reservaI/confirmacion', [ResReservaController::class, 'indexConfirmacion'])->name('inmueble.confirmacion')->middleware(['auth', 'candirect:reservas.Reserva.lista']);
     Route::get('reservaI/confirmacion/{id}/show', [ResReservaController::class, 'showConfirmacion'])->name('inmueble.confirmacion.show')->middleware(['auth', 'candirect:reservas.Reserva.lista']); 
     //Route::post('reservaI/notificar/ajuste', [ResReservaController::class, 'notificarAjuste'])->name('inmueble.notificar.ajuste');
-    Route::post('reservaI/calificacion', [ResReservaController::class, 'calificacionAsociado'])->name('inmueble.resenia');
-    Route::post('reservaI/confirmar', [ResReservaController::class, 'confirmar'])->name('inmueble.confirmar');
+    Route::post('reservaI/calificacion', [ResReservaController::class, 'calificacionAsociado'])->name('inmueble.resenia')->middleware('auth');
+    Route::post('reservaI/confirmar', [ResReservaController::class, 'confirmar'])->name('inmueble.confirmar')->middleware('auth');
     Route::get('reservaI/historico', [ResReservaController::class, 'indexHistorico'])->name('inmueble.historico')->middleware(['auth', 'candirect:reservas.Reserva.lista']);
-    Route::resource('inmueble', ResInmuebleController::class)->names('crudinmuebles');
+    Route::resource('inmueble', ResInmuebleController::class)->names('crudinmuebles')->middleware('auth')->except(['show']);
+    Route::get('inmueble/{inmueble}', [ResInmuebleController::class, 'show'])->name('crudinmuebles.show');
+    Route::put('inmueble/{id}/toggle', [ResInmuebleController::class, 'toggle'])->name('inmueble.toggle')->middleware(['auth', 'candirect:reservas.inmueble.active']);
 });
 Route::get('/scheduler-run', function () {Artisan::call('schedule:run');return 'Scheduler ejecutado';});
 

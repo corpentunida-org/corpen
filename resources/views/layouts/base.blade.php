@@ -197,46 +197,46 @@
                                     </a>
                                 </div>
                             </div>
-            <div class="dropdown nxl-h-item">
-                
-                <a href="javascript:void(0);" data-bs-toggle="dropdown" role="button" data-bs-auto-close="outside" class="d-flex align-items-center text-decoration-none">
-                    @if (auth()->user()->foto_perfil)
-                        <img src="{{ auth()->user()->foto_perfil }}" 
-                            alt="user-image" 
-                            class="img-fluid user-avtar me-0" 
-                            style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover;" />
-                    @else
-                        <div class="user-avtar me-0 shadow-sm" style="width: 38px; height: 38px; border-radius: 50%; background-color: var(--bs-primary-bg-subtle, #e0f2fe); color: var(--bs-primary-text-emphasis, #0369a1); display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 700;">
-                            {{ strtoupper(substr(auth()->user()->name, 0, 2)) }}
-                        </div>
-                    @endif
-                </a>
+                            <div class="dropdown nxl-h-item">
+                                
+                                <a href="javascript:void(0);" data-bs-toggle="dropdown" role="button" data-bs-auto-close="outside" class="d-flex align-items-center text-decoration-none">
+                                    @if (auth()->user()->foto_perfil)
+                                        <img src="{{ auth()->user()->foto_perfil }}" 
+                                            alt="user-image" 
+                                            class="img-fluid user-avtar me-0" 
+                                            style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover;" />
+                                    @else
+                                        <div class="user-avtar me-0 shadow-sm" style="width: 38px; height: 38px; border-radius: 50%; background-color: var(--bs-primary-bg-subtle, #e0f2fe); color: var(--bs-primary-text-emphasis, #0369a1); display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 700;">
+                                            {{ strtoupper(substr(auth()->user()->name, 0, 2)) }}
+                                        </div>
+                                    @endif
+                                </a>
 
-                <div class="dropdown-menu dropdown-menu-end nxl-h-dropdown nxl-user-dropdown">
-                    <div class="dropdown-header">
-                        <div class="d-flex align-items-center">
-                            <div>
-                                <h6 class="text-dark mb-0">{{ auth()->user()->name }}</h6>
-                                <span class="fs-12 fw-medium text-muted">{{ auth()->user()->email }}</span>
+                                <div class="dropdown-menu dropdown-menu-end nxl-h-dropdown nxl-user-dropdown">
+                                    <div class="dropdown-header">
+                                        <div class="d-flex align-items-center">
+                                            <div>
+                                                <h6 class="text-dark mb-0">{{ auth()->user()->name }}</h6>
+                                                <span class="fs-12 fw-medium text-muted">{{ auth()->user()->email }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="dropdown-divider"></div>
+                                    <a href="{{ route('profile.show') }}" class="dropdown-item">
+                                        <i class="feather-user"></i>
+                                        <span>Detalle Perfil</span>
+                                    </a>
+
+                                    <div class="dropdown-divider"></div>
+
+                                    <form method="POST" action="{{ route('logout') }}" class="inline">
+                                        @csrf
+                                        <button type="submit" class="dropdown-item">
+                                            <i class="feather-log-out"></i>{{ __('Cerrar Sesión') }}
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
-                        </div>
-                    </div>
-                    <div class="dropdown-divider"></div>
-                    <a href="{{ route('profile.show') }}" class="dropdown-item">
-                        <i class="feather-user"></i>
-                        <span>Detalle Perfil</span>
-                    </a>
-
-                    <div class="dropdown-divider"></div>
-
-                    <form method="POST" action="{{ route('logout') }}" class="inline">
-                        @csrf
-                        <button type="submit" class="dropdown-item">
-                            <i class="feather-log-out"></i>{{ __('Cerrar Sesión') }}
-                        </button>
-                    </form>
-                </div>
-            </div>
                         </div>
                     </div>
                 </div>

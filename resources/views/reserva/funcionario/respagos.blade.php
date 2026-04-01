@@ -24,11 +24,10 @@
                                         <label class="custom-control-label c-pointer"
                                             for="checkReserva_{{ $res->id }}"></label>
                                     </div>
-
+                                    <input type="hidden" class="txt-contact"
+                                        value="{{ $res->celular }} - {{ $res->celular_respaldo }}">
                                     <div class="d-flex align-items-center gap-3">
-
                                         <div class="lh-base txt-nid">{{ $res->nid }}</div>
-
                                         <a href="#">
                                             <div class="fs-13 fw-bold text-truncate-1-line">
                                                 <span class="txt-usuario">{{ $res->user->name }}</span>
@@ -96,7 +95,6 @@
                                         </div>
 
                                     </div>
-
                                     <!-- DERECHA -->
                                     <div class="d-flex flex-shrink-0 align-items-center gap-3">
 
@@ -176,22 +174,37 @@
                             <div class="form-group row mb-3">
                                 <label for="soporte_link" class="col-sm-3 col-form-label">Soporte</label>
                                 <div class="col-sm-9">
-                                    <a id="soporte_link" target="_blank" class="btn btn-outline-primary btn-sm">
-                                        Ver soporte
-                                    </a>
+                                    <a id="soporte_link" target="_blank" class="btn btn-outline-primary btn-sm">Ver
+                                        soporte</a>
                                 </div>
                             </div>
-                            <div class="form-group row">
+                            <div class="form-group row mb-3">
+                                <label for="soporte_link" class="col-sm-3 col-form-label">Contacto</label>
+                                <div class="col-sm-9">
+                                    <input class="form-control" id="contacto_tel" name="contacto_tel" type="text"
+                                        disabled>
+                                </div>
+                            </div>
+                            <div class="form-group mb-3 row">
                                 <label for="observacion" class="col-sm-3 col-form-label">Observación</label>
                                 <div class="col-sm-9">
-                                    <textarea class="form-control" id="observacion" name="observacion" rows="2"></textarea>
+                                    <textarea class="form-control" id="observacion" name="observacion" rows="2" required></textarea>
                                 </div>
                             </div>
+
+                            <div class="custom-control custom-checkbox ps-4">
+                                <input type="checkbox" class="custom-control-input" id="notificar_pastor"
+                                    name="notificar_pastor" value="1" checked>
+                                <label class="custom-control-label c-pointer" for="notificar_pastor">Confirmar
+                                    notificación al pastor por correo electrónico</label>
+                            </div>
+                            <input type="hidden" name="cancelar_reserva" id="cancelar_reserva" value="0">
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary cerrarModal" id="cancelBtn">Cancelar</button>
-                        <button type="submit" class="btn btn-success" id="confirmBtn">Confirmar</button>
+                        <button type="button" class="btn btn-danger" id="cancel-reservaBtn">Cancelar
+                            Reserva</button>
+                        <button type="submit" class="btn btn-success" id="confirmBtn">Confirmar Reserva</button>
                     </div>
                 </form>
             </div>
@@ -210,7 +223,6 @@
                     let action = $("#formUpdateReserva").data("action").replace(":id", idres);
                     $("#formUpdateReserva").attr("action", action);
                     $("#reserva_id").val(idres);
-
                     $("#usuario").val(item.find(".txt-usuario").text().trim());
                     $("#inmueble").val(item.find(".txt-inmueble").text().trim());
                     let fechas = item.find(".txt-fechas").text().trim().split("a");
@@ -218,6 +230,7 @@
                     $("#fecha_fin").val(fechas[1].trim());
                     $("#fecha_solicitud").val(item.find(".txt-solicitud").text().trim());
                     $("#soporte_link").attr("href", item.find(".link-soporte").attr("href"));
+                    $("#contacto_tel").val(item.find(".txt-contact").val());
                     $("#observacion").val("");
                     $("#confirmModal").modal("show");
                 }
@@ -231,23 +244,43 @@
                 $("#confirmModal").modal("hide");
             });
 
+            $('#cancel-reservaBtn').on('click', function() {
+                Swal.fire({
+                    title: '¿Cancelar reserva?',
+                    text: "Esta acción cancelará la reserva.",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Sí, cancelar',
+                    cancelButtonText: 'No'
+                }).then((result) => {
+                    if (result.value) {
+                        $('#cancelar_reserva').val(1);
+                        document.getElementById('formUpdateReserva').submit();
+                    }
+                });
+
+            });
+
             $("#confirmBtn").click(function() {
 
                 let id = checkboxSeleccionado.data("id");
-
-                console.log("Confirmado ID:", id);
-
-                // Aquí tu acción AJAX
-                /*
-                $.post("/ruta", {
-                    _token: "{{ csrf_token() }}",
-                    id: id
-                });
-                */
-
                 $("#confirmModal").modal("hide");
             });
 
+            $("#formUpdateReserva").on("submit", function(e) {
+
+                let observacion = $("#observacion");
+
+                if ($.trim(observacion.val()) === "") {
+                    observacion.addClass("is-invalid");
+                    e.preventDefault();
+                } else {
+                    observacion.removeClass("is-invalid");
+                }
+
+            });
         });
     </script>
 </x-base-layout>
