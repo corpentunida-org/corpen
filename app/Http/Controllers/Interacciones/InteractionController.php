@@ -26,6 +26,8 @@ use App\Models\Archivo\GdoArea;
 use App\Models\Archivo\GdoCargo;
 use App\Models\Creditos\LineaCredito;
 
+use Illuminate\Support\Facades\Cache;
+
 class InteractionController extends Controller
 {
     public function report(Request $request)
@@ -381,16 +383,16 @@ class InteractionController extends Controller
      */
     public function index(Request $request)
     {
-        // --- 1. CONSTRUIMOS LA CONSULTA BASE ---
-        $baseQuery = Interaction::with(['client', 'agent.cargoRelation.gdoArea', 'channel', 'type', 'outcomeRelation', 'lineaDeObligacion', 'usuarioAsignado', 'seguimientos']);
+        $successfulOutcomeIds = IntOutcome::where('estado', 1)->pluck('id')->toArray();
+        $pendingOutcomeIds = IntOutcome::where('estado', 0)->pluck('id')->toArray();
 
-        // --- 2. APLICAMOS LOS FILTROS (Solo Búsqueda y Rango de Fechas) ---
+        // 1. BASE QUERY (SIN WITH PARA NO SOBRECARGAR LOS CONTEOS DE LA BASE DE DATOS)
+        $baseQuery = Interaction::query();
 
-        // A. Filtro de Búsqueda General
+        // 2. APLICAMOS LOS FILTROS
         if ($request->filled('search')) {
             $search = $request->input('search');
             $baseQuery->where(function ($q) use ($search) {
-                // 1. Busca en campos directos de la tabla interacciones
                 $q->where('id', 'LIKE', "%{$search}%")
                     ->orWhere('notes', 'LIKE', "%{$search}%")
                     ->orWhere('cedula_quien_llama', 'LIKE', "%{$search}%")
@@ -398,18 +400,13 @@ class InteractionController extends Controller
                     ->orWhere('celular_quien_llama', 'LIKE', "%{$search}%")
                     ->orWhere('parentesco_quien_llama', 'LIKE', "%{$search}%")
                     ->orWhere('id_linea_de_obligacion', 'LIKE', "%{$search}%")
-                    
-                    // 2. Busca en Cliente y su Distrito
                     ->orWhereHas('client', function ($query) use ($search) {
                         $query->where('nom_ter', 'LIKE', "%{$search}%")
                               ->orWhere('cod_ter', 'LIKE', "%{$search}%")
-                              // Relación anidada: Cliente -> Distrito
                               ->orWhereHas('distrito', function ($qDistrito) use ($search) {
                                   $qDistrito->where('NOM_DIST', 'LIKE', "%{$search}%");
                               });
                     })
-                    
-                    // 3. Busca en Agente y su Cargo/Área
                     ->orWhereHas('agent', function ($query) use ($search) {
                         $query->where('name', 'LIKE', "%{$search}%")
                               ->orWhereHas('cargoRelation', function($qCargo) use ($search) {
@@ -419,30 +416,13 @@ class InteractionController extends Controller
                                          });
                               });
                     })
-
-                    // 4. Busca por Canal
-                    ->orWhereHas('channel', function ($query) use ($search) {
-                        $query->where('name', 'LIKE', "%{$search}%");
-                    })
-
-                    // 5. Busca por Resultado (Outcome)
-                    ->orWhereHas('outcomeRelation', function ($query) use ($search) {
-                        $query->where('name', 'LIKE', "%{$search}%");
-                    })
-
-                    // 6. Busca por Línea de Obligación
-                    ->orWhereHas('lineaDeObligacion', function ($query) use ($search) {
-                        $query->where('nombre', 'LIKE', "%{$search}%");
-                    })
-
-                    // 7. Busca por el Usuario al que fue Asignado
-                    ->orWhereHas('usuarioAsignado', function ($query) use ($search) {
-                        $query->where('name', 'LIKE', "%{$search}%");
-                    });
+                    ->orWhereHas('channel', fn ($query) => $query->where('name', 'LIKE', "%{$search}%"))
+                    ->orWhereHas('outcomeRelation', fn ($query) => $query->where('name', 'LIKE', "%{$search}%"))
+                    ->orWhereHas('lineaDeObligacion', fn ($query) => $query->where('nombre', 'LIKE', "%{$search}%"))
+                    ->orWhereHas('usuarioAsignado', fn ($query) => $query->where('name', 'LIKE', "%{$search}%"));
             });
         }
 
-        // B. Filtro de Rango de Fechas (Interacción)
         if ($request->filled('start_date') && $request->filled('end_date')) {
             $baseQuery->whereBetween('interaction_date', [$request->input('start_date') . ' 00:00:00', $request->input('end_date') . ' 23:59:59']);
         } elseif ($request->filled('start_date')) {
@@ -451,7 +431,7 @@ class InteractionController extends Controller
             $baseQuery->where('interaction_date', '<=', $request->input('end_date') . ' 23:59:59');
         }
 
-        // --- 3. OBTENEMOS LOS DATOS PARA LAS ESTADÍSTICAS Y PESTAÑAS (Con filtros aplicados) ---
+        // 3. ESTADÍSTICAS SÚPER OPTIMIZADAS
         $countQuery = clone $baseQuery;
         if (!auth()->user()->hasPermission('interacciones.listado.todos')) {
             $countQuery->where(function ($q) {
@@ -461,65 +441,38 @@ class InteractionController extends Controller
                 $q->where('agent_id', Auth::id())->orWhere('id_user_asignacion', Auth::id());
             });
         }
+
         $stats = [
             'total' => $countQuery->count(),
-            'successful' => (clone $countQuery)->whereHas('outcomeRelation', fn($q) => $q->where('estado', 1))->count(),
-            'pending' => (clone $countQuery)->whereHas('outcomeRelation', fn($q) => $q->where('estado', 0))->count(),
-            'today' => (clone $countQuery)
-                ->where(function ($q) {
-                    $q->whereDate('interaction_date', today())->orWhereDate('updated_at', today());
-                })
-                ->count(),
-            'overdue' => (clone $countQuery)
-                ->whereHas('outcomeRelation', fn($q) => $q->where('estado', 0))
-                ->whereHas('seguimientos', fn($q) => $q->where('next_action_date', '<', today()->startOfDay()))
-                ->count(),
+            'successful' => (clone $countQuery)->whereIn('outcome', $successfulOutcomeIds)->count(),
+            'pending' => (clone $countQuery)->whereIn('outcome', $pendingOutcomeIds)->count(),
+            'today' => (clone $countQuery)->where(fn($q) => $q->whereDate('interaction_date', today())->orWhereDate('updated_at', today()))->count(),
+            'overdue' => (clone $countQuery)->whereIn('outcome', $pendingOutcomeIds)->whereHas('seguimientos', fn($q) => $q->where('next_action_date', '<', today()->startOfDay()))->count(),
         ];
 
+        // 4. PREPARAMOS LAS RELACIONES (Se aplican solo al final para ahorrar memoria)
+        $relations = ['client', 'agent.cargoRelation.gdoArea', 'channel', 'type', 'outcomeRelation', 'lineaDeObligacion', 'usuarioAsignado', 'seguimientos'];
+
+        // 5. PESTAÑAS (Máximo 15 registros por pestaña secundaria)
         $collectionsForTabs = [
-            'successful' => (clone $baseQuery)
-                ->whereHas('outcomeRelation', function ($q) {
-                    $q->where('estado', 1);
-                })
-                ->get(),
-
-            'pending' => (clone $baseQuery)
-                ->whereHas('outcomeRelation', function ($q) {
-                    $q->where('estado', 0);
-                })
-                ->get(),
-
-            'today' => (clone $baseQuery)
-                ->where(function ($q) {
-                    $q->whereDate('interaction_date', today())->orWhereDate('updated_at', today());
-                })
-                ->get(),
-
-            'overdue' => (clone $baseQuery)
-                ->whereHas('outcomeRelation', function ($q) {
-                    $q->where('estado', 0);
-                })
-                ->whereHas('seguimientos', function ($q) {
-                    $q->where('next_action_date', '<', today()->startOfDay());
-                })
-                ->get(),
+            'successful' => (clone $baseQuery)->whereIn('outcome', $successfulOutcomeIds)->orderBy('id', 'desc')->with($relations)->take(15)->get(),
+            'pending' => (clone $baseQuery)->whereIn('outcome', $pendingOutcomeIds)->orderBy('id', 'desc')->with($relations)->take(15)->get(),
+            'today' => (clone $baseQuery)->where(fn($q) => $q->whereDate('interaction_date', today())->orWhereDate('updated_at', today()))->orderBy('id', 'desc')->with($relations)->take(15)->get(),
+            'overdue' => (clone $baseQuery)->whereIn('outcome', $pendingOutcomeIds)->whereHas('seguimientos', fn($q) => $q->where('next_action_date', '<', today()->startOfDay()))->orderBy('id', 'desc')->with($relations)->take(15)->get(),
         ];
 
-        // --- 4. OBTENEMOS LA COLECCIÓN PAGINADA PARA LA PESTAÑA "TODOS" ---
-        $interactions = $baseQuery->orderBy('id', 'desc')->paginate(100);
-
-        // appends() asegura que al cambiar de página en la paginación, no se pierdan los filtros
+        // 6. PAGINACIÓN PRINCIPAL
+        $interactions = (clone $baseQuery)->orderBy('id', 'desc')->with($relations)->paginate(50);
         $interactions->appends($request->query());
 
-        // --- 5. DATOS PARA LOS SELECT DE LA VISTA ---
-        $channels = IntChannel::orderBy('name')->pluck('name', 'id');
-        $types = IntType::orderBy('name')->pluck('name', 'id');
-        $outcomes = IntOutcome::orderBy('name')->pluck('name', 'id');
-        $areas = GdoArea::orderBy('nombre')->pluck('nombre', 'id');
-        $cargos = GdoCargo::orderBy('nombre_cargo')->pluck('nombre_cargo', 'id');
-        $lineas = LineaCredito::orderBy('nombre')->pluck('nombre', 'id');
+        // 7. CATÁLOGOS CON CACHÉ (Guarda la info por 24 horas)
+        $channels = Cache::remember('cat_channels', 86400, fn() => IntChannel::orderBy('name')->pluck('name', 'id'));
+        $types = Cache::remember('cat_types', 86400, fn() => IntType::orderBy('name')->pluck('name', 'id'));
+        $outcomes = Cache::remember('cat_outcomes', 86400, fn() => IntOutcome::orderBy('name')->pluck('name', 'id'));
+        $areas = Cache::remember('cat_areas', 86400, fn() => GdoArea::orderBy('nombre')->pluck('nombre', 'id'));
+        $cargos = Cache::remember('cat_cargos', 86400, fn() => GdoCargo::orderBy('nombre_cargo')->pluck('nombre_cargo', 'id'));
+        $lineas = Cache::remember('cat_lineas', 86400, fn() => LineaCredito::orderBy('nombre')->pluck('nombre', 'id'));
 
-        // --- 6. PASAMOS TODAS LAS VARIABLES A LA VISTA ---
         return view('interactions.index', compact('interactions', 'stats', 'collectionsForTabs', 'channels', 'types', 'outcomes', 'areas', 'cargos', 'lineas'));
     }
 
