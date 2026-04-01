@@ -83,6 +83,7 @@
                                     <tr>
                                         <th>Inmueble</th>
                                         <th>Asociado</th>
+                                        <th>Fecha de Reserva</th>
                                         <th>Inicio Reserva</th>
                                         <th>Fin Reserva</th>
                                         <th>Estado</th>
@@ -99,6 +100,10 @@
                                             <td data-label="Cliente">
                                                 <div class="fw-semibold">{{ $hisres->nid }}</div>
                                                 {{ $hisres->tercero?->nom_ter ?? $hisres->user->name }}
+                                            </td>
+
+                                            <td data-label="Fecha-Reserva">
+                                                {{ $hisres->created_at->translatedFormat('j F Y') }}
                                             </td>
 
                                             <td data-label="Inicio">

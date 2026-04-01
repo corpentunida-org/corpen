@@ -9,6 +9,8 @@ class Kernel extends ConsoleKernel
 {
     protected function schedule(Schedule $schedule)
     {
-        $schedule->command('reservas:cancelar-vencidas')->daily();
+        $schedule->command('reservas:cancelar-vencidas')
+        ->everyMinute()
+        ->timezone('America/Bogota');
     }
 }
