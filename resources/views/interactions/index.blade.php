@@ -210,16 +210,7 @@
                                                 data-llamante-celular="{{ $interaction->celular_quien_llama ?? '—' }}"
                                                 data-llamante-parentesco="{{ $interaction->parentesco_quien_llama ?? '—' }}"
                                                 {{-- NUEVO: Empaquetamos los seguimientos en JSON --}}
-                                                data-seguimientos="{{ json_encode($interaction->seguimientos->map(function($seg) {
-                                                    return [
-                                                        'fecha_creacion' => $seg->created_at ? $seg->created_at->format('d/m/Y H:i') : '',
-                                                        'agente' => $seg->creator->name ?? '—',
-                                                        'resultado' => $seg->outcomeRelation->name ?? '—',
-                                                        'accion' => $seg->nextAction->name ?? '—',
-                                                        'fecha_accion' => $seg->next_action_date ? $seg->next_action_date->format('d/m/Y H:i') : '—',
-                                                        'notas' => $seg->next_action_notes ?? 'Sin notas.'
-                                                    ];
-                                                })) }}">
+                                                data-seguimientos-count="{{ $interaction->seguimientos->count() }}"">
                                                 #{{ $interaction->id }}
                                             </a>
                                             @if ($interaction->attachment_urls)
@@ -345,16 +336,7 @@
                                                 data-llamante-cedula="{{ $interaction->cedula_quien_llama ?? '—' }}"
                                                 data-llamante-celular="{{ $interaction->celular_quien_llama ?? '—' }}"
                                                 data-llamante-parentesco="{{ $interaction->parentesco_quien_llama ?? '—' }}"
-                                                data-seguimientos="{{ json_encode($interaction->seguimientos->map(function($seg) {
-                                                    return [
-                                                        'fecha_creacion' => $seg->created_at ? $seg->created_at->format('d/m/Y H:i') : '',
-                                                        'agente' => $seg->creator->name ?? '—',
-                                                        'resultado' => $seg->outcomeRelation->name ?? '—',
-                                                        'accion' => $seg->nextAction->name ?? '—',
-                                                        'fecha_accion' => $seg->next_action_date ? $seg->next_action_date->format('d/m/Y H:i') : '—',
-                                                        'notas' => $seg->next_action_notes ?? 'Sin notas.'
-                                                    ];
-                                                })) }}">
+                                                data-seguimientos-count="{{ $interaction->seguimientos->count() }}"">
                                                 #{{ $interaction->id }}
                                             </a>
                                             @if ($interaction->attachment_urls)
@@ -475,16 +457,7 @@
                                                 data-llamante-cedula="{{ $interaction->cedula_quien_llama ?? '—' }}"
                                                 data-llamante-celular="{{ $interaction->celular_quien_llama ?? '—' }}"
                                                 data-llamante-parentesco="{{ $interaction->parentesco_quien_llama ?? '—' }}"
-                                                data-seguimientos="{{ json_encode($interaction->seguimientos->map(function($seg) {
-                                                    return [
-                                                        'fecha_creacion' => $seg->created_at ? $seg->created_at->format('d/m/Y H:i') : '',
-                                                        'agente' => $seg->creator->name ?? '—',
-                                                        'resultado' => $seg->outcomeRelation->name ?? '—',
-                                                        'accion' => $seg->nextAction->name ?? '—',
-                                                        'fecha_accion' => $seg->next_action_date ? $seg->next_action_date->format('d/m/Y H:i') : '—',
-                                                        'notas' => $seg->next_action_notes ?? 'Sin notas.'
-                                                    ];
-                                                })) }}">
+                                                data-seguimientos-count="{{ $interaction->seguimientos->count() }}"">
                                                 #{{ $interaction->id }}
                                             </a>
                                             @if ($interaction->attachment_urls)
@@ -605,16 +578,7 @@
                                                 data-llamante-cedula="{{ $interaction->cedula_quien_llama ?? '—' }}"
                                                 data-llamante-celular="{{ $interaction->celular_quien_llama ?? '—' }}"
                                                 data-llamante-parentesco="{{ $interaction->parentesco_quien_llama ?? '—' }}"
-                                                data-seguimientos="{{ json_encode($interaction->seguimientos->map(function($seg) {
-                                                    return [
-                                                        'fecha_creacion' => $seg->created_at ? $seg->created_at->format('d/m/Y H:i') : '',
-                                                        'agente' => $seg->creator->name ?? '—',
-                                                        'resultado' => $seg->outcomeRelation->name ?? '—',
-                                                        'accion' => $seg->nextAction->name ?? '—',
-                                                        'fecha_accion' => $seg->next_action_date ? $seg->next_action_date->format('d/m/Y H:i') : '—',
-                                                        'notas' => $seg->next_action_notes ?? 'Sin notas.'
-                                                    ];
-                                                })) }}">
+                                                data-seguimientos-count="{{ $interaction->seguimientos->count() }}"">
                                                 #{{ $interaction->id }}
                                             </a>
                                             @if ($interaction->attachment_urls)
@@ -735,16 +699,7 @@
                                                 data-llamante-cedula="{{ $interaction->cedula_quien_llama ?? '—' }}"
                                                 data-llamante-celular="{{ $interaction->celular_quien_llama ?? '—' }}"
                                                 data-llamante-parentesco="{{ $interaction->parentesco_quien_llama ?? '—' }}"
-                                                data-seguimientos="{{ json_encode($interaction->seguimientos->map(function($seg) {
-                                                    return [
-                                                        'fecha_creacion' => $seg->created_at ? $seg->created_at->format('d/m/Y H:i') : '',
-                                                        'agente' => $seg->creator->name ?? '—',
-                                                        'resultado' => $seg->outcomeRelation->name ?? '—',
-                                                        'accion' => $seg->nextAction->name ?? '—',
-                                                        'fecha_accion' => $seg->next_action_date ? $seg->next_action_date->format('d/m/Y H:i') : '—',
-                                                        'notas' => $seg->next_action_notes ?? 'Sin notas.'
-                                                    ];
-                                                })) }}">
+                                                data-seguimientos-count="{{ $interaction->seguimientos->count() }}"">
                                                 #{{ $interaction->id }}
                                             </a>
                                             @if ($interaction->attachment_urls)
