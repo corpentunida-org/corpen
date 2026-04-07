@@ -15,7 +15,7 @@
             }
         };
     @endphp
-
+    <x-success />
     <style>
         :root {
             /* Paleta Pastel Minimalista */

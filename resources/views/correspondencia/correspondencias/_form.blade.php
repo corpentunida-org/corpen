@@ -162,7 +162,6 @@
 </style>
 
 <div class="container-fluid py-2">
-
     {{-- SECCIÓN 1: ENCABEZADO E INFORMACIÓN GENERAL --}}
     <div class="card shadow-sm border-0 mb-4">
         <div class="card-body">
@@ -263,7 +262,7 @@
                                 required>
                         @endif
                     </div>
-                    <div class="mb-2">
+                    <div class="mb-4">
                         <label class="field-label">Observación</label>
                         @if ($esEdicion)
                             <div class="p-3 bg-light rounded text-muted small border">
@@ -274,6 +273,44 @@
                             <textarea name="observacion_previa" class="form-control" rows="3">{{ old('observacion_previa') }}</textarea>
                         @endif
                     </div>
+                    <div class="mb-2">
+                        <label class="field-label">Documento Digital</label>
+
+
+                        @if ($esEdicion && $correspondencia->documento_arc)
+                            <div class="d-flex align-items-center">
+                                <i class="bi bi-file-earmark-pdf text-danger fs-4 me-2"></i>
+                                <div class="text-truncate small me-auto">Ver adjunto</div>
+                                <a href="{{ $correspondencia->getFile($correspondencia->documento_arc) }}"
+                                    target="_blank" class="btn btn-sm btn-outline-dark">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </div>
+                        @else
+                            <div id="dropzone" class="drop-zone">
+                                <input type="file" name="documento_arc" id="file-input" class="drop-zone-input"
+                                    accept=".pdf,.doc,.docx">
+
+                                <div id="dropzone-prompt">
+                                    <i class="bi bi-cloud-arrow-up fs-2 text-primary"></i>
+                                    <p class="mb-0 small fw-bold">Arrastra o haz clic aquí</p>
+                                </div>
+
+                                <div id="file-preview" class="preview-container">
+                                    <div class="d-flex align-items-center">
+                                        <i id="preview-icon" class="bi bi-file-earmark-text fs-4 me-2"></i>
+                                        <div class="text-truncate small me-auto text-start">
+                                            <span id="file-name" class="d-block fw-bold text-dark"></span>
+                                        </div>
+                                        <button type="button" id="remove-file" class="btn btn-sm text-danger"
+                                            style="z-index: 30;">
+                                            <i class="bi bi-x-circle-fill fs-5"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
                 </div>
             </div>
 
@@ -282,14 +319,15 @@
                     <div class="card-body p-4">
                         <div class="d-flex justify-content-between align-items-start mb-3">
                             <div>
-                                <h5 class="fw-bold text-dark"><i class="bi bi-pen-fill me-2"></i>Cierre de Radicado</h5>
+                                <h5 class="fw-bold text-dark"><i class="bi bi-pen-fill me-2"></i>Cierre de Radicado
+                                </h5>
                             </div>
                             <div class="form-check form-switch form-switch-lg">
                                 <input class="form-check-input" type="checkbox" name="finalizado" id="finalizado"
                                     value="1"
                                     {{ old('finalizado', $correspondencia->finalizado) ? 'checked' : '' }}>
-                                <label class="form-check-label fw-bold ms-2 mt-1" for="finalizado"
-                                    id="lbl_finalizado">En Proceso</label>
+                                <label class="form-check-label fw-bold ms-2 mt-1"
+                                    for="finalizado"id="lbl_finalizado"></label>
                             </div>
                         </div>
                         <textarea name="final_descripcion" id="final_descripcion" class="form-control" rows="5"
@@ -319,7 +357,8 @@
                                 required>
                                 <option value="">Buscar por nombre o cédula...</option>
                                 @foreach ($remitentes as $r)
-                                    <option value="{{ $r->cod_ter }}">{{ $r->cod_ter }} - {{ $r->nom_ter }}</option>
+                                    <option value="{{ $r->cod_ter }}">{{ $r->cod_ter }} - {{ $r->nom_ter }}
+                                    </option>
                                 @endforeach
                             </select>
                         @else
@@ -386,44 +425,7 @@
                     </div>
 
                     {{-- ZONA DE ARCHIVO: DRAG & DROP + CLIC NATIVO --}}
-                    <div class="mt-4 pt-3 border-top">
-                        <label class="field-label">Documento Digital</label>
-                        @if ($esEdicion && $correspondencia->documento_arc)
-                            <div class="card bg-light border p-2">
-                                <div class="d-flex align-items-center">
-                                    <i class="bi bi-file-earmark-pdf text-danger fs-4 me-2"></i>
-                                    <div class="text-truncate small me-auto">Ver adjunto</div>
-                                    <a href="{{ $correspondencia->getFile($correspondencia->documento_arc) }}"
-                                        target="_blank" class="btn btn-sm btn-outline-dark">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
-                                </div>
-                            </div>
-                        @else
-                            <div id="dropzone" class="drop-zone">
-                                <input type="file" name="documento_arc" id="file-input" class="drop-zone-input"
-                                    accept=".pdf,.doc,.docx">
 
-                                <div id="dropzone-prompt">
-                                    <i class="bi bi-cloud-arrow-up fs-2 text-primary"></i>
-                                    <p class="mb-0 small fw-bold">Arrastra o haz clic aquí</p>
-                                </div>
-
-                                <div id="file-preview" class="preview-container">
-                                    <div class="d-flex align-items-center">
-                                        <i id="preview-icon" class="bi bi-file-earmark-text fs-4 me-2"></i>
-                                        <div class="text-truncate small me-auto text-start">
-                                            <span id="file-name" class="d-block fw-bold text-dark"></span>
-                                        </div>
-                                        <button type="button" id="remove-file" class="btn btn-sm text-danger"
-                                            style="z-index: 30;">
-                                            <i class="bi bi-x-circle-fill fs-5"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        @endif
-                    </div>
                 </div>
             </div>
         </div>
@@ -445,14 +447,16 @@
         if (switchFinal.length > 0) {
             const updateState = () => {
                 const isChecked = switchFinal.is(':checked');
-                $('#lbl_finalizado').text(isChecked ? 'FINALIZAR RADICADO' : 'En Proceso').toggleClass(
-                    'text-success', isChecked);
+                $('#final_descripcion').val(isChecked ? 'Se finaliza el radicado' : '');
                 $('#card_cierre').toggleClass('active-closure', isChecked);
                 $('#final_descripcion').attr('required', isChecked);
+
+                isChecked ? $('#final_descripcion').show() : $('#final_descripcion').hide();
             };
             switchFinal.on('change', updateState);
             updateState();
         }
+
 
         // 3. AJAX TRD
         @if (!$esEdicion)
@@ -465,7 +469,7 @@
                         trd.empty().append('<option value="">Seleccione serie...</option>');
                         data.forEach(i => trd.append(
                             `<option value="${i.id_trd}">${i.serie_documental}</option>`
-                            ));
+                        ));
                         trd.prop('disabled', false);
                     });
                 }
