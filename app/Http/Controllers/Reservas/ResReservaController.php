@@ -182,6 +182,7 @@ class ResReservaController extends Controller implements HasMiddleware
         }*/
     }
 
+    //contabilidad confirmar reserva
     public function update(Request $request, Res_reserva $reserva)
     {
         $request->validate([
@@ -203,12 +204,12 @@ class ResReservaController extends Controller implements HasMiddleware
 
         if ($request->boolean('notificar_pastor')) {
             $texto = $request->boolean('cancelar_reserva') ? 'Lamentamos informarle que su reserva ha sido cancelada. Por favor, revise los comentarios del funcionario para más detalles.' : 'Su reserva ha sido confirmada. Por favor, revise los comentarios del funcionario para más detalles.';
-            $texto .= "\n\nComentario del funcionario:\n" . $request->observacion;
+            $texto .= "<br><br><strong>Comentario del funcionario:</strong><br>" . nl2br(e($request->observacion));
             Mail::to($reserva->user->email)->send(new ReservaInmueble($reserva->user->name, $texto, 'Actualización de estado de reserva', false, $reserva->res_inmueble));
         }
 
-        //$this->auditoria('Update estado de reserva a confirmado soporte de pago ID: ', $reserva->id);
-        return redirect()->back()->with('success', 'Reserva confirmada correctamente.');
+        $this->auditoria('Update estado de reserva a confirmado soporte de pago ID: ', $reserva->id);
+        return redirect()->back()->with('success', 'Cambio de estado realizado correctamente.');
     }
 
     public function destroy($id)
@@ -330,7 +331,7 @@ class ResReservaController extends Controller implements HasMiddleware
     }
 
     public function reservaspagos()
-    {
+    { 
         $reservas = Res_reserva::where('res_status_id', 5)
             ->whereNotNull('soporte_pago')
             ->with(['user', 'res_inmueble'])
@@ -343,5 +344,13 @@ class ResReservaController extends Controller implements HasMiddleware
             ->get();
 
         return view('reserva.funcionario.respagos', compact('reservas', 'reservascon'));
+    }
+
+    public function indexCartera()
+    {
+        $fecha = date('Y-m-d');
+        $reservas = Res_reserva::where('res_status_id', 1)
+        ->where('fecha_fin', '>=', $fecha)->orderBy('fecha_inicio', 'asc')->with(['user', 'res_inmueble'])->get();
+        return view('reserva.funcionario.rescartera', compact('reservas'));
     }
 }

@@ -264,6 +264,7 @@ Route::prefix('reservas')->name('reserva.')->group(function () {
     Route::post('reservaI/storeSoporte', [ResReservaController::class, 'storeSoporte'])->name('inmueble.soporte.store')->middleware('auth');
     Route::get('verificar/comprobante', [ResReservaController::class, 'reservaspagos'])->name('reservas.pago')->middleware(['auth', 'candirect:reservas.Reserva.pagos']);
     Route::get('reservaI/confirmacion', [ResReservaController::class, 'indexConfirmacion'])->name('inmueble.confirmacion')->middleware(['auth', 'candirect:reservas.Reserva.lista']);
+    Route::get('reservaI/cartera', [ResReservaController::class, 'indexCartera'])->name('reservas.sinsoporte')->middleware(['auth', 'candirect:reservas.Reserva.cartera']);
     Route::get('reservaI/confirmacion/{id}/show', [ResReservaController::class, 'showConfirmacion'])->name('inmueble.confirmacion.show')->middleware(['auth', 'candirect:reservas.Reserva.lista']); 
     //Route::post('reservaI/notificar/ajuste', [ResReservaController::class, 'notificarAjuste'])->name('inmueble.notificar.ajuste');
     Route::post('reservaI/calificacion', [ResReservaController::class, 'calificacionAsociado'])->name('inmueble.resenia')->middleware('auth');
