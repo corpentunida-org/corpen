@@ -103,15 +103,15 @@
                                             </td>
 
                                             <td data-label="Fecha-Reserva">
-                                                {{ $hisres->created_at->translatedFormat('j F Y') }}
+                                                {{ $hisres->created_at?->translatedFormat('j F Y') ?? '' }}
                                             </td>
 
                                             <td data-label="Inicio">
-                                                {{ $hisres->fecha_inicio->translatedFormat('j F Y') }}
+                                                {{ $hisres->fecha_inicio?->translatedFormat('j F Y') ?? '' }}
                                             </td>
 
                                             <td data-label="Fin">
-                                                {{ $hisres->fecha_fin->translatedFormat('j F Y') }}
+                                                {{ $hisres->fecha_fin?->translatedFormat('j F Y') ?? '' }}
                                             </td>
 
                                             <td data-label="Estado">

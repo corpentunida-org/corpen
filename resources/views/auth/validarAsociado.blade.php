@@ -5,12 +5,12 @@
     <p style="font-size: 20px;
                 font-weight: bold;
                 color: #254684;
-                text-align: center; padding-top: 100px">Registro Asociado Corpentunida</p>
+                text-align: center; padding-top: 50px">Registro Asociado</p>
     <p style="font-size: 16px;
                 font-weight: bold;
                 color: #254684;
                 text-align: center;
-                padding-bottom: 15px;">Validar identidad</p>
+                padding-bottom: 15px;">Datos para validar identidad</p>
 
     <form method="POST" class="w-100 mt-4 pt-2" action="{{ route('validar.asociado') }}" style="padding-bottom: 220px">
         @csrf
@@ -27,9 +27,8 @@
 
         <div class="flex items-center justify-end mt-4">
             <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('login') }}">
-                {{ __('Already registered?') }}
+                {{ __('Si ya está registrado. Haga clic aquí para iniciar sesión.') }}
             </a>
-
             <x-button class="ms-4">
                 {{ __('Validar') }}
             </x-button>
