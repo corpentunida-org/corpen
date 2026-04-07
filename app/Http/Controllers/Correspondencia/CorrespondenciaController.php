@@ -232,57 +232,17 @@ class CorrespondenciaController extends Controller
      */
     public function update(Request $request, Correspondencia $correspondencia)
     {
-        // 1. VALIDACIÓN
-        $data = $request->validate(
-            [
-                'fecha_solicitud' => 'required|date',
-                'asunto' => 'required|string|max:500',
-                'medio_recibido' => 'required|exists:corr_medio_recepcion,id',
-                'remitente_id' => 'required',
-                'trd_id' => 'required',
-                'flujo_id' => 'required',
-                'estado_id' => 'required',
-                'observacion_previa' => 'nullable|string',
-
-                // LÓGICA CLAVE: Si se marca 'finalizado', la descripción es OBLIGATORIA
-                'final_descripcion' => 'nullable|string|required_if:finalizado,1',
-
-                'documento_arc' => 'nullable|file|mimes:pdf,doc,docx|max:10240',
-            ],
-            [
-                // Mensaje personalizado por si intentan finalizar sin escribir
-                'final_descripcion.required_if' => 'Debe escribir una descripción de cierre si va a finalizar el radicado.',
-            ],
-        );
-
-        // 2. BOOLEANOS
-        $data['es_confidencial'] = $request->boolean('es_confidencial');
         $data['finalizado'] = $request->boolean('finalizado');
-
-        // 3. GESTIÓN DE ARCHIVOS (S3)
-        if ($request->hasFile('documento_arc')) {
-            // Borrar anterior si existe
-            if ($correspondencia->documento_arc) {
-                Storage::disk('s3')->delete($correspondencia->documento_arc);
-            }
-
-            // Subir nuevo
-            $file = $request->file('documento_arc');
-            $fileName = 'rad' . $correspondencia->id_radicado . '_' . time() . '.' . $file->extension();
-            $path = 'corpentunida/correspondencia/' . $fileName;
-
-            Storage::disk('s3')->put($path, file_get_contents($file));
-            $data['documento_arc'] = $path;
-        }
+        $data['final_descripcion'] = $request->final_descripcion;
 
         // 4. ACTUALIZAR BASE DE DATOS
         $correspondencia->update($data);
 
         // 5. AUDITORÍA
-        $this->auditoria('UPDATE CORRESPONDENCIA ID ' . $correspondencia->id_radicado);
+        $this->auditoria('FIN CORRESPONDENCIA ID ' . $correspondencia->id_radicado);
 
         // 6. REDIRECCIÓN CORRECTA AL SHOW
-        return redirect()->route('correspondencia.correspondencias.show', $correspondencia)->with('success', 'Radicado actualizado correctamente.');
+        return redirect()->route('correspondencia.correspondencias.index')->with('success', 'Radicado finalizado correctamente.');
     }
 
     /**

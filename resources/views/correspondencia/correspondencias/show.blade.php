@@ -23,7 +23,7 @@
                    data-bs-toggle="tooltip" 
                    data-bs-placement="bottom" 
                    title="Observación: Funcionalidad de uso exclusivo del usuario final encargado de la gestión y validación de solicitudes en estado completamente cerrado.">
-                    <i class="bi bi-pencil-square"></i> Finalización del Proceso
+                    <i class="bi bi-pencil-square me-2"></i> Finalización del Proceso
                 </a>
             </div>
         </header>
