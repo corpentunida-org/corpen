@@ -15,6 +15,13 @@ class ResInmuebleController extends Controller
     /**
      * Display a listing of the resource.
      */
+
+    private function auditoria($accion)
+    {
+        $auditoriaController = app(AuditoriaController::class);
+        $auditoriaController->create($accion, 'RESERVAS');
+    }
+
     public function index()
     {
         $inmuebles = Res_inmueble::with('fotosrel')
@@ -97,6 +104,7 @@ class ResInmuebleController extends Controller
         $inmueble = Res_inmueble::findOrFail($id);
         $inmueble->active = !$inmueble->active;
         $inmueble->save();
+        $this->auditoria('Cambio de estado de un apartamento. Estado: ' . ($inmueble->active ? 'Activo' : 'Inactivo'), ' en ', $inmueble->id);
         return back()->with('success', 'El estado del inmueble ha sido actualizado correctamente.');
     }
 
