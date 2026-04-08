@@ -4,6 +4,10 @@
     <div class="card stretch stretch-full">
         <a class="card-header">
             <h5 class="mb-0">Reservas pendientes de verificación de pago</h5>
+            <label class="d-flex align-items-center gap-2 ms-auto">
+                Search:
+                <input placeholder="Search..." class="form-control form-control-sm" id="buscadorReservas" type="text">
+            </label>
         </a>
         <div class="card-body" style="">
             @if ($reservas->count() == 0)
@@ -279,6 +283,19 @@
                 } else {
                     observacion.removeClass("is-invalid");
                 }
+
+            });
+            $("#buscadorReservas").on("keyup", function() {
+
+                let valor = $(this).val().toLowerCase();
+
+                $(".item-reserva").filter(function() {
+
+                    $(this).toggle(
+                        $(this).text().toLowerCase().indexOf(valor) > -1
+                    );
+
+                });
 
             });
         });
