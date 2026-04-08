@@ -53,12 +53,12 @@ class ResReservaController extends Controller implements HasMiddleware
     public function createReserva($id)
     {
         $inmueble = Res_inmueble::findOrFail($id);
-        if (!$inmueble->active) {
+        /*if (!$inmueble->active) {
             return redirect()->route('reserva.reserva.index')->with('error', 'El inmueble seleccionado no está disponible para reservas en este momento.');
-        }
+        }*/
         date_default_timezone_set('America/Bogota');
         $fecha = date('Y-m-d');
-        $reservas = Res_reserva::where('res_inmueble_id', $id)->where('fecha_fin', '>=', $fecha)->orderBy('fecha_inicio', 'asc')->get();
+        $reservas = Res_reserva::where('res_inmueble_id', $id)->where('fecha_fin', '>=', $fecha)->whereIn('res_status_id', [1,2,5])->orderBy('fecha_inicio', 'asc')->get();
         return view('reserva.asociado.create', compact('inmueble', 'reservas'));
     }
 
@@ -105,9 +105,9 @@ class ResReservaController extends Controller implements HasMiddleware
         }
 
         $existe_reserva = Res_reserva::where('res_inmueble_id', $inmueble_id)
+            ->whereNotIn('res_status_id', [3, 4])
             ->where(function ($query) use ($fechaInicio, $endDate) {
-                $query
-                    ->whereBetween('fecha_inicio', [$fechaInicio, $endDate])
+                $query->whereBetween('fecha_inicio', [$fechaInicio, $endDate])
                     ->orWhereBetween('fecha_fin', [$fechaInicio, $endDate])
                     ->orWhere(function ($query) use ($fechaInicio, $endDate) {
                         $query->where('fecha_inicio', '<=', $fechaInicio)->where('fecha_fin', '>=', $endDate);
@@ -136,50 +136,6 @@ class ResReservaController extends Controller implements HasMiddleware
         Mail::to(auth()->user()->email)->send(new ReservaInmueble(auth()->user()->name, $texto, 'Reserva de Inmueble ' . $inmueble->name, true, $inmueble));
         return redirect()->route('reserva.reserva.index')->with('success', 'Reserva creada con éxito');
 
-        //INSERT CODIGO ANTERIOR
-        /*{
-        $fechaAnt = Carbon::parse($fechaInicio)->subDay()->format('Y-m-d');
-        $fechaDespues = Carbon::parse($endDate)->addDay()->format('Y-m-d');
-
-        $reserva = new Res_reserva();
-        $reserva->res_inmueble_id = $inmueble_id;
-        $reserva->res_status_id = 1;
-        $reserva->user_id = auth()->user()->id;
-        $reserva->nid = auth()->user()->nid;
-        $reserva->celular = $request->input('celular');
-        $reserva->fecha_solicitud = $fecha_actual;
-        $reserva->fecha_inicio = $fechaInicio;
-        $reserva->fecha_fin = $endDate;
-        $reserva->comentario_reserva = $request->input('description');
-        $reserva->save();
-
-        $reservaAnt = new Res_reserva();
-        $reservaAnt->res_inmueble_id = $inmueble_id;
-        $reservaAnt->res_status_id = 1;
-        $reservaAnt->user_id = 4;
-        $reservaAnt->nid = '0000000000';
-        $reservaAnt->fecha_solicitud = $fecha_actual;
-        $reservaAnt->fecha_inicio = $fechaAnt;
-        $reservaAnt->fecha_fin = $fechaAnt;
-        $reservaAnt->save();
-
-        $reservaDes = new Res_reserva();
-        $reservaDes->res_inmueble_id = $inmueble_id;
-        $reservaDes->res_status_id = 1;
-        $reservaDes->user_id = 4;
-        $reservaDes->nid = '0000000000';
-        $reservaDes->fecha_solicitud = $fecha_actual;
-        $reservaDes->fecha_inicio = $fechaDespues;
-        $reservaDes->fecha_fin = $fechaDespues;
-        $reservaDes->save();
-
-        $reserva->reserva_antes = $reservaAnt->id;
-        $reserva->reserva_despues = $reservaDes->id;
-        $reserva->save();
-
-        $texto = 'Hemos recibido su solicitud de reserva con ingreso el ' . $request->input('fechaInicio') . ' y salida el ' . $request->input('endDate') . '. En las próximas horas, un funcionario se comunicará con usted para validar los datos de la reserva. ¡Dios le bendiga!.';
-        Mail::to(auth()->user()->email)->cc('jesdis@hotmail.com')->send(new ReservaInmueble(auth()->user()->name, $texto, 'Reserva de Inmueble'));
-        }*/
     }
 
     //contabilidad confirmar reserva
