@@ -65,9 +65,9 @@ class MaeCongregacion extends Model
         return $this->belongsTo(MaeDistritos::class, 'distrito', 'COD_DIST');
     }
 
-    public function maeTerceros()
+    public function maeTercero()
     {
-        return $this->belongsTo(maeTerceros::class, 'codigo', 'congrega');
+        return $this->hasOne(maeTerceros::class, 'congrega', 'codigo');
     }
 
     public function pastorAnteriorObj()

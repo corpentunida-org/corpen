@@ -4,15 +4,19 @@ namespace App\Models\Maestras;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-
-
 use App\Models\Maestras\MaeCongregacion;
 
 class MaeDistritos extends Model
 {
-use HasFactory;
+    use HasFactory;
 
     protected $table = 'MaeDistritos';
+
+    // 👇 AGREGAR ESTO URGENTE 👇
+    protected $primaryKey = 'COD_DIST';
+    public $incrementing = false;
+    protected $keyType = 'string';
+    // 👆 ======================= 👆
 
     protected $fillable = [
         'COD_DIST',
@@ -21,24 +25,13 @@ use HasFactory;
         'COMPUEST',
     ];
     
-    //crear una funcion que relacionara la otra tabla - congregaciones es el nombre de la funcion ya que mas adelante la voy a llamar
-    //relacionar el nombre con la misma tabla para que no hayan confuciones 
-        /**
-     * Relación uno a muchos con Congregaciones
-     * Un distrito puede tener muchas congregaciones
-     */
     public function congregaciones()
     {
-        return $this->hasMany(MaeCongregacion::class, 'COD_DIST', 'distrito');
+        return $this->hasMany(MaeCongregacion::class, 'distrito', 'COD_DIST');
     }
-    /**
-     * Relación con maeTerceros
-     * Un distrito puede tener muchos terceros
-     */
+
     public function terceros()
     {
         return $this->hasMany(maeTerceros::class, 'cod_dist', 'COD_DIST');
     }
-
-
 }

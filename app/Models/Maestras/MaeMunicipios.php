@@ -4,8 +4,7 @@ namespace App\Models\Maestras;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-// Importante: Asegúrate de que el modelo Congregacion esté en este namespace
-// use App\Models\Maestras\Congregacion; 
+use App\Models\Maestras\MaeCongregacion; 
 
 class MaeMunicipios extends Model
 {
@@ -29,7 +28,7 @@ class MaeMunicipios extends Model
     {
         // 'municipio' es la llave foránea en la tabla congregaciones
         // 'id' es la llave primaria en MaeMunicipios
-        return $this->hasMany(Congregacion::class, 'municipio', 'id');
+        return $this->hasMany(MaeCongregacion::class, 'municipio', 'id');
     }
 
     /**
