@@ -12,7 +12,7 @@ class MaeClaseCongregacion extends Model
 {
 use HasFactory;
 
-    protected $table = 'claseCongregacion';
+    protected $table = 'MaeClaseCongregacion';
 
     protected $fillable = [
         'id',
