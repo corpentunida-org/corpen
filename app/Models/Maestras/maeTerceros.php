@@ -5,13 +5,14 @@ namespace App\Models\Maestras;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
-use App\Models\Maestras\Congregacion;
+use App\Models\Maestras\MaeCongregacion;
 use App\Models\Vistas\VisitaCorpen;
 use App\Models\Maestras\MaeTipo;
-use App\Models\Maestras\maeDistritos;
+use App\Models\Maestras\MaeDistritos;
 use App\Models\Soportes\ScpUsuario;
 use App\Models\Interacciones\Interaction;
 use App\Models\Inventario\InvCompra;
+use App\Models\Correspondencia\Correspondencia;
 
 
 class maeTerceros extends Model
@@ -230,9 +231,9 @@ class maeTerceros extends Model
      * Relación uno a muchos con Congregaciones
      * Un tercero puede estar relacionado con muchas congregaciones
      */
-    public function congregaciones()
+    public function congregacion() 
     {
-        return $this->hasOne(Congregacion::class, 'codigo', 'congrega');
+        return $this->belongsTo(MaeCongregacion::class, 'congrega', 'codigo');
     }
 
 
@@ -260,14 +261,14 @@ class maeTerceros extends Model
 
     public function distrito()
     {
-        return $this->belongsTo(maeDistritos::class, 'cod_dist', 'COD_DIST');
+        return $this->belongsTo(MaeDistritos::class, 'cod_dist', 'COD_DIST');
     }
 
     //SECCION FLUJO DE SOLICITUDES
     // Correspondencias enviadas por este tercero
     public function correspondencias()
     {
-        return $this->hasMany(\App\Models\Correspondencia\Correspondencia::class, 'remitente_id', 'cod_ter');
+        return $this->hasMany(Correspondencia::class, 'remitente_id', 'cod_ter');
     }
 
     /**
@@ -278,5 +279,17 @@ class maeTerceros extends Model
     {
         // hasMany(Modelo Relacionado, llave_foranea, llave_primaria_local)
         return $this->hasMany(InvCompra::class, 'cod_ter_proveedor', 'cod_ter');
+    }
+
+    // Asegúrate de poner esto dentro de la clase maeTerceros
+
+    public function getCongregaAttribute($value)
+    {
+        return trim($value); // Quita espacios en blanco como "01   " -> "01"
+    }
+
+    public function getCodDistAttribute($value)
+    {
+        return trim($value); 
     }
 }

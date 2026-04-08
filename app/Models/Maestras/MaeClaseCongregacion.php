@@ -6,13 +6,13 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 
-use App\Models\Maestras\Congregacion;
+use App\Models\Maestras\MaeCongregacion;
 
-class claseCongregacion extends Model
+class MaeClaseCongregacion extends Model
 {
 use HasFactory;
 
-    protected $table = 'claseCongregacion';
+    protected $table = 'MaeClaseCongregacion';
 
     protected $fillable = [
         'id',
@@ -25,7 +25,7 @@ use HasFactory;
     
     public function congregaciones()
     {
-        return $this->hasMany(Congregacion::class, 'id', 'clase');
+        return $this->hasMany(MaeCongregacion::class, 'id', 'clase');
     }
 
 }

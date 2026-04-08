@@ -178,7 +178,7 @@
 <table class="details">
     <tr>
         <th>Clase de Congregación</th>
-        <td>{{ $congregacion->claseCongregacion->nombre ?? 'No especificada' }}</td>
+        <td>{{ $congregacion->maeClaseCongregacion->nombre ?? 'No especificada' }}</td>
     </tr>
     <tr>
         <th>Distrito</th>
