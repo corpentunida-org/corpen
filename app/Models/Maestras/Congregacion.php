@@ -5,7 +5,7 @@ namespace App\Models\Maestras;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Maestras\claseCongregacion;
-use App\Models\Maestras\maeDistritos;
+use App\Models\Maestras\MaeDistritos;
 use App\Models\Maestras\maeTerceros;
 use App\Models\Maestras\MaeMunicipios;
 
@@ -60,9 +60,9 @@ class Congregacion extends Model
     }
 
 
-    public function maeDistritos()
+    public function maeDistritosRelacion()
     {
-        return $this->belongsTo(maeDistritos::class, 'distrito', 'COD_DIST');
+        return $this->belongsTo(MaeDistritos::class, 'distrito', 'COD_DIST');
     }
 
     public function maeTerceros()

@@ -67,7 +67,7 @@
                         <span class="input-group-text"><i class="feather-map-pin"></i></span>
                         <select id="filterDistrict" class="form-select pastel-select">
                             <option value="">Todos</option>
-                            @foreach(App\Models\Maestras\maeDistritos::all() as $distrito)
+                            @foreach(App\Models\Maestras\MaeDistritos::all() as $distrito)
                                 <option value="{{ $distrito->id }}" {{ request('district_filter') == $distrito->id ? 'selected' : '' }}>{{ $distrito->nom_dis }}</option>
                             @endforeach
                         </select>
