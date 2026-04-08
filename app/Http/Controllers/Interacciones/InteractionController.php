@@ -12,7 +12,8 @@ use Carbon\Carbon;
 use Exception;
 
 use App\Models\Maestras\maeTerceros;
-use App\Models\Maestras\maeDistritos;
+use App\Models\Maestras\MaeDistritos;
+use App\Models\Maestras\MaeCongregacion;
 use App\Models\User;
 use App\Models\Interacciones\Interaction;
 use App\Models\Interacciones\IntSeguimiento;
@@ -192,7 +193,7 @@ class InteractionController extends Controller
             ->get();
 
         $distritosAgrupados = $distritosInteracciones->groupBy(function ($item) {
-            // CORRECCIÓN AQUÍ: Usamos NOM_DIST según tu modelo maeDistritos
+            // CORRECCIÓN AQUÍ: Usamos NOM_DIST según tu modelo MaeDistritos
             return optional(optional($item->client)->distrito)->NOM_DIST ?? 'Sin Distrito';
         })->map(function ($row) {
             return $row->count();
@@ -236,8 +237,8 @@ class InteractionController extends Controller
         ];
 
         // 5. Listas para los select de Filtro
-        // Asegúrate de tener el modelo maeDistritos importado arriba
-        $listDistritos = maeDistritos::all(); 
+        // Asegúrate de tener el modelo MaeDistritos importado arriba
+        $listDistritos = MaeDistritos::all(); 
         $listLineas    = LineaCredito::all();
         
         // NUEVO: Consultas para los selects de Agentes y Clientes

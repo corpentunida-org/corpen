@@ -55,8 +55,10 @@
                         <span class="input-group-text"><i class="feather-users"></i></span>
                         <select id="filterCongregation" class="form-select pastel-select">
                             <option value="">Todas</option>
-                            @foreach(App\Models\Maestras\Congregacion::all() as $congregacion)
-                                <option value="{{ $congregacion->id }}" {{ request('congregation_filter') == $congregacion->id ? 'selected' : '' }}>{{ $congregacion->nom_con }}</option>
+                            @foreach(App\Models\Maestras\MaeCongregacion::all() as $congregacion)
+                                <option value="{{ $congregacion->codigo }}" {{ request('congregation_filter') == $congregacion->codigo ? 'selected' : '' }}>
+                                    {{ $congregacion->nombre }}
+                                </option>
                             @endforeach
                         </select>
                     </div>
@@ -67,8 +69,8 @@
                         <span class="input-group-text"><i class="feather-map-pin"></i></span>
                         <select id="filterDistrict" class="form-select pastel-select">
                             <option value="">Todos</option>
-                            @foreach(App\Models\Maestras\maeDistritos::all() as $distrito)
-                                <option value="{{ $distrito->id }}" {{ request('district_filter') == $distrito->id ? 'selected' : '' }}>{{ $distrito->nom_dis }}</option>
+                            @foreach(App\Models\Maestras\MaeDistritos::all() as $distrito)
+                                <option value="{{ $distrito->COD_DIST }}" {{ request('district_filter') == $distrito->COD_DIST ? 'selected' : '' }}>{{ $distrito->NOM_DIST }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -304,9 +306,9 @@
                                         $clientId = $tercero->cod_ter ?? 'N/A';
                                         $clientPhone = $tercero->tel ?? ($tercero->cel ?? 'N/A');
                                         $clientEmail = $tercero->email ?? 'N/A';
-                                        $type = $tercero->maeTipos->nom_ter ?? 'Sin definir';
-                                        $congregacion = $tercero->congregaciones->nom_con ?? 'Sin definir';
-                                        $distrito = $tercero->distrito->nom_dis ?? 'Sin definir';
+                                        $type = $tercero->maeTipos->nombre ?? 'Sin definir';
+                                        $congregacion = $tercero->congregacion->nombre ?? 'Sin definir';
+                                        $distrito = $tercero->distrito->NOM_DIST ?? 'Sin definir';
                                     @endphp
 
                                     <tr class="table-row-hover pastel-row excel-row" data-status="{{ $isActive ? 'activo' : 'inactivo' }}">
@@ -507,9 +509,9 @@
                                         $clientId = $tercero->cod_ter ?? 'N/A';
                                         $clientPhone = $tercero->tel ?? ($tercero->cel ?? 'N/A');
                                         $clientEmail = $tercero->email ?? 'N/A';
-                                        $type = $tercero->maeTipos->nom_ter ?? 'Sin definir';
-                                        $congregacion = $tercero->congregaciones->nom_con ?? 'Sin definir';
-                                        $distrito = $tercero->distrito->nom_dis ?? 'Sin definir';
+                                        $type = $tercero->maeTipos->nombre ?? 'Sin definir';
+                                        $congregacion = $tercero->congregacion->nombre ?? 'Sin definir';
+                                        $distrito = $tercero->distrito->NOM_DIST ?? 'Sin definir';
                                     @endphp
                                     <tr class="table-row-hover pastel-row excel-row" data-status="activo">
                                         <td class="py-1">
@@ -672,9 +674,9 @@
                                         $clientId = $tercero->cod_ter ?? 'N/A';
                                         $clientPhone = $tercero->tel ?? ($tercero->cel ?? 'N/A');
                                         $clientEmail = $tercero->email ?? 'N/A';
-                                        $type = $tercero->maeTipos->nom_ter ?? 'Sin definir';
-                                        $congregacion = $tercero->congregaciones->nom_con ?? 'Sin definir';
-                                        $distrito = $tercero->distrito->nom_dis ?? 'Sin definir';
+                                        $type = $tercero->maeTipos->nombre ?? 'Sin definir';
+                                        $congregacion = $tercero->congregacion->nombre ?? 'Sin definir';
+                                        $distrito = $tercero->distrito->NOM_DIST ?? 'Sin definir';
                                     @endphp
                                     <tr class="table-row-hover pastel-row excel-row" data-status="inactivo">
                                         <td class="py-1">
