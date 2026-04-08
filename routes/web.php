@@ -45,7 +45,7 @@ use App\Http\Controllers\Archivo\GdoDocsEmpleadosController;
 use App\Http\Controllers\Archivo\GdoCategoriaDocumentoController;
 
 //MAESTRAS
-use App\Http\Controllers\Maestras\CongregacionController;
+use App\Http\Controllers\Maestras\MaeCongregacionController;
 use App\Http\Controllers\Maestras\MaeTercerosController;
 use App\Http\Controllers\Maestras\MaeTiposController;
 use App\Http\Controllers\Maestras\MaeMunicipiosController;
@@ -291,11 +291,11 @@ Route::prefix('maestras')
             ->parameters(['tipos' => 'tipo']);
 
         // CONGREGACION (CORREGIDO)
-        Route::resource('congregaciones', CongregacionController::class)
+        Route::resource('congregaciones', MaeCongregacionController::class)
             ->names('congregacion')
             ->parameters(['congregaciones' => 'congregacion']);
 
-        Route::get('buscar-pastor', [CongregacionController::class, 'buscarPastor'])->name('buscar.pastor');
+        Route::get('buscar-pastor', [MaeCongregacionController::class, 'buscarPastor'])->name('buscar.pastor');
 
         Route::get('departamentos/{region}', [MaeMunicipiosController::class, 'listadepartamentos'])->name('departamentos.listar');
         Route::get('municipios/{departamento}', [MaeMunicipiosController::class, 'listamunicipios'])->name('municipios.listar');

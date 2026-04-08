@@ -4,13 +4,13 @@ namespace App\Models\Maestras;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Maestras\claseCongregacion;
+use App\Models\Maestras\MaeClaseCongregacion;
 use App\Models\Maestras\MaeDistritos;
 use App\Models\Maestras\maeTerceros;
 use App\Models\Maestras\MaeMunicipios;
 
 
-class Congregacion extends Model
+class MaeCongregacion extends Model
 {
     use HasFactory;
 
@@ -33,8 +33,6 @@ class Congregacion extends Model
     protected $fillable = [
         'codigo',
         'nombre',
-        'pastor',
-        'pastorAnterior',
         'clase',
         'estado',
         'municipio',
@@ -45,6 +43,8 @@ class Congregacion extends Model
         'apertura',
         'cierre',
         'observacion',
+        'pastor', //Ultimo registro
+        'pastorAnterior', //Ultimo registro
         // 'codigo' no se incluye aquí porque es la clave primaria y no se debe cambiar en un update.
     ];
 
@@ -54,13 +54,13 @@ class Congregacion extends Model
      * El tercer argumento ('id') es la clave primaria en la tabla 'claseCongregacion'.
      * Esta relación está bien configurada.
      */
-    public function claseCongregacion()
+    public function maeClaseCongregacion()
     {
-        return $this->belongsTo(claseCongregacion::class, 'clase', 'id');
+        return $this->belongsTo(MaeClaseCongregacion::class, 'clase', 'id');
     }
 
 
-    public function maeDistritosRelacion()
+    public function maeDistritos()
     {
         return $this->belongsTo(MaeDistritos::class, 'distrito', 'COD_DIST');
     }

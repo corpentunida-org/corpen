@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Maestras;
 use App\Http\Controllers\Controller;
 use App\Models\Maestras\maeTerceros;
 use App\Models\Maestras\MaeTipo;
-use App\Models\Maestras\Congregacion;
+use App\Models\Maestras\MaeCongregacion;
 use App\Models\Maestras\MaeDistritos;
 use App\Models\Soportes\ScpUsuario;
 use App\Models\Interacciones\Interaction;
@@ -44,7 +44,7 @@ class MaeTercerosController extends Controller
     public function create()
     {
         $tipos = MaeTipo::all();
-        $congregaciones = Congregacion::all();
+        $congregaciones = MaeCongregacion::all();
         $distritos = MaeDistritos::all();
         $tercero = new maeTerceros(); // objeto vacío para el formulario
         return view('maestras.terceros.create', compact('tercero', 'tipos', 'congregaciones', 'distritos'));
@@ -92,7 +92,7 @@ class MaeTercerosController extends Controller
     {
         //dd($tercero); // Debug: Ver el tercero que se va a editar
         $tipos = MaeTipo::all();
-        $congregaciones = Congregacion::all();
+        $congregaciones = MaeCongregacion::all();
         $distritos = MaeDistritos::all();
 
         // Cargar relaciones necesarias

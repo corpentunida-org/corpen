@@ -5,7 +5,7 @@ namespace App\Models\Maestras;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
-use App\Models\Maestras\Congregacion;
+use App\Models\Maestras\MaeCongregacion;
 use App\Models\Vistas\VisitaCorpen;
 use App\Models\Maestras\MaeTipo;
 use App\Models\Maestras\MaeDistritos;
@@ -232,7 +232,7 @@ class maeTerceros extends Model
      */
     public function congregaciones()
     {
-        return $this->hasOne(Congregacion::class, 'codigo', 'congrega');
+        return $this->hasOne(MaeCongregacion::class, 'codigo', 'congrega');
     }
 
 

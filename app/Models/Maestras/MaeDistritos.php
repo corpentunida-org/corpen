@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 
-use App\Models\Maestras\Congregacion;
+use App\Models\Maestras\MaeCongregacion;
 
 class MaeDistritos extends Model
 {
@@ -29,7 +29,7 @@ use HasFactory;
      */
     public function congregaciones()
     {
-        return $this->hasMany(Congregacion::class, 'COD_DIST', 'distrito');
+        return $this->hasMany(MaeCongregacion::class, 'COD_DIST', 'distrito');
     }
     /**
      * Relación con maeTerceros
