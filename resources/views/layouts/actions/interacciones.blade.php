@@ -17,10 +17,15 @@
             </a>
         </li>
         <li class="nxl-item">
-            <a class="nxl-link" href="{{ route('interactions.report') }}"> 
-                <i class="bi bi-pie-chart me-2"></i> Informe
+            <a href="{{ route('interactions.report',
+                auth()->user()->hasDirectPermission('interacciones.informes.todosagentes')
+                    ? request()->all()
+                    : array_merge(request()->all(), ['agent_id' => auth()->id()]),
+                ) }}"
+                class="nxl-link">
+                <i class="bi bi-bar-chart-fill me-2"></i> Informe
             </a>
-        </li>     
+        </li>
         @candirect('interacciones.parametros.index')
         <li class="nxl-item nxl-hasmenu">
             <a class="nxl-link" href="javascript:void(0)">
