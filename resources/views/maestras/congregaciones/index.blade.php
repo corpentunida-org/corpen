@@ -61,7 +61,7 @@
                                     @endif
                                 </td>
                                 <td class="py-1 px-2">{{ $congregacion->claseCongregacion->nombre ?? '' }}</td>
-                                <td class="py-1 px-2">{{ $congregacion->maeDistritos->NOM_DIST ?? '' }}</td>
+                                <td class="py-1 px-2">{{ $congregacion->maeDistritosRelacion->NOM_DIST ?? '' }}</td>
                                 <td class="py-1 px-2">{{ $congregacion->maeMunicipios->nombre ?? '' }}</td>
                                 <td class="py-1 px-2" title="{{ $congregacion->maeTerceros->nom_ter ?? 'Nombre no disponible' }}">
                                     {{ $congregacion->pastor }}

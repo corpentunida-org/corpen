@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Maestras;
 
 use App\Http\Controllers\Controller;
 use App\Models\Maestras\claseCongregacion;
-use App\Models\Maestras\maeDistritos;
+use App\Models\Maestras\MaeDistritos;
 use App\Models\Maestras\maeTerceros;
 use App\Models\Maestras\MaeMunicipios;
 use App\Models\Maestras\Congregacion;
@@ -46,7 +46,7 @@ class CongregacionController extends Controller
     public function create()
     {
         $claselist = claseCongregacion::all();
-        $distritos = maeDistritos::all();
+        $distritos = MaeDistritos::all();
         $terceros = maeTerceros::all();
         $municipios = MaeMunicipios::all();
 
@@ -91,7 +91,7 @@ class CongregacionController extends Controller
     public function edit(Congregacion $congregacion)
     {
         $clases = claseCongregacion::all();
-        $distritos = maeDistritos::all(); //get
+        $distritos = MaeDistritos::all(); //get
         $pastores = maeTerceros::all();
         $municipios = MaeMunicipios::all();
         // La vista debe estar en la ruta correcta
@@ -159,7 +159,7 @@ class CongregacionController extends Controller
     }
     public function show($codigo)
     {
-        $congregacion = Congregacion::with(['claseCongregacion', 'maeDistritos', 'maeMunicipios', 'maeTerceros'])
+        $congregacion = Congregacion::with(['claseCongregacion', 'maeDistritosRelacion', 'maeMunicipios', 'maeTerceros'])
             ->where('codigo', $codigo)
             ->firstOrFail();
 
@@ -175,7 +175,7 @@ class CongregacionController extends Controller
     }
     public function generarPdf($codigo)
     {
-        $congregacion = Congregacion::with(['claseCongregacion', 'maeDistritos', 'maeMunicipios', 'maeTerceros'])
+        $congregacion = Congregacion::with(['claseCongregacion', 'MaeDistritos', 'maeMunicipios', 'maeTerceros'])
             ->where('codigo', $codigo)
             ->firstOrFail();
 

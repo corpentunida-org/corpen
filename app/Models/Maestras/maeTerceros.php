@@ -8,7 +8,7 @@ use Carbon\Carbon;
 use App\Models\Maestras\Congregacion;
 use App\Models\Vistas\VisitaCorpen;
 use App\Models\Maestras\MaeTipo;
-use App\Models\Maestras\maeDistritos;
+use App\Models\Maestras\MaeDistritos;
 use App\Models\Soportes\ScpUsuario;
 use App\Models\Interacciones\Interaction;
 use App\Models\Inventario\InvCompra;
@@ -260,7 +260,7 @@ class maeTerceros extends Model
 
     public function distrito()
     {
-        return $this->belongsTo(maeDistritos::class, 'cod_dist', 'COD_DIST');
+        return $this->belongsTo(MaeDistritos::class, 'cod_dist', 'COD_DIST');
     }
 
     //SECCION FLUJO DE SOLICITUDES

@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Maestras\maeTerceros;
 use App\Models\Maestras\MaeTipo;
 use App\Models\Maestras\Congregacion;
-use App\Models\Maestras\maeDistritos;
+use App\Models\Maestras\MaeDistritos;
 use App\Models\Soportes\ScpUsuario;
 use App\Models\Interacciones\Interaction;
 use App\Models\Vistas\VisitaCorpen;
@@ -45,7 +45,7 @@ class MaeTercerosController extends Controller
     {
         $tipos = MaeTipo::all();
         $congregaciones = Congregacion::all();
-        $distritos = maeDistritos::all();
+        $distritos = MaeDistritos::all();
         $tercero = new maeTerceros(); // objeto vacío para el formulario
         return view('maestras.terceros.create', compact('tercero', 'tipos', 'congregaciones', 'distritos'));
     }
@@ -93,7 +93,7 @@ class MaeTercerosController extends Controller
         //dd($tercero); // Debug: Ver el tercero que se va a editar
         $tipos = MaeTipo::all();
         $congregaciones = Congregacion::all();
-        $distritos = maeDistritos::all();
+        $distritos = MaeDistritos::all();
 
         // Cargar relaciones necesarias
         $tercero->load(['congregaciones', 'maeTipos', 'distrito', 'scpUsuarios', 'interactions', 'visitasCorpen']);
