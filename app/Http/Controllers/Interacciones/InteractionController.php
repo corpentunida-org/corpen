@@ -13,6 +13,7 @@ use Exception;
 
 use App\Models\Maestras\maeTerceros;
 use App\Models\Maestras\MaeDistritos;
+use App\Models\Maestras\MaeCongregacion;
 use App\Models\User;
 use App\Models\Interacciones\Interaction;
 use App\Models\Interacciones\IntSeguimiento;
