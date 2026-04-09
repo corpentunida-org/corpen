@@ -18,13 +18,8 @@ class MaeDistritos extends Model
     protected $keyType = 'string';
     // 👆 ======================= 👆
 
-    protected $fillable = [
-        'COD_DIST',
-        'NOM_DIST',
-        'DETALLE',
-        'COMPUEST',
-    ];
-    
+    protected $fillable = ['COD_DIST', 'NOM_DIST', 'DETALLE', 'COMPUEST'];
+
     public function congregaciones()
     {
         return $this->hasMany(MaeCongregacion::class, 'distrito', 'COD_DIST');
@@ -32,6 +27,6 @@ class MaeDistritos extends Model
 
     public function terceros()
     {
-        return $this->hasMany(maeTerceros::class, 'cod_dist', 'COD_DIST');
+        return $this->hasMany(MaeTerceros::class, 'cod_dist', 'COD_DIST');
     }
 }

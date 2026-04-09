@@ -4,12 +4,10 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     public function up(): void
     {
         Schema::create('corr_correspondencia', function (Blueprint $table) {
-
             $table->string('id_radicado', 20)->primary();
 
             $table->dateTime('fecha_solicitud');
@@ -17,13 +15,7 @@ return new class extends Migration
 
             $table->boolean('es_confidencial')->default(false);
 
-            $table->enum('medio_recibido', [
-                'whatsapp',
-                'email',
-                'fisico',
-                'llamada',
-                'correspondencia'
-            ]);
+            $table->enum('medio_recibido', ['whatsapp', 'email', 'fisico', 'llamada', 'correspondencia']);
 
             // 👉 MISMO tipo que MaeTerceros.cod_ter
             $table->bigInteger('remitente_id');
@@ -43,25 +35,15 @@ return new class extends Migration
 
             // ===== FOREIGN KEYS =====
 
-            $table->foreign('remitente_id')
-                ->references('cod_ter')
-                ->on('MaeTerceros');
+            $table->foreign('remitente_id')->references('cod_ter')->on('MaeTerceros');
 
-            $table->foreign('trd_id')
-                ->references('id_trd')
-                ->on('corr_trd');
+            $table->foreign('trd_id')->references('id_trd')->on('corr_trd');
 
-            $table->foreign('flujo_id')
-                ->references('id')
-                ->on('corr_flujo_de_trabajo');
+            $table->foreign('flujo_id')->references('id')->on('corr_flujo_de_trabajo');
 
-            $table->foreign('estado_id')
-                ->references('id')
-                ->on('corr_estados');
+            $table->foreign('estado_id')->references('id')->on('corr_estados');
 
-            $table->foreign('usuario_id')
-                ->references('id')
-                ->on('users');
+            $table->foreign('usuario_id')->references('id')->on('users');
         });
     }
 

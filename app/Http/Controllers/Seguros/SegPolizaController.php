@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Seguros;
 
 use App\Http\Controllers\Controller;
-use App\Models\Maestras\maeTerceros;
+use App\Models\Maestras\MaeTerceros;
 use App\Models\Seguros\SegBeneficios;
 use App\Models\Seguros\SegPoliza;
 use App\Models\Seguros\SegBeneficiario;
@@ -140,9 +140,12 @@ class SegPolizaController extends Controller
         $grupoFamiliar = SegAsegurado::where('Titular', $titularCedula)
             ->whereDoesntHave('reclamacion', function ($q) {
                 $q->where('finReclamacion', false);
-            })->whereHas('polizas', function ($q) {
+            })
+            ->whereHas('polizas', function ($q) {
                 $q->where('active', 1);
-            })->with('tercero', 'polizas.plan.coberturas')->get();
+            })
+            ->with('tercero', 'polizas.plan.coberturas')
+            ->get();
 
         $totalPrima = DB::table('SEG_polizas')->whereIn('seg_asegurado_id', $grupoFamiliar->pluck('cedula'))->sum('valor_prima');
 
@@ -200,7 +203,7 @@ class SegPolizaController extends Controller
             }
             $tercero = SegTercero::where('cedula', $row['num_doc'])->first();
             if (!$tercero) {
-                $maeTercero = maeTerceros::where('cod_ter', $row['num_doc'])->first();
+                $maeTercero = MaeTerceros::where('cod_ter', $row['num_doc'])->first();
                 $fechaNacimiento = Carbon::create(1899, 12, 30)->addDays($row['fecha_nac'])->toDateString();
                 if (!$maeTercero) {
                     try {
@@ -214,7 +217,7 @@ class SegPolizaController extends Controller
                             'fechaNacimiento' => $fechaNacimiento,
                             'genero' => $row['genero'],
                         ]);
-                        maeTerceros::create([
+                        MaeTerceros::create([
                             'cod_ter' => $row['num_doc'],
                             'nom_ter' => $row['nombre'],
                             'fec_nac' => $fechaNacimiento,

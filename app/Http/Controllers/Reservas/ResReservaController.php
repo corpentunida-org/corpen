@@ -58,7 +58,11 @@ class ResReservaController extends Controller implements HasMiddleware
         }
         date_default_timezone_set('America/Bogota');
         $fecha = date('Y-m-d');
-        $reservas = Res_reserva::where('res_inmueble_id', $id)->where('fecha_fin', '>=', $fecha)->orderBy('fecha_inicio', 'asc')->get();
+        $reservas = Res_reserva::where('res_inmueble_id', $id)
+            ->where('fecha_fin', '>=', $fecha)
+            ->whereIn('res_status_id', [1, 2, 5])
+            ->orderBy('fecha_inicio', 'asc')
+            ->get();
         return view('reserva.asociado.create', compact('inmueble', 'reservas'));
     }
 
@@ -105,6 +109,7 @@ class ResReservaController extends Controller implements HasMiddleware
         }
 
         $existe_reserva = Res_reserva::where('res_inmueble_id', $inmueble_id)
+            ->whereNotIn('res_status_id', [3, 4])
             ->where(function ($query) use ($fechaInicio, $endDate) {
                 $query
                     ->whereBetween('fecha_inicio', [$fechaInicio, $endDate])
@@ -135,51 +140,6 @@ class ResReservaController extends Controller implements HasMiddleware
         $texto = 'Hemos recibido su solicitud de reserva con ingreso el ' . $request->input('fechaInicio') . ' y salida el ' . $request->input('endDate') . '. En las próximas horas, un funcionario se comunicará con usted para validar los datos de la reserva. ¡Dios le bendiga!.';
         Mail::to(auth()->user()->email)->send(new ReservaInmueble(auth()->user()->name, $texto, 'Reserva de Inmueble ' . $inmueble->name, true, $inmueble));
         return redirect()->route('reserva.reserva.index')->with('success', 'Reserva creada con éxito');
-
-        //INSERT CODIGO ANTERIOR
-        /*{
-        $fechaAnt = Carbon::parse($fechaInicio)->subDay()->format('Y-m-d');
-        $fechaDespues = Carbon::parse($endDate)->addDay()->format('Y-m-d');
-
-        $reserva = new Res_reserva();
-        $reserva->res_inmueble_id = $inmueble_id;
-        $reserva->res_status_id = 1;
-        $reserva->user_id = auth()->user()->id;
-        $reserva->nid = auth()->user()->nid;
-        $reserva->celular = $request->input('celular');
-        $reserva->fecha_solicitud = $fecha_actual;
-        $reserva->fecha_inicio = $fechaInicio;
-        $reserva->fecha_fin = $endDate;
-        $reserva->comentario_reserva = $request->input('description');
-        $reserva->save();
-
-        $reservaAnt = new Res_reserva();
-        $reservaAnt->res_inmueble_id = $inmueble_id;
-        $reservaAnt->res_status_id = 1;
-        $reservaAnt->user_id = 4;
-        $reservaAnt->nid = '0000000000';
-        $reservaAnt->fecha_solicitud = $fecha_actual;
-        $reservaAnt->fecha_inicio = $fechaAnt;
-        $reservaAnt->fecha_fin = $fechaAnt;
-        $reservaAnt->save();
-
-        $reservaDes = new Res_reserva();
-        $reservaDes->res_inmueble_id = $inmueble_id;
-        $reservaDes->res_status_id = 1;
-        $reservaDes->user_id = 4;
-        $reservaDes->nid = '0000000000';
-        $reservaDes->fecha_solicitud = $fecha_actual;
-        $reservaDes->fecha_inicio = $fechaDespues;
-        $reservaDes->fecha_fin = $fechaDespues;
-        $reservaDes->save();
-
-        $reserva->reserva_antes = $reservaAnt->id;
-        $reserva->reserva_despues = $reservaDes->id;
-        $reserva->save();
-
-        $texto = 'Hemos recibido su solicitud de reserva con ingreso el ' . $request->input('fechaInicio') . ' y salida el ' . $request->input('endDate') . '. En las próximas horas, un funcionario se comunicará con usted para validar los datos de la reserva. ¡Dios le bendiga!.';
-        Mail::to(auth()->user()->email)->cc('jesdis@hotmail.com')->send(new ReservaInmueble(auth()->user()->name, $texto, 'Reserva de Inmueble'));
-        }*/
     }
 
     //contabilidad confirmar reserva
@@ -204,7 +164,7 @@ class ResReservaController extends Controller implements HasMiddleware
 
         if ($request->boolean('notificar_pastor')) {
             $texto = $request->boolean('cancelar_reserva') ? 'Lamentamos informarle que su reserva ha sido cancelada. Por favor, revise los comentarios del funcionario para más detalles.' : 'Su reserva ha sido confirmada. Por favor, revise los comentarios del funcionario para más detalles.';
-            $texto .= "<br><br><strong>Comentario del funcionario:</strong><br>" . nl2br(e($request->observacion));
+            $texto .= '<br><br><strong>Comentario del funcionario:</strong><br>' . nl2br(e($request->observacion));
             Mail::to($reserva->user->email)->send(new ReservaInmueble($reserva->user->name, $texto, 'Actualización de estado de reserva', false, $reserva->res_inmueble));
         }
 
@@ -331,7 +291,7 @@ class ResReservaController extends Controller implements HasMiddleware
     }
 
     public function reservaspagos()
-    { 
+    {
         $reservas = Res_reserva::where('res_status_id', 5)
             ->whereNotNull('soporte_pago')
             ->with(['user', 'res_inmueble'])
@@ -350,7 +310,39 @@ class ResReservaController extends Controller implements HasMiddleware
     {
         $fecha = date('Y-m-d');
         $reservas = Res_reserva::where('res_status_id', 1)
-        ->where('fecha_fin', '>=', $fecha)->orderBy('fecha_inicio', 'asc')->with(['user', 'res_inmueble'])->get();
+            ->where('fecha_fin', '>=', $fecha)
+            ->orderBy('fecha_inicio', 'asc')
+            ->with(['user', 'res_inmueble'])
+            ->get();
         return view('reserva.funcionario.rescartera', compact('reservas'));
+    }
+
+    public function cancelarReservasSinSoportePago()
+    {
+        $fechaInicio = '2025-04-08';
+        $reservas = Res_reserva::whereNull('soporte_pago')
+            ->where('res_status_id', 1)
+            ->whereDate('fecha_solicitud', '>=', $fechaInicio)
+            ->whereDate('fecha_solicitud', '<=', now()->subDays(5))
+            ->get();
+
+        $canceladas = 0;
+
+        foreach ($reservas as $reserva) {
+            // cambiar estado
+            $reserva->update([
+                'res_status_id' => 4,
+                'deleted_at' => now(),
+            ]);
+
+            // enviar correo
+            \Mail::to($reserva->usuario->email)->send(new \App\Mail\ReservaCanceladaMail($reserva));
+
+            $canceladas++;
+        }
+
+        return response()->json([
+            'mensaje' => "$canceladas reservas canceladas automáticamente",
+        ]);
     }
 }

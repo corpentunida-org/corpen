@@ -4,7 +4,7 @@ namespace App\Models\Soportes;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Maestras\maeTerceros;
+use App\Models\Maestras\MaeTerceros;
 use App\Models\User;
 
 class ScpUsuario extends Model
@@ -22,13 +22,13 @@ class ScpUsuario extends Model
         'updated_at',
     ];
 
-    public $timestamps = true; 
+    public $timestamps = true;
     /**
      * Relación: un ScpUsuario pertenece a un MaeTercero
      */
     public function maeTercero()
     {
-        return $this->belongsTo(maeTerceros::class, 'cod_ter', 'cod_ter');
+        return $this->belongsTo(MaeTerceros::class, 'cod_ter', 'cod_ter');
     }
 
     public function UserApp()

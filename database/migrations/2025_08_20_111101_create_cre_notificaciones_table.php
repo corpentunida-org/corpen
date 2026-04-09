@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      *
@@ -20,9 +19,7 @@ return new class extends Migration
             // --- FK: Claves Foráneas ---
 
             // Conexión con el crédito (esto está bien)
-            $table->foreignId('cre_creditos_id')
-                  ->constrained('cre_creditos')
-                  ->onDelete('cascade');
+            $table->foreignId('cre_creditos_id')->constrained('cre_creditos')->onDelete('cascade');
 
             // --- INICIO DE LA CORRECCIÓN ---
             // Conexión con el cliente/tercero vía 'cod_ter'
@@ -30,16 +27,14 @@ return new class extends Migration
             $table->bigInteger('mae_terceros_cod_ter');
 
             // 2. La referencia debe apuntar a la columna correcta: 'cod_ter'
-            $table->foreign('mae_terceros_cod_ter')
-                  ->references('cod_ter')->on('MaeTerceros');
+            $table->foreign('mae_terceros_cod_ter')->references('cod_ter')->on('MaeTerceros');
             // --- FIN DE LA CORRECCIÓN ---
 
             // --- Atributos de la Notificación ---
             $table->string('asunto');
             $table->text('mensaje');
             $table->string('canal');
-            $table->enum('estado', ['pendiente', 'enviada', 'entregada', 'fallida', 'leida'])
-                  ->default('pendiente');
+            $table->enum('estado', ['pendiente', 'enviada', 'entregada', 'fallida', 'leida'])->default('pendiente');
 
             $table->timestamps();
         });
@@ -54,5 +49,4 @@ return new class extends Migration
     {
         Schema::dropIfExists('cre_notificaciones');
     }
-    
 };

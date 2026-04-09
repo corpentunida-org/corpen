@@ -2,7 +2,7 @@
 
 namespace App\Models\Seguros;
 
-use App\Models\Maestras\maeTerceros;
+use App\Models\Maestras\MaeTerceros;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Seguros\SegAsegurado;
@@ -32,13 +32,7 @@ class SegNovedades extends Model
     ]; */
 
     protected $table = 'Seg_novedadaes';
-    protected $fillable = [
-        'id_poliza', 
-        'id_asegurado', 
-        'tipo', 
-        'estado', 'id_plan', 'valorAsegurado', 'primaAseguradora', 'primaCorpen', 'extraprima', 
-        'beneficiario_id'
-        ,'formulario'];
+    protected $fillable = ['id_poliza', 'id_asegurado', 'tipo', 'estado', 'id_plan', 'valorAsegurado', 'primaAseguradora', 'primaCorpen', 'extraprima', 'beneficiario_id', 'formulario'];
 
     /* public function tercero()
     {
@@ -56,7 +50,7 @@ class SegNovedades extends Model
     }
     public function tercero()
     {
-        return $this->belongsTo(maeTerceros::class, 'id_asegurado', 'cod_ter');
+        return $this->belongsTo(MaeTerceros::class, 'id_asegurado', 'cod_ter');
     }
     public function terceroAlt()
     {

@@ -4,7 +4,7 @@ namespace App\Models\Seguros;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Maestras\maeTerceros;
+use App\Models\Maestras\MaeTerceros;
 
 class SegPoliza extends Model
 {
@@ -22,10 +22,10 @@ class SegPoliza extends Model
     {
         return $this->belongsTo(SegPlan::class, 'seg_plan_id', 'id');
     }
-  
+
     public function tercero()
     {
-        return $this->belongsTo(maeTerceros::class, 'seg_asegurado_id', 'cod_ter');
+        return $this->belongsTo(MaeTerceros::class, 'seg_asegurado_id', 'cod_ter');
     }
     public function terceroAlt()
     {
@@ -35,9 +35,7 @@ class SegPoliza extends Model
     {
         if ($this->tercero) {
             return $this->tercero->nom_ter;
-        }
-
-        else if ($this->terceroAlt) {
+        } elseif ($this->terceroAlt) {
             return $this->terceroAlt->nombre;
         }
         return 'No se encuentra registrado.';
@@ -47,24 +45,20 @@ class SegPoliza extends Model
     {
         if ($this->tercero) {
             return $this->tercero->fec_nac;
-        }
-
-        else if ($this->terceroAlt) {
+        } elseif ($this->terceroAlt) {
             return $this->terceroAlt->fechaNacimiento;
         }
-        return ;
+        return;
     }
 
     public function getGeneroAttribute()
     {
         if ($this->tercero) {
             return $this->tercero->sexo;
-        }
-
-        else if ($this->terceroAlt) {
+        } elseif ($this->terceroAlt) {
             return $this->terceroAlt->genero;
         }
-        return ;
+        return;
     }
 
     public function esreclamacion()

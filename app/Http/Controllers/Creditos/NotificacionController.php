@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Creditos;
 use App\Http\Controllers\Controller;
 use App\Models\Creditos\Notificacion;
 use App\Models\Creditos\Credito;
-use App\Models\Maestras\maeTerceros;
+use App\Models\Maestras\MaeTerceros;
 use App\Enums\NotificacionEstadoEnum;
 use App\Http\Requests\StoreNotificacionRequest;
 use App\Http\Requests\UpdateNotificacionRequest;
@@ -17,7 +17,9 @@ class NotificacionController extends Controller
      */
     public function index()
     {
-        $notificaciones = Notificacion::with(['credito', 'tercero'])->latest()->paginate(15);
+        $notificaciones = Notificacion::with(['credito', 'tercero'])
+            ->latest()
+            ->paginate(15);
         return view('creditos.notificaciones.index', compact('notificaciones'));
     }
 
@@ -27,7 +29,7 @@ class NotificacionController extends Controller
     public function create()
     {
         $creditos = Credito::all();
-        $terceros = maeTerceros::all();
+        $terceros = MaeTerceros::all();
         // Pasamos todos los casos del Enum a la vista para el <select> de estados.
         $estados = NotificacionEstadoEnum::cases();
 
@@ -58,7 +60,7 @@ class NotificacionController extends Controller
     public function edit(Notificacion $notificacion)
     {
         $creditos = Credito::all();
-        $terceros = maeTerceros::all();
+        $terceros = MaeTerceros::all();
         $estados = NotificacionEstadoEnum::cases();
 
         return view('creditos.notificaciones.edit', compact('notificacion', 'creditos', 'terceros', 'estados'));

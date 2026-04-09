@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
-use App\Models\Maestras\maeTerceros;
+use App\Models\Maestras\MaeTerceros;
 use App\Models\Cinco\Retiros;
 
 class CondicionesRetirosController extends Controller
@@ -35,7 +35,7 @@ class CondicionesRetirosController extends Controller
 
     public function generarpdf($id)
     {
-        $tercero = maeTerceros::with('distrito')->where('Cod_Ter', $id)->first();
+        $tercero = MaeTerceros::with('distrito')->where('Cod_Ter', $id)->first();
         $retiro = Retiros::where('cod_ter', $id)->with('tipoRetiroNom')->first();
         $opciones = DB::table('Ret_opciones')->orderBy('tipo')->get()->groupBy('tipo');
         $ret_opciones = DB::table('RET_retiros_opciones')->where('cod_ter', $id)->get();
@@ -44,7 +44,7 @@ class CondicionesRetirosController extends Controller
         foreach ($ret_opciones as $r) {
             $valores[$r->id_opcion] = $r->valor;
         }
-        return view('cinco.retiros.liquidacionpdf', compact('image_path', 'tercero', 'retiro', 'ret_opciones', 'opciones','valores'));
+        return view('cinco.retiros.liquidacionpdf', compact('image_path', 'tercero', 'retiro', 'ret_opciones', 'opciones', 'valores'));
         /*$pdf = Pdf::loadView('cinco.retiros.liquidacionpdf', compact( 'image_path','tercero', 'retiro','ret_opciones', 'opciones','valores'))
             ->setPaper('letter', 'landscape');
         return $pdf->download(date('Y-m-d') . " Reporte " . $id . '.pdf');*/

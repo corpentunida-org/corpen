@@ -1,66 +1,92 @@
 <x-base-layout>
     {{-- Alertas mejoradas con diseño --}}
-    @if (session('success'))
-        <div class="alert alert-success alert-dismissible fade show d-flex align-items-center glassmorphism-alert"
-            role="alert">
-            <i class="feather-check-circle me-2"></i>
-            <div>{{ session('success') }}</div>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
-    @if (session('error'))
-        <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center glassmorphism-alert"
-            role="alert">
-            <i class="feather-alert-circle me-2"></i>
-            <div>{{ session('error') }}</div>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
+    <x-success />
+    <x-error />
 
     {{-- Encabezado de la página --}}
-    <div class="d-flex justify-content-between align-items-center mb-3">
+    {{-- <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
             <h4 class="fw-bold mb-1"><i class="feather-pie-chart me-2"></i>Informe de Interacciones</h4>
             <p class="text-muted mb-0 small">Dashboard analítico y métricas de rendimiento (Daytrack)</p>
         </div>
             <div>
-            {{-- Enlace al PDF con los mismos filtros actuales en la URL --}}
+            
             <a href="{{ route('interactions.report.pdf', request()->all()) }}" target="_blank" class="btn btn-outline-secondary btn-sm me-2 shadow-sm" style="border-radius: 8px;">
                 <i class="feather-printer me-1"></i>Imprimir
             </a>
         </div>
+    </div> --}}
+    @candirect('interacciones.informes.todosagentes')
+    <div class="d-flex justify-content-end align-items-center mb-3">
+    <a href="{{ route('interactions.report.pdf', request()->all()) }}" target="_blank"
+        class="btn btn-outline-secondary me-2 w-25 p-2"><i class="feather-printer me-1"></i>Imprimir</a>
     </div>
+    @endcandirect
 
     {{-- Filtros Avanzados (MANUALES) --}}
-    <div class="card shadow-sm mb-4 glassmorphism-card" style="border-radius: 12px;">
-        <div class="d-flex justify-content-between align-items-center py-2 px-3 border-bottom">
+    <div class="card mb-2">
+        <div class="card-header py-2 px-3">
             <div>
-                <h6 class="mb-0 fw-semibold">
+                <h5 class="card-title">
                     <i class="feather-filter me-2 text-primary"></i>Filtros de Dashboard
-                </h6>
-                <small class="text-muted">Analiza las interacciones usando múltiples criterios</small>
+                    </h6>
+                    <small class="text-muted">Analiza las interacciones usando múltiples criterios</small>
             </div>
             <button type="button" class="btn btn-sm btn-light shadow-sm" id="clearFilters" style="border-radius: 6px;">
                 <i class="feather-refresh-cw me-1"></i>Limpiar Filtros
             </button>
         </div>
         <div class="card-body p-3">
-            <form action="{{ route('interactions.report') }}" method="GET" class="row g-3 align-items-end">
-                {{-- Filtro: Fecha Inicio --}}
-                <div class="col-md-3">
-                    <label class="form-label fw-semibold text-muted small mb-1">Fecha Inicio</label>
-                    <div class="input-group input-group-sm">
-                        <span class="input-group-text bg-white border-end-0"><i class="feather-calendar text-primary"></i></span>
+            <form action="{{ route('interactions.report') }}" method="GET" class="row g-3 ">
+                {{-- Filtro: Agente --}}
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold text-muted small mb-1">Agente</label>
+                    @if (auth()->user()->hasDirectPermission('interacciones.informes.todosagentes'))
+                        <select name="agent_id" class="form-select form-select-sm select2-search"
+                            data-placeholder="Todos">
+                            <option value=""></option>
+                            @foreach ($listAgentes as $agente)
+                                <option value="{{ $agente->id }}"
+                                    {{ ($filtroAgente ?? '') == $agente->id ? 'selected' : '' }}>
+                                    {{ $agente->name ?? 'Agente ' . $agente->id }}
+                                </option>
+                            @endforeach
+                        </select>
+                    @else
+                        <input type="text" class="form-control form-control-sm" value="{{ auth()->user()->name }}" disabled>
+                        <input type="hidden" name="agent_id" value="{{ auth()->id() }}">
+                    @endif
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold text-muted small mb-1">Cliente</label>
+                    <select name="client_id" class="form-select form-select-sm select2-search" data-placeholder="Todos">
+                        <option value=""></option>
+                        @foreach ($listClientes as $cliente)
+                            <option value="{{ $cliente->cod_ter }}"
+                                {{ ($filtroCliente ?? '') == $cliente->cod_ter ? 'selected' : '' }}>
+                                {{ $cliente->nom_ter ?? 'Cliente ' . $cliente->cod_ter }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold text-muted mb-1">Fecha Inicio</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0"><i
+                                class="feather-calendar text-primary"></i></span>
                         <input type="date" name="start_date" class="form-control border-start-0 ps-0"
                             value="{{ $startDate ?? request('start_date') }}" />
                     </div>
                 </div>
-                
+
                 {{-- Filtro: Fecha Fin --}}
-                <div class="col-md-3">
-                    <label class="form-label fw-semibold text-muted small mb-1">Fecha Fin</label>
-                    <div class="input-group input-group-sm">
-                        <span class="input-group-text bg-white border-end-0"><i class="feather-calendar text-primary"></i></span>
+                <div class="col-md-2">
+                    <label class="form-label fw-semibold text-muted mb-1">Fecha Fin</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0"><i
+                                class="feather-calendar text-primary"></i></span>
                         <input type="date" name="end_date" class="form-control border-start-0 ps-0"
                             value="{{ $endDate ?? request('end_date') }}" />
                     </div>
@@ -69,11 +95,13 @@
                 {{-- Filtro: Distrito --}}
                 <div class="col-md-2">
                     <label class="form-label fw-semibold text-muted small mb-1">Distrito</label>
-                    <select name="distrito_id" class="form-select form-select-sm select2-search" data-placeholder="Todos">
+                    <select name="distrito_id" class="form-select form-select-sm select2-search"
+                        data-placeholder="Todos">
                         <option value=""></option>
-                        @foreach($listDistritos as $distrito)
-                            <option value="{{ $distrito->COD_DIST }}" {{ ($filtroDistrito ?? '') == $distrito->COD_DIST ? 'selected' : '' }}>
-                                {{ $distrito->NOM_DIST ?? 'Distrito '.$distrito->COD_DIST }}
+                        @foreach ($listDistritos as $distrito)
+                            <option value="{{ $distrito->COD_DIST }}"
+                                {{ ($filtroDistrito ?? '') == $distrito->COD_DIST ? 'selected' : '' }}>
+                                {{ $distrito->NOM_DIST ?? 'Distrito ' . $distrito->COD_DIST }}
                             </option>
                         @endforeach
                     </select>
@@ -84,43 +112,21 @@
                     <label class="form-label fw-semibold text-muted small mb-1">Línea de Crédito</label>
                     <select name="linea_id" class="form-select form-select-sm select2-search" data-placeholder="Todas">
                         <option value=""></option>
-                        @foreach($listLineas as $linea)
-                            <option value="{{ $linea->id }}" {{ ($filtroLinea ?? '') == $linea->id ? 'selected' : '' }}>
-                                {{ $linea->nombre ?? 'Línea '.$linea->id }}
+                        @foreach ($listLineas as $linea)
+                            <option value="{{ $linea->id }}"
+                                {{ ($filtroLinea ?? '') == $linea->id ? 'selected' : '' }}>
+                                {{ $linea->nombre ?? 'Línea ' . $linea->id }}
                             </option>
                         @endforeach
                     </select>
                 </div>
 
-                {{-- Filtro: Agente --}}
-                <div class="col-md-2">
-                    <label class="form-label fw-semibold text-muted small mb-1">Agente</label>
-                    <select name="agent_id" class="form-select form-select-sm select2-search" data-placeholder="Todos">
-                        <option value=""></option>
-                        @foreach($listAgentes as $agente)
-                            <option value="{{ $agente->id }}" {{ ($filtroAgente ?? '') == $agente->id ? 'selected' : '' }}>
-                                {{ $agente->name ?? 'Agente '.$agente->id }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
 
-                {{-- Filtro: Cliente --}}
-                <div class="col-md-2">
-                    <label class="form-label fw-semibold text-muted small mb-1">Cliente</label>
-                    <select name="client_id" class="form-select form-select-sm select2-search" data-placeholder="Todos">
-                        <option value=""></option>
-                        @foreach($listClientes as $cliente)
-                            <option value="{{ $cliente->cod_ter }}" {{ ($filtroCliente ?? '') == $cliente->cod_ter ? 'selected' : '' }}>
-                                {{ $cliente->nom_ter ?? 'Cliente '.$cliente->cod_ter }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
 
                 {{-- Botón Buscar Visible y Atractivo --}}
                 <div class="col-md-2">
-                    <button type="submit" class="btn btn-sm btn-primary w-100 shadow-sm" style="border-radius: 8px; font-weight: 500;">
+                    <button type="submit" class="btn btn-sm btn-primary w-100 shadow-sm"
+                        style="border-radius: 8px; font-weight: 500;">
                         <i class="feather-search me-1"></i>Filtrar Datos
                     </button>
                 </div>
@@ -129,11 +135,13 @@
     </div>
 
     {{-- Tarjetas de Métricas Principales (KPIs) --}}
-    <div class="row mb-4 g-3">
+    <div class="row mb-2 g-3">
         <div class="col-md-3">
-            <div class="card shadow-sm h-100 border-0 stat-card" style="border-radius: 12px; border-left: 4px solid #4a90e2 !important;">
+            <div class="card shadow-sm h-100 border-0 stat-card"
+                style="border-radius: 12px; border-left: 4px solid #4a90e2 !important;">
                 <div class="card-body text-center p-4">
-                    <div class="d-inline-flex align-items-center justify-content-center bg-soft-primary text-primary rounded-circle mb-3 shadow-sm" style="width: 50px; height: 50px;">
+                    <div class="d-inline-flex align-items-center justify-content-center bg-soft-primary text-primary rounded-circle mb-3 shadow-sm"
+                        style="width: 50px; height: 50px;">
                         <i class="feather-inbox fs-4"></i>
                     </div>
                     <h6 class="text-muted fw-semibold mb-1">Total Interacciones</h6>
@@ -142,9 +150,11 @@
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card shadow-sm h-100 border-0 stat-card" style="border-radius: 12px; border-left: 4px solid #2ecc71 !important;">
+            <div class="card shadow-sm h-100 border-0 stat-card"
+                style="border-radius: 12px; border-left: 4px solid #2ecc71 !important;">
                 <div class="card-body text-center p-4">
-                    <div class="d-inline-flex align-items-center justify-content-center bg-soft-success text-success rounded-circle mb-3 shadow-sm" style="width: 50px; height: 50px;">
+                    <div class="d-inline-flex align-items-center justify-content-center bg-soft-success text-success rounded-circle mb-3 shadow-sm"
+                        style="width: 50px; height: 50px;">
                         <i class="feather-check-circle fs-4"></i>
                     </div>
                     <h6 class="text-muted fw-semibold mb-1">Gestiones Exitosas</h6>
@@ -153,9 +163,11 @@
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card shadow-sm h-100 border-0 stat-card" style="border-radius: 12px; border-left: 4px solid #f39c12 !important;">
+            <div class="card shadow-sm h-100 border-0 stat-card"
+                style="border-radius: 12px; border-left: 4px solid #f39c12 !important;">
                 <div class="card-body text-center p-4">
-                    <div class="d-inline-flex align-items-center justify-content-center bg-soft-warning text-warning rounded-circle mb-3 shadow-sm" style="width: 50px; height: 50px;">
+                    <div class="d-inline-flex align-items-center justify-content-center bg-soft-warning text-warning rounded-circle mb-3 shadow-sm"
+                        style="width: 50px; height: 50px;">
                         <i class="feather-clock fs-4"></i>
                     </div>
                     <h6 class="text-muted fw-semibold mb-1">Pendientes</h6>
@@ -164,9 +176,11 @@
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card shadow-sm h-100 border-0 stat-card" style="border-radius: 12px; border-left: 4px solid #e74c3c !important;">
+            <div class="card shadow-sm h-100 border-0 stat-card"
+                style="border-radius: 12px; border-left: 4px solid #e74c3c !important;">
                 <div class="card-body text-center p-4">
-                    <div class="d-inline-flex align-items-center justify-content-center bg-soft-danger text-danger rounded-circle mb-3 shadow-sm" style="width: 50px; height: 50px;">
+                    <div class="d-inline-flex align-items-center justify-content-center bg-soft-danger text-danger rounded-circle mb-3 shadow-sm"
+                        style="width: 50px; height: 50px;">
                         <i class="feather-alert-triangle fs-4"></i>
                     </div>
                     <h6 class="text-muted fw-semibold mb-1">Acciones Vencidas</h6>
@@ -181,7 +195,8 @@
         <div class="col-md-6">
             <div class="card shadow-sm" style="border-radius: 12px;">
                 <div class="card-header py-3 border-bottom-0 bg-transparent">
-                    <h6 class="mb-0 fw-bold"><i class="feather-bar-chart-2 me-2 text-primary"></i>Interacciones por Canal</h6>
+                    <h6 class="mb-0 fw-bold"><i class="feather-bar-chart-2 me-2 text-primary"></i>Interacciones por
+                        Canal</h6>
                 </div>
                 <div class="card-body">
                     <div style="position: relative; height: 300px; width: 100%;">
@@ -194,10 +209,12 @@
         <div class="col-md-6">
             <div class="card shadow-sm" style="border-radius: 12px;">
                 <div class="card-header py-3 border-bottom-0 bg-transparent">
-                    <h6 class="mb-0 fw-bold"><i class="feather-pie-chart me-2 text-success"></i>Distribución de Resultados</h6>
+                    <h6 class="mb-0 fw-bold"><i class="feather-pie-chart me-2 text-success"></i>Distribución de
+                        Resultados</h6>
                 </div>
                 <div class="card-body">
-                    <div style="position: relative; height: 300px; width: 100%; display: flex; justify-content: center;">
+                    <div
+                        style="position: relative; height: 300px; width: 100%; display: flex; justify-content: center;">
                         <canvas id="chartResultados"></canvas>
                     </div>
                 </div>
@@ -210,7 +227,8 @@
         <div class="col-md-6">
             <div class="card shadow-sm" style="border-radius: 12px;">
                 <div class="card-header py-3 border-bottom-0 bg-transparent">
-                    <h6 class="mb-0 fw-bold"><i class="feather-users me-2 text-info"></i>Top 5 Agentes (Interacciones)</h6>
+                    <h6 class="mb-0 fw-bold"><i class="feather-users me-2 text-info"></i>Top 5 Agentes (Interacciones)
+                    </h6>
                 </div>
                 <div class="card-body">
                     <div style="position: relative; height: 300px; width: 100%;">
@@ -252,7 +270,8 @@
         <div class="col-md-6">
             <div class="card shadow-sm" style="border-radius: 12px;">
                 <div class="card-header py-3 border-bottom-0 bg-transparent">
-                    <h6 class="mb-0 fw-bold"><i class="feather-credit-card me-2 text-secondary"></i>Interacciones por Línea Crédito</h6>
+                    <h6 class="mb-0 fw-bold"><i class="feather-credit-card me-2 text-secondary"></i>Interacciones por
+                        Línea Crédito</h6>
                 </div>
                 <div class="card-body">
                     <div style="position: relative; height: 300px; width: 100%;">
@@ -268,7 +287,8 @@
         <div class="col-md-6">
             <div class="card shadow-sm" style="border-radius: 12px;">
                 <div class="card-header py-3 border-bottom-0 bg-transparent">
-                    <h6 class="mb-0 fw-bold"><i class="feather-user-check me-2" style="color: #14b8a6;"></i>Top 5 Agentes (Seguimientos)</h6>
+                    <h6 class="mb-0 fw-bold"><i class="feather-user-check me-2" style="color: #14b8a6;"></i>Top 5
+                        Agentes (Seguimientos)</h6>
                 </div>
                 <div class="card-body">
                     <div style="position: relative; height: 300px; width: 100%;">
@@ -280,7 +300,6 @@
     </div>
 
     @push('scripts')
-
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
         <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
         <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
@@ -288,20 +307,25 @@
         <style>
             /* Ajuste visual mejorado de Select2 para centrado vertical perfecto */
             .select2-container--default .select2-selection--single {
-                height: 31px !important; /* Altura de form-select-sm de Bootstrap */
+                height: 31px !important;
+                /* Altura de form-select-sm de Bootstrap */
                 border: 1px solid #dee2e6 !important;
                 border-radius: 0.25rem !important;
                 display: flex !important;
-                align-items: center !important; /* Centra el contenido verticalmente */
+                align-items: center !important;
+                /* Centra el contenido verticalmente */
             }
+
             .select2-container--default .select2-selection--single .select2-selection__rendered {
-                line-height: normal !important; /* Anula el line-height por defecto */
+                line-height: normal !important;
+                /* Anula el line-height por defecto */
                 color: #495057 !important;
                 font-size: 0.875rem;
                 padding-left: 0.5rem !important;
                 padding-right: 2rem !important;
                 width: 100%;
             }
+
             .select2-container--default .select2-selection--single .select2-selection__arrow {
                 height: 100% !important;
                 top: 0 !important;
@@ -310,6 +334,7 @@
                 justify-content: center !important;
                 right: 5px !important;
             }
+
             .select2-container--default .select2-selection--single .select2-selection__clear {
                 display: flex;
                 align-items: center;
@@ -331,8 +356,14 @@
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
         <style>
-            .stat-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
-            .stat-card:hover { transform: translateY(-3px); box-shadow: 0 .5rem 1rem rgba(0,0,0,.08)!important; }
+            .stat-card {
+                transition: transform 0.2s ease, box-shadow 0.2s ease;
+            }
+
+            .stat-card:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .08) !important;
+            }
         </style>
 
         <script>
@@ -345,7 +376,7 @@
                 // --- CONFIGURACIÓN ESTÉTICA DE CHART.JS ---
                 Chart.defaults.font.family = "'Inter', system-ui, -apple-system, sans-serif";
                 Chart.defaults.color = '#718096';
-                
+
                 // Tooltips modernos estilo SaaS
                 const elegantTooltip = {
                     backgroundColor: 'rgba(255, 255, 255, 0.98)',
@@ -357,8 +388,13 @@
                     boxPadding: 8,
                     usePointStyle: true,
                     cornerRadius: 8,
-                    titleFont: { size: 13, weight: 'bold' },
-                    bodyFont: { size: 13 }
+                    titleFont: {
+                        size: 13,
+                        weight: 'bold'
+                    },
+                    bodyFont: {
+                        size: 13
+                    }
                 };
 
                 // Función para crear degradados
@@ -371,12 +407,52 @@
 
                 // Escalas invisibles para un look limpio
                 const cleanScales = {
-                    x: { grid: { display: false }, border: { display: false } },
-                    y: { grid: { color: '#f7fafc', drawBorder: false }, border: { display: false }, beginAtZero: true, ticks: { stepSize: 1, precision: 0 } }
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        border: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        grid: {
+                            color: '#f7fafc',
+                            drawBorder: false
+                        },
+                        border: {
+                            display: false
+                        },
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1,
+                            precision: 0
+                        }
+                    }
                 };
                 const cleanScalesHorizontal = {
-                    x: { grid: { color: '#f7fafc', drawBorder: false }, border: { display: false }, beginAtZero: true, ticks: { stepSize: 1, precision: 0 } },
-                    y: { grid: { display: false }, border: { display: false } }
+                    x: {
+                        grid: {
+                            color: '#f7fafc',
+                            drawBorder: false
+                        },
+                        border: {
+                            display: false
+                        },
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1,
+                            precision: 0
+                        }
+                    },
+                    y: {
+                        grid: {
+                            display: false
+                        },
+                        border: {
+                            display: false
+                        }
+                    }
                 };
 
                 // Datos
@@ -404,7 +480,8 @@
                         datasets: [{
                             label: 'Interacciones',
                             data: canalesData,
-                            backgroundColor: createGradient(ctxCanales, 'rgba(74, 144, 226, 0.8)', 'rgba(74, 144, 226, 0.2)'),
+                            backgroundColor: createGradient(ctxCanales, 'rgba(74, 144, 226, 0.8)',
+                                'rgba(74, 144, 226, 0.2)'),
                             hoverBackgroundColor: 'rgba(74, 144, 226, 1)',
                             borderRadius: 6,
                             borderSkipped: false,
@@ -412,9 +489,17 @@
                         }]
                     },
                     options: {
-                        responsive: true, maintainAspectRatio: false,
-                        animation: { easing: 'easeOutQuart' },
-                        plugins: { legend: { display: false }, tooltip: elegantTooltip },
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        animation: {
+                            easing: 'easeOutQuart'
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: elegantTooltip
+                        },
                         scales: cleanScales
                     }
                 });
@@ -427,24 +512,39 @@
                         labels: resultadosLabels,
                         datasets: [{
                             data: resultadosData,
-                            backgroundColor: ['#4a90e2', '#2ecc71', '#f39c12', '#e74c3c', '#9b59b6', '#95a5a6'],
+                            backgroundColor: ['#4a90e2', '#2ecc71', '#f39c12', '#e74c3c', '#9b59b6',
+                                '#95a5a6'
+                            ],
                             borderWidth: 3,
                             borderColor: '#ffffff',
                             hoverOffset: 10
                         }]
                     },
                     options: {
-                        responsive: true, maintainAspectRatio: false, cutout: '75%',
-                        animation: { animateScale: true, animateRotate: true },
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '75%',
+                        animation: {
+                            animateScale: true,
+                            animateRotate: true
+                        },
                         plugins: {
-                            legend: { position: 'right', labels: { usePointStyle: true, boxWidth: 8, padding: 20 } },
+                            legend: {
+                                position: 'right',
+                                labels: {
+                                    usePointStyle: true,
+                                    boxWidth: 8,
+                                    padding: 20
+                                }
+                            },
                             tooltip: {
                                 ...elegantTooltip,
                                 callbacks: {
                                     label: function(context) {
                                         let value = context.parsed;
                                         let total = context.chart._metasets[context.datasetIndex].total;
-                                        let percentage = total > 0 ? Math.round((value / total) * 100) + '%' : '0%';
+                                        let percentage = total > 0 ? Math.round((value / total) * 100) +
+                                            '%' : '0%';
                                         return ` ${context.label}: ${value} (${percentage})`;
                                     }
                                 }
@@ -470,18 +570,29 @@
                             }]
                         },
                         options: {
-                            indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-                            plugins: { legend: { display: false }, tooltip: elegantTooltip },
+                            indexAxis: 'y',
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                },
+                                tooltip: elegantTooltip
+                            },
                             scales: cleanScalesHorizontal
                         }
                     });
                 };
 
                 // 3, 4, 5, 6, 7. Gráficos Horizontales
-                createHBar('chartAgentes', agentesLabels, agentesData, 'rgba(155, 89, 182, 0.8)', 'rgba(155, 89, 182, 0.2)');
-                createHBar('chartClientes', clientesLabels, clientesData, 'rgba(52, 152, 219, 0.8)', 'rgba(52, 152, 219, 0.2)');
-                createHBar('chartDistritos', distritosLabels, distritosData, 'rgba(46, 204, 113, 0.8)', 'rgba(46, 204, 113, 0.2)');
-                createHBar('chartSeguimientosAgentes', seguimientosAgentesLabels, seguimientosAgentesData, 'rgba(20, 184, 166, 0.8)', 'rgba(20, 184, 166, 0.2)');
+                createHBar('chartAgentes', agentesLabels, agentesData, 'rgba(155, 89, 182, 0.8)',
+                    'rgba(155, 89, 182, 0.2)');
+                createHBar('chartClientes', clientesLabels, clientesData, 'rgba(52, 152, 219, 0.8)',
+                    'rgba(52, 152, 219, 0.2)');
+                createHBar('chartDistritos', distritosLabels, distritosData, 'rgba(46, 204, 113, 0.8)',
+                    'rgba(46, 204, 113, 0.2)');
+                createHBar('chartSeguimientosAgentes', seguimientosAgentesLabels, seguimientosAgentesData,
+                    'rgba(20, 184, 166, 0.8)', 'rgba(20, 184, 166, 0.2)');
 
                 // Líneas de Crédito (Barras Verticales)
                 const ctxLineas = document.getElementById('chartLineas').getContext('2d');
@@ -491,7 +602,8 @@
                         labels: lineasLabels,
                         datasets: [{
                             data: lineasData,
-                            backgroundColor: createGradient(ctxLineas, 'rgba(243, 156, 18, 0.8)', 'rgba(243, 156, 18, 0.2)'),
+                            backgroundColor: createGradient(ctxLineas, 'rgba(243, 156, 18, 0.8)',
+                                'rgba(243, 156, 18, 0.2)'),
                             hoverBackgroundColor: 'rgba(243, 156, 18, 1)',
                             borderRadius: 6,
                             borderSkipped: false,
@@ -499,8 +611,14 @@
                         }]
                     },
                     options: {
-                        responsive: true, maintainAspectRatio: false,
-                        plugins: { legend: { display: false }, tooltip: elegantTooltip },
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: elegantTooltip
+                        },
                         scales: cleanScales
                     }
                 });

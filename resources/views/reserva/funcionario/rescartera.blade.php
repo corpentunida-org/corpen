@@ -16,57 +16,46 @@
                     <p class="text-muted">No hay reservas pendientes de verificación de pago</p>
                 </div>
             @else
-                <table class="table table-bordered table-hover" id="tablaReservas">
-                    <thead>
-                        <tr>
-                            <th></th>
-                            <th>Cedula</th>
-                            <th>Usuario</th>
-                            <th>Inmueble</th>
-                            <th>Fechas</th>
-                            <th>Soporte</th>
-                            <th>Solicitud</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        @foreach ($reservas as $res)
-                            <tr>
-                                <td>
-                                    <input class="checkconfirmres" id="checkReserva_{{ $res->id }}" type="checkbox"
-                                        data-id="{{ $res->id }}">
-                                </td>
-
-                                <td>{{ $res->nid }}</td>
-
-                                <td>{{ $res->user->name }}</td>
-
-                                <td>
-                                    <span class="badge bg-soft-primary text-primary">
-                                        {{ $res->res_inmueble->name }}
-                                    </span>
-                                </td>
-
-                                <td>
-                                    {{ $res->fecha_inicio }} a {{ $res->fecha_fin }}
-                                </td>
-
-                                <td>
-                                    <a href="{{ $res->soporte_pago ? $res->getFile($res->soporte_pago) : '#' }}"
-                                        class="{{ $res->soporte_pago ? 'badge bg-soft-primary text-primary' : 'text-secondary' }}"
-                                        target="_blank">
-                                        {{ $res->soporte_pago ? 'Soporte de pago' : 'No hay soporte' }}
-                                    </a>
-                                </td>
-
-                                <td>
-                                    {{ $res->fecha_solicitud->format('d M, Y') }}
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+                <ul class="list-unstyled mb-0" id="listaReservas">
+                    @foreach ($reservas as $res)
+                        <li class="p-3 mb-3 border border-dashed rounded-3 item-reserva">
+                            <div class="d-flex align-items-center justify-content-between">
+                                <div class="d-flex align-items-center gap-3 me-3">
+                                    <div class="custom-control custom-checkbox me-2"> <input
+                                            class="custom-control-input checkconfirmres"
+                                            id="checkReserva_{{ $res->id }}" type="checkbox"
+                                            data-id="{{ $res->id }}"> <label class="custom-control-label c-pointer"
+                                            for="checkReserva_{{ $res->id }}"></label> </div> <input type="hidden"
+                                        class="txt-contact" value="{{ $res->celular }} - {{ $res->celular_respaldo }}">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="lh-base txt-nid">{{ $res->nid }}</div> <a href="#">
+                                            <div class="fs-13 fw-bold text-truncate-1-line"> <span
+                                                    class="txt-usuario">{{ $res->user->name }}</span> <span
+                                                    class="ms-2 badge bg-soft-primary text-primary text-capitalize txt-inmueble">
+                                                    {{ $res->res_inmueble->name }} </span> </div>
+                                            <div class="fs-12 fw-normal text-truncate-1-line txt-fechas">
+                                                {{ $res->fecha_inicio }} a {{ $res->fecha_fin }} </div>
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="d-flex flex-shrink-0 align-items-center gap-3"> <a
+                                        href="{{ $res->soporte_pago ? $res->getFile($res->soporte_pago) : '#' }}"
+                                        class="{{ $res->soporte_pago ? 'badge bg-soft-primary text-primary' : 'text-secondary' }} text-capitalize p-2 link-soporte"
+                                        target="_blank"> <i class="bi bi-paperclip"></i>
+                                        {{ $res->soporte_pago ? 'Soporte de pago' : 'No hay soporte' }} </a>
+                                    <div class="d-md-inline-block d-none me-3 txt-solicitud">
+                                        {{ $res->fecha_solicitud->format('d M, Y') }} </div>
+                                </div>
+                            </div>
+                        </li>
+                    @endforeach
+                </ul>
             @endif
+        </div>
+        <div class="card-footer d-flex align-items-center justify-content-end gap-2">
+            <nav class="mt-3">
+                <ul id="paginadorReservas" class="pagination justify-content-center"></ul>
+            </nav>
         </div>
     </div>
 
@@ -135,6 +124,52 @@
                 });
 
             });
+
+            let items = $('#listaReservas .item-reserva');
+            let itemsPorPagina = 5;
+            let totalItems = items.length;
+            let totalPaginas = Math.ceil(totalItems / itemsPorPagina);
+
+            function mostrarPagina(pagina) {
+
+                items.hide();
+
+                let inicio = (pagina - 1) * itemsPorPagina;
+                let fin = inicio + itemsPorPagina;
+
+                items.slice(inicio, fin).show();
+
+                $('#paginadorReservas li').removeClass('active');
+                $('#page-' + pagina).addClass('active');
+            }
+
+            function crearPaginador() {
+
+                let paginador = $('#paginadorReservas');
+                paginador.empty();
+
+                for (let i = 1; i <= totalPaginas; i++) {
+
+                    paginador.append(`
+                <li class="page-item" id="page-${i}">
+                    <a class="page-link" href="#">${i}</a>
+                </li>
+            `);
+                }
+
+                $('.page-link').click(function(e) {
+                    e.preventDefault();
+                    let pagina = $(this).text();
+                    mostrarPagina(pagina);
+                });
+
+            }
+
+            crearPaginador();
+            mostrarPagina(1);
+
+
+
         });
     </script>
 </x-base-layout>
