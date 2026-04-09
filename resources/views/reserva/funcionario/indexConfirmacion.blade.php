@@ -158,6 +158,6 @@
                 }
             });
             calendar.render();
-        }
+        } 
     </script>
 </x-base-layout>
