@@ -880,7 +880,7 @@ class InteractionController extends Controller
     {
         try {
             $cliente = MaeTerceros::where('cod_ter', $cod_ter)
-                ->with(['maeTipos', 'distrito', 'congregaciones'])
+                ->with(['maeTipos', 'distrito', 'congregacion'])
                 ->first();
 
             if (!$cliente) {
@@ -965,10 +965,10 @@ class InteractionController extends Controller
                     ]
                     : null,
 
-                'congregaciones' => $cliente->congregaciones
+                'congregaciones' => $cliente->congregacion
                     ? [
-                        'codigo' => $cliente->congregaciones->codigo,
-                        'nombre' => $cliente->congregaciones->nombre ?? 'No definido',
+                        'codigo' => $cliente->congregacion->codigo,
+                        'nombre' => $cliente->congregacion->nombre ?? 'No definido',
                     ]
                     : null,
             ];
