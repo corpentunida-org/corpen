@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Maestras;
 
 use App\Http\Controllers\Controller;
-use App\Models\Maestras\maeTerceros;
+use App\Models\Maestras\MaeTerceros;
 use App\Models\Maestras\MaeTipo;
 use App\Models\Maestras\MaeCongregacion;
 use App\Models\Maestras\MaeDistritos;
@@ -23,7 +23,7 @@ class MaeTercerosController extends Controller
     {
         $search = $request->input('search');
 
-        $terceros = maeTerceros::query()
+        $terceros = MaeTerceros::query()
             ->with(['congregacion', 'maeTipos', 'distrito']) // Cargar relaciones para evitar N+1
             ->when($search, function ($query, $search) {
                 $query
@@ -46,7 +46,7 @@ class MaeTercerosController extends Controller
         $tipos = MaeTipo::all();
         $congregacio = MaeCongregacion::all();
         $distritos = MaeDistritos::all();
-        $tercero = new maeTerceros(); // objeto vacío para el formulario
+        $tercero = new MaeTerceros(); // objeto vacío para el formulario
         return view('maestras.terceros.create', compact('tercero', 'tipos', 'congregacion', 'distritos'));
     }
 
@@ -56,25 +56,28 @@ class MaeTercerosController extends Controller
     public function store(Request $request)
     {
         // 1. Añadimos la validación estricta para que los selects NO pasen vacíos
-        $request->validate([
-            'cod_ter'  => 'required|string|max:20|unique:MaeTerceros,cod_ter',
-            'nom_ter'  => 'required|string|max:255',
-            'tdoc'     => 'required|string|max:5',
-            'tip_pers' => 'required|string|max:1',
-            'congrega' => 'required|string', // <-- ¡AQUÍ ESTÁ LA MAGIA!
-            'tip_prv'  => 'required|string', // <-- (O tip_cli, dependiendo de tu BD)
-            'cod_dist' => 'required|string', // <-- Obligamos a que traigan datos
-            'email'    => 'nullable|email',
-            'fec_nac'  => 'nullable|date',
-            'fec_minis'=> 'nullable|date',
-            'fecha_ipuc'=> 'nullable|date',
-            'fec_aport'=> 'nullable|date',
-        ], [
-            // Mensajes de error personalizados por si acaso
-            'congrega.required' => 'Por favor, selecciona una congregación.',
-            'tip_prv.required'  => 'Por favor, selecciona un tipo.',
-            'cod_dist.required' => 'Por favor, selecciona un distrito.',
-        ]);
+        $request->validate(
+            [
+                'cod_ter' => 'required|string|max:20|unique:MaeTerceros,cod_ter',
+                'nom_ter' => 'required|string|max:255',
+                'tdoc' => 'required|string|max:5',
+                'tip_pers' => 'required|string|max:1',
+                'congrega' => 'required|string', // <-- ¡AQUÍ ESTÁ LA MAGIA!
+                'tip_prv' => 'required|string', // <-- (O tip_cli, dependiendo de tu BD)
+                'cod_dist' => 'required|string', // <-- Obligamos a que traigan datos
+                'email' => 'nullable|email',
+                'fec_nac' => 'nullable|date',
+                'fec_minis' => 'nullable|date',
+                'fecha_ipuc' => 'nullable|date',
+                'fec_aport' => 'nullable|date',
+            ],
+            [
+                // Mensajes de error personalizados por si acaso
+                'congrega.required' => 'Por favor, selecciona una congregación.',
+                'tip_prv.required' => 'Por favor, selecciona un tipo.',
+                'cod_dist.required' => 'Por favor, selecciona un distrito.',
+            ],
+        );
 
         // Preparar datos para guardar
         $data = $request->only($this->fillableFields());
@@ -88,7 +91,7 @@ class MaeTercerosController extends Controller
             }
         }
 
-        maeTerceros::create($data);
+        MaeTerceros::create($data);
 
         return redirect()->route('maestras.terceros.index')->with('success', 'Tercero creado correctamente.');
     }
@@ -96,7 +99,7 @@ class MaeTercerosController extends Controller
     /**
      * Mostrar formulario de edición de tercero.
      */
-    public function edit(maeTerceros $tercero)
+    public function edit(MaeTerceros $tercero)
     {
         //dd($tercero); // Debug: Ver el tercero que se va a editar
         $tipos = MaeTipo::all();
@@ -113,21 +116,21 @@ class MaeTercerosController extends Controller
      * Actualizar tercero existente.
      * Soporta actualización normal y actualización vía Modal (Iframe).
      */
-    public function update(Request $request, maeTerceros $tercero)
+    public function update(Request $request, MaeTerceros $tercero)
     {
         $validated = $request->validate([
-            'cod_ter'  => 'unique:mae_terceros,cod_ter,' . $tercero->cod_ter . ',cod_ter',
-            'nom_ter'  => 'sometimes|required|string|max:255',
-            'tdoc'     => 'sometimes|required|string|max:5',
+            'cod_ter' => 'unique:mae_terceros,cod_ter,' . $tercero->cod_ter . ',cod_ter',
+            'nom_ter' => 'sometimes|required|string|max:255',
+            'tdoc' => 'sometimes|required|string|max:5',
             'tip_pers' => 'sometimes|required|string|max:1',
-            'congrega' => 'sometimes|required|string', 
-            'tip_prv'  => 'sometimes|required|string', 
-            'cod_dist' => 'sometimes|required|string', 
-            'email'    => 'nullable|email',
-            'fec_nac'  => 'nullable|date',
-            'fec_minis'=> 'nullable|date',
-            'fecha_ipuc'=> 'nullable|date',
-            'fec_aport'=> 'nullable|date',
+            'congrega' => 'sometimes|required|string',
+            'tip_prv' => 'sometimes|required|string',
+            'cod_dist' => 'sometimes|required|string',
+            'email' => 'nullable|email',
+            'fec_nac' => 'nullable|date',
+            'fec_minis' => 'nullable|date',
+            'fecha_ipuc' => 'nullable|date',
+            'fec_aport' => 'nullable|date',
         ]);
 
         $data = collect($validated)->filter(fn($v) => !is_null($v) && $v !== '')->toArray();
@@ -138,7 +141,7 @@ class MaeTercerosController extends Controller
     /**
      * Eliminar tercero.
      */
-    public function destroy(maeTerceros $tercero)
+    public function destroy(MaeTerceros $tercero)
     {
         // Verificar si tiene relaciones que impidan eliminar
         if ($tercero->interactions()->count() > 0 || $tercero->visitasCorpen()->count() > 0 || $tercero->scpUsuarios()->count() > 0) {
@@ -152,7 +155,7 @@ class MaeTercerosController extends Controller
     /**
      * Mostrar tercero o generar PDF.
      */
-    public function show(maeTerceros $tercero)
+    public function show(MaeTerceros $tercero)
     {
         // Cargar todas las relaciones necesarias
         $tercero->load(['congregacion', 'maeTipos', 'distrito', 'scpUsuarios', 'interactions', 'visitasCorpen']);
@@ -170,7 +173,7 @@ class MaeTercerosController extends Controller
      */
     public function generarPdf($cod_ter)
     {
-        $tercero = maeTerceros::with(['congregacion', 'maeTipos', 'distrito', 'scpUsuarios', 'interactions', 'visitasCorpen'])
+        $tercero = MaeTerceros::with(['congregacion', 'maeTipos', 'distrito', 'scpUsuarios', 'interactions', 'visitasCorpen'])
             ->where('cod_ter', $cod_ter)
             ->firstOrFail();
 

@@ -54,7 +54,7 @@ use App\Http\Controllers\Maestras\MaeMunicipiosController;
 use App\Http\Controllers\Creditos\CreditoController;
 
 //INTERACCIONES
-use App\Models\Maestras\maeTerceros;
+use App\Models\Maestras\MaeTerceros;
 use App\Http\Controllers\Interacciones\InteractionController;
 use App\Http\Controllers\Interacciones\IntChannelController;
 use App\Http\Controllers\Interacciones\IntTypeController;
@@ -134,12 +134,19 @@ Route::get('/base', function () {
     return view('layouts.base');
 });
 
-
 //ADMIN
-Route::resource('users', UserController::class)->names('admin.users')->middleware(['auth', 'can:admin.users.index']);
-Route::resource('admin', AuditoriaController::class)->names('admin.auditoria')->middleware(['auth', 'candirect:admin.auditoria.index']);
-Route::resource('roles', RoleController::class)->names('admin.roles')->middleware(['auth']);
-Route::resource('permisos', PermissionsController::class)->names('admin.permisos')->middleware(['auth']);
+Route::resource('users', UserController::class)
+    ->names('admin.users')
+    ->middleware(['auth', 'can:admin.users.index']);
+Route::resource('admin', AuditoriaController::class)
+    ->names('admin.auditoria')
+    ->middleware(['auth', 'candirect:admin.auditoria.index']);
+Route::resource('roles', RoleController::class)
+    ->names('admin.roles')
+    ->middleware(['auth']);
+Route::resource('permisos', PermissionsController::class)
+    ->names('admin.permisos')
+    ->middleware(['auth']);
 
 //RUTAS DE EXEQUIALES
 Route::prefix('exequiales')->group(function () {
@@ -253,28 +260,62 @@ Route::get('/inventario', [UserController::class, 'inventario'])
 Route::get('user/validation/asociado', [UserController::class, 'validarAsociadoCreate'])->name('user.validar.asociado');
 Route::get('/consumir-api', [UserController::class, 'consumirEndpoint']);
 
-Route::get('validar/asociado', function () {return view('auth.validarAsociado');})->name('validar.asociado.form');
+Route::get('validar/asociado', function () {
+    return view('auth.validarAsociado');
+})->name('validar.asociado.form');
 Route::post('validar/asociado', [UserController::class, 'validarAsociado'])->name('validar.asociado');
 
-Route::prefix('reservas')->name('reserva.')->group(function () {
-    Route::resource('reserva', ResReservaController::class)->names('reserva');
-    Route::get('reservaI/{id}/create', [ResReservaController::class, 'createReserva'])->name('inmueble.create')->middleware('auth');
-    Route::post('reservaI/store', [ResReservaController::class, 'storeReserva'])->name('inmueble.store')->middleware('auth');
-    Route::get('reservaI/{id}/soporte', [ResReservaController::class, 'createSoporte'])->name('inmueble.soporte.create')->middleware('auth');
-    Route::post('reservaI/storeSoporte', [ResReservaController::class, 'storeSoporte'])->name('inmueble.soporte.store')->middleware('auth');
-    Route::get('verificar/comprobante', [ResReservaController::class, 'reservaspagos'])->name('reservas.pago')->middleware(['auth', 'candirect:reservas.Reserva.pagos']);
-    Route::get('reservaI/confirmacion', [ResReservaController::class, 'indexConfirmacion'])->name('inmueble.confirmacion')->middleware(['auth', 'candirect:reservas.Reserva.lista']);
-    Route::get('reservaI/cartera', [ResReservaController::class, 'indexCartera'])->name('reservas.sinsoporte')->middleware(['auth', 'candirect:reservas.Reserva.cartera']);
-    Route::get('reservaI/confirmacion/{id}/show', [ResReservaController::class, 'showConfirmacion'])->name('inmueble.confirmacion.show')->middleware(['auth', 'candirect:reservas.Reserva.lista']); 
-    //Route::post('reservaI/notificar/ajuste', [ResReservaController::class, 'notificarAjuste'])->name('inmueble.notificar.ajuste');
-    Route::post('reservaI/calificacion', [ResReservaController::class, 'calificacionAsociado'])->name('inmueble.resenia')->middleware('auth');
-    Route::post('reservaI/confirmar', [ResReservaController::class, 'confirmar'])->name('inmueble.confirmar')->middleware('auth');
-    Route::get('reservaI/historico', [ResReservaController::class, 'indexHistorico'])->name('inmueble.historico')->middleware(['auth', 'candirect:reservas.Reserva.lista']);
-    Route::resource('inmueble', ResInmuebleController::class)->names('crudinmuebles')->middleware('auth')->except(['show']);
-    Route::get('inmueble/{inmueble}', [ResInmuebleController::class, 'show'])->name('crudinmuebles.show');
-    Route::put('inmueble/{id}/toggle', [ResInmuebleController::class, 'toggle'])->name('inmueble.toggle')->middleware(['auth', 'candirect:reservas.inmueble.active']);
+Route::prefix('reservas')
+    ->name('reserva.')
+    ->group(function () {
+        Route::resource('reserva', ResReservaController::class)->names('reserva');
+        Route::get('reservaI/{id}/create', [ResReservaController::class, 'createReserva'])
+            ->name('inmueble.create')
+            ->middleware('auth');
+        Route::post('reservaI/store', [ResReservaController::class, 'storeReserva'])
+            ->name('inmueble.store')
+            ->middleware('auth');
+        Route::get('reservaI/{id}/soporte', [ResReservaController::class, 'createSoporte'])
+            ->name('inmueble.soporte.create')
+            ->middleware('auth');
+        Route::post('reservaI/storeSoporte', [ResReservaController::class, 'storeSoporte'])
+            ->name('inmueble.soporte.store')
+            ->middleware('auth');
+        Route::get('verificar/comprobante', [ResReservaController::class, 'reservaspagos'])
+            ->name('reservas.pago')
+            ->middleware(['auth', 'candirect:reservas.Reserva.pagos']);
+        Route::get('reservaI/confirmacion', [ResReservaController::class, 'indexConfirmacion'])
+            ->name('inmueble.confirmacion')
+            ->middleware(['auth', 'candirect:reservas.Reserva.lista']);
+        Route::get('reservaI/cartera', [ResReservaController::class, 'indexCartera'])
+            ->name('reservas.sinsoporte')
+            ->middleware(['auth', 'candirect:reservas.Reserva.cartera']);
+        Route::get('reservaI/confirmacion/{id}/show', [ResReservaController::class, 'showConfirmacion'])
+            ->name('inmueble.confirmacion.show')
+            ->middleware(['auth', 'candirect:reservas.Reserva.lista']);
+        //Route::post('reservaI/notificar/ajuste', [ResReservaController::class, 'notificarAjuste'])->name('inmueble.notificar.ajuste');
+        Route::post('reservaI/calificacion', [ResReservaController::class, 'calificacionAsociado'])
+            ->name('inmueble.resenia')
+            ->middleware('auth');
+        Route::post('reservaI/confirmar', [ResReservaController::class, 'confirmar'])
+            ->name('inmueble.confirmar')
+            ->middleware('auth');
+        Route::get('reservaI/historico', [ResReservaController::class, 'indexHistorico'])
+            ->name('inmueble.historico')
+            ->middleware(['auth', 'candirect:reservas.Reserva.lista']);
+        Route::resource('inmueble', ResInmuebleController::class)
+            ->names('crudinmuebles')
+            ->middleware('auth')
+            ->except(['show']);
+        Route::get('inmueble/{inmueble}', [ResInmuebleController::class, 'show'])->name('crudinmuebles.show');
+        Route::put('inmueble/{id}/toggle', [ResInmuebleController::class, 'toggle'])
+            ->name('inmueble.toggle')
+            ->middleware(['auth', 'candirect:reservas.inmueble.active']);
+    });
+Route::get('/scheduler-run', function () {
+    Artisan::call('schedule:run');
+    return 'Scheduler ejecutado';
 });
-Route::get('/scheduler-run', function () {Artisan::call('schedule:run');return 'Scheduler ejecutado';});
 
 //TERCEROS
 Route::prefix('maestras')
@@ -282,7 +323,9 @@ Route::prefix('maestras')
     ->name('maestras.')
     ->group(function () {
         // TERCEROS
-        Route::resource('terceros', MaeTercerosController::class)->names('terceros')->parameters(['terceros' => 'tercero']);
+        Route::resource('terceros', MaeTercerosController::class)
+            ->names('terceros')
+            ->parameters(['terceros' => 'tercero']);
         Route::get('terceros/{tercero}/pdf', [MaeTercerosController::class, 'generarPdf'])->name('terceros.generarPdf');
 
         // TIPO
@@ -406,7 +449,7 @@ Route::prefix('interactions')
 
         // 📊 Informe / Dashboard de interacciones
         Route::get('/report', [InteractionController::class, 'report'])->name('report');
-        
+
         // 📄 NUEVO: Descargar/Ver PDF del Informe de interacciones
         Route::get('/report/pdf', [InteractionController::class, 'reportPdf'])->name('report.pdf');
 
@@ -433,16 +476,16 @@ Route::prefix('interactions')
 
         // 📌 AJAX: Buscar clientes para Select2
         Route::get('/search-clients', [InteractionController::class, 'searchClients'])->name('search-clients');
-        
+
         // 🆕 NUEVA RUTA: Buscar usuarios para Select2 (Delegar a otro)
         Route::get('/search-users', [InteractionController::class, 'searchUsers'])->name('searchUsers');
 
         // 🆕 NUEVA RUTA: Obtener el distrito de un cliente
         Route::get('/clientes/{client_id}/distrito', [InteractionController::class, 'getClientDistrict'])->name('clientes.distrito');
-        
+
         // 🆕 NUEVA RUTA: Actualizar el distrito de un cliente
         Route::put('/clientes/{client_id}/actualizar-distrito', [InteractionController::class, 'updateClientDistrict'])->name('clientes.actualizar-distrito');
-        
+
         // --- 📡 GRUPO DE RUTAS PARA CANALES DE INTERACCIÓN ---
         Route::prefix('channels')
             ->name('channels.')
@@ -499,11 +542,10 @@ Route::prefix('interactions')
         // Se coloca aquí para que herede el middleware auth y el prefijo
         Route::post('/seguimientos/store', [IntSeguimientoController::class, 'store'])->name('seguimientos.store');
 
-
         // ==========================================================
         // 💬 NUEVO: MÓDULO DE CHAT / MENSAJERÍA (CASOS DE USO)
         // ==========================================================
-        
+
         // --- 🖥️ 0. RUTA PRINCIPAL (LA QUE FALTABA) ---
         Route::get('/chat', [IntChatController::class, 'index'])->name('chat.index');
         // --- 📂 1. RUTAS PARA WORKSPACES (Espacios de trabajo) ---
@@ -521,7 +563,7 @@ Route::prefix('interactions')
                 Route::post('/private', [IntConversationController::class, 'iniciarChatPrivado'])->name('startPrivate');
 
                 Route::post('/contextual', [IntConversationController::class, 'storeContextual'])->name('storeContextual');
-                
+
                 // RUTA: Para invitar participantes a un chat existente
                 Route::post('/add-participants', [IntConversationController::class, 'addParticipants'])->name('addParticipants');
                 Route::delete('/remove-participant/{participant}', [IntConversationController::class, 'removeParticipant'])->name('removeParticipant');
@@ -533,7 +575,6 @@ Route::prefix('interactions')
             ->group(function () {
                 Route::post('/', [IntMessageController::class, 'store'])->name('store');
             });
-
     });
 //FIN INTERACCIONES
 
@@ -693,7 +734,9 @@ Route::middleware('auth')
         Route::get('notificaciones', [ScpSoporteController::class, 'getNotificaciones'])->name('notificaciones');
 
         // Vista completa de notificaciones
-        Route::get('notificaciones/detalladas', [ScpSoporteController::class, 'getNotificacionesDetalladas'])->name('notificaciones.detalladas')->middleware('auth');
+        Route::get('notificaciones/detalladas', [ScpSoporteController::class, 'getNotificacionesDetalladas'])
+            ->name('notificaciones.detalladas')
+            ->middleware('auth');
 
         // Acción manual de reenvío de correo
         Route::get('enviar-correo-escalado/{id}', [ScpNotificacionController::class, 'enviarCorreoEscalado'])->name('enviarCorreoEscalado');
@@ -723,7 +766,7 @@ Route::middleware(['auth'])
 
         // Descargar Factura PDF (Sistema)
         Route::get('compras/{id}/descargar-factura', [CompraController::class, 'descargarFactura'])->name('compras.descargar');
-        
+
         // Ver Archivo Adjunto en AWS S3
         Route::get('compras/{id}/archivo', [CompraController::class, 'verArchivoS3'])->name('compras.archivo');
 
@@ -827,12 +870,16 @@ Route::middleware(['auth'])
 // ==========================================
 //   MÓDULO DE CORRESPONDENCIA
 // ==========================================
-Route::middleware(['auth'])->prefix('correspondencia')->name('correspondencia.')
+Route::middleware(['auth'])
+    ->prefix('correspondencia')
+    ->name('correspondencia.')
     ->group(function () {
         // ---------------------------------------------------
         // 1. DASHBOARD (TABLERO UNIFICADO)
         // ---------------------------------------------------
-        Route::get('tablero', [CorrespondenciaController::class, 'tablero'])->name('tablero')->middleware('candirect:correspondencia.usuario.admin');
+        Route::get('tablero', [CorrespondenciaController::class, 'tablero'])
+            ->name('tablero')
+            ->middleware('candirect:correspondencia.usuario.admin');
 
         // ---------------------------------------------------
         // 2. GESTIÓN DE CORRESPONDENCIA (CRUD)
@@ -844,7 +891,7 @@ Route::middleware(['auth'])->prefix('correspondencia')->name('correspondencia.')
 
         Route::get('ajax/trds-por-flujo/{flujo_id}', [CorrespondenciaController::class, 'getTrdsByFlujo'])->name('ajax.trds.flujo');
 
-        Route::get('ajax/remitente-por-codigo/{cod_ter}',[CorrespondenciaController::class, 'getRemitenteByCodigo'])->name('ajax.remitente.codigo');
+        Route::get('ajax/remitente-por-codigo/{cod_ter}', [CorrespondenciaController::class, 'getRemitenteByCodigo'])->name('ajax.remitente.codigo');
 
         // ---------------------------------------------------
         // 3. FLUJOS Y PROCESOS
@@ -890,31 +937,25 @@ Route::middleware(['auth'])->prefix('correspondencia')->name('correspondencia.')
 
         Route::get('comunicaciones-salida/{comunicacionSalida}/descargar-pdf', [ComunicacionSalidaController::class, 'descargarPdf'])->name('comunicaciones-salida.descargar');
 
-    // RUTA CORREGIDA: Cambiamos el parámetro a {id} y agregamos "Pdf" al nombre
-    Route::get('comunicaciones-salida/{id}/descargar-pdf', [ComunicacionSalidaController::class, 'descargarPdf'])
-        ->name('comunicaciones-salida.descargarPdf');
-    // ---------------------------------------------------
-    // 8. TRACKING DE PROCESOS (HISTORIAL/SEGUIMIENTO)
-    // ---------------------------------------------------
-    Route::resource('correspondencias-procesos', CorrespondenciaProcesoController::class)
-        ->parameters(['correspondencias-procesos' => 'correspondenciaProceso']);
-
-    Route::post('correspondencias-procesos/{correspondenciaProceso}/marcar-notificado', [CorrespondenciaProcesoController::class, 'marcarNotificado'])
-        ->name('correspondencias-procesos.marcarNotificado');
-
-    // ---------------------------------------------------
-    // 9. CONFIGURACIÓN DE ESTADOS (MAESTRO)
-    // ---------------------------------------------------
-    Route::resource('estados', CorrEstadoController::class)
-        ->parameters(['estados' => 'estado']);
-    
+        // RUTA CORREGIDA: Cambiamos el parámetro a {id} y agregamos "Pdf" al nombre
+        Route::get('comunicaciones-salida/{id}/descargar-pdf', [ComunicacionSalidaController::class, 'descargarPdf'])->name('comunicaciones-salida.descargarPdf');
         // ---------------------------------------------------
-    // 10. MEDIOS DE RECEPCIÓN (NUEVO)
-    // ---------------------------------------------------
-    Route::resource('medios-recepcion', MedioRecepcionController::class)
-        ->parameters(['medios-recepcion' => 'medios_recepcion']);
+        // 8. TRACKING DE PROCESOS (HISTORIAL/SEGUIMIENTO)
+        // ---------------------------------------------------
+        Route::resource('correspondencias-procesos', CorrespondenciaProcesoController::class)->parameters(['correspondencias-procesos' => 'correspondenciaProceso']);
 
-});
+        Route::post('correspondencias-procesos/{correspondenciaProceso}/marcar-notificado', [CorrespondenciaProcesoController::class, 'marcarNotificado'])->name('correspondencias-procesos.marcarNotificado');
+
+        // ---------------------------------------------------
+        // 9. CONFIGURACIÓN DE ESTADOS (MAESTRO)
+        // ---------------------------------------------------
+        Route::resource('estados', CorrEstadoController::class)->parameters(['estados' => 'estado']);
+
+        // ---------------------------------------------------
+        // 10. MEDIOS DE RECEPCIÓN (NUEVO)
+        // ---------------------------------------------------
+        Route::resource('medios-recepcion', MedioRecepcionController::class)->parameters(['medios-recepcion' => 'medios_recepcion']);
+    });
 // FIN MÓDULO DE CORRESPONDENCIA
 
 //VISITAS

@@ -43,19 +43,20 @@ class VisitaCorpenController extends Controller
             'registrado_por' => 'required|string|max:255',
         ]);
 
-
-
         $visita = VisitaCorpen::registrar(
             $request->cedula,
             $request->ciudad, // renombrado para mayor claridad
             $request->motivo,
-            $request->registrado_por
+            $request->registrado_por,
         );
 
-        return response()->json([
-            'message' => 'Visita registrada correctamente',
-            'data' => $visita
-        ], 201);
+        return response()->json(
+            [
+                'message' => 'Visita registrada correctamente',
+                'data' => $visita,
+            ],
+            201,
+        );
     }
 
     /**
@@ -83,7 +84,7 @@ class VisitaCorpenController extends Controller
 
         return response()->json([
             'message' => 'Visita actualizada correctamente',
-            'data' => $visita
+            'data' => $visita,
         ]);
     }
 
@@ -96,7 +97,7 @@ class VisitaCorpenController extends Controller
         $visita->delete();
 
         return response()->json([
-            'message' => 'Visita eliminada correctamente'
+            'message' => 'Visita eliminada correctamente',
         ]);
     }
 
@@ -106,13 +107,10 @@ class VisitaCorpenController extends Controller
     public function search(Request $request)
     {
         $request->validate([
-            'cedula' => 'required|string'
+            'cedula' => 'required|string',
         ]);
 
-        $visitas = VisitaCorpen::with('cliente')
-            ->where('cliente_id', $request->cedula)
-            ->orderBy('fecha', 'desc')
-            ->get();
+        $visitas = VisitaCorpen::with('cliente')->where('cliente_id', $request->cedula)->orderBy('fecha', 'desc')->get();
 
         return response()->json($visitas);
     }
@@ -122,31 +120,26 @@ class VisitaCorpenController extends Controller
      */
     public function estadisticas()
     {
-        $porCiudad = VisitaCorpen::select('banco', DB::raw('count(*) as total'))
-            ->groupBy('banco')
-            ->get();
+        $porCiudad = VisitaCorpen::select('banco', DB::raw('count(*) as total'))->groupBy('banco')->get();
 
-        $porUsuario = VisitaCorpen::select('registrado_por', DB::raw('count(*) as total'))
-            ->groupBy('registrado_por')
-            ->get();
+        $porUsuario = VisitaCorpen::select('registrado_por', DB::raw('count(*) as total'))->groupBy('registrado_por')->get();
 
         return response()->json([
             'por_ciudad' => $porCiudad,
-            'por_usuario' => $porUsuario
+            'por_usuario' => $porUsuario,
         ]);
     }
     public function buscarCliente(Request $request)
     {
         $request->validate([
-            'query' => 'required|string'
+            'query' => 'required|string',
         ]);
 
-        $clientes = \App\Models\Maestras\maeTerceros::where('cod_ter', 'like', "%{$request->query}%")
+        $clientes = \App\Models\Maestras\MaeTerceros::where('cod_ter', 'like', "%{$request->query}%")
             ->orWhere('nom_ter', 'like', "%{$request->query}%")
             ->limit(10)
             ->get(['cod_ter', 'nom_ter']); // Solo devuelve lo necesario
 
         return response()->json($clientes);
     }
-
 }

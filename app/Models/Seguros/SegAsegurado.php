@@ -2,7 +2,7 @@
 
 namespace App\Models\Seguros;
 
-use App\Models\Maestras\maeTerceros;
+use App\Models\Maestras\MaeTerceros;
 use App\Models\Seguros\SegTercero;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,17 +11,11 @@ class SegAsegurado extends Model
 {
     use HasFactory;
     protected $table = 'SEG_asegurados';
-    protected $fillable = [
-        'cedula',
-        'parentesco',
-        'titular',
-        'valorpAseguradora',
-        'viuda'
-    ];
+    protected $fillable = ['cedula', 'parentesco', 'titular', 'valorpAseguradora', 'viuda'];
 
     public function tercero()
     {
-        return $this->belongsTo(maeTerceros::class, 'cedula', 'cod_ter');
+        return $this->belongsTo(MaeTerceros::class, 'cedula', 'cod_ter');
     }
 
     public function terceroAlt()
@@ -43,7 +37,7 @@ class SegAsegurado extends Model
 
     public function terceroAF()
     {
-        return $this->belongsTo(maeTerceros::class, 'titular', 'cod_ter');
+        return $this->belongsTo(MaeTerceros::class, 'titular', 'cod_ter');
     }
 
     public function terceroAfAlt()
@@ -66,11 +60,7 @@ class SegAsegurado extends Model
 
     public function getTerceroPreferidoAttribute()
     {
-        return $this->tercero
-            ?? $this->terceroAlt
-            ?? $this->terceroAF
-            ?? $this->terceroAfAlt
-            ?? null;
+        return $this->tercero ?? ($this->terceroAlt ?? ($this->terceroAF ?? ($this->terceroAfAlt ?? null)));
     }
 
     public function polizas()

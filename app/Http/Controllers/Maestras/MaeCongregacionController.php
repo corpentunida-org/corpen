@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Maestras;
 use App\Http\Controllers\Controller;
 use App\Models\Maestras\MaeClaseCongregacion;
 use App\Models\Maestras\MaeDistritos;
-use App\Models\Maestras\maeTerceros;
+use App\Models\Maestras\MaeTerceros;
 use App\Models\Maestras\MaeMunicipios;
 use App\Models\Maestras\MaeCongregacion;
 use Illuminate\Http\Request;
@@ -26,9 +26,9 @@ class MaeCongregacionController extends Controller
         if (!empty($busqueda)) {
             $query->where(function ($q) use ($busqueda) {
                 $q->where('nombre', 'LIKE', "%{$busqueda}%")
-                  ->orWhere('codigo', 'LIKE', "%{$busqueda}%")
-                  ->orWhere('municipio', 'LIKE', "%{$busqueda}%")
-                  ->orWhere('pastor', 'LIKE', "%{$busqueda}%");
+                    ->orWhere('codigo', 'LIKE', "%{$busqueda}%")
+                    ->orWhere('municipio', 'LIKE', "%{$busqueda}%")
+                    ->orWhere('pastor', 'LIKE', "%{$busqueda}%");
             });
         }
 
@@ -43,9 +43,9 @@ class MaeCongregacionController extends Controller
      */
     public function create()
     {
-        $claselist  = MaeClaseCongregacion::all();
-        $distritos  = MaeDistritos::all();
-        $terceros   = maeTerceros::all();
+        $claselist = MaeClaseCongregacion::all();
+        $distritos = MaeDistritos::all();
+        $terceros = MaeTerceros::all();
         $municipios = MaeMunicipios::all();
 
         return view('maestras.congregaciones.create', compact('claselist', 'distritos', 'terceros', 'municipios'));
@@ -64,18 +64,18 @@ class MaeCongregacionController extends Controller
 
         // Crear la congregación
         MaeCongregacion::create([
-            'codigo'      => $request->Codigo,
-            'nombre'      => strtoupper($request->nombre),
-            'pastor'      => $request->pastor,
-            'estado'      => $request->estado,
-            'clase'       => $request->clase,
-            'municipio'   => $request->municipio,
-            'direccion'   => strtoupper($request->direccion),
-            'telefono'    => $request->telefono,
-            'celular'     => $request->celular,
-            'distrito'    => $request->distrito,
-            'apertura'    => $request->apertura,
-            'cierre'      => $request->cierre,
+            'codigo' => $request->Codigo,
+            'nombre' => strtoupper($request->nombre),
+            'pastor' => $request->pastor,
+            'estado' => $request->estado,
+            'clase' => $request->clase,
+            'municipio' => $request->municipio,
+            'direccion' => strtoupper($request->direccion),
+            'telefono' => $request->telefono,
+            'celular' => $request->celular,
+            'distrito' => $request->distrito,
+            'apertura' => $request->apertura,
+            'cierre' => $request->cierre,
             'observacion' => $request->observacion,
         ]);
 
@@ -88,11 +88,11 @@ class MaeCongregacionController extends Controller
      */
     public function edit(MaeCongregacion $congregacion)
     {
-        $clases     = MaeClaseCongregacion::all();
-        $distritos  = MaeDistritos::all(); 
-        $pastores   = maeTerceros::all();
+        $clases = MaeClaseCongregacion::all();
+        $distritos = MaeDistritos::all();
+        $pastores = MaeTerceros::all();
         $municipios = MaeMunicipios::all();
-        
+
         return view('maestras.congregaciones.edit', compact('congregacion', 'clases', 'distritos', 'pastores', 'municipios'));
     }
 
@@ -103,19 +103,19 @@ class MaeCongregacionController extends Controller
     {
         // Se actualiza la congregación directamente con los datos del request.
         $congregacion->update([
-            'nombre'         => strtoupper($request->nombre), 
-            'pastor'         => $request->pastor,
+            'nombre' => strtoupper($request->nombre),
+            'pastor' => $request->pastor,
             'pastorAnterior' => $request->pastorAnterior,
-            'estado'         => $request->estado,
-            'clase'          => $request->clase,
-            'municipio'      => $request->municipio,
-            'direccion'      => strtoupper($request->direccion), 
-            'telefono'       => $request->telefono,
-            'celular'        => $request->celular,
-            'distrito'       => $request->distrito,
-            'apertura'       => $request->apertura,
-            'cierre'         => $request->cierre,
-            'observacion'    => $request->observacion,
+            'estado' => $request->estado,
+            'clase' => $request->clase,
+            'municipio' => $request->municipio,
+            'direccion' => strtoupper($request->direccion),
+            'telefono' => $request->telefono,
+            'celular' => $request->celular,
+            'distrito' => $request->distrito,
+            'apertura' => $request->apertura,
+            'cierre' => $request->cierre,
+            'observacion' => $request->observacion,
         ]);
 
         return redirect()->route('maestras.congregacion.index')->with('success', '¡Congregación actualizada exitosamente!');
@@ -144,7 +144,7 @@ class MaeCongregacionController extends Controller
     public function buscarPastor(Request $request)
     {
         $cedula = $request->get('cedula');
-        $pastor = maeTerceros::where('cod_ter', $cedula)->first();
+        $pastor = MaeTerceros::where('cod_ter', $cedula)->first();
 
         if ($pastor) {
             return response()->json(['nombre' => $pastor->nom_ter]);
@@ -158,7 +158,7 @@ class MaeCongregacionController extends Controller
      */
     public function show($codigo)
     {
-        $congregacion = MaeCongregacion::with(['maeClaseCongregacion', 'maeDistritos', 'maeMunicipios', 'maeTerceros'])
+        $congregacion = MaeCongregacion::with(['maeClaseCongregacion', 'maeDistritos', 'maeMunicipios', 'MaeTerceros'])
             ->where('codigo', $codigo)
             ->firstOrFail();
 
@@ -178,7 +178,7 @@ class MaeCongregacionController extends Controller
      */
     public function generarPdf($codigo)
     {
-        $congregacion = MaeCongregacion::with(['maeClaseCongregacion', 'maeDistritos', 'maeMunicipios', 'maeTerceros'])
+        $congregacion = MaeCongregacion::with(['maeClaseCongregacion', 'maeDistritos', 'maeMunicipios', 'MaeTerceros'])
             ->where('codigo', $codigo)
             ->firstOrFail();
 

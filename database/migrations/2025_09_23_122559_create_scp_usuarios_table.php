@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     public function up(): void
     {
         Schema::create('scp_usuarios', function (Blueprint $table) {
@@ -14,10 +13,7 @@ return new class extends Migration
             $table->string('rol')->nullable();
             $table->timestamps();
 
-            $table->foreign('cod_ter')
-                  ->references('cod_ter')
-                  ->on('MaeTerceros')
-                  ->onDelete('cascade');
+            $table->foreign('cod_ter')->references('cod_ter')->on('MaeTerceros')->onDelete('cascade');
         });
     }
 

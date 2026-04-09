@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Exception;
 
-use App\Models\Maestras\maeTerceros;
+use App\Models\Maestras\MaeTerceros;
 use App\Models\Maestras\MaeDistritos;
 use App\Models\Maestras\MaeCongregacion;
 use App\Models\User;
@@ -177,14 +177,18 @@ class InteractionController extends Controller
         // f. Agrupación por Distrito (Relación anidada)
         $distritosInteracciones = (clone $baseQuery)->with(['client.distrito'])->get();
 
-        $distritosAgrupados = $distritosInteracciones->groupBy(function ($item) {
-            // CORRECCIÓN AQUÍ: Usamos NOM_DIST según tu modelo MaeDistritos
-            return optional(optional($item->client)->distrito)->NOM_DIST ?? 'Sin Distrito';
-        })->map(function ($row) {
-            return $row->count();
-        })->sortByDesc(function ($count) {
-            return $count;
-        })->take(5);
+        $distritosAgrupados = $distritosInteracciones
+            ->groupBy(function ($item) {
+                // CORRECCIÓN AQUÍ: Usamos NOM_DIST según tu modelo MaeDistritos
+                return optional(optional($item->client)->distrito)->NOM_DIST ?? 'Sin Distrito';
+            })
+            ->map(function ($row) {
+                return $row->count();
+            })
+            ->sortByDesc(function ($count) {
+                return $count;
+            })
+            ->take(5);
 
         $chartDistritos = [
             'labels' => $distritosAgrupados->keys()->toArray(),
@@ -229,7 +233,7 @@ class InteractionController extends Controller
         // NUEVO: Consultas para los selects de Agentes y Clientes
         $listAgentes = User::select('id', 'name')->get();
         // Límite de 1000 agregado por seguridad de rendimiento si tu base de clientes es muy grande.
-        $listClientes = maeTerceros::select('cod_ter', 'nom_ter')->limit(1000)->get();
+        $listClientes = MaeTerceros::select('cod_ter', 'nom_ter')->limit(1000)->get();
 
         // 6. Retornar Vista
         return view(
@@ -875,7 +879,7 @@ class InteractionController extends Controller
     public function getCliente($cod_ter)
     {
         try {
-            $cliente = maeTerceros::where('cod_ter', $cod_ter)
+            $cliente = MaeTerceros::where('cod_ter', $cod_ter)
                 ->with(['maeTipos', 'distrito', 'congregaciones'])
                 ->first();
 
@@ -983,7 +987,7 @@ class InteractionController extends Controller
     {
         $search = $request->get('q');
 
-        $clientes = maeTerceros::select('cod_ter', 'nom_ter', 'apl1', 'apl2', 'nom1', 'nom2', 'cod_dist', 'congrega')
+        $clientes = MaeTerceros::select('cod_ter', 'nom_ter', 'apl1', 'apl2', 'nom1', 'nom2', 'cod_dist', 'congrega')
             ->where('estado', 1)
             ->where(function ($query) use ($search) {
                 $query

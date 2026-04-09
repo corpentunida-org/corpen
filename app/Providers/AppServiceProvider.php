@@ -4,11 +4,10 @@ namespace App\Providers;
 
 use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Facades\Route;
-use App\Models\Maestras\maeTerceros;
+use App\Models\Maestras\MaeTerceros;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Blade;
-
 
 class AppServiceProvider extends ServiceProvider
 {

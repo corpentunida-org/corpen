@@ -6,9 +6,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Maestras\MaeClaseCongregacion;
 use App\Models\Maestras\MaeDistritos;
-use App\Models\Maestras\maeTerceros;
+use App\Models\Maestras\MaeTerceros;
 use App\Models\Maestras\MaeMunicipios;
-
 
 class MaeCongregacion extends Model
 {
@@ -23,7 +22,6 @@ class MaeCongregacion extends Model
     // Para evitar problemas con created_at y updated_at si no las usas.
     // Si sí las tienes en tu tabla, puedes comentar o borrar esta línea.
     public $timestamps = false;
-
 
     /**
      * ¡AQUÍ ESTÁ LA CORRECCIÓN!
@@ -59,7 +57,6 @@ class MaeCongregacion extends Model
         return $this->belongsTo(MaeClaseCongregacion::class, 'clase', 'id');
     }
 
-
     public function maeDistritos()
     {
         return $this->belongsTo(MaeDistritos::class, 'distrito', 'COD_DIST');
@@ -67,18 +64,16 @@ class MaeCongregacion extends Model
 
     public function maeTercero()
     {
-        return $this->hasOne(maeTerceros::class, 'congrega', 'codigo');
+        return $this->hasOne(MaeTerceros::class, 'congrega', 'codigo');
     }
 
     public function pastorAnteriorObj()
     {
-        return $this->belongsTo(maeTerceros::class, 'pastorAnterior', 'cod_ter');
+        return $this->belongsTo(MaeTerceros::class, 'pastorAnterior', 'cod_ter');
     }
 
-     public function maeMunicipios()
+    public function maeMunicipios()
     {
-        return $this->belongsTo(MaeMunicipios::class, 'municipio', 'id'); 
+        return $this->belongsTo(MaeMunicipios::class, 'municipio', 'id');
     }
-
 }
-

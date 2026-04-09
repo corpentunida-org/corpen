@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Cinco;
 
 use App\Models\Cinco\MoviContCinco;
-use App\Models\Maestras\maeTerceros;
+use App\Models\Maestras\MaeTerceros;
 use App\Models\Cinco\Terceros;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
@@ -127,11 +127,9 @@ class MoviContCincoController extends Controller
             $apOrdenado = $ap = MoviContCinco::where('Cedula', $id)->where('Cuenta', '416542')->get();
         }
 
-        
         $cuentasAgrupadas = MoviContCinco::select('cuenta')->with('cuentaContable')->where('Cedula', $id)->groupBy('cuenta')->orderBy('cuenta')->get();
 
-        
-        $fechas = maeTerceros::select('nom_ter', 'fec_minis', 'fecha_ipuc', 'fec_aport')->where('Cod_Ter', $id)->first();
+        $fechas = MaeTerceros::select('nom_ter', 'fec_minis', 'fecha_ipuc', 'fec_aport')->where('Cod_Ter', $id)->first();
 
         $tercero = Terceros::where('cod_ter', $id)->first();
 
