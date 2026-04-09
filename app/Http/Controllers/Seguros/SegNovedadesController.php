@@ -11,7 +11,7 @@ use App\Models\Seguros\SegPlan;
 use App\Models\Seguros\SegPoliza;
 use App\Models\Seguros\SegCambioEstadoNovedad;
 use App\Http\Controllers\Exequial\ComaeTerController;
-use App\Models\Maestras\maeTerceros;
+use App\Models\Maestras\MaeTerceros;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use App\Http\Controllers\AuditoriaController;
@@ -124,9 +124,9 @@ class SegNovedadesController extends Controller
             if ($terapi->getStatusCode() === 404) {
                 return redirect()->back()->with('error', 'La cédula ingresada no coincide con ningún documento en base de datos de SiaSoft.');
             }*/
-            $terceroontable = maeTerceros::where('cod_ter', $request->asegurado)->exists();
+            $terceroontable = MaeTerceros::where('cod_ter', $request->asegurado)->exists();
             if (!$terceroontable) {
-                $terceroontable = maeTerceros::create([
+                $terceroontable = MaeTerceros::create([
                     'cod_ter' => $request->asegurado,
                     'nom_ter' => strtoupper($request->ternombre),
                     'fec_nac' => $request->fechaNacimiento,
@@ -135,7 +135,7 @@ class SegNovedadesController extends Controller
                     'cod_dist' => $request->terdistrito,
                 ]);
             } else {
-                $terceroontable = maeTerceros::where('cod_ter', $request->asegurado)->first();
+                $terceroontable = MaeTerceros::where('cod_ter', $request->asegurado)->first();
             }
             $aseguradontable = SegAsegurado::where('cedula', $terceroontable->cod_ter)->first();
             if (!$aseguradontable) {
@@ -231,12 +231,18 @@ class SegNovedadesController extends Controller
                         $poliza = SegPoliza::findOrFail($novedad->id_poliza);
                         $poliza->update(['active' => false, 'fecha_fin' => Carbon::now()->toDateTimeString()]);
                         if ($novedad->eliminargrupofamiliar) {
-                            $cedulas = SegAsegurado::where('Titular', $novedad->id_asegurado)->whereDoesntHave('reclamacion', function ($q) {
-                                    $q->where('finReclamacion', false);})->whereHas('polizas', function ($q) {
-                                    $q->where('active', 1);})->pluck('cedula');
+                            $cedulas = SegAsegurado::where('Titular', $novedad->id_asegurado)
+                                ->whereDoesntHave('reclamacion', function ($q) {
+                                    $q->where('finReclamacion', false);
+                                })
+                                ->whereHas('polizas', function ($q) {
+                                    $q->where('active', 1);
+                                })
+                                ->pluck('cedula');
 
-                            SegPoliza::whereIn('seg_asegurado_id', $cedulas)->where('active', 1)
-                                ->update(['active' => false,'fecha_fin' => now(),]);
+                            SegPoliza::whereIn('seg_asegurado_id', $cedulas)
+                                ->where('active', 1)
+                                ->update(['active' => false, 'fecha_fin' => now()]);
                         }
                     } elseif ($novedad->tipo == 4) {
                         $beneficiario = SegBeneficiario::findOrFail($novedad->beneficiario_id);

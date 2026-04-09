@@ -9,7 +9,7 @@ use App\Models\Soportes\ScpObservacion;
 use App\Models\Soportes\ScpTipo;
 use App\Models\Soportes\ScpPrioridad;
 use App\Models\Soportes\ScpUsuario;
-use App\Models\Maestras\maeTerceros;
+use App\Models\Maestras\MaeTerceros;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Carbon\Carbon;

@@ -8,7 +8,7 @@ use App\Models\User;
 use App\Models\Correspondencia\Trd;
 use App\Models\Correspondencia\Estado;
 use App\Models\Correspondencia\FlujoDeTrabajo;
-use App\Models\Maestras\maeTerceros;
+use App\Models\Maestras\MaeTerceros;
 use Illuminate\Support\Facades\Storage;
 
 class Correspondencia extends Model
@@ -23,22 +23,7 @@ class Correspondencia extends Model
 
     public $incrementing = false;
 
-    protected $fillable = [
-        'id_radicado',
-        'fecha_solicitud',
-        'asunto',
-        'es_confidencial',
-        'medio_recibido',
-        'remitente_id',
-        'trd_id',
-        'flujo_id',
-        'estado_id',
-        'usuario_id',
-        'observacion_previa',
-        'finalizado',
-        'final_descripcion',
-        'documento_arc',
-    ];
+    protected $fillable = ['id_radicado', 'fecha_solicitud', 'asunto', 'es_confidencial', 'medio_recibido', 'remitente_id', 'trd_id', 'flujo_id', 'estado_id', 'usuario_id', 'observacion_previa', 'finalizado', 'final_descripcion', 'documento_arc'];
 
     protected $casts = [
         'fecha_solicitud' => 'datetime',
@@ -46,14 +31,12 @@ class Correspondencia extends Model
         'finalizado' => 'boolean',
     ];
 
-    public function getFile ($nameFile)
+    public function getFile($nameFile)
     {
         $url = '#';
-        if($nameFile) {
+        if ($nameFile) {
             if (Storage::disk('s3')->exists($nameFile)) {
-                $url = Storage::disk('s3')->temporaryUrl(
-                    $nameFile, now()->addMinutes(5)
-                );
+                $url = Storage::disk('s3')->temporaryUrl($nameFile, now()->addMinutes(5));
             }
         }
         return $url;
@@ -92,7 +75,7 @@ class Correspondencia extends Model
     }
     public function remitente()
     {
-        return $this->belongsTo(maeTerceros::class, 'remitente_id','cod_ter');
+        return $this->belongsTo(MaeTerceros::class, 'remitente_id', 'cod_ter');
     }
     /**
      * Relación: Historial de procesos/gestiones
@@ -100,8 +83,7 @@ class Correspondencia extends Model
     public function procesos()
     {
         // Añadimos orderBy para que el último proceso aparezca primero en el resumen
-        return $this->hasMany(CorrespondenciaProceso::class, 'id_correspondencia', 'id_radicado')
-                    ->orderBy('created_at', 'desc');
+        return $this->hasMany(CorrespondenciaProceso::class, 'id_correspondencia', 'id_radicado')->orderBy('created_at', 'desc');
     }
     /**
      * Relación: Medio de Recepción

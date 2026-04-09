@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Storage;
-use App\Models\Maestras\maeTerceros;
+use App\Models\Maestras\MaeTerceros;
 use App\Models\Reserva\Res_inmueble;
 use App\Models\Reserva\Res_status;
 use App\Models\Reserva\Res_reserva_evidencia;
@@ -76,7 +76,7 @@ class Res_reserva extends Model
 
     public function tercero()
     {
-        return $this->belongsTo(maeTerceros::class, 'nid', 'cod_ter');
+        return $this->belongsTo(MaeTerceros::class, 'nid', 'cod_ter');
     }
 
     public function comments()

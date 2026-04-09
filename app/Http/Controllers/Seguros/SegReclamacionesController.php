@@ -96,7 +96,7 @@ class SegReclamacionesController extends Controller
      */
 
     public function store(Request $request)
-    {        
+    {
         $data = [
             'cedulaAsegurado' => $request->asegurado,
             'idCobertura' => $request->cobertura_id,
@@ -137,9 +137,11 @@ class SegReclamacionesController extends Controller
             $valor = $request->valorAsegurado - ($request->valorAsegurado * $request->porValorAsegurado) / 100;
             $polizares->update(['valor_asegurado' => $valor]);
         }
-        if($request->boolean('confirmviuda')){
+        if ($request->boolean('confirmviuda')) {
             $asegurado = SegAsegurado::where('titular', $request->asegurado)->where('parentesco', 'CO')->first();
-            if ($asegurado) {$asegurado->update(['viuda' => true]);}
+            if ($asegurado) {
+                $asegurado->update(['viuda' => true]);
+            }
         }
         $cambioEstado = SegCambioEstadoReclamacion::create([
             'reclamacion_id' => $reclamacion->id,
@@ -212,7 +214,7 @@ class SegReclamacionesController extends Controller
             'hora_actualizacion' => now()->toTimeString(),
         ]);
 
-        if ($request->checkchangevalaseg == '1') {            
+        if ($request->checkchangevalaseg == '1') {
             $nuevoMonto = $poliza->valor_asegurado * 0.5;
             $poliza->valor_asegurado = $nuevoMonto;
             $poliza->save();
@@ -270,7 +272,7 @@ class SegReclamacionesController extends Controller
         $datos = SegReclamaciones::with(['asegurado.terceroAF', 'asegurado.tercero', 'cobertura', 'diagnostico'])->get();
         $headings = ['N°', 'ASEGURADO CÉDULA', 'ASEGURADO', 'EDAD', 'TITULAR CEDULA', 'TITULAR', 'PARENTESCO', 'COBERTURA', 'VALOR ASEGURADO', 'DIAGNOSTICO', 'FECHA ACTUALIZACIÓN', 'ESTADO'];
         $datosFormateados = $datos->map(function ($item, $index) {
-            $fechaNacimiento = Carbon::parse($item->fecha_nacimiento);            
+            $fechaNacimiento = Carbon::parse($item->fecha_nacimiento);
             return [
                 'N°' => $index + 1,
                 'ASEGURADO CÉDULA' => $item->cedulaAsegurado ?? '',

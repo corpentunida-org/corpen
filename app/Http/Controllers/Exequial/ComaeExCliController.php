@@ -10,7 +10,7 @@ use App\Http\Controllers\AuditoriaController;
 use App\Models\Exequiales\ComaeExRelPar;
 use App\Models\Exequiales\ComaeExCli;
 use App\Models\Exequiales\ComaeTer;
-use App\Models\Maestras\maeTerceros;
+use App\Models\Maestras\MaeTerceros;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -73,7 +73,7 @@ class ComaeExCliController extends Controller
         //API
         $token = env('TOKEN_ADMIN');
         $id = $request->input('id');
-        $maeter = maeTerceros::where('cod_ter', $id)->exists();
+        $maeter = MaeTerceros::where('cod_ter', $id)->exists();
 
         $titular = Http::withHeaders([
             'Authorization' => 'Bearer ' . $token,
@@ -224,7 +224,7 @@ class ComaeExCliController extends Controller
         ]);
 
         if ($personalTitular->failed() || $personalTitular->status() == 500 || empty($personalTitular->json())) {
-            $tercero = maeTerceros::where('cod_ter', $id)->select('cod_dist', 'fec_nac', 'congrega', 'tel', 'email')->first();
+            $tercero = MaeTerceros::where('cod_ter', $id)->select('cod_dist', 'fec_nac', 'congrega', 'tel', 'email')->first();
             $personalTitular = [
                 'district' => $tercero && $tercero->cod_dist ? substr($tercero->cod_dist, -2) : '',
                 'birthdate' => $tercero->fec_nac ? $tercero->fec_nac->format('Y-m-d\TH:i:s') : '',

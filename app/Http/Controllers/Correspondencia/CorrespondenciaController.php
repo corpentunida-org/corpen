@@ -12,7 +12,7 @@ use App\Models\Correspondencia\Estado;
 use App\Models\Correspondencia\Proceso;
 use App\Models\Correspondencia\MedioRecepcion;
 // Otros Modelos
-use App\Models\Maestras\maeTerceros;
+use App\Models\Maestras\MaeTerceros;
 use App\Models\User;
 // Soporte de Laravel
 use Illuminate\Support\Facades\Storage;
@@ -75,9 +75,14 @@ class CorrespondenciaController extends Controller
                 ->paginate(15)
                 ->appends($request->all());
         }
-        $flujos_disponibles = $flujos = $correspondencias->getCollection()->groupBy('flujo_id')->map(function ($items) {
-            return ['id' => $items->first()->flujo_id,'nombre' => optional($items->first()->flujo)->nombre,'count' => $items->count(),];})->values();
-        return view('correspondencia.correspondencias.index', compact('correspondencias', 'estados', 'procesos_disponibles','flujos_disponibles'));
+        $flujos_disponibles = $flujos = $correspondencias
+            ->getCollection()
+            ->groupBy('flujo_id')
+            ->map(function ($items) {
+                return ['id' => $items->first()->flujo_id, 'nombre' => optional($items->first()->flujo)->nombre, 'count' => $items->count()];
+            })
+            ->values();
+        return view('correspondencia.correspondencias.index', compact('correspondencias', 'estados', 'procesos_disponibles', 'flujos_disponibles'));
     }
 
     /**
@@ -88,7 +93,7 @@ class CorrespondenciaController extends Controller
         $trds = Trd::all();
         $flujos = FlujoDeTrabajo::all();
         $estados = Estado::all();
-        $remitentes = maeTerceros::all();
+        $remitentes = MaeTerceros::all();
         $medios = MedioRecepcion::activos()->get(); // Solo medios con estado activo
 
         // Generación sugerida del siguiente ID de radicado
@@ -221,7 +226,7 @@ class CorrespondenciaController extends Controller
         $trds = Trd::all();
         $flujos = FlujoDeTrabajo::all();
         $estados = Estado::all();
-        $remitentes = maeTerceros::all();
+        $remitentes = MaeTerceros::all();
         $medios = MedioRecepcion::activos()->get();
 
         return view('correspondencia.correspondencias.edit', compact('correspondencia', 'trds', 'flujos', 'estados', 'remitentes', 'medios'));
@@ -313,7 +318,7 @@ class CorrespondenciaController extends Controller
 
     public function getRemitenteByCodigo($cod_ter)
     {
-        $tercero = maeTerceros::find($cod_ter);
+        $tercero = MaeTerceros::find($cod_ter);
         if (!$tercero) {
             return response()->json(['message' => 'Remitente no encontrado'], 404);
         }

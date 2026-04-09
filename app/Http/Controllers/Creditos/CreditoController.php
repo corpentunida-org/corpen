@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Creditos\Credito;
 use App\Models\Creditos\Estado;
 use App\Models\Creditos\LineaCredito;
-use App\Models\Maestras\maeTerceros; // Asegúrate que la ruta a tu modelo Tercero sea correcta
+use App\Models\Maestras\MaeTerceros; // Asegúrate que la ruta a tu modelo Tercero sea correcta
 use App\Http\Requests\StoreCreditoRequest;
 use App\Http\Requests\UpdateCreditoRequest;
 
@@ -33,13 +33,11 @@ class CreditoController extends Controller
 
         // 3. Añadimos el resto de tu lógica original.
         // El filtro de estado y el Eager Loading se aplican a la consulta ya filtrada (o no).
-        $creditos = $query->where('cre_estados_id', 16)
-                          ->with('tercero', 'lineaCredito.tipoCredito', 'estado.etapa')
-                          ->paginate(10);
+        $creditos = $query->where('cre_estados_id', 16)->with('tercero', 'lineaCredito.tipoCredito', 'estado.etapa')->paginate(10);
 
         // 4. Devolvemos la vista con los créditos (filtrados o no).
         return view('creditos.creditos.index', compact('creditos'));
-/* 
+        /*
         $creditos = Credito::where('cre_estados_id', 16)->with('tercero','lineaCredito.tipoCredito', 'estado.etapa')->paginate(10);
         return view('creditos.creditos.index', compact('creditos')); */
     }
@@ -51,7 +49,7 @@ class CreditoController extends Controller
         // Pasamos a la vista todos los datos necesarios para los menús desplegables del formulario.
         $estados = Estado::all();
         $lineasCredito = LineaCredito::all();
-        $terceros = maeTerceros::all();
+        $terceros = MaeTerceros::all();
 
         return view('creditos.creditos.crear', compact('estados', 'lineasCredito', 'terceros'));
     }
@@ -86,7 +84,7 @@ class CreditoController extends Controller
         // Al igual que en create, necesitamos los datos para los menús desplegables.
         $estados = Estado::all();
         $lineasCredito = LineaCredito::all();
-        $terceros = maeTerceros::all();
+        $terceros = MaeTerceros::all();
 
         return view('creditos.edit', compact('credito', 'estados', 'lineasCredito', 'terceros'));
     }

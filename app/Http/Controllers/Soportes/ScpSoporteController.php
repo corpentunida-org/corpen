@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Soportes;
 use App\Http\Controllers\Controller;
 use App\Models\Archivo\GdoCargo;
 use App\Models\Creditos\LineaCredito;
-use App\Models\Maestras\maeTerceros;
+use App\Models\Maestras\MaeTerceros;
 use App\Models\Soportes\ScpCategoria;
 use App\Models\Soportes\ScpEstado;
 use App\Models\Soportes\ScpObservacion;
@@ -92,7 +92,7 @@ class ScpSoporteController extends Controller
         $categorias = ScpCategoria::all();
         $tipos = ScpTipo::all();
         $prioridades = ScpPrioridad::all();
-        $terceros = maeTerceros::select('cod_ter', 'nom_ter')->get();
+        $terceros = MaeTerceros::select('cod_ter', 'nom_ter')->get();
         $usuarios = User::select('id', 'name')->get();
         $cargos = GdoCargo::select('id', 'nombre_cargo')->get();
         $lineas = LineaCredito::select('id', 'nombre')->get();
@@ -262,7 +262,7 @@ class ScpSoporteController extends Controller
         $categorias = ScpCategoria::all(); // ← agrega esto
         $tipos = ScpTipo::all();
         $prioridades = ScpPrioridad::all();
-        $terceros = maeTerceros::select('cod_ter', 'nom_ter')->get();
+        $terceros = MaeTerceros::select('cod_ter', 'nom_ter')->get();
         $usuarios = User::select('id', 'name')->get();
         $cargos = GdoCargo::select('id', 'nombre_cargo')->get();
         $lineas = LineaCredito::select('id', 'nombre')->get();
@@ -347,7 +347,7 @@ class ScpSoporteController extends Controller
                 if ($request->filled('id_scp_usuario_asignado') && $request->id_scp_usuario_asignado != 0) {
                     $usuarioEscalado = ScpUsuario::with('UserApp')->find($request->id_scp_usuario_asignado);
                     if ($usuarioEscalado && $usuarioEscalado->UserApp && !empty($usuarioEscalado->UserApp->email)) {
-                         Mail::to($usuarioEscalado->UserApp->email)->send(new SoporteEscaladoMail($scpSoporte, 'escalado'));
+                        Mail::to($usuarioEscalado->UserApp->email)->send(new SoporteEscaladoMail($scpSoporte, 'escalado'));
                     }
                 }
                 if ($scpSoporte->usuario && !empty($scpSoporte->usuario->email)) {

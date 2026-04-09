@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Cinco;
 
 use App\Http\Controllers\Controller;
 use App\Models\Cinco\Terceros;
-use App\Models\Maestras\maeTerceros;
+use App\Models\Maestras\MaeTerceros;
 use Illuminate\Http\Request;
 use App\Http\Controllers\AuditoriaController;
 
@@ -14,9 +14,10 @@ class TercerosController extends Controller
      * Display a listing of the resource.
      */
 
-    private function auditoria($accion){
+    private function auditoria($accion)
+    {
         $auditoriaController = app(AuditoriaController::class);
-        $auditoriaController->create($accion, "CINCO");
+        $auditoriaController->create($accion, 'CINCO');
     }
 
     public function index()
@@ -49,7 +50,7 @@ class TercerosController extends Controller
         $id = $request->input('id');
         $tercero = Terceros::where('Cod_Ter', $id)->first();
         if (!$tercero) {
-            $ter = maeTerceros::where('cod_ter', $id)->first();
+            $ter = MaeTerceros::where('cod_ter', $id)->first();
             if ($ter) {
                 $tercero = Terceros::create([
                     'Cod_Ter' => $ter->cod_ter,
@@ -57,7 +58,7 @@ class TercerosController extends Controller
                     'Fec_Ipuc' => $ter->fecha_ipuc,
                     'Fec_Minis' => $ter->fec_minis,
                     'Fec_Aport' => $ter->fec_aport,
-                ]);                
+                ]);
                 return view('cinco.terceros.show', compact('tercero'));
             }
             return redirect()->route('cinco.tercero.index')->with('warning', 'No existe esa cédula en la lista de terceros cinco');
@@ -77,23 +78,23 @@ class TercerosController extends Controller
      * Update the specified resource in storage.
      */
     public function update(Request $request, $id)
-    {        
+    {
         $ter = Terceros::where('Cod_Ter', $id->cod_ter)->first();
         $ter->update([
             'Fec_Ing' => $request->input('Fec_Ing'),
-            'Fec_Minis' => $request->input('Fec_Minis'),            
+            'Fec_Minis' => $request->input('Fec_Minis'),
             'Fec_Aport' => $request->input('Fec_Aport'),
-            'observacion'=> strtoupper($request->input('observacion')),
-            'verificado'=> true,
-            'verificadousuario'=> auth()->user()->name
+            'observacion' => strtoupper($request->input('observacion')),
+            'verificado' => true,
+            'verificadousuario' => auth()->user()->name,
         ]);
-        maeTerceros::where('cod_ter', $id->cod_ter)->update([
+        MaeTerceros::where('cod_ter', $id->cod_ter)->update([
             'fecha_ipuc' => $request->input('Fec_Ing'),
             'fec_minis' => $request->input('Fec_Minis'),
             'fec_aport' => $request->input('Fec_Aport'),
         ]);
 
-        $accion = "Actualizar fechas terceros " . $id->cod_ter;
+        $accion = 'Actualizar fechas terceros ' . $id->cod_ter;
         $this->auditoria($accion);
         return redirect()->back()->with('success', 'Registro actualizado correctamente.');
     }

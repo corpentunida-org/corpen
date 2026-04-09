@@ -6,7 +6,7 @@ use App\Models\Cinco\Retiros;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\Cinco\Terceros;
-use App\Models\Maestras\maeTerceros;
+use App\Models\Maestras\MaeTerceros;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
@@ -18,8 +18,8 @@ class RetirosListadoController extends Controller
     public function index()
     {
         $tabla = DB::table('RET_condicionesRetiros')->get();
-        $retopciones = DB::table('Ret_opciones')->get()->groupBy('tipo'); 
-        return view('cinco.retiros.index', compact('tabla','retopciones'));
+        $retopciones = DB::table('Ret_opciones')->get()->groupBy('tipo');
+        return view('cinco.retiros.index', compact('tabla', 'retopciones'));
     }
 
     public function namesearch(Request $request)
@@ -44,7 +44,9 @@ class RetirosListadoController extends Controller
     public function store(Request $request)
     {
         $añoActual = Carbon::now()->year;
-        $ultimo = Retiros::where('consecutivoDocumento', 'like', "BPA-{$añoActual}%")->orderBy('consecutivoDocumento', 'desc')->first();
+        $ultimo = Retiros::where('consecutivoDocumento', 'like', "BPA-{$añoActual}%")
+            ->orderBy('consecutivoDocumento', 'desc')
+            ->first();
         if ($ultimo) {
             $numeroAnterior = (int) substr($ultimo->consecutivoDocumento, -3);
             $nuevoConsecutivo = str_pad($numeroAnterior + 1, 3, '0', STR_PAD_LEFT);
@@ -71,11 +73,13 @@ class RetirosListadoController extends Controller
                     'cod_ter' => $request->cod_ter,
                     'documento' => $retiro->consecutivoDocumento,
                     'id_opcion' => $opcionId,
-                    'valor' => $valor
+                    'valor' => $valor,
                 ]);
             }
         }
-        return redirect()->route('cinco.retiros.show', ['calculoretiro' => 'ID','id' => $retiro->cod_ter,])->with('success', 'Retiro registrado correctamente.');
+        return redirect()
+            ->route('cinco.retiros.show', ['calculoretiro' => 'ID', 'id' => $retiro->cod_ter])
+            ->with('success', 'Retiro registrado correctamente.');
     }
 
     /**
@@ -84,7 +88,7 @@ class RetirosListadoController extends Controller
     public function show(Request $request)
     {
         $id = $request->input('id');
-        $tercero = maeTerceros::where('Cod_Ter', $id)->first();
+        $tercero = MaeTerceros::where('Cod_Ter', $id)->first();
         if (!$tercero) {
             return redirect()->route('cinco.retiros.index')->with('error', 'No hay registros con esa cedula ingresada.');
         }
@@ -92,7 +96,7 @@ class RetirosListadoController extends Controller
         $arrayliquidacion = $this->liquidaciones($tercero->fec_minis);
         $tiposselect = DB::table('RET_TiposRetiros')->where('activo', 1)->get();
         $retiro = Retiros::where('cod_ter', $id)->get();
-        
+
         return view('cinco.retiros.show', compact('tercero', 'arrayliquidacion', 'tiposselect', 'opciones', 'retiro'));
     }
 
