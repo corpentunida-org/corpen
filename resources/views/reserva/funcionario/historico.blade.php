@@ -26,6 +26,7 @@
                 display: block !important;
                 text-align: left !important;
                 border: none;
+                padding:2px!important;
             }
 
             table td a {
@@ -55,6 +56,13 @@
                 padding: 4px 0 !important;
                 margin-left: 15px !important;
             }
+        }
+
+        #calendar {
+            background-color: white;
+            with: 100%;
+            padding: 10px;
+            position: static;
         }
     </style>
     @if ($historicosres != null)
@@ -143,79 +151,78 @@
         </div>
     @endif
 
+
+
     <div class="col-lg-12">
-        <div class="card stretch stretch-full">
-            <div class="card-header cursor-pointer" data-bs-toggle="collapse" data-bs-target="#calendarCollapse">
+        <div class="card" data-scrollbar-target="#psScrollbarInit">
+            <div class="card-header">
                 <h5 class="fw-bold mb-1">Reservas Calendario</h5>
                 <p class="text-muted mb-0 small">
                     Calendario detallado de reservas activas.
                 </p>
             </div>
-            <hr class="m-0">
-            <div class="card-body d-flex flex-column p-0">
-                <div id="calendar" class="flex-fill"></div>
+            <div class="card-body">
+                <div id="calendar"></div>
             </div>
         </div>
     </div>
 
     <script>
-        $('#customerList').DataTable({
-            columnDefs: [{
-                targets: '_all',
-                className: 'text-start'
-            }]
-        });
-
         document.addEventListener('DOMContentLoaded', function() {
             const calendarEl = document.getElementById('calendar');
-        if (calendarEl) {
-            const calendar = new FullCalendar.Calendar(calendarEl, {
-                height: "auto",
-                locale: 'es',
-                contentHeight: "auto",
-                expandRows: false,
+            if (calendarEl) {
+                const calendar = new FullCalendar.Calendar(calendarEl, {
+                    height: 'auto',
+                    contentHeight: 'auto',
+                    expandRows: true,
+                    locale: 'es',
+                    initialDate: '{{ optional($historicosres->min('fecha_inicio'))?->format('Y-m-d') }}',
+                    headerToolbar: {
+                        left: 'prev,next today',
+                        center: 'title',
+                        right: 'dayGridMonth'
+                    },
 
-                headerToolbar: {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'dayGridMonth'
-                },
+                    initialView: window.innerWidth < 768 ? 'timeGridWeek' : 'dayGridMonth';
 
-                initialView: 'dayGridMonth',
+                    events: [
+                        @foreach ($historicosres as $r)
+                            {
+                                title: '{{ $r->res_status_id == 4 ? 'RESERVA CANCELADA ' . $r->res_inmueble->name : 'RESERVA ' . $r->res_inmueble->name }}',
+                                start: '{{ \Carbon\Carbon::parse($r->fecha_inicio)->format('Y-m-d') }}',
+                                end: '{{ \Carbon\Carbon::parse($r->fecha_fin)->addDay()->format('Y-m-d') }}',
+                                color: '{{ $r->res_status_id == 4 ? '#ffb3b3' : ($r->res_inmueble_id == 1 ? '#c8b6ff' : '#b6e3ff') }}',
+                                textColor: '#2b1a55',
+                                aspectRatio: 1.35,
+                                extendedProps: {
+                                    id: '{{ $r->id }}',
+                                    apto: '{{ $r->res_inmueble->name ?? '' }}',
+                                    fecha_inicio: '{{ $r->fecha_inicio }}',
+                                    fecha_fin: '{{ $r->fecha_fin }}',
+                                    usuario: '{{ $r->nid }} - {{ $r->user->name ?? '' }}',
+                                    telefono: '{{ $r->celular }} - {{ $r->celular_respaldo }}'
+                                }
+                            },
+                        @endforeach
+                    ],
+                    eventClick: function(info) {
 
-                events: [
-                    @foreach ($hisres as $r)
-                        {
-                            title: 'Reservado',
-                            start: '{{ \Carbon\Carbon::parse($r->fecha_inicio)->format('Y-m-d') }}',
-                            end: '{{ \Carbon\Carbon::parse($r->fecha_fin)->addDay()->format('Y-m-d') }}',
-                            color: '#c8b6ff',
-                            textColor: '#2b1a55',
-                            extendedProps: {
-                                id: '{{ $r->id }}',
-                                apto: '{{ $r->res_inmueble->name }}',
-                                fecha_inicio: '{{ $r->fecha_inicio }}',
-                                fecha_fin: '{{ $r->fecha_fin }}',
-                                usuario: '{{ $r->nid }} - {{ $r->user->name }}',
-                                telefono: '{{ $r->celular }} - {{ $r->celular_respaldo }}'
-                            }
-                        },                    
-                    @endforeach
-                ],
-                eventClick: function(info) {
+                        let inicio = new Date(info.event.extendedProps.fecha_inicio);
+                        let fin = new Date(info.event.extendedProps.fecha_fin);
 
-                    let inicio = new Date(info.event.extendedProps.fecha_inicio);
-                    let fin = new Date(info.event.extendedProps.fecha_fin);
+                        let opciones = {
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric'
+                        };
 
-                    let opciones = {day: 'numeric',month: 'long',year: 'numeric'};
+                        let fechaInicio = inicio.toLocaleDateString('es-ES', opciones);
+                        let fechaFin = fin.toLocaleDateString('es-ES', opciones);
 
-                    let fechaInicio = inicio.toLocaleDateString('es-ES', opciones);
-                    let fechaFin = fin.toLocaleDateString('es-ES', opciones);
-
-                    Swal.fire({
-                        title: 'Detalle de Reserva',
-                        icon: 'info',
-                        html: `
+                        Swal.fire({
+                            title: 'Detalle de Reserva',
+                            icon: 'info',
+                            html: `
                             <p><b>ID Reserva:</b> ${info.event.extendedProps.id}</p>
                             <p><b>Apartamento:</b> ${info.event.extendedProps.apto}</p>
                             <p><b>Usuario:</b> ${info.event.extendedProps.usuario}</p>
@@ -223,51 +230,13 @@
                             <p><b>Fecha Inicio:</b> ${fechaInicio} </p>
                             <p><b>Fecha Fin:</b> ${fechaFin}</p>
                         `,
-                        confirmButtonText: 'Cerrar'
-                    });
+                            confirmButtonText: 'Cerrar'
+                        });
 
-                }
-            });
-            calendar.render();
-        } 
-        });
-    </script>
-    {{-- <script>
-        document.addEventListener("DOMContentLoaded", function() {
-
-            const buscador = document.getElementById('buscadorTabla');
-            const filas = document.querySelectorAll('#tablaReservas tbody tr');
-            const contador = document.getElementById('contador');
-
-            function filtrarTabla() {
-                let filtro = buscador.value.toLowerCase();
-                let visibles = 0;
-
-                filas.forEach(fila => {
-                    let texto = fila.innerText.toLowerCase();
-
-                    if (texto.includes(filtro)) {
-                        fila.style.display = '';
-                        visibles++;
-                    } else {
-                        fila.style.display = 'none';
                     }
                 });
-
-                contador.innerText = visibles + ' resultados';
+                calendar.render();
             }
-
-            buscador.addEventListener('keyup', filtrarTabla);
-
-            // Inicializar contador
-            contador.innerText = filas.length + ' resultados';
-
-
-            // 🔥 TOOLTIPS (Bootstrap 5)
-            document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
-                new bootstrap.Tooltip(el);
-            });
-
         });
-    </script> --}}
+    </script>
 </x-base-layout>
