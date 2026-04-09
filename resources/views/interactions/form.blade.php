@@ -270,7 +270,7 @@
                                     <label class="form-label mb-2">Relación con el titular: <span
                                             class="text-muted">*</span></label>
                                     <div class="d-flex flex-wrap gap-2">
-                                        @foreach (['familiar' => 'Familiar', 'amigo' => 'Amigo', 'representante' => 'Representante', 'otro' => 'Otro'] as $v => $l)
+                                        @foreach (['familiar' => 'Familiar', 'amigo' => 'Amigo', 'representante' => 'Representante', 'empleado' => 'Empleado', 'IPUC CAN' => 'IPUC CAN', 'otro' => 'Otro'] as $v => $l)
                                             <input type="radio" class="btn-check" name="parentesco_quien_llama"
                                                 id="rel_{{ $v }}" value="{{ $v }}">
                                             <label class="smart-tag py-1 px-3 small cursor-pointer"
