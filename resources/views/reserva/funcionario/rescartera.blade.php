@@ -16,7 +16,7 @@
                     <p class="text-muted">No hay reservas pendientes de verificación de pago</p>
                 </div>
             @else
-                <ul class="list-unstyled mb-0">
+                <ul class="list-unstyled mb-0" id="listaReservas">
                     @foreach ($reservas as $res)
                         <li class="p-3 mb-3 border border-dashed rounded-3 item-reserva">
                             <div class="d-flex align-items-center justify-content-between">
@@ -51,6 +51,11 @@
                     @endforeach
                 </ul>
             @endif
+        </div>
+        <div class="card-footer d-flex align-items-center justify-content-end gap-2">
+            <nav class="mt-3">
+                <ul id="paginadorReservas" class="pagination justify-content-center"></ul>
+            </nav>
         </div>
     </div>
 
@@ -119,6 +124,52 @@
                 });
 
             });
+
+            let items = $('#listaReservas .item-reserva');
+            let itemsPorPagina = 5;
+            let totalItems = items.length;
+            let totalPaginas = Math.ceil(totalItems / itemsPorPagina);
+
+            function mostrarPagina(pagina) {
+
+                items.hide();
+
+                let inicio = (pagina - 1) * itemsPorPagina;
+                let fin = inicio + itemsPorPagina;
+
+                items.slice(inicio, fin).show();
+
+                $('#paginadorReservas li').removeClass('active');
+                $('#page-' + pagina).addClass('active');
+            }
+
+            function crearPaginador() {
+
+                let paginador = $('#paginadorReservas');
+                paginador.empty();
+
+                for (let i = 1; i <= totalPaginas; i++) {
+
+                    paginador.append(`
+                <li class="page-item" id="page-${i}">
+                    <a class="page-link" href="#">${i}</a>
+                </li>
+            `);
+                }
+
+                $('.page-link').click(function(e) {
+                    e.preventDefault();
+                    let pagina = $(this).text();
+                    mostrarPagina(pagina);
+                });
+
+            }
+
+            crearPaginador();
+            mostrarPagina(1);
+
+
+
         });
     </script>
 </x-base-layout>

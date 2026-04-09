@@ -58,7 +58,11 @@ class ResReservaController extends Controller implements HasMiddleware
         }
         date_default_timezone_set('America/Bogota');
         $fecha = date('Y-m-d');
-        $reservas = Res_reserva::where('res_inmueble_id', $id)->where('fecha_fin', '>=', $fecha)->whereIn('res_status_id', [1,2,5])->orderBy('fecha_inicio', 'asc')->get();
+        $reservas = Res_reserva::where('res_inmueble_id', $id)
+            ->where('fecha_fin', '>=', $fecha)
+            ->whereIn('res_status_id', [1, 2, 5])
+            ->orderBy('fecha_inicio', 'asc')
+            ->get();
         return view('reserva.asociado.create', compact('inmueble', 'reservas'));
     }
 
@@ -107,7 +111,8 @@ class ResReservaController extends Controller implements HasMiddleware
         $existe_reserva = Res_reserva::where('res_inmueble_id', $inmueble_id)
             ->whereNotIn('res_status_id', [3, 4])
             ->where(function ($query) use ($fechaInicio, $endDate) {
-                $query->whereBetween('fecha_inicio', [$fechaInicio, $endDate])
+                $query
+                    ->whereBetween('fecha_inicio', [$fechaInicio, $endDate])
                     ->orWhereBetween('fecha_fin', [$fechaInicio, $endDate])
                     ->orWhere(function ($query) use ($fechaInicio, $endDate) {
                         $query->where('fecha_inicio', '<=', $fechaInicio)->where('fecha_fin', '>=', $endDate);
@@ -135,7 +140,6 @@ class ResReservaController extends Controller implements HasMiddleware
         $texto = 'Hemos recibido su solicitud de reserva con ingreso el ' . $request->input('fechaInicio') . ' y salida el ' . $request->input('endDate') . '. En las próximas horas, un funcionario se comunicará con usted para validar los datos de la reserva. ¡Dios le bendiga!.';
         Mail::to(auth()->user()->email)->send(new ReservaInmueble(auth()->user()->name, $texto, 'Reserva de Inmueble ' . $inmueble->name, true, $inmueble));
         return redirect()->route('reserva.reserva.index')->with('success', 'Reserva creada con éxito');
-
     }
 
     //contabilidad confirmar reserva
@@ -160,7 +164,7 @@ class ResReservaController extends Controller implements HasMiddleware
 
         if ($request->boolean('notificar_pastor')) {
             $texto = $request->boolean('cancelar_reserva') ? 'Lamentamos informarle que su reserva ha sido cancelada. Por favor, revise los comentarios del funcionario para más detalles.' : 'Su reserva ha sido confirmada. Por favor, revise los comentarios del funcionario para más detalles.';
-            $texto .= "<br><br><strong>Comentario del funcionario:</strong><br>" . nl2br(e($request->observacion));
+            $texto .= '<br><br><strong>Comentario del funcionario:</strong><br>' . nl2br(e($request->observacion));
             Mail::to($reserva->user->email)->send(new ReservaInmueble($reserva->user->name, $texto, 'Actualización de estado de reserva', false, $reserva->res_inmueble));
         }
 
@@ -287,7 +291,7 @@ class ResReservaController extends Controller implements HasMiddleware
     }
 
     public function reservaspagos()
-    { 
+    {
         $reservas = Res_reserva::where('res_status_id', 5)
             ->whereNotNull('soporte_pago')
             ->with(['user', 'res_inmueble'])
@@ -306,7 +310,39 @@ class ResReservaController extends Controller implements HasMiddleware
     {
         $fecha = date('Y-m-d');
         $reservas = Res_reserva::where('res_status_id', 1)
-        ->where('fecha_fin', '>=', $fecha)->orderBy('fecha_inicio', 'asc')->with(['user', 'res_inmueble'])->get();
+            ->where('fecha_fin', '>=', $fecha)
+            ->orderBy('fecha_inicio', 'asc')
+            ->with(['user', 'res_inmueble'])
+            ->get();
         return view('reserva.funcionario.rescartera', compact('reservas'));
+    }
+
+    public function cancelarReservasSinSoportePago()
+    {
+        $fechaInicio = '2025-04-08';
+        $reservas = Res_reserva::whereNull('soporte_pago')
+            ->where('res_status_id', 1)
+            ->whereDate('fecha_solicitud', '>=', $fechaInicio)
+            ->whereDate('fecha_solicitud', '<=', now()->subDays(5))
+            ->get();
+
+        $canceladas = 0;
+
+        foreach ($reservas as $reserva) {
+            // cambiar estado
+            $reserva->update([
+                'res_status_id' => 4,
+                'deleted_at' => now(),
+            ]);
+
+            // enviar correo
+            \Mail::to($reserva->usuario->email)->send(new \App\Mail\ReservaCanceladaMail($reserva));
+
+            $canceladas++;
+        }
+
+        return response()->json([
+            'mensaje' => "$canceladas reservas canceladas automáticamente",
+        ]);
     }
 }
