@@ -182,7 +182,7 @@
     </tr>
     <tr>
         <th>Distrito</th>
-        <td>{{ $congregacion->maeDistritos->NOM_DIST ?? 'No asignado' }}</td>
+        <td>{{ $congregacion->maeDistritosRelacion->NOM_DIST ?? 'No asignado' }}</td>
     </tr>
     <tr>
         <th>Municipio</th>
