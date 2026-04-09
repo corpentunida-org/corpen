@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Exception;
 
-use App\Models\Maestras\maeTerceros;
+use App\Models\Maestras\MaeTerceros;
 use App\Models\Maestras\MaeDistritos;
 use App\Models\Maestras\MaeCongregacion;
 use App\Models\User;
@@ -33,26 +33,30 @@ class InteractionController extends Controller
 {
     public function report(Request $request)
     {
-        // 1. Definir rango de fechas y filtros adicionales
+        $filtroAgente = $request->input('agent_id');
+        if (!auth()->user()->hasDirectPermission('interacciones.informes.todosagentes')) {
+            if ($filtroAgente && $filtroAgente != auth()->id()) {
+                abort(403, 'No tienes permiso para ver informes de otros agentes.');
+            }
+            $filtroAgente = auth()->id();
+        }
         $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->toDateString());
-        $endDate   = $request->input('end_date', Carbon::now()->endOfMonth()->toDateString());
-        
+        $endDate = $request->input('end_date', Carbon::now()->endOfMonth()->toDateString());
+
         $filtroDistrito = $request->input('distrito_id');
-        $filtroLinea    = $request->input('linea_id');
-        
-        // NUEVO: Capturar los inputs de Agente y Cliente
-        $filtroAgente   = $request->input('agent_id');
-        $filtroCliente  = $request->input('client_id');
+        $filtroLinea = $request->input('linea_id');
+
+        $filtroCliente = $request->input('client_id');
 
         $start = Carbon::parse($startDate)->startOfDay();
-        $end   = Carbon::parse($endDate)->endOfDay();
+        $end = Carbon::parse($endDate)->endOfDay();
 
         // 2. Query Base para interacciones dentro del rango
         $baseQuery = Interaction::whereBetween('interaction_date', [$start, $end]);
 
         // Aplicar Filtro de Distrito (A través del cliente) si existe
         if ($filtroDistrito) {
-            $baseQuery->whereHas('client', function($q) use ($filtroDistrito) {
+            $baseQuery->whereHas('client', function ($q) use ($filtroDistrito) {
                 $q->where('cod_dist', $filtroDistrito);
             });
         }
@@ -75,157 +79,142 @@ class InteractionController extends Controller
         // 3. Cálculos de Tarjetas (KPIs)
         $totalInteracciones = (clone $baseQuery)->count();
 
-        $exitosas = (clone $baseQuery)->whereHas('outcomeRelation', function($q) {
-            $q->where('estado', 1);
-        })->count();
+        $exitosas = (clone $baseQuery)
+            ->whereHas('outcomeRelation', function ($q) {
+                $q->where('estado', 1);
+            })
+            ->count();
 
-        $pendientes = (clone $baseQuery)->whereHas('outcomeRelation', function($q) {
-            $q->where('estado', '!=', 1)->orWhereNull('estado');
-        })->count();
+        $pendientes = (clone $baseQuery)
+            ->whereHas('outcomeRelation', function ($q) {
+                $q->where('estado', '!=', 1)->orWhereNull('estado');
+            })
+            ->count();
 
         // NUEVO: Se agregaron $filtroAgente y $filtroCliente al use() de la subconsulta
-        $vencidas = IntSeguimiento::whereHas('interaction', function($q) use ($start, $end, $filtroDistrito, $filtroLinea, $filtroAgente, $filtroCliente) {
-                $q->whereBetween('interaction_date', [$start, $end])
-                  ->whereHas('outcomeRelation', function($q2) {
-                      $q2->where('estado', '!=', 1)->orWhereNull('estado');
-                  });
-                
-                // Replicar filtros en seguimientos
-                if ($filtroDistrito) {
-                    $q->whereHas('client', function($q3) use ($filtroDistrito) {
-                        $q3->where('cod_dist', $filtroDistrito);
-                    });
-                }
-                if ($filtroLinea) {
-                    $q->where('id_linea_de_obligacion', $filtroLinea);
-                }
-                
-                // NUEVO: Replicar filtros de Agente y Cliente en seguimientos
-                if ($filtroAgente) {
-                    $q->where('agent_id', $filtroAgente);
-                }
-                if ($filtroCliente) {
-                    $q->where('client_id', $filtroCliente);
-                }
-            })
+        $vencidas = IntSeguimiento::whereHas('interaction', function ($q) use ($start, $end, $filtroDistrito, $filtroLinea, $filtroAgente, $filtroCliente) {
+            $q->whereBetween('interaction_date', [$start, $end])->whereHas('outcomeRelation', function ($q2) {
+                $q2->where('estado', '!=', 1)->orWhereNull('estado');
+            });
+
+            // Replicar filtros en seguimientos
+            if ($filtroDistrito) {
+                $q->whereHas('client', function ($q3) use ($filtroDistrito) {
+                    $q3->where('cod_dist', $filtroDistrito);
+                });
+            }
+            if ($filtroLinea) {
+                $q->where('id_linea_de_obligacion', $filtroLinea);
+            }
+
+            // NUEVO: Replicar filtros de Agente y Cliente en seguimientos
+            if ($filtroAgente) {
+                $q->where('agent_id', $filtroAgente);
+            }
+            if ($filtroCliente) {
+                $q->where('client_id', $filtroCliente);
+            }
+        })
             ->whereNotNull('next_action_date')
             ->where('next_action_date', '<', Carbon::now())
             ->count();
 
         $stats = [
-            'total'      => $totalInteracciones,
+            'total' => $totalInteracciones,
             'successful' => $exitosas,
-            'pending'    => $pendientes,
-            'overdue'    => $vencidas,
+            'pending' => $pendientes,
+            'overdue' => $vencidas,
         ];
 
         // 4. Datos para Gráficos
-        
+
         // a. Agrupación por Canal
-        $canalesData = (clone $baseQuery)
-            ->select('interaction_channel', DB::raw('count(*) as total'))
-            ->with('channel') 
-            ->groupBy('interaction_channel')
-            ->get();
+        $canalesData = (clone $baseQuery)->select('interaction_channel', DB::raw('count(*) as total'))->with('channel')->groupBy('interaction_channel')->get();
 
         $chartCanales = [
             'labels' => $canalesData->map(fn($item) => $item->channel->name ?? 'Desconocido')->toArray(),
-            'data'   => $canalesData->pluck('total')->toArray(),
+            'data' => $canalesData->pluck('total')->toArray(),
         ];
 
         // b. Agrupación por Resultado (Outcome)
-        $resultadosData = (clone $baseQuery)
-            ->select('outcome', DB::raw('count(*) as total'))
-            ->with('outcomeRelation')
-            ->groupBy('outcome')
-            ->get();
+        $resultadosData = (clone $baseQuery)->select('outcome', DB::raw('count(*) as total'))->with('outcomeRelation')->groupBy('outcome')->get();
 
         $chartResultados = [
             'labels' => $resultadosData->map(fn($item) => $item->outcomeRelation->name ?? 'Sin Estado')->toArray(),
-            'data'   => $resultadosData->pluck('total')->toArray(),
+            'data' => $resultadosData->pluck('total')->toArray(),
         ];
 
         // c. Top 5 Agentes con más interacciones
-        $agentesData = (clone $baseQuery)
-            ->select('agent_id', DB::raw('count(*) as total'))
-            ->with('agent') 
-            ->groupBy('agent_id')
-            ->orderByDesc('total')
-            ->limit(5)
-            ->get();
+        $agentesData = (clone $baseQuery)->select('agent_id', DB::raw('count(*) as total'))->with('agent')->groupBy('agent_id')->orderByDesc('total')->limit(5)->get();
 
         $chartAgentes = [
             'labels' => $agentesData->map(fn($item) => $item->agent->name ?? 'Sin Agente')->toArray(),
-            'data'   => $agentesData->pluck('total')->toArray(),
+            'data' => $agentesData->pluck('total')->toArray(),
         ];
 
         // d. Top 5 Clientes
-        $clientesData = (clone $baseQuery)
-            ->select('client_id', DB::raw('count(*) as total'))
-            ->with('client') 
-            ->groupBy('client_id')
-            ->orderByDesc('total')
-            ->limit(5)
-            ->get();
+        $clientesData = (clone $baseQuery)->select('client_id', DB::raw('count(*) as total'))->with('client')->groupBy('client_id')->orderByDesc('total')->limit(5)->get();
 
         $chartClientes = [
-            'labels' => $clientesData->map(fn($item) => $item->client->nom_ter ?? 'Cliente '.$item->client_id)->toArray(),
-            'data'   => $clientesData->pluck('total')->toArray(),
+            'labels' => $clientesData->map(fn($item) => $item->client->nom_ter ?? 'Cliente ' . $item->client_id)->toArray(),
+            'data' => $clientesData->pluck('total')->toArray(),
         ];
 
         // e. Agrupación por Línea de Crédito
         $lineasData = (clone $baseQuery)
             ->select('id_linea_de_obligacion', DB::raw('count(*) as total'))
-            ->with('lineaDeObligacion') 
+            ->with('lineaDeObligacion')
             ->groupBy('id_linea_de_obligacion')
             ->orderByDesc('total')
             ->limit(5) // Top 5 para el gráfico
             ->get();
 
         $chartLineas = [
-            'labels' => $lineasData->map(fn($item) => optional($item->lineaDeObligacion)->nombre ?? 'Sin Línea')->toArray(), 
-            'data'   => $lineasData->pluck('total')->toArray(),
+            'labels' => $lineasData->map(fn($item) => optional($item->lineaDeObligacion)->nombre ?? 'Sin Línea')->toArray(),
+            'data' => $lineasData->pluck('total')->toArray(),
         ];
 
         // f. Agrupación por Distrito (Relación anidada)
-        $distritosInteracciones = (clone $baseQuery)
-            ->with(['client.distrito'])
-            ->get();
+        $distritosInteracciones = (clone $baseQuery)->with(['client.distrito'])->get();
 
-        $distritosAgrupados = $distritosInteracciones->groupBy(function ($item) {
-            // CORRECCIÓN AQUÍ: Usamos NOM_DIST según tu modelo MaeDistritos
-            return optional(optional($item->client)->distrito)->NOM_DIST ?? 'Sin Distrito';
-        })->map(function ($row) {
-            return $row->count();
-        })->sortByDesc(function ($count) {
-            return $count;
-        })->take(5);
+        $distritosAgrupados = $distritosInteracciones
+            ->groupBy(function ($item) {
+                // CORRECCIÓN AQUÍ: Usamos NOM_DIST según tu modelo MaeDistritos
+                return optional(optional($item->client)->distrito)->NOM_DIST ?? 'Sin Distrito';
+            })
+            ->map(function ($row) {
+                return $row->count();
+            })
+            ->sortByDesc(function ($count) {
+                return $count;
+            })
+            ->take(5);
 
         $chartDistritos = [
             'labels' => $distritosAgrupados->keys()->toArray(),
-            'data'   => $distritosAgrupados->values()->toArray(),
+            'data' => $distritosAgrupados->values()->toArray(),
         ];
 
         // g. (NUEVO) Top 5 Agentes por Seguimientos
-        $seguimientosAgentesData = IntSeguimiento::whereHas('interaction', function($q) use ($start, $end, $filtroDistrito, $filtroLinea, $filtroAgente, $filtroCliente) {
-                $q->whereBetween('interaction_date', [$start, $end]);
-                if ($filtroDistrito) {
-                    $q->whereHas('client', function($q3) use ($filtroDistrito) {
-                        $q3->where('cod_dist', $filtroDistrito);
-                    });
-                }
-                if ($filtroLinea) {
-                    $q->where('id_linea_de_obligacion', $filtroLinea);
-                }
-                if ($filtroAgente) {
-                    $q->where('agent_id', $filtroAgente);
-                }
-                if ($filtroCliente) {
-                    $q->where('client_id', $filtroCliente);
-                }
-            })
+        $seguimientosAgentesData = IntSeguimiento::whereHas('interaction', function ($q) use ($start, $end, $filtroDistrito, $filtroLinea, $filtroAgente, $filtroCliente) {
+            $q->whereBetween('interaction_date', [$start, $end]);
+            if ($filtroDistrito) {
+                $q->whereHas('client', function ($q3) use ($filtroDistrito) {
+                    $q3->where('cod_dist', $filtroDistrito);
+                });
+            }
+            if ($filtroLinea) {
+                $q->where('id_linea_de_obligacion', $filtroLinea);
+            }
+            if ($filtroAgente) {
+                $q->where('agent_id', $filtroAgente);
+            }
+            if ($filtroCliente) {
+                $q->where('client_id', $filtroCliente);
+            }
+        })
             ->select('agent_id', DB::raw('count(*) as total'))
-            ->with('creator') 
+            ->with('creator')
             ->groupBy('agent_id')
             ->orderByDesc('total')
             ->limit(5)
@@ -233,79 +222,114 @@ class InteractionController extends Controller
 
         $chartSeguimientosAgentes = [
             'labels' => $seguimientosAgentesData->map(fn($item) => optional($item->creator)->name ?? 'Sin Agente')->toArray(),
-            'data'   => $seguimientosAgentesData->pluck('total')->toArray(),
+            'data' => $seguimientosAgentesData->pluck('total')->toArray(),
         ];
 
         // 5. Listas para los select de Filtro
-        // Asegúrate de tener el modelo MaeDistritos importado arriba
-        $listDistritos = MaeDistritos::all(); 
-        $listLineas    = LineaCredito::all();
-        
-        // NUEVO: Consultas para los selects de Agentes y Clientes
-        $listAgentes   = User::select('id', 'name')->get(); 
-        // Límite de 1000 agregado por seguridad de rendimiento si tu base de clientes es muy grande.
-        $listClientes  = maeTerceros::select('cod_ter', 'nom_ter')->limit(1000)->get(); 
+        // Asegúrate de tener el modelo maeDistritos importado arriba
+        $listDistritos = maeDistritos::all();
+        $listLineas = LineaCredito::all();
 
-        // 6. Retornar Vista 
-        return view('interactions.reportes.report', compact(
-            'stats', 
-            'chartCanales', 
-            'chartResultados',
-            'chartAgentes',
-            'chartClientes',
-            'chartLineas',
-            'chartDistritos',
-            'chartSeguimientosAgentes', // <-- NUEVO GRÁFICO AGREGADO AQUÍ
-            'startDate',
-            'endDate',
-            'filtroDistrito',
-            'filtroLinea',
-            'filtroAgente',  // NUEVO
-            'filtroCliente', // NUEVO
-            'listDistritos',
-            'listLineas',
-            'listAgentes',   // NUEVO
-            'listClientes'   // NUEVO
-        ));
+        // NUEVO: Consultas para los selects de Agentes y Clientes
+        $listAgentes = User::select('id', 'name')->get();
+        // Límite de 1000 agregado por seguridad de rendimiento si tu base de clientes es muy grande.
+        $listClientes = MaeTerceros::select('cod_ter', 'nom_ter')->limit(1000)->get();
+
+        // 6. Retornar Vista
+        return view(
+            'interactions.reportes.report',
+            compact(
+                'stats',
+                'chartCanales',
+                'chartResultados',
+                'chartAgentes',
+                'chartClientes',
+                'chartLineas',
+                'chartDistritos',
+                'chartSeguimientosAgentes', // <-- NUEVO GRÁFICO AGREGADO AQUÍ
+                'startDate',
+                'endDate',
+                'filtroDistrito',
+                'filtroLinea',
+                'filtroAgente', // NUEVO
+                'filtroCliente', // NUEVO
+                'listDistritos',
+                'listLineas',
+                'listAgentes', // NUEVO
+                'listClientes', // NUEVO
+            ),
+        );
     }
     public function reportPdf(Request $request)
     {
         $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->toDateString());
-        $endDate   = $request->input('end_date', Carbon::now()->endOfMonth()->toDateString());
-        
+        $endDate = $request->input('end_date', Carbon::now()->endOfMonth()->toDateString());
+
         $filtroDistrito = $request->input('distrito_id');
-        $filtroLinea    = $request->input('linea_id');
-        $filtroAgente   = $request->input('agent_id');
-        $filtroCliente  = $request->input('client_id');
+        $filtroLinea = $request->input('linea_id');
+        $filtroAgente = $request->input('agent_id');
+        $filtroCliente = $request->input('client_id');
 
         $start = Carbon::parse($startDate)->startOfDay();
-        $end   = Carbon::parse($endDate)->endOfDay();
+        $end = Carbon::parse($endDate)->endOfDay();
 
         $baseQuery = Interaction::whereBetween('interaction_date', [$start, $end]);
 
-        if ($filtroDistrito) $baseQuery->whereHas('client', function($q) use ($filtroDistrito) { $q->where('cod_dist', $filtroDistrito); });
-        if ($filtroLinea) $baseQuery->where('id_linea_de_obligacion', $filtroLinea);
-        if ($filtroAgente) $baseQuery->where('agent_id', $filtroAgente);
-        if ($filtroCliente) $baseQuery->where('client_id', $filtroCliente);
+        if ($filtroDistrito) {
+            $baseQuery->whereHas('client', function ($q) use ($filtroDistrito) {
+                $q->where('cod_dist', $filtroDistrito);
+            });
+        }
+        if ($filtroLinea) {
+            $baseQuery->where('id_linea_de_obligacion', $filtroLinea);
+        }
+        if ($filtroAgente) {
+            $baseQuery->where('agent_id', $filtroAgente);
+        }
+        if ($filtroCliente) {
+            $baseQuery->where('client_id', $filtroCliente);
+        }
 
         $totalInteracciones = (clone $baseQuery)->count();
-        $exitosas = (clone $baseQuery)->whereHas('outcomeRelation', function($q) { $q->where('estado', 1); })->count();
-        $pendientes = (clone $baseQuery)->whereHas('outcomeRelation', function($q) { $q->where('estado', '!=', 1)->orWhereNull('estado'); })->count();
+        $exitosas = (clone $baseQuery)
+            ->whereHas('outcomeRelation', function ($q) {
+                $q->where('estado', 1);
+            })
+            ->count();
+        $pendientes = (clone $baseQuery)
+            ->whereHas('outcomeRelation', function ($q) {
+                $q->where('estado', '!=', 1)->orWhereNull('estado');
+            })
+            ->count();
 
-        $vencidas = IntSeguimiento::whereHas('interaction', function($q) use ($start, $end, $filtroDistrito, $filtroLinea, $filtroAgente, $filtroCliente) {
-                $q->whereBetween('interaction_date', [$start, $end])
-                  ->whereHas('outcomeRelation', function($q2) { $q2->where('estado', '!=', 1)->orWhereNull('estado'); });
-                if ($filtroDistrito) $q->whereHas('client', function($q3) use ($filtroDistrito) { $q3->where('cod_dist', $filtroDistrito); });
-                if ($filtroLinea) $q->where('id_linea_de_obligacion', $filtroLinea);
-                if ($filtroAgente) $q->where('agent_id', $filtroAgente);
-                if ($filtroCliente) $q->where('client_id', $filtroCliente);
-            })->whereNotNull('next_action_date')->where('next_action_date', '<', Carbon::now())->count();
+        $vencidas = IntSeguimiento::whereHas('interaction', function ($q) use ($start, $end, $filtroDistrito, $filtroLinea, $filtroAgente, $filtroCliente) {
+            $q->whereBetween('interaction_date', [$start, $end])->whereHas('outcomeRelation', function ($q2) {
+                $q2->where('estado', '!=', 1)->orWhereNull('estado');
+            });
+            if ($filtroDistrito) {
+                $q->whereHas('client', function ($q3) use ($filtroDistrito) {
+                    $q3->where('cod_dist', $filtroDistrito);
+                });
+            }
+            if ($filtroLinea) {
+                $q->where('id_linea_de_obligacion', $filtroLinea);
+            }
+            if ($filtroAgente) {
+                $q->where('agent_id', $filtroAgente);
+            }
+            if ($filtroCliente) {
+                $q->where('client_id', $filtroCliente);
+            }
+        })
+            ->whereNotNull('next_action_date')
+            ->where('next_action_date', '<', Carbon::now())
+            ->count();
 
         $stats = [
-            'total'      => $totalInteracciones,
+            'total' => $totalInteracciones,
             'successful' => $exitosas,
-            'pending'    => $pendientes,
-            'overdue'    => $vencidas,
+            'pending' => $pendientes,
+            'overdue' => $vencidas,
         ];
 
         // Tablas
@@ -319,7 +343,7 @@ class InteractionController extends Controller
         $chartLineas = ['labels' => $lineasData->map(fn($item) => optional($item->lineaDeObligacion)->nombre ?? 'Sin Línea')->toArray(), 'data' => $lineasData->pluck('total')->toArray()];
 
         $clientesData = (clone $baseQuery)->select('client_id', DB::raw('count(*) as total'))->with('client')->groupBy('client_id')->orderByDesc('total')->limit(5)->get();
-        $chartClientes = ['labels' => $clientesData->map(fn($item) => $item->client->nom_ter ?? 'Cliente '.$item->client_id)->toArray(), 'data' => $clientesData->pluck('total')->toArray()];
+        $chartClientes = ['labels' => $clientesData->map(fn($item) => $item->client->nom_ter ?? 'Cliente ' . $item->client_id)->toArray(), 'data' => $clientesData->pluck('total')->toArray()];
 
         // AUDITORÍA POR AGENTE (Con cálculo de efectividad incluido)
         $agentesList = (clone $baseQuery)->select('agent_id')->distinct()->pluck('agent_id');
@@ -328,41 +352,73 @@ class InteractionController extends Controller
         foreach ($agentesList as $agente_id) {
             $qAgente = (clone $baseQuery)->where('agent_id', $agente_id);
             $totalAgente = (clone $qAgente)->count();
-            $exitosasAgente = (clone $qAgente)->whereHas('outcomeRelation', function($q) { $q->where('estado', 1); })->count();
-            $pendientesAgente = (clone $qAgente)->whereHas('outcomeRelation', function($q) { $q->where('estado', '!=', 1)->orWhereNull('estado'); })->count();
-            
-            $vencidasAgente = IntSeguimiento::whereHas('interaction', function($q) use ($start, $end, $filtroDistrito, $filtroLinea, $filtroCliente, $agente_id) {
-                $q->whereBetween('interaction_date', [$start, $end])->where('agent_id', $agente_id)
-                  ->whereHas('outcomeRelation', function($q2) { $q2->where('estado', '!=', 1)->orWhereNull('estado'); });
-                if ($filtroDistrito) $q->whereHas('client', function($q3) use ($filtroDistrito) { $q3->where('cod_dist', $filtroDistrito); });
-                if ($filtroLinea) $q->where('id_linea_de_obligacion', $filtroLinea);
-                if ($filtroCliente) $q->where('client_id', $filtroCliente);
-            })->whereNotNull('next_action_date')->where('next_action_date', '<', Carbon::now())->count();
+            $exitosasAgente = (clone $qAgente)
+                ->whereHas('outcomeRelation', function ($q) {
+                    $q->where('estado', 1);
+                })
+                ->count();
+            $pendientesAgente = (clone $qAgente)
+                ->whereHas('outcomeRelation', function ($q) {
+                    $q->where('estado', '!=', 1)->orWhereNull('estado');
+                })
+                ->count();
 
-            $seguimientosAgente = IntSeguimiento::whereHas('interaction', function($q) use ($start, $end, $filtroDistrito, $filtroLinea, $filtroCliente, $agente_id) {
+            $vencidasAgente = IntSeguimiento::whereHas('interaction', function ($q) use ($start, $end, $filtroDistrito, $filtroLinea, $filtroCliente, $agente_id) {
+                $q->whereBetween('interaction_date', [$start, $end])
+                    ->where('agent_id', $agente_id)
+                    ->whereHas('outcomeRelation', function ($q2) {
+                        $q2->where('estado', '!=', 1)->orWhereNull('estado');
+                    });
+                if ($filtroDistrito) {
+                    $q->whereHas('client', function ($q3) use ($filtroDistrito) {
+                        $q3->where('cod_dist', $filtroDistrito);
+                    });
+                }
+                if ($filtroLinea) {
+                    $q->where('id_linea_de_obligacion', $filtroLinea);
+                }
+                if ($filtroCliente) {
+                    $q->where('client_id', $filtroCliente);
+                }
+            })
+                ->whereNotNull('next_action_date')
+                ->where('next_action_date', '<', Carbon::now())
+                ->count();
+
+            $seguimientosAgente = IntSeguimiento::whereHas('interaction', function ($q) use ($start, $end, $filtroDistrito, $filtroLinea, $filtroCliente, $agente_id) {
                 $q->whereBetween('interaction_date', [$start, $end])->where('agent_id', $agente_id);
-                if ($filtroDistrito) $q->whereHas('client', function($q3) use ($filtroDistrito) { $q3->where('cod_dist', $filtroDistrito); });
-                if ($filtroLinea) $q->where('id_linea_de_obligacion', $filtroLinea);
-                if ($filtroCliente) $q->where('client_id', $filtroCliente);
+                if ($filtroDistrito) {
+                    $q->whereHas('client', function ($q3) use ($filtroDistrito) {
+                        $q3->where('cod_dist', $filtroDistrito);
+                    });
+                }
+                if ($filtroLinea) {
+                    $q->where('id_linea_de_obligacion', $filtroLinea);
+                }
+                if ($filtroCliente) {
+                    $q->where('client_id', $filtroCliente);
+                }
             })->count();
 
             $interaccionEjemplo = (clone $qAgente)->with('agent')->first();
             $nombreAgente = $interaccionEjemplo->agent->name ?? 'Sin Agente';
-            
+
             // Calculo previo de efectividad para los insights
             $efectividad = $totalAgente > 0 ? round(($exitosasAgente / $totalAgente) * 100, 1) : 0;
 
-            $agentesAuditoria->push((object)[
-                'nombre'       => $nombreAgente,
-                'total'        => $totalAgente,
-                'exitosas'     => $exitosasAgente,
-                'pendientes'   => $pendientesAgente,
-                'vencidas'     => $vencidasAgente,
-                'seguimientos' => $seguimientosAgente,
-                'efectividad'  => $efectividad
-            ]);
+            $agentesAuditoria->push(
+                (object) [
+                    'nombre' => $nombreAgente,
+                    'total' => $totalAgente,
+                    'exitosas' => $exitosasAgente,
+                    'pendientes' => $pendientesAgente,
+                    'vencidas' => $vencidasAgente,
+                    'seguimientos' => $seguimientosAgente,
+                    'efectividad' => $efectividad,
+                ],
+            );
         }
-        
+
         // Ordenamos por mayor número de gestiones
         $agentesAuditoria = $agentesAuditoria->sortByDesc('total')->values();
 
@@ -371,10 +427,7 @@ class InteractionController extends Controller
         $agenteMasEfectivo = $agentesAuditoria->where('total', '>', 5)->sortByDesc('efectividad')->first(); // Eficiencia
         $tasaGlobal = $totalInteracciones > 0 ? round(($exitosas / $totalInteracciones) * 100, 1) : 0;
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('interactions.reportes.pdf', compact(
-            'stats', 'chartCanales', 'chartResultados', 'chartClientes', 'chartLineas', 
-            'agentesAuditoria', 'startDate', 'endDate', 'mejorAgente', 'agenteMasEfectivo', 'tasaGlobal'
-        ));
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('interactions.reportes.pdf', compact('stats', 'chartCanales', 'chartResultados', 'chartClientes', 'chartLineas', 'agentesAuditoria', 'startDate', 'endDate', 'mejorAgente', 'agenteMasEfectivo', 'tasaGlobal'));
 
         $pdf->setPaper('A4', 'portrait');
         return $pdf->stream('informe_auditoria_' . Carbon::now()->format('Ymd_Hi') . '.pdf');
@@ -402,25 +455,24 @@ class InteractionController extends Controller
                     ->orWhere('parentesco_quien_llama', 'LIKE', "%{$search}%")
                     ->orWhere('id_linea_de_obligacion', 'LIKE', "%{$search}%")
                     ->orWhereHas('client', function ($query) use ($search) {
-                        $query->where('nom_ter', 'LIKE', "%{$search}%")
-                              ->orWhere('cod_ter', 'LIKE', "%{$search}%")
-                              ->orWhereHas('distrito', function ($qDistrito) use ($search) {
-                                  $qDistrito->where('NOM_DIST', 'LIKE', "%{$search}%");
-                              });
+                        $query
+                            ->where('nom_ter', 'LIKE', "%{$search}%")
+                            ->orWhere('cod_ter', 'LIKE', "%{$search}%")
+                            ->orWhereHas('distrito', function ($qDistrito) use ($search) {
+                                $qDistrito->where('NOM_DIST', 'LIKE', "%{$search}%");
+                            });
                     })
                     ->orWhereHas('agent', function ($query) use ($search) {
-                        $query->where('name', 'LIKE', "%{$search}%")
-                              ->orWhereHas('cargoRelation', function($qCargo) use ($search) {
-                                  $qCargo->where('nombre_cargo', 'LIKE', "%{$search}%")
-                                         ->orWhereHas('gdoArea', function($qArea) use ($search) {
-                                             $qArea->where('nombre', 'LIKE', "%{$search}%");
-                                         });
-                              });
+                        $query->where('name', 'LIKE', "%{$search}%")->orWhereHas('cargoRelation', function ($qCargo) use ($search) {
+                            $qCargo->where('nombre_cargo', 'LIKE', "%{$search}%")->orWhereHas('gdoArea', function ($qArea) use ($search) {
+                                $qArea->where('nombre', 'LIKE', "%{$search}%");
+                            });
+                        });
                     })
-                    ->orWhereHas('channel', fn ($query) => $query->where('name', 'LIKE', "%{$search}%"))
-                    ->orWhereHas('outcomeRelation', fn ($query) => $query->where('name', 'LIKE', "%{$search}%"))
-                    ->orWhereHas('lineaDeObligacion', fn ($query) => $query->where('nombre', 'LIKE', "%{$search}%"))
-                    ->orWhereHas('usuarioAsignado', fn ($query) => $query->where('name', 'LIKE', "%{$search}%"));
+                    ->orWhereHas('channel', fn($query) => $query->where('name', 'LIKE', "%{$search}%"))
+                    ->orWhereHas('outcomeRelation', fn($query) => $query->where('name', 'LIKE', "%{$search}%"))
+                    ->orWhereHas('lineaDeObligacion', fn($query) => $query->where('nombre', 'LIKE', "%{$search}%"))
+                    ->orWhereHas('usuarioAsignado', fn($query) => $query->where('name', 'LIKE', "%{$search}%"));
             });
         }
 
@@ -533,19 +585,7 @@ class InteractionController extends Controller
         $nextActions = IntNextAction::all();
         $users = User::orderBy('name')->get();
 
-        return view(
-            'interactions.show',
-            compact(
-                'interaction',
-                'labels',
-                'totals',
-                'range',
-                'clientHistory',
-                'outcomes',
-                'nextActions',
-                'users',
-            )
-        );
+        return view('interactions.show', compact('interaction', 'labels', 'totals', 'range', 'clientHistory', 'outcomes', 'nextActions', 'users'));
     }
 
     /**
@@ -640,23 +680,22 @@ class InteractionController extends Controller
             // Lógica para subir archivo (Si el usuario adjuntó uno)
             $path = null;
             if ($request->hasFile('attachment')) {
-                $file = $request->file('attachment');     
-                $safeName = time() . '_' . str_replace(' ', '_', $file->getClientOriginalName());     
-                $folderPath = "corpentunida/daytrack/" . $interaction->id;
+                $file = $request->file('attachment');
+                $safeName = time() . '_' . str_replace(' ', '_', $file->getClientOriginalName());
+                $folderPath = 'corpentunida/daytrack/' . $interaction->id;
                 $path = Storage::disk('s3')->putFileAs($folderPath, $file, $safeName);
             }
-           
-                $interaction->seguimientos()->create([
-                    'agent_id' => $agentId,
-                    'id_user_asignacion' => $validatedData['id_user_asignacion'] ?? null,
-                    'outcome' => $validatedData['outcome'],
-                    'next_action_type' => $request->input('next_action_type') ?? 1, // Por si acaso enviamos un fallback
-                    'next_action_date' => $request->input('next_action_date') ?? now(),
-                    'next_action_notes' => $request->input('next_action_notes') ?? $request->input('notes'),
-                    'interaction_url' => $request->input('interaction_url'),
-                    'attachment_urls' => $path,
-                ]);
-            
+
+            $interaction->seguimientos()->create([
+                'agent_id' => $agentId,
+                'id_user_asignacion' => $validatedData['id_user_asignacion'] ?? null,
+                'outcome' => $validatedData['outcome'],
+                'next_action_type' => $request->input('next_action_type') ?? 1, // Por si acaso enviamos un fallback
+                'next_action_date' => $request->input('next_action_date') ?? now(),
+                'next_action_notes' => $request->input('next_action_notes') ?? $request->input('notes'),
+                'interaction_url' => $request->input('interaction_url'),
+                'attachment_urls' => $path,
+            ]);
 
             return redirect()->route('interactions.index')->with('success', 'Interacción creada exitosamente.');
         });
@@ -749,9 +788,9 @@ class InteractionController extends Controller
             // Lógica para subir nuevo archivo si lo hay
             $path = null;
             if ($request->hasFile('attachment')) {
-                $file = $request->file('attachment');     
-                $safeName = time() . '_' . str_replace(' ', '_', $file->getClientOriginalName());     
-                $folderPath = "corpentunida/daytrack/" . $interaction->id;
+                $file = $request->file('attachment');
+                $safeName = time() . '_' . str_replace(' ', '_', $file->getClientOriginalName());
+                $folderPath = 'corpentunida/daytrack/' . $interaction->id;
                 $path = Storage::disk('s3')->putFileAs($folderPath, $file, $safeName);
             }
 
@@ -778,7 +817,6 @@ class InteractionController extends Controller
     {
         try {
             return DB::transaction(function () use ($interaction) {
-
                 // Recorremos los seguimientos para borrar todos los archivos en S3
                 foreach ($interaction->seguimientos as $seguimiento) {
                     if (!empty($seguimiento->attachment_urls)) {
@@ -841,7 +879,7 @@ class InteractionController extends Controller
     public function getCliente($cod_ter)
     {
         try {
-            $cliente = maeTerceros::where('cod_ter', $cod_ter)
+            $cliente = MaeTerceros::where('cod_ter', $cod_ter)
                 ->with(['maeTipos', 'distrito', 'congregaciones'])
                 ->first();
 
@@ -873,7 +911,7 @@ class InteractionController extends Controller
                         'parent_interaction_id' => $item->parent_interaction_id,
 
                         // DATOS EXTRAIDOS DEL SEGUIMIENTO
-                        'next_action_date' => ($ultimoSeg && $ultimoSeg->next_action_date) ? $ultimoSeg->next_action_date->format('d/m/Y H:i') : null,
+                        'next_action_date' => $ultimoSeg && $ultimoSeg->next_action_date ? $ultimoSeg->next_action_date->format('d/m/Y H:i') : null,
                         'next_action_type' => $ultimoSeg->next_action_type ?? null,
                         'next_action_notes' => $ultimoSeg->next_action_notes ?? null,
                         'attachment_urls' => $ultimoSeg->attachment_urls ?? [],
@@ -949,7 +987,7 @@ class InteractionController extends Controller
     {
         $search = $request->get('q');
 
-        $clientes = maeTerceros::select('cod_ter', 'nom_ter', 'apl1', 'apl2', 'nom1', 'nom2', 'cod_dist', 'congrega')
+        $clientes = MaeTerceros::select('cod_ter', 'nom_ter', 'apl1', 'apl2', 'nom1', 'nom2', 'cod_dist', 'congrega')
             ->where('estado', 1)
             ->where(function ($query) use ($search) {
                 $query

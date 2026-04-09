@@ -5,9 +5,9 @@ namespace App\Models\Soportes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-use App\Models\Maestras\maeTerceros;  
+use App\Models\Maestras\MaeTerceros;
 
-use App\Models\User;        
+use App\Models\User;
 
 use App\Models\Archivo\GdoCargo;
 use App\Models\Archivo\GdoArea;
@@ -35,11 +35,10 @@ class ScpSoporte extends Model
         'id_scp_tipo',
         'id_scp_prioridad',
         'id_users', //USUARIO QUE CREA EL SOPORTE
-        'id_scp_sub_tipo', 
-        'estado', 
+        'id_scp_sub_tipo',
+        'estado',
         'soporte', //ARCHIVO
-        'usuario_escalado',  //USUARIO ESCALADO
-          
+        'usuario_escalado', //USUARIO ESCALADO
     ];
 
     /*
@@ -61,7 +60,6 @@ class ScpSoporte extends Model
         return $this->hasMany(ScpObservacion::class, 'id_scp_soporte');
     }
 
-
     public function cargo()
     {
         return $this->belongsTo(GdoCargo::class, 'id_gdo_cargo');
@@ -69,29 +67,26 @@ class ScpSoporte extends Model
     public function area()
     {
         return $this->hasOneThrough(
-            GdoArea::class,   // Modelo destino
-            GdoCargo::class,  // Modelo intermedio
-            'id',          // Clave primaria en GdoCargo
-            'id',          // Clave primaria en GdoArea
-            'id_gdo_cargo',// Foreign key en scp_soportes
-            'GDO_area_id'  // Foreign key en gdo_cargo
+            GdoArea::class, // Modelo destino
+            GdoCargo::class, // Modelo intermedio
+            'id', // Clave primaria en GdoCargo
+            'id', // Clave primaria en GdoArea
+            'id_gdo_cargo', // Foreign key en scp_soportes
+            'GDO_area_id', // Foreign key en gdo_cargo
         );
     }
 
-    public function getFile ($nameFile)
+    public function getFile($nameFile)
     {
         $url = '#';
-        if($nameFile) {
+        if ($nameFile) {
             /** @var \Illuminate\Filesystem\AwsS3V3Adapter|\Illuminate\Contracts\Filesystem\Filesystem $s3 */
             if (Storage::disk('s3')->exists($nameFile)) {
-                $url = Storage::disk('s3')->temporaryUrl(
-                    $nameFile, now()->addMinutes(5)
-                );
+                $url = Storage::disk('s3')->temporaryUrl($nameFile, now()->addMinutes(5));
             }
         }
         return $url;
     }
-
 
     public function lineaCredito()
     {
@@ -105,8 +100,6 @@ class ScpSoporte extends Model
     {
         return $this->belongsTo(ScpEstado::class, 'estado', 'id');
     }
-
-
 
     // Usuario que crea el soporte (tabla users)
     public function usuario()

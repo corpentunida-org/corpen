@@ -2,7 +2,7 @@
 
 namespace App\Models\Creditos;
 
-use App\Models\Maestras\maeTerceros; // <-- Asumiendo la ubicación de este modelo
+use App\Models\Maestras\MaeTerceros; // <-- Asumiendo la ubicación de este modelo
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,8 +10,6 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 use App\Models\Creditos\Notificacion;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-
-
 
 class Credito extends Model
 {
@@ -45,16 +43,7 @@ class Credito extends Model
      *
      * @var array<int, string>
      */
-    protected $fillable = [
-        'pr',
-        'pagare',
-        'valor',
-        'cuotas',
-        'fecha_desembolso',
-        'cre_estados_id',
-        'mae_terceros_cedula',
-        'cre_lineas_creditos_id',
-    ];
+    protected $fillable = ['pr', 'pagare', 'valor', 'cuotas', 'fecha_desembolso', 'cre_estados_id', 'mae_terceros_cedula', 'cre_lineas_creditos_id'];
 
     /**
      * Los atributos que deben ser convertidos a tipos nativos.
@@ -92,9 +81,8 @@ class Credito extends Model
      */
     public function tercero()
     {
-        return $this->belongsTo(maeTerceros::class, 'mae_terceros_cod_ter', 'cod_ter');
+        return $this->belongsTo(MaeTerceros::class, 'mae_terceros_cod_ter', 'cod_ter');
     }
-
 
     // --- RELACIONES "TIENE UN/A" (HAS ONE) ---
 
@@ -117,5 +105,5 @@ class Credito extends Model
     public function notificaciones(): HasMany
     {
         return $this->hasMany(Notificacion::class, 'cre_creditos_id');
-    } 
+    }
 }

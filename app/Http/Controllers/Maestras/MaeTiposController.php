@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 
 class MaeTiposController extends Controller
 {
-   /**
+    /**
      * Display a listing of the resource.
      *
      * @param  \Illuminate\Http\Request  $request
@@ -24,8 +24,8 @@ class MaeTiposController extends Controller
             $searchTerm = $request->input('search');
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('codigo', 'like', "%{$searchTerm}%")
-                  ->orWhere('nombre', 'like', "%{$searchTerm}%")
-                  ->orWhere('grupo', 'like', "%{$searchTerm}%");
+                    ->orWhere('nombre', 'like', "%{$searchTerm}%")
+                    ->orWhere('grupo', 'like', "%{$searchTerm}%");
             });
         }
 
@@ -75,12 +75,11 @@ class MaeTiposController extends Controller
         ]);
 
         $validated['activo'] = $request->has('activo') ? 1 : 0;
-        
+
         // Usar el modelo correcto para crear
         MaeTipo::create($validated);
 
-        return redirect()->route('maestras.tipos.index')
-                         ->with('success', 'Tipo creado correctamente.');
+        return redirect()->route('maestras.tipos.index')->with('success', 'Tipo creado correctamente.');
     }
 
     /**
@@ -89,7 +88,7 @@ class MaeTiposController extends Controller
     // Se corrigió el type-hint de MaeTipos a MaeTipo
     public function show(MaeTipo $tipo)
     {
-        $tipo->loadCount('maeTerceros');
+        $tipo->loadCount('MaeTerceros');
         return view('maestras.tipos.show', compact('tipo'));
     }
 
@@ -122,8 +121,7 @@ class MaeTiposController extends Controller
 
         $tipo->update($validated);
 
-        return redirect()->route('maestras.tipos.index')
-                         ->with('success', 'Tipo actualizado correctamente.');
+        return redirect()->route('maestras.tipos.index')->with('success', 'Tipo actualizado correctamente.');
     }
 
     /**
@@ -133,8 +131,7 @@ class MaeTiposController extends Controller
     public function destroy(MaeTipo $tipo)
     {
         $tipo->delete();
-        
-        return redirect()->route('maestras.tipos.index')
-                         ->with('success', 'Tipo eliminado correctamente.');
+
+        return redirect()->route('maestras.tipos.index')->with('success', 'Tipo eliminado correctamente.');
     }
 }

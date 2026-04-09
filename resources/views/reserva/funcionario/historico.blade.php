@@ -6,6 +6,7 @@
             table thead {
                 display: none;
             }
+
             table,
             table tbody,
             table tr,
@@ -143,19 +144,18 @@
     @endif
 
     <div class="col-lg-12">
-            <div class="card stretch stretch-full">
-                <div class="card-header cursor-pointer" data-bs-toggle="collapse" data-bs-target="#calendarCollapse">
-                    <h5 class="fw-bold mb-1">Reservas Calendario</h5>
-                    <p class="text-muted mb-0 small">
-                        Calendario detallado de reservas activas.
-                    </p>
-                </div>
-                <hr class="m-0">
-
-                <div class="card-body d-flex flex-column p-0">
-                    <div id="calendar" class="flex-fill"></div>
-                </div>
+        <div class="card stretch stretch-full">
+            <div class="card-header cursor-pointer" data-bs-toggle="collapse" data-bs-target="#calendarCollapse">
+                <h5 class="fw-bold mb-1">Reservas Calendario</h5>
+                <p class="text-muted mb-0 small">
+                    Calendario detallado de reservas activas.
+                </p>
             </div>
+            <hr class="m-0">
+            <div class="card-body d-flex flex-column p-0">
+                <div id="calendar" class="flex-fill"></div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -168,36 +168,68 @@
 
         document.addEventListener('DOMContentLoaded', function() {
             const calendarEl = document.getElementById('calendar');
-
+        if (calendarEl) {
             const calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'dayGridMonth',
+                height: "auto",
                 locale: 'es',
-                selectable: true,
-                editable: true,
-                height: '100%',
-                expandRows: true,
+                contentHeight: "auto",
+                expandRows: false,
+
                 headerToolbar: {
                     left: 'prev,next today',
                     center: 'title',
-                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                    right: 'dayGridMonth'
                 },
 
-                // Click en día para agregar evento
-                dateClick: function(info) {
-                    const title = prompt("Nombre del evento:");
-                    if (title) {
-                        calendar.addEvent({
-                            title: title,
-                            start: info.dateStr,
-                            allDay: true,
-                            height: 600,
-                        });
-                    }
-                },
+                initialView: 'dayGridMonth',
 
+                events: [
+                    @foreach ($hisres as $r)
+                        {
+                            title: 'Reservado',
+                            start: '{{ \Carbon\Carbon::parse($r->fecha_inicio)->format('Y-m-d') }}',
+                            end: '{{ \Carbon\Carbon::parse($r->fecha_fin)->addDay()->format('Y-m-d') }}',
+                            color: '#c8b6ff',
+                            textColor: '#2b1a55',
+                            extendedProps: {
+                                id: '{{ $r->id }}',
+                                apto: '{{ $r->res_inmueble->name }}',
+                                fecha_inicio: '{{ $r->fecha_inicio }}',
+                                fecha_fin: '{{ $r->fecha_fin }}',
+                                usuario: '{{ $r->nid }} - {{ $r->user->name }}',
+                                telefono: '{{ $r->celular }} - {{ $r->celular_respaldo }}'
+                            }
+                        },                    
+                    @endforeach
+                ],
+                eventClick: function(info) {
+
+                    let inicio = new Date(info.event.extendedProps.fecha_inicio);
+                    let fin = new Date(info.event.extendedProps.fecha_fin);
+
+                    let opciones = {day: 'numeric',month: 'long',year: 'numeric'};
+
+                    let fechaInicio = inicio.toLocaleDateString('es-ES', opciones);
+                    let fechaFin = fin.toLocaleDateString('es-ES', opciones);
+
+                    Swal.fire({
+                        title: 'Detalle de Reserva',
+                        icon: 'info',
+                        html: `
+                            <p><b>ID Reserva:</b> ${info.event.extendedProps.id}</p>
+                            <p><b>Apartamento:</b> ${info.event.extendedProps.apto}</p>
+                            <p><b>Usuario:</b> ${info.event.extendedProps.usuario}</p>
+                            <p><b>Teléfonos:</b> ${info.event.extendedProps.telefono}</p>                            
+                            <p><b>Fecha Inicio:</b> ${fechaInicio} </p>
+                            <p><b>Fecha Fin:</b> ${fechaFin}</p>
+                        `,
+                        confirmButtonText: 'Cerrar'
+                    });
+
+                }
             });
-
             calendar.render();
+        } 
         });
     </script>
     {{-- <script>

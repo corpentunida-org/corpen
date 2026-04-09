@@ -5,9 +5,8 @@ namespace App\Models\Maestras;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Models\Maestras\maeTerceros;
+use App\Models\Maestras\MaeTerceros;
 use App\Models\User;
-
 
 class MaeTipo extends Model
 {
@@ -18,28 +17,12 @@ class MaeTipo extends Model
     /**
      * Los atributos que se pueden asignar masivamente.
      */
-    protected $fillable = [
-        'codigo',
-        'nombre',
-        'descripcion',
-        'grupo',
-        'categoria',
-        'orden',
-        'activo',
-        'editable',
-        'eliminable',
-        'created_by',
-        'updated_by',
-    ];
+    protected $fillable = ['codigo', 'nombre', 'descripcion', 'grupo', 'categoria', 'orden', 'activo', 'editable', 'eliminable', 'created_by', 'updated_by'];
 
     /**
      * Las fechas que deben tratarse como Carbon (fecha).
      */
-    protected $dates = [
-        'created_at',
-        'updated_at',
-        'deleted_at',
-    ];
+    protected $dates = ['created_at', 'updated_at', 'deleted_at'];
 
     /**
      * Relación con el usuario que creó el registro.
@@ -61,7 +44,7 @@ class MaeTipo extends Model
     {
         return $this->belongsTo(MaeTipo::class, 'codigo', 'tip_prv');
     }
-    public function maeTerceros()
+    public function MaeTerceros()
     {
         // Esto le dice a Laravel:
         // "Busca en la tabla MaeTerceros todos los registros donde la columna 'tip_prv'

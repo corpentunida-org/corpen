@@ -2,7 +2,7 @@
 
 namespace App\Models\Seguros;
 
-use App\Models\Maestras\maeTerceros;
+use App\Models\Maestras\MaeTerceros;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -10,26 +10,7 @@ class SegReclamaciones extends Model
 {
     use HasFactory;
     protected $table = 'SEG_reclamaciones';
-    protected $fillable = [
-        'cedulaAsegurado',
-        'idCobertura',
-        'idDiagnostico',
-        'otro',
-        'fechaSiniestro',
-        'fechaContacto',
-        'horaContacto',
-        'nombreContacto',
-        'parentescoContacto',
-        'telcontacto',
-        'estado',
-        'poliza_id',
-        'cedulaContacto',
-        'idBeneficiario',
-        'valor_asegurado',
-        'porreclamar',
-        'fecha_desembolso',
-        'finReclamacion',
-    ];
+    protected $fillable = ['cedulaAsegurado', 'idCobertura', 'idDiagnostico', 'otro', 'fechaSiniestro', 'fechaContacto', 'horaContacto', 'nombreContacto', 'parentescoContacto', 'telcontacto', 'estado', 'poliza_id', 'cedulaContacto', 'idBeneficiario', 'valor_asegurado', 'porreclamar', 'fecha_desembolso', 'finReclamacion'];
 
     public function asegurado()
     {
@@ -38,7 +19,7 @@ class SegReclamaciones extends Model
 
     public function tercero()
     {
-        return $this->belongsTo(maeTerceros::class, 'cedulaAsegurado', 'cod_ter');
+        return $this->belongsTo(MaeTerceros::class, 'cedulaAsegurado', 'cod_ter');
     }
     public function terceroAlt()
     {
@@ -72,7 +53,8 @@ class SegReclamaciones extends Model
         return $this->belongsTo(SegEstadoReclamacion::class, 'estado', 'id');
     }
 
-    public function cambiosEstado(){
+    public function cambiosEstado()
+    {
         return $this->hasMany(SegCambioEstadoReclamacion::class, 'reclamacion_id', 'id');
-    } 
+    }
 }

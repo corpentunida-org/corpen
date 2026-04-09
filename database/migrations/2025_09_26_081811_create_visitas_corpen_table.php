@@ -4,13 +4,12 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     public function up(): void
     {
         Schema::create('visitas_corpen', function (Blueprint $table) {
             $table->id();
-            
+
             // BIGINT igual que cod_ter en MaeTerceros
             $table->bigInteger('cliente_id')->nullable();
 
@@ -23,10 +22,7 @@ return new class extends Migration
             $table->timestamps();
 
             // Clave foránea
-            $table->foreign('cliente_id')
-                  ->references('cod_ter')
-                  ->on('MaeTerceros')
-                  ->onDelete('set null');
+            $table->foreign('cliente_id')->references('cod_ter')->on('MaeTerceros')->onDelete('set null');
         });
     }
 
