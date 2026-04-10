@@ -34,7 +34,7 @@
         }
     </style>
     @if ($reservas->count() != 0)
-        {{-- <div class="col-lg-12">
+        <div class="col-lg-12">
             <div class="card stretch stretch-full">
                 <div class="card-header">
                     <div class="hstack justify-content-between">
@@ -127,7 +127,7 @@
                     </div>
                 </div>
             </div>
-        </div> --}}
+        </div>
     @endif
 
     @include('reserva.asociado.inmueblesindex')

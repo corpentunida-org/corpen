@@ -319,28 +319,18 @@ class ResReservaController extends Controller implements HasMiddleware
 
     public function cancelarReservasSinSoportePago()
     {
-        $fechaInicio = '2025-04-08';
-        $reservas = Res_reserva::whereNull('soporte_pago')
-            ->where('res_status_id', 1)
-            ->whereDate('fecha_solicitud', '>=', $fechaInicio)
-            ->whereDate('fecha_solicitud', '<=', now()->subDays(5))
-            ->get();
-
+        $fechaInicio = '2026-04-08';
+        $reservas = Res_reserva::where('res_status_id', 1)->whereDate('fecha_solicitud', '>=', $fechaInicio)->whereRaw('DATE_ADD(fecha_solicitud, INTERVAL 5 DAY) <= CURDATE()')->with(['user','res_inmueble'])->get();
         $canceladas = 0;
-
         foreach ($reservas as $reserva) {
-            // cambiar estado
             $reserva->update([
                 'res_status_id' => 4,
                 'deleted_at' => now(),
             ]);
-
-            // enviar correo
-            \Mail::to($reserva->usuario->email)->send(new \App\Mail\ReservaCanceladaMail($reserva));
-
+            $texto = 'Lamentamos informarle que su reserva ha sido cancelada automáticamente debido a que no se recibió el soporte de pago en la aplicación dentro del plazo establecido. Si desea realizar una nueva reserva, por favor siga el proceso habitual en nuestra plataforma. ¡Dios le bendiga!';
+            Mail::to($reserva->user->email)->send(new ReservaInmueble($reserva->user->name, $texto, 'Su reserva ha sido cancelada', false, $reserva->res_inmueble));
             $canceladas++;
         }
-
         return response()->json([
             'mensaje' => "$canceladas reservas canceladas automáticamente",
         ]);
