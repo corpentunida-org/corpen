@@ -14,27 +14,23 @@
 <div class="d-flex align-items-center">
 
     <div class="nxl-h-item d-none d-sm-flex me-2" id="messengerComponent">
-        <div class="nxl-head-link position-relative" 
-             data-bs-toggle="offcanvas" 
-             data-bs-target="#offcanvasMessenger" 
-             aria-controls="offcanvasMessenger" 
-             role="button" 
-             title="Mensajes Directos">
+        <div class="nxl-head-link position-relative" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMessenger"
+            aria-controls="offcanvasMessenger" role="button" title="Mensajes Directos">
             <i class="feather-message-square notification-bell"></i>
         </div>
     </div>
 
     <div class="dropdown nxl-h-item d-none" id="notificationComponent">
-        <div class="nxl-head-link me-3 position-relative" data-bs-toggle="dropdown" role="button" data-bs-auto-close="outside"
-            aria-haspopup="true" aria-expanded="false" id="notificationDropdownButton">
+        <div class="nxl-head-link me-3 position-relative" data-bs-toggle="dropdown" role="button"
+            data-bs-auto-close="outside" aria-haspopup="true" aria-expanded="false" id="notificationDropdownButton">
             <i class="feather-bell notification-bell"></i>
             <span class="badge bg-danger nxl-h-badge pulse-animation" id="contadorNotificaciones"
                 aria-label="Notificaciones no leídas"></span>
             <div class="notification-indicator" id="notificationIndicator" aria-hidden="true"></div>
         </div>
 
-        <div class="dropdown-menu dropdown-menu-end nxl-h-dropdown nxl-notifications-menu notification-panel" role="region"
-            aria-labelledby="notificationDropdownButton" aria-live="polite">
+        <div class="dropdown-menu dropdown-menu-end nxl-h-dropdown nxl-notifications-menu notification-panel"
+            role="region" aria-labelledby="notificationDropdownButton" aria-live="polite">
             <div class="notifications-header">
                 <div class="d-flex justify-content-between align-items-center notifications-head">
                     <h6 class="fw-bold text-dark mb-0">Centro de Soportes</h6>
@@ -83,10 +79,11 @@
                 </div>
             </div>
 
-            <div id="listaNotificaciones" class="notifications-list" role="tabpanel" aria-label="Lista de notificaciones">
+            <div id="listaNotificaciones" class="notifications-list" role="tabpanel"
+                aria-label="Lista de notificaciones">
                 <div id="skeletonLoader" class="skeleton-loader d-none">
-                    </div>
                 </div>
+            </div>
 
             <div class="text-center notifications-footer">
                 <small class="text-muted d-block mb-2" id="lastSyncTimestamp">Actualizando...</small>
@@ -733,6 +730,7 @@
             setupTouchGestures();
             setupKeyboardNavigation(); // MEJORA 20
             updateLastSyncTimestamp();
+            ejecutarCancelacionDiaria(); // Ejecutar función de cancelación diaria
         }
 
         // ============================================
@@ -766,12 +764,34 @@
 
             // Configurar nuevo timeout para reanudar actualizaciones
             pauseTimeout = setTimeout(() => {
-                isAutoUpdatePaused = false;               
+                isAutoUpdatePaused = false;
             }, PAUSE_DURATION);
 
             //console.log('Actualizaciones automáticas pausadas por', PAUSE_DURATION / 1000, 'segundos');
         }
 
+        function ejecutarCancelacionDiaria() {
+            const ultimaEjecucion = localStorage.getItem('cancelacion_reservas_fecha');
+            const hoy = new Date().toISOString().split('T')[0];
+            if (ultimaEjecucion === hoy) {
+                return; 
+            }
+            fetch('{{ route('reservas.cancelar.auto') }}', {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data.mensaje);
+                    localStorage.setItem('cancelacion_reservas_fecha', hoy);
+                })
+                .catch(error => {
+                    console.error('Error cancelando reservas:', error);
+                });
+        }
         // ============================================
         // CONFIGURACIÓN DE EVENT LISTENERS
         // ============================================
@@ -780,7 +800,7 @@
             speechToggle.addEventListener('click', () => {
                 speechEnabled = !speechEnabled;
                 speechIcon.style.color = speechEnabled ? 'var(--text-primary)' :
-                'var(--text-secondary)';
+                    'var(--text-secondary)';
                 speechToggle.setAttribute('aria-pressed', speechEnabled);
                 trackEvent(`Lectura por voz ${speechEnabled ? 'activada' : 'desactivada'}`);
             });
@@ -1122,7 +1142,7 @@
             if (audioContext.state === 'suspended') {
                 console.warn(
                     'AudioContext está suspendido. El sonido no se puede reproducir sin una interacción del usuario primero.'
-                    );
+                );
                 return;
             }
 
@@ -1137,7 +1157,7 @@
                 gainNode.gain.value = 0.1;
 
                 oscillator.start();
-                oscillator.stop(audioContext.currentTime + 0.15);                
+                oscillator.stop(audioContext.currentTime + 0.15);
             } catch (error) {
                 console.error('Error al intentar reproducir el sonido de notificación:', error);
             }
@@ -1152,7 +1172,7 @@
                     'event_category': category,
                     'event_label': 'Centro de Soportes'
                 });
-            }            
+            }
         }
 
         // ============================================
