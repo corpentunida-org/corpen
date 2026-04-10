@@ -473,7 +473,6 @@
                                 <div class="text-danger small mt-2">{{ $message }}</div>
                             @enderror
                         </div>
-
                     </div>
                 </div>
             </div>
@@ -533,7 +532,6 @@
                             </div>
                         </div>
                     </div>
-
                     <div class="row g-4 mt-2">
                         <div class="col-md-6">
                             <label for="id_linea_de_obligacion"
@@ -564,14 +562,11 @@
                 <div class="mb-4 pb-3 border-bottom">
                     <h5 class="fw-bold text-dark mb-0">Cierre de Gestión</h5>
                 </div>
-
                 <div class="row g-4">
                     <div class="col-lg-6">
                         <div class="border h-100 bg-white" style="border-radius: 4px;">
                             <div class="p-4">
-                                <label class="form-label text-muted text-uppercase mb-3">
-                                    Resultado de Interacción <span class="text-muted">*</span>
-                                </label>
+                                <label class="form-label text-muted text-uppercase mb-3">Resultado de Interacción <span class="text-muted">*</span></label>
                                 <div class="row g-2">
                                     @foreach ($outcomes as $outcome)
                                         <div class="col-sm-6">

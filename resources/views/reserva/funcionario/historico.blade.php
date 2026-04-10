@@ -26,7 +26,7 @@
                 display: block !important;
                 text-align: left !important;
                 border: none;
-                padding:2px!important;
+                padding: 2px !important;
             }
 
             table td a {
@@ -55,6 +55,20 @@
                 display: block !important;
                 padding: 4px 0 !important;
                 margin-left: 15px !important;
+            }
+
+            .fc-toolbar {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .fc-toolbar-title {
+                font-size: 18px;
+                text-align: center;
+            }
+
+            .fc-daygrid-day-frame {
+                min-height: 60px;
             }
         }
 
@@ -172,19 +186,18 @@
             const calendarEl = document.getElementById('calendar');
             if (calendarEl) {
                 const calendar = new FullCalendar.Calendar(calendarEl, {
+                    locale: 'es',
+                    initialView: 'dayGridMonth',
                     height: 'auto',
                     contentHeight: 'auto',
                     expandRows: true,
-                    locale: 'es',
+                    handleWindowResize: true,
                     initialDate: '{{ optional($historicosres->min('fecha_inicio'))?->format('Y-m-d') }}',
                     headerToolbar: {
                         left: 'prev,next today',
                         center: 'title',
                         right: 'dayGridMonth'
                     },
-
-                    initialView: window.innerWidth < 768 ? 'timeGridWeek' : 'dayGridMonth';
-
                     events: [
                         @foreach ($historicosres as $r)
                             {
@@ -236,6 +249,9 @@
                     }
                 });
                 calendar.render();
+                window.addEventListener('resize', function() {
+                    calendar.updateSize();
+                });
             }
         });
     </script>

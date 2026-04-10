@@ -312,10 +312,8 @@ Route::prefix('reservas')
             ->name('inmueble.toggle')
             ->middleware(['auth', 'candirect:reservas.inmueble.active']);
     });
-Route::get('/scheduler-run', function () {
-    Artisan::call('schedule:run');
-    return 'Scheduler ejecutado';
-});
+//Route::get('/scheduler-run', function () {Artisan::call('schedule:run');return 'Scheduler ejecutado';});
+Route::get('/scheduler-run', [ResReservaController::class, 'cancelarReservasSinSoportePago'])->name('reservas.cancelar.auto');
 
 //TERCEROS
 Route::prefix('maestras')
