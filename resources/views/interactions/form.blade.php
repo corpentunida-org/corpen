@@ -544,6 +544,8 @@
                                     @foreach ($lineasCredito as $id => $nombre)
                                         <option value="{{ $id }}">{{ $nombre }}</option>
                                     @endforeach
+                                    <option value="asesoriamiento">Asesoriamiento</option>
+                                    <option value="varios">Varios</option>
                                 @endif
                             </select>
                         </div>
