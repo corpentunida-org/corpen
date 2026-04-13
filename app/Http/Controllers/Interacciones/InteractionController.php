@@ -631,15 +631,15 @@ class InteractionController extends Controller
     public function store(Request $request)
     {
         $validatedData = $request->validate([
-            'client_id' => 'required|exists:MaeTerceros,cod_ter',
-            'agent_id' => 'required|exists:users,id',
+            'client_id' => 'required',
+            'agent_id' => 'required',
             'interaction_date' => 'required|date',
-            'interaction_channel' => 'required|exists:int_channels,id',
-            'interaction_type' => 'required|exists:int_types,id',
-            'outcome' => 'required|exists:int_outcomes,id',
+            'interaction_channel' => 'required',
+            'interaction_type' => 'required',
+            'outcome' => 'required',
             'notes' => 'nullable|string',
             'next_action_date' => 'nullable|date',
-            'next_action_type' => 'nullable|exists:int_next_actions,id',
+            'next_action_type' => 'nullable',
             'next_action_notes' => 'nullable|string',
             'interaction_url' => 'nullable|url',
             'attachment' => 'nullable|file|mimes:jpeg,png,pdf,jpg,doc,docx|max:10240',
@@ -647,18 +647,22 @@ class InteractionController extends Controller
             'nombre_quien_llama' => 'nullable|string|max:255',
             'celular_quien_llama' => 'nullable|string|max:50',
             'parentesco_quien_llama' => 'nullable|string|max:50',
-            'id_linea_de_obligacion' => 'nullable|integer|exists:cre_lineas_creditos,id',
-            'id_user_asignacion' => 'nullable|integer|exists:users,id',
+            'id_linea_de_obligacion' => 'nullable|integer',
+            'id_user_asignacion' => 'nullable|integer',
             'start_time' => 'nullable|date',
             'duration' => 'nullable|integer|min:0',
-            'parent_interaction_id' => 'nullable|integer|exists:interactions,id',
+            'parent_interaction_id' => 'nullable|integer',
         ]);
 
         return DB::transaction(function () use ($request, $validatedData) {
-            $duration = $validatedData['duration'] ?? 0;
             $agentId = Auth::id();
+            $duration = $validatedData['duration'] ?? 0;
 
-            // 1. Guardar Interaction (TABLA 1)
+            /*
+        |---------------------------------------
+        | 1. Crear interacción
+        |---------------------------------------
+        */
             $interaction = Interaction::create([
                 'client_id' => $validatedData['client_id'],
                 'agent_id' => $agentId,
@@ -677,24 +681,35 @@ class InteractionController extends Controller
                 'parentesco_quien_llama' => $validatedData['parentesco_quien_llama'] ?? null,
             ]);
 
-            // Lógica para subir archivo (Si el usuario adjuntó uno)
-            $path = null;
+            /*
+        |---------------------------------------
+        | 2. Subir archivo a S3
+        |---------------------------------------
+        */
+            $attachmentPath = null;
+
             if ($request->hasFile('attachment')) {
                 $file = $request->file('attachment');
-                $safeName = time() . '_' . str_replace(' ', '_', $file->getClientOriginalName());
-                $folderPath = 'corpentunida/daytrack/' . $interaction->id;
-                $path = Storage::disk('s3')->putFileAs($folderPath, $file, $safeName);
+
+                $fileName = uniqid() . '_' . $file->getClientOriginalName();
+
+                $attachmentPath = Storage::disk('s3')->putFileAs('corpentunida/daytrack/' . $interaction->id, $file, $fileName);
             }
 
+            /*
+        |---------------------------------------
+        | 3. Crear seguimiento
+        |---------------------------------------
+        */
             $interaction->seguimientos()->create([
                 'agent_id' => $agentId,
                 'id_user_asignacion' => $validatedData['id_user_asignacion'] ?? null,
                 'outcome' => $validatedData['outcome'],
-                'next_action_type' => $request->input('next_action_type') ?? 1, // Por si acaso enviamos un fallback
-                'next_action_date' => $request->input('next_action_date') ?? now(),
+                'next_action_type' => $request->input('next_action_type', 1),
+                'next_action_date' => $request->input('next_action_date', now()),
                 'next_action_notes' => $request->input('next_action_notes') ?? $request->input('notes'),
                 'interaction_url' => $request->input('interaction_url'),
-                'attachment_urls' => $path,
+                'attachment_urls' => $attachmentPath,
             ]);
 
             return redirect()->route('interactions.index')->with('success', 'Interacción creada exitosamente.');
