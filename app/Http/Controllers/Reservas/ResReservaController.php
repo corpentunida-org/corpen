@@ -31,6 +31,7 @@ class ResReservaController extends Controller implements HasMiddleware
 
     public function index()
     {
+        
         $reservas = Res_reserva::where('user_id', auth()->user()->id)
             ->where('puntuacion_asociado', null)
             ->orderBy('fecha_inicio', 'desc')
@@ -92,7 +93,8 @@ class ResReservaController extends Controller implements HasMiddleware
 
         //consultar si el usuario ya tiene una reserva en el ultimo año
         $reservaExistente = Res_reserva::where('user_id', auth()->user()->id)
-            ->where('fecha_inicio', '>=', Carbon::parse($fechaInicio)->subYear()->format('Y-m-d')) // Fecha menor a un año antes de $fechaInicio
+            ->where('res_status_id', '!=', 4)
+            ->where('fecha_inicio', '>=', Carbon::parse($fechaInicio)->subYear()->format('Y-m-d'))
             ->count();
 
         if ($reservaExistente) {
@@ -204,7 +206,9 @@ class ResReservaController extends Controller implements HasMiddleware
         $reserva->save();
 
         $texto = 'Hemos recibido el comprobante de pago del servicio de aseo correspondiente a su reserva. En las próximas horas, uno de nuestros funcionarios se comunicará con usted para verificar el pago y brindarle las recomendaciones necesarias para confirmar su reserva. ¡Dios le bendiga!';
-        Mail::to(auth()->user()->email)->send(new ReservaInmueble(auth()->user()->name, $texto, 'Soporte pago del Aseo - Reserva', false, $reserva->res_inmueble));
+        //Mail::to(auth()->user()->email)->send(new ReservaInmueble(auth()->user()->name, $texto, 'Soporte pago del Aseo - Reserva', false, $reserva->res_inmueble));
+        Mail::to($reserva->user->email)->send(new ReservaInmueble($reserva->user->name, $texto, 'Soporte pago del Aseo - Reserva', false, $reserva->res_inmueble));
+        $this->auditoria('Subida de soporte de pago para reserva ID: ' . $reserva->id);
         return redirect()->route('reserva.reserva.index')->with('success', 'Soporte de pago cargado con éxito');
     }
 
@@ -320,7 +324,11 @@ class ResReservaController extends Controller implements HasMiddleware
     public function cancelarReservasSinSoportePago()
     {
         $fechaInicio = '2026-04-08';
-        $reservas = Res_reserva::where('res_status_id', 1)->whereDate('fecha_solicitud', '>=', $fechaInicio)->whereRaw('DATE_ADD(fecha_solicitud, INTERVAL 5 DAY) <= CURDATE()')->with(['user','res_inmueble'])->get();
+        $reservas = Res_reserva::where('res_status_id', 1)
+            ->whereDate('fecha_solicitud', '>=', $fechaInicio)
+            ->whereRaw('DATE_ADD(fecha_solicitud, INTERVAL 5 DAY) <= CURDATE()')
+            ->with(['user', 'res_inmueble'])
+            ->get();
         $canceladas = 0;
         foreach ($reservas as $reserva) {
             $reserva->update([

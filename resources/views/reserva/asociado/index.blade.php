@@ -73,24 +73,25 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @foreach ($reservas as $reserva)                             
-                                        <tr>
-                                            <td>
-                                                <div class="fw-semibold mb-1"></div>
-                                                <div class="d-flex gap-3">
-                                                    <a href="javascript:void(0);"
-                                                        class="hstack gap-1 fs-11 fw-normal text-primary">
-                                                        <span>{{ $reserva->res_inmueble->name }}</span>
-                                                    </a>
-                                                </div>
-                                            </td>
-                                            <td>{{ $reserva->fecha_inicio }} a {{ $reserva->fecha_fin }}</td>
-                                            <td>{{ $reserva->comentario_reserva ?: ' ' }}</td>
-                                            <td>
-                                                <div class="fw-semibold mb-1">{{ $reserva->res_status->name }}</div>
-                                            </td>
-                                            <td>
-                                                <div class="hstack gap-2 justify-content-end">
+                                @foreach ($reservas as $reserva)
+                                    <tr>
+                                        <td>
+                                            <div class="fw-semibold mb-1"></div>
+                                            <div class="d-flex gap-3">
+                                                <a href="javascript:void(0);"
+                                                    class="hstack gap-1 fs-11 fw-normal text-primary">
+                                                    <span>{{ $reserva->res_inmueble->name }}</span>
+                                                </a>
+                                            </div>
+                                        </td>
+                                        <td>{{ $reserva->fecha_inicio }} a {{ $reserva->fecha_fin }}</td>
+                                        <td>{{ $reserva->comentario_reserva ?: ' ' }}</td>
+                                        <td>
+                                            <div class="fw-semibold mb-1">{{ $reserva->res_status->name }}</div>
+                                        </td>
+                                        <td>
+                                            <div class="hstack gap-2 justify-content-end">
+                                                @if ($reserva->res_status_id != 4)
                                                     @if ($reserva->soporte_pago == null || empty($reserva->soporte_pago))
                                                         <a href="{{ route('reserva.inmueble.soporte.create', $reserva->id) }}"
                                                             class="btn btn-sm btn-primary">
@@ -108,19 +109,19 @@
                                                             <i class="bi bi-paperclip me-2"></i> Ver comprobante
                                                         </a>
                                                     @endif
-                                                    <form action="{{ route('reserva.reserva.destroy', $reserva->id) }}"
-                                                        method="POST">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="btn btn-sm btn-danger"
-                                                            onclick="return confirm('¿Está seguro de eliminar esta reserva?')">
-                                                            <i class="bi bi-trash"></i>
-                                                        </button>
-                                                    </form>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    
+                                                @endif
+                                                <form action="{{ route('reserva.reserva.destroy', $reserva->id) }}"
+                                                    method="POST">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-sm btn-danger"
+                                                        onclick="return confirm('¿Está seguro de eliminar esta reserva?')">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
                                 @endforeach
                             </tbody>
                         </table>
@@ -230,9 +231,9 @@
             }
 
             $('#calificarfinreserva').on('show.bs.modal', function(event) {
-                var button = $(event.relatedTarget); 
+                var button = $(event.relatedTarget);
                 var reservaId = button.data('reserva-id');
-                $('#reserva_id').val(reservaId); 
+                $('#reserva_id').val(reservaId);
             });
 
         });
