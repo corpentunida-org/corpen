@@ -744,11 +744,11 @@
 
             // Configurar nuevo intervalo
             autoUpdateInterval = setInterval(() => {
-                // Solo actualizar si no está pausado
-                if (!isAutoUpdatePaused) {
+                const dropdownOpen = document.querySelector('.dropdown-menu.show');
+                if (dropdownOpen && !isAutoUpdatePaused) {
                     actualizarNotificacionesDetalladas();
                 }
-            }, 10000);
+            }, 30000);
         }
 
         // ============================================
@@ -774,7 +774,7 @@
             const ultimaEjecucion = localStorage.getItem('cancelacion_reservas_fecha');
             const hoy = new Date().toISOString().split('T')[0];
             if (ultimaEjecucion === hoy) {
-                return; 
+                return;
             }
             fetch('{{ route('reservas.cancelar.auto') }}', {
                     method: 'GET',
