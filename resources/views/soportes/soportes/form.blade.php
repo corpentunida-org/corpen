@@ -75,7 +75,7 @@
     $modoEdicion = isset($soporte);
 @endphp
 
-<div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+<div class="card">
     <div class="card-header bg-gradient-primary text-white p-4">
         <div class="d-flex align-items-center">
             <div class="flex-shrink-0">
@@ -233,8 +233,6 @@
                 </div>
             </div>
         </div>
-
-        <input type="hidden" name="cod_ter_maeTercero" value="79893305">
 
         <div class="mb-4" id="linea_credito_wrapper" style="display:none;">
             <div class="card border-0 bg-light">
