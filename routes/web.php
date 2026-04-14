@@ -9,6 +9,11 @@ use App\Http\Controllers\IndexController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuditoriaController;
 
+//CONTABILIDAD
+use App\Http\Controllers\Contabilidad\ConCuentaBancariaController;
+use App\Http\Controllers\Contabilidad\ConExtractoTransaccionController;
+//CARTERA
+use App\Http\Controllers\Cartera\CarComprobantePagoController;
 use App\Http\Controllers\Cartera\ReadExelController;
 
 use App\Http\Controllers\Exequial\ComaeTerController;
@@ -241,7 +246,7 @@ Route::prefix('retiros')->group(function () {
     Route::get('condicionRetiros/{id}/reportepdf/', [CondicionesRetirosController::class, 'generarpdf'])->name('cinco.liquidacionretiro');
 });
 
-//RUTA CARTERA MOROSOS
+/* //RUTA CARTERA MOROSOS
 Route::get('cartera', [ReadExelController::class, 'index'])
     ->name('cartera.morosos.index')
     ->middleware(['auth', 'can:cartera.listamorosos.generarcarta']);
@@ -250,7 +255,86 @@ Route::post('cartera', [ReadExelController::class, 'store'])
     ->middleware(['auth', 'can:cartera.listamorosos.generarcarta']);
 Route::post('/cartera/pdfMora', [ReadExelController::class, 'pdfMora'])
     ->middleware('auth')
-    ->name('cartera.morosos.pdfMora');
+    ->name('cartera.morosos.pdfMora'); */
+
+
+// ==========================================
+//   MÓDULO DE CONTABILIDAD
+// ==========================================
+Route::middleware(['auth'])
+    ->prefix('contabilidad')
+    ->name('contabilidad.')
+    ->group(function () {
+
+        // 1. GESTIÓN DE CUENTAS BANCARIAS
+        Route::resource('cuentas-bancarias', ConCuentaBancariaController::class)
+            ->parameters(['cuentas-bancarias' => 'conCuentaBancaria']);
+
+        // ---------------------------------------------------
+        // 2. CONCILIACIÓN Y EXTRACTOS BANCARIOS
+        // ---------------------------------------------------
+        
+        // Vista del formulario para subir el Excel (GET)
+        Route::get('extractos/importar', [ConExtractoTransaccionController::class, 'importar'])->name('extractos.importar');
+        
+        // Recepción y procesamiento del Excel (POST)
+        Route::post('extractos/importar', [ConExtractoTransaccionController::class, 'procesarImportacion'])->name('extractos.procesar-importacion');
+
+        // Vista dividida de la conciliación (GET)
+        Route::get('extractos/conciliacion', [ConExtractoTransaccionController::class, 'conciliacion'])->name('extractos.conciliacion');
+
+        // El resource original (index, store, show, update, destroy)
+        Route::resource('extractos', ConExtractoTransaccionController::class)
+            ->parameters(['extractos' => 'conExtractoTransaccion']);
+
+    });
+// FIN MÓDULO CONTABILIDAD
+
+// ==========================================
+//   MÓDULO DE CARTERA
+// ==========================================
+Route::middleware(['auth'])
+    ->prefix('cartera')
+    ->name('cartera.')
+    ->group(function () {
+
+        // ---------------------------------------------------
+        // 1. GESTIÓN DE COMPROBANTES DE PAGOS
+        // ---------------------------------------------------
+        // El resource genera automáticamente las rutas:
+        // - cartera.comprobantes.index
+        // - cartera.comprobantes.create  <-- (Tu nueva vista del formulario)
+        // - cartera.comprobantes.store
+        // - cartera.comprobantes.show    <-- (Tu nueva vista de previsualización)
+        // - cartera.comprobantes.edit
+        // - cartera.comprobantes.update
+        // - cartera.comprobantes.destroy
+        Route::resource('comprobantes', App\Http\Controllers\Cartera\CarComprobantePagoController::class)
+            ->parameters(['comprobantes' => 'carComprobantePago']);
+
+
+        // ---------------------------------------------------
+        // 2. GESTIÓN DE MOROSOS (Lectura de Excel)
+        // ---------------------------------------------------
+
+        // Vista principal y carga de Excel
+        // URL: /cartera
+        Route::get('/', [App\Http\Controllers\Cartera\ReadExelController::class, 'index'])
+            ->name('morosos.index')
+            ->middleware('can:cartera.listamorosos.generarcarta');
+
+        Route::post('/', [App\Http\Controllers\Cartera\ReadExelController::class, 'store'])
+            ->name('morosos.store')
+            ->middleware('can:cartera.listamorosos.generarcarta');
+
+        // Generación de PDF de Mora
+        // URL: /cartera/pdfMora
+        Route::post('pdfMora', [App\Http\Controllers\Cartera\ReadExelController::class, 'pdfMora'])
+            ->name('morosos.pdfMora');
+
+    });
+// FIN MÓDULO CARTERA
+
 
 //Módulo inventario
 Route::get('/inventario', [UserController::class, 'inventario'])
