@@ -35,6 +35,7 @@ use App\Http\Controllers\Cinco\CondicionesRetirosController;
 //RESERVAS
 use App\Http\Controllers\Reservas\ResReservaController;
 use App\Http\Controllers\Reservas\ResInmuebleController;
+use App\Http\Controllers\Reservas\ResDashboardController;
 
 //ARCHIVO
 use App\Http\Controllers\Archivo\GdoCargoController;
@@ -268,6 +269,8 @@ Route::post('validar/asociado', [UserController::class, 'validarAsociado'])->nam
 Route::prefix('reservas')
     ->name('reserva.')
     ->group(function () {
+        Route::get('dashboard', [ResDashboardController::class, 'index'])
+            ->name('dashboard');
         Route::resource('reserva', ResReservaController::class)->names('reserva');
         Route::get('reservaI/{id}/create', [ResReservaController::class, 'createReserva'])
             ->name('inmueble.create')
