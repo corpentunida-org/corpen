@@ -271,6 +271,9 @@ Route::prefix('reservas')
     ->group(function () {
         Route::get('dashboard', [ResDashboardController::class, 'index'])
             ->name('dashboard');
+        Route::get('dashboard/exportar', [ResDashboardController::class, 'exportarInforme'])
+            ->name('dashboard.exportar');
+        Route::get('dashboard/pdf', [ResDashboardController::class, 'generarPdf'])->name('dashboard.pdf');
         Route::resource('reserva', ResReservaController::class)->names('reserva');
         Route::get('reservaI/{id}/create', [ResReservaController::class, 'createReserva'])
             ->name('inmueble.create')
