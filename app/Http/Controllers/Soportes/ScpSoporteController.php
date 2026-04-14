@@ -423,67 +423,51 @@ class ScpSoporteController extends Controller
         if (!request()->ajax()) {
             abort(403);
         }
+
         $userId = Auth::id();
-        $usuarioEscalado = ScpUsuario::where('usuario', $userId)->first();
 
-        // Construir la condición base para el usuario
-        $condicionUsuario = function ($q) use ($userId, $usuarioEscalado) {
+        $usuarioEscaladoId = ScpUsuario::where('usuario', $userId)->value('id');
+
+        $query = ScpSoporte::query()->where(function ($q) use ($userId, $usuarioEscaladoId) {
             $q->where('id_users', $userId);
-            if ($usuarioEscalado) {
-                $q->orWhere('usuario_escalado', $usuarioEscalado->id);
+
+            if ($usuarioEscaladoId) {
+                $q->orWhere('usuario_escalado', $usuarioEscaladoId);
             }
-        };
+        });
 
-        // Obtener todos los soportes del usuario con una sola consulta
-        $soportes = ScpSoporte::with('estadoSoporte', 'prioridad', 'usuario')
-            ->where($condicionUsuario)
+        // SOLO contadores (muy rápido)
+        $counts = ScpSoporte::where(function ($q) use ($userId, $usuarioEscaladoId) {
+            $q->where('id_users', $userId);
+
+            if ($usuarioEscaladoId) {
+                $q->orWhere('usuario_escalado', $usuarioEscaladoId);
+            }
+        })
+            ->selectRaw('estado, COUNT(*) as total')
+            ->groupBy('estado')
+            ->pluck('total', 'estado');
+
+        // SOLO últimos soportes
+        $soportes = $query
+            ->with(['estadoSoporte:id,nombre', 'prioridad:id,nombre', 'usuario:id,name'])
             ->orderByDesc('updated_at')
-            ->get(['id', 'id_users', 'detalles_soporte', 'estado', 'id_scp_prioridad', 'updated_at']);
+            ->limit(20)
+            ->get(['id', 'id_users', 'detalles_soporte', 'estado', 'id_scp_prioridad', 'updated_at'])
+            ->groupBy('estado');
 
-        // Agrupar por estado
-        $agrupados = $soportes->groupBy('estado');
+        return response()->json([
+            'sinAsignar_count' => $counts[1] ?? 0,
+            'enProceso_count' => $counts[2] ?? 0,
+            'revision_count' => $counts[3] ?? 0,
+            'cerrados_count' => $counts[4] ?? 0,
+            'total' => ($counts[1] ?? 0) + ($counts[2] ?? 0) + ($counts[3] ?? 0),
 
-        // Preparar datos de respuesta
-        $respuesta = [
-            'sinAsignar_count' => $agrupados->has('1') ? $agrupados->get('1')->count() : 0,
-            'enProceso_count' => $agrupados->has('2') ? $agrupados->get('2')->count() : 0,
-            'revision_count' => $agrupados->has('3') ? $agrupados->get('3')->count() : 0,
-            'cerrados_count' => $agrupados->has('4') ? $agrupados->get('4')->count() : 0,
-            'total' => 0,
-            'sinAsignar' => [],
-            'enProceso' => [],
-            'revision' => [],
-            'cerrados' => [],
-        ];
-
-        // Calcular total (excluyendo cerrados)
-        $respuesta['total'] = $respuesta['sinAsignar_count'] + $respuesta['enProceso_count'] + $respuesta['revision_count'];
-
-        // Formatear y asignar detalles por categoría
-        if ($agrupados->has('1')) {
-            $respuesta['sinAsignar'] = $agrupados->get('1')->map(function ($soporte) {
-                return $this->formatearSoporte($soporte);
-            });
-        }
-
-        if ($agrupados->has('2')) {
-            $respuesta['enProceso'] = $agrupados->get('2')->map(function ($soporte) {
-                return $this->formatearSoporte($soporte);
-            });
-        }
-
-        if ($agrupados->has('3')) {
-            $respuesta['revision'] = $agrupados->get('3')->map(function ($soporte) {
-                return $this->formatearSoporte($soporte);
-            });
-        }
-
-        if ($agrupados->has('4')) {
-            $respuesta['cerrados'] = $agrupados->get('4')->map(function ($soporte) {
-                return $this->formatearSoporte($soporte);
-            });
-        }
-        return response()->json($respuesta);
+            'sinAsignar' => isset($soportes[1]) ? $soportes[1]->map(fn($s) => $this->formatearSoporte($s)) : [],
+            'enProceso' => isset($soportes[2]) ? $soportes[2]->map(fn($s) => $this->formatearSoporte($s)) : [],
+            'revision' => isset($soportes[3]) ? $soportes[3]->map(fn($s) => $this->formatearSoporte($s)) : [],
+            'cerrados' => isset($soportes[4]) ? $soportes[4]->map(fn($s) => $this->formatearSoporte($s)) : [],
+        ]);
     }
 
     // Método auxiliar para formatear soportes
