@@ -629,7 +629,6 @@ class InteractionController extends Controller
     public function create()
     {
         $interaction = new Interaction();
-
         $channels = IntChannel::all();
         $types = IntType::all();
         $outcomes = IntOutcome::all();
@@ -665,9 +664,8 @@ class InteractionController extends Controller
      */
     public function store(Request $request)
     {
-        $validatedData = $request->validate([
+        $validated = $request->validate([
             'client_id' => 'required',
-            'agent_id' => 'required',
             'interaction_date' => 'required|date',
             'interaction_channel' => 'required',
             'interaction_type' => 'required',
@@ -684,71 +682,53 @@ class InteractionController extends Controller
             'parentesco_quien_llama' => 'nullable|string|max:50',
             'id_linea_de_obligacion' => 'nullable|integer',
             'id_user_asignacion' => 'nullable|integer',
-            'start_time' => 'nullable|date',
             'duration' => 'nullable|integer|min:0',
             'parent_interaction_id' => 'nullable|integer',
         ]);
 
-        return DB::transaction(function () use ($request, $validatedData) {
-            $agentId = Auth::id();
-            $duration = $validatedData['duration'] ?? 0;
+        $agentId = Auth::id();
 
-            /*
-        |---------------------------------------
-        | 1. Crear interacción
-        |---------------------------------------
-        */
-            $interaction = Interaction::create([
-                'client_id' => $validatedData['client_id'],
-                'agent_id' => $agentId,
-                'interaction_date' => $validatedData['interaction_date'],
-                'interaction_channel' => $validatedData['interaction_channel'],
-                'interaction_type' => $validatedData['interaction_type'],
-                'duration' => $duration,
-                'outcome' => $validatedData['outcome'],
-                'notes' => $validatedData['notes'] ?? '',
-                'parent_interaction_id' => $validatedData['parent_interaction_id'] ?? null,
-                'id_linea_de_obligacion' => $validatedData['id_linea_de_obligacion'] ?? null,
-                'id_user_asignacion' => $validatedData['id_user_asignacion'] ?? null,
-                'cedula_quien_llama' => $validatedData['cedula_quien_llama'] ?? null,
-                'nombre_quien_llama' => $validatedData['nombre_quien_llama'] ?? null,
-                'celular_quien_llama' => $validatedData['celular_quien_llama'] ?? null,
-                'parentesco_quien_llama' => $validatedData['parentesco_quien_llama'] ?? null,
-            ]);
+        /*
+    |---------------------------------------
+    | 1. Crear interacción
+    |---------------------------------------
+    */
 
-            /*
-        |---------------------------------------
-        | 2. Subir archivo a S3
-        |---------------------------------------
-        */
-            $attachmentPath = null;
+        $interaction = Interaction::create([
+            'client_id' => $validated['client_id'],
+            'agent_id' => $agentId,
+            'interaction_date' => $validated['interaction_date'],
+            'interaction_channel' => $validated['interaction_channel'],
+            'interaction_type' => $validated['interaction_type'],
+            'duration' => $validated['duration'] ?? 0,
+            'outcome' => $validated['outcome'],
+            'notes' => $validated['notes'] ?? null,
+            'parent_interaction_id' => $validated['parent_interaction_id'] ?? null,
+            'id_linea_de_obligacion' => $validated['id_linea_de_obligacion'] ?? null,
+            'id_user_asignacion' => $validated['id_user_asignacion'] ?? null,
+            'cedula_quien_llama' => $validated['cedula_quien_llama'] ?? null,
+            'nombre_quien_llama' => $validated['nombre_quien_llama'] ?? null,
+            'celular_quien_llama' => $validated['celular_quien_llama'] ?? null,
+            'parentesco_quien_llama' => $validated['parentesco_quien_llama'] ?? null,
+        ]);
 
-            if ($request->hasFile('attachment')) {
-                $file = $request->file('attachment');
+        /*
+    |---------------------------------------
+    | 2. Crear seguimiento
+    |---------------------------------------
+    */
 
-                $fileName = uniqid() . '_' . $file->getClientOriginalName();
+        $interaction->seguimientos()->create([
+            'agent_id' => $agentId,
+            'id_user_asignacion' => $validated['id_user_asignacion'] ?? null,
+            'outcome' => $validated['outcome'],
+            'next_action_type' => $validated['next_action_type'] ?? 1,
+            'next_action_date' => $validated['next_action_date'] ?? now(),
+            'next_action_notes' => $validated['next_action_notes'] ?? ($validated['notes'] ?? null),
+            'interaction_url' => $validated['interaction_url'] ?? null,
+        ]);
 
-                $attachmentPath = Storage::disk('s3')->putFileAs('corpentunida/daytrack/' . $interaction->id, $file, $fileName);
-            }
-
-            /*
-        |---------------------------------------
-        | 3. Crear seguimiento
-        |---------------------------------------
-        */
-            $interaction->seguimientos()->create([
-                'agent_id' => $agentId,
-                'id_user_asignacion' => $validatedData['id_user_asignacion'] ?? null,
-                'outcome' => $validatedData['outcome'],
-                'next_action_type' => $request->input('next_action_type', 1),
-                'next_action_date' => $request->input('next_action_date', now()),
-                'next_action_notes' => $request->input('next_action_notes') ?? $request->input('notes'),
-                'interaction_url' => $request->input('interaction_url'),
-                'attachment_urls' => $attachmentPath,
-            ]);
-
-            return redirect()->route('interactions.index')->with('success', 'Interacción creada exitosamente.');
-        });
+        return redirect()->route('interactions.index')->with('success', 'Interacción creada exitosamente.');
     }
 
     /**
