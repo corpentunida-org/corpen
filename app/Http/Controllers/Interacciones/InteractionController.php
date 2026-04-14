@@ -685,7 +685,6 @@ class InteractionController extends Controller
             'duration' => 'nullable|integer|min:0',
             'parent_interaction_id' => 'nullable|integer',
         ]);
-
         $agentId = Auth::id();
 
         /*
