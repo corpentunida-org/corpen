@@ -929,7 +929,7 @@ class InteractionController extends Controller
     public function getCliente($cod_ter)
     {
         try {
-            $cliente = MaeTerceros::select(['cod_ter', 'nom_ter', 'nom1', 'apl1', 'email', 'dir', 'tel1', 'cel1', 'ciudad', 'departamento', 'pais', 'cod_dist', 'barrio', 'cod_est', 'congrega'])
+            $cliente = MaeTerceros::select(['cod_ter', 'nom_ter', 'nom1', 'apl1', 'email', 'dir', 'tel1', 'cel', 'ciudad', 'dpto', 'pais', 'cod_dist', 'barrio', 'cod_est', 'congrega'])
                 ->where('cod_ter', $cod_ter)
                 ->with(['maeTipos:id,nombre', 'distrito:COD_DIST,NOM_DIST,DETALLE,COMPUEST', 'congregacion:codigo,nombre'])
                 ->first();
@@ -989,9 +989,9 @@ class InteractionController extends Controller
                 'email' => $cliente->email ?? 'No registrado',
                 'dir' => $cliente->dir ?? 'No registrado',
                 'tel1' => $cliente->tel1 ?? 'No registrado',
-                'cel1' => $cliente->cel1 ?? 'No registrado',
+                'cel' => $cliente->cel ?? 'No registrado',
                 'ciudad' => $cliente->ciudad ?? 'No registrado',
-                'departamento' => $cliente->departamento ?? 'No registrado',
+                'dpto' => $cliente->dpto ?? 'No registrado',
                 'pais' => $cliente->pais ?? 'No registrado',
                 'cod_dist' => $cliente->cod_dist ?? 'No registrado',
                 'barrio' => $cliente->barrio ?? 'No registrado',
