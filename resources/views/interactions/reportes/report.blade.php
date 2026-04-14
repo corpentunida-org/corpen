@@ -18,8 +18,8 @@
     </div> --}}
     @candirect('interacciones.informes.todosagentes')
     <div class="d-flex justify-content-end align-items-center mb-3">
-    <a href="{{ route('interactions.report.pdf', request()->all()) }}" target="_blank"
-        class="btn btn-outline-secondary me-2 w-25 p-2"><i class="feather-printer me-1"></i>Imprimir</a>
+        <a href="{{ route('interactions.report.pdf', request()->all()) }}" target="_blank"
+            class="btn btn-outline-secondary me-2 w-25 p-2"><i class="feather-printer me-1"></i>Imprimir</a>
     </div>
     @endcandirect
 
@@ -53,7 +53,8 @@
                             @endforeach
                         </select>
                     @else
-                        <input type="text" class="form-control form-control-sm" value="{{ auth()->user()->name }}" disabled>
+                        <input type="text" class="form-control form-control-sm" value="{{ auth()->user()->name }}"
+                            disabled>
                         <input type="hidden" name="agent_id" value="{{ auth()->id() }}">
                     @endif
                 </div>
@@ -162,7 +163,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <a class="col-md-3"  href="#lineasCreditoChart">
             <div class="card shadow-sm h-100 border-0 stat-card"
                 style="border-radius: 12px; border-left: 4px solid #f39c12 !important;">
                 <div class="card-body text-center p-4">
@@ -174,8 +175,8 @@
                     <h3 class="fw-bold mb-0 text-dark">{{ $stats['pending'] ?? 0 }}</h3>
                 </div>
             </div>
-        </div>
-        <div class="col-md-3">
+        </a>
+        <a class="col-md-3" href="#lineasCreditoChart">
             <div class="card shadow-sm h-100 border-0 stat-card"
                 style="border-radius: 12px; border-left: 4px solid #e74c3c !important;">
                 <div class="card-body text-center p-4">
@@ -187,11 +188,11 @@
                     <h3 class="fw-bold mb-0 text-dark">{{ $stats['overdue'] ?? 0 }}</h3>
                 </div>
             </div>
-        </div>
+        </a>
     </div>
 
     {{-- Primera Fila de Gráficos: Canales y Resultados --}}
-    <div class="row mb-4 g-3">
+    <div class="row g-3">
         <div class="col-md-6">
             <div class="card shadow-sm" style="border-radius: 12px;">
                 <div class="card-header py-3 border-bottom-0 bg-transparent">
@@ -223,7 +224,7 @@
     </div>
 
     {{-- Segunda Fila de Gráficos: Agentes y Clientes --}}
-    <div class="row mb-4 g-3">
+    <div class="row g-3">
         <div class="col-md-6">
             <div class="card shadow-sm" style="border-radius: 12px;">
                 <div class="card-header py-3 border-bottom-0 bg-transparent">
@@ -253,7 +254,7 @@
     </div>
 
     {{-- Tercera Fila de Gráficos: Distritos y Líneas de Crédito --}}
-    <div class="row mb-4 g-3">
+    <div class="row g-3">
         <div class="col-md-6">
             <div class="card shadow-sm" style="border-radius: 12px;">
                 <div class="card-header py-3 border-bottom-0 bg-transparent">
@@ -267,7 +268,7 @@
             </div>
         </div>
 
-        <div class="col-md-6">
+        <div class="col-md-6" id="lineasCreditoChart">
             <div class="card shadow-sm" style="border-radius: 12px;">
                 <div class="card-header py-3 border-bottom-0 bg-transparent">
                     <h6 class="mb-0 fw-bold"><i class="feather-credit-card me-2 text-secondary"></i>Interacciones por
@@ -283,7 +284,7 @@
     </div>
 
     {{-- Cuarta Fila de Gráficos: Seguimientos Agentes (NUEVA) --}}
-    <div class="row mb-4 g-3">
+    <div class="row g-3">
         <div class="col-md-6">
             <div class="card shadow-sm" style="border-radius: 12px;">
                 <div class="card-header py-3 border-bottom-0 bg-transparent">
@@ -297,320 +298,240 @@
                 </div>
             </div>
         </div>
+        <div class="col-md-6">
+            <div class="card shadow-sm" style="border-radius: 12px;">
+                <div class="card-header py-3 border-bottom-0 bg-transparent">
+                    <h6 class="mb-0 fw-bold"><i class="feather-user-check bi bi-bookmark-x me-2 text-warning"></i>Vencidas
+                        y Pendientes</h6>
+                </div>
+                <div class="card-body">
+                    <div style="position: relative; height: 300px; width: 100%;">
+                        <canvas id="chartVencidasPendientes"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    @push('scripts')
-        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-        <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-        <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <style>
+        .stat-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
 
-        <style>
-            /* Ajuste visual mejorado de Select2 para centrado vertical perfecto */
-            .select2-container--default .select2-selection--single {
-                height: 31px !important;
-                /* Altura de form-select-sm de Bootstrap */
-                border: 1px solid #dee2e6 !important;
-                border-radius: 0.25rem !important;
-                display: flex !important;
-                align-items: center !important;
-                /* Centra el contenido verticalmente */
-            }
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .08) !important;
+        }
+    </style>
 
-            .select2-container--default .select2-selection--single .select2-selection__rendered {
-                line-height: normal !important;
-                /* Anula el line-height por defecto */
-                color: #495057 !important;
-                font-size: 0.875rem;
-                padding-left: 0.5rem !important;
-                padding-right: 2rem !important;
-                width: 100%;
-            }
-
-            .select2-container--default .select2-selection--single .select2-selection__arrow {
-                height: 100% !important;
-                top: 0 !important;
-                display: flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-                right: 5px !important;
-            }
-
-            .select2-container--default .select2-selection--single .select2-selection__clear {
-                display: flex;
-                align-items: center;
-                margin-right: 5px;
-                color: #999;
-                font-weight: bold;
-            }
-        </style>
-
-        <script>
-            // Inicializar Select2 en los filtros
-            $(document).ready(function() {
-                $('.select2-search').select2({
-                    width: '100%',
-                    allowClear: true // Permite borrar la selección con una "X"
-                });
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Limpiar filtros
+            document.getElementById('clearFilters').addEventListener('click', function() {
+                window.location.href = "{{ route('interactions.report') }}";
             });
-        </script>
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-        <style>
-            .stat-card {
-                transition: transform 0.2s ease, box-shadow 0.2s ease;
-            }
+            // --- CONFIGURACIÓN ESTÉTICA DE CHART.JS ---
+            Chart.defaults.font.family = "'Inter', system-ui, -apple-system, sans-serif";
+            Chart.defaults.color = '#718096';
 
-            .stat-card:hover {
-                transform: translateY(-3px);
-                box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .08) !important;
-            }
-        </style>
+            // Tooltips modernos estilo SaaS
+            const elegantTooltip = {
+                backgroundColor: 'rgba(255, 255, 255, 0.98)',
+                titleColor: '#2d3748',
+                bodyColor: '#4a5568',
+                borderColor: '#e2e8f0',
+                borderWidth: 1,
+                padding: 12,
+                boxPadding: 8,
+                usePointStyle: true,
+                cornerRadius: 8,
+                titleFont: {
+                    size: 13,
+                    weight: 'bold'
+                },
+                bodyFont: {
+                    size: 13
+                }
+            };
 
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                // Limpiar filtros
-                document.getElementById('clearFilters').addEventListener('click', function() {
-                    window.location.href = "{{ route('interactions.report') }}";
-                });
+            // Función para crear degradados
+            const createGradient = (ctx, colorStart, colorEnd) => {
+                const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+                gradient.addColorStop(0, colorStart);
+                gradient.addColorStop(1, colorEnd);
+                return gradient;
+            };
 
-                // --- CONFIGURACIÓN ESTÉTICA DE CHART.JS ---
-                Chart.defaults.font.family = "'Inter', system-ui, -apple-system, sans-serif";
-                Chart.defaults.color = '#718096';
-
-                // Tooltips modernos estilo SaaS
-                const elegantTooltip = {
-                    backgroundColor: 'rgba(255, 255, 255, 0.98)',
-                    titleColor: '#2d3748',
-                    bodyColor: '#4a5568',
-                    borderColor: '#e2e8f0',
-                    borderWidth: 1,
-                    padding: 12,
-                    boxPadding: 8,
-                    usePointStyle: true,
-                    cornerRadius: 8,
-                    titleFont: {
-                        size: 13,
-                        weight: 'bold'
+            // Escalas invisibles para un look limpio
+            const cleanScales = {
+                x: {
+                    grid: {
+                        display: false
                     },
-                    bodyFont: {
-                        size: 13
+                    border: {
+                        display: false
                     }
-                };
-
-                // Función para crear degradados
-                const createGradient = (ctx, colorStart, colorEnd) => {
-                    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-                    gradient.addColorStop(0, colorStart);
-                    gradient.addColorStop(1, colorEnd);
-                    return gradient;
-                };
-
-                // Escalas invisibles para un look limpio
-                const cleanScales = {
-                    x: {
-                        grid: {
-                            display: false
-                        },
-                        border: {
-                            display: false
-                        }
+                },
+                y: {
+                    grid: {
+                        color: '#f7fafc',
+                        drawBorder: false
                     },
-                    y: {
-                        grid: {
-                            color: '#f7fafc',
-                            drawBorder: false
-                        },
-                        border: {
-                            display: false
-                        },
-                        beginAtZero: true,
-                        ticks: {
-                            stepSize: 1,
-                            precision: 0
-                        }
+                    border: {
+                        display: false
+                    },
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1,
+                        precision: 0
                     }
-                };
-                const cleanScalesHorizontal = {
-                    x: {
-                        grid: {
-                            color: '#f7fafc',
-                            drawBorder: false
-                        },
-                        border: {
-                            display: false
-                        },
-                        beginAtZero: true,
-                        ticks: {
-                            stepSize: 1,
-                            precision: 0
-                        }
+                }
+            };
+            const cleanScalesHorizontal = {
+                x: {
+                    grid: {
+                        color: '#f7fafc',
+                        drawBorder: false
                     },
-                    y: {
-                        grid: {
-                            display: false
-                        },
-                        border: {
-                            display: false
-                        }
+                    border: {
+                        display: false
+                    },
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1,
+                        precision: 0
                     }
-                };
-
-                // Datos
-                const canalesLabels = @json($chartCanales['labels'] ?? []);
-                const canalesData = @json($chartCanales['data'] ?? []);
-                const resultadosLabels = @json($chartResultados['labels'] ?? []);
-                const resultadosData = @json($chartResultados['data'] ?? []);
-                const agentesLabels = @json($chartAgentes['labels'] ?? []);
-                const agentesData = @json($chartAgentes['data'] ?? []);
-                const clientesLabels = @json($chartClientes['labels'] ?? []);
-                const clientesData = @json($chartClientes['data'] ?? []);
-                const lineasLabels = @json($chartLineas['labels'] ?? []);
-                const lineasData = @json($chartLineas['data'] ?? []);
-                const distritosLabels = @json($chartDistritos['labels'] ?? []);
-                const distritosData = @json($chartDistritos['data'] ?? []);
-                const seguimientosAgentesLabels = @json($chartSeguimientosAgentes['labels'] ?? []);
-                const seguimientosAgentesData = @json($chartSeguimientosAgentes['data'] ?? []);
-
-                // 1. Canales (Barras Verticales)
-                const ctxCanales = document.getElementById('chartCanales').getContext('2d');
-                new Chart(ctxCanales, {
-                    type: 'bar',
-                    data: {
-                        labels: canalesLabels,
-                        datasets: [{
-                            label: 'Interacciones',
-                            data: canalesData,
-                            backgroundColor: createGradient(ctxCanales, 'rgba(74, 144, 226, 0.8)',
-                                'rgba(74, 144, 226, 0.2)'),
-                            hoverBackgroundColor: 'rgba(74, 144, 226, 1)',
-                            borderRadius: 6,
-                            borderSkipped: false,
-                            barPercentage: 0.6
-                        }]
+                },
+                y: {
+                    grid: {
+                        display: false
                     },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        animation: {
-                            easing: 'easeOutQuart'
-                        },
-                        plugins: {
-                            legend: {
-                                display: false
-                            },
-                            tooltip: elegantTooltip
-                        },
-                        scales: cleanScales
+                    border: {
+                        display: false
                     }
-                });
+                }
+            };
 
-                // 2. Resultados (Dona)
-                const ctxResultados = document.getElementById('chartResultados').getContext('2d');
-                new Chart(ctxResultados, {
-                    type: 'doughnut',
-                    data: {
-                        labels: resultadosLabels,
-                        datasets: [{
-                            data: resultadosData,
-                            backgroundColor: ['#4a90e2', '#2ecc71', '#f39c12', '#e74c3c', '#9b59b6',
-                                '#95a5a6'
-                            ],
-                            borderWidth: 3,
-                            borderColor: '#ffffff',
-                            hoverOffset: 10
-                        }]
+            // Datos
+            const canalesLabels = @json($chartCanales['labels'] ?? []);
+            const canalesData = @json($chartCanales['data'] ?? []);
+            const resultadosLabels = @json($chartResultados['labels'] ?? []);
+            const resultadosData = @json($chartResultados['data'] ?? []);
+            const agentesLabels = @json($chartAgentes['labels'] ?? []);
+            const agentesData = @json($chartAgentes['data'] ?? []);
+            const clientesLabels = @json($chartClientes['labels'] ?? []);
+            const clientesData = @json($chartClientes['data'] ?? []);
+            const lineasLabels = @json($chartLineas['labels'] ?? []);
+            const lineasData = @json($chartLineas['data'] ?? []);
+            const distritosLabels = @json($chartDistritos['labels'] ?? []);
+            const distritosData = @json($chartDistritos['data'] ?? []);
+            const seguimientosAgentesLabels = @json($chartSeguimientosAgentes['labels'] ?? []);
+            const seguimientosAgentesData = @json($chartSeguimientosAgentes['data'] ?? []);
+            const vencidasPendientesLabels = @json($chartAccionesAgentes['labels'] ?? []);
+            const pendientesData = @json($chartAccionesAgentes['pendientes'] ?? []);
+            const vencidasData = @json($chartAccionesAgentes['vencidas'] ?? []);
+
+            // 1. Canales (Barras Verticales)
+            const ctxCanales = document.getElementById('chartCanales').getContext('2d');
+            new Chart(ctxCanales, {
+                type: 'bar',
+                data: {
+                    labels: canalesLabels,
+                    datasets: [{
+                        label: 'Interacciones',
+                        data: canalesData,
+                        backgroundColor: createGradient(ctxCanales, 'rgba(74, 144, 226, 0.8)',
+                            'rgba(74, 144, 226, 0.2)'),
+                        hoverBackgroundColor: 'rgba(74, 144, 226, 1)',
+                        borderRadius: 6,
+                        borderSkipped: false,
+                        barPercentage: 0.6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: {
+                        easing: 'easeOutQuart'
                     },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        cutout: '75%',
-                        animation: {
-                            animateScale: true,
-                            animateRotate: true
+                    plugins: {
+                        legend: {
+                            display: false
                         },
-                        plugins: {
-                            legend: {
-                                position: 'right',
-                                labels: {
-                                    usePointStyle: true,
-                                    boxWidth: 8,
-                                    padding: 20
-                                }
-                            },
-                            tooltip: {
-                                ...elegantTooltip,
-                                callbacks: {
-                                    label: function(context) {
-                                        let value = context.parsed;
-                                        let total = context.chart._metasets[context.datasetIndex].total;
-                                        let percentage = total > 0 ? Math.round((value / total) * 100) +
-                                            '%' : '0%';
-                                        return ` ${context.label}: ${value} (${percentage})`;
-                                    }
+                        tooltip: elegantTooltip
+                    },
+                    scales: cleanScales
+                }
+            });
+
+            // 2. Resultados (Dona)
+            const ctxResultados = document.getElementById('chartResultados').getContext('2d');
+            new Chart(ctxResultados, {
+                type: 'doughnut',
+                data: {
+                    labels: resultadosLabels,
+                    datasets: [{
+                        data: resultadosData,
+                        backgroundColor: ['#4a90e2', '#2ecc71', '#f39c12', '#e74c3c', '#9b59b6',
+                            '#95a5a6'
+                        ],
+                        borderWidth: 3,
+                        borderColor: '#ffffff',
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '75%',
+                    animation: {
+                        animateScale: true,
+                        animateRotate: true
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                usePointStyle: true,
+                                boxWidth: 8,
+                                padding: 20
+                            }
+                        },
+                        tooltip: {
+                            ...elegantTooltip,
+                            callbacks: {
+                                label: function(context) {
+                                    let value = context.parsed;
+                                    let total = context.chart._metasets[context.datasetIndex].total;
+                                    let percentage = total > 0 ? Math.round((value / total) * 100) +
+                                        '%' : '0%';
+                                    return ` ${context.label}: ${value} (${percentage})`;
                                 }
                             }
                         }
                     }
-                });
+                }
+            });
 
-                // Helper para Barras Horizontales
-                const createHBar = (id, labels, data, colorStart, colorEnd) => {
-                    const ctx = document.getElementById(id).getContext('2d');
-                    new Chart(ctx, {
-                        type: 'bar',
-                        data: {
-                            labels: labels,
-                            datasets: [{
-                                data: data,
-                                backgroundColor: createGradient(ctx, colorStart, colorEnd),
-                                hoverBackgroundColor: colorStart.replace('0.8)', '1)'),
-                                borderRadius: 6,
-                                borderSkipped: false,
-                                barPercentage: 0.7
-                            }]
-                        },
-                        options: {
-                            indexAxis: 'y',
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                                legend: {
-                                    display: false
-                                },
-                                tooltip: elegantTooltip
-                            },
-                            scales: cleanScalesHorizontal
-                        }
-                    });
-                };
-
-                // 3, 4, 5, 6, 7. Gráficos Horizontales
-                createHBar('chartAgentes', agentesLabels, agentesData, 'rgba(155, 89, 182, 0.8)',
-                    'rgba(155, 89, 182, 0.2)');
-                createHBar('chartClientes', clientesLabels, clientesData, 'rgba(52, 152, 219, 0.8)',
-                    'rgba(52, 152, 219, 0.2)');
-                createHBar('chartDistritos', distritosLabels, distritosData, 'rgba(46, 204, 113, 0.8)',
-                    'rgba(46, 204, 113, 0.2)');
-                createHBar('chartSeguimientosAgentes', seguimientosAgentesLabels, seguimientosAgentesData,
-                    'rgba(20, 184, 166, 0.8)', 'rgba(20, 184, 166, 0.2)');
-
-                // Líneas de Crédito (Barras Verticales)
-                const ctxLineas = document.getElementById('chartLineas').getContext('2d');
-                new Chart(ctxLineas, {
+            // Helper para Barras Horizontales
+            const createHBar = (id, labels, data, colorStart, colorEnd) => {
+                const ctx = document.getElementById(id).getContext('2d');
+                new Chart(ctx, {
                     type: 'bar',
                     data: {
-                        labels: lineasLabels,
+                        labels: labels,
                         datasets: [{
-                            data: lineasData,
-                            backgroundColor: createGradient(ctxLineas, 'rgba(243, 156, 18, 0.8)',
-                                'rgba(243, 156, 18, 0.2)'),
-                            hoverBackgroundColor: 'rgba(243, 156, 18, 1)',
+                            data: data,
+                            backgroundColor: createGradient(ctx, colorStart, colorEnd),
+                            hoverBackgroundColor: colorStart.replace('0.8)', '1)'),
                             borderRadius: 6,
                             borderSkipped: false,
-                            barPercentage: 0.6
+                            barPercentage: 0.7
                         }]
                     },
                     options: {
+                        indexAxis: 'y',
                         responsive: true,
                         maintainAspectRatio: false,
                         plugins: {
@@ -619,10 +540,84 @@
                             },
                             tooltip: elegantTooltip
                         },
-                        scales: cleanScales
+                        scales: cleanScalesHorizontal
                     }
                 });
+            };
+
+            // 3, 4, 5, 6, 7. Gráficos Horizontales
+            createHBar('chartAgentes', agentesLabels, agentesData, 'rgba(155, 89, 182, 0.8)',
+                'rgba(155, 89, 182, 0.2)');
+            createHBar('chartClientes', clientesLabels, clientesData, 'rgba(52, 152, 219, 0.8)',
+                'rgba(52, 152, 219, 0.2)');
+            createHBar('chartDistritos', distritosLabels, distritosData, 'rgba(46, 204, 113, 0.8)',
+                'rgba(46, 204, 113, 0.2)');
+            createHBar('chartSeguimientosAgentes', seguimientosAgentesLabels, seguimientosAgentesData,
+                'rgba(20, 184, 166, 0.8)', 'rgba(20, 184, 166, 0.2)');
+
+            // Líneas de Crédito (Barras Verticales)
+            const ctxLineas = document.getElementById('chartLineas').getContext('2d');
+            new Chart(ctxLineas, {
+                type: 'bar',
+                data: {
+                    labels: lineasLabels,
+                    datasets: [{
+                        data: lineasData,
+                        backgroundColor: createGradient(ctxLineas, 'rgba(243, 156, 18, 0.8)',
+                            'rgba(243, 156, 18, 0.2)'),
+                        hoverBackgroundColor: 'rgba(243, 156, 18, 1)',
+                        borderRadius: 6,
+                        borderSkipped: false,
+                        barPercentage: 0.6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: elegantTooltip
+                    },
+                    scales: cleanScales
+                }
             });
-        </script>
-    @endpush
+
+            // 8. Pendientes vs Vencidas por Agente
+            const ctxVencidasPendientes = document.getElementById('chartVencidasPendientes').getContext('2d');
+
+            new Chart(ctxVencidasPendientes, {
+                type: 'bar',
+                data: {
+                    labels: vencidasPendientesLabels,
+                    datasets: [{
+                            label: 'Pendientes',
+                            data: pendientesData,
+                            backgroundColor: 'rgba(243,156,18,0.8)',
+                            borderRadius: 6
+                        },
+                        {
+                            label: 'Vencidas',
+                            data: vencidasData,
+                            backgroundColor: 'rgba(231,76,60,0.8)',
+                            borderRadius: 6
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        },
+                        tooltip: elegantTooltip
+                    },
+                    scales: cleanScales
+                }
+            });
+        });
+    </script>
+
 </x-base-layout>

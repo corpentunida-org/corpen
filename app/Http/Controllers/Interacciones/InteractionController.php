@@ -225,6 +225,40 @@ class InteractionController extends Controller
             'data' => $seguimientosAgentesData->pluck('total')->toArray(),
         ];
 
+        $accionesAgentes = IntSeguimiento::select('agent_id', DB::raw('SUM(CASE WHEN next_action_date >= NOW() THEN 1 ELSE 0 END) as pendientes'), DB::raw('SUM(CASE WHEN next_action_date < NOW() THEN 1 ELSE 0 END) as vencidas'))
+            ->whereNotNull('next_action_date')
+            ->whereHas('interaction', function ($q) use ($start, $end, $filtroDistrito, $filtroLinea, $filtroAgente, $filtroCliente) {
+                $q->whereBetween('interaction_date', [$start, $end])->whereHas('outcomeRelation', function ($q2) {
+                    $q2->where('estado', '!=', 1)->orWhereNull('estado');
+                });
+
+                if ($filtroDistrito) {
+                    $q->whereHas('client', function ($q3) use ($filtroDistrito) {
+                        $q3->where('cod_dist', $filtroDistrito);
+                    });
+                }
+
+                if ($filtroLinea) {
+                    $q->where('id_linea_de_obligacion', $filtroLinea);
+                }
+
+                if ($filtroAgente) {
+                    $q->where('agent_id', $filtroAgente);
+                }
+
+                if ($filtroCliente) {
+                    $q->where('client_id', $filtroCliente);
+                }
+            })
+            ->with('creator')
+            ->groupBy('agent_id')
+            ->orderByDesc('vencidas')
+            ->get();
+        $chartAccionesAgentes = [
+            'labels' => $accionesAgentes->map(fn($item) => optional($item->creator)->name ?? 'Sin Agente')->toArray(),
+            'pendientes' => $accionesAgentes->pluck('pendientes')->toArray(),
+            'vencidas' => $accionesAgentes->pluck('vencidas')->toArray(),
+        ];
         // 5. Listas para los select de Filtro
         // Asegúrate de tener el modelo maeDistritos importado arriba
         $listDistritos = maeDistritos::all();
@@ -246,7 +280,8 @@ class InteractionController extends Controller
                 'chartClientes',
                 'chartLineas',
                 'chartDistritos',
-                'chartSeguimientosAgentes', // <-- NUEVO GRÁFICO AGREGADO AQUÍ
+                'chartSeguimientosAgentes',
+                'chartAccionesAgentes',
                 'startDate',
                 'endDate',
                 'filtroDistrito',
@@ -894,8 +929,9 @@ class InteractionController extends Controller
     public function getCliente($cod_ter)
     {
         try {
-            $cliente = MaeTerceros::where('cod_ter', $cod_ter)
-                ->with(['maeTipos', 'distrito', 'congregacion'])
+            $cliente = MaeTerceros::select(['cod_ter', 'nom_ter', 'nom1', 'apl1', 'email', 'dir', 'tel1', 'cel1', 'ciudad', 'departamento', 'pais', 'cod_dist', 'barrio', 'cod_est', 'congrega'])
+                ->where('cod_ter', $cod_ter)
+                ->with(['maeTipos:id,nombre', 'distrito:COD_DIST,NOM_DIST,DETALLE,COMPUEST', 'congregacion:codigo,nombre'])
                 ->first();
 
             if (!$cliente) {
