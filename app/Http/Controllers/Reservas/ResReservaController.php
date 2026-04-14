@@ -198,7 +198,6 @@ class ResReservaController extends Controller implements HasMiddleware
         ]);
 
         $reserva = Res_reserva::findOrFail($request->input('reserva_id'));
-
         $path = $request->file('archivo');
         $url = 'corpentunida/reservas/' . $reserva->id;
         $reserva->soporte_pago = Storage::disk('s3')->put($url, $path);
