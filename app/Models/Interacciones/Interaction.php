@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Storage;
 class Interaction extends Model
 {
     use HasFactory;
-
+    protected $table = 'interactions';
     protected $fillable = ['client_id', 'agent_id', 'interaction_date', 'interaction_channel', 'interaction_type', 'duration', 'outcome', 'notes', 'parent_interaction_id', 'id_linea_de_obligacion', 'id_user_asignacion', 'cedula_quien_llama', 'nombre_quien_llama', 'celular_quien_llama', 'parentesco_quien_llama'];
 
     protected $casts = [
