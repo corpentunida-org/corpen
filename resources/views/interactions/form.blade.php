@@ -458,16 +458,19 @@
                                 Motivo / Tipificación <span class="text-muted">*</span>
                             </label>
                             <div class="d-flex flex-wrap gap-2">
-                                @foreach ($types as $type)
-                                    <input type="radio" class="btn-check" name="interaction_type"
-                                        id="tp_{{ $type->id }}" value="{{ $type->id }}"
-                                        {{ old('interaction_type', $interaction->interaction_type ?? '') == $type->id ? 'checked' : '' }}
-                                        required>
-                                    <label class="smart-tag py-1 px-3 border cursor-pointer transition-all small"
-                                        for="tp_{{ $type->id }}">
-                                        {{ $type->name }}
-                                    </label>
-                                @endforeach
+{{-- Busca esta parte en tu código y déjala así --}}
+@foreach ($types as $type)
+    <input type="radio" 
+           class="btn-check type-trigger" {{-- <-- Agregamos esta clase --}}
+           name="interaction_type"
+           id="tp_{{ $type->id }}" 
+           value="{{ $type->id }}"
+           {{ old('interaction_type', $interaction->interaction_type ?? '') == $type->id ? 'checked' : '' }}
+           required>
+    <label class="smart-tag py-1 px-3 border cursor-pointer transition-all small" for="tp_{{ $type->id }}">
+        {{ $type->name }}
+    </label>
+@endforeach
                             </div>
                             @error('interaction_type')
                                 <div class="text-danger small mt-2">{{ $message }}</div>
@@ -793,6 +796,264 @@
 
     </div>
 </form>
+
+<div class="modal fade" id="modalComprobante" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
+            
+            <div class="modal-header border-0 pb-0 pt-8 px-8 d-flex flex-column align-items-start">
+                <div class="d-flex align-items-center justify-content-between w-100">
+                    <div class="d-flex align-items-center">
+                        <div class="symbol symbol-45px me-3">
+                            <div class="symbol-label bg-light-success">
+                                <i class="fas fa-file-invoice-dollar fs-2x text-success"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="fw-bolder m-0 text-dark">Registrar Soporte de Pago</h3>
+                            <span class="text-muted fs-7">Vinculación directa a Interacción #{{ $interaction->id ?? 'N/A' }}</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="separator separator-dashed w-100 mt-5"></div>
+            </div>
+
+            <div class="modal-body p-8">
+                <form id="formModalComprobante" action="{{ route('cartera.comprobantes.store') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <input type="hidden" name="id_interaction" value="{{ $interaction->id ?? '' }}">
+
+                    <div class="row g-6">
+                        <div class="col-md-6">
+                            <div class="fv-row mb-4">
+                                <label class="form-label fw-bold text-gray-700 fs-7">CÓDIGO TERCERO *</label>
+                                <div class="input-group input-group-solid border border-gray-300 rounded">
+                                    <span class="input-group-text bg-transparent border-0"><i class="fas fa-id-card text-muted"></i></span>
+                                    <input type="number" id="cod_tercero" name="cod_ter_MaeTerceros" class="form-control border-0 gen-hash" placeholder="Ej: 1077..." required>
+                                </div>
+                            </div>
+
+                            <div class="fv-row mb-0">
+                                <label class="form-label fw-bold text-gray-700 fs-7">MONTO PAGADO *</label>
+                                <div class="input-group input-group-solid border border-gray-300 rounded">
+                                    <span class="input-group-text bg-transparent border-0 fw-bold">$</span>
+                                    <input type="text" id="monto_pagado_display" class="form-control border-0 fw-bolder text-success gen-hash" placeholder="0" required>
+                                    <input type="hidden" id="monto_pagado" name="monto_pagado">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="fv-row mb-4">
+                                <label class="form-label fw-bold text-gray-700 fs-7">FECHA DE PAGO *</label>
+                                <input type="date" id="fecha_pago" name="fecha_pago" class="form-control form-control-solid border border-gray-300 gen-hash" required>
+                            </div>
+
+                            <div class="fv-row">
+                                <label class="form-label fw-bold text-gray-700 fs-7">DOCUMENTO SOPORTE *</label>
+                                <div class="drop-zone-custom" id="drop_zone">
+                                    <input type="file" id="archivo_soporte" name="archivo_soporte" class="d-none" accept=".pdf,.jpg,.jpeg,.png" required>
+                                    <label for="archivo_soporte" class="w-100 h-100 cursor-pointer d-flex flex-column align-items-center justify-content-center py-4">
+                                        <i class="fas fa-cloud-upload-alt fs-2 text-muted mb-2"></i>
+                                        <span class="fs-9 text-gray-600 fw-bold">Click o Ctrl+V para pegar</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="preview_container" class="col-12 d-none">
+                            <div class="bg-light rounded p-4 d-flex align-items-center border border-dashed border-gray-400">
+                                <div class="symbol symbol-50px me-4">
+                                    <img id="image_preview" src="" class="d-none shadow-sm rounded" alt="Vista previa">
+                                    <div id="pdf_preview_icon" class="symbol-label bg-white d-none shadow-sm"><i class="fas fa-file-pdf text-danger fs-2"></i></div>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <span id="file_name_preview" class="text-gray-800 fw-bolder fs-8 d-block text-truncate" style="max-width: 250px;">Nombre.pdf</span>
+                                    <span id="file_size_preview" class="text-muted fs-9">0.00 KB</span>
+                                </div>
+                                <button type="button" class="btn btn-icon btn-sm btn-active-light-danger border-0" onclick="resetFile()"><i class="fas fa-times"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="bg-light-primary rounded-pill px-4 py-2 border border-primary border-dashed d-flex align-items-center">
+                                <i class="fas fa-fingerprint text-primary me-2"></i>
+                                <span class="fs-9 text-primary fw-bold me-2">HASH ÚNICO:</span>
+                                <input type="text" id="hash_transaccion" name="hash_transaccion" class="bg-transparent border-0 p-0 text-primary fs-9 font-monospace w-100" readonly placeholder="Calculando integridad...">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-footer bg-light py-4 px-8 border-0">
+                <button type="button" class="btn btn-light fw-bold rounded-pill px-6" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" form="formModalComprobante" class="btn btn-success rounded-pill fw-bolder px-10 shadow-sm" id="btnSubmitComprobante">
+                    <i class="fas fa-save me-2 text-white"></i> Guardar y Vincular Pago
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .drop-zone-custom { border: 2px dashed #dbdfe9; border-radius: 8px; transition: all 0.2s; background-color: #f9fafb; height: 100px; }
+    .drop-zone-custom:hover { border-color: #198754; background-color: #f1fcf4; }
+    .bg-light-soft { background-color: #fcfcfc; }
+    .font-monospace { font-family: 'Roboto Mono', monospace !important; }
+</style>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // 1. SELECTORES
+        const modalElement = document.getElementById('modalComprobante');
+        if (!modalElement) return;
+
+        const form = document.getElementById('formModalComprobante');
+        const myModal = new bootstrap.Modal(modalElement);
+        const displayInput = document.getElementById('monto_pagado_display');
+        const hiddenInput = document.getElementById('monto_pagado');
+        const fileInput = document.getElementById('archivo_soporte');
+        const hashTarget = document.getElementById('hash_transaccion');
+        const btnSubmit = document.getElementById('btnSubmitComprobante');
+
+        // 2. DISPARADOR DE TIPIFICACIÓN (ID 3)
+        document.querySelectorAll('.type-trigger').forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.value == '3') myModal.show();
+            });
+        });
+
+        // 3. MÁSCARA DE MONEDA (ES-CO)
+        displayInput.addEventListener('input', function() {
+            let val = this.value.replace(/\D/g, ''); 
+            hiddenInput.value = val;
+            this.value = val !== '' ? new Intl.NumberFormat('es-CO').format(val) : '';
+            actualizarHash();
+        });
+
+        // 4. GENERADOR DE HASH (INTEGRIDAD)
+        function actualizarHash() {
+            const fecha = document.getElementById('fecha_pago').value.replace(/-/g, '');
+            const monto = hiddenInput.value;
+            const tercero = document.getElementById('cod_tercero').value;
+            if(fecha && monto && tercero) {
+                hashTarget.value = `${fecha}-${monto}-${tercero}`;
+            } else {
+                hashTarget.value = '';
+            }
+        }
+        document.querySelectorAll('.gen-hash').forEach(i => {
+            i.addEventListener('input', actualizarHash);
+            i.addEventListener('change', actualizarHash);
+        });
+
+        // 5. MANEJO DE ARCHIVOS (PREVIEW & PASTE)
+        function handleFile(file) {
+            if (!file) return;
+
+            // Validación de tamaño (5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                Swal.fire('Archivo muy pesado', 'El máximo permitido es 5MB', 'warning');
+                resetFile();
+                return;
+            }
+
+            document.getElementById('preview_container').classList.remove('d-none');
+            document.getElementById('file_name_preview').textContent = file.name;
+            document.getElementById('file_size_preview').textContent = (file.size / 1024).toFixed(2) + ' KB';
+
+            const imagePrev = document.getElementById('image_preview');
+            const pdfIcon = document.getElementById('pdf_preview_icon');
+
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    imagePrev.src = e.target.result;
+                    imagePrev.classList.remove('d-none');
+                    pdfIcon.classList.add('d-none');
+                };
+                reader.readAsDataURL(file);
+            } else if (file.type === 'application/pdf') {
+                imagePrev.classList.add('d-none');
+                pdfIcon.classList.remove('d-none');
+            }
+        }
+
+        fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
+
+        window.addEventListener('paste', e => {
+            if (!modalElement.classList.contains('show')) return;
+            if(e.clipboardData.files.length > 0) {
+                const file = e.clipboardData.files[0];
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                fileInput.files = dataTransfer.files;
+                handleFile(file);
+            }
+        });
+
+        // 6. ENVÍO AJAX (FULL JUGUETES)
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const originalText = btnSubmit.innerHTML;
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> GUARDANDO...`;
+
+            const formData = new FormData(this);
+
+            fetch(this.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+                }
+            })
+            .then(async response => {
+                const data = await response.json();
+                if (!response.ok) throw data;
+                return data;
+            })
+            .then(data => {
+                if (data.success) {
+                    myModal.hide();
+                    Swal.fire({
+                        title: '¡Soporte Registrado!',
+                        text: data.message,
+                        icon: 'success',
+                        buttonsStyling: false,
+                        confirmButtonText: 'Continuar gestión',
+                        customClass: { confirmButton: 'btn btn-success rounded-pill px-8' }
+                    });
+                    form.reset();
+                    resetFile();
+                }
+            })
+            .catch(error => {
+                console.error(error);
+                Swal.fire({
+                    title: 'Error de Validación',
+                    text: error.message || 'Revise que los datos sean correctos o no estén duplicados.',
+                    icon: 'error',
+                    buttonsStyling: false,
+                    confirmButtonText: 'Revisar datos',
+                    customClass: { confirmButton: 'btn btn-danger rounded-pill px-8' }
+                });
+            })
+            .finally(() => {
+                btnSubmit.disabled = false;
+                btnSubmit.innerHTML = originalText;
+            });
+        });
+    });
+
+    function resetFile() {
+        document.getElementById('archivo_soporte').value = '';
+        document.getElementById('preview_container').classList.add('d-none');
+    }
+</script>
 
 <script>
     // Exponer función global para calcular fechas automáticas de la agenda
