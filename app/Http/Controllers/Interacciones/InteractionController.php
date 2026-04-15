@@ -684,14 +684,17 @@ class InteractionController extends Controller
             'id_user_asignacion' => 'nullable|integer',
             'duration' => 'nullable|integer|min:0',
             'parent_interaction_id' => 'nullable|integer',
+            // --- NUEVO JUGUETE ---
+            'temp_token' => 'nullable|string|max:255', 
         ]);
+
         $agentId = Auth::id();
 
         /*
-    |---------------------------------------
-    | 1. Crear interacción
-    |---------------------------------------
-    */
+        |---------------------------------------
+        | 1. Crear interacción
+        |---------------------------------------
+        */
 
         $interaction = Interaction::create([
             'client_id' => $validated['client_id'],
@@ -712,10 +715,30 @@ class InteractionController extends Controller
         ]);
 
         /*
-    |---------------------------------------
-    | 2. Crear seguimiento
-    |---------------------------------------
-    */
+        |---------------------------------------
+        | 2. VINCULACIÓN DE PAGOS (EL GANCHO)
+        |---------------------------------------
+        | Buscamos si hay soportes de pago creados en el modal con el token
+        | de esta sesión y los amarramos al ID de esta interacción.
+        */
+
+        if ($request->filled('temp_token')) {
+            \App\Models\Cartera\CarComprobantePago::where('temp_token', $request->temp_token)
+                ->where(function($query) {
+                    $query->where('id_interaction', 0)
+                          ->orWhereNull('id_interaction');
+                })
+                ->update([
+                    'id_interaction' => $interaction->id,
+                    'temp_token' => null // Limpiamos el token para cerrar el ciclo
+                ]);
+        }
+
+        /*
+        |---------------------------------------
+        | 3. Crear seguimiento
+        |---------------------------------------
+        */
 
         $interaction->seguimientos()->create([
             'agent_id' => $agentId,
