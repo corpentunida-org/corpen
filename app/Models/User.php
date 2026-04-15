@@ -30,6 +30,9 @@ use App\Models\Flujo\Workflow;
 use App\Models\Correspondencia\CorrespondenciaProceso;
 use App\Models\Correspondencia\ComunicacionSalida;
 use App\Models\Archivo\GdoEmpleado;
+//Cartera
+use App\Models\Cartera\CarComprobantePago;
+
 
 class User extends Authenticatable
 {
@@ -237,5 +240,12 @@ class User extends Authenticatable
     {
         return $this->hasMany(\App\Models\Interacciones\IntSeguimiento::class, 'id_user_asignacion');
     }
-
+    
+/**
+     * Obtiene todos los comprobantes de pago registrados por este usuario.
+     */
+    public function comprobantesRegistrados(): HasMany
+    {
+        return $this->hasMany(CarComprobantePago::class, 'id_user');
+    }
 }

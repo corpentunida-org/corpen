@@ -7,11 +7,11 @@
 
     <ul class="nxl-submenu">
         {{-- Submenú de Cartas de Morosos --}}
-        <li class="nxl-item {{ request()->routeIs('cartera.morosos.*') ? 'active' : '' }}">
+        {{-- <li class="nxl-item {{ request()->routeIs('cartera.morosos.*') ? 'active' : '' }}">
             <a class="nxl-link" href="{{ route('cartera.morosos.index') }}">
                 <i class="bi bi-envelope-paper me-2"></i> Cartas Morosos
             </a>
-        </li>
+        </li> --}}
         
         {{-- Submenú de Comprobantes de Pago --}}
         <li class="nxl-item {{ request()->routeIs('cartera.comprobantes.*') ? 'active' : '' }}">
