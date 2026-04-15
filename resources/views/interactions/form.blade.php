@@ -138,6 +138,12 @@
     
 </style>
 
+{{-- Generamos el UUID único para esta sesión de trabajo --}}
+@php $miTokenSesion = (string) \Illuminate\Support\Str::uuid(); @endphp
+
+{{-- Input oculto para el formulario PRINCIPAL de la Interacción --}}
+<input type="hidden" id="interaction_temp_token" name="temp_token" value="{{ $miTokenSesion }}">
+
 <form id="interaction-form" method="POST"
     action="{{ $modoEdicion ? route('interactions.update', $interaction->id) : route('interactions.store') }}"
     enctype="multipart/form-data">
@@ -801,42 +807,44 @@
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
             
-            <div class="modal-header border-0 pb-0 pt-8 px-8 d-flex flex-column align-items-start">
+            <div class="modal-header border-0 pb-0 pt-8 px-8 d-flex flex-column align-items-start text-white bg-success">
                 <div class="d-flex align-items-center justify-content-between w-100">
                     <div class="d-flex align-items-center">
                         <div class="symbol symbol-45px me-3">
-                            <div class="symbol-label bg-light-success">
-                                <i class="fas fa-file-invoice-dollar fs-2x text-success"></i>
+                            <div class="symbol-label bg-white bg-opacity-25">
+                                <i class="fas fa-file-invoice-dollar fs-2x text-white"></i>
                             </div>
                         </div>
                         <div>
-                            <h3 class="fw-bolder m-0 text-dark">Registrar Soporte de Pago</h3>
-                            <span class="text-muted fs-7">Vinculación directa a Interacción #{{ $interaction->id ?? 'N/A' }}</span>
+                            <h3 class="fw-bolder m-0 text-white">Registrar Soporte de Pago</h3>
+                            <span class="text-white opacity-75 fs-9">Sesión: {{ substr($miTokenSesion, 0, 8) }}...</span>
                         </div>
                     </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="separator separator-dashed w-100 mt-5"></div>
+                <div class="separator separator-dashed w-100 mt-5 opacity-25"></div>
             </div>
 
             <div class="modal-body p-8">
                 <form id="formModalComprobante" action="{{ route('cartera.comprobantes.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
+                    {{-- GANCHOS DE VINCULACIÓN --}}
                     <input type="hidden" name="id_interaction" value="{{ $interaction->id ?? '' }}">
+                    <input type="hidden" name="temp_token" value="{{ $miTokenSesion }}">
 
                     <div class="row g-6">
                         <div class="col-md-6">
                             <div class="fv-row mb-4">
-                                <label class="form-label fw-bold text-gray-700 fs-7">CÓDIGO TERCERO *</label>
-                                <div class="input-group input-group-solid border border-gray-300 rounded">
+                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Código Tercero *</label>
+                                <div class="input-group input-group-solid border border-gray-300 rounded shadow-sm">
                                     <span class="input-group-text bg-transparent border-0"><i class="fas fa-id-card text-muted"></i></span>
-                                    <input type="number" id="cod_tercero" name="cod_ter_MaeTerceros" class="form-control border-0 gen-hash" placeholder="Ej: 1077..." required>
+                                    <input type="number" id="cod_tercero" name="cod_ter_MaeTerceros" class="form-control border-0 gen-hash fw-bolder" readonly required>
                                 </div>
                             </div>
 
                             <div class="fv-row mb-0">
-                                <label class="form-label fw-bold text-gray-700 fs-7">MONTO PAGADO *</label>
-                                <div class="input-group input-group-solid border border-gray-300 rounded">
+                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Monto Pagado *</label>
+                                <div class="input-group input-group-solid border border-gray-300 rounded shadow-sm">
                                     <span class="input-group-text bg-transparent border-0 fw-bold">$</span>
                                     <input type="text" id="monto_pagado_display" class="form-control border-0 fw-bolder text-success gen-hash" placeholder="0" required>
                                     <input type="hidden" id="monto_pagado" name="monto_pagado">
@@ -846,12 +854,12 @@
 
                         <div class="col-md-6">
                             <div class="fv-row mb-4">
-                                <label class="form-label fw-bold text-gray-700 fs-7">FECHA DE PAGO *</label>
-                                <input type="date" id="fecha_pago" name="fecha_pago" class="form-control form-control-solid border border-gray-300 gen-hash" required>
+                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Fecha de Pago *</label>
+                                <input type="date" id="fecha_pago" name="fecha_pago" class="form-control form-control-solid border border-gray-300 gen-hash" required value="{{ date('Y-m-d') }}">
                             </div>
 
                             <div class="fv-row">
-                                <label class="form-label fw-bold text-gray-700 fs-7">DOCUMENTO SOPORTE *</label>
+                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Documento Soporte *</label>
                                 <div class="drop-zone-custom" id="drop_zone">
                                     <input type="file" id="archivo_soporte" name="archivo_soporte" class="d-none" accept=".pdf,.jpg,.jpeg,.png" required>
                                     <label for="archivo_soporte" class="w-100 h-100 cursor-pointer d-flex flex-column align-items-center justify-content-center py-4">
@@ -865,12 +873,11 @@
                         <div id="preview_container" class="col-12 d-none">
                             <div class="bg-light rounded p-4 d-flex align-items-center border border-dashed border-gray-400">
                                 <div class="symbol symbol-50px me-4">
-                                    <img id="image_preview" src="" class="d-none shadow-sm rounded" alt="Vista previa">
+                                    <img id="image_preview" src="" class="d-none shadow-sm rounded" style="width: 50px; height: 50px; object-fit: cover;">
                                     <div id="pdf_preview_icon" class="symbol-label bg-white d-none shadow-sm"><i class="fas fa-file-pdf text-danger fs-2"></i></div>
                                 </div>
                                 <div class="flex-grow-1">
-                                    <span id="file_name_preview" class="text-gray-800 fw-bolder fs-8 d-block text-truncate" style="max-width: 250px;">Nombre.pdf</span>
-                                    <span id="file_size_preview" class="text-muted fs-9">0.00 KB</span>
+                                    <span id="file_name_preview" class="text-gray-800 fw-bolder fs-8 d-block text-truncate">Nombre.pdf</span>
                                 </div>
                                 <button type="button" class="btn btn-icon btn-sm btn-active-light-danger border-0" onclick="resetFile()"><i class="fas fa-times"></i></button>
                             </div>
@@ -879,8 +886,8 @@
                         <div class="col-12">
                             <div class="bg-light-primary rounded-pill px-4 py-2 border border-primary border-dashed d-flex align-items-center">
                                 <i class="fas fa-fingerprint text-primary me-2"></i>
-                                <span class="fs-9 text-primary fw-bold me-2">HASH ÚNICO:</span>
-                                <input type="text" id="hash_transaccion" name="hash_transaccion" class="bg-transparent border-0 p-0 text-primary fs-9 font-monospace w-100" readonly placeholder="Calculando integridad...">
+                                <span class="fs-9 text-primary fw-bold me-2 uppercase">Integridad:</span>
+                                <input type="text" id="hash_transaccion" name="hash_transaccion" class="bg-transparent border-0 p-0 text-primary fs-9 font-monospace w-100" readonly placeholder="Calculando...">
                             </div>
                         </div>
                     </div>
@@ -904,155 +911,134 @@
     .font-monospace { font-family: 'Roboto Mono', monospace !important; }
 </style>
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        // 1. SELECTORES
-        const modalElement = document.getElementById('modalComprobante');
-        if (!modalElement) return;
+document.addEventListener("DOMContentLoaded", function() {
+    const modalElement = document.getElementById('modalComprobante');
+    if (!modalElement) return;
 
-        const form = document.getElementById('formModalComprobante');
-        const myModal = new bootstrap.Modal(modalElement);
-        const displayInput = document.getElementById('monto_pagado_display');
-        const hiddenInput = document.getElementById('monto_pagado');
-        const fileInput = document.getElementById('archivo_soporte');
-        const hashTarget = document.getElementById('hash_transaccion');
-        const btnSubmit = document.getElementById('btnSubmitComprobante');
+    const myModal = new bootstrap.Modal(modalElement);
+    const form = document.getElementById('formModalComprobante');
+    
+    // Selectores internos
+    const modalCodTercero = document.getElementById('cod_tercero');
+    const displayInput = document.getElementById('monto_pagado_display');
+    const hiddenInput = document.getElementById('monto_pagado');
+    const hashTarget = document.getElementById('hash_transaccion');
 
-        // 2. DISPARADOR DE TIPIFICACIÓN (ID 3)
-        document.querySelectorAll('.type-trigger').forEach(radio => {
-            radio.addEventListener('change', function() {
-                if (this.value == '3') myModal.show();
-            });
-        });
+    // 1. DISPARADOR DE TIPIFICACIÓN (ID 3)
+    document.querySelectorAll('.type-trigger').forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.value == '3') {
+                // Capturamos el cliente del buscador de la interacción
+                const selectCliente = document.getElementById('client_id');
+                const clienteId = selectCliente ? selectCliente.value : '';
 
-        // 3. MÁSCARA DE MONEDA (ES-CO)
-        displayInput.addEventListener('input', function() {
-            let val = this.value.replace(/\D/g, ''); 
-            hiddenInput.value = val;
-            this.value = val !== '' ? new Intl.NumberFormat('es-CO').format(val) : '';
-            actualizarHash();
-        });
-
-        // 4. GENERADOR DE HASH (INTEGRIDAD)
-        function actualizarHash() {
-            const fecha = document.getElementById('fecha_pago').value.replace(/-/g, '');
-            const monto = hiddenInput.value;
-            const tercero = document.getElementById('cod_tercero').value;
-            if(fecha && monto && tercero) {
-                hashTarget.value = `${fecha}-${monto}-${tercero}`;
-            } else {
-                hashTarget.value = '';
-            }
-        }
-        document.querySelectorAll('.gen-hash').forEach(i => {
-            i.addEventListener('input', actualizarHash);
-            i.addEventListener('change', actualizarHash);
-        });
-
-        // 5. MANEJO DE ARCHIVOS (PREVIEW & PASTE)
-        function handleFile(file) {
-            if (!file) return;
-
-            // Validación de tamaño (5MB)
-            if (file.size > 5 * 1024 * 1024) {
-                Swal.fire('Archivo muy pesado', 'El máximo permitido es 5MB', 'warning');
-                resetFile();
-                return;
-            }
-
-            document.getElementById('preview_container').classList.remove('d-none');
-            document.getElementById('file_name_preview').textContent = file.name;
-            document.getElementById('file_size_preview').textContent = (file.size / 1024).toFixed(2) + ' KB';
-
-            const imagePrev = document.getElementById('image_preview');
-            const pdfIcon = document.getElementById('pdf_preview_icon');
-
-            if (file.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    imagePrev.src = e.target.result;
-                    imagePrev.classList.remove('d-none');
-                    pdfIcon.classList.add('d-none');
-                };
-                reader.readAsDataURL(file);
-            } else if (file.type === 'application/pdf') {
-                imagePrev.classList.add('d-none');
-                pdfIcon.classList.remove('d-none');
-            }
-        }
-
-        fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
-
-        window.addEventListener('paste', e => {
-            if (!modalElement.classList.contains('show')) return;
-            if(e.clipboardData.files.length > 0) {
-                const file = e.clipboardData.files[0];
-                const dataTransfer = new DataTransfer();
-                dataTransfer.items.add(file);
-                fileInput.files = dataTransfer.files;
-                handleFile(file);
-            }
-        });
-
-        // 6. ENVÍO AJAX (FULL JUGUETES)
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            const originalText = btnSubmit.innerHTML;
-            btnSubmit.disabled = true;
-            btnSubmit.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> GUARDANDO...`;
-
-            const formData = new FormData(this);
-
-            fetch(this.action, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
-                }
-            })
-            .then(async response => {
-                const data = await response.json();
-                if (!response.ok) throw data;
-                return data;
-            })
-            .then(data => {
-                if (data.success) {
-                    myModal.hide();
+                if (!clienteId) {
                     Swal.fire({
-                        title: '¡Soporte Registrado!',
-                        text: data.message,
-                        icon: 'success',
-                        buttonsStyling: false,
-                        confirmButtonText: 'Continuar gestión',
-                        customClass: { confirmButton: 'btn btn-success rounded-pill px-8' }
+                        title: '¡Falta el Cliente!',
+                        text: 'Debes seleccionar un cliente antes de registrar un pago.',
+                        icon: 'warning',
+                        confirmButtonColor: '#f1416c'
                     });
-                    form.reset();
-                    resetFile();
+                    this.checked = false;
+                    return;
                 }
-            })
-            .catch(error => {
-                console.error(error);
-                Swal.fire({
-                    title: 'Error de Validación',
-                    text: error.message || 'Revise que los datos sean correctos o no estén duplicados.',
-                    icon: 'error',
-                    buttonsStyling: false,
-                    confirmButtonText: 'Revisar datos',
-                    customClass: { confirmButton: 'btn btn-danger rounded-pill px-8' }
-                });
-            })
-            .finally(() => {
-                btnSubmit.disabled = false;
-                btnSubmit.innerHTML = originalText;
-            });
+
+                // Llenamos el código en el modal automáticamente
+                modalCodTercero.value = clienteId;
+                actualizarHash();
+                myModal.show();
+            }
         });
     });
 
-    function resetFile() {
-        document.getElementById('archivo_soporte').value = '';
-        document.getElementById('preview_container').classList.add('d-none');
+    // 2. MÁSCARA DE MONEDA
+    displayInput.addEventListener('input', function() {
+        let val = this.value.replace(/\D/g, ''); 
+        hiddenInput.value = val;
+        this.value = val !== '' ? new Intl.NumberFormat('es-CO').format(val) : '';
+        actualizarHash();
+    });
+
+    // 3. GENERADOR DE HASH
+    function actualizarHash() {
+        const fecha = document.getElementById('fecha_pago').value.replace(/-/g, '');
+        const monto = hiddenInput.value;
+        const tercero = modalCodTercero.value;
+        if(fecha && monto && tercero) {
+            hashTarget.value = `${fecha}-${monto}-${tercero}`;
+        } else {
+            hashTarget.value = '';
+        }
     }
+    document.querySelectorAll('.gen-hash').forEach(i => i.addEventListener('input', actualizarHash));
+    document.getElementById('fecha_pago').addEventListener('change', actualizarHash);
+
+    // 4. ENVÍO POR AJAX (SIN RECARGAR PÁGINA)
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const btnSubmit = document.getElementById('btnSubmitComprobante');
+        const originalText = btnSubmit.innerHTML;
+        
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> GUARDANDO...`;
+
+        fetch(this.action, {
+            method: 'POST',
+            body: new FormData(this),
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                myModal.hide();
+                Swal.fire({ 
+                    title: '¡Realizado!', 
+                    text: 'El pago ha sido vinculado a esta sesión de trabajo.', 
+                    icon: 'success', 
+                    confirmButtonText: 'Continuar con la Gestión' 
+                });
+                form.reset(); // Limpiar para el siguiente
+                document.getElementById('preview_container').classList.add('d-none');
+            } else {
+                Swal.fire('Atención', data.message, 'warning');
+            }
+        })
+        .catch(() => Swal.fire('Error', 'No se pudo conectar con el servidor', 'error'))
+        .finally(() => { 
+            btnSubmit.disabled = false; 
+            btnSubmit.innerHTML = originalText; 
+        });
+    });
+
+    // 5. SISTEMA CTRL + V (PEGAR CAPTURAS)
+    window.addEventListener('paste', e => {
+        if (!modalElement.classList.contains('show')) return;
+        if(e.clipboardData.files.length > 0) {
+            const file = e.clipboardData.files[0];
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            document.getElementById('archivo_soporte').files = dataTransfer.files;
+            
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const img = document.getElementById('image_preview');
+                img.src = ev.target.result;
+                img.classList.remove('d-none');
+                document.getElementById('preview_container').classList.remove('d-none');
+                document.getElementById('file_name_preview').textContent = "Imagen pegada desde el portapapeles";
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+});
+
+function resetFile() {
+    document.getElementById('archivo_soporte').value = '';
+    document.getElementById('preview_container').classList.add('d-none');
+}
 </script>
 
 <script>
