@@ -15,7 +15,6 @@
 
                 <div class="card border-0 shadow-sm bg-white" style="border-radius: 12px;">
                     <div class="card-body p-5">
-                        {{-- IMPORTANTE: enctype="multipart/form-data" es obligatorio para subir archivos --}}
                         <form action="{{ route('cartera.comprobantes.store') }}" method="POST" enctype="multipart/form-data">
                             @csrf
                             
@@ -25,45 +24,53 @@
                                     <label class="form-label fw-bolder text-gray-800 fs-6">Código Tercero (Siasoft) *</label>
                                     <div class="input-group">
                                         <span class="input-group-text bg-light border-light rounded-start-pill text-muted"><i class="fas fa-user-tag"></i></span>
-                                        <input type="number" name="cod_ter_MaeTerceros" class="form-control rounded-end-pill border-light bg-light fs-6" placeholder="Ej: 5544" required>
+                                        <input type="number" id="cod_tercero" name="cod_ter_MaeTerceros" class="form-control rounded-end-pill border-light bg-light fs-6 gen-hash" placeholder="Ej: 5544" required>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label fw-bolder text-gray-800 fs-6">Monto Pagado *</label>
                                     <div class="input-group">
                                         <span class="input-group-text bg-light border-light rounded-start-pill text-muted">$</span>
-                                        <input type="number" name="monto_pagado" class="form-control rounded-end-pill border-light bg-light fs-6 fw-bold text-success" placeholder="0" required>
+                                        <input type="text" id="monto_pagado_display" class="form-control rounded-end-pill border-light bg-light fs-6 fw-bold text-success gen-hash" placeholder="0" required>
+                                        <input type="hidden" id="monto_pagado" name="monto_pagado">
                                     </div>
                                 </div>
 
                                 {{-- Fecha e Interacción --}}
                                 <div class="col-md-6">
                                     <label class="form-label fw-bolder text-gray-800 fs-6">Fecha de Pago *</label>
-                                    <input type="number" name="fecha_pago" class="form-control rounded-pill border-light bg-light fs-6" placeholder="Ej: 20260414" required>
+                                    <input type="date" id="fecha_pago" name="fecha_pago" class="form-control rounded-pill border-light bg-light fs-6 gen-hash" required>
                                 </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bolder text-gray-800 fs-6">ID Interacción CRM *</label>
-                                    <input type="number" name="id_interaction" class="form-control rounded-pill border-light bg-light fs-6" placeholder="ID de la gestión en CRM" required>
-                                </div>
+                                
+                                {{-- CAMPO OCULTO: ID Interacción CRM (Opcional por ahora) --}}
+                                <input type="hidden" name="id_interaction" value="">
 
-                                {{-- Archivo y Referencias (Opcionales al subir) --}}
+                                {{-- Archivo y Referencias --}}
                                 <div class="col-md-12 border-top border-light pt-4 mt-4">
                                     <h5 class="fw-bolder mb-4">Documento y Referencias</h5>
                                 </div>
                                 
-                                <div class="col-md-12 mb-2">
-                                    <label class="form-label fw-bolder text-gray-800 fs-6">Subir Soporte (PDF, JPG, PNG) *</label>
-                                    <input type="file" name="archivo_soporte" class="form-control rounded border-light bg-light fs-6" accept=".pdf,.jpg,.jpeg,.png" required>
+                                <div class="col-md-12 mb-2" id="drop_zone">
+                                    <label class="form-label fw-bolder text-gray-800 fs-6">Subir Soporte (PDF, JPG, PNG) * <span class="text-muted fw-normal fs-7">(Puedes pegar una imagen con Ctrl+V)</span></label>
+                                    <input type="file" id="archivo_soporte" name="archivo_soporte" class="form-control rounded border-light bg-light fs-6" accept=".pdf,.jpg,.jpeg,.png" required>
+                                    
+                                    <div id="preview_container" class="mt-3 d-none">
+                                        <p class="text-muted mb-1 fs-7">Previsualización:</p>
+                                        <img id="image_preview" src="" alt="Previsualización" class="img-thumbnail shadow-sm" style="max-height: 150px; border-radius: 8px;">
+                                        <div id="file_name_preview" class="alert alert-secondary py-2 mt-2 d-none"></div>
+                                    </div>
                                 </div>
 
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bolder text-gray-800 fs-6">Hash / Referencia Única <span class="text-muted fw-normal">(Opcional)</span></label>
-                                    <input type="text" name="hash_transaccion" class="form-control rounded-pill border-light bg-light fs-6 font-monospace" placeholder="TRX-...">
+                                {{-- Hash Ocupa ahora el 100% (col-md-12) para que no quede un hueco --}}
+                                <div class="col-md-12">
+                                    <label class="form-label fw-bolder text-gray-800 fs-6">Hash / Referencia Única</label>
+                                    <input type="text" id="hash_transaccion" name="hash_transaccion" class="form-control rounded-pill border-light bg-light fs-6 font-monospace text-muted" placeholder="Autogenerado..." readonly>
                                 </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bolder text-gray-800 fs-6">ID Transacción Bancaria <span class="text-muted fw-normal">(Opcional)</span></label>
-                                    <input type="number" name="id_transaccion_bancaria" class="form-control rounded-pill border-light bg-light fs-6" placeholder="ID del extracto vinculado">
-                                </div>
+
+                                {{-- 
+                                    NOTA CRM: El ID Transacción Bancaria se removió de la creación.
+                                    Se debe solicitar únicamente en la vista de edición/conciliación posterior.
+                                --}}
                             </div>
 
                             <div class="d-flex justify-content-end gap-3 mt-5 pt-3 border-top border-light">
@@ -98,4 +105,98 @@
         }
         input[type="file"]::file-selector-button:hover { background-color: #e4e6ef; }
     </style>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // 1. FORMATO DE MILES PARA EL MONTO
+            const displayInput = document.getElementById('monto_pagado_display');
+            const hiddenInput = document.getElementById('monto_pagado');
+
+            displayInput.addEventListener('input', function(e) {
+                // Eliminar cualquier cosa que no sea número
+                let value = this.value.replace(/\D/g, ''); 
+                
+                // Actualizar input oculto con el valor limpio para enviar al backend
+                hiddenInput.value = value;
+                
+                // Formatear visualmente
+                if (value !== '') {
+                    this.value = new Intl.NumberFormat('es-CO').format(value);
+                } else {
+                    this.value = '';
+                }
+            });
+
+            // 2. GENERACIÓN AUTOMÁTICA DEL HASH (Fecha + Monto + Tercero)
+            const inputsHash = document.querySelectorAll('.gen-hash');
+            const inputHashTarget = document.getElementById('hash_transaccion');
+            
+            function actualizarHash() {
+                const fecha = document.getElementById('fecha_pago').value.replace(/-/g, ''); // Quita guiones a YYYY-MM-DD
+                const monto = hiddenInput.value;
+                const tercero = document.getElementById('cod_tercero').value;
+
+                if(fecha && monto && tercero) {
+                    inputHashTarget.value = `${fecha}-${monto}-${tercero}`;
+                } else {
+                    inputHashTarget.value = '';
+                }
+            }
+
+            inputsHash.forEach(input => {
+                input.addEventListener('input', actualizarHash);
+                input.addEventListener('change', actualizarHash);
+            });
+
+            // 3. PREVISUALIZACIÓN Y PEGAR IMAGEN (Ctrl+V)
+            const fileInput = document.getElementById('archivo_soporte');
+            const previewContainer = document.getElementById('preview_container');
+            const imagePreview = document.getElementById('image_preview');
+            const fileNamePreview = document.getElementById('file_name_preview');
+
+            // Función para manejar el archivo seleccionado/pegado
+            function handleFile(file) {
+                if (!file) return;
+                
+                previewContainer.classList.remove('d-none');
+                
+                // Si es imagen, mostrar miniatura
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        imagePreview.src = e.target.result;
+                        imagePreview.classList.remove('d-none');
+                        fileNamePreview.classList.add('d-none');
+                    }
+                    reader.readAsDataURL(file);
+                } 
+                // Si es PDF, mostrar nombre
+                else if (file.type === 'application/pdf') {
+                    imagePreview.classList.add('d-none');
+                    fileNamePreview.classList.remove('d-none');
+                    fileNamePreview.textContent = '📄 Archivo seleccionado: ' + file.name;
+                }
+            }
+
+            // Escuchar cambios normales desde el botón "Examinar"
+            fileInput.addEventListener('change', function(e) {
+                handleFile(e.target.files[0]);
+            });
+
+            // Escuchar el evento de pegar (Ctrl+V) en toda la ventana
+            window.addEventListener('paste', e => {
+                if(e.clipboardData.files.length > 0) {
+                    const file = e.clipboardData.files[0];
+                    // Validar que sea imagen o pdf
+                    if(file.type.startsWith('image/') || file.type === 'application/pdf') {
+                        // Asignar el archivo al input
+                        const dataTransfer = new DataTransfer();
+                        dataTransfer.items.add(file);
+                        fileInput.files = dataTransfer.files;
+                        handleFile(file);
+                    }
+                }
+            });
+        });
+    </script>
 </x-base-layout>
