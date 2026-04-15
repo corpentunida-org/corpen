@@ -141,13 +141,13 @@
 {{-- Generamos el UUID único para esta sesión de trabajo --}}
 @php $miTokenSesion = (string) \Illuminate\Support\Str::uuid(); @endphp
 
-{{-- Input oculto para el formulario PRINCIPAL de la Interacción --}}
-<input type="hidden" id="interaction_temp_token" name="temp_token" value="{{ $miTokenSesion }}">
-
 <form id="interaction-form" method="POST"
     action="{{ $modoEdicion ? route('interactions.update', $interaction->id) : route('interactions.store') }}"
     enctype="multipart/form-data">
     @csrf
+
+    <input type="hidden" id="interaction_temp_token" name="temp_token" value="{{ $miTokenSesion }}">
+
     @if ($modoEdicion)
         @method('PUT')
     @endif
@@ -806,7 +806,6 @@
 <div class="modal fade" id="modalComprobante" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
-            
             <div class="modal-header border-0 pb-0 pt-8 px-8 d-flex flex-column align-items-start text-white bg-success">
                 <div class="d-flex align-items-center justify-content-between w-100">
                     <div class="d-flex align-items-center">
@@ -817,7 +816,7 @@
                         </div>
                         <div>
                             <h3 class="fw-bolder m-0 text-white">Registrar Soporte de Pago</h3>
-                            <span class="text-white opacity-75 fs-9">Sesión: {{ substr($miTokenSesion, 0, 8) }}...</span>
+                            <span class="text-white opacity-75 fs-9">Sesión: {{ substr($miTokenSesion ?? '', 0, 8) }}...</span>
                         </div>
                     </div>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -830,7 +829,7 @@
                     @csrf
                     {{-- GANCHOS DE VINCULACIÓN --}}
                     <input type="hidden" name="id_interaction" value="{{ $interaction->id ?? '' }}">
-                    <input type="hidden" name="temp_token" value="{{ $miTokenSesion }}">
+                    <input type="hidden" name="temp_token" value="{{ $miTokenSesion ?? '' }}">
 
                     <div class="row g-6">
                         <div class="col-md-6">
@@ -860,11 +859,13 @@
 
                             <div class="fv-row">
                                 <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Documento Soporte *</label>
-                                <div class="drop-zone-custom" id="drop_zone">
+                                {{-- Zona Drag & Drop Mejorada --}}
+                                <div class="drop-zone-custom position-relative" id="drop_zone_area">
                                     <input type="file" id="archivo_soporte" name="archivo_soporte" class="d-none" accept=".pdf,.jpg,.jpeg,.png" required>
-                                    <label for="archivo_soporte" class="w-100 h-100 cursor-pointer d-flex flex-column align-items-center justify-content-center py-4">
-                                        <i class="fas fa-cloud-upload-alt fs-2 text-muted mb-2"></i>
-                                        <span class="fs-9 text-gray-600 fw-bold">Click o Ctrl+V para pegar</span>
+                                    <label for="archivo_soporte" class="w-100 h-100 cursor-pointer d-flex flex-column align-items-center justify-content-center py-4 text-center">
+                                        <i class="fas fa-cloud-upload-alt fs-2 text-primary mb-2"></i>
+                                        <span class="fs-8 text-gray-800 fw-bold">Haz clic o arrastra el archivo aquí</span>
+                                        <span class="fs-9 text-muted mt-1">(También puedes pegar con Ctrl+V)</span>
                                     </label>
                                 </div>
                             </div>
@@ -876,10 +877,10 @@
                                     <img id="image_preview" src="" class="d-none shadow-sm rounded" style="width: 50px; height: 50px; object-fit: cover;">
                                     <div id="pdf_preview_icon" class="symbol-label bg-white d-none shadow-sm"><i class="fas fa-file-pdf text-danger fs-2"></i></div>
                                 </div>
-                                <div class="flex-grow-1">
+                                <div class="flex-grow-1 overflow-hidden">
                                     <span id="file_name_preview" class="text-gray-800 fw-bolder fs-8 d-block text-truncate">Nombre.pdf</span>
                                 </div>
-                                <button type="button" class="btn btn-icon btn-sm btn-active-light-danger border-0" onclick="resetFile()"><i class="fas fa-times"></i></button>
+                                <button type="button" class="btn btn-icon btn-sm btn-active-light-danger border-0 ms-2" onclick="resetFile()"><i class="fas fa-times"></i></button>
                             </div>
                         </div>
 
@@ -905,142 +906,209 @@
 </div>
 
 <style>
-    .drop-zone-custom { border: 2px dashed #dbdfe9; border-radius: 8px; transition: all 0.2s; background-color: #f9fafb; height: 100px; }
-    .drop-zone-custom:hover { border-color: #198754; background-color: #f1fcf4; }
+    .drop-zone-custom { 
+        border: 2px dashed #dbdfe9; 
+        border-radius: 8px; 
+        transition: all 0.3s ease; 
+        background-color: #f9fafb; 
+        height: 110px; 
+    }
+    .drop-zone-custom:hover, .drop-zone-custom.dragover { 
+        border-color: #198754; 
+        background-color: #e8f5e9; 
+    }
     .bg-light-soft { background-color: #fcfcfc; }
     .font-monospace { font-family: 'Roboto Mono', monospace !important; }
 </style>
+
 <script>
-document.addEventListener("DOMContentLoaded", function() {
-    const modalElement = document.getElementById('modalComprobante');
-    if (!modalElement) return;
+    document.addEventListener("DOMContentLoaded", function() {
+        const modalElement = document.getElementById('modalComprobante');
+        if (!modalElement) return;
 
-    const myModal = new bootstrap.Modal(modalElement);
-    const form = document.getElementById('formModalComprobante');
-    
-    // Selectores internos
-    const modalCodTercero = document.getElementById('cod_tercero');
-    const displayInput = document.getElementById('monto_pagado_display');
-    const hiddenInput = document.getElementById('monto_pagado');
-    const hashTarget = document.getElementById('hash_transaccion');
-
-    // 1. DISPARADOR DE TIPIFICACIÓN (ID 3)
-    document.querySelectorAll('.type-trigger').forEach(radio => {
-        radio.addEventListener('change', function() {
-            if (this.value == '3') {
-                // Capturamos el cliente del buscador de la interacción
-                const selectCliente = document.getElementById('client_id');
-                const clienteId = selectCliente ? selectCliente.value : '';
-
-                if (!clienteId) {
-                    Swal.fire({
-                        title: '¡Falta el Cliente!',
-                        text: 'Debes seleccionar un cliente antes de registrar un pago.',
-                        icon: 'warning',
-                        confirmButtonColor: '#f1416c'
-                    });
-                    this.checked = false;
-                    return;
-                }
-
-                // Llenamos el código en el modal automáticamente
-                modalCodTercero.value = clienteId;
-                actualizarHash();
-                myModal.show();
-            }
-        });
-    });
-
-    // 2. MÁSCARA DE MONEDA
-    displayInput.addEventListener('input', function() {
-        let val = this.value.replace(/\D/g, ''); 
-        hiddenInput.value = val;
-        this.value = val !== '' ? new Intl.NumberFormat('es-CO').format(val) : '';
-        actualizarHash();
-    });
-
-    // 3. GENERADOR DE HASH
-    function actualizarHash() {
-        const fecha = document.getElementById('fecha_pago').value.replace(/-/g, '');
-        const monto = hiddenInput.value;
-        const tercero = modalCodTercero.value;
-        if(fecha && monto && tercero) {
-            hashTarget.value = `${fecha}-${monto}-${tercero}`;
-        } else {
-            hashTarget.value = '';
-        }
-    }
-    document.querySelectorAll('.gen-hash').forEach(i => i.addEventListener('input', actualizarHash));
-    document.getElementById('fecha_pago').addEventListener('change', actualizarHash);
-
-    // 4. ENVÍO POR AJAX (SIN RECARGAR PÁGINA)
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const btnSubmit = document.getElementById('btnSubmitComprobante');
-        const originalText = btnSubmit.innerHTML;
+        const myModal = new bootstrap.Modal(modalElement);
+        const form = document.getElementById('formModalComprobante');
         
-        btnSubmit.disabled = true;
-        btnSubmit.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> GUARDANDO...`;
+        // Selectores internos
+        const modalCodTercero = document.getElementById('cod_tercero');
+        const displayInput = document.getElementById('monto_pagado_display');
+        const hiddenInput = document.getElementById('monto_pagado');
+        const hashTarget = document.getElementById('hash_transaccion');
+        
+        // Selectores Archivos
+        const fileInput = document.getElementById('archivo_soporte');
+        const dropZone = document.getElementById('drop_zone_area');
 
-        fetch(this.action, {
-            method: 'POST',
-            body: new FormData(this),
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
-            }
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                myModal.hide();
-                Swal.fire({ 
-                    title: '¡Realizado!', 
-                    text: 'El pago ha sido vinculado a esta sesión de trabajo.', 
-                    icon: 'success', 
-                    confirmButtonText: 'Continuar con la Gestión' 
-                });
-                form.reset(); // Limpiar para el siguiente
-                document.getElementById('preview_container').classList.add('d-none');
-            } else {
-                Swal.fire('Atención', data.message, 'warning');
-            }
-        })
-        .catch(() => Swal.fire('Error', 'No se pudo conectar con el servidor', 'error'))
-        .finally(() => { 
-            btnSubmit.disabled = false; 
-            btnSubmit.innerHTML = originalText; 
+        // 1. DISPARADOR DE TIPIFICACIÓN (ID 3)
+        document.querySelectorAll('.type-trigger').forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.value == '3') {
+                    const selectCliente = document.getElementById('client_id');
+                    const clienteId = selectCliente ? selectCliente.value : '';
+
+                    if (!clienteId) {
+                        Swal.fire({
+                            title: '¡Falta el Cliente!',
+                            text: 'Debes seleccionar un cliente antes de registrar un pago.',
+                            icon: 'warning',
+                            confirmButtonColor: '#f1416c'
+                        });
+                        this.checked = false;
+                        return;
+                    }
+
+                    modalCodTercero.value = clienteId;
+                    actualizarHash();
+                    myModal.show();
+                }
+            });
         });
-    });
 
-    // 5. SISTEMA CTRL + V (PEGAR CAPTURAS)
-    window.addEventListener('paste', e => {
-        if (!modalElement.classList.contains('show')) return;
-        if(e.clipboardData.files.length > 0) {
-            const file = e.clipboardData.files[0];
+        // 2. MÁSCARA DE MONEDA
+        displayInput.addEventListener('input', function() {
+            let val = this.value.replace(/\D/g, ''); 
+            hiddenInput.value = val;
+            this.value = val !== '' ? new Intl.NumberFormat('es-CO').format(val) : '';
+            actualizarHash();
+        });
+
+        // 3. GENERADOR DE HASH
+        function actualizarHash() {
+            const fecha = document.getElementById('fecha_pago').value.replace(/-/g, '');
+            const monto = hiddenInput.value;
+            const tercero = modalCodTercero.value;
+            if(fecha && monto && tercero) {
+                hashTarget.value = `${fecha}-${monto}-${tercero}`;
+            } else {
+                hashTarget.value = '';
+            }
+        }
+        document.querySelectorAll('.gen-hash').forEach(i => i.addEventListener('input', actualizarHash));
+        document.getElementById('fecha_pago').addEventListener('change', actualizarHash);
+
+        // ---------------------------------------------------------
+        // 4. MANEJO DE ARCHIVOS (CLIC, ARRASTRAR Y PEGAR)
+        // ---------------------------------------------------------
+
+        // Función principal para procesar el archivo recibido
+        function procesarArchivo(file) {
+            if (!file) return;
+
+            // Validar tipo (Opcional, pero recomendado)
+            const validTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+            if (!validTypes.includes(file.type)) {
+                Swal.fire('Formato no válido', 'Solo se permiten imágenes (JPG, PNG) o PDF.', 'warning');
+                resetFile();
+                return;
+            }
+
+            // Asignar al input (necesario si viene de drag&drop o paste)
             const dataTransfer = new DataTransfer();
             dataTransfer.items.add(file);
-            document.getElementById('archivo_soporte').files = dataTransfer.files;
+            fileInput.files = dataTransfer.files;
+
+            // Mostrar UI de Previsualización
+            document.getElementById('preview_container').classList.remove('d-none');
+            document.getElementById('file_name_preview').textContent = file.name || "Imagen capturada";
             
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                const img = document.getElementById('image_preview');
-                img.src = ev.target.result;
-                img.classList.remove('d-none');
-                document.getElementById('preview_container').classList.remove('d-none');
-                document.getElementById('file_name_preview').textContent = "Imagen pegada desde el portapapeles";
-            };
-            reader.readAsDataURL(file);
+            const img = document.getElementById('image_preview');
+            const pdfIcon = document.getElementById('pdf_preview_icon');
+
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    img.src = ev.target.result;
+                    img.classList.remove('d-none');
+                    pdfIcon.classList.add('d-none');
+                };
+                reader.readAsDataURL(file);
+            } else {
+                // Es PDF
+                img.classList.add('d-none');
+                pdfIcon.classList.remove('d-none');
+            }
         }
+
+        // A. Mediante CLIC (Input File tradicional)
+        fileInput.addEventListener('change', function(e) {
+            if(e.target.files.length > 0) procesarArchivo(e.target.files[0]);
+        });
+
+        // B. Mediante PEGAR (Ctrl+V)
+        window.addEventListener('paste', e => {
+            if (!modalElement.classList.contains('show')) return;
+            if(e.clipboardData.files.length > 0) {
+                procesarArchivo(e.clipboardData.files[0]);
+            }
+        });
+
+        // C. Mediante ARRASTRAR Y SOLTAR (Drag & Drop)
+        dropZone.addEventListener('dragover', e => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', e => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', e => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                procesarArchivo(e.dataTransfer.files[0]);
+            }
+        });
+
+        // ---------------------------------------------------------
+        // 5. ENVÍO POR AJAX (SIN RECARGAR PÁGINA)
+        // ---------------------------------------------------------
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const btnSubmit = document.getElementById('btnSubmitComprobante');
+            const originalText = btnSubmit.innerHTML;
+            
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> GUARDANDO...`;
+
+            fetch(this.action, {
+                method: 'POST',
+                body: new FormData(this),
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    myModal.hide();
+                    Swal.fire({ 
+                        title: '¡Realizado!', 
+                        text: 'El pago ha sido vinculado a esta sesión de trabajo.', 
+                        icon: 'success', 
+                        confirmButtonText: 'Continuar con la Gestión' 
+                    });
+                    form.reset(); 
+                    resetFile();
+                } else {
+                    Swal.fire('Atención', data.message, 'warning');
+                }
+            })
+            .catch(() => Swal.fire('Error', 'No se pudo conectar con el servidor', 'error'))
+            .finally(() => { 
+                btnSubmit.disabled = false; 
+                btnSubmit.innerHTML = originalText; 
+            });
+        });
     });
-});
 
-function resetFile() {
-    document.getElementById('archivo_soporte').value = '';
-    document.getElementById('preview_container').classList.add('d-none');
-}
+    function resetFile() {
+        document.getElementById('archivo_soporte').value = '';
+        document.getElementById('preview_container').classList.add('d-none');
+    }
 </script>
-
 <script>
     // Exponer función global para calcular fechas automáticas de la agenda
     window.addDays = function(days) {
