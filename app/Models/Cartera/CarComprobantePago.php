@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Storage;
 use App\Models\User;
 use App\Models\Maestras\MaeTerceros;
+use App\Models\Interacciones\Interaction;
 
 class CarComprobantePago extends Model
 {
@@ -82,5 +83,10 @@ class CarComprobantePago extends Model
     public function tercero(): BelongsTo
     {
         return $this->belongsTo(MaeTerceros::class, 'cod_ter_MaeTerceros', 'cod_ter');
+    }
+    public function interaccion(): BelongsTo
+    {
+        // Un comprobante pertenece a una interacción
+        return $this->belongsTo(Interaction::class, 'id_interaction', 'id');
     }
 }

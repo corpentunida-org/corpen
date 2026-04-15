@@ -578,6 +578,7 @@ class InteractionController extends Controller
             'outcomeRelation',
             'lineaDeObligacion',
             'usuarioAsignado',
+            'comprobantes',
             // Cargamos relaciones de seguimientos para el Timeline
             'seguimientos.outcomeRelation',
             'seguimientos.creator',

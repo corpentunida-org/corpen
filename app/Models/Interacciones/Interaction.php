@@ -8,6 +8,7 @@ use App\Models\Maestras\MaeTerceros;
 use App\Models\User;
 use App\Models\Creditos\LineaCredito;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Cartera\CarComprobantePago;
 
 class Interaction extends Model
 {
@@ -80,5 +81,9 @@ class Interaction extends Model
     public function seguimientos()
     {
         return $this->hasMany(IntSeguimiento::class, 'id_interaction');
+    }
+    public function comprobantes()
+    {
+        return $this->hasMany(CarComprobantePago::class, 'id_interaction', 'id');
     }
 }
