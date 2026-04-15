@@ -357,6 +357,33 @@
                     <h6 class="fw-bold mb-3"><i class="fas fa-chart-line me-2 text-success"></i>Actividad Semanal</h6>
                     <div style="height: 180px;"><canvas id="agentChart"></canvas></div>
                 </div>
+                {{-- ======================================================== --}}
+                {{-- 🟢 NUEVO: SOPORTE DE PAGO DE CARTERA (SOLO SI EXISTE) --}}
+                {{-- ======================================================== --}}
+                @if($interaction->comprobantes->isNotEmpty())
+                    <div class="glass-card p-4 text-center" style="border-top: 4px solid var(--p-green);">
+                        <h6 class="fw-bold mb-3"><i class="fas fa-file-invoice-dollar me-2 text-success"></i>Soporte de Pago (Cartera)</h6>
+                        
+                        @foreach($interaction->comprobantes as $comprobante)
+                            <div class="bg-light p-3 rounded-3 mb-3 text-start border border-success border-opacity-25">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="data-label mb-0 text-success">Monto Pagado</span>
+                                    <span class="badge bg-white text-dark border">{{ date('d/m/Y', strtotime($comprobante->fecha_pago)) }}</span>
+                                </div>
+                                <div class="fs-4 fw-bolder text-dark mb-3">
+                                    ${{ number_format($comprobante->monto_pagado, 0, ',', '.') }}
+                                </div>
+                                
+                                <div class="d-grid">
+                                    <a href="{{ $comprobante->url_archivo }}" target="_blank" class="btn btn-success border-0 py-2 rounded-pill shadow-sm fw-bold">
+                                        <i class="fas fa-external-link-alt me-2"></i>Abrir Recibo
+                                    </a>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+                {{-- ======================================================== --}}               
             </div>
         </div>
     </div>
