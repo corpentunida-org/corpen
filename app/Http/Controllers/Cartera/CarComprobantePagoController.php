@@ -42,57 +42,81 @@ class CarComprobantePagoController extends Controller
 
     public function store(Request $request)
     {
-        // 1. Preprocesar los datos antes de la validación
-        // El input de tipo "date" envía la fecha con formato YYYY-MM-DD
-        // Le quitamos los guiones para guardarlo como entero (Ej: 20260414) como pedía tu diseño original
+        // 1. Preprocesar fecha
         if ($request->filled('fecha_pago')) {
             $request->merge([
                 'fecha_pago' => str_replace('-', '', $request->fecha_pago)
             ]);
         }
 
-        // 2. Validar
+        // 2. Validar (Laravel enviará error JSON 422 si falla y es AJAX automáticamente)
         $validated = $request->validate([
             'cod_ter_MaeTerceros'     => 'required|integer',
-            'monto_pagado'            => 'required|numeric', // numeric porque viene de input hidden
+            'monto_pagado'            => 'required|numeric',
             'fecha_pago'              => 'required|integer', 
             'archivo_soporte'         => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
-            'hash_transaccion'        => 'nullable|string', // Quitamos el unique directo aquí para manejarlo manual o dejas como estaba si tu DB lo exige
+            'hash_transaccion'        => 'nullable|string',
             'id_transaccion_bancaria' => 'nullable|integer',
-            'id_interaction'          => 'nullable|integer', // AHORA ES OPCIONAL (NULLABLE)
+            'id_interaction'          => 'nullable|integer',
         ]);
 
-        // RE-GENERAR HASH EN EL BACKEND (Por seguridad, para que no lo alteren desde el HTML)
-        $hash_transaccion = $validated['fecha_pago'] . '-' . $validated['monto_pagado'] . '-' . $validated['cod_ter_MaeTerceros'];
+        try {
+            // 3. Generar Hash y comprobar duplicados
+            $hash_transaccion = $validated['fecha_pago'] . '-' . $validated['monto_pagado'] . '-' . $validated['cod_ter_MaeTerceros'];
+            
+            $existeHash = CarComprobantePago::where('hash_transaccion', $hash_transaccion)->exists();
 
-        // Comprobamos si el hash ya existe en base de datos para evitar duplicados
-        $existeHash = CarComprobantePago::where('hash_transaccion', $hash_transaccion)->exists();
-        if ($existeHash) {
-            return back()->withInput()->withErrors(['hash_transaccion' => 'Este comprobante (misma fecha, monto y tercero) ya fue registrado previamente.']);
+            if ($existeHash) {
+                $msg = 'Este comprobante (misma fecha, monto y tercero) ya fue registrado previamente.';
+                if ($request->ajax()) {
+                    // IMPORTANTE: Devolvemos error 422 para que el JS sepa que no debe cerrar el modal
+                    return response()->json(['success' => false, 'message' => $msg], 422);
+                }
+                return back()->withInput()->withErrors(['hash_transaccion' => $msg]);
+            }
+
+            // 4. Subir archivo a S3
+            $rutaArchivo = null;
+            if ($request->hasFile('archivo_soporte')) {
+                $folderPath = "cartera/comprobantes/{$validated['cod_ter_MaeTerceros']}";
+                $rutaArchivo = $request->file('archivo_soporte')->store($folderPath, 's3');
+            }
+
+            // 5. Crear registro
+            CarComprobantePago::create([
+                'cod_ter_MaeTerceros'     => $validated['cod_ter_MaeTerceros'],
+                'monto_pagado'            => $validated['monto_pagado'],
+                'fecha_pago'              => $validated['fecha_pago'],
+                'hash_transaccion'        => $hash_transaccion,
+                'ruta_archivo'            => $rutaArchivo,
+                'id_transaccion_bancaria' => $validated['id_transaccion_bancaria'] ?? 0,
+                'id_interaction'          => $validated['id_interaction'] ?? 0,
+                'id_user'                 => auth()->id(), 
+                'estado'                  => 'pendiente', 
+            ]);
+
+            // 6. Respuesta para AJAX (Modal)
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Soporte almacenado correctamente.'
+                ]);
+            }
+
+            // Respuesta para formularios normales
+            return redirect()->route('cartera.comprobantes.index')
+                            ->with('success', 'Soporte almacenado correctamente.');
+
+        } catch (\Exception $e) {
+            // Si algo falla (S3, DB, etc.)
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'Error al procesar: ' . $e->getMessage()
+                ], 500);
+            }
+            return back()->withErrors(['error' => 'Error inesperado']);
         }
-
-        // Construcción de la ruta dinámica: cartera/comprobantes/12345
-        $folderPath = "cartera/comprobantes/{$validated['cod_ter_MaeTerceros']}";
-
-        $rutaArchivo = null;
-        if ($request->hasFile('archivo_soporte')) {
-            $rutaArchivo = $request->file('archivo_soporte')->store($folderPath, 's3');
-        }
-
-        CarComprobantePago::create([
-            'cod_ter_MaeTerceros'     => $validated['cod_ter_MaeTerceros'],
-            'monto_pagado'            => $validated['monto_pagado'],
-            'fecha_pago'              => $validated['fecha_pago'],
-            'hash_transaccion'        => $hash_transaccion, // Guardamos el hash construido en backend
-            'ruta_archivo'            => $rutaArchivo,
-            'id_transaccion_bancaria' => $validated['id_transaccion_bancaria'] ?? 0,
-            'id_interaction'          => $validated['id_interaction'] ?? 0,
-            'id_user'                 => auth()->id(), 
-            'estado'                  => 'pendiente', 
-        ]);
-
-        return redirect()->route('cartera.comprobantes.index')
-                        ->with('success', 'Soporte almacenado correctamente en la carpeta del tercero.');
     }
 
     public function update(Request $request, $id)
