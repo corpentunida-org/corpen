@@ -14,6 +14,9 @@ use App\Models\Interacciones\Interaction;
 use App\Models\Inventario\InvCompra;
 use App\Models\Correspondencia\Correspondencia;
 
+//cartera
+use App\Models\Cartera\CarComprobantePago;
+
 class MaeTerceros extends Model
 {
     use HasFactory;
@@ -322,5 +325,13 @@ class MaeTerceros extends Model
     public function getCodDistAttribute($value)
     {
         return trim($value);
+    }
+    /**
+     * Relación con los Comprobantes de Pago de Cartera
+     */
+    public function comprobantesPago()
+    {
+        // hasMany(Modelo, llave_foranea_en_comprobantes, llave_local_tercero)
+        return $this->hasMany(CarComprobantePago::class, 'cod_ter_MaeTerceros', 'cod_ter');
     }
 }

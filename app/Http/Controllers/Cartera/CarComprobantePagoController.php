@@ -42,39 +42,83 @@ class CarComprobantePagoController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'cod_ter_MaeTerceros'     => 'required|integer',
-            'monto_pagado'            => 'required|integer',
-            'fecha_pago'              => 'required|integer', 
-            'archivo_soporte'         => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
-            'hash_transaccion'        => 'nullable|string|unique:car_comprobantes_pagos,hash_transaccion',
-            'id_transaccion_bancaria' => 'nullable|integer',
-            'id_interaction'          => 'required|integer',
-        ]);
-
-        // Construcción de la ruta dinámica: cartera/comprobantes/12345
-        $folderPath = "cartera/comprobantes/{$validated['cod_ter_MaeTerceros']}";
-
-        $rutaArchivo = null;
-        if ($request->hasFile('archivo_soporte')) {
-            // El método store() devuelve la ruta completa incluyendo el nombre generado
-            $rutaArchivo = $request->file('archivo_soporte')->store($folderPath, 's3');
+        // 1. Preprocesar fecha (convertir YYYY-MM-DD a YYYYMMDD entero)
+        if ($request->filled('fecha_pago')) {
+            $request->merge([
+                'fecha_pago' => str_replace('-', '', $request->fecha_pago)
+            ]);
         }
 
-        CarComprobantePago::create([
-            'cod_ter_MaeTerceros'     => $validated['cod_ter_MaeTerceros'],
-            'monto_pagado'            => $validated['monto_pagado'],
-            'fecha_pago'              => $validated['fecha_pago'],
-            'hash_transaccion'        => $validated['hash_transaccion'],
-            'ruta_archivo'            => $rutaArchivo,
-            'id_transaccion_bancaria' => $validated['id_transaccion_bancaria'],
-            'id_interaction'          => $validated['id_interaction'],
-            'id_user'                 => auth()->id(), // Seguridad: ID del usuario autenticado
-            'estado'                  => 'pendiente', 
+        // 2. Validar
+        $validated = $request->validate([
+            'cod_ter_MaeTerceros'     => 'required|integer',
+            'monto_pagado'            => 'required|numeric',
+            'fecha_pago'              => 'required|integer', 
+            'archivo_soporte'         => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'hash_transaccion'        => 'nullable|string',
+            'id_transaccion_bancaria' => 'nullable|integer',
+            'id_interaction'          => 'nullable|integer',
+            'temp_token'              => 'nullable|string|max:255', // <--- VALIDACIÓN DEL TOKEN
         ]);
 
-        return redirect()->route('cartera.comprobantes.index')
-                        ->with('success', 'Soporte almacenado correctamente en la carpeta del tercero.');
+        try {
+            // 3. Generar Hash y comprobar duplicados
+            $hash_transaccion = $validated['fecha_pago'] . '-' . $validated['monto_pagado'] . '-' . $validated['cod_ter_MaeTerceros'];
+            
+            $existeHash = CarComprobantePago::where('hash_transaccion', $hash_transaccion)->exists();
+
+            if ($existeHash) {
+                $msg = 'Este comprobante (misma fecha, monto y tercero) ya fue registrado previamente.';
+                if ($request->ajax()) {
+                    return response()->json(['success' => false, 'message' => $msg], 422);
+                }
+                return back()->withInput()->withErrors(['hash_transaccion' => $msg]);
+            }
+
+            // 4. Subir archivo a S3
+            $rutaArchivo = null;
+            if ($request->hasFile('archivo_soporte')) {
+                // Ruta dinámica: cartera/comprobantes/{codigo_tercero}/archivo.ext
+                $folderPath = "cartera/comprobantes/{$validated['cod_ter_MaeTerceros']}";
+                $rutaArchivo = $request->file('archivo_soporte')->store($folderPath, 's3');
+            }
+
+            // 5. Crear registro con el "gancho" temp_token
+            CarComprobantePago::create([
+                'cod_ter_MaeTerceros'     => $validated['cod_ter_MaeTerceros'],
+                'monto_pagado'            => $validated['monto_pagado'],
+                'fecha_pago'              => $validated['fecha_pago'],
+                'hash_transaccion'        => $hash_transaccion,
+                'ruta_archivo'            => $rutaArchivo,
+                'id_transaccion_bancaria' => $validated['id_transaccion_bancaria'] ?? 0,
+                'id_interaction'          => $validated['id_interaction'] ?? 0,
+                'temp_token'              => $validated['temp_token'] ?? null, // <--- GUARDADO DEL TOKEN
+                'id_user'                 => auth()->id(), 
+                'estado'                  => 'pendiente', 
+            ]);
+
+            // 6. Respuesta para AJAX (Modal)
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Soporte almacenado y vinculado temporalmente.'
+                ]);
+            }
+
+            return redirect()->route('cartera.comprobantes.index')
+                            ->with('success', 'Soporte almacenado correctamente.');
+
+        } catch (\Exception $e) {
+            \Log::error("Error en CarComprobantePago@store: " . $e->getMessage());
+            
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false, 
+                    'message' => 'Error crítico: ' . $e->getMessage()
+                ], 500);
+            }
+            return back()->withErrors(['error' => 'Error inesperado al procesar el archivo.']);
+        }
     }
 
     public function update(Request $request, $id)

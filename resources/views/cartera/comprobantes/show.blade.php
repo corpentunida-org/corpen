@@ -29,7 +29,7 @@
                     <div class="card-header bg-transparent border-bottom border-light p-4 d-flex justify-content-between align-items-center">
                         <h4 class="fw-bolder m-0 text-dark fs-4"><i class="fas fa-file-pdf text-danger me-2"></i>Documento Adjunto</h4>
                         <span class="badge bg-light-primary text-primary fw-bolder px-3 py-2 fs-6">
-                            Transacción Bancaria ID: #{{ $comprobante->id_transaccion_bancaria ?? 'No asignada' }}
+                            Transacción Bancaria ID: #{{ $comprobante->id_transaccion_bancaria ?? 'Pendiente de Conciliar' }}
                         </span>
                     </div>
                     
@@ -56,42 +56,71 @@
                 <div class="card border-0 shadow-sm bg-white p-5 h-100" style="border-radius: 12px;">
                     
                     <h5 class="fw-bolder mb-5 text-dark fs-4 pb-3 border-bottom border-light">
-                        <i class="fas fa-info-circle text-primary me-2"></i> Detalles del Recibo
+                        <i class="fas fa-info-circle text-primary me-2"></i> Detalles del Registro
                     </h5>
                     
                     <ul class="list-unstyled mb-0">
-                        <li class="mb-5">
-                            <span class="text-gray-500 fw-bold d-block text-uppercase ls-1 fs-8 mb-1">Tercero (Siasoft)</span>
-                            <span class="text-dark fw-bolder fs-4">#{{ $comprobante->cod_ter_MaeTerceros }}</span>
-                        </li>
-                        
-                        <li class="mb-5">
-                            <span class="text-gray-500 fw-bold d-block text-uppercase ls-1 fs-8 mb-1">Monto Validado</span>
-                            <span class="text-success fw-bolder fs-1 lh-1">${{ number_format($comprobante->monto_pagado, 0, ',', '.') }}</span>
-                        </li>
-                        
-                        <li class="mb-5">
-                            <span class="text-gray-500 fw-bold d-block text-uppercase ls-1 fs-8 mb-1">Fecha de Aplicación</span>
-                            <span class="text-dark fw-bold fs-5">{{ $comprobante->fecha_pago }}</span>
-                        </li>
-
-                        <li class="mb-5">
-                            <span class="text-gray-500 fw-bold d-block text-uppercase ls-1 fs-8 mb-1">Token (Hash Único)</span>
-                            <div class="bg-light p-3 rounded text-break">
-                                <code class="text-dark fw-bold fs-6">{{ $comprobante->hash_transaccion ?? 'Sin Token' }}</code>
+                        {{-- 1. AGENTE / USUARIO (NUEVO) --}}
+                        <li class="mb-5 d-flex align-items-center p-3 bg-light rounded">
+                            <div class="me-3">
+                                <span class="d-flex align-items-center justify-content-center bg-white text-primary rounded-circle shadow-sm" style="width: 40px; height: 40px;">
+                                    <i class="fas fa-user-headset fs-5"></i>
+                                </span>
+                            </div>
+                            <div>
+                                <span class="text-gray-500 fw-bold d-block text-uppercase ls-1 fs-8 mb-1">Registrado por (Agente)</span>
+                                {{-- Usamos optional() por si la relación no existe aún, mostrando el ID como respaldo --}}
+                                <span class="text-dark fw-bolder fs-5">{{ optional($comprobante->user)->name ?? 'Agente ID: ' . $comprobante->id_user }}</span>
                             </div>
                         </li>
 
-                        <li class="mb-0">
+                        {{-- 2. TERCERO --}}
+                        <li class="mb-5">
+                            <span class="text-gray-500 fw-bold d-block text-uppercase ls-1 fs-8 mb-1">Tercero (Siasoft)</span>
+                            <span class="text-dark fw-bolder fs-4"><i class="fas fa-user-tag text-muted me-1 fs-6"></i> #{{ $comprobante->cod_ter_MaeTerceros }}</span>
+                        </li>
+                        
+                        {{-- 3. MONTO --}}
+                        <li class="mb-5">
+                            <span class="text-gray-500 fw-bold d-block text-uppercase ls-1 fs-8 mb-1">Monto Reportado</span>
+                            <span class="text-success fw-bolder fs-1 lh-1">${{ number_format($comprobante->monto_pagado, 0, ',', '.') }}</span>
+                        </li>
+                        
+                        {{-- 4. FECHA (Formateada con Carbon) --}}
+                        <li class="mb-5">
+                            <span class="text-gray-500 fw-bold d-block text-uppercase ls-1 fs-8 mb-1">Fecha de Pago</span>
+                            <span class="text-dark fw-bold fs-5">
+                                <i class="far fa-calendar-alt text-muted me-1"></i> 
+                                {{-- Carbon parsea el YYYYMMDD a una fecha legible --}}
+                                {{ \Carbon\Carbon::parse($comprobante->fecha_pago)->translatedFormat('d \d\e F, Y') }}
+                            </span>
+                        </li>
+
+                        {{-- 5. INTERACCIÓN CRM --}}
+                        <li class="mb-5">
                             <span class="text-gray-500 fw-bold d-block text-uppercase ls-1 fs-8 mb-1">ID Interacción CRM</span>
-                            <span class="text-dark fw-bold fs-5">#{{ $comprobante->id_interaction }}</span>
+                            <span class="text-dark fw-bold fs-5">
+                                @if($comprobante->id_interaction)
+                                    #{{ $comprobante->id_interaction }}
+                                @else
+                                    <span class="text-muted fw-normal fs-6"><i>No registrado</i></span>
+                                @endif
+                            </span>
+                        </li>
+
+                        {{-- 6. HASH --}}
+                        <li class="mb-0">
+                            <span class="text-gray-500 fw-bold d-block text-uppercase ls-1 fs-8 mb-1">Token (Hash Único)</span>
+                            <div class="bg-light p-3 rounded text-break border border-light">
+                                <code class="text-dark fw-bold fs-7">{{ $comprobante->hash_transaccion ?? 'Sin Token' }}</code>
+                            </div>
                         </li>
                     </ul>
 
                     <div class="mt-auto pt-5">
                         @if($comprobante->ruta_archivo)
                             <a href="{{ $comprobante->url_archivo }}" target="_blank" class="btn btn-light-primary w-100 rounded-pill fw-bolder py-3 fs-6">
-                                <i class="fas fa-external-link-alt me-2"></i> Abrir / Descargar
+                                <i class="fas fa-external-link-alt me-2"></i> Abrir en Pestaña Nueva
                             </a>
                         @else
                             <button disabled class="btn btn-light w-100 rounded-pill fw-bolder py-3 fs-6">
