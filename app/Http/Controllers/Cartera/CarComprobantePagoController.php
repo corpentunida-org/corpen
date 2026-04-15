@@ -59,6 +59,7 @@ class CarComprobantePagoController extends Controller
             'id_transaccion_bancaria' => 'nullable|integer',
             'id_interaction'          => 'nullable|integer',
             'temp_token'              => 'nullable|string|max:255', // <--- VALIDACIÓN DEL TOKEN
+            'id_banco'                => 'required|exists:con_cuentas_bancarias,id', // Validación para el nuevo campo de banco
         ]);
 
         try {
@@ -95,6 +96,7 @@ class CarComprobantePagoController extends Controller
                 'temp_token'              => $validated['temp_token'] ?? null, // <--- GUARDADO DEL TOKEN
                 'id_user'                 => auth()->id(), 
                 'estado'                  => 'pendiente', 
+                'id_banco'                => $validated['id_banco'], // Guardar el banco seleccionado
             ]);
 
             // 6. Respuesta para AJAX (Modal)

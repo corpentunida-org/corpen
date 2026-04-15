@@ -15,6 +15,8 @@ use App\Models\Maestras\MaeTerceros;
 use App\Models\Maestras\MaeDistritos;
 use App\Models\Maestras\MaeCongregacion;
 use App\Models\User;
+use App\Models\Contabilidad\ConCuentaBancaria;
+use \App\Models\Cartera\CarComprobantePago;
 use App\Models\Interacciones\Interaction;
 use App\Models\Interacciones\IntSeguimiento;
 use App\Models\Interacciones\IntChannel;
@@ -644,7 +646,7 @@ class InteractionController extends Controller
         $idCargoAgente = null;
         $areaAgente = null;
         $idAreaAgente = null;
-
+        $idBanco = ConCuentaBancaria::select('id', 'numero_cuenta','banco')->get();
         if ($agente) {
             $cargoAgente = $agente->cargoRelation;
             if ($cargoAgente) {
@@ -657,7 +659,7 @@ class InteractionController extends Controller
             }
         }
 
-        return view('interactions.create', compact('interaction', 'channels', 'types', 'outcomes', 'nextActions', 'areas', 'cargos', 'lineasCredito', 'idCargoAgente', 'idAreaAgente'));
+        return view('interactions.create', compact('interaction', 'channels', 'types', 'outcomes', 'nextActions', 'areas', 'cargos', 'lineasCredito', 'idCargoAgente', 'idAreaAgente','idBanco'));
     }
 
     /**
@@ -724,7 +726,7 @@ class InteractionController extends Controller
         */
 
         if ($request->filled('temp_token')) {
-            \App\Models\Cartera\CarComprobantePago::where('temp_token', $request->temp_token)
+            CarComprobantePago::where('temp_token', $request->temp_token)
                 ->where(function($query) {
                     $query->where('id_interaction', 0)
                           ->orWhereNull('id_interaction');
@@ -740,6 +742,13 @@ class InteractionController extends Controller
         | 3. Crear seguimiento
         |---------------------------------------
         */
+        $attachmentPath = null;
+
+        if ($request->hasFile('attachment')) {
+            $file = $request->file('attachment');
+            $fileName = uniqid() . '_' . $file->getClientOriginalName();
+            $attachmentPath = Storage::disk('s3')->putFileAs('corpentunida/daytrack/' . $interaction->id, $file, $fileName);
+        }
 
         $interaction->seguimientos()->create([
             'agent_id' => $agentId,

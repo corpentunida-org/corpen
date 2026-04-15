@@ -803,6 +803,10 @@
     </div>
 </form>
 
+
+
+
+
 <div class="modal fade" id="modalComprobante" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
@@ -847,6 +851,20 @@
                                     <span class="input-group-text bg-transparent border-0 fw-bold">$</span>
                                     <input type="text" id="monto_pagado_display" class="form-control border-0 fw-bolder text-success gen-hash" placeholder="0" required>
                                     <input type="hidden" id="monto_pagado" name="monto_pagado">
+                                </div>
+                            </div>
+
+                            <div class="fv-row mt-2">
+                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Banco *</label>
+                                <div class="input-group input-group-solid border border-gray-300 rounded shadow-sm">
+                                    <select class="form-select select2" id="id_banco_soporte" name="id_banco_soporte" required>
+                                        <option value="">Selecciona el banco...</option>
+                                        @if (isset($idBanco))
+                                            @foreach ($idBanco as $idb)
+                                                <option value="{{ $idb->id }}">{{ $idb->numero_cuenta }} - {{ $idb->banco }}</option>
+                                            @endforeach
+                                        @endif
+                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -1109,6 +1127,11 @@
         document.getElementById('preview_container').classList.add('d-none');
     }
 </script>
+
+
+
+
+
 <script>
     // Exponer función global para calcular fechas automáticas de la agenda
     window.addDays = function(days) {
