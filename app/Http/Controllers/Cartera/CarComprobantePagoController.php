@@ -42,22 +42,40 @@ class CarComprobantePagoController extends Controller
 
     public function store(Request $request)
     {
+        // 1. Preprocesar los datos antes de la validación
+        // El input de tipo "date" envía la fecha con formato YYYY-MM-DD
+        // Le quitamos los guiones para guardarlo como entero (Ej: 20260414) como pedía tu diseño original
+        if ($request->filled('fecha_pago')) {
+            $request->merge([
+                'fecha_pago' => str_replace('-', '', $request->fecha_pago)
+            ]);
+        }
+
+        // 2. Validar
         $validated = $request->validate([
             'cod_ter_MaeTerceros'     => 'required|integer',
-            'monto_pagado'            => 'required|integer',
+            'monto_pagado'            => 'required|numeric', // numeric porque viene de input hidden
             'fecha_pago'              => 'required|integer', 
             'archivo_soporte'         => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
-            'hash_transaccion'        => 'nullable|string|unique:car_comprobantes_pagos,hash_transaccion',
+            'hash_transaccion'        => 'nullable|string', // Quitamos el unique directo aquí para manejarlo manual o dejas como estaba si tu DB lo exige
             'id_transaccion_bancaria' => 'nullable|integer',
-            'id_interaction'          => 'required|integer',
+            'id_interaction'          => 'nullable|integer', // AHORA ES OPCIONAL (NULLABLE)
         ]);
+
+        // RE-GENERAR HASH EN EL BACKEND (Por seguridad, para que no lo alteren desde el HTML)
+        $hash_transaccion = $validated['fecha_pago'] . '-' . $validated['monto_pagado'] . '-' . $validated['cod_ter_MaeTerceros'];
+
+        // Comprobamos si el hash ya existe en base de datos para evitar duplicados
+        $existeHash = CarComprobantePago::where('hash_transaccion', $hash_transaccion)->exists();
+        if ($existeHash) {
+            return back()->withInput()->withErrors(['hash_transaccion' => 'Este comprobante (misma fecha, monto y tercero) ya fue registrado previamente.']);
+        }
 
         // Construcción de la ruta dinámica: cartera/comprobantes/12345
         $folderPath = "cartera/comprobantes/{$validated['cod_ter_MaeTerceros']}";
 
         $rutaArchivo = null;
         if ($request->hasFile('archivo_soporte')) {
-            // El método store() devuelve la ruta completa incluyendo el nombre generado
             $rutaArchivo = $request->file('archivo_soporte')->store($folderPath, 's3');
         }
 
@@ -65,11 +83,11 @@ class CarComprobantePagoController extends Controller
             'cod_ter_MaeTerceros'     => $validated['cod_ter_MaeTerceros'],
             'monto_pagado'            => $validated['monto_pagado'],
             'fecha_pago'              => $validated['fecha_pago'],
-            'hash_transaccion'        => $validated['hash_transaccion'],
+            'hash_transaccion'        => $hash_transaccion, // Guardamos el hash construido en backend
             'ruta_archivo'            => $rutaArchivo,
-            'id_transaccion_bancaria' => $validated['id_transaccion_bancaria'],
-            'id_interaction'          => $validated['id_interaction'],
-            'id_user'                 => auth()->id(), // Seguridad: ID del usuario autenticado
+            'id_transaccion_bancaria' => $validated['id_transaccion_bancaria'] ?? 0,
+            'id_interaction'          => $validated['id_interaction'] ?? 0,
+            'id_user'                 => auth()->id(), 
             'estado'                  => 'pendiente', 
         ]);
 

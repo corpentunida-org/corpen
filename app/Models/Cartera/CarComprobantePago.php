@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Contabilidad\ConExtractoTransaccion;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Storage; // Importante para S3
+use App\Models\User;
+use App\Models\Maestras\MaeTerceros;
 
 class CarComprobantePago extends Model
 {
@@ -78,5 +80,18 @@ class CarComprobantePago extends Model
         
         $partes = explode('/', $this->ruta_archivo);
         return end($partes);
+    }
+/**
+     * Relación con el modelo User (Agente que registró el comprobante)
+     */
+    public function user(): BelongsTo
+    {
+        // Relacionamos la columna 'id_user' de esta tabla con el 'id' del usuario
+        return $this->belongsTo(User::class, 'id_user');
+    }  
+    public function tercero(): BelongsTo
+    {
+        // belongsTo(Modelo, llave_foranea_local, llave_primaria_tercero)
+        return $this->belongsTo(MaeTerceros::class, 'cod_ter_MaeTerceros', 'cod_ter');
     }
 }
