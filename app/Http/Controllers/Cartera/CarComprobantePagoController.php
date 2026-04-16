@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Cartera\CarComprobantePago;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use App\Models\Creditos\LineaCredito;
+use App\Models\Contabilidad\ConCuentaBancaria;
 
 class CarComprobantePagoController extends Controller
 {
@@ -29,8 +31,7 @@ class CarComprobantePagoController extends Controller
             });
         }
 
-        // 3. EL ARREGLO ESTÁ AQUÍ: Usamos paginate() en lugar de get()
-        // Esto devuelve un objeto LengthAwarePaginator, el cual sí tiene el método hasPages()
+        // 3. Paginación
         $comprobantes = $query->latest()->paginate(15); 
         
         return view('cartera.comprobantes.index', compact('comprobantes'));
@@ -38,7 +39,11 @@ class CarComprobantePagoController extends Controller
 
     public function create()
     {
-        return view('cartera.comprobantes.create');
+        // ¡CRÍTICO PARA PRODUCCIÓN! Consultas necesarias para poblar los select de la vista
+        $lineasCredito = LineaCredito::orderBy('nombre')->pluck('nombre', 'id');
+        $idBanco = ConCuentaBancaria::select('id', 'numero_cuenta','banco')->get();
+
+        return view('cartera.comprobantes.create', compact('lineasCredito', 'idBanco'));
     }
 
     public function store(Request $request)

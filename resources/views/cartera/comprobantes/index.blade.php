@@ -51,12 +51,11 @@
                             <th class="col-index"></th>
                             <th>CÓDIGO TERCERO</th>
                             <th>NOMBRE TERCERO</th>
-                            <th>AGENTE</th>
+                            <th>OBLIGACIÓN</th> <th>AGENTE</th>
                             <th>MONTO PAGADO</th>
                             <th>FECHA PAGO</th>
                             <th>ID INTERACCIÓN</th>
-                            <th>ID BANCO</th>
-                            <th>HASH TRANSACCIÓN</th>
+                            <th>TRANSACCIÓN BANCARIA</th> <th>BANCO DESTINO</th> <th>HASH TRANSACCIÓN</th>
                             <th>ESTADO</th>
                             <th>SOPORTE</th>
                             <th style="text-align: center; width: 80px;">...</th>
@@ -71,6 +70,11 @@
                             
                             <td class="text-uppercase text-gray-700">
                                 {{ optional($comprobante->tercero)->nom_ter ?? '---' }}
+                            </td>
+
+                            {{-- NUEVO: OBLIGACIÓN --}}
+                            <td class="text-gray-700" style="max-width: 150px; text-overflow: ellipsis; overflow: hidden;">
+                                {{ optional($comprobante->obligacion)->nombre ?? '---' }}
                             </td>
                             
                             <td>
@@ -99,8 +103,17 @@
                             {{-- ID INTERACCIÓN --}}
                             <td class="text-center text-muted italic">#{{ $comprobante->id_interaction ?? '---' }}</td>
 
-                            {{-- ID BANCO --}}
+                            {{-- TRANSACCIÓN BANCARIA (Extracto) --}}
                             <td class="text-center fw-bold text-primary">{{ $comprobante->id_transaccion_bancaria ?? '---' }}</td>
+
+                            {{-- NUEVO: BANCO DESTINO --}}
+                            <td class="text-gray-700" style="max-width: 150px; text-overflow: ellipsis; overflow: hidden;">
+                                @if($comprobante->id_banco)
+                                    {{ optional($comprobante->banco)->banco ?? 'ID: ' . $comprobante->id_banco }}
+                                @else
+                                    ---
+                                @endif
+                            </td>
 
                             {{-- HASH --}}
                             <td class="font-monospace fs-10 text-muted" style="max-width: 150px;">{{ $comprobante->hash_transaccion }}</td>
@@ -116,9 +129,13 @@
                             </td>
 
                             <td>
-                                <a href="{{ $comprobante->url_archivo }}" target="_blank" class="text-primary text-decoration-none fw-bold">
-                                    <i class="fas fa-link me-1 fs-9"></i> abrir_doc
-                                </a>
+                                @if($comprobante->ruta_archivo)
+                                    <a href="{{ $comprobante->url_archivo }}" target="_blank" class="text-primary text-decoration-none fw-bold">
+                                        <i class="fas fa-link me-1 fs-9"></i> abrir_doc
+                                    </a>
+                                @else
+                                    <span class="text-muted italic fs-9">Sin doc</span>
+                                @endif
                             </td>
 
                             <td class="text-center">
@@ -133,7 +150,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="12" class="text-center py-10 text-muted fs-8 italic">No hay datos en este intervalo.</td>
+                            <td colspan="14" class="text-center py-10 text-muted fs-8 italic">No hay datos en este intervalo.</td>
                         </tr>
                         @endforelse
                     </tbody>
