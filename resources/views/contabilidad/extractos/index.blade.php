@@ -1,107 +1,134 @@
 <x-base-layout>
-    <div class="app-container py-5">
-        <div class="row g-4">
-            {{-- Listado Principal --}}
-            <div class="col-lg-9">
-                <div class="card border-0 bg-transparent">
-                    <div class="card-header bg-transparent p-0 pb-4 border-0 d-flex justify-content-between align-items-center flex-wrap">
-                        <div>
-                            <h3 class="fw-bolder m-0 text-dark fs-2">Extractos Bancarios</h3>
-                            <p class="text-muted m-0 fs-6">Historial de movimientos transaccionales</p>
-                        </div>
-                        <div class="position-relative mt-2 mt-md-0" style="min-width: 280px;">
-                            <i class="fas fa-search position-absolute top-50 translate-middle-y text-muted" style="left: 1rem;"></i>
-                            <input type="text" id="tableSearch" class="form-control rounded-pill border-light bg-white shadow-xs fs-6" style="padding-left: 2.5rem;" placeholder="Buscar referencia o monto...">
-                        </div>
-                    </div>
-                    
-                    <div class="card-body p-0">
-                        <div class="table-responsive bg-white rounded-3 shadow-sm">
-                            <table class="table align-middle gs-0 gy-3 mb-0" id="extractosTable">
-                                <thead>
-                                    <tr class="fw-bolder text-gray-800 fs-6 text-uppercase ls-1 border-bottom border-light">
-                                        <th class="ps-4 py-3">Fecha</th>
-                                        <th class="py-3">Cuenta / Banco</th>
-                                        <th class="py-3">Descripción</th>
-                                        <th class="py-3 text-end">Monto Ingreso</th>
-                                        <th class="py-3 text-center">Estado</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="fs-5">
-                                    @forelse($extractos as $movimiento)
-                                    <tr class="hover-bg-light transition-3ms border-bottom border-light">
-                                        <td class="ps-4 py-3">
-                                            <span class="text-dark fw-bold">{{ $movimiento->fecha_movimiento->format('d/m/Y') }}</span>
-                                            <span class="text-muted d-block fs-7">{{ $movimiento->fecha_movimiento->format('H:i') }}</span>
-                                        </td>
-                                        <td class="py-3">
-                                            <span class="text-dark fw-bold d-block">{{ $movimiento->cuentaBancaria->banco ?? 'N/A' }}</span>
-                                            <span class="text-muted font-monospace fs-7">{{ $movimiento->cuentaBancaria->numero_cuenta ?? '' }}</span>
-                                        </td>
-                                        <td class="py-3" style="max-width: 250px;">
-                                            <span class="text-gray-800 d-block text-truncate" title="{{ $movimiento->descripcion_banco }}">
-                                                {{ $movimiento->descripcion_banco }}
-                                            </span>
-                                            <span class="text-muted font-monospace fs-8">Ref: {{ substr($movimiento->hash_transaccion, 0, 8) }}...</span>
-                                        </td>
-                                        <td class="py-3 text-end">
-                                            <span class="text-success fw-bolder fs-4">${{ number_format($movimiento->valor_ingreso, 0, ',', '.') }}</span>
-                                        </td>
-                                        <td class="py-3 text-center">
-                                            @php
-                                                $estadoConfig = match($movimiento->estado_conciliacion) {
-                                                    'Conciliado_Auto'   => ['color' => 'success', 'icon' => 'fa-robot'],
-                                                    'Conciliado_Manual' => ['color' => 'primary', 'icon' => 'fa-user-check'],
-                                                    'Pendiente'         => ['color' => 'warning', 'icon' => 'fa-clock'],
-                                                    'Anulado'           => ['color' => 'danger',  'icon' => 'fa-times-circle'],
-                                                    default             => ['color' => 'secondary', 'icon' => 'fa-question']
-                                                };
-                                            @endphp
-                                            <span class="badge bg-light-{{ $estadoConfig['color'] }} text-{{ $estadoConfig['color'] }} border-0 px-3 py-2 fw-bolder">
-                                                <i class="fas {{ $estadoConfig['icon'] }} me-1"></i> {{ str_replace('_', ' ', $movimiento->estado_conciliacion) }}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                    @empty
-                                    <tr>
-                                        <td colspan="5" class="text-center py-15 bg-white">
-                                            <i class="fas fa-file-invoice-dollar text-gray-200 fa-4x mb-4"></i>
-                                            <span class="text-dark fs-5 fw-bold d-block">No hay movimientos registrados</span>
-                                            <p class="text-muted mt-2">Importa un extracto bancario para comenzar.</p>
-                                        </td>
-                                    </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+    <div class="app-container py-5" style="background-color: #f8f9fa;">
+        
+        {{-- Barra de Título Estilo Documento --}}
+        <div class="d-flex align-items-center mb-5 px-3">
+            <div class="symbol symbol-40px me-3">
+                <div class="symbol-label bg-success text-white shadow-sm">
+                    <i class="fas fa-file-excel text-white fs-4"></i>
+                </div>
+            </div>
+            <div>
+                <h3 class="fw-bold m-0 text-dark fs-4">Extractos_Bancarios_Siasoft.gsheet</h3>
+                <div class="d-flex align-items-center gap-3 fs-9 mt-1">
+                    <span class="text-muted">Directorio: Contabilidad / Extractos</span>
+                    <span class="badge badge-light-success text-success fw-bold px-2 py-1">DATOS PROTEGIDOS</span>
+                </div>
+            </div>
+            
+            {{-- Controles y Botones Superiores --}}
+            <div class="ms-auto d-flex align-items-center gap-3">
+                {{-- Buscador JS (Se mantiene tu lógica) --}}
+                <div class="input-group input-group-sm border border-gray-300 rounded bg-white shadow-sm">
+                    <span class="input-group-text bg-white border-0"><i class="fas fa-search fs-9 text-muted"></i></span>
+                    <input type="text" id="tableSearch" class="form-control border-0 ps-0 fs-8 w-250px" placeholder="Buscar ref, tercero, descripción o monto...">
+                </div>
+
+                {{-- Botones de Acción que estaban en el Sidebar --}}
+                <a href="{{ route('contabilidad.extractos.importar') }}" class="btn btn-sm btn-primary fw-bold px-4 rounded-1 shadow-sm">
+                    <i class="fas fa-cloud-upload-alt me-1"></i> Subir Extracto
+                </a>
+                
+                <a href="{{ route('contabilidad.extractos.conciliacion') }}" class="btn btn-sm btn-dark fw-bold px-4 rounded-1 shadow-sm">
+                    <i class="fas fa-compress-arrows-alt me-1"></i> Conciliación
+                </a>
+            </div>
+        </div>
+
+        {{-- Contenedor de la Hoja --}}
+        <div class="bg-white shadow-sm border border-gray-300 mx-3" style="border-radius: 0px; overflow: hidden;">
+            
+            {{-- Pestañas de la Hoja --}}
+            <div class="d-flex bg-gray-100 border-bottom border-gray-300">
+                <div class="sheet-tab active">
+                    <i class="fas fa-table me-2 fs-9"></i> Movimientos Generales
                 </div>
             </div>
 
-            {{-- Sidebar de Acciones --}}
-            <div class="col-lg-3">
-                <div class="card border-0 shadow-sm bg-white p-5 mb-4" style="border-radius: 12px;">
-                    <h5 class="fw-bolder text-dark mb-4 fs-4">Flujo de Trabajo</h5>
-                    
-                    <a href="{{ route('contabilidad.extractos.importar') }}" class="btn btn-primary w-100 rounded-pill fs-5 fw-bolder py-3 shadow-sm mb-3">
-                        <i class="fas fa-cloud-upload-alt me-2"></i> Subir Extracto
-                    </a>
-                    
-                    <a href="{{ route('contabilidad.extractos.conciliacion') }}" class="btn btn-dark w-100 rounded-pill fs-5 fw-bolder py-3 shadow-sm mb-4">
-                        <i class="fas fa-compress-arrows-alt me-2"></i> Conciliación
-                    </a>
+            <div class="table-responsive" id="resizable-container">
+                <table class="table-gsheets" id="main-table">
+                    <thead>
+                        <tr>
+                            <th class="col-index"></th>
+                            <th>FECHA</th>
+                            <th>CUENTA / BANCO</th>
+                            <th>CÉDULA/NIT</th>
+                            <th>NOMBRE TERCERO</th>
+                            <th style="width: 250px;">DESCRIPCIÓN BANCO</th>
+                            <th>MONTO INGRESO</th>
+                            <th>HASH TRANSACCIÓN</th>
+                            <th>ESTADO</th>
+                            <th style="text-align: center; width: 60px;">VER</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($extractos as $index => $movimiento)
+                        <tr class="searchable-row">
+                            <td class="col-index">{{ $index + 1 }}</td>
+                            
+                            <td class="text-center">
+                                <span class="fw-bold text-dark">{{ $movimiento->fecha_movimiento->format('d/m/Y') }}</span>
+                            </td>
+                            
+                            <td>
+                                <span class="text-dark fw-bold d-block">{{ $movimiento->cuentaBancaria->banco ?? 'N/A' }}</span>
+                                <span class="text-muted font-monospace fs-9">{{ $movimiento->cuentaBancaria->numero_cuenta ?? '' }}</span>
+                            </td>
+                            
+                            <td class="font-monospace text-gray-700">
+                                {{ $movimiento->referencia_cedula ?? '---' }}
+                            </td>
+                            
+                            <td class="text-uppercase text-gray-800 fw-bold">
+                                {{ $movimiento->referencia_nombre ?? '---' }}
+                            </td>
 
-                    <div class="separator separator-dashed my-4 border-gray-300"></div>
+                            <td class="text-gray-700" title="{{ $movimiento->descripcion_banco }}">
+                                {{ $movimiento->descripcion_banco }}
+                            </td>
 
-                    <h6 class="text-muted fw-bold text-uppercase fs-7 ls-1 mb-3">Resumen Rápido</h6>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span class="text-gray-600 fw-bold">Pendientes:</span>
-                        <span class="text-warning fw-bolder fs-5">{{ $extractos->where('estado_conciliacion', 'Pendiente')->count() }}</span>
-                    </div>
-                    <div class="d-flex justify-content-between">
-                        <span class="text-gray-600 fw-bold">Conciliados:</span>
-                        <span class="text-success fw-bolder fs-5">{{ $extractos->whereIn('estado_conciliacion', ['Conciliado_Auto', 'Conciliado_Manual'])->count() }}</span>
-                    </div>
+                            <td class="text-end fw-bold text-success pe-4">
+                                $ {{ number_format($movimiento->valor_ingreso, 0, ',', '.') }}
+                            </td>
+
+                            <td class="font-monospace fs-10 text-muted" style="max-width: 150px;">
+                                {{ $movimiento->hash_transaccion }}
+                            </td>
+
+                            <td class="text-center p-0">
+                                @if($movimiento->estado_conciliacion == 'Conciliado_Auto' || $movimiento->estado_conciliacion == 'Conciliado_Manual')
+                                    <div class="gs-badge gs-success">CONCILIADO</div>
+                                @elseif($movimiento->estado_conciliacion == 'Anulado')
+                                    <div class="gs-badge gs-danger">ANULADO</div>
+                                @else
+                                    <div class="gs-badge gs-warning">PENDIENTE</div>
+                                @endif
+                            </td>
+
+                            <td class="text-center">
+                                <a href="{{ route('contabilidad.extractos.show', $movimiento->id_transaccion) }}" class="text-primary text-decoration-none" title="Inspeccionar">
+                                    <i class="fas fa-external-link-alt fs-9"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        @empty
+                        <tr>
+                            <td colspan="10" class="text-center py-10 text-muted fs-8 italic">No hay movimientos bancarios registrados. Sube un extracto para comenzar.</td>
+                        </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            {{-- Barra de Estado Estilo Excel (Reemplaza el resumen del sidebar viejo) --}}
+            <div class="bg-white border-top border-gray-300 p-2 d-flex justify-content-between align-items-center fs-9 text-muted">
+                <div>
+                    <i class="fas fa-check-circle text-success me-1"></i> Listo
+                </div>
+                <div class="d-flex gap-4">
+                    <span>Total Registros: <strong>{{ $extractos->count() }}</strong></span>
+                    <span>Pendientes: <strong class="text-warning">{{ $extractos->where('estado_conciliacion', 'Pendiente')->count() }}</strong></span>
+                    <span>Conciliados: <strong class="text-success">{{ $extractos->whereIn('estado_conciliacion', ['Conciliado_Auto', 'Conciliado_Manual'])->count() }}</strong></span>
                 </div>
             </div>
         </div>
@@ -109,20 +136,132 @@
 
     @push('scripts')
     <style>
-        body, .app-container { font-family: 'Inter', sans-serif !important; }
-        .transition-3ms { transition: all 0.2s ease-in-out; }
-        .shadow-xs { box-shadow: 0 .125rem .25rem rgba(0,0,0,.03)!important; }
-        .ls-1 { letter-spacing: 0.05em; }
-        .hover-bg-light:hover { background-color: #f8f9fa !important; }
-        .table { margin-bottom: 0; }
-        .table > :not(caption) > * > * { border-bottom-width: 1px; }
-        .table tbody tr:last-child td { border-bottom: none; }
+        body { 
+            background-color: #f8f9fa; 
+            font-family: 'Roboto', 'Arial', sans-serif !important; 
+        }
+
+        /* TABLA ESTILO GOOGLE SHEETS */
+        .table-gsheets {
+            width: auto; 
+            min-width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            color: #3c4043;
+            table-layout: auto; 
+        }
+
+        .table-gsheets thead th {
+            background-color: #f8f9fa;
+            border: 1px solid #dadce0;
+            padding: 8px 12px;
+            font-weight: 500;
+            color: #5f6368;
+            text-align: left;
+            position: relative; 
+            white-space: nowrap;
+            user-select: none;
+        }
+
+        /* Tirador para redimensionar */
+        .resizer {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 5px;
+            cursor: col-resize;
+            user-select: none;
+            height: 100%;
+            z-index: 1;
+        }
+        .resizer:hover, .resizer.resizing { border-right: 2px solid #188038; }
+
+        .table-gsheets tbody td {
+            border: 1px solid #dadce0;
+            padding: 4px 12px;
+            height: 32px;
+            vertical-align: middle;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .table-gsheets tbody tr:hover { background-color: #e8f0fe !important; }
+
+        .col-index {
+            background-color: #f8f9fa;
+            text-align: center !important;
+            min-width: 40px;
+            color: #5f6368;
+            font-weight: bold;
+            border-right: 2px solid #dadce0 !important;
+        }
+
+        .sheet-tab {
+            padding: 8px 16px; font-size: 11px; font-weight: 500; color: #5f6368;
+            text-decoration: none; border-right: 1px solid #dadce0; background-color: #f1f3f4;
+        }
+        .sheet-tab.active {
+            background-color: #fff; color: #188038; border-bottom: 3px solid #188038;
+        }
+
+        .gs-badge {
+            width: 100%; height: 31px; display: flex; align-items: center;
+            justify-content: center; font-weight: 700; font-size: 9px;
+        }
+        .gs-success { background-color: #e6f4ea; color: #137333; }
+        .gs-warning { background-color: #fef7e0; color: #b06000; }
+        .gs-danger { background-color: #fce8e6; color: #c5221f; }
     </style>
+
     <script>
-        $("#tableSearch").on("keyup", function() {
-            var value = $(this).val().toLowerCase();
-            $("#extractosTable tbody tr").filter(function() {
-                $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+        // 1. Lógica de Redimensionamiento de Columnas
+        document.addEventListener('DOMContentLoaded', function () {
+            const table = document.getElementById('main-table');
+            const cols = table.querySelectorAll('th');
+
+            cols.forEach((col) => {
+                const resizer = document.createElement('div');
+                resizer.classList.add('resizer');
+                col.appendChild(resizer);
+
+                let x = 0;
+                let w = 0;
+
+                const mouseDownHandler = function (e) {
+                    x = e.clientX;
+                    const styles = window.getComputedStyle(col);
+                    w = parseInt(styles.width, 10);
+
+                    document.addEventListener('mousemove', mouseMoveHandler);
+                    document.addEventListener('mouseup', mouseUpHandler);
+                    resizer.classList.add('resizing');
+                };
+
+                const mouseMoveHandler = function (e) {
+                    const dx = e.clientX - x;
+                    col.style.width = `${w + dx}px`;
+                    table.style.tableLayout = 'fixed';
+                };
+
+                const mouseUpHandler = function () {
+                    document.removeEventListener('mousemove', mouseMoveHandler);
+                    document.removeEventListener('mouseup', mouseUpHandler);
+                    resizer.classList.remove('resizing');
+                };
+
+                resizer.addEventListener('mousedown', mouseDownHandler);
+            });
+        });
+
+        // 2. Buscador en tiempo real
+        document.getElementById("tableSearch").addEventListener("keyup", function() {
+            let filter = this.value.toLowerCase();
+            let rows = document.querySelectorAll("#extractosTable .searchable-row");
+
+            rows.forEach(row => {
+                let text = row.textContent.toLowerCase();
+                row.style.display = text.includes(filter) ? "" : "none";
             });
         });
     </script>
