@@ -1,7 +1,7 @@
 <x-guest-layout>
 
         <div class="mb-4 text-sm text-gray-600">
-            {{ __('Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.') }}
+            {{ __('¿Olvidaste tu contraseña? No hay problema. Solo ingresa tu dirección de correo electrónico y te enviaremos un enlace para restablecer tu contraseña, que te permitirá elegir una nueva.') }}
         </div>
 
 
@@ -14,12 +14,12 @@
 
             <div class="block">
                 <x-label for="email" value="{{ __('Email') }}" />
-                <input type="email" name="email" class="form-control" placeholder="Email or Username" value="{{old('email')}}" required>
+                <input type="email" name="email" class="form-control" placeholder="Email" value="{{old('email')}}" required>
             </div>
 
             <div class="flex items-center justify-end mt-4">
                 <x-button>
-                    {{ __('Email Password Reset Link') }}
+                    {{ __('Recibir enlace para restablecer la contraseña') }}
                 </x-button>
             </div>
         </form>
