@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Contabilidad\ConExtractoTransaccion;
 use App\Models\Contabilidad\ConCuentaBancaria;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ConExtractoTransaccionController extends Controller
 {
@@ -28,7 +29,11 @@ class ConExtractoTransaccionController extends Controller
             'id_con_cuentas_bancaria' => 'required|exists:con_cuentas_bancarias,id',
             'hash_transaccion'        => 'required|string|unique:con_extractos_transacciones,hash_transaccion',
             'fecha_movimiento'        => 'required|date',
+            'referencia_cedula'       => 'nullable|string|max:255',
+            'referencia_nombre'       => 'nullable|string|max:255',
             'valor_ingreso'           => 'required|integer',
+            'referencia_oficina'      => 'nullable|string|max:255',
+            'referencia_distrito'     => 'nullable|string|max:255',
             'descripcion_banco'       => 'required|string',
             'estado_conciliacion'     => 'required|in:Pendiente,Conciliado_Auto,Conciliado_Manual,Anulado',
         ]);
@@ -52,6 +57,10 @@ class ConExtractoTransaccionController extends Controller
         $validated = $request->validate([
             'estado_conciliacion' => 'sometimes|in:Pendiente,Conciliado_Auto,Conciliado_Manual,Anulado',
             'descripcion_banco'   => 'sometimes|string',
+            'referencia_cedula'   => 'sometimes|nullable|string|max:255',
+            'referencia_nombre'   => 'sometimes|nullable|string|max:255',
+            'referencia_oficina'  => 'sometimes|nullable|string|max:255',
+            'referencia_distrito' => 'sometimes|nullable|string|max:255',
         ]);
 
         $transaccion->update($validated);
@@ -70,7 +79,7 @@ class ConExtractoTransaccionController extends Controller
     }
 
     // ==========================================
-    // MÉTODOS NUEVOS PARA LAS VISTAS
+    // MÉTODOS NUEVOS PARA LAS VISTAS Y LÓGICA
     // ==========================================
 
     public function importar()
@@ -97,68 +106,187 @@ class ConExtractoTransaccionController extends Controller
     }
 
     /**
-     * Recibe el archivo CSV, lo lee y lo guarda en la base de datos.
+     * PASO 1: Recibe el archivo (CSV o Excel), autogenera el Hash y envía a previsualización.
      */
     public function procesarImportacion(Request $request)
     {
-        // 1. Validamos que seleccione la cuenta y suba un archivo (CSV/TXT)
+        // 1. Ampliamos la validación para aceptar xls y xlsx
         $request->validate([
             'id_con_cuentas_bancaria' => 'required|exists:con_cuentas_bancarias,id',
-            'archivo_extracto'        => 'required|file|mimes:csv,txt|max:2048',
+            'archivo_extracto'        => 'required|file|mimes:csv,txt,xls,xlsx|max:5120',
         ]);
 
         $idCuenta = $request->id_con_cuentas_bancaria;
         $archivo = $request->file('archivo_extracto');
+        $registrosPrevia = [];
 
-        // 2. Abrimos el archivo CSV en modo lectura
-        $fileHandle = fopen($archivo->getRealPath(), "r");
-        
-        $isHeader = true;
+        try {
+            // 2. Usamos la librería Excel para leer todo en un Array.
+            $datosArchivo = Excel::toArray([], $archivo)[0];
+
+            $isHeader = true;
+
+            foreach ($datosArchivo as $row) {
+                if ($isHeader) {
+                    $isHeader = false;
+                    continue;
+                }
+
+                // Aseguramos que la fila tenga al menos fecha para procesarla
+                if (!empty($row[0])) {
+                    
+                    // 3. Extraemos los valores clave en el NUEVO ORDEN SECUENCIAL
+                    $fechaRow    = trim($row[0]);
+                    $cedula      = isset($row[1]) ? trim($row[1]) : '';
+                    $nombre      = isset($row[2]) ? trim($row[2]) : null;
+                    $monto       = isset($row[3]) ? (int) trim($row[3]) : 0;
+                    $oficina     = isset($row[4]) ? trim($row[4]) : null;
+                    $distrito    = isset($row[5]) ? trim($row[5]) : null;
+                    $descripcion = isset($row[6]) ? trim($row[6]) : '';
+
+                    // 4. Formateo de fecha robusto (Excel a veces manda números seriales)
+                    if (is_numeric($fechaRow)) {
+                        $fechaFormateada = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($fechaRow)->format('Ymd');
+                        $fechaVista = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($fechaRow)->format('d/m/Y');
+                    } else {
+                        try {
+                            $fechaCarbon = \Carbon\Carbon::parse(str_replace('/', '-', $fechaRow));
+                            $fechaFormateada = $fechaCarbon->format('Ymd');
+                            $fechaVista = $fechaCarbon->format('d/m/Y');
+                        } catch (\Exception $e) {
+                            $fechaFormateada = str_replace(['-', '/'], '', $fechaRow);
+                            $fechaVista = $fechaRow;
+                        }
+                    }
+
+                    // 5. Autogeneramos el Hash
+                    $hashCalculado = "{$idCuenta}-{$fechaFormateada}-{$monto}-{$cedula}";
+
+                    // 6. Guardamos en el arreglo temporal
+                    $registrosPrevia[] = [
+                        'fecha_movimiento'    => $fechaFormateada,
+                        'fecha_vista'         => $fechaVista,
+                        'descripcion_banco'   => $descripcion,
+                        'hash_transaccion'    => $hashCalculado,
+                        'valor_ingreso'       => $monto,
+                        'referencia_cedula'   => $cedula,
+                        'referencia_nombre'   => $nombre,
+                        'referencia_oficina'  => $oficina,
+                        'referencia_distrito' => $distrito,
+                    ];
+                }
+            }
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => 'Error leyendo el archivo. Asegúrate de que el formato sea correcto. Error: ' . $e->getMessage()]);
+        }
+
+        $cuenta = ConCuentaBancaria::find($idCuenta);
+
+        session([
+            'importacion_temporal' => $registrosPrevia, 
+            'importacion_cuenta_id' => $idCuenta
+        ]);
+
+        return view('contabilidad.extractos.validar', compact('registrosPrevia', 'cuenta'));
+    }
+
+    /**
+     * PASO 2: Guarda definitivamente los datos validados desde la sesión a la BD.
+     */
+    public function confirmarImportacion(Request $request)
+    {
+        $registros = session('importacion_temporal');
+        $idCuenta = session('importacion_cuenta_id');
+
+        if (!$registros || !$idCuenta) {
+            return redirect()->route('contabilidad.extractos.importar')
+                             ->withErrors('La sesión expiró o no hay datos para importar. Por favor, sube el archivo de nuevo.');
+        }
+
         $registrosImportados = 0;
 
-        // 3. Leemos el archivo línea por línea (fgetcsv separa por comas automáticamente)
-        while (($row = fgetcsv($fileHandle, 1000, ",")) !== false) {
+        foreach ($registros as $row) {
+            ConExtractoTransaccion::updateOrCreate(
+                ['hash_transaccion' => $row['hash_transaccion']], 
+                [
+                    'id_con_cuentas_bancaria' => $idCuenta,
+                    'fecha_movimiento'        => $row['fecha_movimiento'],
+                    'descripcion_banco'       => $row['descripcion_banco'],
+                    'valor_ingreso'           => $row['valor_ingreso'],
+                    'referencia_cedula'       => $row['referencia_cedula'],
+                    'referencia_nombre'       => $row['referencia_nombre'],
+                    'referencia_oficina'      => $row['referencia_oficina'],
+                    'referencia_distrito'     => $row['referencia_distrito'],
+                    'estado_conciliacion'     => 'Pendiente',
+                ]
+            );
+            $registrosImportados++;
+        }
+
+        session()->forget(['importacion_temporal', 'importacion_cuenta_id']);
+
+        return redirect()->route('contabilidad.extractos.index')
+                         ->with('success', "¡Aprobación exitosa! Se procesaron $registrosImportados movimientos bancarios.");
+    }
+
+    /**
+     * PASO 3: Cruza automáticamente los extractos y la cartera que compartan el mismo Hash.
+     */
+    public function conciliacionAutomatica()
+    {
+        // 1. Buscamos solo los movimientos bancarios que estén Pendientes
+        $extractosPendientes = ConExtractoTransaccion::where('estado_conciliacion', 'Pendiente')->get();
+        $contador = 0;
+
+        foreach ($extractosPendientes as $extracto) {
             
-            // Saltamos la primera fila porque contiene los títulos de las columnas
-            if ($isHeader) {
-                $isHeader = false;
-                continue;
-            }
+            // 2. Buscamos en Cartera si hay un pago con el mismo Hash exacto y que no esté conciliado
+            $comprobante = \App\Models\Cartera\CarComprobantePago::where('hash_transaccion', $extracto->hash_transaccion)
+                ->where(function($q) {
+                    $q->whereNull('id_transaccion_bancaria')
+                      ->orWhere('estado', '!=', 'conciliado');
+                })
+                ->first();
 
-            // 4. Verificamos que la fila tenga al menos las 4 columnas de nuestro ejemplo
-            if (count($row) >= 4) {
-                
-                // Mapeo según el CSV que creamos:
-                // $row[0] = fecha_movimiento
-                // $row[1] = descripcion_banco
-                // $row[2] = hash_transaccion
-                // $row[3] = valor_ingreso
+            // 3. Si lo encuentra, ¡Hacemos el Match!
+            if ($comprobante) {
+                // Actualizamos Cartera
+                $comprobante->id_transaccion_bancaria = $extracto->id_transaccion; // Conecta el banco con la cartera
+                $comprobante->estado = 'conciliado';
+                $comprobante->save();
 
-                // 5. Usamos updateOrCreate para EVITAR DUPLICADOS. 
-                // Busca si el hash ya existe. Si existe, no hace nada nuevo. Si no existe, lo inserta.
-                ConExtractoTransaccion::updateOrCreate(
-                    [
-                        'hash_transaccion' => $row[2] // Llave única de búsqueda
-                    ], 
-                    [
-                        'id_con_cuentas_bancaria' => $idCuenta,
-                        'fecha_movimiento'        => trim($row[0]),
-                        'descripcion_banco'       => trim($row[1]),
-                        'valor_ingreso'           => (int) trim($row[3]),
-                        'estado_conciliacion'     => 'Pendiente', // Todo entra como pendiente
-                    ]
-                );
-                
-                $registrosImportados++;
+                // Actualizamos el Banco
+                $extracto->estado_conciliacion = 'Conciliado_Auto';
+                $extracto->save();
+
+                $contador++;
             }
         }
 
-        // Cerramos el archivo para liberar memoria
-        fclose($fileHandle);
-
-        // 6. Redireccionamos con el mensaje de cuántos se guardaron
-        return redirect()->route('contabilidad.extractos.index')
-                         ->with('success', "¡Importación exitosa! Se procesaron $registrosImportados movimientos nuevos.");
+        return redirect()->back()->with('success', "¡Proceso completado! Se lograron conciliar $contador registros automáticamente.");
     }
 
+    /**
+     * PASO 4: Vincula manualmente un extracto con un comprobante de cartera.
+     */
+    public function conciliacionManual(Request $request)
+    {
+        $request->validate([
+            'id_transaccion' => 'required|exists:con_extractos_transacciones,id_transaccion',
+            'id_comprobante' => 'required|exists:car_comprobantes_pagos,id',
+        ]);
+
+        $extracto = ConExtractoTransaccion::findOrFail($request->id_transaccion);
+        $comprobante = \App\Models\Cartera\CarComprobantePago::findOrFail($request->id_comprobante);
+
+        // Vinculamos forzadamente
+        $comprobante->id_transaccion_bancaria = $extracto->id_transaccion;
+        $comprobante->estado = 'conciliado';
+        $comprobante->save();
+
+        $extracto->estado_conciliacion = 'Conciliado_Manual';
+        $extracto->save();
+
+        return redirect()->back()->with('success', 'Los registros fueron vinculados manualmente con éxito.');
+    }
 }
