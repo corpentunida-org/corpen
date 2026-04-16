@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Models\User;
 use App\Models\Maestras\MaeTerceros;
 use App\Models\Interacciones\Interaction;
+use App\Models\Creditos\LineaCredito;
 
 class CarComprobantePago extends Model
 {
@@ -26,6 +27,7 @@ class CarComprobantePago extends Model
         'id_user',
         'estado', 
         'id_banco',
+        'id_obligacion'
     ];
 
     protected $casts = [
@@ -33,6 +35,7 @@ class CarComprobantePago extends Model
         'monto_pagado' => 'integer',
         'id_interaction' => 'integer',
         'id_user' => 'integer',
+        'id_obligacion' => 'integer',
     ];
 
     /**
@@ -89,5 +92,9 @@ class CarComprobantePago extends Model
     {
         // Un comprobante pertenece a una interacción
         return $this->belongsTo(Interaction::class, 'id_interaction', 'id');
+    }
+    public function obligacion(): BelongsTo
+    {
+        return $this->belongsTo(LineaCredito::class, 'id_obligacion', 'id');
     }
 }

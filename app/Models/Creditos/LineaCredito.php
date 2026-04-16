@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Models\Interacciones\Interaction;
+use App\Models\Cartera\CarComprobantePago;
 
 class LineaCredito extends Model
 {
@@ -76,6 +77,9 @@ class LineaCredito extends Model
     {
         return $this->hasMany(Interaction::class, 'id_linea_de_obligacion', 'id');
     }
-
+    public function comprobantes()
+    {
+        return $this->hasMany(CarComprobantePago::class, 'id_obligacion', 'id');
+    }
 
 }
