@@ -844,6 +844,23 @@
                                 </div>
                             </div>
 
+                            {{-- NUEVO CAMPO: OBLIGACIÓN --}}
+                            <div class="fv-row mb-4">
+                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Obligación / Línea de Crédito *</label>
+                                <div class="input-group input-group-solid border border-gray-300 rounded shadow-sm">
+                                    <span class="input-group-text bg-transparent border-0"><i class="fas fa-file-contract text-muted"></i></span>
+                                    <select class="form-select border-0 select2" id="id_obligacion" name="id_obligacion" required>
+                                        <option value="">Selecciona la obligación...</option>
+                                        @if (isset($lineasCredito))
+                                            @foreach ($lineasCredito as $id => $nombre)
+                                                <option value="{{ $id }}">{{ $nombre }}</option>
+                                            @endforeach
+                                        @endif
+                                    </select>
+                                </div>
+                            </div>
+                            {{-- FIN NUEVO CAMPO --}}
+
                             <div class="fv-row mb-0">
                                 <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Monto Pagado *</label>
                                 <div class="input-group input-group-solid border border-gray-300 rounded shadow-sm">
@@ -853,10 +870,10 @@
                                 </div>
                             </div>
 
-                            <div class="fv-row mt-2">
+                            <div class="fv-row mt-4">
                                 <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Banco *</label>
                                 <div class="input-group input-group-solid border border-gray-300 rounded shadow-sm">
-                                    <select class="form-select select2" id="id_banco" name="id_banco">
+                                    <select class="form-select select2 border-0" id="id_banco" name="id_banco" required>
                                         <option value="">Selecciona el banco...</option>
                                         @if (isset($idBanco))
                                             @foreach ($idBanco as $idb)
@@ -991,27 +1008,32 @@
 
         // 3. GENERADOR DE HASH
         function actualizarHash() {
+            const banco = document.getElementById('id_banco').value; // Capturamos el ID del Banco
             const fecha = document.getElementById('fecha_pago').value.replace(/-/g, '');
             const monto = hiddenInput.value;
             const tercero = modalCodTercero.value;
-            if(fecha && monto && tercero) {
-                hashTarget.value = `${fecha}-${monto}-${tercero}`;
+            
+            // Ahora validamos que los 4 campos tengan valor
+            if(banco && fecha && monto && tercero) {
+                hashTarget.value = `${banco}-${fecha}-${monto}-${tercero}`;
             } else {
                 hashTarget.value = '';
             }
         }
+        
+        // Mantienes los listeners que ya tenías
         document.querySelectorAll('.gen-hash').forEach(i => i.addEventListener('input', actualizarHash));
         document.getElementById('fecha_pago').addEventListener('change', actualizarHash);
-
+        
+        // ¡NUEVO! Agregamos el listener para que se actualice al cambiar el banco
+        document.getElementById('id_banco').addEventListener('change', actualizarHash);
         // ---------------------------------------------------------
         // 4. MANEJO DE ARCHIVOS (CLIC, ARRASTRAR Y PEGAR)
         // ---------------------------------------------------------
 
-        // Función principal para procesar el archivo recibido
         function procesarArchivo(file) {
             if (!file) return;
 
-            // Validar tipo (Opcional, pero recomendado)
             const validTypes = ['image/jpeg', 'image/png', 'application/pdf'];
             if (!validTypes.includes(file.type)) {
                 Swal.fire('Formato no válido', 'Solo se permiten imágenes (JPG, PNG) o PDF.', 'warning');
@@ -1019,12 +1041,10 @@
                 return;
             }
 
-            // Asignar al input (necesario si viene de drag&drop o paste)
             const dataTransfer = new DataTransfer();
             dataTransfer.items.add(file);
             fileInput.files = dataTransfer.files;
 
-            // Mostrar UI de Previsualización
             document.getElementById('preview_container').classList.remove('d-none');
             document.getElementById('file_name_preview').textContent = file.name || "Imagen capturada";
             
@@ -1040,18 +1060,15 @@
                 };
                 reader.readAsDataURL(file);
             } else {
-                // Es PDF
                 img.classList.add('d-none');
                 pdfIcon.classList.remove('d-none');
             }
         }
 
-        // A. Mediante CLIC (Input File tradicional)
         fileInput.addEventListener('change', function(e) {
             if(e.target.files.length > 0) procesarArchivo(e.target.files[0]);
         });
 
-        // B. Mediante PEGAR (Ctrl+V)
         window.addEventListener('paste', e => {
             if (!modalElement.classList.contains('show')) return;
             if(e.clipboardData.files.length > 0) {
@@ -1059,7 +1076,6 @@
             }
         });
 
-        // C. Mediante ARRASTRAR Y SOLTAR (Drag & Drop)
         dropZone.addEventListener('dragover', e => {
             e.preventDefault();
             dropZone.classList.add('dragover');
