@@ -16,7 +16,11 @@ class ConExtractoTransaccion extends Model
         'id_con_cuentas_bancaria',
         'hash_transaccion',
         'fecha_movimiento',
+        'referencia_cedula',     
+        'referencia_nombre',     
         'valor_ingreso',
+        'referencia_oficina',    
+        'referencia_distrito',   
         'descripcion_banco',
         'estado_conciliacion',
     ];
