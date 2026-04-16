@@ -274,21 +274,40 @@ Route::middleware(['auth'])
         // 2. CONCILIACIÓN Y EXTRACTOS BANCARIOS
         // ---------------------------------------------------
         
-        // Vista del formulario para subir el Excel (GET)
-        Route::get('extractos/importar', [ConExtractoTransaccionController::class, 'importar'])->name('extractos.importar');
+        // --- FLUJO DE IMPORTACIÓN ---
+        // Vista del formulario inicial para subir el archivo
+        Route::get('extractos/importar', [ConExtractoTransaccionController::class, 'importar'])
+            ->name('extractos.importar');
         
-        // Recepción y procesamiento del Excel (POST)
-        Route::post('extractos/importar', [ConExtractoTransaccionController::class, 'procesarImportacion'])->name('extractos.procesar-importacion');
+        // Paso 1: Procesa el archivo y lo guarda temporalmente en la Sesión para previsualizar
+        Route::post('extractos/procesar-importacion', [ConExtractoTransaccionController::class, 'procesarImportacion'])
+            ->name('extractos.procesar-importacion');
 
-        // Vista dividida de la conciliación (GET)
-        Route::get('extractos/conciliacion', [ConExtractoTransaccionController::class, 'conciliacion'])->name('extractos.conciliacion');
+        // Paso 2: Toma los datos de la Sesión y los guarda definitivamente en la Base de Datos
+        Route::post('extractos/confirmar-importacion', [ConExtractoTransaccionController::class, 'confirmarImportacion'])
+            ->name('extractos.confirmar-importacion');
 
-        // El resource original (index, store, show, update, destroy)
+
+        // --- FLUJO DE CONCILIACIÓN ---
+        // Vista principal de la mesa de conciliación (Lado a Lado)
+        Route::get('extractos/conciliacion', [ConExtractoTransaccionController::class, 'conciliacion'])
+            ->name('extractos.conciliacion');
+
+        // Acción: Ejecuta el cruce masivo por Hash (Banco vs Cartera)
+        Route::post('extractos/conciliacion-automatica', [ConExtractoTransaccionController::class, 'conciliacionAutomatica'])
+            ->name('extractos.conciliacion-automatica');
+        
+        // Acción: Vincula un movimiento bancario específico con un recibo de cartera
+        Route::post('extractos/conciliacion-manual', [ConExtractoTransaccionController::class, 'conciliacionManual'])
+            ->name('extractos.conciliacion-manual');
+
+
+        // --- CRUD ESTÁNDAR ---
+        // (index, store, show, update, destroy)
         Route::resource('extractos', ConExtractoTransaccionController::class)
             ->parameters(['extractos' => 'conExtractoTransaccion']);
 
     });
-// FIN MÓDULO CONTABILIDAD
 
 // ==========================================
 //   MÓDULO DE CARTERA
