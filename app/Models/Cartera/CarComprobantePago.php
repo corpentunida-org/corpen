@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\Maestras\MaeTerceros;
 use App\Models\Interacciones\Interaction;
 use App\Models\Creditos\LineaCredito;
+use App\Models\Contabilidad\ConCuentaBancaria;
 
 class CarComprobantePago extends Model
 {
@@ -96,5 +97,9 @@ class CarComprobantePago extends Model
     public function obligacion(): BelongsTo
     {
         return $this->belongsTo(LineaCredito::class, 'id_obligacion', 'id');
+    }
+    public function banco(): BelongsTo
+    {
+        return $this->belongsTo(ConCuentaBancaria::class, 'id_banco', 'id');
     }
 }
