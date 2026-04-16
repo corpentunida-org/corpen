@@ -19,7 +19,7 @@
                             @csrf
                             
                             <div class="row g-4 mb-4">
-                                {{-- Información del Tercero y Monto --}}
+                                {{-- FILA 1: Tercero y Obligación --}}
                                 <div class="col-md-6">
                                     <label class="form-label fw-bolder text-gray-800 fs-6">Código Tercero (Siasoft) *</label>
                                     <div class="input-group">
@@ -27,6 +27,38 @@
                                         <input type="number" id="cod_tercero" name="cod_ter_MaeTerceros" class="form-control rounded-end-pill border-light bg-light fs-6 gen-hash" placeholder="Ej: 5544" required>
                                     </div>
                                 </div>
+
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bolder text-gray-800 fs-6">Obligación / Línea de Crédito *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-light rounded-start-pill text-muted"><i class="fas fa-file-contract"></i></span>
+                                        <select class="form-select rounded-end-pill border-light bg-light select2" id="id_obligacion" name="id_obligacion" required>
+                                            <option value="">Seleccione obligación...</option>
+                                            @if (isset($lineasCredito))
+                                                @foreach ($lineasCredito as $id => $nombre)
+                                                    <option value="{{ $id }}">{{ $nombre }}</option>
+                                                @endforeach
+                                            @endif
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {{-- FILA 2: Banco y Monto --}}
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bolder text-gray-800 fs-6">Banco *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-light border-light rounded-start-pill text-muted"><i class="fas fa-university"></i></span>
+                                        <select class="form-select rounded-end-pill border-light bg-light select2" id="id_banco" name="id_banco" required>
+                                            <option value="">Seleccione banco...</option>
+                                            @if (isset($idBanco))
+                                                @foreach ($idBanco as $idb)
+                                                    <option value="{{ $idb->id }}">{{ $idb->numero_cuenta }} - {{ $idb->banco }}</option>
+                                                @endforeach
+                                            @endif
+                                        </select>
+                                    </div>
+                                </div>
+
                                 <div class="col-md-6">
                                     <label class="form-label fw-bolder text-gray-800 fs-6">Monto Pagado *</label>
                                     <div class="input-group">
@@ -36,7 +68,7 @@
                                     </div>
                                 </div>
 
-                                {{-- Fecha e Interacción --}}
+                                {{-- FILA 3: Fecha --}}
                                 <div class="col-md-6">
                                     <label class="form-label fw-bolder text-gray-800 fs-6">Fecha de Pago *</label>
                                     <input type="date" id="fecha_pago" name="fecha_pago" class="form-control rounded-pill border-light bg-light fs-6 gen-hash" required>
@@ -61,16 +93,11 @@
                                     </div>
                                 </div>
 
-                                {{-- Hash Ocupa ahora el 100% (col-md-12) para que no quede un hueco --}}
+                                {{-- Hash --}}
                                 <div class="col-md-12">
                                     <label class="form-label fw-bolder text-gray-800 fs-6">Hash / Referencia Única</label>
                                     <input type="text" id="hash_transaccion" name="hash_transaccion" class="form-control rounded-pill border-light bg-light fs-6 font-monospace text-muted" placeholder="Autogenerado..." readonly>
                                 </div>
-
-                                {{-- 
-                                    NOTA CRM: El ID Transacción Bancaria se removió de la creación.
-                                    Se debe solicitar únicamente en la vista de edición/conciliación posterior.
-                                --}}
                             </div>
 
                             <div class="d-flex justify-content-end gap-3 mt-5 pt-3 border-top border-light">
@@ -113,13 +140,9 @@
             const hiddenInput = document.getElementById('monto_pagado');
 
             displayInput.addEventListener('input', function(e) {
-                // Eliminar cualquier cosa que no sea número
                 let value = this.value.replace(/\D/g, ''); 
-                
-                // Actualizar input oculto con el valor limpio para enviar al backend
                 hiddenInput.value = value;
                 
-                // Formatear visualmente
                 if (value !== '') {
                     this.value = new Intl.NumberFormat('es-CO').format(value);
                 } else {
@@ -127,17 +150,20 @@
                 }
             });
 
-            // 2. GENERACIÓN AUTOMÁTICA DEL HASH (Fecha + Monto + Tercero)
+            // 2. GENERACIÓN AUTOMÁTICA DEL HASH (Banco + Fecha + Monto + Tercero)
             const inputsHash = document.querySelectorAll('.gen-hash');
+            const inputBanco = document.getElementById('id_banco'); // NUEVO
             const inputHashTarget = document.getElementById('hash_transaccion');
             
             function actualizarHash() {
-                const fecha = document.getElementById('fecha_pago').value.replace(/-/g, ''); // Quita guiones a YYYY-MM-DD
+                const banco = inputBanco.value; // NUEVO
+                const fecha = document.getElementById('fecha_pago').value.replace(/-/g, ''); 
                 const monto = hiddenInput.value;
                 const tercero = document.getElementById('cod_tercero').value;
 
-                if(fecha && monto && tercero) {
-                    inputHashTarget.value = `${fecha}-${monto}-${tercero}`;
+                // Ahora se requiere el banco para generar el Hash
+                if(banco && fecha && monto && tercero) {
+                    inputHashTarget.value = `${banco}-${fecha}-${monto}-${tercero}`;
                 } else {
                     inputHashTarget.value = '';
                 }
@@ -147,6 +173,8 @@
                 input.addEventListener('input', actualizarHash);
                 input.addEventListener('change', actualizarHash);
             });
+            // NUEVO: Escuchar cambios en el selector de Banco
+            inputBanco.addEventListener('change', actualizarHash);
 
             // 3. PREVISUALIZACIÓN Y PEGAR IMAGEN (Ctrl+V)
             const fileInput = document.getElementById('archivo_soporte');
@@ -154,13 +182,11 @@
             const imagePreview = document.getElementById('image_preview');
             const fileNamePreview = document.getElementById('file_name_preview');
 
-            // Función para manejar el archivo seleccionado/pegado
             function handleFile(file) {
                 if (!file) return;
                 
                 previewContainer.classList.remove('d-none');
                 
-                // Si es imagen, mostrar miniatura
                 if (file.type.startsWith('image/')) {
                     const reader = new FileReader();
                     reader.onload = (e) => {
@@ -170,7 +196,6 @@
                     }
                     reader.readAsDataURL(file);
                 } 
-                // Si es PDF, mostrar nombre
                 else if (file.type === 'application/pdf') {
                     imagePreview.classList.add('d-none');
                     fileNamePreview.classList.remove('d-none');
@@ -178,18 +203,14 @@
                 }
             }
 
-            // Escuchar cambios normales desde el botón "Examinar"
             fileInput.addEventListener('change', function(e) {
                 handleFile(e.target.files[0]);
             });
 
-            // Escuchar el evento de pegar (Ctrl+V) en toda la ventana
             window.addEventListener('paste', e => {
                 if(e.clipboardData.files.length > 0) {
                     const file = e.clipboardData.files[0];
-                    // Validar que sea imagen o pdf
                     if(file.type.startsWith('image/') || file.type === 'application/pdf') {
-                        // Asignar el archivo al input
                         const dataTransfer = new DataTransfer();
                         dataTransfer.items.add(file);
                         fileInput.files = dataTransfer.files;

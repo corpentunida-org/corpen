@@ -60,7 +60,7 @@
                     </h5>
                     
                     <ul class="list-unstyled mb-0">
-                        {{-- 1. AGENTE / USUARIO (NUEVO) --}}
+                        {{-- 1. AGENTE / USUARIO --}}
                         <li class="mb-5 d-flex align-items-center p-3 bg-light rounded">
                             <div class="me-3">
                                 <span class="d-flex align-items-center justify-content-center bg-white text-primary rounded-circle shadow-sm" style="width: 40px; height: 40px;">
@@ -69,7 +69,6 @@
                             </div>
                             <div>
                                 <span class="text-gray-500 fw-bold d-block text-uppercase ls-1 fs-8 mb-1">Registrado por (Agente)</span>
-                                {{-- Usamos optional() por si la relación no existe aún, mostrando el ID como respaldo --}}
                                 <span class="text-dark fw-bolder fs-5">{{ optional($comprobante->user)->name ?? 'Agente ID: ' . $comprobante->id_user }}</span>
                             </div>
                         </li>
@@ -79,24 +78,49 @@
                             <span class="text-gray-500 fw-bold d-block text-uppercase ls-1 fs-8 mb-1">Tercero (Siasoft)</span>
                             <span class="text-dark fw-bolder fs-4"><i class="fas fa-user-tag text-muted me-1 fs-6"></i> #{{ $comprobante->cod_ter_MaeTerceros }}</span>
                         </li>
+
+                        {{-- 3. OBLIGACIÓN / LÍNEA (NUEVO CAMPO) --}}
+                        <li class="mb-5">
+                            <span class="text-gray-500 fw-bold d-block text-uppercase ls-1 fs-8 mb-1">Obligación / Línea</span>
+                            <span class="text-dark fw-bolder fs-5">
+                                <i class="fas fa-file-contract text-muted me-1 fs-6"></i> 
+                                @if($comprobante->id_obligacion)
+                                    {{ optional($comprobante->obligacion)->nombre ?? 'ID Obligación: ' . $comprobante->id_obligacion }}
+                                @else
+                                    <span class="text-muted fw-normal fs-6"><i>No registrada</i></span>
+                                @endif
+                            </span>
+                        </li>
                         
-                        {{-- 3. MONTO --}}
+                        {{-- 4. BANCO (NUEVO CAMPO) --}}
+                        <li class="mb-5">
+                            <span class="text-gray-500 fw-bold d-block text-uppercase ls-1 fs-8 mb-1">Banco Destino</span>
+                            <span class="text-dark fw-bolder fs-5">
+                                <i class="fas fa-university text-muted me-1 fs-6"></i> 
+                                @if($comprobante->id_banco)
+                                    {{ optional($comprobante->banco)->numero_cuenta }} - {{ optional($comprobante->banco)->banco ?? 'ID: ' . $comprobante->id_banco }}
+                                @else
+                                    <span class="text-muted fw-normal fs-6"><i>No registrado</i></span>
+                                @endif
+                            </span>
+                        </li>
+                        
+                        {{-- 5. MONTO --}}
                         <li class="mb-5">
                             <span class="text-gray-500 fw-bold d-block text-uppercase ls-1 fs-8 mb-1">Monto Reportado</span>
                             <span class="text-success fw-bolder fs-1 lh-1">${{ number_format($comprobante->monto_pagado, 0, ',', '.') }}</span>
                         </li>
                         
-                        {{-- 4. FECHA (Formateada con Carbon) --}}
+                        {{-- 6. FECHA --}}
                         <li class="mb-5">
                             <span class="text-gray-500 fw-bold d-block text-uppercase ls-1 fs-8 mb-1">Fecha de Pago</span>
                             <span class="text-dark fw-bold fs-5">
                                 <i class="far fa-calendar-alt text-muted me-1"></i> 
-                                {{-- Carbon parsea el YYYYMMDD a una fecha legible --}}
                                 {{ \Carbon\Carbon::parse($comprobante->fecha_pago)->translatedFormat('d \d\e F, Y') }}
                             </span>
                         </li>
 
-                        {{-- 5. INTERACCIÓN CRM --}}
+                        {{-- 7. INTERACCIÓN CRM --}}
                         <li class="mb-5">
                             <span class="text-gray-500 fw-bold d-block text-uppercase ls-1 fs-8 mb-1">ID Interacción CRM</span>
                             <span class="text-dark fw-bold fs-5">
@@ -108,7 +132,7 @@
                             </span>
                         </li>
 
-                        {{-- 6. HASH --}}
+                        {{-- 8. HASH --}}
                         <li class="mb-0">
                             <span class="text-gray-500 fw-bold d-block text-uppercase ls-1 fs-8 mb-1">Token (Hash Único)</span>
                             <div class="bg-light p-3 rounded text-break border border-light">
