@@ -668,8 +668,7 @@
                         <label class="form-label text-muted d-block">Archivo Físico</label>
                         <div class="drop-zone-pro position-relative bg-light p-4 text-center cursor-pointer"
                             id="drop-zone" style="border-radius: 4px;">
-                            <input type="file" id="attachment" name="attachment"
-                                class="drop-zone-input position-absolute w-100 h-100 top-0 start-0 opacity-0 cursor-pointer @error('attachment') is-invalid @enderror"
+                            <input type="file" id="attachment" name="attachment" class="drop-zone-input position-absolute w-100 h-100 top-0 start-0 opacity-0 cursor-pointer @error('attachment') is-invalid @enderror"
                                 accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" onchange="handleFileSelect(this)">
                             <div class="dz-message d-flex flex-column align-items-center justify-content-center"
                                 style="min-height: 80px;" id="upload-icon-wrapper">
@@ -857,7 +856,7 @@
                             <div class="fv-row mt-2">
                                 <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Banco *</label>
                                 <div class="input-group input-group-solid border border-gray-300 rounded shadow-sm">
-                                    <select class="form-select select2" id="id_banco_soporte" name="id_banco_soporte" required>
+                                    <select class="form-select select2" id="id_banco" name="id_banco">
                                         <option value="">Selecciona el banco...</option>
                                         @if (isset($idBanco))
                                             @foreach ($idBanco as $idb)
