@@ -687,17 +687,10 @@ class InteractionController extends Controller
             'id_user_asignacion' => 'nullable|integer',
             'duration' => 'nullable|integer|min:0',
             'parent_interaction_id' => 'nullable|integer',
-            // --- NUEVO JUGUETE ---
             'temp_token' => 'nullable|string|max:255', 
         ]);
 
         $agentId = Auth::id();
-
-        /*
-        |---------------------------------------
-        | 1. Crear interacción
-        |---------------------------------------
-        */
 
         $interaction = Interaction::create([
             'client_id' => $validated['client_id'],
@@ -717,13 +710,7 @@ class InteractionController extends Controller
             'parentesco_quien_llama' => $validated['parentesco_quien_llama'] ?? null,
         ]);
 
-        /*
-        |---------------------------------------
-        | 2. VINCULACIÓN DE PAGOS (EL GANCHO)
-        |---------------------------------------
-        | Buscamos si hay soportes de pago creados en el modal con el token
-        | de esta sesión y los amarramos al ID de esta interacción.
-        */
+    
 
         if ($request->filled('temp_token')) {
             CarComprobantePago::where('temp_token', $request->temp_token)
@@ -736,19 +723,14 @@ class InteractionController extends Controller
                     'temp_token' => null // Limpiamos el token para cerrar el ciclo
                 ]);
         }
-
-        /*
-        |---------------------------------------
-        | 3. Crear seguimiento
-        |---------------------------------------
-        */
-        $attachmentPath = null;
-
+   
+        $rutaArchivo = null;
         if ($request->hasFile('attachment')) {
-            $file = $request->file('attachment');
-            $fileName = uniqid() . '_' . $file->getClientOriginalName();
-            $attachmentPath = Storage::disk('s3')->putFileAs('corpentunida/daytrack/' . $interaction->id, $file, $fileName);
+            // Ruta dinámica: cartera/comprobantes/{codigo_tercero}/archivo.ext
+            $folderPath = "corpentunida/interacciones/evidencia_{$interaction->id}_{$interaction->client_id}";
+            $rutaArchivo = $request->file('attachment')->store($folderPath, 's3');
         }
+        
 
         $interaction->seguimientos()->create([
             'agent_id' => $agentId,
@@ -758,6 +740,7 @@ class InteractionController extends Controller
             'next_action_date' => $validated['next_action_date'] ?? now(),
             'next_action_notes' => $validated['next_action_notes'] ?? ($validated['notes'] ?? null),
             'interaction_url' => $validated['interaction_url'] ?? null,
+            'attachment_urls' => $rutaArchivo,
         ]);
 
         return redirect()->route('interactions.index')->with('success', 'Interacción creada exitosamente.');

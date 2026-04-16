@@ -59,7 +59,7 @@ class CarComprobantePagoController extends Controller
             'id_transaccion_bancaria' => 'nullable|integer',
             'id_interaction'          => 'nullable|integer',
             'temp_token'              => 'nullable|string|max:255', // <--- VALIDACIÓN DEL TOKEN
-            'id_banco'                => 'required|exists:con_cuentas_bancarias,id', // Validación para el nuevo campo de banco
+            'id_banco'                => 'required|integer',
         ]);
 
         try {
@@ -80,7 +80,7 @@ class CarComprobantePagoController extends Controller
             $rutaArchivo = null;
             if ($request->hasFile('archivo_soporte')) {
                 // Ruta dinámica: cartera/comprobantes/{codigo_tercero}/archivo.ext
-                $folderPath = "cartera/comprobantes/{$validated['cod_ter_MaeTerceros']}";
+                $folderPath = "corpentunida/cartera/comprobantes/{$validated['cod_ter_MaeTerceros']}";
                 $rutaArchivo = $request->file('archivo_soporte')->store($folderPath, 's3');
             }
 
