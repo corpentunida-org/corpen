@@ -30,7 +30,6 @@ class ScpSoporte extends Model
         'timestam',
         'id_gdo_cargo',
         'id_cre_lineas_creditos',
-        'cod_ter_maeTercero', //USUARIO ASIGNADO INICIALMENTE
         'id_categoria',
         'id_scp_tipo',
         'id_scp_prioridad',
