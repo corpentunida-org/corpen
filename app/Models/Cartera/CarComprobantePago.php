@@ -25,6 +25,7 @@ class CarComprobantePago extends Model
         'temp_token',
         'id_user',
         'estado', 
+        'id_banco',
     ];
 
     protected $casts = [
