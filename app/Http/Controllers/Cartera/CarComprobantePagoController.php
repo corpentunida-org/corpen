@@ -24,6 +24,7 @@ class CarComprobantePagoController extends Controller
             $query->where(function($q) use ($busqueda) {
                 $q->where('cod_ter_MaeTerceros', 'LIKE', "%{$busqueda}%")
                   ->orWhere('id_interaction', 'LIKE', "%{$busqueda}%")
+                  ->orWhere('id_obligacion', 'LIKE', "%{$busqueda}%") 
                   ->orWhere('monto_pagado', 'LIKE', "%{$busqueda}%");
             });
         }
@@ -52,24 +53,25 @@ class CarComprobantePagoController extends Controller
         // 2. Validar
         $validated = $request->validate([
             'cod_ter_MaeTerceros'     => 'required|integer',
+            'id_obligacion'           => 'nullable|integer', 
             'monto_pagado'            => 'required|numeric',
             'fecha_pago'              => 'required|integer', 
             'archivo_soporte'         => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
             'hash_transaccion'        => 'nullable|string',
             'id_transaccion_bancaria' => 'nullable|integer',
             'id_interaction'          => 'nullable|integer',
-            'temp_token'              => 'nullable|string|max:255', // <--- VALIDACIÓN DEL TOKEN
+            'temp_token'              => 'nullable|string|max:255',
             'id_banco'                => 'required|integer',
         ]);
 
         try {
-            // 3. Generar Hash y comprobar duplicados
-            $hash_transaccion = $validated['fecha_pago'] . '-' . $validated['monto_pagado'] . '-' . $validated['cod_ter_MaeTerceros'];
+            // 3. Generar Hash y comprobar duplicados (Actualizado con ID del Banco)
+            $hash_transaccion = $validated['id_banco'] . '-' . $validated['fecha_pago'] . '-' . $validated['monto_pagado'] . '-' . $validated['cod_ter_MaeTerceros'];
             
             $existeHash = CarComprobantePago::where('hash_transaccion', $hash_transaccion)->exists();
 
             if ($existeHash) {
-                $msg = 'Este comprobante (misma fecha, monto y tercero) ya fue registrado previamente.';
+                $msg = 'Este comprobante (mismo banco, fecha, monto y tercero) ya fue registrado previamente.';
                 if ($request->ajax()) {
                     return response()->json(['success' => false, 'message' => $msg], 422);
                 }
@@ -84,19 +86,20 @@ class CarComprobantePagoController extends Controller
                 $rutaArchivo = $request->file('archivo_soporte')->store($folderPath, 's3');
             }
 
-            // 5. Crear registro con el "gancho" temp_token
+            // 5. Crear registro
             CarComprobantePago::create([
                 'cod_ter_MaeTerceros'     => $validated['cod_ter_MaeTerceros'],
+                'id_obligacion'           => $validated['id_obligacion'] ?? null, 
                 'monto_pagado'            => $validated['monto_pagado'],
                 'fecha_pago'              => $validated['fecha_pago'],
                 'hash_transaccion'        => $hash_transaccion,
                 'ruta_archivo'            => $rutaArchivo,
                 'id_transaccion_bancaria' => $validated['id_transaccion_bancaria'] ?? 0,
                 'id_interaction'          => $validated['id_interaction'] ?? 0,
-                'temp_token'              => $validated['temp_token'] ?? null, // <--- GUARDADO DEL TOKEN
+                'temp_token'              => $validated['temp_token'] ?? null, 
                 'id_user'                 => auth()->id(), 
                 'estado'                  => 'pendiente', 
-                'id_banco'                => $validated['id_banco'], // Guardar el banco seleccionado
+                'id_banco'                => $validated['id_banco'], 
             ]);
 
             // 6. Respuesta para AJAX (Modal)
@@ -129,6 +132,7 @@ class CarComprobantePagoController extends Controller
 
         $validated = $request->validate([
             'monto_pagado'   => 'sometimes|integer',
+            'id_obligacion'  => 'sometimes|integer', // <--- NUEVO CAMPO AGREGADO PARA PERMITIR ACTUALIZACIÓN
             'estado'         => 'sometimes|in:pendiente,conciliado,rechazado',
             'archivo_soporte'=> 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ]);
