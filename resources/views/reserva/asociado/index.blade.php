@@ -181,9 +181,75 @@
         </div>
     </div>
 
+    <!-- Modal Instrucciones de Pago -->
+    <div class="modal fade" id="modalComoPagar" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h4 class="modal-title">Opciones de Pago</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="text-success">Instrucciones de Pago</h5>
+                            <p>El valor de la reserva es de <b>$250.000</b></p>
+
+                            <p>
+                                El pago debe realizarse mediante <b>consignación</b> a la
+                                <b>cuenta de ahorros N° 032386054</b> del Banco de Bogotá.
+                            </p>
+
+                            <p>
+                                Utilice el <b>formato de recaudo nacional</b> y diligencie la información:
+                            </p>
+                            <ul>
+                                <li><b>Referencia 1:</b> Cédula del pastor.</li>
+                                <li><b>Referencia 2:</b> Número de celular del pastor.</li>
+                            </ul>
+                            <p>
+                                Una vez realizada la consignación, debe
+                                <b>subir el comprobante de pago</b> en el portal donde realizó la reserva
+                                para que el pago pueda ser verificado.
+                            </p>
+                            <p>
+                                <a href="https://app.corpentunida.org.co/reservas/reserva" target="_blank">
+                                    https://app.corpentunida.org.co/reservas/reserva
+                                </a>
+                            </p>
+                        </div>
+
+                        <div class="col-md-6">
+                            <h5 class="text-success">Métodos Alternativos</h5>
+                            <h6 class="text-primary">Pagos en Línea</h6>
+                            <p>
+                                <a href="https://www.avalpaycenter.com/wps/portal/portal-de-pagos/web/pagos-aval/resultado-busqueda/realizar-pago?idConv=00021874&origen=buscar"
+                                    target="_blank">Click aquí para portal pagos en línea</a>
+                            </p>
+                            <p>Seleccione el método de pago disponible.</p>
+                            <p>
+                                En el campo <b>referencia o concepto de pago</b>, escriba:
+                                <b>Pago reserva</b>.
+                            </p>
+                            <p>
+                                Complete el proceso y adjunte el comprobante de pago
+                                al aplicativo donde realizó la reserva.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-success" data-bs-dismiss="modal">
+                        ¡Entendido!
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-
+            //calificacion
             function paintStars(section, value) {
                 const items = section.querySelectorAll('.rating-item');
 
@@ -236,6 +302,27 @@
                 $('#reserva_id').val(reservaId);
             });
 
+            //alert reservadas
+            window.tieneReservaPendiente = {{ $reservas->contains('res_status_id', 1) ? 'true' : 'false' }};
+            if (window.tieneReservaPendiente) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: '¡Atención!',
+                    text: 'Tienes reservas pendientes en estado RESERVADA. Recuerda anexar el comprobante de pago dentro de los próximos 3 días para evitar la cancelación automática.',
+                    confirmButtonText: 'Entendido',
+                    showCancelButton: true,
+                    confirmButtonText: 'Entendido',
+                    cancelButtonText: '¿Cómo pagar?',
+                    confirmButtonColor: '#3454D1',
+                    cancelButtonColor: '#F59E0B'
+
+                }).then((result) => {
+                    if (result.dismiss === Swal.DismissReason.cancel) {
+                        var modal = new bootstrap.Modal(document.getElementById('modalComoPagar'));
+                        modal.show();
+                    }
+                });
+            }
         });
     </script>
 </x-base-layout>

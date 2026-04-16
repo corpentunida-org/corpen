@@ -40,7 +40,7 @@
                         <div class="mb-3">
                             <label for="endDate" class="form-label">Fecha de Fin</label>
                             <input type="text" class="form-control" id="endDate" name="endDate"
-                                placeholder="Seleccione una fecha" required readonly>
+                                placeholder="Seleccione una fecha" required>
                         </div>
                         <div class="row">
                             <div class="col-lg-6 mb-3">
@@ -70,7 +70,7 @@
     </div>
 
     <div class="modal fade" id="confirmModal" tabindex="-1">
-        <div class="modal-dialog">
+        <div class="modal-dialog  modal-xl modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title mb-0">
@@ -84,59 +84,76 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <h6 class="fw-bold">Reservas</h6>
-                    <ul class="mb-3">
-                        <li>Las reservas deben realizarse con anticipación a través del enlace publicado en los grupos
-                            oficiales.</li>
-                        <li>El asociado debe estar presente durante la estadía.</li>
-                        <li>❌ No se permite reservar para familiares, amigos o terceros.</li>
+                    <h6>Reservas</h6>
+                    <ul>
+                        <li>Este es el <strong>único canal</strong> para realizar una reserva.</li>
+                        <li>El asociado debe <strong>estar presente durante la estadía</strong>.</li>
+                        <li>
+                            <span class="text-danger">
+                                ❌ No se permite reservar para familiares, amigos o terceros.
+                            </span>
+                        </li>
+                        <li>⏳ <strong>Estadía máxima:</strong> 5 días / 4 noches.</li>
+                        <li><strong>Capacidad máxima:</strong> 6 personas.</li>
+                        <li><span class="text-danger">No se permite el ingreso de mascotas.</span></li>
+                        <li>El asociado es responsable del cuidado de <strong>menores y adultos mayores</strong>.</li>
                     </ul>
-                    <h6 class="fw-bold">Proceso de pago</h6>
-                    <p>
-                        El asociado debe realizar el aporte correspondiente de manera oportuna.
-                        Una vez hecha la pre-reserva, el sistema bloqueará automáticamente los días seleccionados.
-                    </p>
-                    <p>
-                        Tendrá <span class="text-danger">3 días</span> para realizar el pago y cargar el comprobante.
-                        De lo contrario, la fecha quedará libre para otro asociado.
-                    </p>
-                    <p>
-                        <strong class="text-danger">Importante:</strong><br>
-                        El aporte no corresponde a un alquiler, ya que el uso del apartamento es gratuito.
-                        Este valor cubre únicamente gastos de aseo y administración.
+
+                    <h6 class="mt-4">Proceso de pago</h6>
+
+                    <p class="m-0">
+                        Una vez realizada la <strong>pre-reserva</strong>, el sistema bloqueará automáticamente
+                        los días seleccionados.
                     </p>
 
-                    <h6 class="fw-bold">Condiciones de uso</h6>
+                    <p class="m-0">
+                        El asociado tendrá <span class="text-danger"><strong>3 días</strong></span> para realizar el
+                        pago
+                        y cargar el comprobante.
+                        Si no se registra el pago dentro de este plazo, las fechas quedarán disponibles para otro
+                        asociado.
+                    </p>
+                    <p>
+                        <strong class="text-bold">¿Cómo pagar?</strong>
+                        <a href="https://corpentunida.org.co/reservas/#contOpcionesPago" class="text-primary fw-bold">Clic aquí para conocer cómo realizar el pago</a>
+                    </p>
+                    <p>
+                        <span class="text-danger fw-bold">Importante:</span><br>
+                        El aporte <strong>no corresponde a un alquiler</strong>, ya que el uso del apartamento es
+                        gratuito.
+                        Este valor cubre únicamente gastos de <strong>aseo y administración</strong>.
+                    </p>
+
+                    <h6 class="mt-4">Cancelaciones y cambios</h6>
                     <ul>
-                        <li>⏳ Estadía máxima: 5 días / 4 noches</li>
-                        <li>Capacidad máxima: 6 personas</li>
-                        <li>No se permite el ingreso de mascotas</li>
-                        <li>El asociado es responsable del cuidado de menores y adultos mayores</li>
+                        <li><span class="text-danger">No se realizarán devoluciones de dinero.</span></li>
+                        <li>Las reprogramaciones solo se evaluarán en casos de <strong>fuerza mayor</strong>.</li>
                     </ul>
-                    <h6 class="fw-bold">Cancelaciones y cambios</h6>
-                    <ul>
-                        <li>No se realizarán devoluciones de dinero</li>
-                        <li>Reprogramaciones solo en casos de fuerza mayor, sujetas a evaluación</li>
-                    </ul>
-                    <h6 class="fw-bold">Entrega y cuidado del inmueble</h6>
+
+                    <h6 class="mt-4">Entrega y cuidado del inmueble</h6>
                     <p>
                         El apartamento se entrega en óptimas condiciones y debe devolverse en el mismo estado.
-                        Cualquier daño será responsabilidad del asociado.
+                        Cualquier daño será <strong>responsabilidad del asociado</strong>.
                     </p>
-                    <h6 class="fw-bold">Logística de ingreso</h6>
-                    <p>
-                        En cada ciudad (Santa Marta y Armenia) hay un encargado de la entrega de llaves.
-                        Se contactará previamente al asociado.
-                    </p>
-                    <p>
-                        Se debe firmar un acta al momento de ingreso y salida del inmueble.
-                    </p>
-                    <p class="small text-danger">
-                        Nota: El valor aportado no incluye costos adicionales de administración o uso de zonas comunes.
-                    </p>
-                    <p class="text-muted small">
-                        Deseamos que estos espacios sean de bendición, descanso y renovación para cada familia pastoral.
-                    </p>
+
+                    <h6 class="mt-4">Logística de ingreso</h6>
+                    <ul>
+                        <li>
+                            En cada ciudad (<strong>Santa Marta y Armenia</strong>) hay un encargado
+                            de la entrega de llaves. Se contactará previamente al asociado.
+                        </li>
+                        <li>Se debe firmar un <strong>acta al momento de ingreso y salida</strong> del inmueble.</li>
+                        <li>
+                            <span class="text-danger">
+                                Nota: El valor aportado no incluye costos adicionales de administración
+                                o uso de zonas comunes.
+                            </span>
+                        </li>
+                        <li class="text-muted">
+                            Deseamos que estos espacios sean de bendición, descanso y renovación
+                            para cada familia pastoral.
+                        </li>
+                    </ul>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
@@ -298,7 +315,6 @@
                 const calendarEl = document.getElementById('calendar');
 
                 if (calendarEl) {
-
                     const calendar = new FullCalendar.Calendar(calendarEl, {
                         height: "auto",
                         locale: 'es',
@@ -327,7 +343,7 @@
                         initialView: 'dayGridMonth',
 
                         events: [
-                             @foreach ($reservas as $r)
+                            @foreach ($reservas as $r)
                                 {
                                     title: 'Reservado',
                                     start: '{{ $r->fecha_inicio }}',
@@ -491,6 +507,9 @@
                     }
                 });
                 $('#confirmSubmit').on('click', function() {
+                    const btn = $('#confirmSubmit');
+                    btn.prop('disabled', true);
+                    btn.html('<span class="spinner-border spinner-border-sm me-2"></span> Procesando...');
                     const form = $('#reservaForm');
                     if (form.length) {
                         form.submit();
