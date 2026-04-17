@@ -23,7 +23,7 @@
         </div>
 
         <div class="row g-4">
-            {{-- Columna Principal: Visualizador del Documento REAL --}}
+            {{-- Columna Principal: Visualizador del Documento --}}
             <div class="col-lg-8">
                 <div class="card border-0 shadow-sm bg-white h-100" style="border-radius: 12px; overflow: hidden;">
                     <div class="card-header bg-transparent border-bottom border-light p-4 d-flex justify-content-between align-items-center">
@@ -33,7 +33,6 @@
                         </span>
                     </div>
                     
-                    {{-- Iframe que carga la URL temporal de S3 generada en el Modelo --}}
                     <div class="card-body p-0 bg-light position-relative" style="min-height: 600px;">
                         @if($comprobante->ruta_archivo)
                             <iframe src="{{ $comprobante->url_archivo }}" 
@@ -60,7 +59,7 @@
                     </h5>
                     
                     <ul class="list-unstyled mb-0">
-                        {{-- 1. AGENTE / USUARIO --}}
+                        {{-- AGENTE --}}
                         <li class="mb-5 d-flex align-items-center p-3 bg-light rounded">
                             <div class="me-3">
                                 <span class="d-flex align-items-center justify-content-center bg-white text-primary rounded-circle shadow-sm" style="width: 40px; height: 40px;">
@@ -73,45 +72,59 @@
                             </div>
                         </li>
 
-                        {{-- 2. TERCERO --}}
+                        {{-- TERCERO --}}
                         <li class="mb-5">
                             <span class="text-gray-500 fw-bold d-block text-uppercase ls-1 fs-8 mb-1">Tercero (Siasoft)</span>
                             <span class="text-dark fw-bolder fs-4"><i class="fas fa-user-tag text-muted me-1 fs-6"></i> #{{ $comprobante->cod_ter_MaeTerceros }}</span>
                         </li>
 
-                        {{-- 3. OBLIGACIÓN / LÍNEA (NUEVO CAMPO) --}}
+                        {{-- OBLIGACIÓN --}}
                         <li class="mb-5">
                             <span class="text-gray-500 fw-bold d-block text-uppercase ls-1 fs-8 mb-1">Obligación / Línea</span>
                             <span class="text-dark fw-bolder fs-5">
                                 <i class="fas fa-file-contract text-muted me-1 fs-6"></i> 
-                                @if($comprobante->id_obligacion)
-                                    {{ optional($comprobante->obligacion)->nombre ?? 'ID Obligación: ' . $comprobante->id_obligacion }}
-                                @else
-                                    <span class="text-muted fw-normal fs-6"><i>No registrada</i></span>
-                                @endif
+                                {{ optional($comprobante->obligacion)->nombre ?? 'No registrada' }}
                             </span>
                         </li>
                         
-                        {{-- 4. BANCO (NUEVO CAMPO) --}}
+                        {{-- BANCO --}}
                         <li class="mb-5">
                             <span class="text-gray-500 fw-bold d-block text-uppercase ls-1 fs-8 mb-1">Banco Destino</span>
                             <span class="text-dark fw-bolder fs-5">
                                 <i class="fas fa-university text-muted me-1 fs-6"></i> 
                                 @if($comprobante->id_banco)
-                                    {{ optional($comprobante->banco)->numero_cuenta }} - {{ optional($comprobante->banco)->banco ?? 'ID: ' . $comprobante->id_banco }}
+                                    {{ optional($comprobante->banco)->banco }}
                                 @else
-                                    <span class="text-muted fw-normal fs-6"><i>No registrado</i></span>
+                                    <span class="text-muted fw-normal">No registrado</span>
                                 @endif
                             </span>
                         </li>
-                        
-                        {{-- 5. MONTO --}}
+
+                        {{-- SECCIÓN NUEVA: METADATOS CONTABLES --}}
                         <li class="mb-5">
-                            <span class="text-gray-500 fw-bold d-block text-uppercase ls-1 fs-8 mb-1">Monto Reportado</span>
-                            <span class="text-success fw-bolder fs-1 lh-1">${{ number_format($comprobante->monto_pagado, 0, ',', '.') }}</span>
+                            <div class="row g-2 p-3 border border-dashed border-gray-300 rounded">
+                                <div class="col-4">
+                                    <span class="text-gray-500 fw-bold d-block text-uppercase ls-1 fs-9 mb-1">Cuota</span>
+                                    <span class="text-dark fw-bolder fs-6">{{ $comprobante->numero_cuota ?? '---' }}</span>
+                                </div>
+                                <div class="col-4">
+                                    <span class="text-gray-500 fw-bold d-block text-uppercase ls-1 fs-9 mb-1">PR</span>
+                                    <span class="text-dark fw-bolder fs-6">{{ $comprobante->pr ?? '---' }}</span>
+                                </div>
+                                <div class="col-4">
+                                    <span class="text-gray-500 fw-bold d-block text-uppercase ls-1 fs-9 mb-1">CCO</span>
+                                    <span class="text-dark fw-bolder fs-6">{{ $comprobante->cco ?? '---' }}</span>
+                                </div>
+                            </div>
                         </li>
                         
-                        {{-- 6. FECHA --}}
+                        {{-- MONTO (ACTUALIZADO A 2 DECIMALES) --}}
+                        <li class="mb-5">
+                            <span class="text-gray-500 fw-bold d-block text-uppercase ls-1 fs-8 mb-1">Monto Reportado</span>
+                            <span class="text-success fw-bolder fs-1 lh-1">${{ number_format($comprobante->monto_pagado, 2, ',', '.') }}</span>
+                        </li>
+                        
+                        {{-- FECHA --}}
                         <li class="mb-5">
                             <span class="text-gray-500 fw-bold d-block text-uppercase ls-1 fs-8 mb-1">Fecha de Pago</span>
                             <span class="text-dark fw-bold fs-5">
@@ -120,19 +133,7 @@
                             </span>
                         </li>
 
-                        {{-- 7. INTERACCIÓN CRM --}}
-                        <li class="mb-5">
-                            <span class="text-gray-500 fw-bold d-block text-uppercase ls-1 fs-8 mb-1">ID Interacción CRM</span>
-                            <span class="text-dark fw-bold fs-5">
-                                @if($comprobante->id_interaction)
-                                    #{{ $comprobante->id_interaction }}
-                                @else
-                                    <span class="text-muted fw-normal fs-6"><i>No registrado</i></span>
-                                @endif
-                            </span>
-                        </li>
-
-                        {{-- 8. HASH --}}
+                        {{-- TOKEN / HASH --}}
                         <li class="mb-0">
                             <span class="text-gray-500 fw-bold d-block text-uppercase ls-1 fs-8 mb-1">Token (Hash Único)</span>
                             <div class="bg-light p-3 rounded text-break border border-light">
@@ -147,9 +148,7 @@
                                 <i class="fas fa-external-link-alt me-2"></i> Abrir en Pestaña Nueva
                             </a>
                         @else
-                            <button disabled class="btn btn-light w-100 rounded-pill fw-bolder py-3 fs-6">
-                                Sin Archivo
-                            </button>
+                            <button disabled class="btn btn-light w-100 rounded-pill fw-bolder py-3 fs-6">Sin Archivo</button>
                         @endif
                     </div>
                 </div>
@@ -159,8 +158,8 @@
 
     <style>
         body, .app-container { font-family: 'Inter', sans-serif !important; }
-        .shadow-xs { box-shadow: 0 .125rem .25rem rgba(0,0,0,.03)!important; }
         .ls-1 { letter-spacing: 0.05em; }
         .text-break { word-wrap: break-word; overflow-wrap: break-word; }
+        .border-dashed { border-style: dashed !important; }
     </style>
 </x-base-layout>

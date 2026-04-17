@@ -68,13 +68,25 @@
                                     </div>
                                 </div>
 
-                                {{-- FILA 3: Fecha --}}
-                                <div class="col-md-6">
+                                {{-- FILA 3: Fecha, Cuota, PR, CCO (Integración de nuevos campos) --}}
+                                <div class="col-md-4">
                                     <label class="form-label fw-bolder text-gray-800 fs-6">Fecha de Pago *</label>
                                     <input type="date" id="fecha_pago" name="fecha_pago" class="form-control rounded-pill border-light bg-light fs-6 gen-hash" required>
                                 </div>
+                                <div class="col-md-4">
+                                    <label class="form-label fw-bolder text-gray-800 fs-6">Número de Cuota</label>
+                                    <input type="number" name="numero_cuota" class="form-control rounded-pill border-light bg-light fs-6" placeholder="Ej: 1">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label fw-bolder text-gray-800 fs-6">PR</label>
+                                    <input type="number" name="pr" class="form-control rounded-pill border-light bg-light fs-6" placeholder="0">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label fw-bolder text-gray-800 fs-6">CCO</label>
+                                    <input type="number" name="cco" class="form-control rounded-pill border-light bg-light fs-6" placeholder="0">
+                                </div>
                                 
-                                {{-- CAMPO OCULTO: ID Interacción CRM (Opcional por ahora) --}}
+                                {{-- CAMPO OCULTO: ID Interacción CRM --}}
                                 <input type="hidden" name="id_interaction" value="">
 
                                 {{-- Archivo y Referencias --}}
@@ -156,7 +168,7 @@
             const inputHashTarget = document.getElementById('hash_transaccion');
             
             function actualizarHash() {
-                const banco = inputBanco.value; // NUEVO
+                const banco = inputBanco.value; 
                 const fecha = document.getElementById('fecha_pago').value.replace(/-/g, ''); 
                 const monto = hiddenInput.value;
                 const tercero = document.getElementById('cod_tercero').value;
@@ -173,7 +185,6 @@
                 input.addEventListener('input', actualizarHash);
                 input.addEventListener('change', actualizarHash);
             });
-            // NUEVO: Escuchar cambios en el selector de Banco
             inputBanco.addEventListener('change', actualizarHash);
 
             // 3. PREVISUALIZACIÓN Y PEGAR IMAGEN (Ctrl+V)
