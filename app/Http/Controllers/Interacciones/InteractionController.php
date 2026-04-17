@@ -571,16 +571,16 @@ class InteractionController extends Controller
      */
     public function show(Interaction $interaction)
     {
-        // 1. Cargamos todas las relaciones, incluyendo las del timeline de seguimientos
+        // 1. Cargamos todas las relaciones, incluyendo las del timeline y comprobantes
         $interaction->load([
             'agent',
-            'client.distrito', // <-- MODIFICACIÓN: Se agregó '.distrito' para cargar la relación
+            'client.distrito',
             'channel',
             'type',
             'outcomeRelation',
             'lineaDeObligacion',
             'usuarioAsignado',
-            'comprobantes',
+            'comprobantes.banco', // <-- ¡CLAVE! Cargamos el banco anidado para evitar consultas extra (N+1)
             // Cargamos relaciones de seguimientos para el Timeline
             'seguimientos.outcomeRelation',
             'seguimientos.creator',
