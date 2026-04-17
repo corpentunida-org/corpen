@@ -36,8 +36,10 @@
                                     <i class="fas fa-file-excel fa-3x text-primary mb-3"></i>
                                     <h5 class="fw-bolder text-dark">Haz clic o arrastra tu archivo Excel/CSV aquí</h5>
                                     <p class="text-muted mb-1 fs-6">Formatos soportados: Excel (.xlsx, .xls) y CSV</p>
+                                    
+                                    {{-- TEXTO DE ESTRUCTURA ACTUALIZADO --}}
                                     <span class="badge bg-light-info text-info fs-8 mt-2">
-                                        Estructura esperada: Fecha | Desc. | Hash | Valor | Cédula | Nombre | Oficina | Distrito
+                                        Estructura: Fecha | Cédula | Nombre | Valor | Oficina | Distrito | Descripción
                                     </span>
                                 </div>
                             </div>

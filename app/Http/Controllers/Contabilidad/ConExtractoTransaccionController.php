@@ -31,7 +31,7 @@ class ConExtractoTransaccionController extends Controller
             'fecha_movimiento'        => 'required|date',
             'referencia_cedula'       => 'nullable|string|max:255',
             'referencia_nombre'       => 'nullable|string|max:255',
-            'valor_ingreso'           => 'required|integer',
+            'valor_ingreso'           => 'required|numeric',
             'referencia_oficina'      => 'nullable|string|max:255',
             'referencia_distrito'     => 'nullable|string|max:255',
             'descripcion_banco'       => 'required|string',
@@ -139,7 +139,13 @@ class ConExtractoTransaccionController extends Controller
                     $fechaRow    = trim($row[0]);
                     $cedula      = isset($row[1]) ? trim($row[1]) : '';
                     $nombre      = isset($row[2]) ? trim($row[2]) : null;
-                    $monto       = isset($row[3]) ? (int) trim($row[3]) : 0;
+                    
+                    // --- CORRECCIÓN PARA DECIMALES ---
+                    $montoBruto  = isset($row[3]) ? trim($row[3]) : '0';
+                    $montoBruto  = str_replace(',', '.', $montoBruto); // Limpia formato latino
+                    $monto       = (float) $montoBruto; // Convierte a flotante conservando decimales
+                    // ---------------------------------
+                    
                     $oficina     = isset($row[4]) ? trim($row[4]) : null;
                     $distrito    = isset($row[5]) ? trim($row[5]) : null;
                     $descripcion = isset($row[6]) ? trim($row[6]) : '';
