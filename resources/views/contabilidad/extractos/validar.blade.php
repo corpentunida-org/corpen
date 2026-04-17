@@ -72,8 +72,9 @@
                                 {{ $fila['descripcion_banco'] }}
                             </td>
                             
+                            {{-- CAMBIO A 2 DECIMALES AQUÍ --}}
                             <td class="text-end fw-bold text-success pe-4">
-                                $ {{ number_format($fila['valor_ingreso'], 0, ',', '.') }}
+                                $ {{ number_format($fila['valor_ingreso'], 2, ',', '.') }}
                             </td>
 
                             {{-- NUEVAS COLUMNAS --}}

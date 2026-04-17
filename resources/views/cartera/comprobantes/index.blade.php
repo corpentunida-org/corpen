@@ -2,60 +2,94 @@
     <div class="app-container py-5" style="background-color: #f8f9fa;">
         
         {{-- Barra de Título Estilo Documento --}}
-        <div class="d-flex align-items-center mb-5 px-3">
+        <div class="d-flex align-items-center mb-4 px-3">
             <div class="symbol symbol-40px me-3">
-                <div class="symbol-label bg-success text-white">
-                    <i class="fas fa-file-invoice text-white"></i>
+                <div class="symbol-label bg-success text-white shadow-sm">
+                    <i class="fas fa-file-invoice text-white fs-4"></i>
                 </div>
             </div>
             <div>
-                <h3 class="fw-bold m-0 text-dark fs-4">Soportes_Pago_Cartera_2026.gsheet</h3>
-                <div class="d-flex align-items-center gap-3 fs-9">
+                <h3 class="fw-bold m-0 text-dark fs-4">Soportes_Pago_Cartera_{{ str_replace('-', '', $periodo) }}.gsheet</h3>
+                <div class="d-flex align-items-center gap-3 fs-9 mt-1">
                     <span class="text-muted">Archivo guardado en Drive</span>
                     <span class="badge badge-light-success text-success fw-bold px-2 py-1">SOLO LECTURA</span>
                 </div>
             </div>
             <div class="ms-auto d-flex gap-2">
-                <form action="{{ route('cartera.comprobantes.index') }}" method="GET">
-                    <div class="input-group input-group-sm border border-gray-300 rounded">
-                        <span class="input-group-text bg-white border-0"><i class="fas fa-search fs-9"></i></span>
-                        <input type="text" name="buscar" value="{{ request('buscar') }}" class="form-control border-0 ps-0 fs-8 w-200px" placeholder="Buscar en la hoja...">
-                    </div>
-                </form>
-                <a href="{{ route('cartera.comprobantes.create') }}" class="btn btn-sm btn-primary fw-bold px-4 rounded-1">
+                <a href="{{ route('cartera.comprobantes.create') }}" class="btn btn-sm btn-primary fw-bold px-4 rounded-1 shadow-sm">
                     <i class="fas fa-plus me-1"></i> Añadir fila
                 </a>
             </div>
         </div>
 
-        {{-- Contenedor de la Hoja --}}
-        <div class="bg-white shadow-sm border border-gray-300 mx-3" style="border-radius: 0px; overflow: hidden;">
+        {{-- BARRA DE FILTROS BACKEND (ESTILO BARRA DE FÓRMULAS) --}}
+        <form method="GET" action="{{ route('cartera.comprobantes.index') }}" class="bg-white p-3 border border-gray-300 mx-3 mb-3 d-flex flex-wrap gap-3 align-items-end shadow-sm" style="border-radius: 4px;">
             
-            {{-- Pestañas de la Hoja --}}
+            {{-- Mantenemos el estado actual si se está filtrando por pestaña --}}
+            @if(request('estado'))
+                <input type="hidden" name="estado" value="{{ request('estado') }}">
+            @endif
+
+            {{-- Filtro Obligatorio: Mes y Año --}}
+            <div>
+                <label class="form-label fs-9 fw-bolder text-muted text-uppercase mb-1">Periodo (Año/Mes) *</label>
+                <input type="month" name="periodo" value="{{ $periodo }}" class="form-control form-control-sm border-gray-300 fw-bold text-primary" required>
+            </div>
+
+            {{-- Filtro Opcional: Búsqueda Global --}}
+            <div class="flex-grow-1">
+                <label class="form-label fs-9 fw-bolder text-muted text-uppercase mb-1">Búsqueda General</label>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light"><i class="fas fa-search text-muted"></i></span>
+                    <input type="text" name="buscar" value="{{ request('buscar') }}" class="form-control border-gray-300" placeholder="Buscar cédula, monto, cuota, PR, CCO...">
+                </div>
+            </div>
+
+            {{-- Botones de Filtrado --}}
+            <div>
+                <button type="submit" class="btn btn-sm btn-success fw-bold px-4">
+                    <i class="fas fa-filter me-1"></i> Consultar Base
+                </button>
+                <a href="{{ route('cartera.comprobantes.index') }}" class="btn btn-sm btn-light-danger btn-icon ms-1" title="Limpiar Filtros">
+                    <i class="fas fa-times"></i>
+                </a>
+            </div>
+        </form>
+
+        {{-- Contenedor de la Hoja --}}
+        <div class="bg-white shadow-sm border border-gray-300 mx-3 d-flex flex-column" style="border-radius: 0px; overflow: hidden; min-height: 500px;">
+            
+            {{-- Pestañas de la Hoja (Preservando los filtros actuales) --}}
             <div class="d-flex bg-gray-100 border-bottom border-gray-300">
-                <a href="{{ route('cartera.comprobantes.index') }}" class="sheet-tab {{ !request('estado') ? 'active' : '' }}">
+                <a href="{{ route('cartera.comprobantes.index', ['periodo' => $periodo, 'buscar' => request('buscar')]) }}" class="sheet-tab {{ !request('estado') ? 'active' : '' }}">
                     <i class="fas fa-table me-2 fs-9"></i> Todos los registros
                 </a>
-                <a href="{{ route('cartera.comprobantes.index', ['estado' => 'pendiente']) }}" class="sheet-tab {{ request('estado') == 'pendiente' ? 'active' : '' }}">
+                <a href="{{ route('cartera.comprobantes.index', ['estado' => 'pendiente', 'periodo' => $periodo, 'buscar' => request('buscar')]) }}" class="sheet-tab {{ request('estado') == 'pendiente' ? 'active' : '' }}">
                     Pendientes
                 </a>
-                <a href="{{ route('cartera.comprobantes.index', ['estado' => 'conciliado']) }}" class="sheet-tab {{ request('estado') == 'conciliado' ? 'active' : '' }}">
+                <a href="{{ route('cartera.comprobantes.index', ['estado' => 'conciliado', 'periodo' => $periodo, 'buscar' => request('buscar')]) }}" class="sheet-tab {{ request('estado') == 'conciliado' ? 'active' : '' }}">
                     Conciliados
                 </a>
             </div>
 
-            <div class="table-responsive" id="resizable-container">
+            <div class="table-responsive flex-grow-1" id="resizable-container">
                 <table class="table-gsheets" id="main-table">
                     <thead>
                         <tr>
                             <th class="col-index"></th>
                             <th>CÓDIGO TERCERO</th>
                             <th>NOMBRE TERCERO</th>
-                            <th>OBLIGACIÓN</th> <th>AGENTE</th>
+                            <th>OBLIGACIÓN</th> 
+                            <th class="text-center">CUOTA</th> {{-- NUEVO --}}
+                            <th class="text-center">PR</th>    {{-- NUEVO --}}
+                            <th class="text-center">CCO</th>   {{-- NUEVO --}}
+                            <th>AGENTE</th>
                             <th>MONTO PAGADO</th>
                             <th>FECHA PAGO</th>
                             <th>ID INTERACCIÓN</th>
-                            <th>TRANSACCIÓN BANCARIA</th> <th>BANCO DESTINO</th> <th>HASH TRANSACCIÓN</th>
+                            <th>TRANSACCIÓN BANCARIA</th> 
+                            <th>BANCO DESTINO</th> 
+                            <th>HASH TRANSACCIÓN</th>
                             <th>ESTADO</th>
                             <th>SOPORTE</th>
                             <th style="text-align: center; width: 80px;">...</th>
@@ -64,7 +98,7 @@
                     <tbody>
                         @forelse($comprobantes as $index => $comprobante)
                         <tr>
-                            <td class="col-index">{{ $index + 1 }}</td>
+                            <td class="col-index">{{ $comprobantes->firstItem() + $index }}</td>
                             
                             <td class="fw-bold text-center bg-light-soft">{{ $comprobante->cod_ter_MaeTerceros }}</td>
                             
@@ -72,11 +106,15 @@
                                 {{ optional($comprobante->tercero)->nom_ter ?? '---' }}
                             </td>
 
-                            {{-- NUEVO: OBLIGACIÓN --}}
                             <td class="text-gray-700" style="max-width: 150px; text-overflow: ellipsis; overflow: hidden;">
                                 {{ optional($comprobante->obligacion)->nombre ?? '---' }}
                             </td>
                             
+                            {{-- NUEVOS CAMPOS --}}
+                            <td class="text-center font-monospace text-muted">{{ $comprobante->numero_cuota ?? '---' }}</td>
+                            <td class="text-center font-monospace text-muted">{{ $comprobante->pr ?? '---' }}</td>
+                            <td class="text-center font-monospace text-muted">{{ $comprobante->cco ?? '---' }}</td>
+
                             <td>
                                 <div class="d-flex align-items-center">
                                     <div class="symbol symbol-15px me-2">
@@ -100,13 +138,10 @@
                                 {{ $f }}
                             </td>
 
-                            {{-- ID INTERACCIÓN --}}
                             <td class="text-center text-muted italic">#{{ $comprobante->id_interaction ?? '---' }}</td>
 
-                            {{-- TRANSACCIÓN BANCARIA (Extracto) --}}
                             <td class="text-center fw-bold text-primary">{{ $comprobante->id_transaccion_bancaria ?? '---' }}</td>
 
-                            {{-- NUEVO: BANCO DESTINO --}}
                             <td class="text-gray-700" style="max-width: 150px; text-overflow: ellipsis; overflow: hidden;">
                                 @if($comprobante->id_banco)
                                     {{ optional($comprobante->banco)->banco ?? 'ID: ' . $comprobante->id_banco }}
@@ -115,7 +150,6 @@
                                 @endif
                             </td>
 
-                            {{-- HASH --}}
                             <td class="font-monospace fs-10 text-muted" style="max-width: 150px;">{{ $comprobante->hash_transaccion }}</td>
 
                             <td class="text-center p-0">
@@ -150,7 +184,10 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="14" class="text-center py-10 text-muted fs-8 italic">No hay datos en este intervalo.</td>
+                            <td colspan="17" class="text-center py-10 text-muted fs-8 italic">
+                                <i class="fas fa-search text-gray-400 mb-3 fs-1 d-block opacity-50"></i>
+                                No hay datos para el periodo y filtros seleccionados.
+                            </td>
                         </tr>
                         @endforelse
                     </tbody>
@@ -159,9 +196,12 @@
 
             {{-- Barra de Estado / Paginación --}}
             <div class="bg-white border-top border-gray-300 p-2 d-flex justify-content-between align-items-center fs-9 text-muted">
-                <div>Registros: {{ $comprobantes->total() }} | Sincronizado correctamente</div>
-                <div class="gs-pagination">
-                    {{ $comprobantes->withQueryString()->links('pagination::simple-bootstrap-4') }}
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-check-circle text-success me-2"></i> 
+                    Consulta Exitosa | Registros Totales: {{ $comprobantes->total() }}
+                </div>
+                <div class="gs-pagination d-flex align-items-center">
+                    {{ $comprobantes->withQueryString()->links('pagination::bootstrap-4') }}
                 </div>
             </div>
         </div>
@@ -177,12 +217,12 @@
 
         /* TABLA ESTILO GOOGLE SHEETS */
         .table-gsheets {
-            width: auto; /* Permite que se ajuste al contenido inicialmente */
+            width: auto; 
             min-width: 100%;
             border-collapse: collapse;
             font-size: 11px;
             color: #3c4043;
-            table-layout: auto; /* Inicialmente auto-ajuste */
+            table-layout: auto; 
         }
 
         .table-gsheets thead th {
@@ -192,8 +232,9 @@
             font-weight: 500;
             color: #5f6368;
             text-align: left;
-            position: relative; /* Para el redimensionador */
+            position: relative; 
             white-space: nowrap;
+            user-select: none;
         }
 
         /* Tirador para redimensionar */
@@ -207,7 +248,7 @@
             height: 100%;
             z-index: 1;
         }
-        .resizer:hover { border-right: 2px solid #188038; }
+        .resizer:hover, .resizer.resizing { border-right: 2px solid #188038; }
 
         .table-gsheets tbody td {
             border: 1px solid #dadce0;
@@ -245,6 +286,11 @@
         .gs-success { background-color: #e6f4ea; color: #137333; }
         .gs-warning { background-color: #fef7e0; color: #b06000; }
         .gs-danger { background-color: #fce8e6; color: #c5221f; }
+
+        /* Ajuste Paginación */
+        .pagination { margin-bottom: 0 !important; }
+        .page-link { padding: 0.2rem 0.5rem; font-size: 0.8rem; border-color: #dadce0; color: #5f6368; }
+        .page-item.active .page-link { background-color: #1a73e8; border-color: #1a73e8; }
     </style>
 
     <script>
@@ -253,7 +299,6 @@
             const cols = table.querySelectorAll('th');
 
             cols.forEach((col) => {
-                // Crear el div que servirá de tirador
                 const resizer = document.createElement('div');
                 resizer.classList.add('resizer');
                 col.appendChild(resizer);
@@ -274,7 +319,6 @@
                 const mouseMoveHandler = function (e) {
                     const dx = e.clientX - x;
                     col.style.width = `${w + dx}px`;
-                    // Una vez que el usuario toca el ancho, forzamos fixed para que respete su decisión
                     table.style.tableLayout = 'fixed';
                 };
 
