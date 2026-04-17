@@ -28,15 +28,21 @@ class CarComprobantePago extends Model
         'id_user',
         'estado', 
         'id_banco',
-        'id_obligacion'
+        'id_obligacion',
+        'pr',
+        'cco',
+        'numero_cuota'
     ];
 
     protected $casts = [
-        'fecha_pago' => 'integer', 
-        'monto_pagado' => 'integer',
+        'fecha_pago'     => 'integer', 
+        'monto_pagado'   => 'integer',
         'id_interaction' => 'integer',
-        'id_user' => 'integer',
-        'id_obligacion' => 'integer',
+        'id_user'        => 'integer',
+        'id_obligacion'  => 'integer',
+        'pr'             => 'integer',
+        'cco'            => 'integer',
+        'numero_cuota'   => 'integer',
     ];
 
     /**
