@@ -10,17 +10,60 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class ConExtractoTransaccionController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // Traemos los extractos junto con su cuenta asociada
-        $extractos = ConExtractoTransaccion::with('cuentaBancaria')
-                        ->orderBy('fecha_movimiento', 'desc')
-                        ->get();
+        // 1. Filtro Obligatorio: Periodo (Año y Mes). Por defecto el mes actual.
+        $periodo = $request->input('periodo', date('Y-m'));
+        $parts = explode('-', $periodo);
+        $year = $parts[0] ?? date('Y');
+        $month = $parts[1] ?? date('m');
 
-        // Traemos las cuentas activas
+        // 2. Filtros Opcionales
+        $banco_id = $request->input('banco_id');
+        $distrito = $request->input('distrito');
+        $search = $request->input('search');
+
+        // 3. Consulta Base (Obligatorio filtrar por Año y Mes para no saturar la BD)
+        $query = ConExtractoTransaccion::with('cuentaBancaria')
+                    ->whereYear('fecha_movimiento', $year)
+                    ->whereMonth('fecha_movimiento', $month);
+
+        // Aplicar Filtro de Banco si existe
+        if ($banco_id) {
+            $query->where('id_con_cuentas_bancaria', $banco_id);
+        }
+
+        // Aplicar Filtro de Distrito si existe
+        if ($distrito) {
+            $query->where('referencia_distrito', 'LIKE', "%{$distrito}%");
+        }
+
+        // Aplicar Buscador Global
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('hash_transaccion', 'LIKE', "%{$search}%")
+                  ->orWhere('referencia_cedula', 'LIKE', "%{$search}%")
+                  ->orWhere('referencia_nombre', 'LIKE', "%{$search}%")
+                  ->orWhere('descripcion_banco', 'LIKE', "%{$search}%")
+                  ->orWhere('valor_ingreso', 'LIKE', "%{$search}%");
+            });
+        }
+
+        // 4. Paginación (100 registros por página en lugar de traer todo)
+        // El withQueryString() mantiene los filtros aplicados al cambiar de página
+        $extractos = $query->orderBy('fecha_movimiento', 'desc')->paginate(100)->withQueryString();
+
+        // 5. Datos para llenar los Selects
         $cuentas = ConCuentaBancaria::where('estado', 'Activa')->get();
+        
+        // Obtener distritos únicos que existan en la tabla para el filtro
+        $distritos = ConExtractoTransaccion::select('referencia_distrito')
+                        ->whereNotNull('referencia_distrito')
+                        ->where('referencia_distrito', '!=', '')
+                        ->distinct()
+                        ->pluck('referencia_distrito');
 
-        return view('contabilidad.extractos.index', compact('extractos', 'cuentas'));
+        return view('contabilidad.extractos.index', compact('extractos', 'cuentas', 'distritos', 'periodo', 'banco_id', 'distrito', 'search'));
     }
 
     public function store(Request $request)

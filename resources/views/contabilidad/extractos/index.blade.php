@@ -2,7 +2,7 @@
     <div class="app-container py-5" style="background-color: #f8f9fa;">
         
         {{-- Barra de Título Estilo Documento --}}
-        <div class="d-flex align-items-center mb-5 px-3">
+        <div class="d-flex align-items-center mb-4 px-3">
             <div class="symbol symbol-40px me-3">
                 <div class="symbol-label bg-success text-white shadow-sm">
                     <i class="fas fa-file-excel text-white fs-4"></i>
@@ -16,36 +16,82 @@
                 </div>
             </div>
             
-            {{-- Controles y Botones Superiores --}}
+            {{-- Botones de Acción Superiores --}}
             <div class="ms-auto d-flex align-items-center gap-3">
-                {{-- Buscador JS --}}
-                <div class="input-group input-group-sm border border-gray-300 rounded bg-white shadow-sm">
-                    <span class="input-group-text bg-white border-0"><i class="fas fa-search fs-9 text-muted"></i></span>
-                    <input type="text" id="tableSearch" class="form-control border-0 ps-0 fs-8 w-250px" placeholder="Buscar ref, tercero, descripción o monto...">
-                </div>
-
-                {{-- Botones de Acción --}}
                 <a href="{{ route('contabilidad.extractos.importar') }}" class="btn btn-sm btn-primary fw-bold px-4 rounded-1 shadow-sm">
                     <i class="fas fa-cloud-upload-alt me-1"></i> Subir Extracto
                 </a>
                 
                 <a href="{{ route('contabilidad.extractos.conciliacion') }}" class="btn btn-sm btn-dark fw-bold px-4 rounded-1 shadow-sm">
-                    <i class="fas fa-compress-arrows-alt me-1"></i> Conciliación
+                    <i class="fas fa-compress-arrows-alt me-1"></i> Mesa Conciliación
                 </a>
             </div>
         </div>
 
+        {{-- BARRA DE FILTROS BACKEND (ESTILO BARRA DE FÓRMULAS) --}}
+        <form method="GET" action="{{ route('contabilidad.extractos.index') }}" class="bg-white p-3 border border-gray-300 mx-3 mb-3 d-flex flex-wrap gap-3 align-items-end shadow-sm" style="border-radius: 4px;">
+            
+            {{-- Filtro Obligatorio: Mes y Año --}}
+            <div>
+                <label class="form-label fs-9 fw-bolder text-muted text-uppercase mb-1">Periodo (Año/Mes) *</label>
+                <input type="month" name="periodo" value="{{ $periodo }}" class="form-control form-control-sm border-gray-300 fw-bold text-primary" required>
+            </div>
+
+            {{-- Filtro Opcional: Banco --}}
+            <div>
+                <label class="form-label fs-9 fw-bolder text-muted text-uppercase mb-1">Cuenta / Banco</label>
+                <select name="banco_id" class="form-select form-select-sm border-gray-300" style="min-width: 180px;">
+                    <option value="">Todas las cuentas...</option>
+                    @foreach($cuentas as $cuenta)
+                        <option value="{{ $cuenta->id }}" {{ $banco_id == $cuenta->id ? 'selected' : '' }}>
+                            {{ $cuenta->banco }} - {{ substr($cuenta->numero_cuenta, -4) }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- Filtro Opcional: Distrito --}}
+            <div>
+                <label class="form-label fs-9 fw-bolder text-muted text-uppercase mb-1">Distrito (Opcional)</label>
+                <select name="distrito" class="form-select form-select-sm border-gray-300" style="min-width: 150px;">
+                    <option value="">Todos...</option>
+                    @foreach($distritos as $dist)
+                        <option value="{{ $dist }}" {{ $distrito == $dist ? 'selected' : '' }}>{{ $dist }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- Filtro Opcional: Búsqueda Global --}}
+            <div class="flex-grow-1">
+                <label class="form-label fs-9 fw-bolder text-muted text-uppercase mb-1">Búsqueda Exacta</label>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light"><i class="fas fa-search text-muted"></i></span>
+                    <input type="text" name="search" value="{{ $search }}" class="form-control border-gray-300" placeholder="Buscar cédula, referencia, nombre o monto...">
+                </div>
+            </div>
+
+            {{-- Botones de Filtrado --}}
+            <div>
+                <button type="submit" class="btn btn-sm btn-success fw-bold px-4">
+                    <i class="fas fa-filter me-1"></i> Filtrar Base
+                </button>
+                <a href="{{ route('contabilidad.extractos.index') }}" class="btn btn-sm btn-light-danger btn-icon ms-1" title="Limpiar Filtros">
+                    <i class="fas fa-times"></i>
+                </a>
+            </div>
+        </form>
+
         {{-- Contenedor de la Hoja --}}
-        <div class="bg-white shadow-sm border border-gray-300 mx-3" style="border-radius: 0px; overflow: hidden;">
+        <div class="bg-white shadow-sm border border-gray-300 mx-3 d-flex flex-column" style="border-radius: 0px; overflow: hidden; min-height: 500px;">
             
             {{-- Pestañas de la Hoja --}}
             <div class="d-flex bg-gray-100 border-bottom border-gray-300">
                 <div class="sheet-tab active">
-                    <i class="fas fa-table me-2 fs-9"></i> Movimientos Generales
+                    <i class="fas fa-table me-2 fs-9"></i> Movimientos_{{ str_replace('-', '', $periodo) }}
                 </div>
             </div>
 
-            <div class="table-responsive" id="resizable-container">
+            <div class="table-responsive flex-grow-1" id="resizable-container">
                 <table class="table-gsheets" id="main-table">
                     <thead>
                         <tr>
@@ -54,6 +100,7 @@
                             <th>CUENTA / BANCO</th>
                             <th>CÉDULA/NIT</th>
                             <th>NOMBRE TERCERO</th>
+                            <th>DISTRITO</th>
                             <th style="width: 250px;">DESCRIPCIÓN BANCO</th>
                             <th>MONTO INGRESO</th>
                             <th>HASH TRANSACCIÓN</th>
@@ -63,8 +110,8 @@
                     </thead>
                     <tbody>
                         @forelse($extractos as $index => $movimiento)
-                        <tr class="searchable-row">
-                            <td class="col-index">{{ $index + 1 }}</td>
+                        <tr>
+                            <td class="col-index">{{ $extractos->firstItem() + $index }}</td>
                             
                             <td class="text-center">
                                 <span class="fw-bold text-dark">{{ $movimiento->fecha_movimiento->format('d/m/Y') }}</span>
@@ -83,11 +130,14 @@
                                 {{ $movimiento->referencia_nombre ?? '---' }}
                             </td>
 
+                            <td class="text-uppercase text-gray-600">
+                                {{ $movimiento->referencia_distrito ?? '---' }}
+                            </td>
+
                             <td class="text-gray-700" title="{{ $movimiento->descripcion_banco }}">
                                 {{ $movimiento->descripcion_banco }}
                             </td>
 
-                            {{-- CAMBIO A 2 DECIMALES AQUÍ --}}
                             <td class="text-end fw-bold text-success pe-4">
                                 $ {{ number_format($movimiento->valor_ingreso, 2, ',', '.') }}
                             </td>
@@ -114,22 +164,31 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="10" class="text-center py-10 text-muted fs-8 italic">No hay movimientos bancarios registrados. Sube un extracto para comenzar.</td>
+                            <td colspan="11" class="text-center py-10 text-muted fs-8 italic">
+                                <i class="fas fa-search mb-3 fs-1 text-gray-400 d-block"></i>
+                                No se encontraron registros para los filtros seleccionados.
+                            </td>
                         </tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
 
-            {{-- Barra de Estado Estilo Excel --}}
+            {{-- Paginación y Barra de Estado Inferior --}}
             <div class="bg-white border-top border-gray-300 p-2 d-flex justify-content-between align-items-center fs-9 text-muted">
-                <div>
-                    <i class="fas fa-check-circle text-success me-1"></i> Listo
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-check-circle text-success me-2"></i> 
+                    Consulta Exitosa
                 </div>
+                
+                {{-- Renderizado de la paginación de Laravel --}}
+                <div class="d-flex align-items-center">
+                    {{ $extractos->links('pagination::bootstrap-4') }}
+                </div>
+
                 <div class="d-flex gap-4">
-                    <span>Total Registros: <strong>{{ $extractos->count() }}</strong></span>
-                    <span>Pendientes: <strong class="text-warning">{{ $extractos->where('estado_conciliacion', 'Pendiente')->count() }}</strong></span>
-                    <span>Conciliados: <strong class="text-success">{{ $extractos->whereIn('estado_conciliacion', ['Conciliado_Auto', 'Conciliado_Manual'])->count() }}</strong></span>
+                    <span>Total en BD (este mes): <strong class="text-dark">{{ $extractos->total() }}</strong></span>
+                    <span>Mostrando: <strong class="text-dark">{{ $extractos->firstItem() ?? 0 }} - {{ $extractos->lastItem() ?? 0 }}</strong></span>
                 </div>
             </div>
         </div>
@@ -213,10 +272,14 @@
         .gs-success { background-color: #e6f4ea; color: #137333; }
         .gs-warning { background-color: #fef7e0; color: #b06000; }
         .gs-danger { background-color: #fce8e6; color: #c5221f; }
+        
+        /* Ajuste Paginación */
+        .pagination { margin-bottom: 0 !important; }
+        .page-link { padding: 0.2rem 0.5rem; font-size: 0.8rem; }
     </style>
 
     <script>
-        // 1. Lógica de Redimensionamiento de Columnas
+        // Lógica de Redimensionamiento de Columnas
         document.addEventListener('DOMContentLoaded', function () {
             const table = document.getElementById('main-table');
             const cols = table.querySelectorAll('th');
@@ -252,17 +315,6 @@
                 };
 
                 resizer.addEventListener('mousedown', mouseDownHandler);
-            });
-        });
-
-        // 2. Buscador en tiempo real corregido para apuntar a "#main-table"
-        document.getElementById("tableSearch").addEventListener("keyup", function() {
-            let filter = this.value.toLowerCase();
-            let rows = document.querySelectorAll("#main-table .searchable-row");
-
-            rows.forEach(row => {
-                let text = row.textContent.toLowerCase();
-                row.style.display = text.includes(filter) ? "" : "none";
             });
         });
     </script>
