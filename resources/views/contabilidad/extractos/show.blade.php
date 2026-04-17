@@ -40,7 +40,8 @@
                         <div class="row g-4">
                             <div class="col-md-6">
                                 <span class="text-gray-500 fw-bold d-block text-uppercase ls-1 fs-8 mb-1">Monto de Ingreso</span>
-                                <span class="text-success fw-bolder fs-1 lh-1">${{ number_format($extracto->valor_ingreso, 0, ',', '.') }}</span>
+                                {{-- CAMBIO A 2 DECIMALES AQUÍ --}}
+                                <span class="text-success fw-bolder fs-1 lh-1">${{ number_format($extracto->valor_ingreso, 2, ',', '.') }}</span>
                             </div>
                             <div class="col-md-6">
                                 <span class="text-gray-500 fw-bold d-block text-uppercase ls-1 fs-8 mb-1">Fecha del Movimiento</span>
