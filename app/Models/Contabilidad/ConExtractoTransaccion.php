@@ -27,7 +27,7 @@ class ConExtractoTransaccion extends Model
 
     protected $casts = [
         'fecha_movimiento' => 'datetime',
-        'valor_ingreso' => 'integer',
+        'valor_ingreso'    => 'decimal:2',
     ];
 
     /**
