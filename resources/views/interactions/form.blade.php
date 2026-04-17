@@ -1085,7 +1085,7 @@
             if (e.dataTransfer.files.length > 0) procesarArchivo(e.dataTransfer.files[0]);
         });
 
-        // 5. ENVÍO POR AJAX
+        // 5. ENVÍO POR AJAX (CON PREVENCIÓN DE NULOS)
         form.addEventListener('submit', function(e) {
             e.preventDefault();
             const btnSubmit = document.getElementById('btnSubmitComprobante');
@@ -1093,9 +1093,16 @@
             btnSubmit.disabled = true;
             btnSubmit.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> GUARDANDO...`;
 
+            // [CORRECCIÓN CRÍTICA PARA PRODUCCIÓN]: Limpiamos campos vacíos del FormData
+            // Esto asegura que Laravel no reciba strings vacíos ("") que rompen la validación
+            const formData = new FormData(this);
+            if (!formData.get('numero_cuota')) formData.delete('numero_cuota');
+            if (!formData.get('pr')) formData.delete('pr');
+            if (!formData.get('cco')) formData.delete('cco');
+
             fetch(this.action, {
                 method: 'POST',
-                body: new FormData(this),
+                body: formData,
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
                     'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
@@ -1127,7 +1134,6 @@
     function resetFile() {
         document.getElementById('archivo_soporte').value = '';
         document.getElementById('preview_container').classList.add('d-none');
-        // Reset campos nuevos
         document.getElementById('numero_cuota').value = '';
         document.getElementById('pr').value = '';
         document.getElementById('cco').value = '';
