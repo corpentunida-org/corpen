@@ -18,13 +18,13 @@
             
             {{-- Controles y Botones Superiores --}}
             <div class="ms-auto d-flex align-items-center gap-3">
-                {{-- Buscador JS (Se mantiene tu lógica) --}}
+                {{-- Buscador JS --}}
                 <div class="input-group input-group-sm border border-gray-300 rounded bg-white shadow-sm">
                     <span class="input-group-text bg-white border-0"><i class="fas fa-search fs-9 text-muted"></i></span>
                     <input type="text" id="tableSearch" class="form-control border-0 ps-0 fs-8 w-250px" placeholder="Buscar ref, tercero, descripción o monto...">
                 </div>
 
-                {{-- Botones de Acción que estaban en el Sidebar --}}
+                {{-- Botones de Acción --}}
                 <a href="{{ route('contabilidad.extractos.importar') }}" class="btn btn-sm btn-primary fw-bold px-4 rounded-1 shadow-sm">
                     <i class="fas fa-cloud-upload-alt me-1"></i> Subir Extracto
                 </a>
@@ -87,8 +87,9 @@
                                 {{ $movimiento->descripcion_banco }}
                             </td>
 
+                            {{-- CAMBIO A 2 DECIMALES AQUÍ --}}
                             <td class="text-end fw-bold text-success pe-4">
-                                $ {{ number_format($movimiento->valor_ingreso, 0, ',', '.') }}
+                                $ {{ number_format($movimiento->valor_ingreso, 2, ',', '.') }}
                             </td>
 
                             <td class="font-monospace fs-10 text-muted" style="max-width: 150px;">
@@ -120,7 +121,7 @@
                 </table>
             </div>
 
-            {{-- Barra de Estado Estilo Excel (Reemplaza el resumen del sidebar viejo) --}}
+            {{-- Barra de Estado Estilo Excel --}}
             <div class="bg-white border-top border-gray-300 p-2 d-flex justify-content-between align-items-center fs-9 text-muted">
                 <div>
                     <i class="fas fa-check-circle text-success me-1"></i> Listo
@@ -254,10 +255,10 @@
             });
         });
 
-        // 2. Buscador en tiempo real
+        // 2. Buscador en tiempo real corregido para apuntar a "#main-table"
         document.getElementById("tableSearch").addEventListener("keyup", function() {
             let filter = this.value.toLowerCase();
-            let rows = document.querySelectorAll("#extractosTable .searchable-row");
+            let rows = document.querySelectorAll("#main-table .searchable-row");
 
             rows.forEach(row => {
                 let text = row.textContent.toLowerCase();

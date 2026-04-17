@@ -79,8 +79,9 @@
                                             <span class="text-muted fs-9 font-monospace">Ref: {{ substr($movimiento->hash_transaccion, 0, 15) }}...</span>
                                         </td>
                                         
+                                        {{-- CAMBIO A 2 DECIMALES AQUÍ --}}
                                         <td class="text-end fw-bolder text-success">
-                                            ${{ number_format($movimiento->valor_ingreso, 0, ',', '.') }}
+                                            ${{ number_format($movimiento->valor_ingreso, 2, ',', '.') }}
                                         </td>
                                     </tr>
                                 @empty
@@ -156,8 +157,9 @@
                                                 </span>
                                             </td>
                                             
+                                            {{-- CAMBIO A 2 DECIMALES AQUÍ --}}
                                             <td class="text-end fw-bolder text-dark">
-                                                ${{ number_format($comprobante->monto_pagado, 0, ',', '.') }}
+                                                ${{ number_format($comprobante->monto_pagado, 2, ',', '.') }}
                                             </td>
                                             
                                             <td class="text-center p-1">
