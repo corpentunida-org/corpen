@@ -834,7 +834,7 @@
                     <input type="hidden" name="id_interaction" value="{{ $interaction->id ?? '' }}">
                     <input type="hidden" name="temp_token" value="{{ $miTokenSesion ?? '' }}">
 
-                    <div class="row g-6">
+                    <div class="row g-5">
                         <div class="col-md-6">
                             <div class="fv-row mb-4">
                                 <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Código Tercero *</label>
@@ -844,7 +844,6 @@
                                 </div>
                             </div>
 
-                            {{-- NUEVO CAMPO: OBLIGACIÓN --}}
                             <div class="fv-row mb-4">
                                 <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Obligación / Línea de Crédito *</label>
                                 <div class="input-group input-group-solid border border-gray-300 rounded shadow-sm">
@@ -859,7 +858,6 @@
                                     </select>
                                 </div>
                             </div>
-                            {{-- FIN NUEVO CAMPO --}}
 
                             <div class="fv-row mb-0">
                                 <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Monto Pagado *</label>
@@ -869,8 +867,15 @@
                                     <input type="hidden" id="monto_pagado" name="monto_pagado">
                                 </div>
                             </div>
+                        </div>
 
-                            <div class="fv-row mt-4">
+                        <div class="col-md-6">
+                            <div class="fv-row mb-4">
+                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Fecha de Pago *</label>
+                                <input type="date" id="fecha_pago" name="fecha_pago" class="form-control form-control-solid border border-gray-300 gen-hash" required value="{{ date('Y-m-d') }}">
+                            </div>
+
+                            <div class="fv-row mb-4">
                                 <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Banco *</label>
                                 <div class="input-group input-group-solid border border-gray-300 rounded shadow-sm">
                                     <select class="form-select select2 border-0" id="id_banco" name="id_banco" required>
@@ -883,24 +888,35 @@
                                     </select>
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <div class="fv-row mb-4">
-                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Fecha de Pago *</label>
-                                <input type="date" id="fecha_pago" name="fecha_pago" class="form-control form-control-solid border border-gray-300 gen-hash" required value="{{ date('Y-m-d') }}">
-                            </div>
 
                             <div class="fv-row">
                                 <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Documento Soporte *</label>
-                                {{-- Zona Drag & Drop Mejorada --}}
                                 <div class="drop-zone-custom position-relative" id="drop_zone_area">
                                     <input type="file" id="archivo_soporte" name="archivo_soporte" class="d-none" accept=".pdf,.jpg,.jpeg,.png" required>
-                                    <label for="archivo_soporte" class="w-100 h-100 cursor-pointer d-flex flex-column align-items-center justify-content-center py-4 text-center">
-                                        <i class="fas fa-cloud-upload-alt fs-2 text-primary mb-2"></i>
-                                        <span class="fs-8 text-gray-800 fw-bold">Haz clic o arrastra el archivo aquí</span>
-                                        <span class="fs-9 text-muted mt-1">(También puedes pegar con Ctrl+V)</span>
+                                    <label for="archivo_soporte" class="w-100 h-100 cursor-pointer d-flex flex-column align-items-center justify-content-center py-2 text-center">
+                                        <i class="fas fa-cloud-upload-alt fs-4 text-primary mb-1"></i>
+                                        <span class="fs-9 text-gray-800 fw-bold">Clic, Arrastra o Pega (Ctrl+V)</span>
                                     </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- FILA CONTABLE: CUOTA, PR, CCO --}}
+                        <div class="col-12 mt-2">
+                            <div class="p-4 bg-light-soft border border-dashed border-gray-300 rounded-3">
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-bold text-gray-600 fs-9 text-uppercase">N° Cuota</label>
+                                        <input type="number" name="numero_cuota" id="numero_cuota" class="form-control form-control-sm border-gray-300 bg-white" placeholder="Ej: 1">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-bold text-gray-600 fs-9 text-uppercase">PR</label>
+                                        <input type="number" name="pr" id="pr" class="form-control form-control-sm border-gray-300 bg-white" placeholder="0">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-bold text-gray-600 fs-9 text-uppercase">CCO</label>
+                                        <input type="number" name="cco" id="cco" class="form-control form-control-sm border-gray-300 bg-white" placeholder="0">
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -945,7 +961,7 @@
         border-radius: 8px; 
         transition: all 0.3s ease; 
         background-color: #f9fafb; 
-        height: 110px; 
+        height: 85px; 
     }
     .drop-zone-custom:hover, .drop-zone-custom.dragover { 
         border-color: #198754; 
@@ -953,6 +969,7 @@
     }
     .bg-light-soft { background-color: #fcfcfc; }
     .font-monospace { font-family: 'Roboto Mono', monospace !important; }
+    .border-dashed { border-style: dashed !important; }
 </style>
 
 <script>
@@ -963,17 +980,14 @@
         const myModal = new bootstrap.Modal(modalElement);
         const form = document.getElementById('formModalComprobante');
         
-        // Selectores internos
         const modalCodTercero = document.getElementById('cod_tercero');
         const displayInput = document.getElementById('monto_pagado_display');
         const hiddenInput = document.getElementById('monto_pagado');
         const hashTarget = document.getElementById('hash_transaccion');
-        
-        // Selectores Archivos
         const fileInput = document.getElementById('archivo_soporte');
         const dropZone = document.getElementById('drop_zone_area');
 
-        // 1. DISPARADOR DE TIPIFICACIÓN (ID 3)
+        // 1. DISPARADOR DE TIPIFICACIÓN
         document.querySelectorAll('.type-trigger').forEach(radio => {
             radio.addEventListener('change', function() {
                 if (this.value == '3') {
@@ -1006,14 +1020,13 @@
             actualizarHash();
         });
 
-        // 3. GENERADOR DE HASH
+        // 3. GENERADOR DE HASH (Incluye Banco)
         function actualizarHash() {
-            const banco = document.getElementById('id_banco').value; // Capturamos el ID del Banco
+            const banco = document.getElementById('id_banco').value;
             const fecha = document.getElementById('fecha_pago').value.replace(/-/g, '');
             const monto = hiddenInput.value;
             const tercero = modalCodTercero.value;
             
-            // Ahora validamos que los 4 campos tengan valor
             if(banco && fecha && monto && tercero) {
                 hashTarget.value = `${banco}-${fecha}-${monto}-${tercero}`;
             } else {
@@ -1021,36 +1034,26 @@
             }
         }
         
-        // Mantienes los listeners que ya tenías
         document.querySelectorAll('.gen-hash').forEach(i => i.addEventListener('input', actualizarHash));
         document.getElementById('fecha_pago').addEventListener('change', actualizarHash);
-        
-        // ¡NUEVO! Agregamos el listener para que se actualice al cambiar el banco
         document.getElementById('id_banco').addEventListener('change', actualizarHash);
-        // ---------------------------------------------------------
-        // 4. MANEJO DE ARCHIVOS (CLIC, ARRASTRAR Y PEGAR)
-        // ---------------------------------------------------------
 
+        // 4. MANEJO DE ARCHIVOS
         function procesarArchivo(file) {
             if (!file) return;
-
             const validTypes = ['image/jpeg', 'image/png', 'application/pdf'];
             if (!validTypes.includes(file.type)) {
-                Swal.fire('Formato no válido', 'Solo se permiten imágenes (JPG, PNG) o PDF.', 'warning');
+                Swal.fire('Formato no válido', 'Solo imágenes o PDF.', 'warning');
                 resetFile();
                 return;
             }
-
             const dataTransfer = new DataTransfer();
             dataTransfer.items.add(file);
             fileInput.files = dataTransfer.files;
-
             document.getElementById('preview_container').classList.remove('d-none');
             document.getElementById('file_name_preview').textContent = file.name || "Imagen capturada";
-            
             const img = document.getElementById('image_preview');
             const pdfIcon = document.getElementById('pdf_preview_icon');
-
             if (file.type.startsWith('image/')) {
                 const reader = new FileReader();
                 reader.onload = (ev) => {
@@ -1071,37 +1074,22 @@
 
         window.addEventListener('paste', e => {
             if (!modalElement.classList.contains('show')) return;
-            if(e.clipboardData.files.length > 0) {
-                procesarArchivo(e.clipboardData.files[0]);
-            }
+            if(e.clipboardData.files.length > 0) procesarArchivo(e.clipboardData.files[0]);
         });
 
-        dropZone.addEventListener('dragover', e => {
-            e.preventDefault();
-            dropZone.classList.add('dragover');
-        });
-
-        dropZone.addEventListener('dragleave', e => {
-            e.preventDefault();
-            dropZone.classList.remove('dragover');
-        });
-
+        dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', e => { e.preventDefault(); dropZone.classList.remove('dragover'); });
         dropZone.addEventListener('drop', e => {
             e.preventDefault();
             dropZone.classList.remove('dragover');
-            if (e.dataTransfer.files.length > 0) {
-                procesarArchivo(e.dataTransfer.files[0]);
-            }
+            if (e.dataTransfer.files.length > 0) procesarArchivo(e.dataTransfer.files[0]);
         });
 
-        // ---------------------------------------------------------
-        // 5. ENVÍO POR AJAX (SIN RECARGAR PÁGINA)
-        // ---------------------------------------------------------
+        // 5. ENVÍO POR AJAX
         form.addEventListener('submit', function(e) {
             e.preventDefault();
             const btnSubmit = document.getElementById('btnSubmitComprobante');
             const originalText = btnSubmit.innerHTML;
-            
             btnSubmit.disabled = true;
             btnSubmit.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> GUARDANDO...`;
 
@@ -1119,9 +1107,8 @@
                     myModal.hide();
                     Swal.fire({ 
                         title: '¡Realizado!', 
-                        text: 'El pago ha sido vinculado a esta sesión de trabajo.', 
-                        icon: 'success', 
-                        confirmButtonText: 'Continuar con la Gestión' 
+                        text: 'El pago ha sido vinculado a esta sesión.', 
+                        icon: 'success'
                     });
                     form.reset(); 
                     resetFile();
@@ -1129,7 +1116,7 @@
                     Swal.fire('Atención', data.message, 'warning');
                 }
             })
-            .catch(() => Swal.fire('Error', 'No se pudo conectar con el servidor', 'error'))
+            .catch(() => Swal.fire('Error', 'No se pudo conectar', 'error'))
             .finally(() => { 
                 btnSubmit.disabled = false; 
                 btnSubmit.innerHTML = originalText; 
@@ -1140,6 +1127,10 @@
     function resetFile() {
         document.getElementById('archivo_soporte').value = '';
         document.getElementById('preview_container').classList.add('d-none');
+        // Reset campos nuevos
+        document.getElementById('numero_cuota').value = '';
+        document.getElementById('pr').value = '';
+        document.getElementById('cco').value = '';
     }
 </script>
 
