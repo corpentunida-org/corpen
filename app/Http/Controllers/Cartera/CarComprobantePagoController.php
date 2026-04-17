@@ -66,6 +66,14 @@ class CarComprobantePagoController extends Controller
             ]);
         }
 
+        // [CORRECCIÓN CRÍTICA PARA PRODUCCIÓN]: Convertir strings vacíos a NULL explícitamente
+        // Esto evita que la validación 'integer' o la base de datos fallen.
+        $request->merge([
+            'pr'           => $request->filled('pr') ? $request->pr : null,
+            'cco'          => $request->filled('cco') ? $request->cco : null,
+            'numero_cuota' => $request->filled('numero_cuota') ? $request->numero_cuota : null,
+        ]);
+
         // 2. Validar (Incluyendo pr, cco y numero_cuota)
         $validated = $request->validate([
             'cod_ter_MaeTerceros'     => 'required|integer',
@@ -78,9 +86,9 @@ class CarComprobantePagoController extends Controller
             'id_interaction'          => 'nullable|integer',
             'temp_token'              => 'nullable|string|max:255',
             'id_banco'                => 'required|integer',
-            'pr'                      => 'nullable|integer', // NUEVO
-            'cco'                     => 'nullable|integer', // NUEVO
-            'numero_cuota'            => 'nullable|integer', // NUEVO
+            'pr'                      => 'nullable|integer', 
+            'cco'                     => 'nullable|integer', 
+            'numero_cuota'            => 'nullable|integer', 
         ]);
 
         try {
@@ -119,9 +127,9 @@ class CarComprobantePagoController extends Controller
                 'id_user'                 => auth()->id(), 
                 'estado'                  => 'pendiente', 
                 'id_banco'                => $validated['id_banco'], 
-                'pr'                      => $validated['pr'] ?? null,          // NUEVO
-                'cco'                     => $validated['cco'] ?? null,         // NUEVO
-                'numero_cuota'            => $validated['numero_cuota'] ?? null // NUEVO
+                'pr'                      => $validated['pr'] ?? null,          
+                'cco'                     => $validated['cco'] ?? null,         
+                'numero_cuota'            => $validated['numero_cuota'] ?? null 
             ]);
 
             // 6. Respuesta para AJAX (Modal)
