@@ -13,28 +13,39 @@ class CarComprobantePagoController extends Controller
 {
     public function index(Request $request)
     {
-        $query = CarComprobantePago::query();
+        // 1. Filtro Obligatorio: Periodo (Año y Mes). Por defecto el mes actual.
+        $periodo = $request->input('periodo', date('Y-m'));
+        $parts = explode('-', $periodo);
+        $year = $parts[0] ?? date('Y');
+        $month = $parts[1] ?? date('m');
 
-        // 1. Filtrar por estado (Tabs de la interfaz)
+        // 2. Consulta Base
+        $query = CarComprobantePago::whereYear('fecha_pago', $year)
+                                   ->whereMonth('fecha_pago', $month);
+
+        // 3. Filtrar por estado (Tabs de la interfaz)
         if ($request->filled('estado')) {
             $query->where('estado', $request->estado);
         }
 
-        // 2. Buscador backend (busca en toda la base de datos)
+        // 4. Buscador backend (busca en toda la base de datos y ahora incluye los nuevos campos)
         if ($request->filled('buscar')) {
             $busqueda = $request->buscar;
             $query->where(function($q) use ($busqueda) {
                 $q->where('cod_ter_MaeTerceros', 'LIKE', "%{$busqueda}%")
                   ->orWhere('id_interaction', 'LIKE', "%{$busqueda}%")
                   ->orWhere('id_obligacion', 'LIKE', "%{$busqueda}%") 
-                  ->orWhere('monto_pagado', 'LIKE', "%{$busqueda}%");
+                  ->orWhere('monto_pagado', 'LIKE', "%{$busqueda}%")
+                  ->orWhere('numero_cuota', 'LIKE', "%{$busqueda}%")
+                  ->orWhere('pr', 'LIKE', "%{$busqueda}%")
+                  ->orWhere('cco', 'LIKE', "%{$busqueda}%");
             });
         }
 
-        // 3. Paginación
-        $comprobantes = $query->latest()->paginate(15); 
+        // 5. Paginación robusta de 100 registros
+        $comprobantes = $query->latest()->paginate(100)->withQueryString(); 
         
-        return view('cartera.comprobantes.index', compact('comprobantes'));
+        return view('cartera.comprobantes.index', compact('comprobantes', 'periodo'));
     }
 
     public function create()
@@ -55,7 +66,7 @@ class CarComprobantePagoController extends Controller
             ]);
         }
 
-        // 2. Validar
+        // 2. Validar (Incluyendo pr, cco y numero_cuota)
         $validated = $request->validate([
             'cod_ter_MaeTerceros'     => 'required|integer',
             'id_obligacion'           => 'nullable|integer', 
@@ -67,10 +78,13 @@ class CarComprobantePagoController extends Controller
             'id_interaction'          => 'nullable|integer',
             'temp_token'              => 'nullable|string|max:255',
             'id_banco'                => 'required|integer',
+            'pr'                      => 'nullable|integer', // NUEVO
+            'cco'                     => 'nullable|integer', // NUEVO
+            'numero_cuota'            => 'nullable|integer', // NUEVO
         ]);
 
         try {
-            // 3. Generar Hash y comprobar duplicados (Actualizado con ID del Banco)
+            // 3. Generar Hash y comprobar duplicados
             $hash_transaccion = $validated['id_banco'] . '-' . $validated['fecha_pago'] . '-' . $validated['monto_pagado'] . '-' . $validated['cod_ter_MaeTerceros'];
             
             $existeHash = CarComprobantePago::where('hash_transaccion', $hash_transaccion)->exists();
@@ -91,7 +105,7 @@ class CarComprobantePagoController extends Controller
                 $rutaArchivo = $request->file('archivo_soporte')->store($folderPath, 's3');
             }
 
-            // 5. Crear registro
+            // 5. Crear registro con los nuevos campos
             CarComprobantePago::create([
                 'cod_ter_MaeTerceros'     => $validated['cod_ter_MaeTerceros'],
                 'id_obligacion'           => $validated['id_obligacion'] ?? null, 
@@ -105,6 +119,9 @@ class CarComprobantePagoController extends Controller
                 'id_user'                 => auth()->id(), 
                 'estado'                  => 'pendiente', 
                 'id_banco'                => $validated['id_banco'], 
+                'pr'                      => $validated['pr'] ?? null,          // NUEVO
+                'cco'                     => $validated['cco'] ?? null,         // NUEVO
+                'numero_cuota'            => $validated['numero_cuota'] ?? null // NUEVO
             ]);
 
             // 6. Respuesta para AJAX (Modal)
@@ -137,17 +154,19 @@ class CarComprobantePagoController extends Controller
 
         $validated = $request->validate([
             'monto_pagado'   => 'sometimes|integer',
-            'id_obligacion'  => 'sometimes|integer', // <--- NUEVO CAMPO AGREGADO PARA PERMITIR ACTUALIZACIÓN
+            'id_obligacion'  => 'sometimes|integer', 
             'estado'         => 'sometimes|in:pendiente,conciliado,rechazado',
             'archivo_soporte'=> 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
+            'pr'             => 'sometimes|nullable|integer', // NUEVO
+            'cco'            => 'sometimes|nullable|integer', // NUEVO
+            'numero_cuota'   => 'sometimes|nullable|integer', // NUEVO
         ]);
 
         if ($request->hasFile('archivo_soporte')) {
-            // Al actualizar, mantenemos la carpeta del tercero original o la nueva si cambió
             $terceroId = $comprobante->cod_ter_MaeTerceros;
             $folderPath = "cartera/comprobantes/{$terceroId}";
 
-            // Borrar el archivo anterior de S3 para no dejar basura
+            // Borrar el archivo anterior de S3
             if ($comprobante->ruta_archivo) {
                 Storage::disk('s3')->delete($comprobante->ruta_archivo);
             }
