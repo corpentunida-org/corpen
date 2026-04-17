@@ -133,19 +133,81 @@ class ConExtractoTransaccionController extends Controller
         return view('contabilidad.extractos.importar', compact('cuentas'));
     }
 
-    public function conciliacion()
+    public function conciliacion(Request $request)
     {
-        // 1. Lado Izquierdo: Extractos del banco pendientes
-        $extractosPendientes = ConExtractoTransaccion::with('cuentaBancaria')
-                                ->where('estado_conciliacion', 'Pendiente')
-                                ->orderBy('fecha_movimiento', 'desc')
-                                ->get();
+        // 1. Filtro Obligatorio: Periodo (Año y Mes). Por defecto el mes actual.
+        $periodo = $request->input('periodo', date('Y-m'));
+        $parts = explode('-', $periodo);
+        $year = $parts[0] ?? date('Y');
+        $month = $parts[1] ?? date('m');
 
-        // 2. Lado Derecho: Soportes de cartera (pagos registrados)
-        // Traemos los recibos ordenados por fecha
-        $comprobantesCartera = \App\Models\Cartera\CarComprobantePago::orderBy('id', 'desc')->get();
+        // 2. Filtros Opcionales
+        $banco_id = $request->input('banco_id');
+        $distrito = $request->input('distrito');
+        $search = $request->input('search');
 
-        return view('contabilidad.extractos.conciliacion', compact('extractosPendientes', 'comprobantesCartera'));
+        // =========================================================
+        // 3. CONSULTA LADO IZQUIERDO: EXTRACTOS BANCO (PENDIENTES)
+        // =========================================================
+        $queryBanco = ConExtractoTransaccion::with('cuentaBancaria')
+                        ->where('estado_conciliacion', 'Pendiente')
+                        ->whereYear('fecha_movimiento', $year)
+                        ->whereMonth('fecha_movimiento', $month);
+
+        if ($banco_id) {
+            $queryBanco->where('id_con_cuentas_bancaria', $banco_id);
+        }
+        if ($distrito) {
+            $queryBanco->where('referencia_distrito', 'LIKE', "%{$distrito}%");
+        }
+        if ($search) {
+            $queryBanco->where(function($q) use ($search) {
+                $q->where('hash_transaccion', 'LIKE', "%{$search}%")
+                  ->orWhere('referencia_cedula', 'LIKE', "%{$search}%")
+                  ->orWhere('descripcion_banco', 'LIKE', "%{$search}%")
+                  ->orWhere('valor_ingreso', 'LIKE', "%{$search}%");
+            });
+        }
+        // Paginador exclusivo para el Banco
+        $extractosPendientes = $queryBanco->orderBy('fecha_movimiento', 'desc')
+                                          ->paginate(100, ['*'], 'banco_page')
+                                          ->withQueryString();
+
+        // =========================================================
+        // 4. CONSULTA LADO DERECHO: SOPORTES CARTERA (SIN CRUZAR)
+        // =========================================================
+        // Filtramos directo en BD para no traer pagos ya conciliados
+        $queryCartera = \App\Models\Cartera\CarComprobantePago::where('estado', '!=', 'conciliado')
+                        ->whereYear('fecha_pago', $year)
+                        ->whereMonth('fecha_pago', $month);
+
+        // El buscador global también aplica a la cartera (monto o tercero)
+        if ($search) {
+            $queryCartera->where(function($q) use ($search) {
+                $q->where('cod_ter_MaeTerceros', 'LIKE', "%{$search}%")
+                  ->orWhere('ruta_archivo', 'LIKE', "%{$search}%")
+                  ->orWhere('monto_pagado', 'LIKE', "%{$search}%");
+            });
+        }
+        // Paginador exclusivo para la Cartera
+        $comprobantesCartera = $queryCartera->orderBy('fecha_pago', 'desc')
+                                            ->paginate(100, ['*'], 'cartera_page')
+                                            ->withQueryString();
+
+        // =========================================================
+        // 5. DATOS PARA LLENAR LOS SELECTS DE LOS FILTROS
+        // =========================================================
+        $cuentas = ConCuentaBancaria::where('estado', 'Activa')->get();
+        $distritos = ConExtractoTransaccion::select('referencia_distrito')
+                        ->whereNotNull('referencia_distrito')
+                        ->where('referencia_distrito', '!=', '')
+                        ->distinct()
+                        ->pluck('referencia_distrito');
+
+        return view('contabilidad.extractos.conciliacion', compact(
+            'extractosPendientes', 'comprobantesCartera', 
+            'cuentas', 'distritos', 'periodo', 'banco_id', 'distrito', 'search'
+        ));
     }
 
     /**

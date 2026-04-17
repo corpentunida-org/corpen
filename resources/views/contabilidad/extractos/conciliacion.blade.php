@@ -1,11 +1,10 @@
 <x-base-layout>
     <div class="app-container py-5 flex-grow-1 d-flex flex-column" style="min-height: 90vh; background-color: #f8f9fa;">
         
-        {{-- Barra Superior de Herramientas y Filtros --}}
-        <div class="bg-white p-4 rounded-3 shadow-sm border border-gray-300 mb-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
-            
+        {{-- Header Superior --}}
+        <div class="d-flex align-items-center mb-4 px-3 justify-content-between">
             <div class="d-flex align-items-center">
-                <a href="{{ route('contabilidad.extractos.index') }}" class="btn btn-icon btn-light btn-sm me-4 shadow-sm rounded-circle">
+                <a href="{{ route('contabilidad.extractos.index') }}" class="btn btn-icon btn-light btn-sm me-3 shadow-sm rounded-circle">
                     <i class="fas fa-arrow-left"></i>
                 </a>
                 <div>
@@ -16,46 +15,84 @@
                 </div>
             </div>
 
-            {{-- Filtro Global (Mes) controlado por JS --}}
-            <div class="d-flex align-items-center bg-light p-2 rounded border border-gray-200">
-                <label for="filtroMes" class="fw-bold text-gray-700 me-3 ms-2 fs-7 text-uppercase ls-1">Mes a Conciliar:</label>
-                <input type="month" id="filtroMes" class="form-control form-control-sm border-gray-300 shadow-none fw-bold text-primary" style="width: 150px;">
-                <button type="button" id="btnLimpiarFiltro" class="btn btn-sm btn-icon btn-light-danger ms-2" title="Limpiar Filtro">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            
             {{-- Botón Conciliación Automática --}}
             <form action="{{ route('contabilidad.extractos.conciliacion-automatica') }}" method="POST" class="m-0">
                 @csrf
                 <button type="submit" class="btn btn-success fw-bolder fs-6 px-4 shadow-sm" {{ $extractosPendientes->count() == 0 ? 'disabled' : '' }}>
-                    <i class="fas fa-robot me-2"></i> Auto-Conciliar
+                    <i class="fas fa-robot me-2"></i> Auto-Conciliar Mes Actual
                 </button>
             </form>
         </div>
 
+        {{-- BARRA DE FILTROS BACKEND MAESTRA --}}
+        <form method="GET" action="{{ route('contabilidad.extractos.conciliacion') }}" class="bg-white p-3 border border-gray-300 mx-3 mb-3 d-flex flex-wrap gap-3 align-items-end shadow-sm" style="border-radius: 4px;">
+            
+            {{-- Filtro Obligatorio: Mes y Año --}}
+            <div>
+                <label class="form-label fs-9 fw-bolder text-muted text-uppercase mb-1">Periodo a Conciliar *</label>
+                <input type="month" name="periodo" value="{{ $periodo }}" class="form-control form-control-sm border-gray-300 fw-bold text-primary" required>
+            </div>
+
+            {{-- Filtro Opcional: Banco (Aplica a lado izquierdo) --}}
+            <div>
+                <label class="form-label fs-9 fw-bolder text-muted text-uppercase mb-1">Filtrar Banco</label>
+                <select name="banco_id" class="form-select form-select-sm border-gray-300" style="min-width: 150px;">
+                    <option value="">Todas las cuentas...</option>
+                    @foreach($cuentas as $cuenta)
+                        <option value="{{ $cuenta->id }}" {{ $banco_id == $cuenta->id ? 'selected' : '' }}>
+                            {{ $cuenta->banco }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- Filtro Opcional: Distrito (Aplica a lado izquierdo) --}}
+            <div>
+                <label class="form-label fs-9 fw-bolder text-muted text-uppercase mb-1">Distrito Origen</label>
+                <select name="distrito" class="form-select form-select-sm border-gray-300" style="min-width: 120px;">
+                    <option value="">Todos...</option>
+                    @foreach($distritos as $dist)
+                        <option value="{{ $dist }}" {{ $distrito == $dist ? 'selected' : '' }}>{{ $dist }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            {{-- Filtro Opcional: Búsqueda Global (Aplica a ambos lados) --}}
+            <div class="flex-grow-1">
+                <label class="form-label fs-9 fw-bolder text-muted text-uppercase mb-1">Búsqueda General</label>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-light"><i class="fas fa-search text-muted"></i></span>
+                    <input type="text" name="search" value="{{ $search }}" class="form-control border-gray-300" placeholder="Buscar valor exacto, ref, tercero...">
+                </div>
+            </div>
+
+            {{-- Botones de Filtrado --}}
+            <div>
+                <button type="submit" class="btn btn-sm btn-primary fw-bold px-4">
+                    <i class="fas fa-filter me-1"></i> Consultar BD
+                </button>
+                <a href="{{ route('contabilidad.extractos.conciliacion') }}" class="btn btn-sm btn-light-danger btn-icon ms-1" title="Limpiar Filtros">
+                    <i class="fas fa-times"></i>
+                </a>
+            </div>
+        </form>
+
         {{-- Contenedor de las Dos Hojas de Cálculo --}}
-        <div class="row g-3 flex-grow-1">
+        <div class="row g-3 flex-grow-1 mx-1">
             
             {{-- ======================================================= --}}
             {{-- LADO IZQUIERDO: EXTRACTO DEL BANCO (HOJA 1)             --}}
             {{-- ======================================================= --}}
             <div class="col-lg-6 d-flex flex-column">
-                <div class="bg-white shadow-sm border border-gray-300 d-flex flex-column flex-grow-1" style="border-radius: 4px; overflow: hidden;">
+                <div class="bg-white shadow-sm border border-gray-300 d-flex flex-column flex-grow-1" style="border-radius: 0px; overflow: hidden;">
                     
-                    {{-- Pestaña / Header --}}
-                    <div class="d-flex justify-content-between align-items-center bg-gray-100 border-bottom border-gray-300 px-3 py-2">
+                    <div class="d-flex bg-gray-100 border-bottom border-gray-300">
                         <div class="sheet-tab active fw-bold text-primary">
-                            <i class="fas fa-university me-1"></i> Banco (Pendientes)
-                        </div>
-                        <div class="input-group input-group-sm w-200px">
-                            <span class="input-group-text bg-white border-end-0"><i class="fas fa-search fs-9 text-muted"></i></span>
-                            <input type="text" id="buscarBanco" class="form-control border-start-0 ps-0 fs-8 shadow-none" placeholder="Buscar monto/ref...">
+                            <i class="fas fa-university me-1"></i> Banco_{{ str_replace('-', '', $periodo) }}
                         </div>
                     </div>
 
-                    {{-- Tabla Estilo Google Sheets --}}
-                    <div class="table-responsive flex-grow-1" style="max-height: 60vh; overflow-y: auto;">
+                    <div class="table-responsive flex-grow-1" style="max-height: 55vh; overflow-y: auto;">
                         <table class="table-gsheets table-hover w-100" id="tablaBanco">
                             <thead class="sticky-top bg-white shadow-xs">
                                 <tr>
@@ -67,11 +104,9 @@
                             </thead>
                             <tbody>
                                 @forelse($extractosPendientes as $index => $movimiento)
-                                    <tr class="item-extracto cursor-pointer transition-3ms" 
-                                        data-id="{{ $movimiento->id_transaccion }}" 
-                                        data-mes="{{ $movimiento->fecha_movimiento->format('Y-m') }}">
+                                    <tr class="item-extracto cursor-pointer transition-3ms" data-id="{{ $movimiento->id_transaccion }}">
                                         
-                                        <td class="col-index">{{ $index + 1 }}</td>
+                                        <td class="col-index">{{ $extractosPendientes->firstItem() + $index }}</td>
                                         <td class="text-center text-gray-700">{{ $movimiento->fecha_movimiento->format('d/m/Y') }}</td>
                                         
                                         <td class="text-truncate" style="max-width: 200px;" title="{{ $movimiento->descripcion_banco }} | Ref: {{ $movimiento->hash_transaccion }}">
@@ -79,7 +114,6 @@
                                             <span class="text-muted fs-9 font-monospace">Ref: {{ substr($movimiento->hash_transaccion, 0, 15) }}...</span>
                                         </td>
                                         
-                                        {{-- CAMBIO A 2 DECIMALES AQUÍ --}}
                                         <td class="text-end fw-bolder text-success">
                                             ${{ number_format($movimiento->valor_ingreso, 2, ',', '.') }}
                                         </td>
@@ -87,8 +121,8 @@
                                 @empty
                                     <tr>
                                         <td colspan="4" class="text-center py-10 text-muted fs-7 italic">
-                                            <i class="fas fa-check-double text-success mb-2 fs-2 d-block opacity-50"></i>
-                                            Sin movimientos pendientes.
+                                            <i class="fas fa-search text-gray-400 mb-2 fs-2 d-block opacity-50"></i>
+                                            Sin movimientos pendientes para estos filtros.
                                         </td>
                                     </tr>
                                 @endforelse
@@ -96,10 +130,14 @@
                         </table>
                     </div>
                     
-                    {{-- Footer / Barra de Estado --}}
-                    <div class="bg-gray-100 border-top border-gray-300 px-3 py-1 text-muted fs-9 d-flex justify-content-between">
-                        <span id="contadorBanco">Mostrando {{ $extractosPendientes->count() }} filas</span>
-                        <span>Selecciona una fila para vincular</span>
+                    {{-- Footer Banco: Paginación y Estado --}}
+                    <div class="bg-white border-top border-gray-300 p-2 d-flex justify-content-between align-items-center fs-9 text-muted">
+                        <div class="d-flex align-items-center">
+                            {{ $extractosPendientes->links('pagination::bootstrap-4') }}
+                        </div>
+                        <div>
+                            <span>Total en BD: <strong>{{ $extractosPendientes->total() }}</strong></span> | Selecciona para vincular
+                        </div>
                     </div>
                 </div>
             </div>
@@ -108,21 +146,15 @@
             {{-- LADO DERECHO: SOPORTES DE CARTERA (HOJA 2)              --}}
             {{-- ======================================================= --}}
             <div class="col-lg-6 d-flex flex-column">
-                <div class="bg-white shadow-sm border border-gray-300 d-flex flex-column flex-grow-1" style="border-radius: 4px; overflow: hidden;">
+                <div class="bg-white shadow-sm border border-gray-300 d-flex flex-column flex-grow-1" style="border-radius: 0px; overflow: hidden;">
                     
-                    {{-- Pestaña / Header --}}
-                    <div class="d-flex justify-content-between align-items-center bg-gray-100 border-bottom border-gray-300 px-3 py-2">
+                    <div class="d-flex bg-gray-100 border-bottom border-gray-300">
                         <div class="sheet-tab active fw-bold text-info">
-                            <i class="fas fa-receipt me-1"></i> Cartera (Sin Cruzar)
-                        </div>
-                        <div class="input-group input-group-sm w-200px">
-                            <span class="input-group-text bg-white border-end-0"><i class="fas fa-search fs-9 text-muted"></i></span>
-                            <input type="text" id="buscarCartera" class="form-control border-start-0 ps-0 fs-8 shadow-none" placeholder="Buscar monto/tercero...">
+                            <i class="fas fa-receipt me-1"></i> Cartera_{{ str_replace('-', '', $periodo) }}
                         </div>
                     </div>
 
-                    {{-- Tabla Estilo Google Sheets --}}
-                    <div class="table-responsive flex-grow-1" style="max-height: 60vh; overflow-y: auto;">
+                    <div class="table-responsive flex-grow-1" style="max-height: 55vh; overflow-y: auto;">
                         <table class="table-gsheets table-hover w-100" id="tablaCartera">
                             <thead class="sticky-top bg-white shadow-xs">
                                 <tr>
@@ -134,59 +166,52 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @php $contadorCartera = 0; @endphp
-                                @foreach($comprobantesCartera as $comprobante)
-                                    @if($comprobante->estado != 'conciliado')
-                                        @php 
-                                            $contadorCartera++; 
-                                            // Formateamos la fecha para el filtro YYYY-MM
-                                            $mesCartera = \Carbon\Carbon::parse($comprobante->fecha_pago)->format('Y-m');
-                                        @endphp
-                                        <tr class="item-cartera transition-3ms" data-mes="{{ $mesCartera }}">
-                                            
-                                            <td class="col-index">{{ $contadorCartera }}</td>
-                                            
-                                            <td class="text-center text-gray-700">
-                                                {{ \Carbon\Carbon::parse($comprobante->fecha_pago)->format('d/m/Y') }}
-                                            </td>
-                                            
-                                            <td class="text-truncate" style="max-width: 180px;" title="Archivo: {{ basename($comprobante->ruta_archivo) }}">
-                                                <span class="text-dark fw-bold d-block">Tercero: #{{ $comprobante->cod_ter_MaeTerceros }}</span>
-                                                <span class="text-muted fs-9 d-flex align-items-center">
-                                                    <i class="fas fa-file-invoice me-1"></i> {{ basename($comprobante->ruta_archivo) }}
-                                                </span>
-                                            </td>
-                                            
-                                            {{-- CAMBIO A 2 DECIMALES AQUÍ --}}
-                                            <td class="text-end fw-bolder text-dark">
-                                                ${{ number_format($comprobante->monto_pagado, 2, ',', '.') }}
-                                            </td>
-                                            
-                                            <td class="text-center p-1">
-                                                <button type="button" class="btn btn-sm btn-outline-info w-100 py-1 px-2 fw-bolder fs-9 rounded-1 btn-vincular" 
-                                                        data-comprobante-id="{{ $comprobante->id }}">
-                                                    VINCULAR
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    @endif
-                                @endforeach
-                                @if($contadorCartera == 0)
-                                    <tr>
-                                        <td colspan="5" class="text-center py-10 text-muted fs-7 italic">
-                                            <i class="fas fa-folder-open text-info mb-2 fs-2 d-block opacity-50"></i>
-                                            No hay soportes pendientes.
+                                @forelse($comprobantesCartera as $index => $comprobante)
+                                    <tr class="item-cartera transition-3ms">
+                                        <td class="col-index">{{ $comprobantesCartera->firstItem() + $index }}</td>
+                                        
+                                        <td class="text-center text-gray-700">
+                                            {{ \Carbon\Carbon::parse($comprobante->fecha_pago)->format('d/m/Y') }}
+                                        </td>
+                                        
+                                        <td class="text-truncate" style="max-width: 180px;" title="Archivo: {{ basename($comprobante->ruta_archivo) }}">
+                                            <span class="text-dark fw-bold d-block">Tercero: #{{ $comprobante->cod_ter_MaeTerceros }}</span>
+                                            <span class="text-muted fs-9 d-flex align-items-center">
+                                                <i class="fas fa-file-invoice me-1"></i> {{ basename($comprobante->ruta_archivo) }}
+                                            </span>
+                                        </td>
+                                        
+                                        <td class="text-end fw-bolder text-dark">
+                                            ${{ number_format($comprobante->monto_pagado, 2, ',', '.') }}
+                                        </td>
+                                        
+                                        <td class="text-center p-1">
+                                            <button type="button" class="btn btn-sm btn-outline-info w-100 py-1 px-2 fw-bolder fs-9 rounded-1 btn-vincular" 
+                                                    data-comprobante-id="{{ $comprobante->id }}">
+                                                VINCULAR
+                                            </button>
                                         </td>
                                     </tr>
-                                @endif
+                                @empty
+                                    <tr>
+                                        <td colspan="5" class="text-center py-10 text-muted fs-7 italic">
+                                            <i class="fas fa-search text-gray-400 mb-2 fs-2 d-block opacity-50"></i>
+                                            No hay soportes de cartera pendientes.
+                                        </td>
+                                    </tr>
+                                @endforelse
                             </tbody>
                         </table>
                     </div>
                     
-                    {{-- Footer / Barra de Estado --}}
-                    <div class="bg-gray-100 border-top border-gray-300 px-3 py-1 text-muted fs-9 d-flex justify-content-between">
-                        <span id="contadorCarteraTexto">Mostrando {{ $contadorCartera }} filas</span>
-                        <span>Esperando cruce manual...</span>
+                    {{-- Footer Cartera: Paginación y Estado --}}
+                    <div class="bg-white border-top border-gray-300 p-2 d-flex justify-content-between align-items-center fs-9 text-muted">
+                        <div class="d-flex align-items-center">
+                            {{ $comprobantesCartera->links('pagination::bootstrap-4') }}
+                        </div>
+                        <div>
+                            <span>Total en BD: <strong>{{ $comprobantesCartera->total() }}</strong></span> | Esperando cruce...
+                        </div>
                     </div>
                 </div>
             </div>
@@ -204,76 +229,6 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            
-            // ==========================================
-            // 1. LÓGICA DE FILTROS (Mes y Buscadores)
-            // ==========================================
-            const filtroMes = document.getElementById('filtroMes');
-            const btnLimpiar = document.getElementById('btnLimpiarFiltro');
-            const inputBanco = document.getElementById('buscarBanco');
-            const inputCartera = document.getElementById('buscarCartera');
-
-            function aplicarFiltros() {
-                const mesSeleccionado = filtroMes.value; // Formato "YYYY-MM"
-                const textoBanco = inputBanco.value.toLowerCase().replace(/\./g, '');
-                const textoCartera = inputCartera.value.toLowerCase().replace(/\./g, '');
-
-                let countBanco = 0;
-                let countCartera = 0;
-
-                // Filtrar Tabla Banco
-                document.querySelectorAll('#tablaBanco tbody tr.item-extracto').forEach(row => {
-                    const rowMes = row.getAttribute('data-mes');
-                    const rowText = row.textContent.toLowerCase().replace(/\./g, '');
-                    
-                    const cumpleMes = (mesSeleccionado === '' || rowMes === mesSeleccionado);
-                    const cumpleTexto = (rowText.includes(textoBanco));
-
-                    if (cumpleMes && cumpleTexto) {
-                        row.style.display = '';
-                        countBanco++;
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
-
-                // Filtrar Tabla Cartera
-                document.querySelectorAll('#tablaCartera tbody tr.item-cartera').forEach(row => {
-                    const rowMes = row.getAttribute('data-mes');
-                    const rowText = row.textContent.toLowerCase().replace(/\./g, '');
-                    
-                    const cumpleMes = (mesSeleccionado === '' || rowMes === mesSeleccionado);
-                    const cumpleTexto = (rowText.includes(textoCartera));
-
-                    if (cumpleMes && cumpleTexto) {
-                        row.style.display = '';
-                        countCartera++;
-                    } else {
-                        row.style.display = 'none';
-                    }
-                });
-
-                // Actualizar contadores
-                document.getElementById('contadorBanco').textContent = `Mostrando ${countBanco} filas`;
-                document.getElementById('contadorCarteraTexto').textContent = `Mostrando ${countCartera} filas`;
-            }
-
-            // Event Listeners de Filtros
-            filtroMes.addEventListener('change', aplicarFiltros);
-            inputBanco.addEventListener('keyup', aplicarFiltros);
-            inputCartera.addEventListener('keyup', aplicarFiltros);
-            
-            btnLimpiar.addEventListener('click', () => {
-                filtroMes.value = '';
-                inputBanco.value = '';
-                inputCartera.value = '';
-                aplicarFiltros();
-            });
-
-
-            // ==========================================
-            // 2. LÓGICA DE SELECCIÓN Y VINCULACIÓN
-            // ==========================================
             let selectedExtractoId = null;
 
             // Seleccionar fila del banco
@@ -342,7 +297,7 @@
             padding: 6px 16px; font-size: 12px; font-weight: 600; text-decoration: none; display: inline-block;
         }
         .sheet-tab.active {
-            background-color: #fff; border-bottom: 3px solid currentColor; border-top-left-radius: 4px; border-top-right-radius: 4px;
+            background-color: #fff; border-bottom: 3px solid currentColor; border-top-left-radius: 0px; border-top-right-radius: 0px;
         }
         
         /* EFECTOS INTERACTIVOS */
@@ -359,5 +314,10 @@
             background-color: #1a73e8 !important;
             color: white !important;
         }
+
+        /* Ajuste Paginación Minimalista */
+        .pagination { margin-bottom: 0 !important; }
+        .page-link { padding: 0.2rem 0.5rem; font-size: 0.8rem; border-color: #dadce0; color: #5f6368; }
+        .page-item.active .page-link { background-color: #1a73e8; border-color: #1a73e8; }
     </style>
 </x-base-layout>
