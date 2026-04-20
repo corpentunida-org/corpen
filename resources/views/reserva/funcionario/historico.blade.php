@@ -247,7 +247,6 @@
                         `,
                             confirmButtonText: 'Cerrar'
                         });
-
                     }
                 });
                 calendar.render();
