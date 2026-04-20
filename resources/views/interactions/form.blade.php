@@ -921,6 +921,21 @@
                                 </div>
                             </div>
 
+                            <div class="fv-row mb-4">
+                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Obligación / Línea de Crédito *</label>
+                                <div class="input-group input-group-solid border border-gray-300 rounded shadow-sm">
+                                    <span class="input-group-text bg-transparent border-0"><i class="fas fa-file-contract text-muted"></i></span>
+                                    <select class="form-select border-0 select2" id="id_obligacion" name="id_obligacion" required>
+                                        <option value="">Selecciona la obligación...</option>
+                                        @if (isset($lineasCredito))
+                                            @foreach ($lineasCredito as $id => $nombre)
+                                                <option value="{{ $id }}">{{ $nombre }}</option>
+                                            @endforeach
+                                        @endif
+                                    </select>
+                                </div>
+                            </div>
+
                             <div class="fv-row mb-0">
                                 <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Monto Pagado
                                     *</label>
@@ -936,18 +951,14 @@
 
                         <div class="col-md-6">
                             <div class="fv-row mb-4">
-                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Fecha de Pago
-                                    *</label>
-                                <input type="date" id="fecha_pago" name="fecha_pago"
-                                    class="form-control form-control-solid border border-gray-300 gen-hash" required
-                                    value="{{ date('Y-m-d') }}">
+                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Fecha de Pago *</label>
+                                <input type="date" id="fecha_pago" name="fecha_pago" class="form-control form-control-solid border border-gray-300 gen-hash" required value="{{ date('Y-m-d') }}">
                             </div>
 
                             <div class="fv-row mb-4">
                                 <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Banco *</label>
                                 <div class="input-group input-group-solid border border-gray-300 rounded shadow-sm">
-                                    <select class="form-select select2 border-0" id="id_banco" name="id_banco"
-                                        required>
+                                    <select class="form-select select2 border-0" id="id_banco" name="id_banco" required>
                                         <option value="">Selecciona el banco...</option>
                                         @if (isset($idBanco))
                                             @foreach ($idBanco as $idb)
@@ -960,13 +971,10 @@
                             </div>
 
                             <div class="fv-row">
-                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Documento Soporte
-                                    *</label>
+                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Documento Soporte *</label>
                                 <div class="drop-zone-custom position-relative" id="drop_zone_area">
-                                    <input type="file" id="archivo_soporte" name="archivo_soporte" class="d-none"
-                                        accept=".pdf,.jpg,.jpeg,.png" required>
-                                    <label for="archivo_soporte"
-                                        class="w-100 h-100 cursor-pointer d-flex flex-column align-items-center justify-content-center py-2 text-center">
+                                    <input type="file" id="archivo_soporte" name="archivo_soporte" class="d-none" accept=".pdf,.jpg,.jpeg,.png" required>
+                                    <label for="archivo_soporte" class="w-100 h-100 cursor-pointer d-flex flex-column align-items-center justify-content-center py-2 text-center">
                                         <i class="fas fa-cloud-upload-alt fs-4 text-primary mb-1"></i>
                                         <span class="fs-9 text-gray-800 fw-bold">Clic, Arrastra o Pega (Ctrl+V)</span>
                                     </label>
@@ -979,23 +987,16 @@
                             <div class="p-4 bg-light-soft border border-dashed border-gray-300 rounded-3">
                                 <div class="row g-3">
                                     <div class="col-md-4">
-                                        <label class="form-label fw-bold text-gray-600 fs-9 text-uppercase">N°
-                                            Cuota</label>
-                                        <input type="number" name="numero_cuota" id="numero_cuota"
-                                            class="form-control form-control-sm border-gray-300 bg-white"
-                                            placeholder="Ej: 1">
+                                        <label class="form-label fw-bold text-gray-600 fs-9 text-uppercase">N° Cuota</label>
+                                        <input type="number" name="numero_cuota" id="numero_cuota" class="form-control form-control-sm border-gray-300 bg-white" placeholder="Ej: 1">
                                     </div>
                                     <div class="col-md-4">
                                         <label class="form-label fw-bold text-gray-600 fs-9 text-uppercase">PR</label>
-                                        <input type="number" name="pr" id="pr"
-                                            class="form-control form-control-sm border-gray-300 bg-white"
-                                            placeholder="0">
+                                        <input type="number" name="pr" id="pr" class="form-control form-control-sm border-gray-300 bg-white" placeholder="0">
                                     </div>
                                     <div class="col-md-4">
                                         <label class="form-label fw-bold text-gray-600 fs-9 text-uppercase">CCO</label>
-                                        <input type="number" name="cco" id="cco"
-                                            class="form-control form-control-sm border-gray-300 bg-white"
-                                            placeholder="0">
+                                        <input type="number" name="cco" id="cco" class="form-control form-control-sm border-gray-300 bg-white" placeholder="0">
                                     </div>
                                 </div>
                             </div>
@@ -1047,50 +1048,21 @@
 </div>
 
 <style>
-    .drop-zone-custom {
-        border: 2px dashed #dbdfe9;
-        border-radius: 8px;
-        transition: all 0.3s ease;
-        background-color: #f9fafb;
-        height: 85px;
-    }
-
-    .drop-zone-custom:hover,
-    .drop-zone-custom.dragover {
-        border-color: #198754;
-        background-color: #e8f5e9;
-    }
-
-    .bg-light-soft {
-        background-color: #fcfcfc;
-    }
-
-    .border-dashed {
-        border-style: dashed !important;
-    }
-
-    #container-lineas {
-        display: flex;
-        flex-wrap: wrap;
-        /* Permite que salten de línea si hay demasiados */
-    }
-
-    .linea-item-wrapper {
-        flex-shrink: 0;
-        /* Evita que el select se deforme */
-    }
-
-    /* Alinea el icono de eliminar correctamente dentro del input-group */
-    .btn-remove-linea {
-        display: flex;
-        align-items: center;
-        font-size: 1.1rem;
+    .drop-zone-custom { 
+        border: 2px dashed #dbdfe9; 
+        border-radius: 8px; 
+        transition: all 0.3s ease; 
+        background-color: #f9fafb; 
+        height: 85px; 
     }
 
     .btn-remove-linea:hover {
         color: #dc3545;
         background: transparent;
     }
+    .bg-light-soft { background-color: #fcfcfc; }
+    .font-monospace { font-family: 'Roboto Mono', monospace !important; }
+    .border-dashed { border-style: dashed !important; }
 </style>
 
 <script>
@@ -1100,32 +1072,13 @@
 
         const myModal = new bootstrap.Modal(modalElement);
         const form = document.getElementById('formModalComprobante');
-
+        
         const modalCodTercero = document.getElementById('cod_tercero');
         const displayInput = document.getElementById('monto_pagado_display');
         const hiddenInput = document.getElementById('monto_pagado');
         const hashTarget = document.getElementById('hash_transaccion');
         const fileInput = document.getElementById('archivo_soporte');
         const dropZone = document.getElementById('drop_zone_area');
-
-        document.getElementById('search-type').addEventListener('input', function(e) {
-            const term = e.target.value.toLowerCase();
-            // Buscamos todos los labels dentro del contenedor
-            const labels = document.querySelectorAll('#container-list-types label');
-
-            labels.forEach(label => {
-                const text = label.textContent.toLowerCase();
-                const input = document.getElementById(label.getAttribute('for'));
-
-                if (text.includes(term)) {
-                    label.classList.remove('d-none');
-                    if (input) input.classList.remove('d-none');
-                } else {
-                    label.classList.add('d-none');
-                    if (input) input.classList.add('d-none');
-                }
-            });
-        });
 
         // 1. DISPARADOR DE TIPIFICACIÓN
         document.querySelectorAll('.type-trigger').forEach(radio => {
@@ -1166,14 +1119,14 @@
             const fecha = document.getElementById('fecha_pago').value.replace(/-/g, '');
             const monto = hiddenInput.value;
             const tercero = modalCodTercero.value;
-
-            if (banco && fecha && monto && tercero) {
+            
+            if(banco && fecha && monto && tercero) {
                 hashTarget.value = `${banco}-${fecha}-${monto}-${tercero}`;
             } else {
                 hashTarget.value = '';
             }
         }
-
+        
         document.querySelectorAll('.gen-hash').forEach(i => i.addEventListener('input', actualizarHash));
         document.getElementById('fecha_pago').addEventListener('change', actualizarHash);
         document.getElementById('id_banco').addEventListener('change', actualizarHash);
@@ -1214,17 +1167,11 @@
 
         window.addEventListener('paste', e => {
             if (!modalElement.classList.contains('show')) return;
-            if (e.clipboardData.files.length > 0) procesarArchivo(e.clipboardData.files[0]);
+            if(e.clipboardData.files.length > 0) procesarArchivo(e.clipboardData.files[0]);
         });
 
-        dropZone.addEventListener('dragover', e => {
-            e.preventDefault();
-            dropZone.classList.add('dragover');
-        });
-        dropZone.addEventListener('dragleave', e => {
-            e.preventDefault();
-            dropZone.classList.remove('dragover');
-        });
+        dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', e => { e.preventDefault(); dropZone.classList.remove('dragover'); });
         dropZone.addEventListener('drop', e => {
             e.preventDefault();
             dropZone.classList.remove('dragover');
@@ -1247,34 +1194,41 @@
             if (!formData.get('pr')) formData.delete('pr');
             if (!formData.get('cco')) formData.delete('cco');
 
+            // [CORRECCIÓN CRÍTICA PARA PRODUCCIÓN]: Limpiamos campos vacíos del FormData
+            // Esto asegura que Laravel no reciba strings vacíos ("") que rompen la validación
+            const formData = new FormData(this);
+            if (!formData.get('numero_cuota')) formData.delete('numero_cuota');
+            if (!formData.get('pr')) formData.delete('pr');
+            if (!formData.get('cco')) formData.delete('cco');
+
             fetch(this.action, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
-                    }
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        myModal.hide();
-                        Swal.fire({
-                            title: '¡Realizado!',
-                            text: 'El pago ha sido vinculado a esta sesión.',
-                            icon: 'success'
-                        });
-                        form.reset();
-                        resetFile();
-                    } else {
-                        Swal.fire('Atención', data.message, 'warning');
-                    }
-                })
-                .catch(() => Swal.fire('Error', 'No se pudo conectar', 'error'))
-                .finally(() => {
-                    btnSubmit.disabled = false;
-                    btnSubmit.innerHTML = originalText;
-                });
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    myModal.hide();
+                    Swal.fire({ 
+                        title: '¡Realizado!', 
+                        text: 'El pago ha sido vinculado a esta sesión.', 
+                        icon: 'success'
+                    });
+                    form.reset(); 
+                    resetFile();
+                } else {
+                    Swal.fire('Atención', data.message, 'warning');
+                }
+            })
+            .catch(() => Swal.fire('Error', 'No se pudo conectar', 'error'))
+            .finally(() => { 
+                btnSubmit.disabled = false; 
+                btnSubmit.innerHTML = originalText; 
+            });
         });
     });
 
