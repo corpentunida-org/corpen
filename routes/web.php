@@ -15,6 +15,8 @@ use App\Http\Controllers\Contabilidad\ConExtractoTransaccionController;
 //CARTERA
 use App\Http\Controllers\Cartera\CarComprobantePagoController;
 use App\Http\Controllers\Cartera\ReadExelController;
+//RECAUDO
+use App\Http\Controllers\Recaudo\RecImputacionContableController;
 
 use App\Http\Controllers\Exequial\ComaeTerController;
 use App\Http\Controllers\Exequial\ComaeExCliController;
@@ -308,6 +310,7 @@ Route::middleware(['auth'])
             ->parameters(['extractos' => 'conExtractoTransaccion']);
 
     });
+// FIN MÓDULO CONTABILIDAD
 
 // ==========================================
 //   MÓDULO DE CARTERA
@@ -353,7 +356,22 @@ Route::middleware(['auth'])
 
     });
 // FIN MÓDULO CARTERA
+// ==========================================
+//   MÓDULO DE RECAUDO
+// ==========================================
+Route::middleware(['auth'])
+    ->prefix('recaudo')
+    ->name('recaudo.')
+    ->group(function () {
 
+        // ---------------------------------------------------
+        // 1. GESTIÓN DE IMPUTACIONES CONTABLES
+        // ---------------------------------------------------
+        Route::resource('imputaciones', RecImputacionContableController::class)
+            ->parameters(['imputaciones' => 'recImputacionContable']);
+
+    });
+// FIN MÓDULO RECAUDO
 
 //Módulo inventario
 Route::get('/inventario', [UserController::class, 'inventario'])
