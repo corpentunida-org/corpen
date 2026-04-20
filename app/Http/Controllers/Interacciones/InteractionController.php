@@ -16,7 +16,7 @@ use App\Models\Maestras\MaeDistritos;
 use App\Models\Maestras\MaeCongregacion;
 use App\Models\User;
 use App\Models\Contabilidad\ConCuentaBancaria;
-use \App\Models\Cartera\CarComprobantePago;
+use App\Models\Cartera\CarComprobantePago;
 use App\Models\Interacciones\Interaction;
 use App\Models\Interacciones\IntSeguimiento;
 use App\Models\Interacciones\IntChannel;
@@ -165,14 +165,13 @@ class InteractionController extends Controller
         // e. Agrupación por Línea de Crédito
         $lineasData = (clone $baseQuery)
             ->select('id_linea_de_obligacion', DB::raw('count(*) as total'))
-            ->with('lineaDeObligacion')
             ->groupBy('id_linea_de_obligacion')
             ->orderByDesc('total')
             ->limit(5) // Top 5 para el gráfico
             ->get();
 
         $chartLineas = [
-            'labels' => $lineasData->map(fn($item) => optional($item->lineaDeObligacion)->nombre ?? 'Sin Línea')->toArray(),
+            'labels' => $lineasData->map(fn($item) => optional($item->lineas_detalle[0])->nombre ?? 'Sin Línea')->toArray(),
             'data' => $lineasData->pluck('total')->toArray(),
         ];
 
@@ -376,8 +375,17 @@ class InteractionController extends Controller
         $resultadosData = (clone $baseQuery)->select('outcome', DB::raw('count(*) as total'))->with('outcomeRelation')->groupBy('outcome')->get();
         $chartResultados = ['labels' => $resultadosData->map(fn($item) => $item->outcomeRelation->name ?? 'Sin Estado')->toArray(), 'data' => $resultadosData->pluck('total')->toArray()];
 
-        $lineasData = (clone $baseQuery)->select('id_linea_de_obligacion', DB::raw('count(*) as total'))->with('lineaDeObligacion')->groupBy('id_linea_de_obligacion')->orderByDesc('total')->limit(5)->get();
-        $chartLineas = ['labels' => $lineasData->map(fn($item) => optional($item->lineaDeObligacion)->nombre ?? 'Sin Línea')->toArray(), 'data' => $lineasData->pluck('total')->toArray()];
+        $lineasData = (clone $baseQuery)
+            ->select(
+                // Extraemos el primer elemento del array JSON: $[0]
+                DB::raw('JSON_UNQUOTE(JSON_EXTRACT(id_linea_de_obligacion, "$[0]")) as primer_id'),
+                DB::raw('count(*) as total'),
+            )
+            ->groupBy('primer_id')
+            ->orderByDesc('total')
+            ->limit(5)
+            ->get();
+        $chartLineas = ['labels' => $lineasData->map(fn($item) => optional($item->lineas_detalle[0])->nombre ?? 'Sin Línea')->toArray(), 'data' => $lineasData->pluck('total')->toArray()];
 
         $clientesData = (clone $baseQuery)->select('client_id', DB::raw('count(*) as total'))->with('client')->groupBy('client_id')->orderByDesc('total')->limit(5)->get();
         $chartClientes = ['labels' => $clientesData->map(fn($item) => $item->client->nom_ter ?? 'Cliente ' . $item->client_id)->toArray(), 'data' => $clientesData->pluck('total')->toArray()];
@@ -508,7 +516,7 @@ class InteractionController extends Controller
                     })
                     ->orWhereHas('channel', fn($query) => $query->where('name', 'LIKE', "%{$search}%"))
                     ->orWhereHas('outcomeRelation', fn($query) => $query->where('name', 'LIKE', "%{$search}%"))
-                    ->orWhereHas('lineaDeObligacion', fn($query) => $query->where('nombre', 'LIKE', "%{$search}%"))
+                    ->orWhereHas('lineas_detalle', fn($query) => $query->where('nombre', 'LIKE', "%{$search}%"))
                     ->orWhereHas('usuarioAsignado', fn($query) => $query->where('name', 'LIKE', "%{$search}%"));
             });
         }
@@ -541,8 +549,8 @@ class InteractionController extends Controller
         ];
 
         // 4. PREPARAMOS LAS RELACIONES (Se aplican solo al final para ahorrar memoria)
-        $relations = ['client', 'agent.cargoRelation.gdoArea', 'channel', 'type', 'outcomeRelation', 'lineaDeObligacion', 'usuarioAsignado', 'seguimientos'];
-
+        //$relations = ['client', 'agent.cargoRelation.gdoArea', 'channel', 'type', 'outcomeRelation', 'lineaDeObligacion', 'usuarioAsignado', 'seguimientos'];
+        $relations = ['client', 'agent.cargoRelation.gdoArea', 'channel', 'type', 'outcomeRelation', 'usuarioAsignado', 'seguimientos'];
         // 5. PESTAÑAS (Máximo 15 registros por pestaña secundaria)
         $collectionsForTabs = [
             'successful' => (clone $baseQuery)->whereIn('outcome', $successfulOutcomeIds)->orderBy('id', 'desc')->with($relations)->take(15)->get(),
@@ -612,7 +620,7 @@ class InteractionController extends Controller
         // 3. Histórico del Cliente
         $clientHistory = collect();
         if ($interaction->client_id) {
-            $clientHistory = Interaction::with(['agent', 'channel', 'type', 'outcomeRelation', 'lineaDeObligacion', 'usuarioAsignado'])
+            $clientHistory = Interaction::with(['agent', 'channel', 'type', 'outcomeRelation', 'usuarioAsignado'])
                 ->where('client_id', $interaction->client_id)
                 ->orderByDesc('interaction_date')
                 ->get();
@@ -646,7 +654,7 @@ class InteractionController extends Controller
         $idCargoAgente = null;
         $areaAgente = null;
         $idAreaAgente = null;
-        $idBanco = ConCuentaBancaria::select('id', 'numero_cuenta','banco')->get();
+        $idBanco = ConCuentaBancaria::select('id', 'numero_cuenta', 'banco')->get();
         if ($agente) {
             $cargoAgente = $agente->cargoRelation;
             if ($cargoAgente) {
@@ -659,7 +667,7 @@ class InteractionController extends Controller
             }
         }
 
-        return view('interactions.create', compact('interaction', 'channels', 'types', 'outcomes', 'nextActions', 'areas', 'cargos', 'lineasCredito', 'idCargoAgente', 'idAreaAgente','idBanco'));
+        return view('interactions.create', compact('interaction', 'channels', 'types', 'outcomes', 'nextActions', 'areas', 'cargos', 'lineasCredito', 'idCargoAgente', 'idAreaAgente', 'idBanco'));
     }
 
     /**
@@ -667,7 +675,6 @@ class InteractionController extends Controller
      */
     public function store(Request $request)
     {
-        dd($request->all());
         $validated = $request->validate([
             'client_id' => 'required',
             'interaction_date' => 'required|date',
@@ -684,11 +691,11 @@ class InteractionController extends Controller
             'nombre_quien_llama' => 'nullable|string|max:255',
             'celular_quien_llama' => 'nullable|string|max:50',
             'parentesco_quien_llama' => 'nullable|string|max:50',
-            'id_linea_de_obligacion' => 'nullable|integer',
+            'id_linea_de_obligacion.*' => 'integer',
             'id_user_asignacion' => 'nullable|integer',
             'duration' => 'nullable|integer|min:0',
             'parent_interaction_id' => 'nullable|integer',
-            'temp_token' => 'nullable|string|max:255', 
+            'temp_token' => 'nullable|string|max:255',
         ]);
 
         $agentId = Auth::id();
@@ -710,27 +717,24 @@ class InteractionController extends Controller
             'celular_quien_llama' => $validated['celular_quien_llama'] ?? null,
             'parentesco_quien_llama' => $validated['parentesco_quien_llama'] ?? null,
         ]);
-    
 
         if ($request->filled('temp_token')) {
             CarComprobantePago::where('temp_token', $request->temp_token)
-                ->where(function($query) {
-                    $query->where('id_interaction', 0)
-                          ->orWhereNull('id_interaction');
+                ->where(function ($query) {
+                    $query->where('id_interaction', 0)->orWhereNull('id_interaction');
                 })
                 ->update([
                     'id_interaction' => $interaction->id,
-                    'temp_token' => null // Limpiamos el token para cerrar el ciclo
+                    'temp_token' => null, // Limpiamos el token para cerrar el ciclo
                 ]);
         }
-   
+
         $rutaArchivo = null;
         if ($request->hasFile('attachment')) {
             // Ruta dinámica: cartera/comprobantes/{codigo_tercero}/archivo.ext
             $folderPath = "corpentunida/interacciones/evidencia_{$interaction->id}_{$interaction->client_id}";
             $rutaArchivo = $request->file('attachment')->store($folderPath, 's3');
         }
-        
 
         $interaction->seguimientos()->create([
             'agent_id' => $agentId,
@@ -934,7 +938,7 @@ class InteractionController extends Controller
             }
 
             // AQUI TAMBIEN SE AJUSTÓ LA RELACIÓN CON SEGUIMIENTOS
-            $history = Interaction::with(['agent', 'channel', 'type', 'outcomeRelation', 'lineaDeObligacion', 'usuarioAsignado', 'seguimientos'])
+            $history = Interaction::with(['agent', 'channel', 'type', 'outcomeRelation', 'usuarioAsignado', 'seguimientos'])
                 ->where('client_id', $cod_ter)
                 ->orderByDesc('interaction_date')
                 ->limit(10)
@@ -969,7 +973,7 @@ class InteractionController extends Controller
                         'celular_quien_llama' => $item->celular_quien_llama,
 
                         'id_linea_de_obligacion' => $item->id_linea_de_obligacion,
-                        'linea_obligacion_name' => $item->lineaDeObligacion ? $item->lineaDeObligacion->nombre ?? $item->lineaDeObligacion->name : null,
+                        'linea_obligacion_name' => $item->lineaDeObligacion ?? null,
 
                         'id_user_asignacion' => $item->id_user_asignacion,
                         'usuario_asignado_name' => $item->usuarioAsignado ? $item->usuarioAsignado->name : null,
