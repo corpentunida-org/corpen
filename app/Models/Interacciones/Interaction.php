@@ -18,7 +18,7 @@ class Interaction extends Model
 
     protected $casts = [
         'interaction_date' => 'datetime',
-        'id_linea_de_obligacion' => 'integer',
+        'id_linea_de_obligacion' => 'array',
         'id_user_asignacion' => 'integer',
     ];
 
@@ -68,9 +68,16 @@ class Interaction extends Model
         return $this->belongsTo(IntOutcome::class, 'outcome', 'id');
     }
 
-    public function lineaDeObligacion()
+    /*public function lineaDeObligacion()
     {
         return $this->belongsTo(LineaCredito::class, 'id_linea_de_obligacion', 'id');
+    }*/
+    public function getLineasDetalleAttribute()
+    {
+        if (!$this->id_linea_de_obligacion || !is_array($this->id_linea_de_obligacion)) {
+            return collect();
+        }
+        return LineaCredito::whereIn('id', $this->id_linea_de_obligacion)->select('id', 'nombre')->get();
     }
 
     public function usuarioAsignado()
