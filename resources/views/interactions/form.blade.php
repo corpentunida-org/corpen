@@ -350,9 +350,8 @@
                             style="border-radius: 4px;">
                             <div class="d-flex align-items-center flex-grow-1 pe-2">
                                 <div class="lh-sm">
-                                    <div class="small text-muted"
-                                        style="font-size: 0.65rem; text-transform: uppercase;">Agente Responsable</div>
-                                    <div class="fw-bold text-dark text-truncate" style="max-width: 120px;"
+                                    <div class="small text-muted">Agente Responsable</div>
+                                    <div class="fw-bold text-dark" style="max-width: 120px;"
                                         title="{{ auth()->user()->name }}">
                                         {{ auth()->user()->name }}
                                     </div>

@@ -221,7 +221,7 @@
                                                     data-duracion="{{ $interaction->duration ? $interaction->duration . ' min' : '—' }}"
                                                     data-outcome="{{ $interaction->outcomeRelation?->name ?? '—' }}"
                                                     data-notas="{{ $interaction->notes ?? 'Sin notas.' }}"
-                                                    data-linea="{{ $interaction->lineaDeObligacion?->nombre ?? '—' }}"
+                                                    data-linea="{{ $interaction->lineas_detalle[0]?->nombre ?? '—' }}"
                                                     data-asignado="{{ $interaction->usuarioAsignado?->name ?? '—' }}"
                                                     data-llamante-nombre="{{ $interaction->nombre_quien_llama ?? '—' }}"
                                                     data-llamante-cedula="{{ $interaction->cedula_quien_llama ?? '—' }}"
@@ -290,7 +290,8 @@
 
                                             <td>
                                                 <div class="small mb-1 text-truncate-2-lines text-dark">
-                                                    {{ $interaction->lineaDeObligacion?->nombre ?? ($interaction->id_linea_de_obligacion ?? '') }}
+                                                    {{ $interaction->lineas_detalle[0]->nombre ?? 'General' }} /
+                                                    {{ $interaction->lineas_detalle[1]->nombre ?? 'General' }}
                                                 </div>
                                                 <span
                                                     class="badge bg-soft-{{ $priorityColors[$interaction->outcome] ?? 'secondary' }} text-{{ $priorityColors[$interaction->outcome] ?? 'secondary' }}">
