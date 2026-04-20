@@ -199,7 +199,7 @@
                         right: 'dayGridMonth'
                     },
                     events: [
-                        @foreach ($historicosres as $r)
+                        @foreach ($historicosres as $r)                        
                             {
                                 title: '{{ $r->res_status_id == 4 ? 'RESERVA CANCELADA ' . $r->res_inmueble->name : 'RESERVA ' . $r->res_inmueble->name }}',
                                 start: '{{ \Carbon\Carbon::parse($r->fecha_inicio)->format('Y-m-d') }}',
@@ -213,7 +213,9 @@
                                     fecha_inicio: '{{ $r->fecha_inicio }}',
                                     fecha_fin: '{{ $r->fecha_fin }}',
                                     usuario: '{{ $r->nid }} - {{ $r->user->name ?? '' }}',
-                                    telefono: '{{ $r->celular }} - {{ $r->celular_respaldo }}'
+                                    telefono: '{{ $r->celular }} - {{ $r->celular_respaldo }}',
+                                    celular: '{{ $r->celular }}',
+                                    celular_respaldo: '{{ $r->celular_respaldo }}'
                                 }
                             },
                         @endforeach
@@ -231,7 +233,7 @@
 
                         let fechaInicio = inicio.toLocaleDateString('es-ES', opciones);
                         let fechaFin = fin.toLocaleDateString('es-ES', opciones);
-
+                        const telefono = `${info.event.extendedProps.celular} ${info.event.extendedProps.celular_respaldo ? ' - ' + info.event.extendedProps.celular_respaldo : ''}`;
                         Swal.fire({
                             title: 'Detalle de Reserva',
                             icon: 'info',
@@ -239,13 +241,12 @@
                             <p><b>ID Reserva:</b> ${info.event.extendedProps.id}</p>
                             <p><b>Apartamento:</b> ${info.event.extendedProps.apto}</p>
                             <p><b>Usuario:</b> ${info.event.extendedProps.usuario}</p>
-                            <p><b>Teléfonos:</b> ${info.event.extendedProps.telefono}</p>                            
+                            <p><b>Teléfonos:</b> ${telefono}</p>                            
                             <p><b>Fecha Inicio:</b> ${fechaInicio} </p>
                             <p><b>Fecha Fin:</b> ${fechaFin}</p>
                         `,
                             confirmButtonText: 'Cerrar'
                         });
-
                     }
                 });
                 calendar.render();
