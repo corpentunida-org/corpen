@@ -286,7 +286,7 @@ class ResReservaController extends Controller implements HasMiddleware
 
     public function indexHistorico()
     {
-        $historicosres = Res_reserva::select('id', 'res_inmueble_id', 'res_status_id', 'user_id', 'nid', 'fecha_inicio', 'fecha_fin')
+        $historicosres = Res_reserva::select('id', 'res_inmueble_id', 'res_status_id', 'user_id', 'nid', 'fecha_inicio', 'fecha_fin','celular','celular_respaldo')
             ->with(['res_inmueble:id,name', 'user:id,name'])
             ->orderby('fecha_solicitud', 'desc')
             ->get();
