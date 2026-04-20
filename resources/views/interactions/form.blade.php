@@ -13,6 +13,7 @@
             opacity: 1;
         }
     }
+
     .category-container {
         border: 1px solid #EFF0F6;
         border-radius: 6px;
@@ -129,13 +130,10 @@
     }
 
     #btn-submit-interaccion:disabled {
-        background-color: #64748B !important
-        border-color: #64748B !important;
+        background-color: #64748B !important border-color: #64748B !important;
         cursor: not-allowed;
         opacity: 0.8;
     }
-
-    
 </style>
 
 {{-- Generamos el UUID único para esta sesión de trabajo --}}
@@ -152,7 +150,8 @@
         @method('PUT')
     @endif
 
-    <div class="bg-white border-bottom p-4 mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+    <div
+        class="bg-white border-bottom p-4 mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
         <div class="d-flex align-items-center gap-3">
             <div>
                 <i class="bi bi-headset fs-2"></i>
@@ -221,7 +220,8 @@
                                 <div class="border border-dashed rounded-3 option-card-titular">
                                     <input type="radio" class="btn-check" name="caller_type" id="caller_client"
                                         value="client" checked>
-                                    <label class="visual-card d-flex flex-row align-items-center p-3 gap-3 position-relative h-100"
+                                    <label
+                                        class="visual-card d-flex flex-row align-items-center p-3 gap-3 position-relative h-100"
                                         for="caller_client">
                                         <i class="bi bi-person card-icon mb-0 fs-3 text-muted"></i>
                                         <div class="text-start flex-grow-1">
@@ -309,7 +309,7 @@
                         </div>
                     </div>
 
-                    <div class="col-md-4">
+                    {{-- <div class="col-md-4">
                         <div class="bg-white border p-3 d-flex flex-column justify-content-center h-100"
                             style="border-radius: 4px;">
                             <div class="d-flex align-items-center mb-2">
@@ -319,7 +319,6 @@
                                         title="{{ auth()->user()->name }}">{{ auth()->user()->name }}</div>
                                 </div>
                             </div>
-
                             <div class="border-top pt-2 mt-1 d-flex justify-content-between align-items-center">
                                 <div>
                                     <small class="text-muted d-block" style="font-size: 0.70rem;">DURACIÓN</small>
@@ -338,6 +337,50 @@
                                     <button type="button" class="btn btn-sm btn-light border py-1 px-2"
                                         id="btn-timer-reset" title="Reiniciar">
                                         <i class="bi bi-arrow-counterclockwise"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" name="agent_id" value="{{ auth()->user()->id }}">
+                        <input type="hidden" name="interaction_date" value="{{ now()->toDateTimeString() }}">
+                        <input type="hidden" name="duration" id="duration" value="0">
+                    </div> --}}
+                    <div class="col-md-4">
+                        <div class="bg-white border p-2 mt-4 d-flex align-items-center justify-content-between h-100"
+                            style="border-radius: 4px;">
+                            <div class="d-flex align-items-center flex-grow-1 pe-2">
+                                <div class="lh-sm">
+                                    <div class="small text-muted"
+                                        style="font-size: 0.65rem; text-transform: uppercase;">Agente Responsable</div>
+                                    <div class="fw-bold text-dark text-truncate" style="max-width: 120px;"
+                                        title="{{ auth()->user()->name }}">
+                                        {{ auth()->user()->name }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="border-start h-75 mx-2"></div>
+
+                            <div class="d-flex align-items-center flex-grow-1">
+                                <div class="me-auto">
+                                    <small class="text-muted d-block"
+                                        style="font-size: 0.65rem; text-transform: uppercase;">Duración</small>
+                                    <div class="d-flex align-items-center">
+                                        <span id="timer-indicator" class="me-1"
+                                            style="width: 7px; height: 7px; background-color: #333; border-radius: 50%;"></span>
+                                        <div class="fw-bold text-dark fs-6 lh-1" id="timer">00:00
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex gap-1 ms-2">
+                                    <button type="button" class="btn btn-sm btn-light border p-1"
+                                        id="btn-timer-toggle" title="Pausar/Reanudar">
+                                        <i class="bi bi-pause" style="font-size: 0.8rem;"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-light border p-1"
+                                        id="btn-timer-reset" title="Reiniciar">
+                                        <i class="bi bi-arrow-counterclockwise" style="font-size: 0.8rem;"></i>
                                     </button>
                                 </div>
                             </div>
@@ -405,20 +448,20 @@
                 </div>
 
                 <div class="collapse m-2" id="historyCollapse">
-                        <div id="history-content" class="position-relative bg-white">
-                            <div>
-                                <div id="interaction-history-list" class="history-list"
-                                    style="max-height: 300px; overflow-y: auto; min-height: 100px;">
-                                    <div id="history-loading-skeleton" class="py-3 px-2 text-muted small">
-                                        Cargando historial...
-                                    </div>
-                                    <div id="history-empty-state" class="text-center py-4 d-none">
-                                        <p class="text-muted small mb-0">No se encontraron interacciones previas.</p>
-                                    </div>
+                    <div id="history-content" class="position-relative bg-white">
+                        <div>
+                            <div id="interaction-history-list" class="history-list"
+                                style="max-height: 300px; overflow-y: auto; min-height: 100px;">
+                                <div id="history-loading-skeleton" class="py-3 px-2 text-muted small">
+                                    Cargando historial...
+                                </div>
+                                <div id="history-empty-state" class="text-center py-4 d-none">
+                                    <p class="text-muted small mb-0">No se encontraron interacciones previas.</p>
                                 </div>
                             </div>
                         </div>
-                    
+                    </div>
+
                 </div>
             </div>
 
@@ -463,20 +506,22 @@
                             <label class="form-label text-uppercase text-muted mb-2 d-block">
                                 Motivo / Tipificación <span class="text-muted">*</span>
                             </label>
-                            <div class="d-flex flex-wrap gap-2">
-{{-- Busca esta parte en tu código y déjala así --}}
-@foreach ($types as $type)
-    <input type="radio" 
-           class="btn-check type-trigger" {{-- <-- Agregamos esta clase --}}
-           name="interaction_type"
-           id="tp_{{ $type->id }}" 
-           value="{{ $type->id }}"
-           {{ old('interaction_type', $interaction->interaction_type ?? '') == $type->id ? 'checked' : '' }}
-           required>
-    <label class="smart-tag py-1 px-3 border cursor-pointer transition-all small" for="tp_{{ $type->id }}">
-        {{ $type->name }}
-    </label>
-@endforeach
+                            <div class="input-group input-group-sm mb-4" style="width: 300px;">
+                                <div class="input-group-text"><i class="bi bi-search small"></i></div>
+                                <input class="form-control" id="search-type"
+                                    placeholder="Buscar motivo / tipificacion..." type="text" name="name">
+                            </div>
+                            <div class="d-flex flex-wrap gap-2" id="container-list-types">
+                                @foreach ($types as $type)
+                                    <input type="radio" class="btn-check type-trigger" name="interaction_type"
+                                        id="tp_{{ $type->id }}" value="{{ $type->id }}"
+                                        {{ old('interaction_type', $interaction->interaction_type ?? '') == $type->id ? 'checked' : '' }}
+                                        required>
+                                    <label class="smart-tag py-1 px-3 border cursor-pointer transition-all small"
+                                        for="tp_{{ $type->id }}">
+                                        {{ $type->name }}
+                                    </label>
+                                @endforeach
                             </div>
                             @error('interaction_type')
                                 <div class="text-danger small mt-2">{{ $message }}</div>
@@ -490,7 +535,6 @@
                 <div class="category-header p-3">
                     <h5 class="category-title mb-1">Asignación y Contexto</h5>
                 </div>
-
                 <div class="category-content p-4">
                     <div class="mb-4">
                         <label class="form-label text-muted mb-3 d-block">¿Quién es el responsable de esta
@@ -541,20 +585,30 @@
                             </div>
                         </div>
                     </div>
-                    <div class="row g-4 mt-2">
-                        <div class="col-md-6">
-                            <label for="id_linea_de_obligacion"
-                                class="form-label text-uppercase text-muted mb-2">Línea de
-                                Obligación <span class="text-muted">*</span></label>
-                            <select class="form-select select2" id="id_linea_de_obligacion"
-                                name="id_linea_de_obligacion" required>
-                                <option value="">Selecciona la línea...</option>
-                                @if (isset($lineasCredito))
-                                    @foreach ($lineasCredito as $id => $nombre)
-                                        <option value="{{ $id }}">{{ $nombre }}</option>
-                                    @endforeach                                    
-                                @endif
-                            </select>
+                    <div class="col-md-12 mt-2">
+                        <label class="form-label text-uppercase text-muted mb-2 d-block">
+                            Líneas de Obligación <span class="text-muted">*</span>
+                        </label>
+
+                        <div class="d-flex flex-wrap gap-2 align-items-center" id="container-lineas">
+                            <div class="linea-item-wrapper" style="width: 250px;">
+                                <div class="input-group input-group-sm">
+                                    <select class="form-select" name="id_linea_de_obligacion[]" required>
+                                        <option value="">Selecciona la línea...</option>
+                                        @if (isset($lineasCredito))
+                                            @foreach ($lineasCredito as $id => $nombre)
+                                                <option value="{{ $id }}">{{ $nombre }}</option>
+                                            @endforeach
+                                        @endif
+                                    </select>
+                                </div>
+                            </div>
+
+                            <button type="button"
+                                class="btn btn-primary rounded-circle shadow-sm d-flex align-items-center justify-content-center"
+                                id="btn-add-linea" style="width: 32px; height: 32px; flex-shrink: 0;">
+                                <i class="bi bi-plus-lg"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -575,7 +629,8 @@
                     <div class="col-lg-6">
                         <div class="border h-100 bg-white" style="border-radius: 4px;">
                             <div class="p-4">
-                                <label class="form-label text-muted text-uppercase mb-3">Resultado de Interacción <span class="text-muted">*</span></label>
+                                <label class="form-label text-muted text-uppercase mb-3">Resultado de Interacción <span
+                                        class="text-muted">*</span></label>
                                 <div class="row g-2">
                                     @foreach ($outcomes as $outcome)
                                         <div class="col-sm-6">
@@ -668,7 +723,8 @@
                         <label class="form-label text-muted d-block">Archivo Físico</label>
                         <div class="drop-zone-pro position-relative bg-light p-4 text-center cursor-pointer"
                             id="drop-zone" style="border-radius: 4px;">
-                            <input type="file" id="attachment" name="attachment" class="drop-zone-input position-absolute w-100 h-100 top-0 start-0 opacity-0 cursor-pointer @error('attachment') is-invalid @enderror"
+                            <input type="file" id="attachment" name="attachment"
+                                class="drop-zone-input position-absolute w-100 h-100 top-0 start-0 opacity-0 cursor-pointer @error('attachment') is-invalid @enderror"
                                 accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" onchange="handleFileSelect(this)">
                             <div class="dz-message d-flex flex-column align-items-center justify-content-center"
                                 style="min-height: 80px;" id="upload-icon-wrapper">
@@ -731,7 +787,8 @@
                             historial.</p>
                     </div>
                     <div id="history-section" style="display:none;">
-                        <input type="hidden" id="parent_interaction_id" name="parent_interaction_id" value="">
+                        <input type="hidden" id="parent_interaction_id" name="parent_interaction_id"
+                            value="">
                         <div class="p-3 bg-white border-bottom">
                             <div id="selected-parent-info"
                                 class="bg-light border p-2 d-flex align-items-center justify-content-between"
@@ -746,7 +803,6 @@
                                 </button>
                             </div>
                         </div>
-
                         <div id="history-content" class="p-3 bg-white">
                             <div id="interaction-history-list-bottom" class="history-list"
                                 style="max-height: 250px; overflow-y: auto;">
@@ -761,8 +817,9 @@
                     <label class="form-label text-muted d-block">
                         Notas Finales <span class="text-muted">*</span>
                     </label>
-                    <textarea class="form-control bg-white" name="notes" id="notes" rows="4" lang="es" spellcheck="true" autocorrect="on" autocapitalize="sentences"
-                        placeholder="Resumen de la interacción..." required>{{ old('notes', $interaction->notes ?? '') }}</textarea>
+                    <textarea class="form-control bg-white" name="notes" id="notes" rows="4" lang="es"
+                        spellcheck="true" autocorrect="on" autocapitalize="sentences" placeholder="Resumen de la interacción..."
+                        required>{{ old('notes', $interaction->notes ?? '') }}</textarea>
                     @error('notes')
                         <div class="text-danger small mt-1">{{ $message }}</div>
                     @enderror
@@ -771,7 +828,6 @@
 
             <div class="d-flex justify-content-between mb-4">
                 <button type="button" class="btn btn-light border px-4" id="btn-volver">Volver</button>
-
                 <div class="d-flex gap-2">
                     <button type="button" class="btn btn-light border text-danger px-3 btn-limpiar-borrador">
                         <i class="bi bi-trash me-1"></i> Borrar Borrador
@@ -803,13 +859,11 @@
 </form>
 
 
-
-
-
 <div class="modal fade" id="modalComprobante" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
-            <div class="modal-header border-0 pb-0 pt-8 px-8 d-flex flex-column align-items-start text-white bg-success">
+            <div
+                class="modal-header border-0 pb-0 pt-8 px-8 d-flex flex-column align-items-start text-white bg-success">
                 <div class="d-flex align-items-center justify-content-between w-100">
                     <div class="d-flex align-items-center">
                         <div class="symbol symbol-45px me-3">
@@ -819,16 +873,19 @@
                         </div>
                         <div>
                             <h3 class="fw-bolder m-0 text-white">Registrar Soporte de Pago</h3>
-                            <span class="text-white opacity-75 fs-9">Sesión: {{ substr($miTokenSesion ?? '', 0, 8) }}...</span>
+                            <span class="text-white opacity-75 fs-9">Sesión:
+                                {{ substr($miTokenSesion ?? '', 0, 8) }}...</span>
                         </div>
                     </div>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                 </div>
                 <div class="separator separator-dashed w-100 mt-5 opacity-25"></div>
             </div>
 
             <div class="modal-body p-8">
-                <form id="formModalComprobante" action="{{ route('cartera.comprobantes.store') }}" method="POST" enctype="multipart/form-data">
+                <form id="formModalComprobante" action="{{ route('cartera.comprobantes.store') }}" method="POST"
+                    enctype="multipart/form-data">
                     @csrf
                     {{-- GANCHOS DE VINCULACIÓN --}}
                     <input type="hidden" name="id_interaction" value="{{ $interaction->id ?? '' }}">
@@ -837,18 +894,24 @@
                     <div class="row g-5">
                         <div class="col-md-6">
                             <div class="fv-row mb-4">
-                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Código Tercero *</label>
+                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Código Tercero
+                                    *</label>
                                 <div class="input-group input-group-solid border border-gray-300 rounded shadow-sm">
-                                    <span class="input-group-text bg-transparent border-0"><i class="fas fa-id-card text-muted"></i></span>
-                                    <input type="number" id="cod_tercero" name="cod_ter_MaeTerceros" class="form-control border-0 gen-hash fw-bolder" readonly required>
+                                    <span class="input-group-text bg-transparent border-0"><i
+                                            class="fas fa-id-card text-muted"></i></span>
+                                    <input type="number" id="cod_tercero" name="cod_ter_MaeTerceros"
+                                        class="form-control border-0 gen-hash fw-bolder" readonly required>
                                 </div>
                             </div>
 
                             <div class="fv-row mb-4">
-                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Obligación / Línea de Crédito *</label>
+                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Obligación / Línea
+                                    de Crédito *</label>
                                 <div class="input-group input-group-solid border border-gray-300 rounded shadow-sm">
-                                    <span class="input-group-text bg-transparent border-0"><i class="fas fa-file-contract text-muted"></i></span>
-                                    <select class="form-select border-0 select2" id="id_obligacion" name="id_obligacion" required>
+                                    <span class="input-group-text bg-transparent border-0"><i
+                                            class="fas fa-file-contract text-muted"></i></span>
+                                    <select class="form-select border-0 select2" id="id_obligacion"
+                                        name="id_obligacion" required>
                                         <option value="">Selecciona la obligación...</option>
                                         @if (isset($lineasCredito))
                                             @foreach ($lineasCredito as $id => $nombre)
@@ -860,10 +923,13 @@
                             </div>
 
                             <div class="fv-row mb-0">
-                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Monto Pagado *</label>
+                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Monto Pagado
+                                    *</label>
                                 <div class="input-group input-group-solid border border-gray-300 rounded shadow-sm">
                                     <span class="input-group-text bg-transparent border-0 fw-bold">$</span>
-                                    <input type="text" id="monto_pagado_display" class="form-control border-0 fw-bolder text-success gen-hash" placeholder="0" required>
+                                    <input type="text" id="monto_pagado_display"
+                                        class="form-control border-0 fw-bolder text-success gen-hash" placeholder="0"
+                                        required>
                                     <input type="hidden" id="monto_pagado" name="monto_pagado">
                                 </div>
                             </div>
@@ -871,18 +937,23 @@
 
                         <div class="col-md-6">
                             <div class="fv-row mb-4">
-                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Fecha de Pago *</label>
-                                <input type="date" id="fecha_pago" name="fecha_pago" class="form-control form-control-solid border border-gray-300 gen-hash" required value="{{ date('Y-m-d') }}">
+                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Fecha de Pago
+                                    *</label>
+                                <input type="date" id="fecha_pago" name="fecha_pago"
+                                    class="form-control form-control-solid border border-gray-300 gen-hash" required
+                                    value="{{ date('Y-m-d') }}">
                             </div>
 
                             <div class="fv-row mb-4">
                                 <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Banco *</label>
                                 <div class="input-group input-group-solid border border-gray-300 rounded shadow-sm">
-                                    <select class="form-select select2 border-0" id="id_banco" name="id_banco" required>
+                                    <select class="form-select select2 border-0" id="id_banco" name="id_banco"
+                                        required>
                                         <option value="">Selecciona el banco...</option>
                                         @if (isset($idBanco))
                                             @foreach ($idBanco as $idb)
-                                                <option value="{{ $idb->id }}">{{ $idb->numero_cuenta }} - {{ $idb->banco }}</option>
+                                                <option value="{{ $idb->id }}">{{ $idb->numero_cuenta }} -
+                                                    {{ $idb->banco }}</option>
                                             @endforeach
                                         @endif
                                     </select>
@@ -890,10 +961,13 @@
                             </div>
 
                             <div class="fv-row">
-                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Documento Soporte *</label>
+                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Documento Soporte
+                                    *</label>
                                 <div class="drop-zone-custom position-relative" id="drop_zone_area">
-                                    <input type="file" id="archivo_soporte" name="archivo_soporte" class="d-none" accept=".pdf,.jpg,.jpeg,.png" required>
-                                    <label for="archivo_soporte" class="w-100 h-100 cursor-pointer d-flex flex-column align-items-center justify-content-center py-2 text-center">
+                                    <input type="file" id="archivo_soporte" name="archivo_soporte" class="d-none"
+                                        accept=".pdf,.jpg,.jpeg,.png" required>
+                                    <label for="archivo_soporte"
+                                        class="w-100 h-100 cursor-pointer d-flex flex-column align-items-center justify-content-center py-2 text-center">
                                         <i class="fas fa-cloud-upload-alt fs-4 text-primary mb-1"></i>
                                         <span class="fs-9 text-gray-800 fw-bold">Clic, Arrastra o Pega (Ctrl+V)</span>
                                     </label>
@@ -906,39 +980,55 @@
                             <div class="p-4 bg-light-soft border border-dashed border-gray-300 rounded-3">
                                 <div class="row g-3">
                                     <div class="col-md-4">
-                                        <label class="form-label fw-bold text-gray-600 fs-9 text-uppercase">N° Cuota</label>
-                                        <input type="number" name="numero_cuota" id="numero_cuota" class="form-control form-control-sm border-gray-300 bg-white" placeholder="Ej: 1">
+                                        <label class="form-label fw-bold text-gray-600 fs-9 text-uppercase">N°
+                                            Cuota</label>
+                                        <input type="number" name="numero_cuota" id="numero_cuota"
+                                            class="form-control form-control-sm border-gray-300 bg-white"
+                                            placeholder="Ej: 1">
                                     </div>
                                     <div class="col-md-4">
                                         <label class="form-label fw-bold text-gray-600 fs-9 text-uppercase">PR</label>
-                                        <input type="number" name="pr" id="pr" class="form-control form-control-sm border-gray-300 bg-white" placeholder="0">
+                                        <input type="number" name="pr" id="pr"
+                                            class="form-control form-control-sm border-gray-300 bg-white"
+                                            placeholder="0">
                                     </div>
                                     <div class="col-md-4">
                                         <label class="form-label fw-bold text-gray-600 fs-9 text-uppercase">CCO</label>
-                                        <input type="number" name="cco" id="cco" class="form-control form-control-sm border-gray-300 bg-white" placeholder="0">
+                                        <input type="number" name="cco" id="cco"
+                                            class="form-control form-control-sm border-gray-300 bg-white"
+                                            placeholder="0">
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         <div id="preview_container" class="col-12 d-none">
-                            <div class="bg-light rounded p-4 d-flex align-items-center border border-dashed border-gray-400">
+                            <div
+                                class="bg-light rounded p-4 d-flex align-items-center border border-dashed border-gray-400">
                                 <div class="symbol symbol-50px me-4">
-                                    <img id="image_preview" src="" class="d-none shadow-sm rounded" style="width: 50px; height: 50px; object-fit: cover;">
-                                    <div id="pdf_preview_icon" class="symbol-label bg-white d-none shadow-sm"><i class="fas fa-file-pdf text-danger fs-2"></i></div>
+                                    <img id="image_preview" src="" class="d-none shadow-sm rounded"
+                                        style="width: 50px; height: 50px; object-fit: cover;">
+                                    <div id="pdf_preview_icon" class="symbol-label bg-white d-none shadow-sm"><i
+                                            class="fas fa-file-pdf text-danger fs-2"></i></div>
                                 </div>
                                 <div class="flex-grow-1 overflow-hidden">
-                                    <span id="file_name_preview" class="text-gray-800 fw-bolder fs-8 d-block text-truncate">Nombre.pdf</span>
+                                    <span id="file_name_preview"
+                                        class="text-gray-800 fw-bolder fs-8 d-block text-truncate">Nombre.pdf</span>
                                 </div>
-                                <button type="button" class="btn btn-icon btn-sm btn-active-light-danger border-0 ms-2" onclick="resetFile()"><i class="fas fa-times"></i></button>
+                                <button type="button"
+                                    class="btn btn-icon btn-sm btn-active-light-danger border-0 ms-2"
+                                    onclick="resetFile()"><i class="fas fa-times"></i></button>
                             </div>
                         </div>
 
                         <div class="col-12">
-                            <div class="bg-light-primary rounded-pill px-4 py-2 border border-primary border-dashed d-flex align-items-center">
+                            <div
+                                class="bg-light-primary rounded-pill px-4 py-2 border border-primary border-dashed d-flex align-items-center">
                                 <i class="fas fa-fingerprint text-primary me-2"></i>
                                 <span class="fs-9 text-primary fw-bold me-2 uppercase">Integridad:</span>
-                                <input type="text" id="hash_transaccion" name="hash_transaccion" class="bg-transparent border-0 p-0 text-primary fs-9 font-monospace w-100" readonly placeholder="Calculando...">
+                                <input type="text" id="hash_transaccion" name="hash_transaccion"
+                                    class="bg-transparent border-0 p-0 text-primary fs-9 w-100" readonly
+                                    placeholder="Calculando...">
                             </div>
                         </div>
                     </div>
@@ -946,8 +1036,10 @@
             </div>
 
             <div class="modal-footer bg-light py-4 px-8 border-0">
-                <button type="button" class="btn btn-light fw-bold rounded-pill px-6" data-bs-dismiss="modal">Cancelar</button>
-                <button type="submit" form="formModalComprobante" class="btn btn-success rounded-pill fw-bolder px-10 shadow-sm" id="btnSubmitComprobante">
+                <button type="button" class="btn btn-light fw-bold rounded-pill px-6"
+                    data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" form="formModalComprobante"
+                    class="btn btn-success rounded-pill fw-bolder px-10 shadow-sm" id="btnSubmitComprobante">
                     <i class="fas fa-save me-2 text-white"></i> Guardar y Vincular Pago
                 </button>
             </div>
@@ -956,20 +1048,50 @@
 </div>
 
 <style>
-    .drop-zone-custom { 
-        border: 2px dashed #dbdfe9; 
-        border-radius: 8px; 
-        transition: all 0.3s ease; 
-        background-color: #f9fafb; 
-        height: 85px; 
+    .drop-zone-custom {
+        border: 2px dashed #dbdfe9;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        background-color: #f9fafb;
+        height: 85px;
     }
-    .drop-zone-custom:hover, .drop-zone-custom.dragover { 
-        border-color: #198754; 
-        background-color: #e8f5e9; 
+
+    .drop-zone-custom:hover,
+    .drop-zone-custom.dragover {
+        border-color: #198754;
+        background-color: #e8f5e9;
     }
-    .bg-light-soft { background-color: #fcfcfc; }
-    .font-monospace { font-family: 'Roboto Mono', monospace !important; }
-    .border-dashed { border-style: dashed !important; }
+
+    .bg-light-soft {
+        background-color: #fcfcfc;
+    }
+
+    .border-dashed {
+        border-style: dashed !important;
+    }
+
+    #container-lineas {
+        display: flex;
+        flex-wrap: wrap;
+        /* Permite que salten de línea si hay demasiados */
+    }
+
+    .linea-item-wrapper {
+        flex-shrink: 0;
+        /* Evita que el select se deforme */
+    }
+
+    /* Alinea el icono de eliminar correctamente dentro del input-group */
+    .btn-remove-linea {
+        display: flex;
+        align-items: center;
+        font-size: 1.1rem;
+    }
+
+    .btn-remove-linea:hover {
+        color: #dc3545;
+        background: transparent;
+    }
 </style>
 
 <script>
@@ -979,13 +1101,32 @@
 
         const myModal = new bootstrap.Modal(modalElement);
         const form = document.getElementById('formModalComprobante');
-        
+
         const modalCodTercero = document.getElementById('cod_tercero');
         const displayInput = document.getElementById('monto_pagado_display');
         const hiddenInput = document.getElementById('monto_pagado');
         const hashTarget = document.getElementById('hash_transaccion');
         const fileInput = document.getElementById('archivo_soporte');
         const dropZone = document.getElementById('drop_zone_area');
+
+        document.getElementById('search-type').addEventListener('input', function(e) {
+            const term = e.target.value.toLowerCase();
+            // Buscamos todos los labels dentro del contenedor
+            const labels = document.querySelectorAll('#container-list-types label');
+
+            labels.forEach(label => {
+                const text = label.textContent.toLowerCase();
+                const input = document.getElementById(label.getAttribute('for'));
+
+                if (text.includes(term)) {
+                    label.classList.remove('d-none');
+                    if (input) input.classList.remove('d-none');
+                } else {
+                    label.classList.add('d-none');
+                    if (input) input.classList.add('d-none');
+                }
+            });
+        });
 
         // 1. DISPARADOR DE TIPIFICACIÓN
         document.querySelectorAll('.type-trigger').forEach(radio => {
@@ -1014,7 +1155,7 @@
 
         // 2. MÁSCARA DE MONEDA
         displayInput.addEventListener('input', function() {
-            let val = this.value.replace(/\D/g, ''); 
+            let val = this.value.replace(/\D/g, '');
             hiddenInput.value = val;
             this.value = val !== '' ? new Intl.NumberFormat('es-CO').format(val) : '';
             actualizarHash();
@@ -1026,14 +1167,14 @@
             const fecha = document.getElementById('fecha_pago').value.replace(/-/g, '');
             const monto = hiddenInput.value;
             const tercero = modalCodTercero.value;
-            
-            if(banco && fecha && monto && tercero) {
+
+            if (banco && fecha && monto && tercero) {
                 hashTarget.value = `${banco}-${fecha}-${monto}-${tercero}`;
             } else {
                 hashTarget.value = '';
             }
         }
-        
+
         document.querySelectorAll('.gen-hash').forEach(i => i.addEventListener('input', actualizarHash));
         document.getElementById('fecha_pago').addEventListener('change', actualizarHash);
         document.getElementById('id_banco').addEventListener('change', actualizarHash);
@@ -1069,16 +1210,22 @@
         }
 
         fileInput.addEventListener('change', function(e) {
-            if(e.target.files.length > 0) procesarArchivo(e.target.files[0]);
+            if (e.target.files.length > 0) procesarArchivo(e.target.files[0]);
         });
 
         window.addEventListener('paste', e => {
             if (!modalElement.classList.contains('show')) return;
-            if(e.clipboardData.files.length > 0) procesarArchivo(e.clipboardData.files[0]);
+            if (e.clipboardData.files.length > 0) procesarArchivo(e.clipboardData.files[0]);
         });
 
-        dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
-        dropZone.addEventListener('dragleave', e => { e.preventDefault(); dropZone.classList.remove('dragover'); });
+        dropZone.addEventListener('dragover', e => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+        dropZone.addEventListener('dragleave', e => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+        });
         dropZone.addEventListener('drop', e => {
             e.preventDefault();
             dropZone.classList.remove('dragover');
@@ -1091,7 +1238,8 @@
             const btnSubmit = document.getElementById('btnSubmitComprobante');
             const originalText = btnSubmit.innerHTML;
             btnSubmit.disabled = true;
-            btnSubmit.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> GUARDANDO...`;
+            btnSubmit.innerHTML =
+                `<span class="spinner-border spinner-border-sm me-2"></span> GUARDANDO...`;
 
             // [CORRECCIÓN CRÍTICA PARA PRODUCCIÓN]: Limpiamos campos vacíos del FormData
             // Esto asegura que Laravel no reciba strings vacíos ("") que rompen la validación
@@ -1101,33 +1249,33 @@
             if (!formData.get('cco')) formData.delete('cco');
 
             fetch(this.action, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
-                }
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    myModal.hide();
-                    Swal.fire({ 
-                        title: '¡Realizado!', 
-                        text: 'El pago ha sido vinculado a esta sesión.', 
-                        icon: 'success'
-                    });
-                    form.reset(); 
-                    resetFile();
-                } else {
-                    Swal.fire('Atención', data.message, 'warning');
-                }
-            })
-            .catch(() => Swal.fire('Error', 'No se pudo conectar', 'error'))
-            .finally(() => { 
-                btnSubmit.disabled = false; 
-                btnSubmit.innerHTML = originalText; 
-            });
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        myModal.hide();
+                        Swal.fire({
+                            title: '¡Realizado!',
+                            text: 'El pago ha sido vinculado a esta sesión.',
+                            icon: 'success'
+                        });
+                        form.reset();
+                        resetFile();
+                    } else {
+                        Swal.fire('Atención', data.message, 'warning');
+                    }
+                })
+                .catch(() => Swal.fire('Error', 'No se pudo conectar', 'error'))
+                .finally(() => {
+                    btnSubmit.disabled = false;
+                    btnSubmit.innerHTML = originalText;
+                });
         });
     });
 
@@ -1138,11 +1286,33 @@
         document.getElementById('pr').value = '';
         document.getElementById('cco').value = '';
     }
+
+
+    //duplicar select lineas de obligacion
+    $('#btn-add-linea').on('click', function() {
+        // 1. Clonar el primer item
+        let $newRow = $('.linea-item-wrapper').first().clone();
+
+        // 2. Limpiar el valor seleccionado en el clon
+        $newRow.find('select').val('');
+
+        // 3. Crear el botón de eliminar y añadirlo al input-group
+        let btnDelete = `
+            <button type="button" class="btn btn-outline-danger border-0 ps-1 pe-1 btn-remove-linea" title="Eliminar">
+                <i class="bi bi-x-circle-fill"></i>
+            </button>`;
+
+        $newRow.find('.input-group').append(btnDelete);
+
+        // 4. Insertar el clon antes del botón de agregar (+)
+        $(this).before($newRow);
+    });
+
+    // Evento para eliminar (usando delegación para elementos dinámicos)
+    $(document).on('click', '.btn-remove-linea', function() {
+        $(this).closest('.linea-item-wrapper').remove();
+    });
 </script>
-
-
-
-
 
 <script>
     // Exponer función global para calcular fechas automáticas de la agenda
@@ -1210,7 +1380,7 @@
 
     $('input[name="handled_by_agent"]').on('change', toggleAssignment);
     toggleAssignment();
-   
+
     const CRMApp = (function($) {
         'use strict';
         // =====================================================================
@@ -1252,7 +1422,7 @@
             // Selects Paso 2
             areaSelect: '#id_area_de_asignacion',
             cargoSelect: '#id_cargo_asignacion',
-            lineaSelect: '#id_linea_de_obligacion',
+            lineaSelect: 'select[name="id_linea_de_obligacion[]"]',
             distritoSelect: '#id_distrito_interaccion',
 
             // Sincronización
@@ -1284,6 +1454,9 @@
 
             markError: function(element, isWrapper = false) {
                 const $el = $(element);
+                if (!$el.prop('required') && !isWrapper) {
+                    return;
+                }
                 if (isWrapper || $el.hasClass('grid-gallery') || $el.hasClass('bg-light')) {
                     $el.addClass(isWrapper ? 'sync-wrapper-error' : 'container-error');
                 } else if ($el.hasClass('select2-hidden-accessible')) {
@@ -1300,7 +1473,12 @@
                 } else if ($el.hasClass('select2-hidden-accessible')) {
                     $el.next('.select2-container').removeClass('select2-error');
                 } else {
-                    $el.removeClass('input-error is-invalid').addClass('is-valid');
+                    $el.removeClass('input-error is-invalid');
+                    if ($el.prop('required')) {
+                        $el.addClass('is-valid');
+                    } else {
+                        $el.removeClass('is-valid');
+                    }
                 }
             },
 
@@ -1331,9 +1509,10 @@
 
                 if (input.files && input.files[0]) {
                     let file = input.files[0];
-                    
+
                     // ---> NUEVO: Feedback visual estilo "Carga Exitosa" <---
-                    label.innerHTML = `<span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i> ${file.name}</span>`;
+                    label.innerHTML =
+                        `<span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i> ${file.name}</span>`;
                     dropZone.style.borderColor = '#198754';
                     dropZone.style.backgroundColor = '#f8fff9';
 
@@ -1352,8 +1531,8 @@
                     // Restaurar estado por defecto si el usuario cancela
                     label.innerText = 'Adjuntar archivo';
                     label.classList.remove('text-success');
-                    dropZone.style.borderColor = ''; 
-                    dropZone.style.backgroundColor = ''; 
+                    dropZone.style.borderColor = '';
+                    dropZone.style.backgroundColor = '';
                     previewWrapper.style.display = 'none';
                 }
             }
@@ -1628,7 +1807,7 @@
         // =====================================================================
         // 6. MÓDULO DE BORRADORES (Auto-Guardado)
         // =====================================================================
-        
+
 
         // =====================================================================
         // 7. MÓDULO DE VALIDACIÓN Y SINCRONIZACIÓN (Form Validator)
@@ -1689,10 +1868,24 @@
                 }
 
                 // 4. Asignación (Linea Obligación)
-                if (!$(DOM.lineaSelect).val()) {
-                    UI.markError(DOM.lineaSelect);
+                let allLineasValid = true;
+                const $allLineas = $(DOM.lineaSelect);
+                $allLineas.each(function() {
+                    if (!$(this).val()) {
+                        UI.markError(
+                        this); // Marca error en el select específico que esté vacío
+                        allLineasValid = false;
+                    } else {
+                        UI.cleanError(this);
+                    }
+                });
+
+                if (!allLineasValid) {
                     isValid = false;
-                    firstErr = firstErr || $(DOM.lineaSelect).parent();
+                    // Guardamos el primer select con error para el scroll
+                    firstErr = firstErr || $allLineas.filter(function() {
+                        return !$(this).val();
+                    }).first();
                 }
 
                 // 5. Asignación a Otro Usuario
@@ -1881,7 +2074,7 @@
 
                 // 2. Buscar el input de archivo de esta vista
                 let inputDocumento = document.getElementById('attachment');
-                
+
                 if (inputDocumento) {
                     // 3. Transferir el archivo pegado al input
                     const dt = new DataTransfer();

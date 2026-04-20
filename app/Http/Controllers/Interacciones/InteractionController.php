@@ -667,6 +667,7 @@ class InteractionController extends Controller
      */
     public function store(Request $request)
     {
+        dd($request->all());
         $validated = $request->validate([
             'client_id' => 'required',
             'interaction_date' => 'required|date',
@@ -709,7 +710,6 @@ class InteractionController extends Controller
             'celular_quien_llama' => $validated['celular_quien_llama'] ?? null,
             'parentesco_quien_llama' => $validated['parentesco_quien_llama'] ?? null,
         ]);
-
     
 
         if ($request->filled('temp_token')) {
