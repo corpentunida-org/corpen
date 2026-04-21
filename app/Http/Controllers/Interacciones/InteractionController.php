@@ -489,15 +489,25 @@ class InteractionController extends Controller
 
         $baseQuery = Interaction::query();
 
-        // 2. Filtros (Simplificados)
+        // 2. Filtros (Buscador General Potente)
         if ($request->filled('search')) {
             $search = "%{$request->input('search')}%";
+            
             $baseQuery->where(function ($q) use ($search) {
                 $q->where('notes', 'LIKE', $search)
                 ->orWhere('nombre_quien_llama', 'LIKE', $search)
-                ->orWhere('id', 'LIKE', $search);
-                // Intenta limitar los orWhereHas, son costosos. 
-                // Si puedes, usa Joins para búsqueda, son 10x más rápidos.
+                ->orWhere('id', 'LIKE', $search)
+                ->orWhere('client_id', 'LIKE', $search) // Busca por Cédula directamente
+                
+                // Busca en el nombre del Cliente (Relación)
+                ->orWhereHas('client', function($query) use ($search) {
+                    $query->where('nom_ter', 'LIKE', $search);
+                })
+                
+                // Busca en el nombre del Agente/Asesor (Relación)
+                ->orWhereHas('agent', function($query) use ($search) {
+                    $query->where('name', 'LIKE', $search);
+                });
             });
         }
 
