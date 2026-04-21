@@ -68,10 +68,10 @@ class Interaction extends Model
         return $this->belongsTo(IntOutcome::class, 'outcome', 'id');
     }
 
-    /*public function lineaDeObligacion()
+    public function lineaDeObligacion()
     {
         return $this->belongsTo(LineaCredito::class, 'id_linea_de_obligacion', 'id');
-    }*/
+    }
     public function getLineasDetalleAttribute()
     {
         if (!$this->id_linea_de_obligacion || !is_array($this->id_linea_de_obligacion)) {
