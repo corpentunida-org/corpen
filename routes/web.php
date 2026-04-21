@@ -584,6 +584,9 @@ Route::prefix('interactions')
 
         // 👁️ Mostrar detalle
         Route::get('/{interaction}/show', [InteractionController::class, 'show'])->name('show');
+        
+        // 🚀 NUEVA RUTA PARA AJAX (Punto 3): Obtener seguimientos dinámicamente
+        Route::get('/{interaction}/seguimientos', [InteractionController::class, 'getSeguimientos'])->name('seguimientos.ajax');
 
         // ✏️ Editar / actualizar
         Route::get('/{interaction}/edit', [InteractionController::class, 'edit'])->name('edit');
