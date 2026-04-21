@@ -586,10 +586,9 @@ class InteractionController extends Controller
             'channel',
             'type',
             'outcomeRelation',
-            'lineaDeObligacion',
+            //'lineaDeObligacion',
             'usuarioAsignado',
-            'comprobantes.banco', // <-- ¡CLAVE! Cargamos el banco anidado para evitar consultas extra (N+1)
-            // Cargamos relaciones de seguimientos para el Timeline
+            'comprobantes.banco',
             'seguimientos.outcomeRelation',
             'seguimientos.creator',
             'seguimientos.assignedUser',
