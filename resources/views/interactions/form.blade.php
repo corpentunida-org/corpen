@@ -1040,6 +1040,7 @@
         const modalElement = document.getElementById('modalComprobante');
         if (!modalElement) return;
 
+        // Instancia del modal para controlarlo por JS
         const myModal = new bootstrap.Modal(modalElement);
         const form = document.getElementById('formModalComprobante');
         const modalCodTercero = document.getElementById('cod_tercero');
@@ -1058,7 +1059,6 @@
 
             const items = list.querySelectorAll('button');
 
-            // Mostrar lista al ganar foco
             input.addEventListener('focus', function() {
                 if(items.length > 0) {
                     items.forEach(i => i.style.display = 'block');
@@ -1066,12 +1066,10 @@
                 }
             });
 
-            // Filtrar en tiempo real
             input.addEventListener('input', function() {
                 const val = this.value.toLowerCase().trim();
                 let hasVisible = false;
-                
-                hidden.value = ''; // Reset ID hasta que seleccione uno de la lista
+                hidden.value = ''; 
                 actualizarHash();
 
                 items.forEach(item => {
@@ -1088,7 +1086,6 @@
                 else list.classList.add('d-none');
             });
 
-            // Seleccionar opción de la lista
             items.forEach(item => {
                 item.addEventListener('click', function(e) {
                     e.preventDefault();
@@ -1099,7 +1096,6 @@
                 });
             });
 
-            // Cerrar lista si se hace clic fuera
             document.addEventListener('click', function(e) {
                 if (!input.contains(e.target) && !list.contains(e.target)) {
                     list.classList.add('d-none');
@@ -1107,18 +1103,16 @@
             });
         }
 
-        // Inicializar buscadores
         setupBuscadorNativo('search_obligacion', 'id_obligacion', 'list_obligacion');
         setupBuscadorNativo('search_banco', 'id_banco', 'list_banco');
 
 
-        // --- 2. ENVÍO Y RESETEO (LA CORRECCIÓN PARA CARGAR OTRO) ---
+        // --- 2. ENVÍO Y RESETEO (LOOP DE MODAL SIN RECARGA DE VISTA) ---
         form.addEventListener('submit', function(e) {
-            e.preventDefault();
+            e.preventDefault(); // Evita recarga por defecto
             
-            // Validación: Obligar a seleccionar de la lista
             if(!document.getElementById('id_obligacion').value || !document.getElementById('id_banco').value) {
-                Swal.fire('Atención', 'Por favor selecciona una Obligación y un Banco válidos de las listas sugeridas.', 'warning');
+                Swal.fire('Atención', 'Por favor selecciona una Obligación y un Banco válidos.', 'warning');
                 return;
             }
 
@@ -1135,7 +1129,6 @@
             const formData = new FormData(form);
             if (forceSave) formData.append('force_save', '1');
 
-            // Limpieza para Laravel
             if (!formData.get('numero_cuota')) formData.delete('numero_cuota');
             if (!formData.get('pr')) formData.delete('pr');
             if (!formData.get('cco')) formData.delete('cco');
@@ -1145,12 +1138,16 @@
                 body: formData,
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value
+                    'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+                    'Accept': 'application/json'
                 }
             })
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
+                    // CERRAR MODAL INMEDIATAMENTE
+                    myModal.hide();
+
                     Swal.fire({
                         title: '¡Pago Vinculado!',
                         text: "¿Deseas adjuntar otro comprobante para este cliente?",
@@ -1158,39 +1155,42 @@
                         showCancelButton: true,
                         confirmButtonText: 'Sí, adjuntar otro',
                         cancelButtonText: 'No, terminar',
-                        confirmButtonColor: '#198754'
+                        confirmButtonColor: '#198754',
+                        allowOutsideClick: false
                     }).then((result) => {
                         if (result.isConfirmed) {
-                            // --- AQUÍ ESTÁ EL FIX DE RESETEO COMPLETO ---
-                            
-                            // 1. Guardar el cliente actual
+                            // --- REAPERTURA MANUAL ---
                             const clienteID = modalCodTercero.value;
 
-                            // 2. Resetear el formulario (esto limpia el HTML)
                             form.reset(); 
-                            
-                            // 3. Limpiar archivo y previsualización
                             resetFile(); 
 
-                            // 4. Limpiar explícitamente los inputs de búsqueda y los IDs ocultos
+                            // Limpieza manual de campos persistentes
                             document.getElementById('id_obligacion').value = '';
                             document.getElementById('id_banco').value = '';
                             document.getElementById('search_obligacion').value = '';
                             document.getElementById('search_banco').value = '';
+                            hiddenInput.value = '';
+                            displayInput.value = '';
                             
-                            // 5. Restaurar cliente y fecha de hoy
+                            // Restauramos contexto
                             modalCodTercero.value = clienteID;
                             document.getElementById('fecha_pago').value = new Date().toISOString().split('T')[0];
-                            
-                            // 6. Refrescar Hash y poner foco en el primer campo
                             actualizarHash();
-                            document.getElementById('search_obligacion').focus();
+
+                            // VOLVEMOS A MOSTRAR EL MODAL
+                            myModal.show();
+                            
+                            setTimeout(() => {
+                                document.getElementById('search_obligacion').focus();
+                            }, 500);
 
                         } else {
-                            myModal.hide();
+                            // CASO NO: Solo limpiamos el form por dentro por si lo vuelven a abrir,
+                            // pero NO recargamos la página. La interacción sigue viva.
                             form.reset();
                             resetFile();
-                            location.reload(); // Opcional para ver los cambios en la tabla
+                            console.log("Cierre de proceso sin recarga.");
                         }
                     });
                 } 
@@ -1227,7 +1227,8 @@
 
         function actualizarHash() {
             const banco = document.getElementById('id_banco').value;
-            const fecha = document.getElementById('fecha_pago').value.replace(/-/g, '');
+            const fechaInput = document.getElementById('fecha_pago').value;
+            const fecha = fechaInput ? fechaInput.replace(/-/g, '') : '';
             const monto = hiddenInput.value;
             const tercero = modalCodTercero.value;
             hashTarget.value = (banco && fecha && monto && tercero) ? `${banco}-${fecha}-${monto}-${tercero}` : '';
@@ -1238,7 +1239,7 @@
             el.addEventListener('change', actualizarHash);
         });
 
-        // --- 4. MANEJO DE ARCHIVOS Y PEGADO (CTRL+V) ---
+        // --- 4. MANEJO DE ARCHIVOS Y PEGADO ---
         function procesarArchivo(file) {
             if (!file) return;
             const validTypes = ['image/jpeg', 'image/png', 'application/pdf'];
@@ -1295,7 +1296,8 @@
 
     function resetFile() {
         document.getElementById('archivo_soporte').value = '';
-        document.getElementById('preview_container').classList.add('d-none');
+        const previewContainer = document.getElementById('preview_container');
+        if(previewContainer) previewContainer.classList.add('d-none');
         document.getElementById('numero_cuota').value = '';
         document.getElementById('pr').value = '';
         document.getElementById('cco').value = '';
