@@ -882,7 +882,6 @@
             <div class="modal-body p-8">
                 <form id="formModalComprobante" action="{{ route('cartera.comprobantes.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
-                    {{-- GANCHOS DE VINCULACIÓN --}}
                     <input type="hidden" name="id_interaction" value="{{ $interaction->id ?? '' }}">
                     <input type="hidden" name="temp_token" value="{{ $miTokenSesion ?? '' }}">
 
@@ -953,7 +952,6 @@
                             </div>
                         </div>
 
-                        {{-- FILA CONTABLE: CUOTA, PR, CCO --}}
                         <div class="col-12 mt-2">
                             <div class="p-4 bg-light-soft border border-dashed border-gray-300 rounded-3">
                                 <div class="row g-3">
@@ -1008,17 +1006,8 @@
 </div>
 
 <style>
-    .drop-zone-custom { 
-        border: 2px dashed #dbdfe9; 
-        border-radius: 8px; 
-        transition: all 0.3s ease; 
-        background-color: #f9fafb; 
-        height: 85px; 
-    }
-    .drop-zone-custom:hover, .drop-zone-custom.dragover { 
-        border-color: #198754; 
-        background-color: #e8f5e9; 
-    }
+    .drop-zone-custom { border: 2px dashed #dbdfe9; border-radius: 8px; transition: all 0.3s ease; background-color: #f9fafb; height: 85px; }
+    .drop-zone-custom:hover, .drop-zone-custom.dragover { border-color: #198754; background-color: #e8f5e9; }
     .bg-light-soft { background-color: #fcfcfc; }
     .font-monospace { font-family: 'Roboto Mono', monospace !important; }
     .border-dashed { border-style: dashed !important; }
@@ -1031,7 +1020,6 @@
 
         const myModal = new bootstrap.Modal(modalElement);
         const form = document.getElementById('formModalComprobante');
-        
         const modalCodTercero = document.getElementById('cod_tercero');
         const displayInput = document.getElementById('monto_pagado_display');
         const hiddenInput = document.getElementById('monto_pagado');
@@ -1039,120 +1027,28 @@
         const fileInput = document.getElementById('archivo_soporte');
         const dropZone = document.getElementById('drop_zone_area');
 
-        // 1. DISPARADOR DE TIPIFICACIÓN
-        document.querySelectorAll('.type-trigger').forEach(radio => {
-            radio.addEventListener('change', function() {
-                if (this.value == '3') {
-                    const selectCliente = document.getElementById('client_id');
-                    const clienteId = selectCliente ? selectCliente.value : '';
-
-                    if (!clienteId) {
-                        Swal.fire({
-                            title: '¡Falta el Cliente!',
-                            text: 'Debes seleccionar un cliente antes de registrar un pago.',
-                            icon: 'warning',
-                            confirmButtonColor: '#f1416c'
-                        });
-                        this.checked = false;
-                        return;
-                    }
-
-                    modalCodTercero.value = clienteId;
-                    actualizarHash();
-                    myModal.show();
-                }
-            });
-        });
-
-        // 2. MÁSCARA DE MONEDA
-        displayInput.addEventListener('input', function() {
-            let val = this.value.replace(/\D/g, ''); 
-            hiddenInput.value = val;
-            this.value = val !== '' ? new Intl.NumberFormat('es-CO').format(val) : '';
-            actualizarHash();
-        });
-
-        // 3. GENERADOR DE HASH (Incluye Banco)
-        function actualizarHash() {
-            const banco = document.getElementById('id_banco').value;
-            const fecha = document.getElementById('fecha_pago').value.replace(/-/g, '');
-            const monto = hiddenInput.value;
-            const tercero = modalCodTercero.value;
-            
-            if(banco && fecha && monto && tercero) {
-                hashTarget.value = `${banco}-${fecha}-${monto}-${tercero}`;
-            } else {
-                hashTarget.value = '';
-            }
-        }
-        
-        document.querySelectorAll('.gen-hash').forEach(i => i.addEventListener('input', actualizarHash));
-        document.getElementById('fecha_pago').addEventListener('change', actualizarHash);
-        document.getElementById('id_banco').addEventListener('change', actualizarHash);
-
-        // 4. MANEJO DE ARCHIVOS
-        function procesarArchivo(file) {
-            if (!file) return;
-            const validTypes = ['image/jpeg', 'image/png', 'application/pdf'];
-            if (!validTypes.includes(file.type)) {
-                Swal.fire('Formato no válido', 'Solo imágenes o PDF.', 'warning');
-                resetFile();
-                return;
-            }
-            const dataTransfer = new DataTransfer();
-            dataTransfer.items.add(file);
-            fileInput.files = dataTransfer.files;
-            document.getElementById('preview_container').classList.remove('d-none');
-            document.getElementById('file_name_preview').textContent = file.name || "Imagen capturada";
-            const img = document.getElementById('image_preview');
-            const pdfIcon = document.getElementById('pdf_preview_icon');
-            if (file.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = (ev) => {
-                    img.src = ev.target.result;
-                    img.classList.remove('d-none');
-                    pdfIcon.classList.add('d-none');
-                };
-                reader.readAsDataURL(file);
-            } else {
-                img.classList.add('d-none');
-                pdfIcon.classList.remove('d-none');
-            }
-        }
-
-        fileInput.addEventListener('change', function(e) {
-            if(e.target.files.length > 0) procesarArchivo(e.target.files[0]);
-        });
-
-        window.addEventListener('paste', e => {
-            if (!modalElement.classList.contains('show')) return;
-            if(e.clipboardData.files.length > 0) procesarArchivo(e.clipboardData.files[0]);
-        });
-
-        dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
-        dropZone.addEventListener('dragleave', e => { e.preventDefault(); dropZone.classList.remove('dragover'); });
-        dropZone.addEventListener('drop', e => {
-            e.preventDefault();
-            dropZone.classList.remove('dragover');
-            if (e.dataTransfer.files.length > 0) procesarArchivo(e.dataTransfer.files[0]);
-        });
-
-        // 5. ENVÍO POR AJAX (CON PREVENCIÓN DE NULOS)
+        // --- 1. LÓGICA DE ENVÍO Y RE-INTENTO ---
         form.addEventListener('submit', function(e) {
             e.preventDefault();
+            ejecutarEnvio(false);
+        });
+
+        function ejecutarEnvio(forceSave = false) {
             const btnSubmit = document.getElementById('btnSubmitComprobante');
             const originalText = btnSubmit.innerHTML;
+            
             btnSubmit.disabled = true;
-            btnSubmit.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> GUARDANDO...`;
+            btnSubmit.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> PROCESANDO...`;
 
-            // [CORRECCIÓN CRÍTICA PARA PRODUCCIÓN]: Limpiamos campos vacíos del FormData
-            // Esto asegura que Laravel no reciba strings vacíos ("") que rompen la validación
-            const formData = new FormData(this);
+            const formData = new FormData(form);
+            if (forceSave) formData.append('force_save', '1');
+
+            // Limpieza de campos nulos para Laravel
             if (!formData.get('numero_cuota')) formData.delete('numero_cuota');
             if (!formData.get('pr')) formData.delete('pr');
             if (!formData.get('cco')) formData.delete('cco');
 
-            fetch(this.action, {
+            fetch(form.action, {
                 method: 'POST',
                 body: formData,
                 headers: {
@@ -1163,22 +1059,126 @@
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    myModal.hide();
-                    Swal.fire({ 
-                        title: '¡Realizado!', 
-                        text: 'El pago ha sido vinculado a esta sesión.', 
-                        icon: 'success'
+                    Swal.fire({
+                        title: '¡Pago Vinculado!',
+                        text: "¿Deseas adjuntar otro comprobante para este cliente?",
+                        icon: 'success',
+                        showCancelButton: true,
+                        confirmButtonText: 'Sí, adjuntar otro',
+                        cancelButtonText: 'No, terminar',
+                        confirmButtonColor: '#198754'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            // Reset parcial: limpiamos datos del pago pero dejamos el tercero
+                            resetFile();
+                            displayInput.value = '';
+                            hiddenInput.value = '';
+                            document.getElementById('id_obligacion').value = '';
+                            actualizarHash();
+                        } else {
+                            myModal.hide();
+                            form.reset();
+                            resetFile();
+                        }
                     });
-                    form.reset(); 
-                    resetFile();
+                } 
+                else if (data.is_duplicate) {
+                    Swal.fire({
+                        title: '¿Pago Duplicado?',
+                        text: data.message,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Sí, registrar de todos modos',
+                        cancelButtonText: 'No, cancelar',
+                        confirmButtonColor: '#f1416c'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            ejecutarEnvio(true); // Re-intento forzado
+                        }
+                    });
                 } else {
                     Swal.fire('Atención', data.message, 'warning');
                 }
             })
             .catch(() => Swal.fire('Error', 'No se pudo conectar', 'error'))
-            .finally(() => { 
-                btnSubmit.disabled = false; 
-                btnSubmit.innerHTML = originalText; 
+            .finally(() => {
+                btnSubmit.disabled = false;
+                btnSubmit.innerHTML = originalText;
+            });
+        }
+
+        // --- 2. AUXILIARES: MÁSCARA Y HASH ---
+        displayInput.addEventListener('input', function() {
+            let val = this.value.replace(/\D/g, ''); 
+            hiddenInput.value = val;
+            this.value = val !== '' ? new Intl.NumberFormat('es-CO').format(val) : '';
+            actualizarHash();
+        });
+
+        function actualizarHash() {
+            const banco = document.getElementById('id_banco').value;
+            const fecha = document.getElementById('fecha_pago').value.replace(/-/g, '');
+            const monto = hiddenInput.value;
+            const tercero = modalCodTercero.value;
+            hashTarget.value = (banco && fecha && monto && tercero) ? `${banco}-${fecha}-${monto}-${tercero}` : '';
+        }
+
+        document.querySelectorAll('.gen-hash, #fecha_pago, #id_banco').forEach(el => {
+            el.addEventListener('input', actualizarHash);
+            el.addEventListener('change', actualizarHash);
+        });
+
+        // --- 3. MANEJO DE ARCHIVOS ---
+        function procesarArchivo(file) {
+            if (!file) return;
+            const validTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+            if (!validTypes.includes(file.type)) {
+                Swal.fire('Formato no válido', 'Solo imágenes o PDF.', 'warning');
+                return;
+            }
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            fileInput.files = dataTransfer.files;
+
+            document.getElementById('preview_container').classList.remove('d-none');
+            document.getElementById('file_name_preview').textContent = file.name;
+            
+            const img = document.getElementById('image_preview');
+            const pdfIcon = document.getElementById('pdf_preview_icon');
+            
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => { img.src = e.target.result; img.classList.remove('d-none'); pdfIcon.classList.add('d-none'); };
+                reader.readAsDataURL(file);
+            } else {
+                img.classList.add('d-none'); pdfIcon.classList.remove('d-none');
+            }
+        }
+
+        fileInput.addEventListener('change', e => { if(e.target.files.length) procesarArchivo(e.target.files[0]); });
+        
+        window.addEventListener('paste', e => {
+            if (modalElement.classList.contains('show') && e.clipboardData.files.length) procesarArchivo(e.clipboardData.files[0]);
+        });
+
+        dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', e => { e.preventDefault(); dropZone.classList.remove('dragover'); });
+        dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragover'); if (e.dataTransfer.files.length) procesarArchivo(e.dataTransfer.files[0]); });
+
+        // --- 4. DISPARADOR EXTERNO (TIPIFICACIÓN) ---
+        document.querySelectorAll('.type-trigger').forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.value == '3') {
+                    const clienteId = document.getElementById('client_id')?.value || '';
+                    if (!clienteId) {
+                        Swal.fire('¡Falta el Cliente!', 'Selecciona un cliente antes de registrar el pago.', 'warning');
+                        this.checked = false;
+                        return;
+                    }
+                    modalCodTercero.value = clienteId;
+                    actualizarHash();
+                    myModal.show();
+                }
             });
         });
     });
