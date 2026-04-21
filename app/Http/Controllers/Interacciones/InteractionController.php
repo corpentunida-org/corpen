@@ -368,16 +368,17 @@ class InteractionController extends Controller
             'overdue' => $vencidas,
         ];
 
-        // Tablas
+        // --- Gráficos ---
+        
         $canalesData = (clone $baseQuery)->select('interaction_channel', DB::raw('count(*) as total'))->with('channel')->groupBy('interaction_channel')->get();
         $chartCanales = ['labels' => $canalesData->map(fn($item) => $item->channel->name ?? 'Desconocido')->toArray(), 'data' => $canalesData->pluck('total')->toArray()];
 
         $resultadosData = (clone $baseQuery)->select('outcome', DB::raw('count(*) as total'))->with('outcomeRelation')->groupBy('outcome')->get();
         $chartResultados = ['labels' => $resultadosData->map(fn($item) => $item->outcomeRelation->name ?? 'Sin Estado')->toArray(), 'data' => $resultadosData->pluck('total')->toArray()];
 
+        // CORRECCIÓN LÍNEA DE CRÉDITO (Punto del error)
         $lineasData = (clone $baseQuery)
             ->select(
-                // Extraemos el primer elemento del array JSON: $[0]
                 DB::raw('JSON_UNQUOTE(JSON_EXTRACT(id_linea_de_obligacion, "$[0]")) as primer_id'),
                 DB::raw('count(*) as total'),
             )
@@ -385,91 +386,73 @@ class InteractionController extends Controller
             ->orderByDesc('total')
             ->limit(5)
             ->get();
-        $chartLineas = ['labels' => $lineasData->map(fn($item) => optional($item->lineas_detalle[0])->nombre ?? 'Sin Línea')->toArray(), 'data' => $lineasData->pluck('total')->toArray()];
+
+        // Obtenemos los nombres de las líneas manualmente para evitar el error de array key 0
+        $idsLineas = $lineasData->pluck('primer_id')->filter()->toArray();
+        $nombresLineasMap = LineaCredito::whereIn('id', $idsLineas)->pluck('nombre', 'id');
+
+        $chartLineas = [
+            'labels' => $lineasData->map(function($item) use ($nombresLineasMap) {
+                return $nombresLineasMap[$item->primer_id] ?? 'Sin Línea';
+            })->toArray(), 
+            'data' => $lineasData->pluck('total')->toArray()
+        ];
 
         $clientesData = (clone $baseQuery)->select('client_id', DB::raw('count(*) as total'))->with('client')->groupBy('client_id')->orderByDesc('total')->limit(5)->get();
         $chartClientes = ['labels' => $clientesData->map(fn($item) => $item->client->nom_ter ?? 'Cliente ' . $item->client_id)->toArray(), 'data' => $clientesData->pluck('total')->toArray()];
 
-        // AUDITORÍA POR AGENTE (Con cálculo de efectividad incluido)
+        // AUDITORÍA POR AGENTE
         $agentesList = (clone $baseQuery)->select('agent_id')->distinct()->pluck('agent_id');
         $agentesAuditoria = collect();
 
         foreach ($agentesList as $agente_id) {
             $qAgente = (clone $baseQuery)->where('agent_id', $agente_id);
             $totalAgente = (clone $qAgente)->count();
-            $exitosasAgente = (clone $qAgente)
-                ->whereHas('outcomeRelation', function ($q) {
-                    $q->where('estado', 1);
-                })
-                ->count();
-            $pendientesAgente = (clone $qAgente)
-                ->whereHas('outcomeRelation', function ($q) {
-                    $q->where('estado', '!=', 1)->orWhereNull('estado');
-                })
-                ->count();
+            
+            $exitosasAgente = (clone $qAgente)->whereHas('outcomeRelation', fn($q) => $q->where('estado', 1))->count();
+            $pendientesAgente = (clone $qAgente)->whereHas('outcomeRelation', fn($q) => $q->where('estado', '!=', 1)->orWhereNull('estado'))->count();
 
             $vencidasAgente = IntSeguimiento::whereHas('interaction', function ($q) use ($start, $end, $filtroDistrito, $filtroLinea, $filtroCliente, $agente_id) {
                 $q->whereBetween('interaction_date', [$start, $end])
                     ->where('agent_id', $agente_id)
-                    ->whereHas('outcomeRelation', function ($q2) {
-                        $q2->where('estado', '!=', 1)->orWhereNull('estado');
-                    });
-                if ($filtroDistrito) {
-                    $q->whereHas('client', function ($q3) use ($filtroDistrito) {
-                        $q3->where('cod_dist', $filtroDistrito);
-                    });
-                }
-                if ($filtroLinea) {
-                    $q->where('id_linea_de_obligacion', $filtroLinea);
-                }
-                if ($filtroCliente) {
-                    $q->where('client_id', $filtroCliente);
-                }
+                    ->whereHas('outcomeRelation', fn($q2) => $q2->where('estado', '!=', 1)->orWhereNull('estado'));
+                
+                if ($filtroDistrito) $q->whereHas('client', fn($q3) => $q3->where('cod_dist', $filtroDistrito));
+                if ($filtroLinea) $q->where('id_linea_de_obligacion', $filtroLinea);
+                if ($filtroCliente) $q->where('client_id', $filtroCliente);
             })
-                ->whereNotNull('next_action_date')
-                ->where('next_action_date', '<', Carbon::now())
-                ->count();
+            ->whereNotNull('next_action_date')
+            ->where('next_action_date', '<', Carbon::now())
+            ->count();
 
             $seguimientosAgente = IntSeguimiento::whereHas('interaction', function ($q) use ($start, $end, $filtroDistrito, $filtroLinea, $filtroCliente, $agente_id) {
                 $q->whereBetween('interaction_date', [$start, $end])->where('agent_id', $agente_id);
-                if ($filtroDistrito) {
-                    $q->whereHas('client', function ($q3) use ($filtroDistrito) {
-                        $q3->where('cod_dist', $filtroDistrito);
-                    });
-                }
-                if ($filtroLinea) {
-                    $q->where('id_linea_de_obligacion', $filtroLinea);
-                }
-                if ($filtroCliente) {
-                    $q->where('client_id', $filtroCliente);
-                }
+                if ($filtroDistrito) $q->whereHas('client', fn($q3) => $q3->where('cod_dist', $filtroDistrito));
+                if ($filtroLinea) $q->where('id_linea_de_obligacion', $filtroLinea);
+                if ($filtroCliente) $q->where('client_id', $filtroCliente);
             })->count();
 
-            $interaccionEjemplo = (clone $qAgente)->with('agent')->first();
-            $nombreAgente = $interaccionEjemplo->agent->name ?? 'Sin Agente';
+            // CORRECCIÓN AQUÍ: Evitamos que rompa si no hay agente asociado
+            $agenteRelacion = User::find($agente_id);
+            $nombreAgente = $agenteRelacion->name ?? 'Sin Agente';
 
-            // Calculo previo de efectividad para los insights
             $efectividad = $totalAgente > 0 ? round(($exitosasAgente / $totalAgente) * 100, 1) : 0;
 
-            $agentesAuditoria->push(
-                (object) [
-                    'nombre' => $nombreAgente,
-                    'total' => $totalAgente,
-                    'exitosas' => $exitosasAgente,
-                    'pendientes' => $pendientesAgente,
-                    'vencidas' => $vencidasAgente,
-                    'seguimientos' => $seguimientosAgente,
-                    'efectividad' => $efectividad,
-                ],
-            );
+            $agentesAuditoria->push((object) [
+                'nombre' => $nombreAgente,
+                'total' => $totalAgente,
+                'exitosas' => $exitosasAgente,
+                'pendientes' => $pendientesAgente,
+                'vencidas' => $vencidasAgente,
+                'seguimientos' => $seguimientosAgente,
+                'efectividad' => $efectividad,
+            ]);
         }
 
-        // Ordenamos por mayor número de gestiones
         $agentesAuditoria = $agentesAuditoria->sortByDesc('total')->values();
 
-        // INSIGHTS INTELIGENTES
-        $mejorAgente = $agentesAuditoria->first(); // El que más hizo
-        $agenteMasEfectivo = $agentesAuditoria->where('total', '>', 5)->sortByDesc('efectividad')->first(); // Eficiencia
+        $mejorAgente = $agentesAuditoria->first();
+        $agenteMasEfectivo = $agentesAuditoria->where('total', '>', 5)->sortByDesc('efectividad')->first();
         $tasaGlobal = $totalInteracciones > 0 ? round(($exitosas / $totalInteracciones) * 100, 1) : 0;
 
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('interactions.reportes.pdf', compact('stats', 'chartCanales', 'chartResultados', 'chartClientes', 'chartLineas', 'agentesAuditoria', 'startDate', 'endDate', 'mejorAgente', 'agenteMasEfectivo', 'tasaGlobal'));
@@ -1028,7 +1011,7 @@ class InteractionController extends Controller
         $search = $request->get('q');
 
         $clientes = MaeTerceros::select('cod_ter', 'nom_ter', 'apl1', 'apl2', 'nom1', 'nom2', 'cod_dist', 'congrega')
-            ->where('estado', 1)
+            //->where('estado', 1)
             ->where(function ($query) use ($search) {
                 $query
                     ->where('nom_ter', 'like', "%{$search}%")
