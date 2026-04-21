@@ -59,61 +59,57 @@ class CarComprobantePagoController extends Controller
 
     public function store(Request $request)
     {
-        // 1. Preprocesar fecha (convertir YYYY-MM-DD a YYYYMMDD entero)
+        // 1. Preprocesar fecha
         if ($request->filled('fecha_pago')) {
-            $request->merge([
-                'fecha_pago' => str_replace('-', '', $request->fecha_pago)
-            ]);
+            $request->merge(['fecha_pago' => str_replace('-', '', $request->fecha_pago)]);
         }
 
-        // [CORRECCIÓN CRÍTICA PARA PRODUCCIÓN]: Convertir strings vacíos a NULL explícitamente
-        // Esto evita que la validación 'integer' o la base de datos fallen.
+        // [CORRECCIÓN CRÍTICA]: Convertir strings vacíos a NULL
         $request->merge([
             'pr'           => $request->filled('pr') ? $request->pr : null,
             'cco'          => $request->filled('cco') ? $request->cco : null,
             'numero_cuota' => $request->filled('numero_cuota') ? $request->numero_cuota : null,
         ]);
 
-        // 2. Validar (Incluyendo pr, cco y numero_cuota)
         $validated = $request->validate([
             'cod_ter_MaeTerceros'     => 'required|integer',
             'id_obligacion'           => 'nullable|integer', 
             'monto_pagado'            => 'required|numeric',
             'fecha_pago'              => 'required|integer', 
             'archivo_soporte'         => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
-            'hash_transaccion'        => 'nullable|string',
-            'id_transaccion_bancaria' => 'nullable|integer',
-            'id_interaction'          => 'nullable|integer',
-            'temp_token'              => 'nullable|string|max:255',
             'id_banco'                => 'required|integer',
+            'temp_token'              => 'nullable|string|max:255',
+            'id_interaction'          => 'nullable|integer',
             'pr'                      => 'nullable|integer', 
             'cco'                     => 'nullable|integer', 
             'numero_cuota'            => 'nullable|integer', 
         ]);
 
         try {
-            // 3. Generar Hash y comprobar duplicados
             $hash_transaccion = $validated['id_banco'] . '-' . $validated['fecha_pago'] . '-' . $validated['monto_pagado'] . '-' . $validated['cod_ter_MaeTerceros'];
             
             $existeHash = CarComprobantePago::where('hash_transaccion', $hash_transaccion)->exists();
 
-            if ($existeHash) {
-                $msg = 'Este comprobante (mismo banco, fecha, monto y tercero) ya fue registrado previamente.';
-                if ($request->ajax()) {
-                    return response()->json(['success' => false, 'message' => $msg], 422);
-                }
-                return back()->withInput()->withErrors(['hash_transaccion' => $msg]);
+            // VALIDACIÓN DE DUPLICADO CON FORZADO
+            if ($existeHash && !$request->boolean('force_save')) {
+                return response()->json([
+                    'success' => false,
+                    'is_duplicate' => true,
+                    'message' => 'Ya existe un pago con estos mismos datos. ¿Deseas registrarlo de todas formas?'
+                ]);
             }
 
-            // 4. Subir archivo a S3
+            // Si se fuerza, alteramos el hash para evitar error de UNIQUE en base de datos
+            if ($existeHash && $request->boolean('force_save')) {
+                $hash_transaccion .= '-F-' . time();
+            }
+
             $rutaArchivo = null;
             if ($request->hasFile('archivo_soporte')) {
-                // Ruta dinámica: cartera/comprobantes/{codigo_tercero}/archivo.ext
                 $folderPath = "corpentunida/cartera/comprobantes/{$validated['cod_ter_MaeTerceros']}";
                 $rutaArchivo = $request->file('archivo_soporte')->store($folderPath, 's3');
             }
 
-            // 5. Crear registro con los nuevos campos
             CarComprobantePago::create([
                 'cod_ter_MaeTerceros'     => $validated['cod_ter_MaeTerceros'],
                 'id_obligacion'           => $validated['id_obligacion'] ?? null, 
@@ -121,41 +117,23 @@ class CarComprobantePagoController extends Controller
                 'fecha_pago'              => $validated['fecha_pago'],
                 'hash_transaccion'        => $hash_transaccion,
                 'ruta_archivo'            => $rutaArchivo,
-                'id_transaccion_bancaria' => $validated['id_transaccion_bancaria'] ?? 0,
                 'id_interaction'          => $validated['id_interaction'] ?? 0,
                 'temp_token'              => $validated['temp_token'] ?? null, 
                 'id_user'                 => auth()->id(), 
                 'estado'                  => 'pendiente', 
                 'id_banco'                => $validated['id_banco'], 
-                'pr'                      => $validated['pr'] ?? null,          
-                'cco'                     => $validated['cco'] ?? null,         
-                'numero_cuota'            => $validated['numero_cuota'] ?? null 
+                'pr'                      => $validated['pr'],
+                'cco'                     => $validated['cco'],
+                'numero_cuota'            => $validated['numero_cuota']
             ]);
 
-            // 6. Respuesta para AJAX (Modal)
-            if ($request->ajax()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Soporte almacenado y vinculado temporalmente.'
-                ]);
-            }
-
-            return redirect()->route('cartera.comprobantes.index')
-                            ->with('success', 'Soporte almacenado correctamente.');
+            return response()->json(['success' => true, 'message' => 'Soporte almacenado correctamente.']);
 
         } catch (\Exception $e) {
             \Log::error("Error en CarComprobantePago@store: " . $e->getMessage());
-            
-            if ($request->ajax()) {
-                return response()->json([
-                    'success' => false, 
-                    'message' => 'Error crítico: ' . $e->getMessage()
-                ], 500);
-            }
-            return back()->withErrors(['error' => 'Error inesperado al procesar el archivo.']);
+            return response()->json(['success' => false, 'message' => 'Error crítico: ' . $e->getMessage()], 500);
         }
     }
-
     public function update(Request $request, $id)
     {
         $comprobante = CarComprobantePago::findOrFail($id);
