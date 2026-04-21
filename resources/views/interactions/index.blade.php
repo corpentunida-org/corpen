@@ -212,25 +212,23 @@
                                             <td>
 
                                                 <a class="interaction-id fw-bold text-decoration-none pastel-link"
-                                                    href="#" data-id="{{ $interaction->id }}"
+                                                    href="#" 
+                                                    data-id="{{ $interaction->id }}"
                                                     data-fecha="{{ optional($interaction->interaction_date)->format('d/m/Y H:i') }}"
                                                     data-cliente="{{ $interaction->client->nom_ter ?? '—' }}"
                                                     data-client-id="{{ $interaction->client_id ?? '—' }}"
                                                     data-agent="{{ $interaction->agent->name ?? '—' }}"
                                                     data-motivo="{{ $interaction->type->name ?? 'N/A' }}"
-                                                    data-duracion="{{ $interaction->duration ? $interaction->duration . ' min' : '—' }}"
+                                                    data-duracion="{{ floor($interaction->duration / 60) }}m {{ $interaction->duration % 60 }}s"
                                                     data-outcome="{{ $interaction->outcomeRelation?->name ?? '—' }}"
                                                     data-notas="{{ $interaction->notes ?? 'Sin notas.' }}"
-                                                    data-linea="{{ $interaction->lineas_detalle[0]?->nombre ?? '—' }}"
+                                                    data-linea="{{ !empty($nombresEncontrados) ? $nombresEncontrados[0] : '—' }}"
                                                     data-asignado="{{ $interaction->usuarioAsignado?->name ?? '—' }}"
                                                     data-llamante-nombre="{{ $interaction->nombre_quien_llama ?? '—' }}"
                                                     data-llamante-cedula="{{ $interaction->cedula_quien_llama ?? '—' }}"
                                                     data-llamante-celular="{{ $interaction->celular_quien_llama ?? '—' }}"
-                                                    data-llamante-parentesco="{{ $interaction->parentesco_quien_llama ?? '—' }}"
-                                                    data-seguimientos-count="{{ $interaction->seguimientos->count() }}">
-
+                                                    data-llamante-parentesco="{{ $interaction->parentesco_quien_llama ?? '—' }}">
                                                     #{{ $interaction->id }}
-
                                                 </a>
 
                                                 @if ($interaction->attachment_urls)
@@ -290,11 +288,17 @@
 
                                             <td>
                                                 <div class="small mb-1 text-truncate-2-lines text-dark">
-                                                    {{ $interaction->lineas_detalle[0]->nombre ?? 'General' }} /
-                                                    {{ $interaction->lineas_detalle[1]->nombre ?? 'General' }}
+                                                    @php
+                                                        // Obtenemos los nombres desde el array $lineas (cacheado) usando los IDs del modelo
+                                                        $idsActuales = is_array($interaction->id_linea_de_obligacion) ? $interaction->id_linea_de_obligacion : [];
+                                                        $nombresEncontrados = [];
+                                                        foreach($idsActuales as $idL) {
+                                                            if(isset($lineas[$idL])) $nombresEncontrados[] = $lineas[$idL];
+                                                        }
+                                                    @endphp
+                                                    {{ !empty($nombresEncontrados) ? implode(' / ', $nombresEncontrados) : 'General' }}
                                                 </div>
-                                                <span
-                                                    class="badge bg-soft-{{ $priorityColors[$interaction->outcome] ?? 'secondary' }} text-{{ $priorityColors[$interaction->outcome] ?? 'secondary' }}">
+                                                <span class="badge bg-soft-{{ $priorityColors[$interaction->outcome] ?? 'secondary' }} text-{{ $priorityColors[$interaction->outcome] ?? 'secondary' }}">
                                                     {{ $interaction->outcomeRelation?->name ?? ' ' }}
                                                 </span>
                                             </td>
@@ -594,7 +598,7 @@
                     }
                 });
 
-                // Lógica del modal
+                // Lógica del modal con carga dinámica (AJAX)
                 document.addEventListener('click', function(e) {
                     const interactionIdLink = e.target.closest('.interaction-id');
 
@@ -602,62 +606,63 @@
                         e.preventDefault();
                         const el = interactionIdLink.dataset;
 
+                        // 1. Llenar datos básicos del modal
                         document.getElementById('modal-id').textContent = `RADICADO #${el.id}`;
                         document.getElementById('modal-fecha').textContent = el.fecha;
                         document.getElementById('modal-cliente').textContent = el.cliente || '—';
-                        document.getElementById('modal-client-id').textContent = el.clientId ?
-                            `(CC: ${el.clientId})` : '';
+                        document.getElementById('modal-client-id').textContent = el.clientId ? `(CC: ${el.clientId})` : '';
                         document.getElementById('modal-agent').textContent = el.agent || '—';
                         document.getElementById('modal-motivo').textContent = el.motivo || '—';
                         document.getElementById('modal-duracion').textContent = el.duracion || '—';
                         document.getElementById('modal-llamante-nombre').textContent = el.llamanteNombre || '—';
                         document.getElementById('modal-llamante-cedula').textContent = el.llamanteCedula || '—';
-                        document.getElementById('modal-llamante-celular').textContent = el.llamanteCelular ||
-                            '—';
-                        document.getElementById('modal-llamante-parentesco').textContent = el
-                            .llamanteParentesco || '—';
+                        document.getElementById('modal-llamante-celular').textContent = el.llamanteCelular || '—';
+                        document.getElementById('modal-llamante-parentesco').textContent = el.llamanteParentesco || '—';
                         document.getElementById('modal-linea').textContent = el.linea || '—';
                         document.getElementById('modal-outcome').textContent = el.outcome || '—';
                         document.getElementById('modal-asignado').textContent = el.asignado || '—';
                         document.getElementById('modal-notas').textContent = el.notas || 'Sin notas.';
 
+                        // 2. Cargar Seguimientos vía AJAX
                         const container = document.getElementById('modal-seguimientos-container');
                         const counter = document.getElementById('modal-seguimientos-count');
-                        container.innerHTML = '';
 
-                        try {
-                            const seguimientos = JSON.parse(el.seguimientos || '[]');
-                            counter.textContent = seguimientos.length;
+                        // Estado de carga
+                        container.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary spinner-border-sm"></div><p class="small text-muted mt-2">Cargando historial...</p></div>';
+                        counter.textContent = '...';
 
-                            if (seguimientos.length > 0) {
-                                let html = '<div class="list-group list-group-flush">';
-                                seguimientos.forEach(seg => {
-                                    html += `
-                                        <div class="list-group-item px-0 bg-transparent border-bottom">
-                                            <div class="d-flex w-100 justify-content-between mb-1">
-                                                <strong class="text-dark" style="font-size: 0.9rem;">${seg.resultado}</strong>
-                                                <small class="text-muted">${seg.fecha_creacion}</small>
-                                            </div>
-                                            <p class="mb-2 text-muted" style="font-size: 0.85rem;">${seg.notas}</p>
-                                            <div class="bg-light p-2 rounded" style="font-size: 0.8rem;">
-                                                <span class="d-block text-secondary mb-1"><i class="feather-user me-1"></i> Agente: <strong>${seg.agente}</strong></span>
-                                                <span class="d-block text-secondary"><i class="feather-calendar me-1"></i> Próx. Acción: <strong>${seg.accion}</strong> (${seg.fecha_accion})</span>
-                                            </div>
-                                        </div>
-                                    `;
-                                });
-                                html += '</div>';
-                                container.innerHTML = html;
-                            } else {
-                                container.innerHTML =
-                                    '<p class="text-muted small mb-0 py-2 text-center">No hay seguimientos registrados para esta interacción.</p>';
-                            }
-                        } catch (error) {
-                            console.error('Error al analizar los seguimientos:', error);
-                            container.innerHTML =
-                                '<p class="text-danger small mb-0 py-2">Error al cargar el historial de seguimientos.</p>';
-                            counter.textContent = '0';
-                        }
+                        // Petición al servidor (Ruta que agregamos al web.php)
+                        fetch(`/interactions/${el.id}/seguimientos`)
+                            .then(res => res.json())
+                            .then(seguimientos => {
+                                counter.textContent = seguimientos.length;
+                                if (seguimientos.length > 0) {
+                                    let html = '<div class="list-group list-group-flush">';
+                                    seguimientos.forEach(seg => {
+                                        html += `
+                                            <div class="list-group-item px-0 bg-transparent border-bottom">
+                                                <div class="d-flex w-100 justify-content-between mb-1">
+                                                    <strong class="text-dark" style="font-size: 0.9rem;">${seg.resultado}</strong>
+                                                    <small class="text-muted">${seg.fecha_creacion}</small>
+                                                </div>
+                                                <p class="mb-2 text-muted" style="font-size: 0.85rem;">${seg.notas}</p>
+                                                <div class="bg-light p-2 rounded" style="font-size: 0.8rem;">
+                                                    <span class="d-block text-secondary mb-1"><i class="feather-user me-1"></i> Agente: <strong>${seg.agente}</strong></span>
+                                                    <span class="d-block text-secondary"><i class="feather-calendar me-1"></i> Próx. Acción: <strong>${seg.accion}</strong> (${seg.fecha_accion})</span>
+                                                </div>
+                                            </div>`;
+                                    });
+                                    html += '</div>';
+                                    container.innerHTML = html;
+                                } else {
+                                    container.innerHTML = '<p class="text-muted small mb-0 py-4 text-center">No hay seguimientos registrados.</p>';
+                                }
+                            })
+                            .catch(err => {
+                                console.error(err);
+                                container.innerHTML = '<p class="text-danger small py-4 text-center">Error al cargar seguimientos.</p>';
+                                counter.textContent = '0';
+                            });
 
                         new bootstrap.Modal(document.getElementById('detalleInteractionModal')).show();
                     }
