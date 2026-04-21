@@ -584,31 +584,33 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-12 mt-2">
-                        <label class="form-label text-uppercase text-muted mb-2 d-block">
-                            Líneas de Obligación <span class="text-muted">*</span>
-                        </label>
-
-                        <div class="d-flex flex-wrap gap-2 align-items-center" id="container-lineas">
-                            <div class="linea-item-wrapper" style="width: 250px;">
-                                <div class="input-group input-group-sm">
-                                    <select class="form-select" name="id_linea_de_obligacion[]" required>
-                                        <option value="">Selecciona la línea...</option>
-                                        @if (isset($lineasCredito))
-                                            @foreach ($lineasCredito as $id => $nombre)
-                                                <option value="{{ $id }}">{{ $nombre }}</option>
-                                            @endforeach
-                                        @endif
-                                    </select>
-                                </div>
+                   <div class="d-flex flex-wrap gap-3 align-items-center" id="container-lineas">
+                        <div class="linea-item-wrapper" style="width: 320px;">
+                            <div class="input-group">
+                                <select class="form-select select2-linea" name="id_linea_de_obligacion[]" required>
+                                    <option value="">Selecciona la línea...</option>
+                                    @if (isset($lineasCredito))
+                                        @foreach ($lineasCredito as $id => $nombre)
+                                            <option value="{{ $id }}">{{ $nombre }}</option>
+                                        @endforeach
+                                    @endif
+                                </select>
+                                
+                                <button type="button" 
+                                        class="btn border border-start-0 text-secondary px-3 btn-remove-linea d-none" 
+                                        style="background-color: #fff;" 
+                                        title="Quitar línea">
+                                    <i class="bi bi-x-lg" style="font-size: 0.9rem;"></i>
+                                </button>
                             </div>
-
-                            <button type="button"
-                                class="btn btn-primary rounded-circle shadow-sm d-flex align-items-center justify-content-center"
-                                id="btn-add-linea" style="width: 32px; height: 32px; flex-shrink: 0;">
-                                <i class="bi bi-plus-lg"></i>
-                            </button>
                         </div>
+
+                        <button type="button" 
+                                class="btn btn-primary rounded-circle d-flex align-items-center justify-content-center shadow-sm" 
+                                id="btn-add-linea" 
+                                style="width: 35px; height: 35px; flex-shrink: 0;">
+                            <i class="bi bi-plus-lg"></i>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -858,7 +860,7 @@
 </form>
 
 
-<div class="modal fade" id="modalComprobante" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="modalComprobante" data-bs-backdrop="static" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
             <div class="modal-header border-0 pb-0 pt-8 px-8 d-flex flex-column align-items-start text-white bg-success">
@@ -895,18 +897,19 @@
                                 </div>
                             </div>
 
-                            <div class="fv-row mb-4">
+                            <div class="fv-row mb-4 position-relative">
                                 <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Obligación / Línea de Crédito *</label>
                                 <div class="input-group input-group-solid border border-gray-300 rounded shadow-sm">
-                                    <span class="input-group-text bg-transparent border-0"><i class="fas fa-file-contract text-muted"></i></span>
-                                    <select class="form-select border-0 select2" id="id_obligacion" name="id_obligacion" required>
-                                        <option value="">Selecciona la obligación...</option>
-                                        @if (isset($lineasCredito))
-                                            @foreach ($lineasCredito as $id => $nombre)
-                                                <option value="{{ $id }}">{{ $nombre }}</option>
-                                            @endforeach
-                                        @endif
-                                    </select>
+                                    <span class="input-group-text bg-transparent border-0"><i class="fas fa-search text-muted"></i></span>
+                                    <input type="text" id="search_obligacion" class="form-control border-0" placeholder="Escribe para buscar..." autocomplete="off" required>
+                                    <input type="hidden" id="id_obligacion" name="id_obligacion">
+                                </div>
+                                <div class="list-group position-absolute w-100 shadow-lg d-none custom-dropdown-list" id="list_obligacion">
+                                    @if (isset($lineasCredito))
+                                        @foreach ($lineasCredito as $id => $nombre)
+                                            <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="{{ $id }}">{{ $nombre }}</button>
+                                        @endforeach
+                                    @endif
                                 </div>
                             </div>
 
@@ -926,17 +929,19 @@
                                 <input type="date" id="fecha_pago" name="fecha_pago" class="form-control form-control-solid border border-gray-300 gen-hash" required value="{{ date('Y-m-d') }}">
                             </div>
 
-                            <div class="fv-row mb-4">
+                            <div class="fv-row mb-4 position-relative">
                                 <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Banco *</label>
                                 <div class="input-group input-group-solid border border-gray-300 rounded shadow-sm">
-                                    <select class="form-select select2 border-0" id="id_banco" name="id_banco" required>
-                                        <option value="">Selecciona el banco...</option>
-                                        @if (isset($idBanco))
-                                            @foreach ($idBanco as $idb)
-                                                <option value="{{ $idb->id }}">{{ $idb->numero_cuenta }} - {{ $idb->banco }}</option>
-                                            @endforeach
-                                        @endif
-                                    </select>
+                                    <span class="input-group-text bg-transparent border-0"><i class="fas fa-search text-muted"></i></span>
+                                    <input type="text" id="search_banco" class="form-control border-0" placeholder="Escribe para buscar banco..." autocomplete="off" required>
+                                    <input type="hidden" id="id_banco" name="id_banco">
+                                </div>
+                                <div class="list-group position-absolute w-100 shadow-lg d-none custom-dropdown-list" id="list_banco">
+                                    @if (isset($idBanco))
+                                        @foreach ($idBanco as $idb)
+                                            <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="{{ $idb->id }}">{{ $idb->numero_cuenta }} - {{ $idb->banco }}</button>
+                                        @endforeach
+                                    @endif
                                 </div>
                             </div>
 
@@ -1011,6 +1016,23 @@
     .bg-light-soft { background-color: #fcfcfc; }
     .font-monospace { font-family: 'Roboto Mono', monospace !important; }
     .border-dashed { border-style: dashed !important; }
+    
+    /* ESTILOS DEL NUEVO BUSCADOR FLOTANTE */
+    .custom-dropdown-list {
+        z-index: 1060;
+        max-height: 180px;
+        overflow-y: auto;
+        top: 100%;
+        left: 0;
+        margin-top: 5px;
+        background: #fff;
+        border: 1px solid #e4e6ef;
+        border-radius: 0.475rem;
+    }
+    .custom-dropdown-list button:hover {
+        background-color: #f1f1f4;
+        color: #181c32;
+    }
 </style>
 
 <script>
@@ -1027,9 +1049,79 @@
         const fileInput = document.getElementById('archivo_soporte');
         const dropZone = document.getElementById('drop_zone_area');
 
-        // --- 1. LÓGICA DE ENVÍO Y RE-INTENTO ---
+        // --- 1. LÓGICA DE BUSCADORES NATIVOS (FILTRADO GLOBAL) ---
+        function setupBuscadorNativo(inputId, hiddenId, listId) {
+            const input = document.getElementById(inputId);
+            const hidden = document.getElementById(hiddenId);
+            const list = document.getElementById(listId);
+            if (!input || !list) return;
+
+            const items = list.querySelectorAll('button');
+
+            // Mostrar lista al ganar foco
+            input.addEventListener('focus', function() {
+                if(items.length > 0) {
+                    items.forEach(i => i.style.display = 'block');
+                    list.classList.remove('d-none');
+                }
+            });
+
+            // Filtrar en tiempo real
+            input.addEventListener('input', function() {
+                const val = this.value.toLowerCase().trim();
+                let hasVisible = false;
+                
+                hidden.value = ''; // Reset ID hasta que seleccione uno de la lista
+                actualizarHash();
+
+                items.forEach(item => {
+                    const text = item.textContent.toLowerCase();
+                    if (text.includes(val)) {
+                        item.style.display = 'block';
+                        hasVisible = true;
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+
+                if (hasVisible) list.classList.remove('d-none');
+                else list.classList.add('d-none');
+            });
+
+            // Seleccionar opción de la lista
+            items.forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    input.value = this.textContent.trim();
+                    hidden.value = this.getAttribute('data-id');
+                    list.classList.add('d-none');
+                    actualizarHash();
+                });
+            });
+
+            // Cerrar lista si se hace clic fuera
+            document.addEventListener('click', function(e) {
+                if (!input.contains(e.target) && !list.contains(e.target)) {
+                    list.classList.add('d-none');
+                }
+            });
+        }
+
+        // Inicializar buscadores
+        setupBuscadorNativo('search_obligacion', 'id_obligacion', 'list_obligacion');
+        setupBuscadorNativo('search_banco', 'id_banco', 'list_banco');
+
+
+        // --- 2. ENVÍO Y RESETEO (LA CORRECCIÓN PARA CARGAR OTRO) ---
         form.addEventListener('submit', function(e) {
             e.preventDefault();
+            
+            // Validación: Obligar a seleccionar de la lista
+            if(!document.getElementById('id_obligacion').value || !document.getElementById('id_banco').value) {
+                Swal.fire('Atención', 'Por favor selecciona una Obligación y un Banco válidos de las listas sugeridas.', 'warning');
+                return;
+            }
+
             ejecutarEnvio(false);
         });
 
@@ -1043,7 +1135,7 @@
             const formData = new FormData(form);
             if (forceSave) formData.append('force_save', '1');
 
-            // Limpieza de campos nulos para Laravel
+            // Limpieza para Laravel
             if (!formData.get('numero_cuota')) formData.delete('numero_cuota');
             if (!formData.get('pr')) formData.delete('pr');
             if (!formData.get('cco')) formData.delete('cco');
@@ -1069,16 +1161,36 @@
                         confirmButtonColor: '#198754'
                     }).then((result) => {
                         if (result.isConfirmed) {
-                            // Reset parcial: limpiamos datos del pago pero dejamos el tercero
-                            resetFile();
-                            displayInput.value = '';
-                            hiddenInput.value = '';
+                            // --- AQUÍ ESTÁ EL FIX DE RESETEO COMPLETO ---
+                            
+                            // 1. Guardar el cliente actual
+                            const clienteID = modalCodTercero.value;
+
+                            // 2. Resetear el formulario (esto limpia el HTML)
+                            form.reset(); 
+                            
+                            // 3. Limpiar archivo y previsualización
+                            resetFile(); 
+
+                            // 4. Limpiar explícitamente los inputs de búsqueda y los IDs ocultos
                             document.getElementById('id_obligacion').value = '';
+                            document.getElementById('id_banco').value = '';
+                            document.getElementById('search_obligacion').value = '';
+                            document.getElementById('search_banco').value = '';
+                            
+                            // 5. Restaurar cliente y fecha de hoy
+                            modalCodTercero.value = clienteID;
+                            document.getElementById('fecha_pago').value = new Date().toISOString().split('T')[0];
+                            
+                            // 6. Refrescar Hash y poner foco en el primer campo
                             actualizarHash();
+                            document.getElementById('search_obligacion').focus();
+
                         } else {
                             myModal.hide();
                             form.reset();
                             resetFile();
+                            location.reload(); // Opcional para ver los cambios en la tabla
                         }
                     });
                 } 
@@ -1092,22 +1204,20 @@
                         cancelButtonText: 'No, cancelar',
                         confirmButtonColor: '#f1416c'
                     }).then((result) => {
-                        if (result.isConfirmed) {
-                            ejecutarEnvio(true); // Re-intento forzado
-                        }
+                        if (result.isConfirmed) ejecutarEnvio(true);
                     });
                 } else {
                     Swal.fire('Atención', data.message, 'warning');
                 }
             })
-            .catch(() => Swal.fire('Error', 'No se pudo conectar', 'error'))
+            .catch(() => Swal.fire('Error', 'No se pudo conectar con el servidor', 'error'))
             .finally(() => {
                 btnSubmit.disabled = false;
                 btnSubmit.innerHTML = originalText;
             });
         }
 
-        // --- 2. AUXILIARES: MÁSCARA Y HASH ---
+        // --- 3. MÁSCARA Y HASH ---
         displayInput.addEventListener('input', function() {
             let val = this.value.replace(/\D/g, ''); 
             hiddenInput.value = val;
@@ -1123,12 +1233,12 @@
             hashTarget.value = (banco && fecha && monto && tercero) ? `${banco}-${fecha}-${monto}-${tercero}` : '';
         }
 
-        document.querySelectorAll('.gen-hash, #fecha_pago, #id_banco').forEach(el => {
+        document.querySelectorAll('.gen-hash, #fecha_pago').forEach(el => {
             el.addEventListener('input', actualizarHash);
             el.addEventListener('change', actualizarHash);
         });
 
-        // --- 3. MANEJO DE ARCHIVOS ---
+        // --- 4. MANEJO DE ARCHIVOS Y PEGADO (CTRL+V) ---
         function procesarArchivo(file) {
             if (!file) return;
             const validTypes = ['image/jpeg', 'image/png', 'application/pdf'];
@@ -1165,7 +1275,7 @@
         dropZone.addEventListener('dragleave', e => { e.preventDefault(); dropZone.classList.remove('dragover'); });
         dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragover'); if (e.dataTransfer.files.length) procesarArchivo(e.dataTransfer.files[0]); });
 
-        // --- 4. DISPARADOR EXTERNO (TIPIFICACIÓN) ---
+        // --- 5. DISPARADOR DE TIPIFICACIÓN ---
         document.querySelectorAll('.type-trigger').forEach(radio => {
             radio.addEventListener('change', function() {
                 if (this.value == '3') {
@@ -2145,6 +2255,51 @@
             } else {
                 label.classList.add('d-none');
                 if (input) input.classList.add('d-none');
+            }
+        });
+    });
+
+    // Líneas de Obligación *
+    $(document).ready(function() {
+        // 1. CONFIGURACIÓN GLOBAL
+        const select2Options = {
+            theme: 'bootstrap-5',
+            placeholder: 'Selecciona la línea...',
+            width: '100%',
+            allowClear: true
+        };
+
+        // 2. CAPTURAR EL TEMPLATE LIMPIO
+        // Guardamos el HTML del primer item antes de inicializar Select2
+        const $masterRow = $('.linea-item-wrapper').first().clone();
+        
+        // 3. INICIALIZAR EL PRIMER SELECT
+        $('.select2-linea').select2(select2Options);
+
+        // 4. EVENTO AGREGAR (+)
+        $('#btn-add-linea').on('click', function() {
+            // Clonamos nuestra "Master Row" que está limpia de Select2
+            let $newRow = $masterRow.clone();
+
+            // Limpiamos cualquier rastro por si acaso (buena práctica)
+            $newRow.find('select').val('').removeAttr('data-select2-id');
+            $newRow.find('option').removeAttr('data-select2-id');
+            
+            // Activamos el botón de borrar en el nuevo
+            $newRow.find('.btn-remove-linea').removeClass('d-none');
+
+            // Insertamos antes del botón +
+            $(this).before($newRow);
+
+            // INICIALIZAMOS Select2 SOLO en este nuevo elemento
+            $newRow.find('.select2-linea').select2(select2Options);
+        });
+
+        // 5. EVENTO ELIMINAR
+        $(document).on('click', '.btn-remove-linea', function() {
+            // Validación para no borrar el único que quede
+            if ($('.linea-item-wrapper').length > 1) {
+                $(this).closest('.linea-item-wrapper').remove();
             }
         });
     });
