@@ -2128,4 +2128,24 @@
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Guardando...';
         }
     });
+
+    // Este bloque Motivo / Tipificación *
+    document.getElementById('search-type').addEventListener('input', function(e) {
+        const term = e.target.value.toLowerCase();
+        // Buscamos todos los labels dentro del contenedor
+        const labels = document.querySelectorAll('#container-list-types label');
+
+        labels.forEach(label => {
+            const text = label.textContent.toLowerCase();
+            const input = document.getElementById(label.getAttribute('for'));
+
+            if (text.includes(term)) {
+                label.classList.remove('d-none');
+                if (input) input.classList.remove('d-none');
+            } else {
+                label.classList.add('d-none');
+                if (input) input.classList.add('d-none');
+            }
+        });
+    });
 </script>
