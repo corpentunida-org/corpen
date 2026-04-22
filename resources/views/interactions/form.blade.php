@@ -603,6 +603,11 @@
                                     <i class="bi bi-x-lg" style="font-size: 0.9rem;"></i>
                                 </button>
                             </div>
+                            <button type="button"
+                                class="btn btn-primary rounded-circle shadow-sm d-flex align-items-center justify-content-center"
+                                id="btn-add-linea" style="width: 32px; height: 32px; flex-shrink: 0;">
+                                <i class="bi bi-plus-lg"></i>
+                            </button>
                         </div>
 
                         <button type="button" 

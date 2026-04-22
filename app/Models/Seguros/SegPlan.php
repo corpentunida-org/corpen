@@ -13,7 +13,7 @@ class SegPlan extends Model
     protected $primaryKey = 'id';
     public $incrementing = true;
     protected $keyType = 'int';
-    protected $fillable = ['name', 'valor', 'prima_aseguradora','prima_pastor','prima_asegurado','condicion_corpen', 'seg_convenio_id', 'condicion_id','vigente'];
+    protected $fillable = ['name', 'valor', 'prima_aseguradora', 'prima_aseguradoraAF', 'prima_pastor', 'prima_asegurado', 'seg_convenio_id', 'condicion_corpen', 'condicion_id', 'vigente'];
 
     public function condicion()
     {

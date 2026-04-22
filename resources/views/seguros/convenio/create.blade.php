@@ -59,62 +59,78 @@
                             </div>
                             <h5 class="fw-bold my-4">Los planes se copian con cada una de las coberturas.</h5>
                             @foreach ($planes as $i => $segPlans)
-                                <div class="mb-4 cobertura-row">
-                                    @foreach ($segPlans as $plan)
-                                        <div class="row my-2 plan-row">
-                                            <div class="col-lg-2">
-                                                <input type="hidden" name="planes[{{ $plan->id }}][idOriginal]"
-                                                    value="{{ $plan->id }}">
-                                                <label class="form-label">Nombre Plan<span
-                                                        class="text-danger">*</span></label>
-                                                <input type="text" class="form-control"
-                                                    name="planes[{{ $plan->id }}][name]" value="{{ $plan->name }}"
-                                                    required>
-                                            </div>
-                                            <div class="col-lg-2">
-                                                <label class="form-label">Valor Asegurado<span
-                                                        class="text-danger">*</span></label>
-                                                <input type="number" class="form-control"
-                                                    name="planes[{{ $plan->id }}][vasegurado]"
-                                                    value="{{ $plan->valor }}" required>
-                                            </div>
-                                            <div class="col-lg-2">
-                                                <label class="form-label">Prima Aseguradora <span
-                                                        class="text-danger">*</span></label>
-                                                <input type="number" class="form-control"
-                                                    name="planes[{{ $plan->id }}][vprimaase]"
-                                                    value="{{ $plan->prima_aseguradora }}" required>
-                                            </div>
-                                            <div class="col-lg-2">
-                                                <label class="form-label">Prima Corpen<span
-                                                        class="text-danger">*</span></label>
-                                                <input type="number" class="form-control"
-                                                    name="planes[{{ $plan->id }}][vprimacor]"
-                                                    value="{{ $plan->prima_asegurado }}" required>
-                                            </div>
-                                            <div class="col-lg-3">
-                                                <label class="form-label">Condición<span
-                                                        class="text-danger">*</span></label>
-                                                <select class="form-control"
-                                                    name="planes[{{ $plan->id }}][condicion]">
-                                                    @foreach ($condiciones as $c)
-                                                        <option value="{{ $c->id }}"
-                                                            {{ $plan->condicion_id == $c->id ? 'selected' : '' }}>
-                                                            {{ $c->descripcion }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-                                            <div class="col-lg-1 d-flex align-items-end pb-3">
-                                                <button type="button"
-                                                    class="btn btn-danger btn-sm py-2 eliminar-plan">
-                                                    <i class="feather-trash-2"></i>
-                                                </button>
-                                            </div>
+                                @foreach ($segPlans as $plan)
+                                    <div class="row my-2 plan-row">
+                                        <div class="col-lg-2">
+                                            <input type="hidden" name="planes[{{ $plan->id }}][idOriginal]"
+                                                value="{{ $plan->id }}">
+                                            <label class="form-label text-nowrap">Nombre Plan<span
+                                                    class="text-danger">*</span></label>
+                                            <input type="text" class="form-control"
+                                                name="planes[{{ $plan->id }}][name]" value="{{ $plan->name }}"
+                                                required>
                                         </div>
-                                    @endforeach
-                                    <hr class="my-3">
-                                </div>
+
+                                        <div class="col-lg-2">
+                                            <label class="form-label text-nowrap">Valor Asegurado<span
+                                                    class="text-danger">*</span></label>
+                                            <input type="number" class="form-control"
+                                                name="planes[{{ $plan->id }}][vasegurado]"
+                                                value="{{ $plan->valor }}" required>
+                                        </div>
+
+                                        <div class="col-lg-1">
+                                            <label class="form-label text-nowrap">Prima Aseg.<span
+                                                    class="text-danger">*</span></label>
+                                            <input type="number" class="form-control"
+                                                name="planes[{{ $plan->id }}][vprimaase]"
+                                                value="{{ $plan->prima_aseguradora }}" required>
+                                        </div>
+
+                                        <div class="col-lg-1">
+                                            <label class="form-label text-nowrap">Aseg. Pastor<span
+                                                    class="text-danger">*</span></label>
+                                            <input type="number" class="form-control"
+                                                name="planes[{{ $plan->id }}][vprimaaseaf]"
+                                                value="{{ $plan->prima_aseguradoraAF }}" required>
+                                        </div>
+
+                                        <div class="col-lg-1">
+                                            <label class="form-label text-nowrap">Prima Corpen<span
+                                                    class="text-danger">*</span></label>
+                                            <input type="number" class="form-control"
+                                                name="planes[{{ $plan->id }}][vprimacor]"
+                                                value="{{ $plan->prima_asegurado }}" required>
+                                        </div>
+
+                                        <div class="col-lg-1">
+                                            <label class="form-label text-nowrap">Corpen Pastor.</label>
+                                            <input type="number" class="form-control"
+                                                name="planes[{{ $plan->id }}][vprimacorpas]"
+                                                value="{{ $plan->prima_pastor }}" required>
+                                        </div>
+
+                                        <div class="col-lg-3">
+                                            <label class="form-label text-nowrap">Condición<span
+                                                    class="text-danger">*</span></label>
+                                            <select class="form-control"
+                                                name="planes[{{ $plan->id }}][condicion]">
+                                                @foreach ($condiciones as $c)
+                                                    <option value="{{ $c->id }}"
+                                                        {{ $plan->condicion_id == $c->id ? 'selected' : '' }}>
+                                                        {{ $c->descripcion }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="col-auto d-flex align-items-end p-0">
+                                            <button type="button" class="btn btn-danger btn-sm eliminar-plan">
+                                                <i class="feather-trash-2"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                @endforeach
+                                <hr class="my-3">
                             @endforeach
 
                             <div class="d-flex align-items-center justify-content-between">
