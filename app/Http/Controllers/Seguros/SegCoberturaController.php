@@ -46,7 +46,7 @@ class SegCoberturaController extends Controller
             return redirect()->back()->with('error', 'No se pudo procesar la cobertura.');
         }
         $this->auditoria("COBERTURA CREADA ID " . $cobertura->id);
-        return redirect()->route('seguros.planes.index')->with('success', 'La cobertura fue creada exitosamente.');
+        return redirect()->route('seguros.convenio.index')->with('success', 'La cobertura fue creada exitosamente.');
     }
 
     /**
