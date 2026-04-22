@@ -11,7 +11,6 @@
                         <h5 class="fw-bold">Convenios:</h5>
                         <a href="javascript:void(0);" class="btn btn-sm btn-light-brand">Listar Todos</a>
                     </div>
-
                     @foreach ($convenios as $i => $convenio)
                         {{-- <li
                                 class="d-flex justify-content-between feed-item feed-item-{{ $colors[$i % count($colors)] }}">
