@@ -40,7 +40,7 @@ class SegPlanController extends Controller
         $convenios = SegConvenio::all();
         $condiciones = SegCondicion::all();
         $convenio_id = $request->convenio_id;
-        return view('seguros.planes.create', compact('coberturas', 'convenios', 'condiciones','convenio_id'));
+        return view('seguros.planes.create', compact('coberturas', 'convenios', 'condiciones', 'convenio_id'));
     }
 
     /**
@@ -51,7 +51,11 @@ class SegPlanController extends Controller
         $plan = SegPlan::create([
             'name' => strtoupper($request->input('name')),
             'valor' => $request->input('valorPlanAsegurado'),
-            'prima' => $request->input('prima'),
+            'prima_aseguradora' => $request->input('primaase'),
+            'prima_aseguradoraAF' => $request->input('primaasepas'),
+            'prima_pastor' => $request->input('primacorpenpas'),
+            'prima_asegurado' => $request->input('primacorpen'),
+            'condicion_corpen' => $request->input('condicion_id'),
             'seg_convenio_id' => $request->input('convenio'),
             'condicion_id' => $request->input('condicion_id'),
         ]);
@@ -72,7 +76,9 @@ class SegPlanController extends Controller
         }
         $idConvenio = $request->input('idConveniobusqueda');
         $this->auditoria('PLAN CREADO ID ' . $plan->id);
-        return redirect()->action([SegConvenioController::class, 'show'], ['convenio' => $idConvenio])->with('success', 'Plan creado correctamente.');
+        return redirect()
+            ->action([SegConvenioController::class, 'show'], ['convenio' => $idConvenio])
+            ->with('success', 'Plan creado correctamente.');
     }
 
     /**
@@ -99,7 +105,7 @@ class SegPlanController extends Controller
      * Update the specified resource in storage.
      */
     public function update(Request $request, $id)
-    {        
+    {
         $convenioId = $request->input('convenio');
         $plan = SegPlan::findOrFail($id);
         $plan->update([
@@ -107,7 +113,7 @@ class SegPlanController extends Controller
             'valor' => $request->input('valorPlanAsegurado'),
             'prima_aseguradora' => $request->input('primabase'),
             'prima_pastor' => $request->input('primapastor'),
-            'prima_asegurado' => $request->input('primaasegurado')            
+            'prima_asegurado' => $request->input('primaasegurado'),
         ]);
 
         $coberturas = $request->input('cobertura');

@@ -56,20 +56,34 @@
                             </div>
                             <div class="mb-4">
                                 <div class="row">
-                                    <div class="col-lg-6">
+                                    <div class="col-lg-4">
                                         <label class="form-label">Valor Asegurado Plan<span
                                                 class="text-danger">*</span></label>
                                         <input type="number" class="uppercase-input form-control"
                                             name="valorPlanAsegurado" required>
                                     </div>
-                                    <div class="col-lg-6">
-                                        <label class="form-label">Total Valor Prima<span
+                                    <div class="col-lg-2">
+                                        <label class="form-label">Prima Aseguradora Pastor<span
                                                 class="text-danger">*</span></label>
-                                        <input type="number" class="form-control" name="prima" id="prima"
-                                            required>
-                                        <div class="invalid-feedback">
-                                            La suma de las coberturas debe dar el valor total de la prima.
-                                        </div>
+                                        <input type="number" class="form-control" name="primaasepas" id="primaasepas"
+                                            required>                                        
+                                    </div>
+                                    <div class="col-lg-2">
+                                        <label class="form-label">Prima Aseguradora<span
+                                                class="text-danger">*</span></label>
+                                        <input type="number" class="form-control" name="primaase" id="primaase"
+                                            required>                                        
+                                    </div>
+                                    <div class="col-lg-2">
+                                        <label class="form-label">Prima Corpentunida pastor<span
+                                                class="text-danger">*</span></label>
+                                        <input type="number" class="form-control" name="primacorpenpas" id="primacorpenpas"
+                                            required>                                        
+                                    </div>
+                                    <div class="col-lg-2">
+                                        <label class="form-label">Prima Corpentunida<span
+                                                class="text-danger">*</span></label>
+                                        <input type="number" class="form-control" name="primacorpen" id="primacorpen"required>                                        
                                     </div>
                                 </div>
                             </div>
@@ -85,7 +99,8 @@
                                         <div class="col-lg-3">
                                             <label class="form-label">Valor Asegurado<span
                                                     class="text-danger">*</span></label>
-                                            <input type="number" class="form-control" name="valorAsegurado[]" required>
+                                            <input type="number" class="form-control" name="valorAsegurado[]"
+                                                required>
                                         </div>
                                         <div class="col-lg-2">
                                             <label class="form-label">Valor Cobertura<span
@@ -95,8 +110,9 @@
                                         <div class="col-lg-2">
                                             <label class="form-label">Porcentaje al Valor Total</label>
                                             <div class="input-group">
-                                                <input type="number" class="form-control" name="poralvalorasegurado[]"
-                                                    min="0" max="100" value="100" id="inputporcober">
+                                                <input type="number" class="form-control"
+                                                    name="poralvalorasegurado[]" min="0" max="100"
+                                                    value="100" id="inputporcober">
                                                 <span class="input-group-text">%</span>
                                             </div>
                                         </div>
@@ -157,23 +173,6 @@
                                         $(form).addClass('was-validated');
                                         event.preventDefault();
                                         event.stopPropagation();
-                                    } else {
-                                        var totalValorPrima = 0;
-                                        $('input[name="valorPrima[]"]').each(function() {
-                                            var valor = parseFloat($(this).val()) || 0;
-                                            totalValorPrima += valor;
-                                        });
-
-                                        var totalPrima = parseFloat($('input[name="prima"]').val());
-
-                                        if (isNaN(totalPrima) || totalPrima <= 0) {
-                                            $('#prima').addClass('is-invalid');
-                                            event.preventDefault();
-                                            return;
-                                        } else {
-                                            $('#prima').removeClass('is-invalid');
-                                            $('#primaError').text('');
-                                        }
                                     }
                                 });
                                 $('#add-cobertura').click(function() {
@@ -203,7 +202,7 @@
                                         <label class="form-label">Convenio<span class="text-danger">*</span></label>
                                         <select class="form-control" name="cobconvenio">
                                             @foreach ($convenios as $convenio)
-                                                <option value="{{ $convenio->id }}">
+                                                <option value="{{ $convenio->idAseguradora }}">
                                                     {{ $convenio->idAseguradora }} - {{ $convenio->nombre }}
                                                 </option>
                                             @endforeach
