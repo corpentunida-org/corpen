@@ -438,106 +438,114 @@
                     <div style="height: 180px;"><canvas id="agentChart"></canvas></div>
                 </div>
                 {{-- ======================================================== --}}
-                {{-- 🟢 NUEVO: SOPORTE DE PAGO DE CARTERA (SOLO SI EXISTE) --}}
+                {{-- 🟢 SOPORTE DE PAGO (MINIMALISTA, AMIGABLE Y CÁLIDO)      --}}
                 {{-- ======================================================== --}}
                 @if ($interaction->comprobantes->isNotEmpty())
-                    <div class="glass-card p-4 text-center mt-4"
-                        style="border-top: 4px solid var(--p-green); border-radius: 12px;">
-                        <h6 class="fw-bold mb-4 text-dark text-uppercase ls-1 fs-7">
-                            <i class="fas fa-file-invoice-dollar me-2 text-success fs-5"></i>Soporte de Pago Vinculado
-                        </h6>
+                    <div class="mt-4 text-start">
+                        
+                        {{-- Encabezado amigable --}}
+                        <div class="d-flex align-items-center mb-3 ps-2">
+                            <div class="bg-warning bg-opacity-10 text-warning rounded-circle d-flex justify-content-center align-items-center me-2" style="width: 32px; height: 32px;">
+                                <i class="fas fa-receipt fs-7"></i>
+                            </div>
+                            <h6 class="fw-bold text-dark mb-0 fs-6">Soporte de pago vinculado</h6>
+                        </div>
 
                         @foreach ($interaction->comprobantes as $comprobante)
-                            <div
-                                class="bg-light p-4 rounded-3 mb-4 text-start border border-success border-opacity-25 shadow-sm position-relative overflow-hidden">
-
-                                {{-- Decoración de fondo opcional --}}
-                                <div class="position-absolute top-0 end-0 opacity-5 pt-3 pe-3">
-                                    <i class="fas fa-check-circle fa-4x text-success"></i>
-                                </div>
-
-                                {{-- Fecha y Monto --}}
-                                <div
-                                    class="d-flex justify-content-between align-items-center mb-1 position-relative z-index-1">
-                                    <span class="fw-bold text-success text-uppercase fs-9 ls-1">Monto Reportado</span>
-                                    <span class="badge bg-white text-dark border shadow-xs fs-9 py-2 px-3">
-                                        <i class="far fa-calendar-alt text-muted me-1"></i>
-                                        {{ date('d/m/Y', strtotime($comprobante->fecha_pago)) }}
-                                    </span>
-                                </div>
-                                <div class="fs-1 fw-bolder text-dark mb-4 position-relative z-index-1">
-                                    ${{ number_format($comprobante->monto_pagado, 2, ',', '.') }}
-                                </div>
-
-                                {{-- Bloque del Banco --}}
-                                <div
-                                    class="d-flex align-items-center mb-4 p-3 bg-white rounded border border-gray-200 shadow-xs">
-                                    <div class="d-flex align-items-center justify-content-center bg-light-primary text-primary rounded-circle me-3"
-                                        style="width: 35px; height: 35px;">
-                                        <i class="fas fa-university fs-6"></i>
+                            {{-- Tarjeta principal con borde cálido y esquinas muy suaves --}}
+                            <div class="bg-white p-4 rounded-4 shadow-sm mb-4" style="border: 1px solid #f0ece1;">
+                                
+                                {{-- Fila 1: Monto y Fecha --}}
+                                <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom" style="border-color: #f0ece1 !important;">
+                                    <div>
+                                        <span class="text-muted d-block fs-8 fw-medium mb-1">Monto Pagado</span>
+                                        <div class="fs-1 fw-bolder text-dark" style="letter-spacing: -1px;">
+                                            ${{ number_format($comprobante->monto_pagado, 2, ',', '.') }}
+                                        </div>
                                     </div>
-                                    <div class="d-flex flex-column">
-                                        <span class="text-muted fw-bold fs-9 text-uppercase ls-1">Banco Destino</span>
-                                        <span class="text-dark fw-bolder fs-7 text-truncate"
-                                            style="max-width: 200px;">
-                                            @if ($comprobante->id_banco)
-                                                {{ optional($comprobante->banco)->banco ?? 'ID: ' . $comprobante->id_banco }}
-                                            @else
-                                                <span class="text-muted italic">No registrado</span>
-                                            @endif
+                                    <div class="text-end">
+                                        <span class="badge bg-light text-dark border px-3 py-2 rounded-pill fw-medium fs-8" style="border-color: #e8e5dc !important;">
+                                            <i class="far fa-calendar-alt text-muted me-1"></i> {{ date('d/m/Y', strtotime($comprobante->fecha_pago)) }}
                                         </span>
                                     </div>
                                 </div>
 
-                                {{-- Bloque Contable (Cuota, PR, CCO) --}}
-                                <div class="row g-2 mb-4">
-                                    <div class="col-4">
-                                        <div
-                                            class="border border-dashed border-gray-300 rounded p-2 text-center bg-white h-100 d-flex flex-column justify-content-center">
-                                            <span
-                                                class="text-muted fs-9 fw-bold d-block text-uppercase mb-1">Cuota</span>
-                                            <span
-                                                class="text-dark fw-bolder fs-7">{{ $comprobante->numero_cuota ?? '--' }}</span>
+                                {{-- Fila 2: Información de Origen/Destino (Fondo crema muy sutil) --}}
+                                <div class="rounded-4 p-3 mb-4" style="background-color: #fcfbf8; border: 1px solid #f4f1ea;">
+                                    
+                                    {{-- Obligación / Línea de Crédito --}}
+                                    <div class="d-flex align-items-center mb-3 pb-3 border-bottom" style="border-color: #f0ece1 !important;">
+                                        <div class="bg-white rounded-circle d-flex justify-content-center align-items-center me-3 shadow-sm flex-shrink-0" style="width: 42px; height: 42px; color: #e5a93d;">
+                                            <i class="fas fa-star fs-6"></i>
+                                        </div>
+                                        <div>
+                                            <span class="text-muted d-block fs-9 fw-medium text-uppercase mb-1">Tu Crédito</span>
+                                            <span class="fw-bold text-dark fs-6">
+                                                @if ($comprobante->id_obligacion)
+                                                    {{ optional($comprobante->obligacion)->nombre ?? 'Crédito no especificado' }}
+                                                @else
+                                                    <span class="fst-italic text-muted">No vinculado a un crédito</span>
+                                                @endif
+                                            </span>
                                         </div>
                                     </div>
-                                    <div class="col-4">
-                                        <div
-                                            class="border border-dashed border-gray-300 rounded p-2 text-center bg-white h-100 d-flex flex-column justify-content-center">
-                                            <span class="text-muted fs-9 fw-bold d-block text-uppercase mb-1">PR</span>
-                                            <span
-                                                class="text-dark fw-bolder fs-7">{{ $comprobante->pr ?? '--' }}</span>
+
+                                    {{-- Banco y Cuenta --}}
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-white rounded-circle d-flex justify-content-center align-items-center me-3 shadow-sm flex-shrink-0" style="width: 42px; height: 42px; color: #4ea385;">
+                                            <i class="fas fa-building fs-6"></i>
+                                        </div>
+                                        <div>
+                                            <span class="text-muted d-block fs-9 fw-medium text-uppercase mb-1">Destino del Pago</span>
+                                            <div class="d-flex align-items-baseline flex-wrap gap-1">
+                                                <span class="fw-bold text-dark fs-6">
+                                                    {{ optional($comprobante->banco)->banco ?? 'Banco no registrado' }}
+                                                </span>
+                                                <span class="text-muted fs-8">
+                                                    • Cta: <span class="fw-medium text-dark">{{ optional($comprobante->banco)->numero_cuenta ?? 'N/A' }}</span>
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div class="col-4">
-                                        <div
-                                            class="border border-dashed border-gray-300 rounded p-2 text-center bg-white h-100 d-flex flex-column justify-content-center">
-                                            <span
-                                                class="text-muted fs-9 fw-bold d-block text-uppercase mb-1">CCO</span>
-                                            <span
-                                                class="text-dark fw-bolder fs-7">{{ $comprobante->cco ?? '--' }}</span>
-                                        </div>
+                                    
+                                </div>
+
+                                {{-- Fila 3: Detalles Contables (Píldora horizontal) --}}
+                                <div class="d-flex justify-content-around align-items-center mb-4 rounded-pill p-2" style="background-color: #f8f9fa; border: 1px solid #f0ece1;">
+                                    <div class="text-center px-3">
+                                        <span class="text-muted fs-9 d-block fw-medium mb-1">Cuota</span>
+                                        <span class="fw-bold text-dark fs-6">{{ $comprobante->numero_cuota ?? '--' }}</span>
+                                    </div>
+                                    <div style="width: 1px; height: 20px; background-color: #e8e5dc;"></div>
+                                    <div class="text-center px-3">
+                                        <span class="text-muted fs-9 d-block fw-medium mb-1">PR</span>
+                                        <span class="fw-bold text-dark fs-6">{{ $comprobante->pr ?? '--' }}</span>
+                                    </div>
+                                    <div style="width: 1px; height: 20px; background-color: #e8e5dc;"></div>
+                                    <div class="text-center px-3">
+                                        <span class="text-muted fs-9 d-block fw-medium mb-1">CCO</span>
+                                        <span class="fw-bold text-dark fs-6">{{ $comprobante->cco ?? '--' }}</span>
                                     </div>
                                 </div>
 
-                                {{-- Botón de Acción --}}
-                                <div class="d-grid mt-2">
+                                {{-- Fila 4: Acción centrada y redondeada --}}
+                                <div class="text-center mt-2">
                                     @if ($comprobante->ruta_archivo)
                                         <a href="{{ $comprobante->url_archivo }}" target="_blank"
-                                            class="btn btn-success border-0 py-3 rounded-pill shadow-sm fw-bolder fs-7 transition-all">
-                                            <i class="fas fa-external-link-alt me-2"></i>Ver Recibo Completo
+                                            class="btn btn-dark rounded-pill px-5 py-2 fw-medium shadow-sm transition-all hover-lift">
+                                            <i class="fas fa-file-invoice me-2"></i> Ver recibo completo
                                         </a>
                                     @else
-                                        <button disabled
-                                            class="btn btn-light text-muted border-0 py-3 rounded-pill fw-bolder fs-7">
-                                            <i class="fas fa-file-excel me-2"></i>Sin Archivo Adjunto
-                                        </button>
+                                        <div class="d-inline-flex align-items-center px-4 py-2 bg-light rounded-pill text-muted fs-8 border" style="border-color: #e8e5dc !important;">
+                                            <i class="fas fa-paperclip me-2"></i> Sin recibo adjunto
+                                        </div>
                                     @endif
                                 </div>
                             </div>
                         @endforeach
                     </div>
                 @endif
-                {{-- ======================================================== --}}            
+                {{-- ======================================================== --}}      
             </div>
         </div>
     </div>

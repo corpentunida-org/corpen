@@ -627,97 +627,6 @@
         </div>
 
         <div class="tab-pane fade" id="resultado-tab" role="tabpanel">
-            <div class="category-container mb-4 p-4">
-                <div class="mb-4 pb-3 border-bottom">
-                    <h5 class="fw-bold text-dark mb-0">Cierre de Gestión</h5>
-                </div>
-                <div class="row g-4">
-                    <div class="col-lg-6">
-                        <div class="border h-100 bg-white" style="border-radius: 4px;">
-                            <div class="p-4">
-                                <label class="form-label text-muted text-uppercase mb-3">Resultado de Interacción <span
-                                        class="text-muted">*</span></label>
-                                <div class="row g-2">
-                                    @foreach ($outcomes as $outcome)
-                                        <div class="col-sm-6">
-                                            <input type="radio" class="btn-check outcome-radio" name="outcome"
-                                                id="outcome_{{ $outcome->id }}" value="{{ $outcome->id }}"
-                                                data-requires-planning="{{ !$outcome->estado ? 'true' : 'false' }}"
-                                                {{ old('outcome', $interaction->outcome ?? '') == $outcome->id ? 'checked' : '' }}
-                                                required>
-                                            <label class="btn btn-outline-secondary w-100 text-start "
-                                                for="outcome_{{ $outcome->id }}">
-                                                {{ $outcome->name }}
-                                            </label>
-                                        </div>
-                                    @endforeach
-                                </div>
-                                @error('outcome')
-                                    <div class="text-danger small mt-2">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-lg-6" id="planning-section" style="display:none;">
-                        <div class="border h-100 bg-light" style="border-radius: 4px;">
-                            <div class="p-4">
-                                <div class="mb-3 border-bottom pb-2">
-                                    <h6 class="text-dark mb-0">Agenda de Seguimiento</h6>
-                                </div>
-
-                                <div class="mb-3">
-                                    <label class="form-label small text-muted">Acción a realizar</label>
-                                    <div class="row g-2">
-                                        @foreach ($nextActions as $action)
-                                            <div class="col-6 col-sm-4">
-                                                <input type="radio" class="btn-check" name="next_action_type"
-                                                    id="action_{{ $action->id }}" value="{{ $action->id }}"
-                                                    {{ old('next_action_type', $interaction->next_action_type ?? '') == $action->id ? 'checked' : '' }}>
-                                                <label class="btn btn-outline-dark w-100 border small text-truncate"
-                                                    for="action_{{ $action->id }}" title="{{ $action->name }}">
-                                                    {{ $action->name }}
-                                                </label>
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                    @error('next_action_type')
-                                        <div class="text-danger small mt-1">{{ $message }}</div>
-                                    @enderror
-                                </div>
-
-                                <div class="mb-3">
-                                    <label for="next_action_date" class="form-label small text-muted">Fecha y Hora
-                                        Programada</label>
-                                    <input type="datetime-local"
-                                        class="form-control @error('next_action_date') is-invalid @enderror"
-                                        id="next_action_date" name="next_action_date"
-                                        value="{{ old('next_action_date', $interaction->next_action_date ?? '') }}">
-
-                                    <div class="d-flex gap-2 mt-2">
-                                        <button type="button" class="btn btn-sm btn-light border flex-grow-1"
-                                            onclick="addDays(1)">Mañana</button>
-                                        <button type="button" class="btn btn-sm btn-light border flex-grow-1"
-                                            onclick="addDays(3)">En 3 días</button>
-                                        <button type="button" class="btn btn-sm btn-light border flex-grow-1"
-                                            onclick="addDays(7)">En 1 sem</button>
-                                    </div>
-                                    @error('next_action_date')
-                                        <div class="text-danger small mt-1">{{ $message }}</div>
-                                    @enderror
-                                </div>
-
-                                <div class="form-group mb-0">
-                                    <label for="next_action_notes"
-                                        class="form-label small text-muted">Instrucciones</label>
-                                    <textarea class="form-control bg-white @error('next_action_notes') is-invalid @enderror" id="next_action_notes"
-                                        name="next_action_notes" rows="2" style="resize: vertical;" placeholder="Ej. Llamar para confirmar..."></textarea>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             <div class="category-container mb-4 p-4">
                 <div class="mb-4 pb-2 border-bottom">
@@ -818,6 +727,98 @@
                 </div>
             </div>
 
+            <div class="category-container mb-4 p-4">
+                <div class="mb-4 pb-3 border-bottom">
+                    <h5 class="fw-bold text-dark mb-0">Cierre de Gestión</h5>
+                </div>
+                <div class="row g-4">
+                    <div class="col-lg-6">
+                        <div class="border h-100 bg-white" style="border-radius: 4px;">
+                            <div class="p-4">
+                                <label class="form-label text-muted text-uppercase mb-3">Resultado de Interacción <span
+                                        class="text-muted">*</span></label>
+                                <div class="row g-2">
+                                    @foreach ($outcomes as $outcome)
+                                        <div class="col-sm-6">
+                                            <input type="radio" class="btn-check outcome-radio" name="outcome"
+                                                id="outcome_{{ $outcome->id }}" value="{{ $outcome->id }}"
+                                                data-requires-planning="{{ !$outcome->estado ? 'true' : 'false' }}"
+                                                {{ old('outcome', $interaction->outcome ?? '') == $outcome->id ? 'checked' : '' }}
+                                                required>
+                                            <label class="btn btn-outline-secondary w-100 text-start "
+                                                for="outcome_{{ $outcome->id }}">
+                                                {{ $outcome->name }}
+                                            </label>
+                                        </div>
+                                    @endforeach
+                                </div>
+                                @error('outcome')
+                                    <div class="text-danger small mt-2">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6" id="planning-section" style="display:none;">
+                        <div class="border h-100 bg-light" style="border-radius: 4px;">
+                            <div class="p-4">
+                                <div class="mb-3 border-bottom pb-2">
+                                    <h6 class="text-dark mb-0">Agenda de Seguimiento</h6>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label small text-muted">Acción a realizar</label>
+                                    <div class="row g-2">
+                                        @foreach ($nextActions as $action)
+                                            <div class="col-6 col-sm-4">
+                                                <input type="radio" class="btn-check" name="next_action_type"
+                                                    id="action_{{ $action->id }}" value="{{ $action->id }}"
+                                                    {{ old('next_action_type', $interaction->next_action_type ?? '') == $action->id ? 'checked' : '' }}>
+                                                <label class="btn btn-outline-dark w-100 border small text-truncate"
+                                                    for="action_{{ $action->id }}" title="{{ $action->name }}">
+                                                    {{ $action->name }}
+                                                </label>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                    @error('next_action_type')
+                                        <div class="text-danger small mt-1">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="next_action_date" class="form-label small text-muted">Fecha y Hora
+                                        Programada</label>
+                                    <input type="datetime-local"
+                                        class="form-control @error('next_action_date') is-invalid @enderror"
+                                        id="next_action_date" name="next_action_date"
+                                        value="{{ old('next_action_date', $interaction->next_action_date ?? '') }}">
+
+                                    <div class="d-flex gap-2 mt-2">
+                                        <button type="button" class="btn btn-sm btn-light border flex-grow-1"
+                                            onclick="addDays(1)">Mañana</button>
+                                        <button type="button" class="btn btn-sm btn-light border flex-grow-1"
+                                            onclick="addDays(3)">En 3 días</button>
+                                        <button type="button" class="btn btn-sm btn-light border flex-grow-1"
+                                            onclick="addDays(7)">En 1 sem</button>
+                                    </div>
+                                    @error('next_action_date')
+                                        <div class="text-danger small mt-1">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                <div class="form-group mb-0">
+                                    <label for="next_action_notes"
+                                        class="form-label small text-muted">Instrucciones</label>
+                                    <textarea class="form-control bg-white @error('next_action_notes') is-invalid @enderror" id="next_action_notes"
+                                        name="next_action_notes" rows="2" style="resize: vertical;" placeholder="Ej. Llamar para confirmar..."></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <div class="row mb-4">
                 <div class="col-12">
                     <label class="form-label text-muted d-block">
