@@ -756,7 +756,7 @@ class InteractionController extends Controller
             'attachment_urls' => $rutaArchivo,
         ]);
 
-        return redirect()->route('interactions.index')->with('success', 'Interacción creada exitosamente.');
+        return redirect()->route('interactions.show', $interaction->id)->with('success', 'Interacción creada exitosamente.');
     }
 
     /**
