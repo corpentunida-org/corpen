@@ -59,12 +59,24 @@ class CarComprobantePagoController extends Controller
 
     public function store(Request $request)
     {
-        // 1. Preprocesar fecha
+        // 1. Preprocesar fecha para que sea un número puro de 14 dígitos (YYYYMMDDHHMMSS)
         if ($request->filled('fecha_pago')) {
-            $request->merge(['fecha_pago' => str_replace('-', '', $request->fecha_pago)]);
+            // Quitamos cualquier carácter que no sea número (guiones, espacios, dos puntos, la T del datetime-local)
+            $soloNumeros = preg_replace('/[^0-9]/', '', $request->fecha_pago);
+
+            // Si solo enviaron la fecha (8 dígitos: YYYYMMDD), le pegamos la hora actual
+            if (strlen($soloNumeros) === 8) {
+                $soloNumeros .= date('His');
+            } 
+            // Si enviaron fecha y hora pero faltan los segundos (12 dígitos: YYYYMMDDHHMM), le ponemos 00
+            elseif (strlen($soloNumeros) === 12) {
+                $soloNumeros .= '00';
+            }
+
+            $request->merge(['fecha_pago' => $soloNumeros]);
         }
 
-        // [CORRECCIÓN CRÍTICA]: Convertir strings vacíos a NULL
+        // [CORRECCIÓN CRÍTICA]: Convertir strings vacíos a NULL para evitar errores de tipo
         $request->merge([
             'pr'           => $request->filled('pr') ? $request->pr : null,
             'cco'          => $request->filled('cco') ? $request->cco : null,
@@ -75,7 +87,7 @@ class CarComprobantePagoController extends Controller
             'cod_ter_MaeTerceros'     => 'required|integer',
             'id_obligacion'           => 'nullable|integer', 
             'monto_pagado'            => 'required|numeric',
-            'fecha_pago'              => 'required|integer', 
+            'fecha_pago'              => 'required|numeric', // numeric permite los 14 dígitos sin desbordamiento
             'archivo_soporte'         => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
             'id_banco'                => 'required|integer',
             'temp_token'              => 'nullable|string|max:255',
@@ -86,7 +98,11 @@ class CarComprobantePagoController extends Controller
         ]);
 
         try {
-            $hash_transaccion = $validated['id_banco'] . '-' . $validated['fecha_pago'] . '-' . $validated['monto_pagado'] . '-' . $validated['cod_ter_MaeTerceros'];
+            // Generación del hash con la fecha de 14 dígitos
+            $hash_transaccion = $validated['id_banco'] . '-' . 
+                                $validated['fecha_pago'] . '-' . 
+                                $validated['monto_pagado'] . '-' . 
+                                $validated['cod_ter_MaeTerceros'];
             
             $existeHash = CarComprobantePago::where('hash_transaccion', $hash_transaccion)->exists();
 
@@ -95,11 +111,11 @@ class CarComprobantePagoController extends Controller
                 return response()->json([
                     'success' => false,
                     'is_duplicate' => true,
-                    'message' => 'Ya existe un pago con estos mismos datos. ¿Deseas registrarlo de todas formas?'
+                    'message' => 'Ya existe un pago con estos mismos datos en este segundo exacto. ¿Deseas registrarlo de todas formas?'
                 ]);
             }
 
-            // Si se fuerza, alteramos el hash para evitar error de UNIQUE en base de datos
+            // Si se fuerza, alteramos el hash para evitar error de UNIQUE en la BD
             if ($existeHash && $request->boolean('force_save')) {
                 $hash_transaccion .= '-F-' . time();
             }
