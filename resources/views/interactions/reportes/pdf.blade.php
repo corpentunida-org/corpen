@@ -45,6 +45,7 @@
         .color-danger { background-color: #ef4444; }
 
         .badge { padding: 3px 6px; border-radius: 4px; font-weight: bold; font-size: 10px; }
+        .badge-time { background-color: #e2e8f0; color: #475569; border: 1px solid #cbd5e0; }
         .bg-red { background-color: #fee2e2; color: #b91c1c; }
         .bg-green { background-color: #d1fae5; color: #047857; }
 
@@ -59,9 +60,7 @@
 </head>
 <body>
 
-    <div class="watermark"></div>//marca de agua
-
-    <div class="header">
+    <div class="watermark"></div><div class="header">
         <h1>Reporte Ejecutivo de Auditoría</h1>
         <p>Análisis de Rendimiento - Periodo: <strong>{{ \Carbon\Carbon::parse($startDate)->format('d/m/Y') }}</strong> al <strong>{{ \Carbon\Carbon::parse($endDate)->format('d/m/Y') }}</strong></p>
     </div>
@@ -130,9 +129,7 @@
 
     {{-- SALTO DE PÁGINA --}}
     <div class="page-break"></div>
-    <div class="watermark"></div>//marca de agua
-
-    <div class="header" style="border-bottom: 3px solid #0f766e;">
+    <div class="watermark"></div><div class="header" style="border-bottom: 3px solid #0f766e;">
         <h1 style="color: #0f766e;">Ranking y Auditoría de Agentes</h1>
         <p>Métricas detalladas de desempeño y cumplimiento de SLAs por asesor</p>
     </div>
@@ -141,11 +138,11 @@
         <thead>
             <tr>
                 <th width="5%" class="text-center">#</th>
-                <th width="30%">Nombre del Agente</th>
+                <th width="25%">Nombre del Agente</th>
                 <th class="text-center">Total</th>
                 <th class="text-center">Éxito</th>
                 <th class="text-center">Vencidas</th>
-                <th width="25%">Nivel de Efectividad</th>
+                <th class="text-center">Tiempo</th> <th width="20%">Nivel de Efectividad</th>
             </tr>
         </thead>
         <tbody>
@@ -167,6 +164,21 @@
                     } else {
                         $rankDisplay = '<span style="color: #64748b; font-weight: bold;">' . $rank . '</span>';
                     }
+
+                    // LÓGICA DE FORMATEO DE TIEMPO (El duration está en SEGUNDOS)
+                    $tiempoTotalSegundos = $agente->tiempo_total ?? 0;
+                    
+                    $horas = floor($tiempoTotalSegundos / 3600);
+                    $minutos = floor(($tiempoTotalSegundos % 3600) / 60);
+                    $segundos = $tiempoTotalSegundos % 60;
+                    
+                    if ($horas > 0) {
+                        $tiempoFormateado = "{$horas}h {$minutos}m {$segundos}s";
+                    } elseif ($minutos > 0) {
+                        $tiempoFormateado = "{$minutos}m {$segundos}s";
+                    } else {
+                        $tiempoFormateado = "{$segundos}s";
+                    }
                 @endphp
                 <tr>
                     <td class="text-center">{!! $rankDisplay !!}</td>
@@ -180,6 +192,9 @@
                             <span style="color: #cbd5e0;">-</span>
                         @endif
                     </td>
+                    <td class="text-center">
+                        <span class="badge badge-time">{{ $tiempoFormateado }}</span>
+                    </td>
                     <td>
                         <div style="display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 2px;">
                             <span>Efectividad</span>
@@ -191,7 +206,7 @@
                     </td>
                 </tr>
             @empty
-                <tr><td colspan="6" class="text-center">No hay datos de agentes para mostrar.</td></tr>
+                <tr><td colspan="7" class="text-center">No hay datos de agentes para mostrar.</td></tr>
             @endforelse
         </tbody>
     </table>
