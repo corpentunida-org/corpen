@@ -407,6 +407,9 @@ class InteractionController extends Controller
             $qAgente = (clone $baseQuery)->where('agent_id', $agente_id);
             $totalAgente = (clone $qAgente)->count();
 
+            // NUEVO: Sumar el tiempo total de las interacciones por agente
+            $tiempoTotalAgente = (clone $qAgente)->sum('duration');
+
             $exitosasAgente = (clone $qAgente)->whereHas('outcomeRelation', fn ($q) => $q->where('estado', 1))->count();
             $pendientesAgente = (clone $qAgente)->whereHas('outcomeRelation', fn ($q) => $q->where('estado', '!=', 1)->orWhereNull('estado'))->count();
 
@@ -456,6 +459,7 @@ class InteractionController extends Controller
                 'vencidas' => $vencidasAgente,
                 'seguimientos' => $seguimientosAgente,
                 'efectividad' => $efectividad,
+                'tiempo_total' => $tiempoTotalAgente, // NUEVO: Pasamos la suma de duraciones
             ]);
         }
 
