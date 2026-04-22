@@ -394,11 +394,23 @@
                     <div class="mb-4">
                         <span class="data-label">Usuario Asignado (Analista)</span>
                         <div class="d-flex align-items-center gap-3 p-2 bg-light rounded-3">
-                            <div class="avatar-init" style="background: var(--p-blue);">
-                                {{ substr($interaction->usuarioAsignado->name ?? 'A', 0, 1) }}
+                            
+                            {{-- Validamos si existe el usuario asignado Y si tiene foto de perfil --}}
+                            @if ($interaction->usuarioAsignado && $interaction->usuarioAsignado->foto_perfil)
+                                <img src="{{ $interaction->usuarioAsignado->foto_perfil }}" 
+                                     alt="avatar-analista" 
+                                     class="shadow-sm" 
+                                     style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;" />
+                            @else
+                                {{-- Si no tiene foto o no hay usuario, mostramos tu div original --}}
+                                <div class="avatar-init shadow-sm" style="background: var(--p-blue); width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: white; font-weight: bold;">
+                                    {{ substr($interaction->usuarioAsignado->name ?? 'A', 0, 1) }}
+                                </div>
+                            @endif
+
+                            <div class="data-value text-truncate fw-bold text-dark">
+                                {{ $interaction->usuarioAsignado->name ?? 'Sin Asignación' }}
                             </div>
-                            <div class="data-value text-truncate">
-                                {{ $interaction->usuarioAsignado->name ?? 'Sin Asignación' }}</div>
                         </div>
                     </div>
                     <div class="mb-3">
