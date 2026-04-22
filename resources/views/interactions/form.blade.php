@@ -930,8 +930,8 @@
 
                         <div class="col-md-6">
                             <div class="fv-row mb-4">
-                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Fecha de Pago *</label>
-                                <input type="date" id="fecha_pago" name="fecha_pago" class="form-control form-control-solid border border-gray-300 gen-hash" required value="{{ date('Y-m-d') }}">
+                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Fecha y Hora de Pago *</label>
+                                <input type="datetime-local" id="fecha_pago" name="fecha_pago" class="form-control form-control-solid border border-gray-300 gen-hash" required value="{{ date('Y-m-d\TH:i') }}">
                             </div>
 
                             <div class="fv-row mb-4 position-relative">
@@ -997,7 +997,7 @@
                         <div class="col-12">
                             <div class="bg-light-primary rounded-pill px-4 py-2 border border-primary border-dashed d-flex align-items-center">
                                 <i class="fas fa-fingerprint text-primary me-2"></i>
-                                <span class="fs-9 text-primary fw-bold me-2 uppercase">Integridad:</span>
+                                <span class="fs-9 text-primary fw-bold me-2 uppercase">Integridad (Hash):</span>
                                 <input type="text" id="hash_transaccion" name="hash_transaccion" class="bg-transparent border-0 p-0 text-primary fs-9 font-monospace w-100" readonly placeholder="Calculando...">
                             </div>
                         </div>
@@ -1021,23 +1021,8 @@
     .bg-light-soft { background-color: #fcfcfc; }
     .font-monospace { font-family: 'Roboto Mono', monospace !important; }
     .border-dashed { border-style: dashed !important; }
-    
-    /* ESTILOS DEL NUEVO BUSCADOR FLOTANTE */
-    .custom-dropdown-list {
-        z-index: 1060;
-        max-height: 180px;
-        overflow-y: auto;
-        top: 100%;
-        left: 0;
-        margin-top: 5px;
-        background: #fff;
-        border: 1px solid #e4e6ef;
-        border-radius: 0.475rem;
-    }
-    .custom-dropdown-list button:hover {
-        background-color: #f1f1f4;
-        color: #181c32;
-    }
+    .custom-dropdown-list { z-index: 1060; max-height: 180px; overflow-y: auto; top: 100%; left: 0; margin-top: 5px; background: #fff; border: 1px solid #e4e6ef; border-radius: 0.475rem; }
+    .custom-dropdown-list button:hover { background-color: #f1f1f4; color: #181c32; }
 </style>
 
 <script>
@@ -1045,7 +1030,6 @@
         const modalElement = document.getElementById('modalComprobante');
         if (!modalElement) return;
 
-        // Instancia del modal para controlarlo por JS
         const myModal = new bootstrap.Modal(modalElement);
         const form = document.getElementById('formModalComprobante');
         const modalCodTercero = document.getElementById('cod_tercero');
@@ -1054,8 +1038,9 @@
         const hashTarget = document.getElementById('hash_transaccion');
         const fileInput = document.getElementById('archivo_soporte');
         const dropZone = document.getElementById('drop_zone_area');
+        const fechaPagoInput = document.getElementById('fecha_pago');
 
-        // --- 1. LÓGICA DE BUSCADORES NATIVOS (FILTRADO GLOBAL) ---
+        // --- 1. LÓGICA DE BUSCADORES NATIVOS ---
         function setupBuscadorNativo(inputId, hiddenId, listId) {
             const input = document.getElementById(inputId);
             const hidden = document.getElementById(hiddenId);
@@ -1064,7 +1049,7 @@
 
             const items = list.querySelectorAll('button');
 
-            input.addEventListener('focus', function() {
+            input.addEventListener('focus', () => {
                 if(items.length > 0) {
                     items.forEach(i => i.style.display = 'block');
                     list.classList.remove('d-none');
@@ -1076,19 +1061,12 @@
                 let hasVisible = false;
                 hidden.value = ''; 
                 actualizarHash();
-
                 items.forEach(item => {
                     const text = item.textContent.toLowerCase();
-                    if (text.includes(val)) {
-                        item.style.display = 'block';
-                        hasVisible = true;
-                    } else {
-                        item.style.display = 'none';
-                    }
+                    if (text.includes(val)) { item.style.display = 'block'; hasVisible = true; } 
+                    else { item.style.display = 'none'; }
                 });
-
-                if (hasVisible) list.classList.remove('d-none');
-                else list.classList.add('d-none');
+                if (hasVisible) list.classList.remove('d-none'); else list.classList.add('d-none');
             });
 
             items.forEach(item => {
@@ -1101,42 +1079,71 @@
                 });
             });
 
-            document.addEventListener('click', function(e) {
-                if (!input.contains(e.target) && !list.contains(e.target)) {
-                    list.classList.add('d-none');
-                }
+            document.addEventListener('click', (e) => {
+                if (!input.contains(e.target) && !list.contains(e.target)) list.classList.add('d-none');
             });
         }
 
         setupBuscadorNativo('search_obligacion', 'id_obligacion', 'list_obligacion');
         setupBuscadorNativo('search_banco', 'id_banco', 'list_banco');
 
+        // --- 2. LÓGICA DEL HASH (14 DÍGITOS YYYYMMDDHHMMSS) ---
+        function actualizarHash() {
+            const banco = document.getElementById('id_banco').value;
+            const fechaVal = fechaPagoInput.value; // Formato: YYYY-MM-DDTHH:MM
+            const monto = hiddenInput.value;
+            const tercero = modalCodTercero.value;
 
-        // --- 2. ENVÍO Y RESETEO (LOOP DE MODAL SIN RECARGA DE VISTA) ---
-        form.addEventListener('submit', function(e) {
-            e.preventDefault(); // Evita recarga por defecto
-            
-            if(!document.getElementById('id_obligacion').value || !document.getElementById('id_banco').value) {
-                Swal.fire('Atención', 'Por favor selecciona una Obligación y un Banco válidos.', 'warning');
-                return;
+            // Limpiamos la fecha de guiones, puntos y la 'T'
+            let fechaLimpia = fechaVal.replace(/[^0-9]/g, '');
+
+            // Si por alguna razón faltan los segundos (datetime-local suele dar 12 dígitos)
+            if (fechaLimpia.length === 12) {
+                fechaLimpia += '00';
             }
 
+            if (banco && fechaLimpia && monto && tercero) {
+                hashTarget.value = `${banco}-${fechaLimpia}-${monto}-${tercero}`;
+            } else {
+                hashTarget.value = '';
+            }
+        }
+
+        // --- 3. MÁSCARA DE MONTO ---
+        displayInput.addEventListener('input', function() {
+            let val = this.value.replace(/\D/g, ''); 
+            hiddenInput.value = val;
+            this.value = val !== '' ? new Intl.NumberFormat('es-CO').format(val) : '';
+            actualizarHash();
+        });
+
+        // Escuchas globales para el hash
+        document.querySelectorAll('.gen-hash').forEach(el => {
+            el.addEventListener('input', actualizarHash);
+            el.addEventListener('change', actualizarHash);
+        });
+
+        // --- 4. ENVÍO Y RESETEO ---
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            if(!document.getElementById('id_obligacion').value || !document.getElementById('id_banco').value) {
+                Swal.fire('Atención', 'Selecciona Obligación y Banco válidos.', 'warning');
+                return;
+            }
             ejecutarEnvio(false);
         });
 
         function ejecutarEnvio(forceSave = false) {
             const btnSubmit = document.getElementById('btnSubmitComprobante');
             const originalText = btnSubmit.innerHTML;
-            
             btnSubmit.disabled = true;
             btnSubmit.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> PROCESANDO...`;
 
             const formData = new FormData(form);
             if (forceSave) formData.append('force_save', '1');
 
-            if (!formData.get('numero_cuota')) formData.delete('numero_cuota');
-            if (!formData.get('pr')) formData.delete('pr');
-            if (!formData.get('cco')) formData.delete('cco');
+            // Limpieza de nulos antes de enviar
+            ['numero_cuota', 'pr', 'cco'].forEach(f => { if(!formData.get(f)) formData.delete(f); });
 
             fetch(form.action, {
                 method: 'POST',
@@ -1150,148 +1157,80 @@
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
-                    // CERRAR MODAL INMEDIATAMENTE
                     myModal.hide();
-
                     Swal.fire({
                         title: '¡Pago Vinculado!',
-                        text: "¿Deseas adjuntar otro comprobante para este cliente?",
+                        text: "¿Deseas adjuntar otro comprobante?",
                         icon: 'success',
                         showCancelButton: true,
-                        confirmButtonText: 'Sí, adjuntar otro',
-                        cancelButtonText: 'No, terminar',
-                        confirmButtonColor: '#198754',
-                        allowOutsideClick: false
+                        confirmButtonText: 'Sí, otro',
+                        cancelButtonText: 'Terminar',
+                        confirmButtonColor: '#198754'
                     }).then((result) => {
                         if (result.isConfirmed) {
-                            // --- REAPERTURA MANUAL ---
-                            const clienteID = modalCodTercero.value;
-
-                            form.reset(); 
-                            resetFile(); 
-
-                            // Limpieza manual de campos persistentes
-                            document.getElementById('id_obligacion').value = '';
-                            document.getElementById('id_banco').value = '';
-                            document.getElementById('search_obligacion').value = '';
-                            document.getElementById('search_banco').value = '';
-                            hiddenInput.value = '';
-                            displayInput.value = '';
-                            
-                            // Restauramos contexto
-                            modalCodTercero.value = clienteID;
-                            document.getElementById('fecha_pago').value = new Date().toISOString().split('T')[0];
-                            actualizarHash();
-
-                            // VOLVEMOS A MOSTRAR EL MODAL
-                            myModal.show();
-                            
-                            setTimeout(() => {
-                                document.getElementById('search_obligacion').focus();
-                            }, 500);
-
-                        } else {
-                            // CASO NO: Solo limpiamos el form por dentro por si lo vuelven a abrir,
-                            // pero NO recargamos la página. La interacción sigue viva.
+                            const clieID = modalCodTercero.value;
                             form.reset();
                             resetFile();
-                            console.log("Cierre de proceso sin recarga.");
+                            modalCodTercero.value = clieID;
+                            // Reset fecha a ahora mismo
+                            const ahora = new Date();
+                            ahora.setMinutes(ahora.getMinutes() - ahora.getTimezoneOffset());
+                            fechaPagoInput.value = ahora.toISOString().slice(0, 16);
+                            actualizarHash();
+                            myModal.show();
                         }
                     });
-                } 
-                else if (data.is_duplicate) {
+                } else if (data.is_duplicate) {
                     Swal.fire({
-                        title: '¿Pago Duplicado?',
+                        title: '¿Duplicado?',
                         text: data.message,
                         icon: 'warning',
                         showCancelButton: true,
-                        confirmButtonText: 'Sí, registrar de todos modos',
-                        cancelButtonText: 'No, cancelar',
+                        confirmButtonText: 'Sí, forzar',
                         confirmButtonColor: '#f1416c'
-                    }).then((result) => {
-                        if (result.isConfirmed) ejecutarEnvio(true);
-                    });
+                    }).then((r) => { if(r.isConfirmed) ejecutarEnvio(true); });
                 } else {
-                    Swal.fire('Atención', data.message, 'warning');
+                    Swal.fire('Error', data.message, 'error');
                 }
             })
-            .catch(() => Swal.fire('Error', 'No se pudo conectar con el servidor', 'error'))
-            .finally(() => {
-                btnSubmit.disabled = false;
-                btnSubmit.innerHTML = originalText;
-            });
+            .catch(() => Swal.fire('Error', 'Servidor no responde', 'error'))
+            .finally(() => { btnSubmit.disabled = false; btnSubmit.innerHTML = originalText; });
         }
 
-        // --- 3. MÁSCARA Y HASH ---
-        displayInput.addEventListener('input', function() {
-            let val = this.value.replace(/\D/g, ''); 
-            hiddenInput.value = val;
-            this.value = val !== '' ? new Intl.NumberFormat('es-CO').format(val) : '';
-            actualizarHash();
-        });
-
-        function actualizarHash() {
-            const banco = document.getElementById('id_banco').value;
-            const fechaInput = document.getElementById('fecha_pago').value;
-            const fecha = fechaInput ? fechaInput.replace(/-/g, '') : '';
-            const monto = hiddenInput.value;
-            const tercero = modalCodTercero.value;
-            hashTarget.value = (banco && fecha && monto && tercero) ? `${banco}-${fecha}-${monto}-${tercero}` : '';
-        }
-
-        document.querySelectorAll('.gen-hash, #fecha_pago').forEach(el => {
-            el.addEventListener('input', actualizarHash);
-            el.addEventListener('change', actualizarHash);
-        });
-
-        // --- 4. MANEJO DE ARCHIVOS Y PEGADO ---
+        // --- 5. ARCHIVOS Y PORTAPAPELES ---
         function procesarArchivo(file) {
             if (!file) return;
-            const validTypes = ['image/jpeg', 'image/png', 'application/pdf'];
-            if (!validTypes.includes(file.type)) {
-                Swal.fire('Formato no válido', 'Solo imágenes o PDF.', 'warning');
-                return;
-            }
-            const dataTransfer = new DataTransfer();
-            dataTransfer.items.add(file);
-            fileInput.files = dataTransfer.files;
+            const valid = ['image/jpeg', 'image/png', 'application/pdf'];
+            if (!valid.includes(file.type)) return Swal.fire('Error', 'Solo imágenes o PDF.', 'warning');
+            
+            const dt = new DataTransfer(); dt.items.add(file);
+            fileInput.files = dt.files;
 
             document.getElementById('preview_container').classList.remove('d-none');
             document.getElementById('file_name_preview').textContent = file.name;
-            
             const img = document.getElementById('image_preview');
-            const pdfIcon = document.getElementById('pdf_preview_icon');
+            const pdf = document.getElementById('pdf_preview_icon');
             
             if (file.type.startsWith('image/')) {
                 const reader = new FileReader();
-                reader.onload = (e) => { img.src = e.target.result; img.classList.remove('d-none'); pdfIcon.classList.add('d-none'); };
+                reader.onload = (e) => { img.src = e.target.result; img.classList.remove('d-none'); pdf.classList.add('d-none'); };
                 reader.readAsDataURL(file);
-            } else {
-                img.classList.add('d-none'); pdfIcon.classList.remove('d-none');
-            }
+            } else { img.classList.add('d-none'); pdf.classList.remove('d-none'); }
         }
 
         fileInput.addEventListener('change', e => { if(e.target.files.length) procesarArchivo(e.target.files[0]); });
-        
-        window.addEventListener('paste', e => {
-            if (modalElement.classList.contains('show') && e.clipboardData.files.length) procesarArchivo(e.clipboardData.files[0]);
-        });
-
+        window.addEventListener('paste', e => { if (modalElement.classList.contains('show') && e.clipboardData.files.length) procesarArchivo(e.clipboardData.files[0]); });
         dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
-        dropZone.addEventListener('dragleave', e => { e.preventDefault(); dropZone.classList.remove('dragover'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
         dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragover'); if (e.dataTransfer.files.length) procesarArchivo(e.dataTransfer.files[0]); });
 
-        // --- 5. DISPARADOR DE TIPIFICACIÓN ---
+        // --- 6. GESTIÓN DE TIPIFICACIÓN (EXTERNO) ---
         document.querySelectorAll('.type-trigger').forEach(radio => {
             radio.addEventListener('change', function() {
                 if (this.value == '3') {
-                    const clienteId = document.getElementById('client_id')?.value || '';
-                    if (!clienteId) {
-                        Swal.fire('¡Falta el Cliente!', 'Selecciona un cliente antes de registrar el pago.', 'warning');
-                        this.checked = false;
-                        return;
-                    }
-                    modalCodTercero.value = clienteId;
+                    const cID = document.getElementById('client_id')?.value || '';
+                    if (!cID) { Swal.fire('Error', 'Selecciona un cliente.', 'warning'); this.checked = false; return; }
+                    modalCodTercero.value = cID;
                     actualizarHash();
                     myModal.show();
                 }
@@ -1301,11 +1240,11 @@
 
     function resetFile() {
         document.getElementById('archivo_soporte').value = '';
-        const previewContainer = document.getElementById('preview_container');
-        if(previewContainer) previewContainer.classList.add('d-none');
-        document.getElementById('numero_cuota').value = '';
-        document.getElementById('pr').value = '';
-        document.getElementById('cco').value = '';
+        const prev = document.getElementById('preview_container');
+        if(prev) prev.classList.add('d-none');
+        ['numero_cuota', 'pr', 'cco', 'id_obligacion', 'id_banco', 'search_obligacion', 'search_banco', 'monto_pagado', 'monto_pagado_display'].forEach(id => {
+            const el = document.getElementById(id); if(el) el.value = '';
+        });
     }
 </script>
 
