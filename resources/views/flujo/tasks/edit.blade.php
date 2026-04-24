@@ -328,61 +328,91 @@
         }
 
         @keyframes pulse {
-            0% {
-                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
-            }
-
-            70% {
-                box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
-            }
-
-            100% {
-                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
-            }
+            0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
         }
 
         @media (max-width: 992px) {
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .form-row-compact {
-                flex-direction: column;
-                gap: 0;
-            }
+            .form-grid { grid-template-columns: 1fr; }
+            .form-row-compact { flex-direction: column; gap: 0; }
         }
+
         /* Estilos minimalistas para la lista de tareas */
         .task-container { display: none; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
         .task-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
         .btn-toggle { background: none; border: none; color: #64748b; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: color 0.2s; }
         .btn-toggle:hover { color: #0f172a; }
-        
         .task-row { display: flex; align-items: center; padding: 6px 0; border-bottom: 1px solid transparent; transition: all 0.2s; }
         .task-row:hover { border-bottom-color: #f1f5f9; }
         .task-checkbox { width: 16px; height: 16px; margin-right: 12px; cursor: pointer; accent-color: #3b82f6; }
-        
         .task-input { flex: 1; border: none; outline: none; background: transparent; font-size: 14px; color: #334155; transition: all 0.2s; padding: 4px 0; }
         .task-input:focus { border-bottom: 1px dashed #cbd5e1; }
         .task-input.completed { text-decoration: line-through; color: #94a3b8; }
-        
         .task-delete { opacity: 0; background: none; border: none; color: #ef4444; cursor: pointer; font-size: 14px; padding: 0 8px; transition: opacity 0.2s; }
         .task-row:hover .task-delete { opacity: 1; }
-        
         .btn-add-task { background: none; border: none; color: #94a3b8; font-size: 14px; cursor: pointer; padding: 8px 0 0 28px; display: flex; align-items: center; gap: 6px; width: 100%; text-align: left; }
         .btn-add-task:hover { color: #3b82f6; }
+
+        /* NUEVO: Estilos para la previsualización al pasar el mouse (Hover Preview) */
+        #hover-preview-card {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 9999;
+            background: white;
+            padding: 10px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            width: 500px;
+            max-width: 90vw;
+            pointer-events: none; /* Evita que el modal bloquee el mouse del usuario */
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+        }
+        #hover-preview-card img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            max-height: 70vh;
+            object-fit: contain;
+        }
+        #hover-preview-card iframe {
+            width: 100%;
+            height: 60vh;
+            border: none;
+            border-radius: 8px;
+            background: #f8fafc;
+        }
     </style>
 
     <div class="task-edit-wrapper">
+        
         {{-- Encabezado de Acción --}}
         <header class="form-header">
-            <div class="header-content">
-                <a href="{{ route('flujo.tasks.index') }}" class="btn-back-minimal">
-                    <i class="fas fa-arrow-left"></i>
-                </a>
-                <div class="header-text">
-                    <h1 class="main-title">Edición de Tarea <span class="text-accent">#{{ $task->id }}</span></h1>
-                    <p class="main-subtitle">Ajuste parámetros operativos y gestione el hilo de comunicación.</p>
+            <div class="header-content" style="width: 100%; display: flex; justify-content: space-between;">
+                
+                <div style="display: flex; align-items: center; gap: 20px;">
+                    {{-- Botón de regreso (Solo se muestra si la tarea tiene un workflow) --}}
+                    @if($task->workflow)
+                        <a href="{{ route('flujo.workflows.show', $task->workflow->id) }}" class="btn-back-minimal" title="Volver al Workflow">
+                            <i class="fas fa-arrow-left"></i>
+                        </a>
+                    @endif
+                    
+                    <div class="header-text">
+                        <h1 class="main-title">Edición de Tarea <span class="text-accent">#{{ $task->id }}</span></h1>
+                        <p class="main-subtitle">Ajuste parámetros operativos y gestione el hilo de comunicación.</p>
+                    </div>
                 </div>
+
+                {{-- Botón para ir a todas las tareas --}}
+                <a href="{{ route('flujo.tasks.index') }}" class="btn-back-minimal" style="width: auto; padding: 0 15px; font-weight: 600; font-size: 13px;">
+                    Todas las Tareas
+                </a>
+                
             </div>
         </header>
 
@@ -576,6 +606,7 @@
                 </div>
             </div>
         </main>
+        
         <div class="card-minimal col-md-12 mt-4">
             <div class="comment-thread mt-4">
                 @forelse($task->comments->sortByDesc('created_at') as $comment)
@@ -594,8 +625,15 @@
                                         $comment->soporte,
                                         now()->addMinutes(30),
                                     );
+                                    
+                                    // NUEVO: Extraemos la extensión para saber si es imagen o PDF
+                                    $extension = strtolower(pathinfo($comment->soporte, PATHINFO_EXTENSION));
+                                    $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg']);
                                 @endphp
-                                <a href="{{ $urlS3 }}" target="_blank" class="attachment-link">
+                                
+                                <a href="{{ $urlS3 }}" target="_blank" class="attachment-link preview-trigger" 
+                                   data-url="{{ $urlS3 }}" 
+                                   data-type="{{ $isImage ? 'image' : 'pdf' }}">
                                     <i class="fas fa-file-download"></i> Ver Archivo
                                 </a>
                             </div>
@@ -824,7 +862,7 @@
         });
     </script>
 
-    {{-- NUEVO: Lógica para la Plantilla del Comentario (Feedback) --}}
+    {{-- Lógica para la Plantilla del Comentario (Feedback) --}}
     <script>
         // Función activada por el onchange del switch del comentario
         function alternarPlantilla(checkbox) {
@@ -877,6 +915,55 @@
             var inputs = document.querySelectorAll('.dev-template-input');
             inputs.forEach(function(input) {
                 input.addEventListener('input', actualizarPlantilla);
+            });
+        });
+    </script>
+
+    {{-- NUEVO: Lógica visual del Hover Preview para archivos adjuntos --}}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 1. Crear el contenedor modal flotante
+            let previewModal = document.createElement('div');
+            previewModal.id = 'hover-preview-card';
+            document.body.appendChild(previewModal);
+
+            let hoverTimer; // Temporizador
+
+            // 2. Seleccionar los enlaces de archivos
+            const triggers = document.querySelectorAll('.preview-trigger');
+
+            triggers.forEach(trigger => {
+                // Cuando entra el mouse
+                trigger.addEventListener('mouseenter', function(e) {
+                    const url = this.getAttribute('data-url');
+                    const type = this.getAttribute('data-type');
+
+                    // Esperar 400ms antes de disparar el modal
+                    hoverTimer = setTimeout(() => {
+                        if (type === 'image') {
+                            previewModal.innerHTML = `<img src="${url}" alt="Vista previa de archivo">`;
+                        } else {
+                            // Para PDFs
+                            previewModal.innerHTML = `<iframe src="${url}#toolbar=0&navpanes=0&scrollbar=0" title="PDF Preview"></iframe>`;
+                        }
+                        
+                        // Mostrar visualmente
+                        previewModal.style.display = 'block';
+                        setTimeout(() => previewModal.style.opacity = '1', 10); 
+                    }, 400); 
+                });
+
+                // Cuando sale el mouse
+                trigger.addEventListener('mouseleave', function(e) {
+                    clearTimeout(hoverTimer); // Cancelar la apertura si fue rápido
+                    
+                    // Ocultar y limpiar
+                    previewModal.style.opacity = '0';
+                    setTimeout(() => {
+                        previewModal.style.display = 'none';
+                        previewModal.innerHTML = ''; 
+                    }, 200); 
+                });
             });
         });
     </script>

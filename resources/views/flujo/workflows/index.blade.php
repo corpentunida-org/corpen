@@ -166,10 +166,13 @@
                     <input type="hidden" name="asignado_a" id="input-user" value="{{ request('asignado_a') }}">
                     
                     <div class="search-group">
-                        <i class="fas fa-search"></i>
-                        <input type="text" name="search" value="{{ request('search') }}" placeholder="Buscar proyecto..." autocomplete="off">
+                        <i class="fas fa-search" onclick="document.getElementById('main-filter-form').submit();" style="cursor: pointer;" title="Buscar"></i>
+                        
+                        <input type="text" name="search" value="{{ request('search') }}" placeholder="Buscar proyecto..." autocomplete="off" 
+                            onkeypress="if(event.key === 'Enter') { event.preventDefault(); document.getElementById('main-filter-form').submit(); }">
+                        
                         @if(request()->filled('search'))
-                            <a href="{{ route('flujo.workflows.index') }}" class="clear-search"><i class="fas fa-times"></i></a>
+                            <a href="{{ route('flujo.workflows.index') }}" class="clear-search" title="Limpiar búsqueda"><i class="fas fa-times"></i></a>
                         @endif
                     </div>
 
