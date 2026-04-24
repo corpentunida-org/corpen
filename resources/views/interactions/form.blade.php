@@ -257,8 +257,7 @@
                             <h6 class="text-dark fw-bold small text-uppercase mb-3">Datos de quien llama</h6>
                             <div class="row g-3">
                                 <div class="col-md-4">
-                                    <label class="form-label">Nombre Completo <span
-                                            class="text-muted">*</span></label>
+                                    <label class="form-label">Nombre Completo <span class="text-muted">*</span></label>
                                     <input type="text" class="form-control" id="nombre_quien_llama"
                                         name="nombre_quien_llama" placeholder="Ej. Juan Pérez">
                                 </div>
@@ -373,12 +372,12 @@
                                 </div>
 
                                 <div class="d-flex gap-1 ms-2">
-                                    <button type="button" class="btn btn-sm btn-light border p-1"
-                                        id="btn-timer-toggle" title="Pausar/Reanudar">
+                                    <button type="button" class="btn btn-sm btn-light border p-1" id="btn-timer-toggle"
+                                        title="Pausar/Reanudar">
                                         <i class="bi bi-pause" style="font-size: 0.8rem;"></i>
                                     </button>
-                                    <button type="button" class="btn btn-sm btn-light border p-1"
-                                        id="btn-timer-reset" title="Reiniciar">
+                                    <button type="button" class="btn btn-sm btn-light border p-1" id="btn-timer-reset"
+                                        title="Reiniciar">
                                         <i class="bi bi-arrow-counterclockwise" style="font-size: 0.8rem;"></i>
                                     </button>
                                 </div>
@@ -426,8 +425,8 @@
                                     <div class="d-flex justify-content-end gap-2 mt-2 pt-2 border-top">
                                         <a id="btn-editar-cliente" href="#" target="_blank"
                                             class="btn btn-sm btn-light border text-dark">Editar</a>
-                                        <a id="btn-ver-cliente" href="#" target="_blank"
-                                            class="btn btn-sm btn-dark">Ver Ficha</a>
+                                        <a id="btn-ver-cliente" href="#" target="_blank" class="btn btn-sm btn-dark">Ver
+                                            Ficha</a>
                                     </div>
                                 </div>
                             </div>
@@ -485,11 +484,8 @@
                                 @foreach ($channels as $channel)
                                     <div class="position-relative">
                                         <input type="radio" class="btn-check" name="interaction_channel"
-                                            id="ch_{{ $channel->id }}" value="{{ $channel->id }}"
-                                            {{ old('interaction_channel', $interaction->interaction_channel ?? '') == $channel->id ? 'checked' : '' }}
-                                            required>
-                                        <label
-                                            class="smart-tag py-1 px-3 border cursor-pointer text-center transition-all"
+                                            id="ch_{{ $channel->id }}" value="{{ $channel->id }}" {{ old('interaction_channel', $interaction->interaction_channel ?? '') == $channel->id ? 'checked' : '' }} required>
+                                        <label class="smart-tag py-1 px-3 border cursor-pointer text-center transition-all"
                                             for="ch_{{ $channel->id }}">
                                             <span class="small">{{ $channel->name }}</span>
                                         </label>
@@ -513,9 +509,7 @@
                             <div class="d-flex flex-wrap gap-2" id="container-list-types">
                                 @foreach ($types as $type)
                                     <input type="radio" class="btn-check type-trigger" name="interaction_type"
-                                        id="tp_{{ $type->id }}" value="{{ $type->id }}"
-                                        {{ old('interaction_type', $interaction->interaction_type ?? '') == $type->id ? 'checked' : '' }}
-                                        required>
+                                        id="tp_{{ $type->id }}" value="{{ $type->id }}" {{ old('interaction_type', $interaction->interaction_type ?? '') == $type->id ? 'checked' : '' }} required>
                                     <label class="smart-tag py-1 px-3 border cursor-pointer transition-all small"
                                         for="tp_{{ $type->id }}">
                                         {{ $type->name }}
@@ -548,8 +542,8 @@
                                 </label>
                             </div>
                             <div>
-                                <input type="radio" class="btn-check" name="handled_by_agent"
-                                    id="handled_by_other" value="no">
+                                <input type="radio" class="btn-check" name="handled_by_agent" id="handled_by_other"
+                                    value="no">
                                 <label class="btn btn-outline-secondary px-4 py-2" for="handled_by_other">
                                     Delegar a otro
                                 </label>
@@ -569,8 +563,7 @@
                             <div class="bg-white border rounded p-3">
                                 <label for="id_user_asignacion" class="form-label small">Buscar Usuario <span
                                         class="text-muted">*</span></label>
-                                <select class="form-select" id="id_user_asignacion" name="id_user_asignacion"
-                                    required>
+                                <select class="form-select" id="id_user_asignacion" name="id_user_asignacion" required>
                                     <option value="">Buscar usuario por nombre o correo...</option>
                                     <option value="{{ Auth::id() }}" id="option-me">
                                         -
@@ -584,9 +577,9 @@
                             </div>
                         </div>
                     </div>
-                   <div class="d-flex flex-wrap gap-3 align-items-center" id="container-lineas">
-                        <div class="linea-item-wrapper" style="width: 320px;">
-                            <div class="input-group">
+                    <div class="d-flex flex-wrap gap-3 align-items-center" id="container-lineas">
+                        <div class="linea-item-wrapper d-flex align-items-center gap-2" style="width: 320px;">
+                            <div class="flex-grow-1" style="min-width: 0;">
                                 <select class="form-select select2-linea" name="id_linea_de_obligacion[]" required>
                                     <option value="">Selecciona la línea...</option>
                                     @if (isset($lineasCredito))
@@ -595,25 +588,11 @@
                                         @endforeach
                                     @endif
                                 </select>
-                                
-                                <button type="button" 
-                                        class="btn border border-start-0 text-secondary px-3 btn-remove-linea d-none" 
-                                        style="background-color: #fff;" 
-                                        title="Quitar línea">
-                                    <i class="bi bi-x-lg" style="font-size: 0.9rem;"></i>
-                                </button>
                             </div>
-                            <button type="button"
-                                class="btn btn-primary rounded-circle shadow-sm d-flex align-items-center justify-content-center"
-                                id="btn-add-linea" style="width: 32px; height: 32px; flex-shrink: 0;">
-                                <i class="bi bi-plus-lg"></i>
-                            </button>
                         </div>
-
-                        <button type="button" 
-                                class="btn btn-primary rounded-circle d-flex align-items-center justify-content-center shadow-sm" 
-                                id="btn-add-linea" 
-                                style="width: 35px; height: 35px; flex-shrink: 0;">
+                        <button type="button"
+                            class="btn btn-primary rounded-circle shadow-sm d-flex align-items-center justify-content-center"
+                            id="btn-add-linea" style="width: 32px; height: 32px; flex-shrink: 0;">
                             <i class="bi bi-plus-lg"></i>
                         </button>
                     </div>
@@ -663,7 +642,8 @@
                                 <div class="d-flex align-items-center p-2 bg-light border">
                                     <div class="flex-grow-1 overflow-hidden me-2">
                                         <div class="text-dark text-truncate small">
-                                            {{ basename($interaction->attachment_urls) }}</div>
+                                            {{ basename($interaction->attachment_urls) }}
+                                        </div>
                                     </div>
                                     <div class="d-flex gap-1">
                                         <a href="{{ route('interactions.download', basename($interaction->attachment_urls)) }}"
@@ -702,8 +682,7 @@
                             historial.</p>
                     </div>
                     <div id="history-section" style="display:none;">
-                        <input type="hidden" id="parent_interaction_id" name="parent_interaction_id"
-                            value="">
+                        <input type="hidden" id="parent_interaction_id" name="parent_interaction_id" value="">
                         <div class="p-3 bg-white border-bottom">
                             <div id="selected-parent-info"
                                 class="bg-light border p-2 d-flex align-items-center justify-content-between"
@@ -742,9 +721,7 @@
                                         <div class="col-sm-6">
                                             <input type="radio" class="btn-check outcome-radio" name="outcome"
                                                 id="outcome_{{ $outcome->id }}" value="{{ $outcome->id }}"
-                                                data-requires-planning="{{ !$outcome->estado ? 'true' : 'false' }}"
-                                                {{ old('outcome', $interaction->outcome ?? '') == $outcome->id ? 'checked' : '' }}
-                                                required>
+                                                data-requires-planning="{{ !$outcome->estado ? 'true' : 'false' }}" {{ old('outcome', $interaction->outcome ?? '') == $outcome->id ? 'checked' : '' }} required>
                                             <label class="btn btn-outline-secondary w-100 text-start "
                                                 for="outcome_{{ $outcome->id }}">
                                                 {{ $outcome->name }}
@@ -772,8 +749,7 @@
                                         @foreach ($nextActions as $action)
                                             <div class="col-6 col-sm-4">
                                                 <input type="radio" class="btn-check" name="next_action_type"
-                                                    id="action_{{ $action->id }}" value="{{ $action->id }}"
-                                                    {{ old('next_action_type', $interaction->next_action_type ?? '') == $action->id ? 'checked' : '' }}>
+                                                    id="action_{{ $action->id }}" value="{{ $action->id }}" {{ old('next_action_type', $interaction->next_action_type ?? '') == $action->id ? 'checked' : '' }}>
                                                 <label class="btn btn-outline-dark w-100 border small text-truncate"
                                                     for="action_{{ $action->id }}" title="{{ $action->name }}">
                                                     {{ $action->name }}
@@ -810,22 +786,24 @@
                                 <div class="form-group mb-0">
                                     <label for="next_action_notes"
                                         class="form-label small text-muted">Instrucciones</label>
-                                    <textarea class="form-control bg-white @error('next_action_notes') is-invalid @enderror" id="next_action_notes"
-                                        name="next_action_notes" rows="2" style="resize: vertical;" placeholder="Ej. Llamar para confirmar..."></textarea>
+                                    <textarea
+                                        class="form-control bg-white @error('next_action_notes') is-invalid @enderror"
+                                        id="next_action_notes" name="next_action_notes" rows="2"
+                                        style="resize: vertical;" placeholder="Ej. Llamar para confirmar..."></textarea>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            
+
             <div class="row mb-4">
                 <div class="col-12">
                     <label class="form-label text-muted d-block">
                         Notas Finales <span class="text-muted">*</span>
                     </label>
-                    <textarea class="form-control bg-white" name="notes" id="notes" rows="4" lang="es"
-                        spellcheck="true" autocorrect="on" autocapitalize="sentences" placeholder="Resumen de la interacción..."
+                    <textarea class="form-control bg-white" name="notes" id="notes" rows="4" lang="es" spellcheck="true"
+                        autocorrect="on" autocapitalize="sentences" placeholder="Resumen de la interacción..."
                         required>{{ old('notes', $interaction->notes ?? '') }}</textarea>
                     @error('notes')
                         <div class="text-danger small mt-1">{{ $message }}</div>
@@ -869,7 +847,8 @@
 <div class="modal fade" id="modalComprobante" data-bs-backdrop="static" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
-            <div class="modal-header border-0 pb-0 pt-8 px-8 d-flex flex-column align-items-start text-white bg-success">
+            <div
+                class="modal-header border-0 pb-0 pt-8 px-8 d-flex flex-column align-items-start text-white bg-success">
                 <div class="d-flex align-items-center justify-content-between w-100">
                     <div class="d-flex align-items-center">
                         <div class="symbol symbol-45px me-3">
@@ -879,16 +858,19 @@
                         </div>
                         <div>
                             <h3 class="fw-bolder m-0 text-white">Registrar Soporte de Pago</h3>
-                            <span class="text-white opacity-75 fs-9">Sesión: {{ substr($miTokenSesion ?? '', 0, 8) }}...</span>
+                            <span class="text-white opacity-75 fs-9">Sesión:
+                                {{ substr($miTokenSesion ?? '', 0, 8) }}...</span>
                         </div>
                     </div>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                 </div>
                 <div class="separator separator-dashed w-100 mt-5 opacity-25"></div>
             </div>
 
             <div class="modal-body p-8">
-                <form id="formModalComprobante" action="{{ route('cartera.comprobantes.store') }}" method="POST" enctype="multipart/form-data">
+                <form id="formModalComprobante" action="{{ route('cartera.comprobantes.store') }}" method="POST"
+                    enctype="multipart/form-data">
                     @csrf
                     <input type="hidden" name="id_interaction" value="{{ $interaction->id ?? '' }}">
                     <input type="hidden" name="temp_token" value="{{ $miTokenSesion ?? '' }}">
@@ -896,34 +878,46 @@
                     <div class="row g-5">
                         <div class="col-md-6">
                             <div class="fv-row mb-4">
-                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Código Tercero *</label>
+                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Código Tercero
+                                    *</label>
                                 <div class="input-group input-group-solid border border-gray-300 rounded shadow-sm">
-                                    <span class="input-group-text bg-transparent border-0"><i class="fas fa-id-card text-muted"></i></span>
-                                    <input type="number" id="cod_tercero" name="cod_ter_MaeTerceros" class="form-control border-0 gen-hash fw-bolder" readonly required>
+                                    <span class="input-group-text bg-transparent border-0"><i
+                                            class="fas fa-id-card text-muted"></i></span>
+                                    <input type="number" id="cod_tercero" name="cod_ter_MaeTerceros"
+                                        class="form-control border-0 gen-hash fw-bolder" readonly required>
                                 </div>
                             </div>
 
                             <div class="fv-row mb-4 position-relative">
-                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Obligación / Línea de Crédito *</label>
+                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Obligación / Línea
+                                    de Crédito *</label>
                                 <div class="input-group input-group-solid border border-gray-300 rounded shadow-sm">
-                                    <span class="input-group-text bg-transparent border-0"><i class="fas fa-search text-muted"></i></span>
-                                    <input type="text" id="search_obligacion" class="form-control border-0" placeholder="Escribe para buscar..." autocomplete="off" required>
+                                    <span class="input-group-text bg-transparent border-0"><i
+                                            class="fas fa-search text-muted"></i></span>
+                                    <input type="text" id="search_obligacion" class="form-control border-0"
+                                        placeholder="Escribe para buscar..." autocomplete="off" required>
                                     <input type="hidden" id="id_obligacion" name="id_obligacion">
                                 </div>
-                                <div class="list-group position-absolute w-100 shadow-lg d-none custom-dropdown-list" id="list_obligacion">
+                                <div class="list-group position-absolute w-100 shadow-lg d-none custom-dropdown-list"
+                                    id="list_obligacion">
                                     @if (isset($lineasCredito))
                                         @foreach ($lineasCredito as $id => $nombre)
-                                            <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="{{ $id }}">{{ $nombre }}</button>
+                                            <button type="button"
+                                                class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom"
+                                                data-id="{{ $id }}">{{ $nombre }}</button>
                                         @endforeach
                                     @endif
                                 </div>
                             </div>
 
                             <div class="fv-row mb-0">
-                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Monto Pagado *</label>
+                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Monto Pagado
+                                    *</label>
                                 <div class="input-group input-group-solid border border-gray-300 rounded shadow-sm">
                                     <span class="input-group-text bg-transparent border-0 fw-bold">$</span>
-                                    <input type="text" id="monto_pagado_display" class="form-control border-0 fw-bolder text-success gen-hash" placeholder="0" required>
+                                    <input type="text" id="monto_pagado_display"
+                                        class="form-control border-0 fw-bolder text-success gen-hash" placeholder="0"
+                                        required>
                                     <input type="hidden" id="monto_pagado" name="monto_pagado">
                                 </div>
                             </div>
@@ -931,31 +925,42 @@
 
                         <div class="col-md-6">
                             <div class="fv-row mb-4">
-                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Fecha y Hora de Pago *</label>
-                                <input type="datetime-local" id="fecha_pago" name="fecha_pago" class="form-control form-control-solid border border-gray-300 gen-hash" required value="{{ date('Y-m-d\TH:i') }}">
+                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Fecha y Hora de Pago
+                                    *</label>
+                                <input type="datetime-local" id="fecha_pago" name="fecha_pago"
+                                    class="form-control form-control-solid border border-gray-300 gen-hash" required
+                                    value="{{ date('Y-m-d\TH:i') }}">
                             </div>
 
                             <div class="fv-row mb-4 position-relative">
                                 <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Banco *</label>
                                 <div class="input-group input-group-solid border border-gray-300 rounded shadow-sm">
-                                    <span class="input-group-text bg-transparent border-0"><i class="fas fa-search text-muted"></i></span>
-                                    <input type="text" id="search_banco" class="form-control border-0" placeholder="Escribe para buscar banco..." autocomplete="off" required>
+                                    <span class="input-group-text bg-transparent border-0"><i
+                                            class="fas fa-search text-muted"></i></span>
+                                    <input type="text" id="search_banco" class="form-control border-0"
+                                        placeholder="Escribe para buscar banco..." autocomplete="off" required>
                                     <input type="hidden" id="id_banco" name="id_banco">
                                 </div>
-                                <div class="list-group position-absolute w-100 shadow-lg d-none custom-dropdown-list" id="list_banco">
+                                <div class="list-group position-absolute w-100 shadow-lg d-none custom-dropdown-list"
+                                    id="list_banco">
                                     @if (isset($idBanco))
                                         @foreach ($idBanco as $idb)
-                                            <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="{{ $idb->id }}">{{ $idb->numero_cuenta }} - {{ $idb->banco }}</button>
+                                            <button type="button"
+                                                class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom"
+                                                data-id="{{ $idb->id }}">{{ $idb->numero_cuenta }} - {{ $idb->banco }}</button>
                                         @endforeach
                                     @endif
                                 </div>
                             </div>
 
                             <div class="fv-row">
-                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Documento Soporte *</label>
+                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Documento Soporte
+                                    *</label>
                                 <div class="drop-zone-custom position-relative" id="drop_zone_area">
-                                    <input type="file" id="archivo_soporte" name="archivo_soporte" class="d-none" accept=".pdf,.jpg,.jpeg,.png" required>
-                                    <label for="archivo_soporte" class="w-100 h-100 cursor-pointer d-flex flex-column align-items-center justify-content-center py-2 text-center">
+                                    <input type="file" id="archivo_soporte" name="archivo_soporte" class="d-none"
+                                        accept=".pdf,.jpg,.jpeg,.png" required>
+                                    <label for="archivo_soporte"
+                                        class="w-100 h-100 cursor-pointer d-flex flex-column align-items-center justify-content-center py-2 text-center">
                                         <i class="fas fa-cloud-upload-alt fs-4 text-primary mb-1"></i>
                                         <span class="fs-9 text-gray-800 fw-bold">Clic, Arrastra o Pega (Ctrl+V)</span>
                                     </label>
@@ -967,39 +972,54 @@
                             <div class="p-4 bg-light-soft border border-dashed border-gray-300 rounded-3">
                                 <div class="row g-3">
                                     <div class="col-md-4">
-                                        <label class="form-label fw-bold text-gray-600 fs-9 text-uppercase">N° Cuota</label>
-                                        <input type="number" name="numero_cuota" id="numero_cuota" class="form-control form-control-sm border-gray-300 bg-white" placeholder="Ej: 1">
+                                        <label class="form-label fw-bold text-gray-600 fs-9 text-uppercase">N°
+                                            Cuota</label>
+                                        <input type="number" name="numero_cuota" id="numero_cuota"
+                                            class="form-control form-control-sm border-gray-300 bg-white"
+                                            placeholder="Ej: 1">
                                     </div>
                                     <div class="col-md-4">
                                         <label class="form-label fw-bold text-gray-600 fs-9 text-uppercase">PR</label>
-                                        <input type="number" name="pr" id="pr" class="form-control form-control-sm border-gray-300 bg-white" placeholder="0">
+                                        <input type="number" name="pr" id="pr"
+                                            class="form-control form-control-sm border-gray-300 bg-white"
+                                            placeholder="0">
                                     </div>
                                     <div class="col-md-4">
                                         <label class="form-label fw-bold text-gray-600 fs-9 text-uppercase">CCO</label>
-                                        <input type="number" name="cco" id="cco" class="form-control form-control-sm border-gray-300 bg-white" placeholder="0">
+                                        <input type="number" name="cco" id="cco"
+                                            class="form-control form-control-sm border-gray-300 bg-white"
+                                            placeholder="0">
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         <div id="preview_container" class="col-12 d-none">
-                            <div class="bg-light rounded p-4 d-flex align-items-center border border-dashed border-gray-400">
+                            <div
+                                class="bg-light rounded p-4 d-flex align-items-center border border-dashed border-gray-400">
                                 <div class="symbol symbol-50px me-4">
-                                    <img id="image_preview" src="" class="d-none shadow-sm rounded" style="width: 50px; height: 50px; object-fit: cover;">
-                                    <div id="pdf_preview_icon" class="symbol-label bg-white d-none shadow-sm"><i class="fas fa-file-pdf text-danger fs-2"></i></div>
+                                    <img id="image_preview" src="" class="d-none shadow-sm rounded"
+                                        style="width: 50px; height: 50px; object-fit: cover;">
+                                    <div id="pdf_preview_icon" class="symbol-label bg-white d-none shadow-sm"><i
+                                            class="fas fa-file-pdf text-danger fs-2"></i></div>
                                 </div>
                                 <div class="flex-grow-1 overflow-hidden">
-                                    <span id="file_name_preview" class="text-gray-800 fw-bolder fs-8 d-block text-truncate">Nombre.pdf</span>
+                                    <span id="file_name_preview"
+                                        class="text-gray-800 fw-bolder fs-8 d-block text-truncate">Nombre.pdf</span>
                                 </div>
-                                <button type="button" class="btn btn-icon btn-sm btn-active-light-danger border-0 ms-2" onclick="resetFile()"><i class="fas fa-times"></i></button>
+                                <button type="button" class="btn btn-icon btn-sm btn-active-light-danger border-0 ms-2"
+                                    onclick="resetFile()"><i class="fas fa-times"></i></button>
                             </div>
                         </div>
 
                         <div class="col-12">
-                            <div class="bg-light-primary rounded-pill px-4 py-2 border border-primary border-dashed d-flex align-items-center">
+                            <div
+                                class="bg-light-primary rounded-pill px-4 py-2 border border-primary border-dashed d-flex align-items-center">
                                 <i class="fas fa-fingerprint text-primary me-2"></i>
                                 <span class="fs-9 text-primary fw-bold me-2 uppercase">Integridad (Hash):</span>
-                                <input type="text" id="hash_transaccion" name="hash_transaccion" class="bg-transparent border-0 p-0 text-primary fs-9 font-monospace w-100" readonly placeholder="Calculando...">
+                                <input type="text" id="hash_transaccion" name="hash_transaccion"
+                                    class="bg-transparent border-0 p-0 text-primary fs-9 font-monospace w-100" readonly
+                                    placeholder="Calculando...">
                             </div>
                         </div>
                     </div>
@@ -1007,8 +1027,10 @@
             </div>
 
             <div class="modal-footer bg-light py-4 px-8 border-0">
-                <button type="button" class="btn btn-light fw-bold rounded-pill px-6" data-bs-dismiss="modal">Cancelar</button>
-                <button type="submit" form="formModalComprobante" class="btn btn-success rounded-pill fw-bolder px-10 shadow-sm" id="btnSubmitComprobante">
+                <button type="button" class="btn btn-light fw-bold rounded-pill px-6"
+                    data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" form="formModalComprobante"
+                    class="btn btn-success rounded-pill fw-bolder px-10 shadow-sm" id="btnSubmitComprobante">
                     <i class="fas fa-save me-2 text-white"></i> Guardar y Vincular Pago
                 </button>
             </div>
@@ -1017,17 +1039,52 @@
 </div>
 
 <style>
-    .drop-zone-custom { border: 2px dashed #dbdfe9; border-radius: 8px; transition: all 0.3s ease; background-color: #f9fafb; height: 85px; }
-    .drop-zone-custom:hover, .drop-zone-custom.dragover { border-color: #198754; background-color: #e8f5e9; }
-    .bg-light-soft { background-color: #fcfcfc; }
-    .font-monospace { font-family: 'Roboto Mono', monospace !important; }
-    .border-dashed { border-style: dashed !important; }
-    .custom-dropdown-list { z-index: 1060; max-height: 180px; overflow-y: auto; top: 100%; left: 0; margin-top: 5px; background: #fff; border: 1px solid #e4e6ef; border-radius: 0.475rem; }
-    .custom-dropdown-list button:hover { background-color: #f1f1f4; color: #181c32; }
+    .drop-zone-custom {
+        border: 2px dashed #dbdfe9;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        background-color: #f9fafb;
+        height: 85px;
+    }
+
+    .drop-zone-custom:hover,
+    .drop-zone-custom.dragover {
+        border-color: #198754;
+        background-color: #e8f5e9;
+    }
+
+    .bg-light-soft {
+        background-color: #fcfcfc;
+    }
+
+    .font-monospace {
+        font-family: 'Roboto Mono', monospace !important;
+    }
+
+    .border-dashed {
+        border-style: dashed !important;
+    }
+
+    .custom-dropdown-list {
+        z-index: 1060;
+        max-height: 180px;
+        overflow-y: auto;
+        top: 100%;
+        left: 0;
+        margin-top: 5px;
+        background: #fff;
+        border: 1px solid #e4e6ef;
+        border-radius: 0.475rem;
+    }
+
+    .custom-dropdown-list button:hover {
+        background-color: #f1f1f4;
+        color: #181c32;
+    }
 </style>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
+    document.addEventListener("DOMContentLoaded", function () {
         const modalElement = document.getElementById('modalComprobante');
         if (!modalElement) return;
 
@@ -1051,27 +1108,27 @@
             const items = list.querySelectorAll('button');
 
             input.addEventListener('focus', () => {
-                if(items.length > 0) {
+                if (items.length > 0) {
                     items.forEach(i => i.style.display = 'block');
                     list.classList.remove('d-none');
                 }
             });
 
-            input.addEventListener('input', function() {
+            input.addEventListener('input', function () {
                 const val = this.value.toLowerCase().trim();
                 let hasVisible = false;
-                hidden.value = ''; 
+                hidden.value = '';
                 actualizarHash();
                 items.forEach(item => {
                     const text = item.textContent.toLowerCase();
-                    if (text.includes(val)) { item.style.display = 'block'; hasVisible = true; } 
+                    if (text.includes(val)) { item.style.display = 'block'; hasVisible = true; }
                     else { item.style.display = 'none'; }
                 });
                 if (hasVisible) list.classList.remove('d-none'); else list.classList.add('d-none');
             });
 
             items.forEach(item => {
-                item.addEventListener('click', function(e) {
+                item.addEventListener('click', function (e) {
                     e.preventDefault();
                     input.value = this.textContent.trim();
                     hidden.value = this.getAttribute('data-id');
@@ -1111,8 +1168,8 @@
         }
 
         // --- 3. MÁSCARA DE MONTO ---
-        displayInput.addEventListener('input', function() {
-            let val = this.value.replace(/\D/g, ''); 
+        displayInput.addEventListener('input', function () {
+            let val = this.value.replace(/\D/g, '');
             hiddenInput.value = val;
             this.value = val !== '' ? new Intl.NumberFormat('es-CO').format(val) : '';
             actualizarHash();
@@ -1125,9 +1182,9 @@
         });
 
         // --- 4. ENVÍO Y RESETEO ---
-        form.addEventListener('submit', function(e) {
+        form.addEventListener('submit', function (e) {
             e.preventDefault();
-            if(!document.getElementById('id_obligacion').value || !document.getElementById('id_banco').value) {
+            if (!document.getElementById('id_obligacion').value || !document.getElementById('id_banco').value) {
                 Swal.fire('Atención', 'Selecciona Obligación y Banco válidos.', 'warning');
                 return;
             }
@@ -1144,7 +1201,7 @@
             if (forceSave) formData.append('force_save', '1');
 
             // Limpieza de nulos antes de enviar
-            ['numero_cuota', 'pr', 'cco'].forEach(f => { if(!formData.get(f)) formData.delete(f); });
+            ['numero_cuota', 'pr', 'cco'].forEach(f => { if (!formData.get(f)) formData.delete(f); });
 
             fetch(form.action, {
                 method: 'POST',
@@ -1155,47 +1212,47 @@
                     'Accept': 'application/json'
                 }
             })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    myModal.hide();
-                    Swal.fire({
-                        title: '¡Pago Vinculado!',
-                        text: "¿Deseas adjuntar otro comprobante?",
-                        icon: 'success',
-                        showCancelButton: true,
-                        confirmButtonText: 'Sí, otro',
-                        cancelButtonText: 'Terminar',
-                        confirmButtonColor: '#198754'
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            const clieID = modalCodTercero.value;
-                            form.reset();
-                            resetFile();
-                            modalCodTercero.value = clieID;
-                            // Reset fecha a ahora mismo
-                            const ahora = new Date();
-                            ahora.setMinutes(ahora.getMinutes() - ahora.getTimezoneOffset());
-                            fechaPagoInput.value = ahora.toISOString().slice(0, 16);
-                            actualizarHash();
-                            myModal.show();
-                        }
-                    });
-                } else if (data.is_duplicate) {
-                    Swal.fire({
-                        title: '¿Duplicado?',
-                        text: data.message,
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonText: 'Sí, forzar',
-                        confirmButtonColor: '#f1416c'
-                    }).then((r) => { if(r.isConfirmed) ejecutarEnvio(true); });
-                } else {
-                    Swal.fire('Error', data.message, 'error');
-                }
-            })
-            .catch(() => Swal.fire('Error', 'Servidor no responde', 'error'))
-            .finally(() => { btnSubmit.disabled = false; btnSubmit.innerHTML = originalText; });
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        myModal.hide();
+                        Swal.fire({
+                            title: '¡Pago Vinculado!',
+                            text: "¿Deseas adjuntar otro comprobante?",
+                            icon: 'success',
+                            showCancelButton: true,
+                            confirmButtonText: 'Sí, otro',
+                            cancelButtonText: 'Terminar',
+                            confirmButtonColor: '#198754'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                const clieID = modalCodTercero.value;
+                                form.reset();
+                                resetFile();
+                                modalCodTercero.value = clieID;
+                                // Reset fecha a ahora mismo
+                                const ahora = new Date();
+                                ahora.setMinutes(ahora.getMinutes() - ahora.getTimezoneOffset());
+                                fechaPagoInput.value = ahora.toISOString().slice(0, 16);
+                                actualizarHash();
+                                myModal.show();
+                            }
+                        });
+                    } else if (data.is_duplicate) {
+                        Swal.fire({
+                            title: '¿Duplicado?',
+                            text: data.message,
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonText: 'Sí, forzar',
+                            confirmButtonColor: '#f1416c'
+                        }).then((r) => { if (r.isConfirmed) ejecutarEnvio(true); });
+                    } else {
+                        Swal.fire('Error', data.message, 'error');
+                    }
+                })
+                .catch(() => Swal.fire('Error', 'Servidor no responde', 'error'))
+                .finally(() => { btnSubmit.disabled = false; btnSubmit.innerHTML = originalText; });
         }
 
         // --- 5. ARCHIVOS Y PORTAPAPELES ---
@@ -1203,7 +1260,7 @@
             if (!file) return;
             const valid = ['image/jpeg', 'image/png', 'application/pdf'];
             if (!valid.includes(file.type)) return Swal.fire('Error', 'Solo imágenes o PDF.', 'warning');
-            
+
             const dt = new DataTransfer(); dt.items.add(file);
             fileInput.files = dt.files;
 
@@ -1211,7 +1268,7 @@
             document.getElementById('file_name_preview').textContent = file.name;
             const img = document.getElementById('image_preview');
             const pdf = document.getElementById('pdf_preview_icon');
-            
+
             if (file.type.startsWith('image/')) {
                 const reader = new FileReader();
                 reader.onload = (e) => { img.src = e.target.result; img.classList.remove('d-none'); pdf.classList.add('d-none'); };
@@ -1219,7 +1276,7 @@
             } else { img.classList.add('d-none'); pdf.classList.remove('d-none'); }
         }
 
-        fileInput.addEventListener('change', e => { if(e.target.files.length) procesarArchivo(e.target.files[0]); });
+        fileInput.addEventListener('change', e => { if (e.target.files.length) procesarArchivo(e.target.files[0]); });
         window.addEventListener('paste', e => { if (modalElement.classList.contains('show') && e.clipboardData.files.length) procesarArchivo(e.clipboardData.files[0]); });
         dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
         dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
@@ -1227,7 +1284,7 @@
 
         // --- 6. GESTIÓN DE TIPIFICACIÓN (EXTERNO) ---
         document.querySelectorAll('.type-trigger').forEach(radio => {
-            radio.addEventListener('change', function() {
+            radio.addEventListener('change', function () {
                 if (this.value == '3') {
                     const cID = document.getElementById('client_id')?.value || '';
                     if (!cID) { Swal.fire('Error', 'Selecciona un cliente.', 'warning'); this.checked = false; return; }
@@ -1242,9 +1299,9 @@
     function resetFile() {
         document.getElementById('archivo_soporte').value = '';
         const prev = document.getElementById('preview_container');
-        if(prev) prev.classList.add('d-none');
+        if (prev) prev.classList.add('d-none');
         ['numero_cuota', 'pr', 'cco', 'id_obligacion', 'id_banco', 'search_obligacion', 'search_banco', 'monto_pagado', 'monto_pagado_display'].forEach(id => {
-            const el = document.getElementById(id); if(el) el.value = '';
+            const el = document.getElementById(id); if (el) el.value = '';
         });
     }
 </script>
@@ -1252,7 +1309,7 @@
 
 <script>
     // Exponer función global para calcular fechas automáticas de la agenda
-    window.addDays = function(days) {
+    window.addDays = function (days) {
         const date = new Date();
         // Sumar los días solicitados
         date.setDate(date.getDate() + days);
@@ -1276,7 +1333,7 @@
     const showTab = document.querySelectorAll('#TabMenu .nav-link');
     const formprogress = document.getElementById('form-progress');
     showTab.forEach(btn => {
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', function () {
             let progreso = this.getAttribute('data-progress');
             formprogress.style.width = progreso + '%';
             showTab.forEach(b => b.classList.remove('active'));
@@ -1317,7 +1374,7 @@
     $('input[name="handled_by_agent"]').on('change', toggleAssignment);
     toggleAssignment();
 
-    const CRMApp = (function($) {
+    const CRMApp = (function ($) {
         'use strict';
         // =====================================================================
         // 1. CONFIGURACIÓN Y SELECTORES (DOM Cache)
@@ -1388,7 +1445,7 @@
             showLoader: () => $(DOM.loader).show(),
             hideLoader: () => $(DOM.loader).hide(),
 
-            markError: function(element, isWrapper = false) {
+            markError: function (element, isWrapper = false) {
                 const $el = $(element);
                 if (!$el.prop('required') && !isWrapper) {
                     return;
@@ -1402,7 +1459,7 @@
                 }
             },
 
-            cleanError: function(element, isWrapper = false) {
+            cleanError: function (element, isWrapper = false) {
                 const $el = $(element);
                 if (isWrapper || $el.hasClass('grid-gallery') || $el.hasClass('bg-light')) {
                     $el.removeClass('sync-wrapper-error container-error');
@@ -1418,7 +1475,7 @@
                 }
             },
 
-            showTab: function(tabId) {
+            showTab: function (tabId) {
 
                 let tabElement;
                 if (tabId === 'resultado-tab') {
@@ -1437,7 +1494,7 @@
             },
 
 
-            handleFileSelect: function(input) {
+            handleFileSelect: function (input) {
                 const label = document.getElementById('file-label');
                 const dropZone = document.getElementById('drop-zone');
                 const previewWrapper = document.getElementById('image-preview-wrapper');
@@ -1478,7 +1535,7 @@
         // 3. MÓDULO DE CLIENTES Y TERCEROS
         // =====================================================================
         const ClientManager = {
-            toggleThirdParty: function() {
+            toggleThirdParty: function () {
                 const isThird = $(DOM.thirdPartyCheck).is(':checked');
                 $(DOM.thirdFields).toggle(isThird);
 
@@ -1490,7 +1547,7 @@
                 }
             },
 
-            generateAvatar: function(name) {
+            generateAvatar: function (name) {
                 const colors = ['#6B9BD1', '#7FA9D3', '#93B7D5', '#A7C5D7', '#BBD3D9'];
                 const initials = name.split(' ').map(n => n.charAt(0)).join('').toUpperCase().substring(
                     0, 2);
@@ -1501,7 +1558,7 @@
                 };
             },
 
-            updateClientCard: function(clientId) {
+            updateClientCard: function (clientId) {
                 if (!clientId) {
                     $(DOM.clientCard).fadeOut();
                     $(DOM.historySection).fadeOut();
@@ -1522,11 +1579,11 @@
                 );
 
                 $.ajax({
-                        url: url,
-                        type: 'GET',
-                        dataType: 'json',
-                        timeout: 15000
-                    })
+                    url: url,
+                    type: 'GET',
+                    dataType: 'json',
+                    timeout: 15000
+                })
                     .done(data => {
                         if (data.error) throw new Error(data.error);
                         const avatar = ClientManager.generateAvatar(data.nom_ter || '');
@@ -1556,7 +1613,7 @@
         // 4. MÓDULO DEL CRONÓMETRO (MODIFICADO PARA PAUSA/REANUDAR)
         // =====================================================================
         const Timer = {
-            start: function(resume = false) {
+            start: function (resume = false) {
                 if (!resume) {
                     this.stop();
                     state.startTime = new Date();
@@ -1581,7 +1638,7 @@
                     }
                 }, 1000);
             },
-            pause: function() {
+            pause: function () {
                 if (state.isPaused) {
                     this.start(true); // Reanudar
                 } else {
@@ -1596,11 +1653,11 @@
                     $('#btn-timer-toggle').html('<i class="bi bi-play"></i>').attr('title', 'Reanudar');
                 }
             },
-            stop: function() {
+            stop: function () {
                 if (state.startTimeInterval) clearInterval(state.startTimeInterval);
                 state.startTimeInterval = null;
             },
-            reset: function() {
+            reset: function () {
                 this.stop();
                 state.startTime = null;
                 state.accumulatedTime = 0;
@@ -1612,13 +1669,13 @@
                 });
                 $('#btn-timer-toggle').html('<i class="bi bi-pause"></i>').attr('title', 'Pausar');
             },
-            updateDisplay: function(seconds) {
+            updateDisplay: function (seconds) {
                 $(DOM.durationInp).val(seconds);
                 $(DOM.durationDisp).val(`${seconds} segundos`);
 
                 const mins = Math.floor(seconds / 60);
                 const secs = seconds % 60;
-                $(DOM.timer).text(`${mins < 10 ? '0'+mins : mins}:${secs < 10 ? '0'+secs : secs}`);
+                $(DOM.timer).text(`${mins < 10 ? '0' + mins : mins}:${secs < 10 ? '0' + secs : secs}`);
             }
         };
 
@@ -1626,7 +1683,7 @@
         // 5. MÓDULO DE HISTORIAL Y ESCALAMIENTO
         // =====================================================================
         const HistoryManager = {
-            updateVisibility: function() {
+            updateVisibility: function () {
                 if ($(DOM.clientSelect).val()) {
                     $('#no-client-selected').hide();
                     $(DOM.historySection).show();
@@ -1636,7 +1693,7 @@
                 }
             },
 
-            renderFull: function(historyData) {
+            renderFull: function (historyData) {
                 const $list = $(DOM.historyList);
                 const $listBottom = $('#interaction-history-list-bottom');
 
@@ -1658,7 +1715,7 @@
                 }
             },
 
-            buildCardHtml: function(item) {
+            buildCardHtml: function (item) {
                 const url = `/interactions/${item.id}/show`;
                 const isSuccess = ['2', '3', '5'].includes(item.outcome);
                 const isPending = ['1', '4'].includes(item.outcome);
@@ -1698,7 +1755,7 @@
             `;
             },
 
-            selectParent: function(id, info) {
+            selectParent: function (id, info) {
                 $(DOM.parentIdInp).val(id);
                 $('#selected-parent-text').text(info);
                 $('#selected-parent-info').fadeIn();
@@ -1709,13 +1766,13 @@
                 toastr.info('Interacción vinculada');
             },
 
-            clearParent: function() {
+            clearParent: function () {
                 $(DOM.parentIdInp).val('');
                 $('#selected-parent-info').fadeOut();
                 $('.history-item > div').removeClass('border-dark');
             },
 
-            restoreParentSelection: function() {
+            restoreParentSelection: function () {
                 const parentId = $(DOM.parentIdInp).val();
                 if (parentId) {
                     const $items = $(`.history-list #history-item-${parentId} > div`);
@@ -1726,7 +1783,7 @@
                 }
             },
 
-            handleAjaxError: function(xhr, status, error) {
+            handleAjaxError: function (xhr, status, error) {
                 console.error('AJAX Error:', error);
                 const msg = xhr.responseJSON?.error || (status === 'timeout' ? 'Timeout.' :
                     'Error de conexión.');
@@ -1748,7 +1805,7 @@
         // 7. MÓDULO DE VALIDACIÓN Y SINCRONIZACIÓN (Form Validator)
         // =====================================================================
         const Validation = {
-            toggleResponsibility: function() {
+            toggleResponsibility: function () {
                 UI.cleanError(DOM.areaSelect);
                 UI.cleanError(DOM.cargoSelect);
 
@@ -1761,7 +1818,7 @@
                 }
             },
 
-            validateStep1: function() {
+            validateStep1: function () {
                 let isValid = true;
                 let firstErr = null;
 
@@ -1805,7 +1862,7 @@
                 // 4. Asignación (Linea Obligación)
                 let allLineasValid = true;
                 const $allLineas = $(DOM.lineaSelect);
-                $allLineas.each(function() {
+                $allLineas.each(function () {
                     if (!$(this).val()) {
                         UI.markError(
                             this); // Marca error en el select específico que esté vacío
@@ -1818,7 +1875,7 @@
                 if (!allLineasValid) {
                     isValid = false;
                     // Guardamos el primer select con error para el scroll
-                    firstErr = firstErr || $allLineas.filter(function() {
+                    firstErr = firstErr || $allLineas.filter(function () {
                         return !$(this).val();
                     }).first();
                 }
@@ -1838,7 +1895,7 @@
                 };
             },
 
-            submitForm: function(e) {
+            submitForm: function (e) {
                 console.log('submit ejecutado');
                 e.preventDefault();
                 Timer.stop(); // Fija la duración final
@@ -1874,7 +1931,7 @@
         };
 
         const SyncManager = {
-            syncFromClient: function() {
+            syncFromClient: function () {
                 const clientId = $(DOM.clientSelect).val();
                 if (!clientId) return Swal.fire('Aviso', 'Selecciona un cliente.', 'warning');
 
@@ -1894,7 +1951,7 @@
                     btn.html(ogHtml);
                 }, 800);
             },
-            syncToClient: function() {
+            syncToClient: function () {
                 const clientId = $(DOM.clientSelect).val();
                 const distId = $(DOM.distritoSelect).val();
 
@@ -1980,13 +2037,13 @@
                     })
                 },
                 language: {
-                    inputTooShort: function() {
+                    inputTooShort: function () {
                         return 'Ingresa 3 letras...';
                     },
-                    noResults: function() {
+                    noResults: function () {
                         return 'No hay usuarios.';
                     },
-                    searching: function() {
+                    searching: function () {
                         return 'Buscando...';
                     }
                 }
@@ -2002,7 +2059,7 @@
             // =================================================================
             // NUEVO: LÓGICA PARA PEGAR ARCHIVOS CON CTRL+V (PORTAPAPELES)
             // =================================================================
-            document.addEventListener('paste', function(e) {
+            document.addEventListener('paste', function (e) {
                 // 1. Obtener archivos del portapapeles
                 let pastedFiles = e.clipboardData.files;
                 if (pastedFiles.length === 0) return; // Si es solo texto, lo ignoramos
@@ -2025,26 +2082,26 @@
             });
 
             // Navegación Tabs (Tu código existente sigue aquí abajo...)
-            $('.tab-button').on('click', function() {
+            $('.tab-button').on('click', function () {
                 UI.showTab($(this).data('tab'));
             });
             // Navegación Tabs
-            $('.tab-button').on('click', function() {
+            $('.tab-button').on('click', function () {
                 UI.showTab($(this).data('tab'));
             });
 
             // Auto-Guardado y Limpieza Visual
-            $(DOM.form).on('input change', 'input, textarea, select', function() {
+            $(DOM.form).on('input change', 'input, textarea, select', function () {
                 UI.cleanError(this);
             });
 
             // Select2 Limpieza visual
-            $(DOM.form).on('select2:select', '.select2', function() {
+            $(DOM.form).on('select2:select', '.select2', function () {
                 UI.cleanError(this);
             });
 
             // Eventos Paso 1 y Continuar
-            $(DOM.clientSelect).on('change', function() {
+            $(DOM.clientSelect).on('change', function () {
                 ClientManager.updateClientCard($(this).val());
             });
             $('input[name="caller_type"]').on('change', ClientManager.toggleThirdParty);
@@ -2069,7 +2126,7 @@
             // Limpieza de radios complejos
             const radioNames = ['interaction_channel', 'interaction_type', 'parentesco_quien_llama'];
             radioNames.forEach(name => {
-                $(`input[name="${name}"]`).on('change', function() {
+                $(`input[name="${name}"]`).on('change', function () {
                     const map = {
                         interaction_channel: '#container-channel',
                         interaction_type: '#container-type',
@@ -2081,7 +2138,7 @@
             });
 
             // Eventos Historial / Planificación
-            $('input[name="outcome"]').on('change', function() {
+            $('input[name="outcome"]').on('change', function () {
                 const val = $(this).next('label').text().trim().toLowerCase();
                 const requiresPlanning = $(this).data('requires-planning') === true || $(this).data(
                     'requires-planning') === 'true';
@@ -2094,7 +2151,7 @@
                 }
             });
 
-            $(document).on('click', '.btn-escalate', function() {
+            $(document).on('click', '.btn-escalate', function () {
                 HistoryManager.selectParent($(this).data('id'), $(this).data('info'));
             });
             $('#clear-parent-selection').on('click', HistoryManager.clearParent);
@@ -2106,7 +2163,7 @@
             // =================================================================
             // BOTÓN LIMPIAR (A prueba de balas y versiones de SweetAlert)
             // =================================================================
-            $(document).on('click', '.btn-limpiar-borrador', function(e) {
+            $(document).on('click', '.btn-limpiar-borrador', function (e) {
                 e.preventDefault();
                 Swal.fire({
                     title: '¿Limpiar el borrador?',
@@ -2167,14 +2224,14 @@
     window.selectParentInteraction = CRMApp.selectParentInteraction;
     window.clearParentSelection = CRMApp.clearParentSelection;
 
-    document.addEventListener("DOMContentLoaded", function() {
-        document.getElementById('btn-volver').addEventListener('click', function() {
+    document.addEventListener("DOMContentLoaded", function () {
+        document.getElementById('btn-volver').addEventListener('click', function () {
             document.getElementById('home-tab').click();
         });
     });
 
     // Este bloque detecta cuando el formulario se envía y bloquea el botón
-    document.getElementById('interaction-form').addEventListener('submit', function(e) {
+    document.getElementById('interaction-form').addEventListener('submit', function (e) {
         const btn = document.getElementById('btn-submit-interaccion');
 
         // Si el formulario es válido, nos aseguramos de matar el caché
@@ -2187,7 +2244,7 @@
     });
 
     // Este bloque Motivo / Tipificación *
-    document.getElementById('search-type').addEventListener('input', function(e) {
+    document.getElementById('search-type').addEventListener('input', function (e) {
         const term = e.target.value.toLowerCase();
         // Buscamos todos los labels dentro del contenedor
         const labels = document.querySelectorAll('#container-list-types label');
@@ -2207,7 +2264,7 @@
     });
 
     // Líneas de Obligación *
-    $(document).ready(function() {
+    $(document).ready(function () {
         // 1. CONFIGURACIÓN GLOBAL
         const select2Options = {
             theme: 'bootstrap-5',
@@ -2219,35 +2276,46 @@
         // 2. CAPTURAR EL TEMPLATE LIMPIO
         // Guardamos el HTML del primer item antes de inicializar Select2
         const $masterRow = $('.linea-item-wrapper').first().clone();
-        
+
         // 3. INICIALIZAR EL PRIMER SELECT
         $('.select2-linea').select2(select2Options);
 
         // 4. EVENTO AGREGAR (+)
-        $('#btn-add-linea').on('click', function() {
-            // Clonamos nuestra "Master Row" que está limpia de Select2
-            let $newRow = $masterRow.clone();
+        // 4. EVENTO AGREGAR (+)
+        $('#btn-add-linea').on('click', function () {
+            let $firstRow = $('.linea-item-wrapper').first();
 
-            // Limpiamos cualquier rastro por si acaso (buena práctica)
-            $newRow.find('select').val('').removeAttr('data-select2-id');
-            $newRow.find('option').removeAttr('data-select2-id');
-            
-            // Activamos el botón de borrar en el nuevo
-            $newRow.find('.btn-remove-linea').removeClass('d-none');
+            // 1. Destruimos Select2 temporalmente en el original para hacer un clon limpio
+            $firstRow.find('.select2-linea').select2('destroy');
 
-            // Insertamos antes del botón +
+            // 2. Clonamos el primer item
+            let $newRow = $firstRow.clone();
+
+            // 3. Limpiamos el valor seleccionado en el clon
+            $newRow.find('select').val('');
+
+            // 4. Creamos el botón de eliminar
+            let btnDelete = `
+    <button type="button" class="btn btn-outline-danger border-0 ps-1 pe-1 btn-remove-linea" title="Eliminar">
+        <i class="bi bi-x-circle-fill"></i>
+    </button>`;
+
+            // 5. Limpiamos basura clonada y AÑADIMOS EL BOTÓN AL CONTENEDOR FLEX
+            $newRow.find('.btn-remove-linea').remove(); // Evita duplicados si clonas una fila que ya tenía botón
+            $newRow.append(btnDelete); // <-- Cambio clave: se usa append directamente en $newRow
+
+            // 6. Insertamos el clon antes del botón de agregar (+)
             $(this).before($newRow);
 
-            // INICIALIZAMOS Select2 SOLO en este nuevo elemento
+            // 7. Volvemos a inicializar Select2 usando tus opciones en ambos elementos
+            $firstRow.find('.select2-linea').select2(select2Options);
             $newRow.find('.select2-linea').select2(select2Options);
         });
 
-        // 5. EVENTO ELIMINAR
-        $(document).on('click', '.btn-remove-linea', function() {
-            // Validación para no borrar el único que quede
-            if ($('.linea-item-wrapper').length > 1) {
-                $(this).closest('.linea-item-wrapper').remove();
-            }
+        // Evento delegado para eliminar la fila (funciona para elementos dinámicos)
+        $(document).on('click', '.btn-remove-linea', function (e) {
+            e.preventDefault(); // Evita cualquier comportamiento por defecto del botón
+            $(this).closest('.linea-item-wrapper').remove();
         });
     });
 </script>
