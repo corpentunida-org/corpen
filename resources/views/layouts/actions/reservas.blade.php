@@ -4,11 +4,11 @@
         <span class="nxl-mtext">Reservas</span><span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
     </a>
     
-    @candirect('reservas.Reserva.historico')
+    {{-- @candirect('reservas.Reserva.historico')
     <ul class="nxl-submenu">
         <li class="nxl-item"><a class="nxl-link" href="{{ route('reserva.dashboard') }}">Dashboard</a></li>
     </ul>
-    @endcandirect
+    @endcandirect --}}
 
     @candirect('reservas.Inmueble.create')
     <ul class="nxl-submenu">

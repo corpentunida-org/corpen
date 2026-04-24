@@ -206,15 +206,13 @@ Route::prefix('seguros')->group(function () {
         ->name('seguros.reclamacion.download');
     Route::post('poliza/upload', [SegPolizaController::class, 'upload'])->name('seguros.poliza.upload');
     Route::post('poliza/create/upload', [SegPolizaController::class, 'uploadCreate'])->name('seguros.poliza.createupload');
-    Route::get('/poliza/create/upload', function () {
-        return view('seguros.polizas.upload');
-    })->name('seguros.poliza.viewupload');
+    Route::get('/poliza/create/upload', function () {return view('seguros.polizas.upload');})->name('seguros.poliza.viewupload');
+    Route::post('poliza/nuevo-convenio/upload', [SegPolizaController::class, 'masivamentenuevoconvenio'])->name('seguros.poliza.nuevo-convenio');
     Route::get('/seguros/cxc', [SegPolizaController::class, 'exportcxc'])->name('seguros.poliza.download');
     Route::get('/dashboard/reclamaciones', [SegReclamacionesController::class, 'dashboard'])->name('seguros.reclamaciones.dashboard');
     Route::get('/planes/{edad}', [SegPlanController::class, 'getPlanes'])->name('seguros.planes.getplanes');
-    Route::resource('beneficios', SegBeneficiosController::class)
-        ->names('seguros.beneficios')
-        ->middleware(['auth', 'candirect:seguros.beneficios.index']);
+    Route::get('/polizas/polizas-no-actualizadas', [SegPolizaController::class, 'listarPolizas'])->name('seguros.poliza.listar-no-actualizadas');
+    Route::resource('beneficios', SegBeneficiosController::class)->names('seguros.beneficios')->middleware(['auth', 'candirect:seguros.beneficios.index']);
     Route::post('beneficios/list', [SegBeneficiosController::class, 'listFilter'])->name('seguros.beneficios.list');
     Route::post('/seguros/filtopolizas', [SegBeneficiosController::class, 'exportFiltroPdf'])->name('seguros.poliza.filtros');
     Route::post('/seguros/filtopolizas/excel', [SegBeneficiosController::class, 'exportexcel'])
