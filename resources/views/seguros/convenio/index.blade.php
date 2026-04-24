@@ -39,7 +39,8 @@
                                 <div>
                                     <span class="text-truncate-1-line lead_date">Fecha de inicio
                                         {{ $convenio->fecha_inicio }}</span>
-                                    <span class="text-truncate-1-line lead_date">Fecha fin {{ $convenio->fecha_fin }}</span>
+                                    <span class="text-truncate-1-line lead_date">Fecha fin
+                                        {{ $convenio->fecha_fin }}</span>
                                     <span class="fw-bold text-black">
                                         Contrato {{ substr($convenio->nombre, 0, -4) }}
                                         <a href="{{ route('seguros.convenio.show', ['convenio' => $convenio->id]) }}"
@@ -62,6 +63,16 @@
 
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div class="card stretch stretch-full">
+        <div class="card-body">
+            <form action="{{ route('seguros.poliza.nuevo-convenio') }}" method="POST" enctype="multipart/form-data">
+                @csrf
+                <input type="file" name="archivo_csv" required>
+                <button type="submit">Actualizar pólizas nuevo convenio</button>
+            </form>
         </div>
     </div>
 </x-base-layout>

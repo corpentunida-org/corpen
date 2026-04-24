@@ -165,8 +165,6 @@
         </div>
     @endif
 
-
-
     <div class="col-lg-12">
         <div class="card" data-scrollbar-target="#psScrollbarInit">
             <div class="card-header">

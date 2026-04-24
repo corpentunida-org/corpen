@@ -314,6 +314,82 @@ class SegPolizaController extends Controller
             ->with('success', "Se actualizaron exitosamente {$updatedCount} registros")
             ->with('failedRows', $failedRows);
     }
+    public function listarPolizas()
+    {
+        $noActualizados = DB::table('seg_polizas_temp_no_match')->get();
+
+        return view('seguros.convenio.listarpolizas', [
+            'no_actualizados' => $noActualizados,
+        ]);
+    }
+    public function masivamentenuevoconvenio(Request $request)
+    {
+        try {
+            DB::beginTransaction();
+            $request->validate([
+                'archivo_csv' => 'required|file|mimes:csv,txt',
+            ]);
+            $file = $request->file('archivo_csv');
+
+            DB::statement("
+                CREATE TABLE IF NOT EXISTS seg_polizas_temp_no_match (
+                    seg_asegurado_id BIGINT UNSIGNED UNIQUE,
+                    fecha_novedad DATE,
+                    extra_prima INT,
+                    seg_plan_id INT,
+                    valor_prima BIGINT,
+                    valor_asegurado BIGINT,
+                    valorpagaraseguradora BIGINT,
+                    primapagar BIGINT
+                )");
+            $handle = fopen($file->getRealPath(), 'r');
+            fgetcsv($handle);
+            while (($data = fgetcsv($handle, 1000, ',')) !== false) {
+                DB::table('seg_polizas_temp_no_match')->insertOrIgnore([
+                    'seg_asegurado_id' => $data[0] ?? null,
+                    'fecha_novedad' => !empty($data[1]) ? $data[1] : null,
+                    'extra_prima' => !empty($data[2]) ? $data[2] : 0,
+                    'seg_plan_id' => !empty($data[3]) ? $data[3] : 77,
+                    'valor_prima' => trim($data[4]) === '' ? null : $data[4],
+                    'valor_asegurado' => trim($data[5]) === '' ? null : $data[5],
+                    'valorpagaraseguradora' => trim($data[6]) === '' ? null : $data[6],
+                    'primapagar' => trim($data[7]) === '' ? null : $data[7],
+                ]);
+            }
+
+            fclose($handle);
+            $updated = DB::update("
+                UPDATE SEG_polizas p
+                JOIN seg_polizas_temp_no_match t
+                ON p.seg_asegurado_id = t.seg_asegurado_id
+                SET
+                    p.fecha_novedad = t.fecha_novedad,
+                    p.extra_prima = t.extra_prima,
+                    p.seg_plan_id = t.seg_plan_id,
+                    p.valor_prima = t.valor_prima,
+                    p.valor_asegurado = t.valor_asegurado,
+                    p.valorpagaraseguradora = t.valorpagaraseguradora,
+                    p.primapagar = t.primapagar,
+                    p.updated_at = NOW()
+                ");
+
+            $noActualizados = DB::select("
+                SELECT t.*
+                FROM seg_polizas_temp_no_match t
+                LEFT JOIN SEG_polizas p
+                ON p.seg_asegurado_id = t.seg_asegurado_id
+                WHERE p.seg_asegurado_id IS NULL
+            ");
+
+            DB::commit();
+            return redirect()->route('seguros.poliza.listar-no-actualizadas')->with('success', "Se actualizaron {$updated} pólizas");
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()
+                ->route('seguros.poliza.listar-no-actualizadas')
+                ->with('error', 'Error al procesar el archivo: ' . $e->getMessage());
+        }
+    }
 
     public function upload(Request $request)
     {
