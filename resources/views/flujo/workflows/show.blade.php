@@ -572,12 +572,29 @@
                                                 {{ $task->fecha_limite->format('d M') }}</span>
                                         </div>
                                     </div>
-                                    <a href="{{ route('flujo.tasks.edit', $task->id) }}"
-                                        style="color: #94a3b8; padding: 10px; margin-left: 5px; transition: 0.2s;"
-                                        onmouseover="this.style.color='var(--primary)'"
-                                        onmouseout="this.style.color='#94a3b8'">
-                                        <i class="fas fa-chevron-right"></i>
-                                    </a>
+                                    
+                                    {{-- CONTENEDOR DE ACCIONES (VISOR Y GESTIONAR) --}}
+                                    <div style="display: flex; align-items: center; gap: 2px;">
+                                        
+                                        {{-- BOTÓN VISOR (SHOW) --}}
+                                        <a href="{{ route('flujo.tasks.show', $task->id) }}"
+                                            title="Ver Detalles de Tarea"
+                                            style="color: #94a3b8; padding: 10px; transition: 0.2s;"
+                                            onmouseover="this.style.color='#4f46e5'"
+                                            onmouseout="this.style.color='#94a3b8'">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+
+                                        {{-- BOTÓN GESTIONAR / EDITAR --}}
+                                        <a href="{{ route('flujo.tasks.edit', $task->id) }}"
+                                            title="Gestionar Tarea"
+                                            style="color: #94a3b8; padding: 10px; transition: 0.2s;"
+                                            onmouseover="this.style.color='var(--primary)'"
+                                            onmouseout="this.style.color='#94a3b8'">
+                                            <i class="fas fa-cog"></i>
+                                        </a>
+                                        
+                                    </div>
                                 </div>
                             @empty
                                 <div style="text-align: center; padding: 3rem; color: #94a3b8;">

@@ -235,32 +235,64 @@
             display: none;
         }
 
+        /* --- MEJORA UX: Timeline para los comentarios --- */
+        .comment-thread {
+            position: relative;
+            padding-left: 30px; 
+        }
+
+        .comment-thread::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 12px; 
+            width: 2px;
+            background: #e2e8f0;
+            border-radius: 2px;
+        }
+
         .comment-bubble {
-            background: #f8fafc;
+            background: var(--white);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-md);
-            padding: 15px;
-            margin-bottom: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            position: relative;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            transition: transform 0.2s, box-shadow 0.2s;
         }
 
-        .comment-head {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 8px;
+        .comment-bubble:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.05);
+            border-color: #cbd5e1;
         }
 
-        .avatar-circle {
-            width: 24px;
-            height: 24px;
-            background: var(--accent-blue);
+        .comment-bubble .avatar-circle {
+            position: absolute;
+            left: -42px; 
+            top: 15px;
+            width: 28px;
+            height: 28px;
+            background: var(--brand-primary);
             color: white;
+            border: 3px solid var(--bg-neutral); 
+            box-shadow: 0 0 0 1px #e2e8f0;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 10px;
             font-weight: 700;
+        }
+        /* ----------------------------------------------- */
+
+        .comment-head {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
         }
 
         .user-name {
@@ -393,27 +425,82 @@
 
     <div class="task-edit-wrapper">
         
-        {{-- Encabezado de Acción --}}
-        <header class="form-header">
-            <div class="header-content" style="width: 100%; display: flex; justify-content: space-between;">
-                
-                <div style="display: flex; align-items: center; gap: 20px;">
+        {{-- Header Minimalista y Amigable (Bootstrap Nativo) --}}
+        <header class="bg-white rounded-4 shadow-sm border p-4 mb-4">
+            
+            {{-- Fila Superior: Navegación y Acciones Globales --}}
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-3">
+                <div class="d-flex flex-wrap gap-2">
                     @if($task->workflow)
-                        <a href="{{ route('flujo.workflows.show', $task->workflow->id) }}" class="btn-back-minimal" title="Volver al Workflow">
-                            <i class="fas fa-arrow-left"></i>
+                        <a href="{{ route('flujo.workflows.show', $task->workflow->id) }}" 
+                           class="btn btn-sm btn-light text-secondary rounded-pill fw-semibold px-3 border" title="Volver al Workflow">
+                            <i class="fas fa-arrow-left me-1"></i> Proyecto
                         </a>
                     @endif
+                    <a href="{{ route('flujo.tasks.index') }}" 
+                       class="btn btn-sm btn-light text-secondary rounded-pill fw-semibold px-3 border">
+                        <i class="fas fa-tasks me-1"></i> Tareas
+                    </a>
                     
-                    <div class="header-text">
-                        <h1 class="main-title">Edición de Tarea <span class="text-accent">#{{ $task->id }}</span></h1>
-                        <p class="main-subtitle">Ajuste parámetros operativos y gestione el hilo de comunicación.</p>
-                    </div>
+                    {{-- MEJORA UX 2: Salto rápido a la vista de detalles --}}
+                    <a href="{{ route('flujo.tasks.show', $task->id) }}" 
+                       class="btn btn-sm btn-light text-primary rounded-pill fw-semibold px-3 border border-primary-subtle" title="Ver cómo se ve esta tarea">
+                        <i class="fas fa-eye me-1"></i> Visor
+                    </a>
                 </div>
-
-                <a href="{{ route('flujo.tasks.index') }}" class="btn-back-minimal" style="width: auto; padding: 0 15px; font-weight: 600; font-size: 13px;">
-                    Todas las Tareas
-                </a>
+                
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-light text-secondary border px-3 py-2 rounded-pill fw-semibold d-none d-sm-inline-block">
+                        <span class="text-primary">Edición</span> / #{{ $task->id }}
+                    </span>
+                    
+                    {{-- MEJORA UX 1: Botón de Guardado Superior (Vinculado al ID del formulario abajo) --}}
+                    <button type="submit" form="task-update-form" class="btn btn-sm btn-dark rounded-pill fw-semibold px-4 shadow-sm d-flex align-items-center gap-2">
+                        <i class="fas fa-save"></i> <span class="d-none d-md-inline">Guardar Cambios</span>
+                    </button>
+                </div>
             </div>
+
+            {{-- Fila Inferior: Título, Meta-datos y Badges --}}
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-3">
+                
+                <div>
+                    <h1 class="h2 fw-bolder text-dark mb-1">Edición de Tarea</h1>
+                    {{-- MEJORA UX 3: Feedback de última actividad --}}
+                    <p class="text-muted small mb-3 mb-md-0">
+                        <i class="fas fa-history me-1"></i> Última actualización: {{ $task->updated_at->diffForHumans() }}
+                    </p>
+                </div>
+                
+                <div class="d-flex flex-wrap align-items-center gap-2 text-secondary small fw-medium">
+                    
+                    {{-- Badge de Estado con "Puntito" de color --}}
+                    <span class="badge bg-light text-dark border px-3 py-2 rounded-pill d-flex align-items-center gap-2 shadow-sm">
+                        @if(in_array(strtolower($task->estado), ['completado', 'finalizado', 'revisado']))
+                            <i class="fas fa-circle text-success" style="font-size: 8px;"></i>
+                        @elseif(strtolower($task->estado) == 'en_proceso')
+                            <i class="fas fa-circle text-primary" style="font-size: 8px;"></i>
+                        @else
+                            <i class="fas fa-circle text-warning" style="font-size: 8px;"></i>
+                        @endif
+                        {{ str_replace('_', ' ', ucfirst($task->estado)) }}
+                    </span>
+
+                    {{-- Badge de Prioridad --}}
+                    <span class="badge bg-light text-dark border px-3 py-2 rounded-pill d-flex align-items-center gap-2 shadow-sm">
+                        @if(strtolower($task->prioridad) == 'alta')
+                            <i class="fas fa-flag text-danger"></i>
+                        @elseif(strtolower($task->prioridad) == 'media')
+                            <i class="fas fa-flag text-warning"></i>
+                        @else
+                            <i class="fas fa-flag text-secondary"></i>
+                        @endif
+                        Prioridad {{ ucfirst($task->prioridad) }}
+                    </span>
+                    
+                </div>
+            </div>
+            
         </header>
 
         {{-- Banner de Contexto de Proyecto --}}
@@ -456,7 +543,8 @@
 
                     <div class="d-flex align-items-center mb-3 p-2 bg-light border rounded">
                         <div class="form-check form-switch mb-0">
-                            <input class="form-check-input" type="checkbox" role="switch" id="devModeToggle" style="cursor: pointer;">
+                            {{-- Agregamos el atributo 'checked' aquí --}}
+                            <input class="form-check-input" type="checkbox" role="switch" id="devModeToggle" style="cursor: pointer;" checked>
                             <label class="form-check-label text-secondary fw-semibold ms-2" for="devModeToggle" style="cursor: pointer;">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-1 mb-1" viewBox="0 0 16 16">
                                     <path fill-rule="evenodd" d="M5 11.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zM3.854 2.146a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0l-.5-.5a.5.5 0 1 1 .708-.708L2 3.293l1.146-1.147a.5.5 0 0 1 .708 0zm0 4a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0l-.5-.5a.5.5 0 1 1 .708-.708L2 7.293l1.146-1.147a.5.5 0 0 1 .708 0zm0 4a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0l-.5-.5a.5.5 0 0 1 .708-.708l.146.147 1.146-1.147a.5.5 0 0 1 .708 0z"/>
@@ -473,12 +561,25 @@
                             class="form-control @error('descripcion') is-invalid @enderror">{{ old('descripcion', $task->descripcion) }}</textarea>
 
                         <div id="devModeContainer" class="border rounded p-3 bg-white shadow-sm" style="display: none;">
+                            
+                            {{-- NUEVO: Barra de progreso gerencial --}}
+                            <div id="progress-wrapper" style="display: none; margin-bottom: 15px;">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Progreso de la Tarea</span>
+                                    <span id="progress-text" style="font-size: 12px; font-weight: 800; color: var(--accent-blue);">0%</span>
+                                </div>
+                                <div style="width: 100%; height: 8px; background-color: #e2e8f0; border-radius: 10px; overflow: hidden;">
+                                    <div id="progress-bar" style="width: 0%; height: 100%; background-color: var(--accent-blue); transition: width 0.4s ease, background-color 0.4s ease;"></div>
+                                </div>
+                            </div>
+                            
                             <div id="taskList"></div>
+                            
                             <button type="button" id="addTaskBtn" class="btn btn-sm btn-outline-secondary mt-3 d-flex align-items-center">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-2" viewBox="0 0 16 16">
                                     <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
                                 </svg>
-                                Agregar Tarea
+                                Agregar Sub-tarea
                             </button>
                         </div>
                     </div>
@@ -557,7 +658,6 @@
             {{-- Columna Lateral: Canal de Feedback --}}
             <div class="form-column">
                 <div class="card-minimal feedback-section">
-                    {{-- MEJORA UX APLICADA AQUÍ --}}
                     <label class="section-label-header"><i class="fas fa-history"></i> Actualizaciones y Evidencias</label>
 
                     <form action="{{ route('flujo.comments.store') }}" method="POST" enctype="multipart/form-data" class="comment-post-box">
@@ -565,7 +665,8 @@
                         
                         <div class="d-flex align-items-center mb-3 p-2 bg-light border rounded">
                             <div class="form-check form-switch mb-0">
-                                <input class="form-check-input" type="checkbox" role="switch" id="templateToggle" onchange="alternarPlantilla(this)" style="cursor: pointer;">
+                                {{-- Agregamos el atributo 'checked' aquí --}}
+                                <input class="form-check-input" type="checkbox" role="switch" id="templateToggle" onchange="alternarPlantilla(this)" style="cursor: pointer;" checked>
                                 <label class="form-check-label text-secondary fw-semibold ms-2" for="templateToggle" style="cursor: pointer; font-size: 0.9rem;">
                                     Usar Formato de Reporte
                                 </label>
@@ -880,18 +981,49 @@
             function syncTextarea() {
                 const rows = taskList.querySelectorAll('.d-flex');
                 let newText = [];
+                let totalTasks = 0;
+                let completedTasks = 0;
 
                 rows.forEach(row => {
                     const checkbox = row.querySelector('.form-check-input');
                     const input = row.querySelector('input[type="text"]');
                     
                     if (input && input.value.trim() !== '') {
+                        totalTasks++;
+                        if (checkbox.checked) completedTasks++;
+                        
                         const mark = checkbox.checked ? '[x]' : '[ ]';
                         newText.push(`${mark} ${input.value}`);
                     }
                 });
 
                 textarea.value = newText.join('\n');
+
+                // NUEVO: Lógica de la barra de progreso
+                const progressWrapper = document.getElementById('progress-wrapper');
+                const progressBar = document.getElementById('progress-bar');
+                const progressText = document.getElementById('progress-text');
+                
+                if (totalTasks > 0) {
+                    progressWrapper.style.display = 'block';
+                    let percentage = Math.round((completedTasks / totalTasks) * 100);
+                    progressBar.style.width = percentage + '%';
+                    progressText.innerText = percentage + '%';
+                    
+                    // Semáforo de colores en la barra
+                    if (percentage === 100) {
+                        progressBar.style.backgroundColor = '#10b981'; // Verde completado
+                        progressText.style.color = '#10b981';
+                    } else if (percentage > 50) {
+                        progressBar.style.backgroundColor = '#3b82f6'; // Azul avanzado
+                        progressText.style.color = '#3b82f6';
+                    } else {
+                        progressBar.style.backgroundColor = '#f59e0b'; // Naranja iniciando
+                        progressText.style.color = '#f59e0b';
+                    }
+                } else {
+                    progressWrapper.style.display = 'none';
+                }
             }
         });
     </script>
@@ -953,45 +1085,69 @@
         });
     </script>
 
-    {{-- NUEVO: Lógica visual del Hover Preview para archivos adjuntos --}}
+    {{-- NUEVO: Lógica visual del Hover Preview para archivos adjuntos y lo otro --}}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // 1. Crear el contenedor modal flotante
+            
+            // ==========================================
+            // 1. LÓGICA DE LOS INTERRUPTORES (TOGGLES)
+            // ==========================================
+            
+            // Toggle de Formato de Reporte
+            let templateToggle = document.getElementById('templateToggle');
+            if(templateToggle && templateToggle.checked) {
+                // Simula que el usuario acaba de hacer click para forzar la lógica nativa
+                templateToggle.dispatchEvent(new Event('change'));
+            }
+            
+            // Toggle de Habilitar Checklist
+            let devToggle = document.getElementById('devModeToggle');
+            if(devToggle && devToggle.checked) {
+                // Simula que el usuario acaba de hacer click
+                devToggle.dispatchEvent(new Event('change'));
+            }
+
+            // ==========================================
+            // 2. LÓGICA DEL HOVER PREVIEW (ARCHIVOS)
+            // ==========================================
             let previewModal = document.createElement('div');
             previewModal.id = 'hover-preview-card';
+            previewModal.style.position = 'absolute';
+            previewModal.style.zIndex = '9999';
+            previewModal.style.display = 'none';
+            previewModal.style.opacity = '0';
+            previewModal.style.transition = 'opacity 0.2s ease';
+            previewModal.style.pointerEvents = 'none'; 
             document.body.appendChild(previewModal);
 
-            let hoverTimer; // Temporizador
+            let hoverTimer; 
 
-            // 2. Seleccionar los enlaces de archivos
             const triggers = document.querySelectorAll('.preview-trigger');
 
             triggers.forEach(trigger => {
-                // Cuando entra el mouse
                 trigger.addEventListener('mouseenter', function(e) {
                     const url = this.getAttribute('data-url');
                     const type = this.getAttribute('data-type');
 
-                    // Esperar 400ms antes de disparar el modal
                     hoverTimer = setTimeout(() => {
                         if (type === 'image') {
-                            previewModal.innerHTML = `<img src="${url}" alt="Vista previa de archivo">`;
+                            previewModal.innerHTML = `<img src="${url}" style="max-width:300px; border-radius:10px; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);" alt="Vista previa">`;
                         } else {
-                            // Para PDFs
-                            previewModal.innerHTML = `<iframe src="${url}#toolbar=0&navpanes=0&scrollbar=0" title="PDF Preview"></iframe>`;
+                            previewModal.innerHTML = `<iframe src="${url}#toolbar=0&navpanes=0&scrollbar=0" style="width:300px; height:400px; border:none; border-radius:10px; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);"></iframe>`;
                         }
                         
-                        // Mostrar visualmente
                         previewModal.style.display = 'block';
                         setTimeout(() => previewModal.style.opacity = '1', 10); 
                     }, 400); 
                 });
 
-                // Cuando sale el mouse
-                trigger.addEventListener('mouseleave', function(e) {
-                    clearTimeout(hoverTimer); // Cancelar la apertura si fue rápido
-                    
-                    // Ocultar y limpiar
+                trigger.addEventListener('mousemove', function(e) {
+                    previewModal.style.left = (e.pageX + 15) + 'px';
+                    previewModal.style.top = (e.pageY + 15) + 'px';
+                });
+
+                trigger.addEventListener('mouseleave', function() {
+                    clearTimeout(hoverTimer); 
                     previewModal.style.opacity = '0';
                     setTimeout(() => {
                         previewModal.style.display = 'none';
@@ -999,6 +1155,7 @@
                     }, 200); 
                 });
             });
+
         });
     </script>
 
