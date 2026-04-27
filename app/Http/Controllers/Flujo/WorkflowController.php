@@ -417,7 +417,38 @@ class WorkflowController extends Controller
             default => ['bg' => '#F1F5F9', 'text' => '#475569'],
         };
 
-        $pdf = Pdf::loadView('flujo.workflows.pdf', compact('workflow', 'progress', 'totalTasks', 'completedTasks', 'pendingTasks', 'auditEvents', 'priorityConfig', 'daysActive', 'totalComments', 'kpiDate'));
+        // --- SOLUCIÓN DE GRÁFICOS (BASE64) ---
+        $auditsCount = $auditEvents->count();
+        $json1 = '{"type":"pie","data":{"labels":["Completadas","Pendientes"],"datasets":[{"data":['.$completedTasks.','.$pendingTasks.'],"backgroundColor":["#444444","#cccccc"]}]}}';
+        $json2 = '{"type":"bar","data":{"labels":["Comentarios","Auditorías"],"datasets":[{"label":"Eventos","data":['.$totalComments.','.$auditsCount.'],"backgroundColor":["#333333","#888888"]}]},"options":{"scales":{"yAxes":[{"ticks":{"beginAtZero":true}}]}}}';
+
+        // Forzamos formato PNG en la URL
+        $chart1_url = "https://quickchart.io/chart?format=png&w=400&h=250&chart=" . urlencode($json1);
+        $chart2_url = "https://quickchart.io/chart?format=png&w=400&h=250&chart=" . urlencode($json2);
+
+        // Desactivamos verificación SSL local por si acaso y descargamos la imagen
+        $context = stream_context_create(["ssl" => ["verify_peer" => false, "verify_peer_name" => false]]);
+        
+        try {
+            $img1 = file_get_contents($chart1_url, false, $context);
+            $chart1_base64 = 'data:image/png;base64,' . base64_encode($img1);
+        } catch (\Exception $e) {
+            $chart1_base64 = ''; // Si falla, queda vacío y no rompe el PDF
+        }
+
+        try {
+            $img2 = file_get_contents($chart2_url, false, $context);
+            $chart2_base64 = 'data:image/png;base64,' . base64_encode($img2);
+        } catch (\Exception $e) {
+            $chart2_base64 = '';
+        }
+        // ------------------------------------
+
+        $pdf = Pdf::loadView('flujo.workflows.pdf', compact(
+            'workflow', 'progress', 'totalTasks', 'completedTasks', 'pendingTasks', 
+            'auditEvents', 'priorityConfig', 'daysActive', 'totalComments', 'kpiDate', 
+            'chart1_base64', 'chart2_base64' // <-- Pasamos las variables Base64 a la vista
+        ))->setOption(['isRemoteEnabled' => true]);
 
         $pdf->setPaper('a4', 'portrait');
         return $pdf->stream('informe-proyecto-' . $workflow->id . '.pdf');
