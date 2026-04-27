@@ -567,7 +567,7 @@
                             <div class="form-check form-switch mb-0">
                                 <input class="form-check-input" type="checkbox" role="switch" id="templateToggle" onchange="alternarPlantilla(this)" style="cursor: pointer;">
                                 <label class="form-check-label text-secondary fw-semibold ms-2" for="templateToggle" style="cursor: pointer; font-size: 0.9rem;">
-                                    Modo Dev (Plantilla Técnica)
+                                    Developer Mode
                                 </label>
                             </div>
                         </div>
@@ -616,7 +616,34 @@
                             <span class="user-name">{{ $comment->user->name ?? 'Sistema' }}</span>
                             <span class="comment-date">{{ $comment->created_at->diffForHumans() }}</span>
                         </div>
-                        <div class="comment-body">{{ $comment->comentario }}</div>
+                        
+                        {{-- INICIO DE LA MEJORA VISUAL PARA LA PLANTILLA --}}
+                        @php
+                            $textoRaw = trim($comment->comentario);
+                            // Detectamos si es una plantilla verificando si está envuelta en [ ]
+                            $esDevTemplate = str_starts_with($textoRaw, '[') && str_ends_with($textoRaw, ']');
+                            
+                            if ($esDevTemplate) {
+                                // Quitamos los corchetes iniciales y finales
+                                $textoLimpio = trim(substr($textoRaw, 1, -1));
+                                
+                                // 1. Escapamos HTML por seguridad (Evitar XSS en producción)
+                                $textoLimpio = e($textoLimpio);
+                                
+                                // 2. Buscamos las etiquetas en mayúsculas seguidas de ":" y las estilizamos
+                                // Esto convertirá "FECHA:" en un título azul bonito
+                                $textoFormateado = preg_replace('/([A-ZÁÉÍÓÚÑ \/]+):/', '<span style="display: block; margin-top: 14px; font-size: 10px; font-weight: 800; color: var(--accent-blue); letter-spacing: 0.5px;">$1</span>', $textoLimpio);
+                                
+                                // 3. Respetamos los saltos de línea reales y envolvemos en una caja
+                                $htmlFinal = '<div style="background: #ffffff; border: 1px solid var(--border-color); border-left: 3px solid var(--accent-blue); padding: 5px 15px 15px; border-radius: 8px; margin-top: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">' . nl2br($textoFormateado) . '</div>';
+                            } else {
+                                // Si es un comentario normal, solo aplicamos saltos de línea
+                                $htmlFinal = nl2br(e($textoRaw));
+                            }
+                        @endphp
+
+                        <div class="comment-body">{!! $htmlFinal !!}</div>
+                        {{-- FIN DE LA MEJORA --}}
 
                         @if ($comment->soporte)
                             <div class="comment-attachment">
@@ -626,7 +653,7 @@
                                         now()->addMinutes(30),
                                     );
                                     
-                                    // NUEVO: Extraemos la extensión para saber si es imagen o PDF
+                                    // Extraemos la extensión para saber si es imagen o PDF
                                     $extension = strtolower(pathinfo($comment->soporte, PATHINFO_EXTENSION));
                                     $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg']);
                                 @endphp
