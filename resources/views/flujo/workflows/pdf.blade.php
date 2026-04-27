@@ -20,6 +20,9 @@
         .page-break {
             page-break-before: always;
         }
+        .avoid-break {
+            page-break-inside: avoid;
+        }
 
         /* --- 3. ENCABEZADO Y PIE (Running Head) --- */
         header {
@@ -56,6 +59,14 @@
             font-size: 14pt; font-weight: bold; text-align: left;
             margin-bottom: 15px; color: #000;
         }
+        h3 {
+            font-size: 12pt; font-weight: bold; text-align: left;
+            margin-top: 15px; margin-bottom: 10px; color: #000;
+        }
+        h4 {
+            font-size: 12pt; font-weight: bold; font-style: italic; text-align: left;
+            margin-top: 10px; margin-bottom: 5px; color: #000;
+        }
         p {
             text-align: justify; text-indent: 0.5in; margin-bottom: 15px;
         }
@@ -69,22 +80,20 @@
         .title-page-sub { margin-bottom: 40px; }
         .title-info { margin-top: 50px; line-height: 2; }
 
-        /* --- 6. TABLAS APA --- */
+        /* --- 6. TABLAS Y FIGURAS APA --- */
         table {
             width: 100%; border-collapse: collapse;
-            font-family: Arial, sans-serif; /* Arial permitido en tablas */
+            font-family: Arial, sans-serif; /* Arial permitido en tablas APA */
             font-size: 10pt; margin-bottom: 0;
         }
         
-        /* Títulos de Tabla */
-        .table-caption {
+        .table-caption, .figure-caption {
             font-family: 'Times New Roman', serif; font-size: 12pt;
-            text-align: left; margin-bottom: 5px; margin-top: 0;
+            text-align: left; margin-bottom: 5px; margin-top: 15px;
         }
-        .table-caption strong { display: block; } /* "Tabla X" */
-        .table-caption em { font-style: italic; } /* Título descriptivo */
+        .table-caption strong, .figure-caption strong { display: block; } 
+        .table-caption em, .figure-caption em { font-style: italic; } 
 
-        /* Bordes APA */
         th {
             border-top: 1px solid #000; border-bottom: 1px solid #000;
             text-align: left; padding: 8px; font-weight: bold;
@@ -94,12 +103,14 @@
         }
         .table-end { border-bottom: 1px solid #000; }
 
-        /* --- 7. UTILIDADES VISUALES --- */
+        .figure-container { text-align: center; margin-bottom: 20px; }
+        .figure-container img { max-width: 80%; height: auto; border: 1px solid #ddd; padding: 10px; }
+
+        /* --- 7. UTILIDADES VISUALES Y PARSEADORES --- */
         .text-center { text-align: center; }
         .text-right { text-align: right; }
         .text-muted { color: #555; font-size: 9pt; font-style: italic; }
         
-        /* Barra de progreso para impresión */
         .progress-wrapper {
             border: 1px solid #000; height: 10px; width: 100%;
             background: #fff; margin-top: 5px;
@@ -111,6 +122,15 @@
         .color-warning { color: #b45309; }
         .color-danger { color: #b91c1c; }
 
+        /* Estilos APA para Bloques de Código/Reportes */
+        .apa-blockquote {
+            margin-left: 0.5in; margin-right: 0;
+            text-align: left; font-size: 11pt; line-height: 1.5;
+            margin-bottom: 15px; padding-left: 10px; border-left: 2px solid #ccc;
+        }
+        .checklist-item {
+            margin-left: 0.5in; text-align: left; margin-bottom: 5px; font-size: 11pt;
+        }
     </style>
 </head>
 <body>
@@ -163,7 +183,7 @@
     </p>
 
     {{-- TABLA 1: KPIs --}}
-    <div style="margin-top: 20px;">
+    <div>
         <div class="table-caption">
             <strong>Tabla 1</strong>
             <em>Indicadores Clave de Desempeño (KPIs)</em>
@@ -218,17 +238,42 @@
         </div>
     </div>
 
+    {{-- FIGURAS APA (Gráficos Reales en Base64 enviados desde el Controlador) --}}
+    <div class="avoid-break" style="margin-top: 30px;">
+        
+        @if(!empty($chart1_base64))
+            <div class="figure-caption">
+                <strong>Figura 1</strong>
+                <em>Distribución Porcentual del Avance de Tareas</em>
+            </div>
+            <div class="figure-container">
+                <img src="{{ $chart1_base64 }}" alt="Gráfico de Progreso">
+            </div>
+        @endif
+        
+        @if(!empty($chart2_base64))
+            <div class="figure-caption">
+                <strong>Figura 2</strong>
+                <em>Volumen Analítico de Actividad y Auditoría</em>
+            </div>
+            <div class="figure-container">
+                <img src="{{ $chart2_base64 }}" alt="Gráfico de Actividad">
+            </div>
+        @endif
+
+    </div>
+
     {{-- ========================================================= --}}
-    {{-- HOJA 3: DETALLE DE ACTIVIDADES --}}
+    {{-- HOJA 3: DETALLE DE ACTIVIDADES (TABLA Y ESPECIFICACIONES) --}}
     {{-- ========================================================= --}}
     <div class="page-break"></div>
 
     <h2>2. Detalle de Actividades</h2>
     <p>
-        A continuación, se relacionan las tareas asociadas al flujo de trabajo, identificando a los responsables y el estado actual de cada entregable.
+        A continuación, se relacionan las tareas asociadas al flujo de trabajo, identificando a los responsables y el estado actual de cada entregable, seguido de las especificaciones técnicas y reportes correspondientes.
     </p>
 
-    <div style="margin-top: 10px;">
+    <div>
         <div class="table-caption">
             <strong>Tabla 2</strong>
             <em>Relación de Tareas y Estado</em>
@@ -262,6 +307,68 @@
             </tbody>
         </table>
     </div>
+
+    {{-- INTEGRACIÓN DE CHECKLISTS Y REPORTES (Estilo APA) --}}
+    @if($workflow->tasks->count() > 0)
+        <div style="margin-top: 30px;">
+            <h3>2.1 Especificaciones y Evidencias por Tarea</h3>
+            <p>El siguiente apartado desglosa los criterios operativos (checklists) y los reportes de desarrollo asociados a cada unidad de trabajo.</p>
+
+            @foreach($workflow->tasks as $task)
+                <div class="avoid-break" style="margin-bottom: 25px;">
+                    <h4>Tarea #{{ $task->id }}: {{ $task->titulo }}</h4>
+                    
+                    {{-- Parseo de Checklist --}}
+                    @php
+                        if ($task->descripcion) {
+                            $descLines = explode("\n", $task->descripcion);
+                            echo '<div style="margin-top: 10px;">';
+                            foreach($descLines as $line) {
+                                $line = trim($line);
+                                if (preg_match('/^\[([xX\s])\]\s*-?\s*(.*)$/', $line, $matches)) {
+                                    $isChecked = strtolower(trim($matches[1])) === 'x';
+                                    $text = $matches[2];
+                                    if ($isChecked) {
+                                        echo '<div class="checklist-item"><strong>[X]</strong> ' . e($text) . '</div>';
+                                    } else {
+                                        echo '<div class="checklist-item">[&nbsp;&nbsp;&nbsp;] ' . e($text) . '</div>';
+                                    }
+                                } elseif ($line !== '') {
+                                    echo '<div style="margin-left: 0.5in; margin-bottom:5px;">' . nl2br(e($line)) . '</div>';
+                                }
+                            }
+                            echo '</div>';
+                        }
+                    @endphp
+
+                    {{-- Parseo de Reportes de Desarrollo (Blockquote APA) --}}
+                    @if($task->comments->count() > 0)
+                        <div style="margin-top: 15px; margin-bottom: 5px; margin-left: 0.5in;"><em>Registro de Evidencias:</em></div>
+                        @foreach($task->comments->sortByDesc('created_at')->take(2) as $comment)
+                            @php
+                                $textoRaw = trim($comment->comentario);
+                                $esDevTemplate = str_starts_with($textoRaw, '[') && str_ends_with($textoRaw, ']');
+                                
+                                echo '<div class="apa-blockquote">';
+                                echo '<strong>' . ($comment->user->name ?? 'Sistema') . ' (' . $comment->created_at->format('d/m/Y') . '):</strong><br>';
+                                
+                                if ($esDevTemplate) {
+                                    $textoLimpio = trim(substr($textoRaw, 1, -1));
+                                    $textoLimpio = e($textoLimpio);
+                                    // Formato de negrita a los títulos del reporte
+                                    $textoFormateado = preg_replace('/([A-ZÁÉÍÓÚÑ \/]+):/', '<strong>$1:</strong>', $textoLimpio);
+                                    echo $textoFormateado;
+                                } else {
+                                    echo nl2br(e($textoRaw));
+                                }
+                                echo '</div>';
+                            @endphp
+                        @endforeach
+                    @endif
+                </div>
+            @endforeach
+        </div>
+    @endif
 
     {{-- ========================================================= --}}
     {{-- HOJA 4: HISTORIAL DE AUDITORÍA --}}
@@ -307,7 +414,7 @@
                             
                             @if(!empty($event->comentario))
                                 <br>
-                                <span class="text-muted">"{{ $event->comentario }}"</span>
+                                <span class="text-muted">"{{ Str::limit($event->comentario, 100) }}"</span>
                             @endif
                         </td>
                         <td class="text-right">
