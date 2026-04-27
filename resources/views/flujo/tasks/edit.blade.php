@@ -211,22 +211,25 @@
             text-transform: uppercase;
         }
 
+        /* --- MEJORA UX: Dropzone modernizada --- */
         .soporte-dropzone {
-            border: 2px dashed var(--border-color);
-            padding: 15px;
+            border: 2px dashed #cbd5e1;
+            background: #f8fafc;
+            padding: 25px 15px;
             border-radius: var(--radius-md);
             text-align: center;
             cursor: pointer;
-            transition: 0.2s;
+            transition: all 0.3s ease;
             color: var(--text-muted);
-            font-size: 13px;
+            position: relative;
         }
 
-        .soporte-dropzone:hover {
+        .soporte-dropzone:hover, .soporte-dropzone.dragover {
             border-color: var(--accent-blue);
-            background: #f5f3ff;
-            color: var(--accent-blue);
+            background: #eff6ff;
+            color: var(--brand-primary);
         }
+        /* --------------------------------------- */
 
         .hidden-input {
             display: none;
@@ -300,6 +303,7 @@
             transition: 0.2s;
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 10px;
         }
 
@@ -311,7 +315,6 @@
 
         .w-full {
             width: 100%;
-            justify-content: center;
         }
 
         /* TomSelect Overrides */
@@ -354,7 +357,7 @@
         .btn-add-task { background: none; border: none; color: #94a3b8; font-size: 14px; cursor: pointer; padding: 8px 0 0 28px; display: flex; align-items: center; gap: 6px; width: 100%; text-align: left; }
         .btn-add-task:hover { color: #3b82f6; }
 
-        /* NUEVO: Estilos para la previsualización al pasar el mouse (Hover Preview) */
+        /* Estilos para la previsualización al pasar el mouse (Hover Preview) */
         #hover-preview-card {
             display: none;
             position: fixed;
@@ -368,7 +371,7 @@
             box-shadow: 0 10px 40px rgba(0,0,0,0.3);
             width: 500px;
             max-width: 90vw;
-            pointer-events: none; /* Evita que el modal bloquee el mouse del usuario */
+            pointer-events: none;
             opacity: 0;
             transition: opacity 0.2s ease-in-out;
         }
@@ -395,7 +398,6 @@
             <div class="header-content" style="width: 100%; display: flex; justify-content: space-between;">
                 
                 <div style="display: flex; align-items: center; gap: 20px;">
-                    {{-- Botón de regreso (Solo se muestra si la tarea tiene un workflow) --}}
                     @if($task->workflow)
                         <a href="{{ route('flujo.workflows.show', $task->workflow->id) }}" class="btn-back-minimal" title="Volver al Workflow">
                             <i class="fas fa-arrow-left"></i>
@@ -408,11 +410,9 @@
                     </div>
                 </div>
 
-                {{-- Botón para ir a todas las tareas --}}
                 <a href="{{ route('flujo.tasks.index') }}" class="btn-back-minimal" style="width: auto; padding: 0 15px; font-weight: 600; font-size: 13px;">
                     Todas las Tareas
                 </a>
-                
             </div>
         </header>
 
@@ -557,17 +557,17 @@
             {{-- Columna Lateral: Canal de Feedback --}}
             <div class="form-column">
                 <div class="card-minimal feedback-section">
-                    <label class="section-label-header"><i class="fas fa-comment-dots"></i> Canal de Feedback</label>
+                    {{-- MEJORA UX APLICADA AQUÍ --}}
+                    <label class="section-label-header"><i class="fas fa-history"></i> Actualizaciones y Evidencias</label>
 
-                    <form action="{{ route('flujo.comments.store') }}" method="POST" enctype="multipart/form-data"
-                        class="comment-post-box">
+                    <form action="{{ route('flujo.comments.store') }}" method="POST" enctype="multipart/form-data" class="comment-post-box">
                         @csrf
                         
                         <div class="d-flex align-items-center mb-3 p-2 bg-light border rounded">
                             <div class="form-check form-switch mb-0">
                                 <input class="form-check-input" type="checkbox" role="switch" id="templateToggle" onchange="alternarPlantilla(this)" style="cursor: pointer;">
                                 <label class="form-check-label text-secondary fw-semibold ms-2" for="templateToggle" style="cursor: pointer; font-size: 0.9rem;">
-                                    Developer Mode
+                                    Usar Formato de Reporte
                                 </label>
                             </div>
                         </div>
@@ -575,7 +575,7 @@
                         <div class="form-group m-0" id="normalComentarioContainer">
                             <label for="comentario">Comentario</label>
                             <input type="hidden" name="task_id" value="{{ $task->id }}">
-                            <textarea name="comentario" id="comentario" class="form-input mb-3" rows="9" placeholder="Escriba una actualización..." required></textarea>
+                            <textarea name="comentario" id="comentario" class="form-input mb-3" rows="7" placeholder="Escriba una actualización o descripción de la evidencia..." required></textarea>
                         </div>
 
                         <div id="templateContainer" class="border rounded p-3 bg-white shadow-sm mb-3" style="display: none;">
@@ -593,14 +593,22 @@
                             </div>
                         </div>
 
-                        <div class="soporte-dropzone" onclick="document.getElementById('soporte').click()">
+                        {{-- NUEVA DROPZONE: Icono, Drag & Drop y Preview integrados --}}
+                        <div class="soporte-dropzone" id="main-dropzone" onclick="document.getElementById('soporte').click()">
                             <input type="file" name="soporte" id="soporte" class="hidden-input" accept=".pdf,image/*">
-                            <i class="fas fa-paperclip"></i>
-                            <span id="file-name-preview">Adjuntar Soporte (PDF/Imagen) o presiona <b>Ctrl+V</b></span>
+                            
+                            <i class="fas fa-cloud-upload-alt fa-2x mb-2" id="dropzone-icon" style="color: var(--accent-blue);"></i>
+                            
+                            <div id="file-name-preview">
+                                <span style="font-weight: 600; color: var(--brand-primary); display: block;">Haz clic o arrastra tu evidencia aquí</span>
+                                <span style="font-size: 11px;">(También puedes pegar una imagen con <b>Ctrl+V</b>)</span>
+                            </div>
+
+                            <img id="image-preview-box" src="" style="display:none; max-width: 100%; max-height: 200px; margin: 15px auto 0; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                         </div>
 
                         <button type="submit" class="btn-save-corporate w-full mt-3">
-                            Publicar <i class="fas fa-paper-plane ml-2"></i>
+                            <i class="fas fa-paper-plane"></i> Publicar Evidencia
                         </button>
                     </form>
                 </div>
@@ -620,24 +628,14 @@
                         {{-- INICIO DE LA MEJORA VISUAL PARA LA PLANTILLA --}}
                         @php
                             $textoRaw = trim($comment->comentario);
-                            // Detectamos si es una plantilla verificando si está envuelta en [ ]
                             $esDevTemplate = str_starts_with($textoRaw, '[') && str_ends_with($textoRaw, ']');
                             
                             if ($esDevTemplate) {
-                                // Quitamos los corchetes iniciales y finales
                                 $textoLimpio = trim(substr($textoRaw, 1, -1));
-                                
-                                // 1. Escapamos HTML por seguridad (Evitar XSS en producción)
                                 $textoLimpio = e($textoLimpio);
-                                
-                                // 2. Buscamos las etiquetas en mayúsculas seguidas de ":" y las estilizamos
-                                // Esto convertirá "FECHA:" en un título azul bonito
                                 $textoFormateado = preg_replace('/([A-ZÁÉÍÓÚÑ \/]+):/', '<span style="display: block; margin-top: 14px; font-size: 10px; font-weight: 800; color: var(--accent-blue); letter-spacing: 0.5px;">$1</span>', $textoLimpio);
-                                
-                                // 3. Respetamos los saltos de línea reales y envolvemos en una caja
                                 $htmlFinal = '<div style="background: #ffffff; border: 1px solid var(--border-color); border-left: 3px solid var(--accent-blue); padding: 5px 15px 15px; border-radius: 8px; margin-top: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">' . nl2br($textoFormateado) . '</div>';
                             } else {
-                                // Si es un comentario normal, solo aplicamos saltos de línea
                                 $htmlFinal = nl2br(e($textoRaw));
                             }
                         @endphp
@@ -653,7 +651,6 @@
                                         now()->addMinutes(30),
                                     );
                                     
-                                    // Extraemos la extensión para saber si es imagen o PDF
                                     $extension = strtolower(pathinfo($comment->soporte, PATHINFO_EXTENSION));
                                     $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg']);
                                 @endphp
@@ -676,82 +673,93 @@
     {{-- Script de la librería --}}
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
 
-    {{-- general scripts para el formulario --}}
+    {{-- Script para Selects e Inicialización de Archivos Unificada --}}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const commonConfig = {
                 create: false,
-                sortField: {
-                    field: "text",
-                    direction: "asc"
-                },
+                sortField: { field: "text", direction: "asc" },
                 plugins: ['dropdown_input'],
-                onInitialize: function() {
-                    this.wrapper.style.opacity = "1";
-                }
+                onInitialize: function() { this.wrapper.style.opacity = "1"; }
             };
 
-            new TomSelect("#user_id", {
-                ...commonConfig,
-                placeholder: 'Buscar responsable...'
-            });
-            new TomSelect("#workflow_id", {
-                ...commonConfig,
-                placeholder: 'Buscar proyecto...'
-            });
-
-            // Preview de nombre de archivo
-            document.getElementById('soporte').addEventListener('change', function(e) {
-                const fileName = e.target.files[0] ? e.target.files[0].name :
-                    "Adjuntar Soporte (PDF/Imagen)";
-                document.getElementById('file-name-preview').innerText = fileName;
-            });
-
-            // Preview de nombre de archivo (Tu código actual)
-            document.getElementById('soporte').addEventListener('change', function(e) {
-                const fileName = e.target.files[0] ? e.target.files[0].name : "Adjuntar Soporte (PDF/Imagen) o presiona Ctrl+V";
-                document.getElementById('file-name-preview').innerHTML = fileName;
-                
-                // Feedback visual al seleccionar manualmente
-                let dropzone = document.querySelector('.soporte-dropzone');
-                if(e.target.files[0]) {
-                    dropzone.style.borderColor = 'var(--accent-blue)';
-                    dropzone.style.background = '#f5f3ff';
-                    dropzone.style.color = 'var(--accent-blue)';
-                } else {
-                    dropzone.style.borderColor = '';
-                    dropzone.style.background = '';
-                    dropzone.style.color = '';
-                }
-            });
+            new TomSelect("#user_id", { ...commonConfig, placeholder: 'Buscar responsable...' });
+            new TomSelect("#workflow_id", { ...commonConfig, placeholder: 'Buscar proyecto...' });
 
             // =================================================================
-            // LÓGICA PARA PEGAR ARCHIVOS CON CTRL+V (PORTAPAPELES)
+            // LÓGICA DE DRAG & DROP, PORTAPAPELES Y PREVISUALIZACIÓN UNIFICADA
             // =================================================================
-            document.addEventListener('paste', function(e) {
-                // Obtener los archivos del portapapeles
-                let pastedFiles = e.clipboardData.files;
-                if (pastedFiles.length === 0) return; // Si es texto plano, lo ignoramos
+            const dropzone = document.getElementById('main-dropzone');
+            const fileInput = document.getElementById('soporte');
+            const previewText = document.getElementById('file-name-preview');
+            const imagePreviewBox = document.getElementById('image-preview-box');
+            const dropzoneIcon = document.getElementById('dropzone-icon');
 
-                let inputFile = document.getElementById('soporte');
-                let dropzone = document.querySelector('.soporte-dropzone');
-                let previewText = document.getElementById('file-name-preview');
+            // Función central que procesa visualmente el archivo
+            function processFile(file) {
+                if (!file) return;
 
-                // Crear un DataTransfer para asignar el archivo al input type="file"
-                const dt = new DataTransfer();
-                dt.items.add(pastedFiles[0]); // Tomamos solo la primera imagen pegada
-                inputFile.files = dt.files;
-
-                // Definir un nombre por defecto si viene del portapapeles
-                let nombreArchivo = pastedFiles[0].name || 'captura_pegada.png';
-
-                // Feedback Visual
-                previewText.innerHTML = `<strong><i class="fas fa-check-circle me-1"></i> ${nombreArchivo}</strong>`;
+                // Actualizar texto
+                previewText.innerHTML = `<strong><i class="fas fa-check-circle me-1"></i> ${file.name || 'Imagen adjuntada'}</strong><br><span style="font-size:11px; color:#64748b;">Haz clic de nuevo para cambiar</span>`;
                 dropzone.style.borderColor = 'var(--accent-blue)';
                 dropzone.style.background = '#f5f3ff';
                 dropzone.style.color = 'var(--accent-blue)';
+
+                // Si es imagen, generar previsualización
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        imagePreviewBox.src = e.target.result;
+                        imagePreviewBox.style.display = 'block';
+                        dropzoneIcon.style.display = 'none'; // Ocultamos la nube para dar espacio a la imagen
+                    }
+                    reader.readAsDataURL(file);
+                } else {
+                    // Si no es imagen (PDF), aseguramos ocultar la previsualización de imagen
+                    imagePreviewBox.style.display = 'none';
+                    dropzoneIcon.style.display = 'inline-block';
+                    dropzoneIcon.className = 'fas fa-file-pdf fa-2x mb-2 text-danger'; // Cambiamos a icono PDF
+                }
+            }
+
+            // 1. Al dar clic tradicional y seleccionar archivo
+            fileInput.addEventListener('change', function(e) {
+                processFile(e.target.files[0]);
             });
 
+            // 2. Al pegar (Ctrl+V)
+            document.addEventListener('paste', function(e) {
+                let pastedFiles = e.clipboardData.files;
+                if (pastedFiles.length === 0) return; // Si es texto plano, se ignora
+
+                const dt = new DataTransfer();
+                dt.items.add(pastedFiles[0]);
+                fileInput.files = dt.files; // Asignamos el archivo al input real
+
+                processFile(pastedFiles[0]); // Lo mostramos en la vista
+            });
+
+            // 3. Al arrastrar y soltar (Drag & Drop)
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropzone.addEventListener(eventName, preventDefaults, false);
+            });
+            function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropzone.addEventListener(eventName, () => dropzone.classList.add('dragover'), false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropzone.addEventListener(eventName, () => dropzone.classList.remove('dragover'), false);
+            });
+
+            dropzone.addEventListener('drop', function(e) {
+                let droppedFiles = e.dataTransfer.files;
+                if(droppedFiles.length) {
+                    fileInput.files = droppedFiles;
+                    processFile(droppedFiles[0]);
+                }
+            }, false);
         });
     </script>
 
@@ -821,9 +829,8 @@
                 // Botón de eliminar usando la clase nativa btn-close de Bootstrap
                 const deleteBtn = document.createElement('button');
                 deleteBtn.type = 'button';
-                deleteBtn.className = 'btn-close ms-2'; // Crea la "X" corporativa automáticamente
+                deleteBtn.className = 'btn-close ms-2'; 
                 deleteBtn.setAttribute('aria-label', 'Eliminar tarea');
-                // Reducimos un poco el tamaño para que coincida con el form-control-sm
                 deleteBtn.style.fontSize = '0.75rem'; 
 
                 // Eventos
