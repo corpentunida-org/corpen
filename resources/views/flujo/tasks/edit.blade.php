@@ -235,32 +235,64 @@
             display: none;
         }
 
+        /* --- MEJORA UX: Timeline para los comentarios --- */
+        .comment-thread {
+            position: relative;
+            padding-left: 30px; 
+        }
+
+        .comment-thread::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 12px; 
+            width: 2px;
+            background: #e2e8f0;
+            border-radius: 2px;
+        }
+
         .comment-bubble {
-            background: #f8fafc;
+            background: var(--white);
             border: 1px solid var(--border-color);
             border-radius: var(--radius-md);
-            padding: 15px;
-            margin-bottom: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            position: relative;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            transition: transform 0.2s, box-shadow 0.2s;
         }
 
-        .comment-head {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 8px;
+        .comment-bubble:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.05);
+            border-color: #cbd5e1;
         }
 
-        .avatar-circle {
-            width: 24px;
-            height: 24px;
-            background: var(--accent-blue);
+        .comment-bubble .avatar-circle {
+            position: absolute;
+            left: -42px; 
+            top: 15px;
+            width: 28px;
+            height: 28px;
+            background: var(--brand-primary);
             color: white;
+            border: 3px solid var(--bg-neutral); 
+            box-shadow: 0 0 0 1px #e2e8f0;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 10px;
             font-weight: 700;
+        }
+        /* ----------------------------------------------- */
+
+        .comment-head {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
         }
 
         .user-name {
@@ -405,8 +437,36 @@
                     @endif
                     
                     <div class="header-text">
-                        <h1 class="main-title">Edición de Tarea <span class="text-accent">#{{ $task->id }}</span></h1>
-                        <p class="main-subtitle">Ajuste parámetros operativos y gestione el hilo de comunicación.</p>
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px;">
+                            <h1 class="main-title" style="margin:0;">Edición de Tarea <span class="text-accent">#{{ $task->id }}</span></h1>
+                            
+                            {{-- BADGE DE ESTADO --}}
+                            @php
+                                $estadoColors = [
+                                    'pendiente' => 'background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;', // Gris
+                                    'en_proceso' => 'background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe;', // Azul
+                                    'revisado' => 'background: #fef3c7; color: #d97706; border: 1px solid #fde68a;', // Amarillo/Naranja
+                                    'completado' => 'background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0;', // Verde
+                                ];
+                                $estadoLabels = ['pendiente' => 'Pendiente', 'en_proceso' => 'En Proceso', 'revisado' => 'Revisión', 'completado' => 'Completado'];
+                                
+                                $prioridadColors = [
+                                    'baja' => 'color: #64748b; background: #f8fafc;',
+                                    'media' => 'color: #eab308; background: #fefce8;',
+                                    'alta' => 'color: #ef4444; background: #fef2f2;',
+                                ];
+                            @endphp
+                            
+                            <span style="padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; {{ $estadoColors[$task->estado] ?? $estadoColors['pendiente'] }}">
+                                {{ $estadoLabels[$task->estado] ?? 'Desconocido' }}
+                            </span>
+
+                            {{-- BADGE DE PRIORIDAD --}}
+                            <span style="padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; border: 1px solid currentColor; {{ $prioridadColors[$task->prioridad] ?? $prioridadColors['baja'] }}">
+                                <i class="fas fa-flag me-1"></i> Prioridad {{ ucfirst($task->prioridad) }}
+                            </span>
+                        </div>
+                        <p class="main-subtitle" style="margin:0;">Ajuste parámetros operativos y gestione el historial de evidencias.</p>
                     </div>
                 </div>
 
@@ -473,12 +533,25 @@
                             class="form-control @error('descripcion') is-invalid @enderror">{{ old('descripcion', $task->descripcion) }}</textarea>
 
                         <div id="devModeContainer" class="border rounded p-3 bg-white shadow-sm" style="display: none;">
+                            
+                            {{-- NUEVO: Barra de progreso gerencial --}}
+                            <div id="progress-wrapper" style="display: none; margin-bottom: 15px;">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Progreso de la Tarea</span>
+                                    <span id="progress-text" style="font-size: 12px; font-weight: 800; color: var(--accent-blue);">0%</span>
+                                </div>
+                                <div style="width: 100%; height: 8px; background-color: #e2e8f0; border-radius: 10px; overflow: hidden;">
+                                    <div id="progress-bar" style="width: 0%; height: 100%; background-color: var(--accent-blue); transition: width 0.4s ease, background-color 0.4s ease;"></div>
+                                </div>
+                            </div>
+                            
                             <div id="taskList"></div>
+                            
                             <button type="button" id="addTaskBtn" class="btn btn-sm btn-outline-secondary mt-3 d-flex align-items-center">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-2" viewBox="0 0 16 16">
                                     <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
                                 </svg>
-                                Agregar Tarea
+                                Agregar Sub-tarea
                             </button>
                         </div>
                     </div>
@@ -557,7 +630,6 @@
             {{-- Columna Lateral: Canal de Feedback --}}
             <div class="form-column">
                 <div class="card-minimal feedback-section">
-                    {{-- MEJORA UX APLICADA AQUÍ --}}
                     <label class="section-label-header"><i class="fas fa-history"></i> Actualizaciones y Evidencias</label>
 
                     <form action="{{ route('flujo.comments.store') }}" method="POST" enctype="multipart/form-data" class="comment-post-box">
@@ -880,18 +952,49 @@
             function syncTextarea() {
                 const rows = taskList.querySelectorAll('.d-flex');
                 let newText = [];
+                let totalTasks = 0;
+                let completedTasks = 0;
 
                 rows.forEach(row => {
                     const checkbox = row.querySelector('.form-check-input');
                     const input = row.querySelector('input[type="text"]');
                     
                     if (input && input.value.trim() !== '') {
+                        totalTasks++;
+                        if (checkbox.checked) completedTasks++;
+                        
                         const mark = checkbox.checked ? '[x]' : '[ ]';
                         newText.push(`${mark} ${input.value}`);
                     }
                 });
 
                 textarea.value = newText.join('\n');
+
+                // NUEVO: Lógica de la barra de progreso
+                const progressWrapper = document.getElementById('progress-wrapper');
+                const progressBar = document.getElementById('progress-bar');
+                const progressText = document.getElementById('progress-text');
+                
+                if (totalTasks > 0) {
+                    progressWrapper.style.display = 'block';
+                    let percentage = Math.round((completedTasks / totalTasks) * 100);
+                    progressBar.style.width = percentage + '%';
+                    progressText.innerText = percentage + '%';
+                    
+                    // Semáforo de colores en la barra
+                    if (percentage === 100) {
+                        progressBar.style.backgroundColor = '#10b981'; // Verde completado
+                        progressText.style.color = '#10b981';
+                    } else if (percentage > 50) {
+                        progressBar.style.backgroundColor = '#3b82f6'; // Azul avanzado
+                        progressText.style.color = '#3b82f6';
+                    } else {
+                        progressBar.style.backgroundColor = '#f59e0b'; // Naranja iniciando
+                        progressText.style.color = '#f59e0b';
+                    }
+                } else {
+                    progressWrapper.style.display = 'none';
+                }
             }
         });
     </script>
@@ -953,7 +1056,7 @@
         });
     </script>
 
-    {{-- NUEVO: Lógica visual del Hover Preview para archivos adjuntos --}}
+    {{-- NUEVO: Lógica visual del Hover Preview para archivos adjuntos y lo otro --}}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // 1. Crear el contenedor modal flotante
