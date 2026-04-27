@@ -425,55 +425,82 @@
 
     <div class="task-edit-wrapper">
         
-        {{-- Encabezado de Acción --}}
-        <header class="form-header">
-            <div class="header-content" style="width: 100%; display: flex; justify-content: space-between;">
-                
-                <div style="display: flex; align-items: center; gap: 20px;">
+        {{-- Header Minimalista y Amigable (Bootstrap Nativo) --}}
+        <header class="bg-white rounded-4 shadow-sm border p-4 mb-4">
+            
+            {{-- Fila Superior: Navegación y Acciones Globales --}}
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-3">
+                <div class="d-flex flex-wrap gap-2">
                     @if($task->workflow)
-                        <a href="{{ route('flujo.workflows.show', $task->workflow->id) }}" class="btn-back-minimal" title="Volver al Workflow">
-                            <i class="fas fa-arrow-left"></i>
+                        <a href="{{ route('flujo.workflows.show', $task->workflow->id) }}" 
+                           class="btn btn-sm btn-light text-secondary rounded-pill fw-semibold px-3 border" title="Volver al Workflow">
+                            <i class="fas fa-arrow-left me-1"></i> Proyecto
                         </a>
                     @endif
+                    <a href="{{ route('flujo.tasks.index') }}" 
+                       class="btn btn-sm btn-light text-secondary rounded-pill fw-semibold px-3 border">
+                        <i class="fas fa-tasks me-1"></i> Tareas
+                    </a>
                     
-                    <div class="header-text">
-                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px;">
-                            <h1 class="main-title" style="margin:0;">Edición de Tarea <span class="text-accent">#{{ $task->id }}</span></h1>
-                            
-                            {{-- BADGE DE ESTADO --}}
-                            @php
-                                $estadoColors = [
-                                    'pendiente' => 'background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1;', // Gris
-                                    'en_proceso' => 'background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe;', // Azul
-                                    'revisado' => 'background: #fef3c7; color: #d97706; border: 1px solid #fde68a;', // Amarillo/Naranja
-                                    'completado' => 'background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0;', // Verde
-                                ];
-                                $estadoLabels = ['pendiente' => 'Pendiente', 'en_proceso' => 'En Proceso', 'revisado' => 'Revisión', 'completado' => 'Completado'];
-                                
-                                $prioridadColors = [
-                                    'baja' => 'color: #64748b; background: #f8fafc;',
-                                    'media' => 'color: #eab308; background: #fefce8;',
-                                    'alta' => 'color: #ef4444; background: #fef2f2;',
-                                ];
-                            @endphp
-                            
-                            <span style="padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; {{ $estadoColors[$task->estado] ?? $estadoColors['pendiente'] }}">
-                                {{ $estadoLabels[$task->estado] ?? 'Desconocido' }}
-                            </span>
-
-                            {{-- BADGE DE PRIORIDAD --}}
-                            <span style="padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; border: 1px solid currentColor; {{ $prioridadColors[$task->prioridad] ?? $prioridadColors['baja'] }}">
-                                <i class="fas fa-flag me-1"></i> Prioridad {{ ucfirst($task->prioridad) }}
-                            </span>
-                        </div>
-                        <p class="main-subtitle" style="margin:0;">Ajuste parámetros operativos y gestione el historial de evidencias.</p>
-                    </div>
+                    {{-- MEJORA UX 2: Salto rápido a la vista de detalles --}}
+                    <a href="{{ route('flujo.tasks.show', $task->id) }}" 
+                       class="btn btn-sm btn-light text-primary rounded-pill fw-semibold px-3 border border-primary-subtle" title="Ver cómo se ve esta tarea">
+                        <i class="fas fa-eye me-1"></i> Visor
+                    </a>
                 </div>
-
-                <a href="{{ route('flujo.tasks.index') }}" class="btn-back-minimal" style="width: auto; padding: 0 15px; font-weight: 600; font-size: 13px;">
-                    Todas las Tareas
-                </a>
+                
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-light text-secondary border px-3 py-2 rounded-pill fw-semibold d-none d-sm-inline-block">
+                        <span class="text-primary">Edición</span> / #{{ $task->id }}
+                    </span>
+                    
+                    {{-- MEJORA UX 1: Botón de Guardado Superior (Vinculado al ID del formulario abajo) --}}
+                    <button type="submit" form="task-update-form" class="btn btn-sm btn-dark rounded-pill fw-semibold px-4 shadow-sm d-flex align-items-center gap-2">
+                        <i class="fas fa-save"></i> <span class="d-none d-md-inline">Guardar Cambios</span>
+                    </button>
+                </div>
             </div>
+
+            {{-- Fila Inferior: Título, Meta-datos y Badges --}}
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-3">
+                
+                <div>
+                    <h1 class="h2 fw-bolder text-dark mb-1">Edición de Tarea</h1>
+                    {{-- MEJORA UX 3: Feedback de última actividad --}}
+                    <p class="text-muted small mb-3 mb-md-0">
+                        <i class="fas fa-history me-1"></i> Última actualización: {{ $task->updated_at->diffForHumans() }}
+                    </p>
+                </div>
+                
+                <div class="d-flex flex-wrap align-items-center gap-2 text-secondary small fw-medium">
+                    
+                    {{-- Badge de Estado con "Puntito" de color --}}
+                    <span class="badge bg-light text-dark border px-3 py-2 rounded-pill d-flex align-items-center gap-2 shadow-sm">
+                        @if(in_array(strtolower($task->estado), ['completado', 'finalizado', 'revisado']))
+                            <i class="fas fa-circle text-success" style="font-size: 8px;"></i>
+                        @elseif(strtolower($task->estado) == 'en_proceso')
+                            <i class="fas fa-circle text-primary" style="font-size: 8px;"></i>
+                        @else
+                            <i class="fas fa-circle text-warning" style="font-size: 8px;"></i>
+                        @endif
+                        {{ str_replace('_', ' ', ucfirst($task->estado)) }}
+                    </span>
+
+                    {{-- Badge de Prioridad --}}
+                    <span class="badge bg-light text-dark border px-3 py-2 rounded-pill d-flex align-items-center gap-2 shadow-sm">
+                        @if(strtolower($task->prioridad) == 'alta')
+                            <i class="fas fa-flag text-danger"></i>
+                        @elseif(strtolower($task->prioridad) == 'media')
+                            <i class="fas fa-flag text-warning"></i>
+                        @else
+                            <i class="fas fa-flag text-secondary"></i>
+                        @endif
+                        Prioridad {{ ucfirst($task->prioridad) }}
+                    </span>
+                    
+                </div>
+            </div>
+            
         </header>
 
         {{-- Banner de Contexto de Proyecto --}}
@@ -516,7 +543,8 @@
 
                     <div class="d-flex align-items-center mb-3 p-2 bg-light border rounded">
                         <div class="form-check form-switch mb-0">
-                            <input class="form-check-input" type="checkbox" role="switch" id="devModeToggle" style="cursor: pointer;">
+                            {{-- Agregamos el atributo 'checked' aquí --}}
+                            <input class="form-check-input" type="checkbox" role="switch" id="devModeToggle" style="cursor: pointer;" checked>
                             <label class="form-check-label text-secondary fw-semibold ms-2" for="devModeToggle" style="cursor: pointer;">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-1 mb-1" viewBox="0 0 16 16">
                                     <path fill-rule="evenodd" d="M5 11.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zM3.854 2.146a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0l-.5-.5a.5.5 0 1 1 .708-.708L2 3.293l1.146-1.147a.5.5 0 0 1 .708 0zm0 4a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0l-.5-.5a.5.5 0 1 1 .708-.708L2 7.293l1.146-1.147a.5.5 0 0 1 .708 0zm0 4a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0l-.5-.5a.5.5 0 0 1 .708-.708l.146.147 1.146-1.147a.5.5 0 0 1 .708 0z"/>
@@ -637,7 +665,8 @@
                         
                         <div class="d-flex align-items-center mb-3 p-2 bg-light border rounded">
                             <div class="form-check form-switch mb-0">
-                                <input class="form-check-input" type="checkbox" role="switch" id="templateToggle" onchange="alternarPlantilla(this)" style="cursor: pointer;">
+                                {{-- Agregamos el atributo 'checked' aquí --}}
+                                <input class="form-check-input" type="checkbox" role="switch" id="templateToggle" onchange="alternarPlantilla(this)" style="cursor: pointer;" checked>
                                 <label class="form-check-label text-secondary fw-semibold ms-2" for="templateToggle" style="cursor: pointer; font-size: 0.9rem;">
                                     Usar Formato de Reporte
                                 </label>
@@ -1059,42 +1088,66 @@
     {{-- NUEVO: Lógica visual del Hover Preview para archivos adjuntos y lo otro --}}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // 1. Crear el contenedor modal flotante
+            
+            // ==========================================
+            // 1. LÓGICA DE LOS INTERRUPTORES (TOGGLES)
+            // ==========================================
+            
+            // Toggle de Formato de Reporte
+            let templateToggle = document.getElementById('templateToggle');
+            if(templateToggle && templateToggle.checked) {
+                // Simula que el usuario acaba de hacer click para forzar la lógica nativa
+                templateToggle.dispatchEvent(new Event('change'));
+            }
+            
+            // Toggle de Habilitar Checklist
+            let devToggle = document.getElementById('devModeToggle');
+            if(devToggle && devToggle.checked) {
+                // Simula que el usuario acaba de hacer click
+                devToggle.dispatchEvent(new Event('change'));
+            }
+
+            // ==========================================
+            // 2. LÓGICA DEL HOVER PREVIEW (ARCHIVOS)
+            // ==========================================
             let previewModal = document.createElement('div');
             previewModal.id = 'hover-preview-card';
+            previewModal.style.position = 'absolute';
+            previewModal.style.zIndex = '9999';
+            previewModal.style.display = 'none';
+            previewModal.style.opacity = '0';
+            previewModal.style.transition = 'opacity 0.2s ease';
+            previewModal.style.pointerEvents = 'none'; 
             document.body.appendChild(previewModal);
 
-            let hoverTimer; // Temporizador
+            let hoverTimer; 
 
-            // 2. Seleccionar los enlaces de archivos
             const triggers = document.querySelectorAll('.preview-trigger');
 
             triggers.forEach(trigger => {
-                // Cuando entra el mouse
                 trigger.addEventListener('mouseenter', function(e) {
                     const url = this.getAttribute('data-url');
                     const type = this.getAttribute('data-type');
 
-                    // Esperar 400ms antes de disparar el modal
                     hoverTimer = setTimeout(() => {
                         if (type === 'image') {
-                            previewModal.innerHTML = `<img src="${url}" alt="Vista previa de archivo">`;
+                            previewModal.innerHTML = `<img src="${url}" style="max-width:300px; border-radius:10px; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);" alt="Vista previa">`;
                         } else {
-                            // Para PDFs
-                            previewModal.innerHTML = `<iframe src="${url}#toolbar=0&navpanes=0&scrollbar=0" title="PDF Preview"></iframe>`;
+                            previewModal.innerHTML = `<iframe src="${url}#toolbar=0&navpanes=0&scrollbar=0" style="width:300px; height:400px; border:none; border-radius:10px; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);"></iframe>`;
                         }
                         
-                        // Mostrar visualmente
                         previewModal.style.display = 'block';
                         setTimeout(() => previewModal.style.opacity = '1', 10); 
                     }, 400); 
                 });
 
-                // Cuando sale el mouse
-                trigger.addEventListener('mouseleave', function(e) {
-                    clearTimeout(hoverTimer); // Cancelar la apertura si fue rápido
-                    
-                    // Ocultar y limpiar
+                trigger.addEventListener('mousemove', function(e) {
+                    previewModal.style.left = (e.pageX + 15) + 'px';
+                    previewModal.style.top = (e.pageY + 15) + 'px';
+                });
+
+                trigger.addEventListener('mouseleave', function() {
+                    clearTimeout(hoverTimer); 
                     previewModal.style.opacity = '0';
                     setTimeout(() => {
                         previewModal.style.display = 'none';
@@ -1102,6 +1155,7 @@
                     }, 200); 
                 });
             });
+
         });
     </script>
 
