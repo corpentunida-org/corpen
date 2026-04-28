@@ -39,8 +39,8 @@ class SegConvenioController extends Controller
             ->groupBy(function ($plan) {
                 return $plan->condicioncorpen->descripcion;
             });
-
-        return view('seguros.convenio.show', compact('convenio', 'planes'));
+        $condiciones = SegCondicion::all();
+        return view('seguros.convenio.show', compact('convenio', 'planes', 'condiciones'));
     }
 
     public function create(Request $request)
@@ -54,7 +54,6 @@ class SegConvenioController extends Controller
 
     public function store(Request $request)
     {
-        //dd($request->all());
         $idConvenio = $request->anio . $request->idAseguradora;
         $validacion = SegConvenio::where('idConvenio', $idConvenio)->exists();
         if ($validacion) {
@@ -114,10 +113,9 @@ class SegConvenioController extends Controller
         return redirect()->route('seguros.convenio.index')->with('success', 'Convenio creado correctamente');
     }
 
-    private function updateVigencia($convenioid, $convenioanio)
+    /*private function updateVigencia($convenioid, $convenioanio)
     {
         $polizas = SegPoliza::where('seg_convenio_id', $convenioid)->where('active', true)->whereNull('reclamacion')->get();
-        dd($polizas);
         foreach ($polizas as $poliza) {
             $planOriginal = SegPlan::find($poliza->seg_plan_id);
             $plan = SegPlan::where('name', $planOriginal->name)
@@ -137,5 +135,5 @@ class SegConvenioController extends Controller
                 ]);
             }
         }
-    }
+    }*/
 }
