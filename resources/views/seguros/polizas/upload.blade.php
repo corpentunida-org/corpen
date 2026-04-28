@@ -6,8 +6,7 @@
                 <div class="mb-3 d-flex align-items-center justify-content-between">
                     <h5 class="fw-bold mb-0 me-4">
                         <span class="d-block mb-2">Cargar Archivo</span>
-                        <span class="fs-12 fw-normal text-muted text-truncate-1-line">El archivo debe tener el siguiente
-                            formato:</span>
+                        <span class="fs-12 fw-normal text-muted text-truncate-1-line">El archivo debe tener el siguiente formato:</span>
                     </h5>
                 </div>
                 <div class="d-flex gap-2">
