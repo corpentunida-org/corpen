@@ -330,7 +330,6 @@ class SegPolizaController extends Controller
                 'archivo_csv' => 'required|file|mimes:csv,txt',
             ]);
             $file = $request->file('archivo_csv');
-
             DB::statement("
                 CREATE TABLE IF NOT EXISTS seg_polizas_temp_no_match (
                     seg_asegurado_id BIGINT UNSIGNED UNIQUE,
