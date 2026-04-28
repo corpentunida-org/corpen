@@ -74,10 +74,15 @@ class Interaction extends Model
     }
     public function getLineasDetalleAttribute()
     {
-        if (!$this->id_linea_de_obligacion || !is_array($this->id_linea_de_obligacion)) {
+        
+
+        if (empty($this->id_linea_de_obligacion)) {
             return collect();
         }
-        return LineaCredito::whereIn('id', $this->id_linea_de_obligacion)->select('id', 'nombre')->get();
+
+        return LineaCredito::whereIn('id',$this->id_linea_de_obligacion)
+            ->select('id', 'nombre')->get();
+    
     }
     /* public function getLineasIdsAttribute() {
         return is_array($this->id_linea_de_obligacion) ? $this->id_linea_de_obligacion : [];
