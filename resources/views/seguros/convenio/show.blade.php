@@ -36,15 +36,22 @@
         <div class="col-12">
             <div class="card stretch stretch-full">
                 <div class="card-body">
-
                     <div class="hstack justify-content-between flex-wrap flex-md-nowrap mb-4">
                         <div>
                             <h5 class="mb-1">{{ $condicionId ?? '-' }}</h5>
                         </div>
+                        <form id="formDuplicarGrupo" method="POST"
+                            action="{{ route('seguros.planes.duplicarGrupo') }}">
+                            @csrf
+                            <input type="hidden" name="condicion_id" id="condicion_id">
+
+                            <button type="submit" id="btnDuplicarGrupo" class="btn btn-light-brand">
+                                Duplicar Grupo
+                            </button>
+                        </form>
                     </div>
 
                     <div class="row justify-content-center">
-
                         @php
                             $colors = ['text-warning', 'text-success', 'text-primary', 'text-teal', 'text-danger'];
                         @endphp
@@ -67,7 +74,8 @@
                                                 @endcandirect
 
                                                 @candirect('seguros.planes.destroy')
-                                                <form action="{{ route('seguros.planes.destroy', ['plan' => $plan->id]) }}"
+                                                <form
+                                                    action="{{ route('seguros.planes.destroy', ['plan' => $plan->id]) }}"
                                                     method="POST">
                                                     @csrf
                                                     @method('DELETE')
@@ -79,7 +87,6 @@
 
                                                 </form>
                                                 @endcandirect
-
                                             </div>
                                         </div>
                                     </div>
@@ -118,7 +125,6 @@
                                 </div>
                             </div>
                         @endforeach
-
                     </div>
                 </div>
             </div>
@@ -138,6 +144,62 @@
                     formToSubmit.submit();
                 }
             });
+        });
+
+        const planesGrupo = @json($planesGrupo->pluck('condicion_id'));
+        const condiciones = @json($condiciones);
+
+        const form = document.getElementById('formDuplicarGrupo');
+
+        form.addEventListener('submit', function(e) {
+
+            e.preventDefault();
+
+            let opciones = {}
+
+            condiciones.forEach(c => {
+                opciones[c.id] = c.nombre
+            })
+
+            Swal.fire({
+                title: 'Duplicar grupo',
+                text: 'Seleccione la condición destino',
+                icon: 'question',
+                input: 'select',
+                inputOptions: opciones,
+                inputPlaceholder: 'Seleccione una condición',
+                showCancelButton: true,
+                confirmButtonText: 'Duplicar',
+
+                /*preConfirm: () => {
+
+                    const condicionId = Number(Swal.getInput().value)
+
+                    if (!condicionId) {
+                        Swal.showValidationMessage('Debe seleccionar una condición')
+                        return false
+                    }
+
+                    if (planesGrupo.includes(condicionId)) {
+                        Swal.showValidationMessage('Ya existe un grupo para esa condición')
+                        return false
+                    }
+
+                    return condicionId
+                }*/
+
+            }).then((result) => {
+console.log(result);
+                if (result.isConfirmed) {
+
+                    document.getElementById('condicion_id').value = result.value
+
+                    form.submit() // ← enviamos el formulario manualmente
+
+                }
+
+            })
+
         });
     });
 </script>
