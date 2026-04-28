@@ -354,7 +354,7 @@
                     {{-- Parseo de Reportes de Desarrollo (Blockquote APA) --}}
                     @if($task->comments->count() > 0)
                         <div style="margin-top: 15px; margin-bottom: 5px; margin-left: 0.5in;"><em>Registro de Evidencias:</em></div>
-                        @foreach($task->comments->sortByDesc('created_at')->take(2) as $comment)
+                        @foreach($task->comments->sortByDesc('created_at') as $comment) {{-- Al quitar el take(2), Laravel iterará sobre absolutamente todos los comentarios ordenados por fecha de creación, sin ningún límite. --}}
                             @php
                                 $textoRaw = trim($comment->comentario);
                                 $esDevTemplate = str_starts_with($textoRaw, '[') && str_ends_with($textoRaw, ']');
