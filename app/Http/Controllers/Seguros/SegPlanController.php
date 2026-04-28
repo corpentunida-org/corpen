@@ -175,4 +175,9 @@ class SegPlanController extends Controller
         $planes = SegPlan::with('convenio')->where('condicion_corpen', $condicion)->where('vigente', true)->get();
         return response()->json($planes);
     }
+
+    public function duplicarGrupoCondicion(Request $request)
+    {
+        return $request->all();
+    }
 }
