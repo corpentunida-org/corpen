@@ -167,6 +167,16 @@
             <strong>Líder del Proyecto:</strong><br>
             {{ $workflow->asignado->name ?? 'No Asignado' }}<br>
             <br>
+            {{-- EQUIPO ASIGNADO EN TEXTO PLANO (APA) --}}
+            <strong>Equipo Asignado:</strong><br>
+            @if ($workflow->participantes->count() > 0)
+                @foreach ($workflow->participantes as $member)
+                    {{ $member->name }}<br>
+                @endforeach
+            @else
+                Sin equipo definido<br>
+            @endif
+            <br>
             <strong>Fecha de Corte:</strong><br>
             {{ \Carbon\Carbon::now()->format('d \d\e F \d\e Y') }}
         </div>
