@@ -46,9 +46,18 @@ class SegConvenioController extends Controller
     public function create(Request $request)
     {
         $idConvenio = $request->get('id');
-        $convenio = SegConvenio::with(['plan.condicion'])->find($idConvenio);
-        $planes = $convenio ? $convenio->plan->groupBy('condicion') : collect();
+
+        $convenio = null;
+        $planes = collect();
+
+        if ($idConvenio) {
+            $convenio = SegConvenio::with(['plan.condicion'])->find($idConvenio);
+
+            $planes = $convenio ? $convenio->plan->groupBy('condicion') : collect();
+        }
+
         $condiciones = SegCondicion::all();
+
         return view('seguros.convenio.create', compact('convenio', 'planes', 'condiciones'));
     }
 
