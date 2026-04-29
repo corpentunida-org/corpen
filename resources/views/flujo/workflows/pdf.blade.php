@@ -254,7 +254,6 @@
     <table class="minimal-table">
         <thead>
             <tr>
-                {{-- NUEVA DISTRIBUCIÓN: Más espacio para la actividad (45%) y se une Responsable/Estado en una sola (20%) --}}
                 <th width="45%">Actividad, Progreso y Subtareas</th>
                 <th width="20%">Asignación y Estado</th>
                 <th width="35%">Últimos Comentarios</th>
@@ -264,23 +263,36 @@
             @forelse($workflow->tasks as $task)
                 @php 
                     $isDone = in_array(strtolower($task->estado), ['finalizado', 'completado']); 
+                    $rawDesc = trim($task->descripcion);
+                    $isJson = str_starts_with($rawDesc, '[');
                     
-                    // Lógica para extraer subtareas y calcular el progreso individual
                     $subtareas = [];
                     $completadas = 0;
-                    if ($task->descripcion) {
-                        $descLines = explode("\n", $task->descripcion);
-                        foreach($descLines as $line) {
-                            $line = trim($line);
-                            if (preg_match('/^\[([xX\s])\]\s*-?\s*(.*)$/', $line, $matches)) {
-                                $isChecked = strtolower(trim($matches[1])) === 'x';
-                                $subtareas[] = ['done' => $isChecked, 'text' => $matches[2]];
-                                if ($isChecked) $completadas++;
+
+                    // Lógica unificada para extraer subtareas (JSON o Legacy)
+                    if ($isJson) {
+                        $sheetData = json_decode($rawDesc, true) ?? [];
+                        foreach($sheetData as $row) {
+                            $isChecked = isset($row['checked']) && $row['checked'];
+                            $text = $row['descripcion'] ?? 'Sin descripción';
+                            $subtareas[] = ['done' => $isChecked, 'text' => $text];
+                            if ($isChecked) $completadas++;
+                        }
+                    } else {
+                        if ($rawDesc) {
+                            $descLines = explode("\n", $rawDesc);
+                            foreach($descLines as $line) {
+                                $line = trim($line);
+                                if (preg_match('/^\[([xX\s])\]\s*-?\s*(.*)$/', $line, $matches)) {
+                                    $isChecked = strtolower(trim($matches[1])) === 'x';
+                                    $subtareas[] = ['done' => $isChecked, 'text' => $matches[2]];
+                                    if ($isChecked) $completadas++;
+                                }
                             }
                         }
                     }
+
                     $totalSubtareas = count($subtareas);
-                    
                     if ($totalSubtareas > 0) {
                         $porcentajeTarea = round(($completadas / $totalSubtareas) * 100);
                     } else {
@@ -307,15 +319,12 @@
                             </table>
                         @endif
 
-                        {{-- CHECKLIST SIN TABLAS ANIDADAS (Soluciona el error del margen inferior en el PDF) --}}
+                        {{-- CHECKLIST --}}
                         @if($totalSubtareas > 0)
                             <div style="margin-top: 5px;">
                                 @foreach($subtareas as $subt)
                                     <div class="chk-row">
-                                        {{-- El cuadrado simulando el checkbox --}}
                                         <div class="chk-box" style="border: 1px solid {{ $subt['done'] ? '#15803d' : '#9ca3af' }}; background-color: {{ $subt['done'] ? '#15803d' : '#fff' }};"></div>
-                                        
-                                        {{-- El texto de la subtarea --}}
                                         <div class="chk-text" style="{{ $subt['done'] ? 'color: #15803d; font-weight: bold;' : 'color: #555;' }}">
                                             {{ $subt['text'] }}
                                         </div>
@@ -496,38 +505,78 @@
         </table>
     </div>
 
-    {{-- INTEGRACIÓN DE CHECKLISTS Y REPORTES (Estilo APA) --}}
+    {{-- INTEGRACIÓN DE CHECKLISTS TIPO EXCEL Y REPORTES (Estilo APA) --}}
     @if($workflow->tasks->count() > 0)
         <div style="margin-top: 30px;">
             <h3>3.1 Especificaciones y Evidencias por Tarea</h3>
-            <p>El siguiente apartado desglosa los criterios operativos (checklists) y los reportes de desarrollo asociados a cada unidad de trabajo.</p>
+            <p>El siguiente apartado desglosa los criterios operativos y los reportes de desarrollo asociados a cada unidad de trabajo.</p>
 
             @foreach($workflow->tasks as $task)
                 <div class="avoid-break" style="margin-bottom: 25px;">
                     <h4>Tarea #{{ $task->id }}: {{ $task->titulo }}</h4>
                     
-                    {{-- Parseo de Checklist --}}
+                    {{-- Parseo de Especificaciones (Lógica Dual: JSON u Original) --}}
                     @php
-                        if ($task->descripcion) {
-                            $descLines = explode("\n", $task->descripcion);
-                            echo '<div style="margin-top: 10px;">';
-                            foreach($descLines as $line) {
-                                $line = trim($line);
-                                if (preg_match('/^\[([xX\s])\]\s*-?\s*(.*)$/', $line, $matches)) {
-                                    $isChecked = strtolower(trim($matches[1])) === 'x';
-                                    $text = $matches[2];
-                                    if ($isChecked) {
-                                        echo '<div class="checklist-item"><strong>[X]</strong> ' . e($text) . '</div>';
-                                    } else {
-                                        echo '<div class="checklist-item">[&nbsp;&nbsp;&nbsp;] ' . e($text) . '</div>';
-                                    }
-                                } elseif ($line !== '') {
-                                    echo '<div style="margin-left: 0.5in; margin-bottom:5px;">' . nl2br(e($line)) . '</div>';
-                                }
-                            }
-                            echo '</div>';
-                        }
+                        $rawDesc = trim($task->descripcion);
+                        $isJson = str_starts_with($rawDesc, '[');
                     @endphp
+
+                    @if($isJson)
+                        {{-- NUEVA TABLA APA PARA LA HOJA DE CÁLCULO JSON --}}
+                        @php $sheetData = json_decode($rawDesc, true) ?? []; @endphp
+                        <div class="table-caption" style="margin-top: 5px;">
+                            <em>Hoja de Ruta Operativa</em>
+                        </div>
+                        <table style="margin-bottom: 15px;">
+                            <thead>
+                                <tr>
+                                    <th width="8%" class="text-center">Edo.</th>
+                                    <th width="15%">Fecha</th>
+                                    <th width="20%">Responsable</th>
+                                    <th width="47%">Descripción de la Actividad</th>
+                                    <th width="10%" class="text-center">Hrs</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach($sheetData as $row)
+                                    <tr>
+                                        {{-- Usamos [X] y [ ] para evitar problemas con librerías PDF que no soportan emojis o iconos --}}
+                                        <td class="text-center">
+                                            <strong>{{ ($row['checked'] ?? false) ? '[X]' : '[ ]' }}</strong>
+                                        </td>
+                                        <td>{{ $row['date'] ?? '--' }}</td>
+                                        <td>{{ $row['responsable'] ?? 'N/A' }}</td>
+                                        <td>{{ $row['descripcion'] ?? '' }}</td>
+                                        <td class="text-center">{{ $row['tiempo'] ?? '0' }}</td>
+                                    </tr>
+                                @endforeach
+                                <tr class="table-end"><td colspan="5"></td></tr>
+                            </tbody>
+                        </table>
+                    @else
+                        {{-- LEGACY: FORMATO DE CHECKLIST ORIGINAL --}}
+                        @php
+                            if ($rawDesc) {
+                                $descLines = explode("\n", $rawDesc);
+                                echo '<div style="margin-top: 10px; margin-bottom: 15px;">';
+                                foreach($descLines as $line) {
+                                    $line = trim($line);
+                                    if (preg_match('/^\[([xX\s])\]\s*-?\s*(.*)$/', $line, $matches)) {
+                                        $isChecked = strtolower(trim($matches[1])) === 'x';
+                                        $text = $matches[2];
+                                        if ($isChecked) {
+                                            echo '<div class="checklist-item"><strong>[X]</strong> ' . e($text) . '</div>';
+                                        } else {
+                                            echo '<div class="checklist-item">[&nbsp;&nbsp;&nbsp;] ' . e($text) . '</div>';
+                                        }
+                                    } elseif ($line !== '') {
+                                        echo '<div style="margin-left: 0.5in; margin-bottom:5px;">' . nl2br(e($line)) . '</div>';
+                                    }
+                                }
+                                echo '</div>';
+                            }
+                        @endphp
+                    @endif
 
                     {{-- Parseo de Reportes de Desarrollo (Blockquote APA) --}}
                     @if($task->comments->count() > 0)
