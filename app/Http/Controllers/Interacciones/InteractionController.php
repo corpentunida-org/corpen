@@ -579,7 +579,6 @@ class InteractionController extends Controller
             ->with($relations)
             ->paginate(50)
             ->appends($request->query());
-
         // 6. CATÁLOGOS CON CACHE
         $allLineas = Cache::remember('all_lineas_list', 3600, fn () => LineaCredito::pluck('nombre', 'id'));
         $channels = Cache::remember('cat_channels', 86400, fn () => IntChannel::orderBy('name')->pluck('name', 'id'));

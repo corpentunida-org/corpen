@@ -394,16 +394,16 @@
                     <div class="mb-4">
                         <span class="data-label">Usuario Asignado (Analista)</span>
                         <div class="d-flex align-items-center gap-3 p-2 bg-light rounded-3">
-                            
+
                             {{-- Validamos si existe el usuario asignado Y si tiene foto de perfil --}}
                             @if ($interaction->usuarioAsignado && $interaction->usuarioAsignado->foto_perfil)
-                                <img src="{{ $interaction->usuarioAsignado->foto_perfil }}" 
-                                     alt="avatar-analista" 
-                                     class="shadow-sm" 
-                                     style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;" />
+                                <img src="{{ $interaction->usuarioAsignado->foto_perfil }}" alt="avatar-analista"
+                                    class="shadow-sm"
+                                    style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;" />
                             @else
                                 {{-- Si no tiene foto o no hay usuario, mostramos tu div original --}}
-                                <div class="avatar-init shadow-sm" style="background: var(--p-blue); width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: white; font-weight: bold;">
+                                <div class="avatar-init shadow-sm"
+                                    style="background: var(--p-blue); width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: white; font-weight: bold;">
                                     {{ substr($interaction->usuarioAsignado->name ?? 'A', 0, 1) }}
                                 </div>
                             @endif
@@ -416,8 +416,13 @@
                     <div class="mb-3">
                         <span class="data-label">Línea de Obligación</span>
                         <div class="data-value text-primary">
-                            <i
-                                class="fas fa-file-invoice-dollar me-2"></i>{{ $interaction->lineaDeObligacion->linea ?? 'General' }}
+                            <i class="fas fa-file-invoice-dollar me-2"></i>
+
+                            @forelse ($interaction->lineas_detalle as $linea)
+                                <span class="d-block">{{ $linea->nombre }}</span>
+                            @empty
+                                <span>General</span>
+                            @endforelse
                         </div>
                     </div>
                 </div>
@@ -454,10 +459,11 @@
                 {{-- ======================================================== --}}
                 @if ($interaction->comprobantes->isNotEmpty())
                     <div class="mt-4 text-start">
-                        
+
                         {{-- Encabezado amigable --}}
                         <div class="d-flex align-items-center mb-3 ps-2">
-                            <div class="bg-warning bg-opacity-10 text-warning rounded-circle d-flex justify-content-center align-items-center me-2" style="width: 32px; height: 32px;">
+                            <div class="bg-warning bg-opacity-10 text-warning rounded-circle d-flex justify-content-center align-items-center me-2"
+                                style="width: 32px; height: 32px;">
                                 <i class="fas fa-receipt fs-7"></i>
                             </div>
                             <h6 class="fw-bold text-dark mb-0 fs-6">Soporte de pago vinculado</h6>
@@ -466,9 +472,10 @@
                         @foreach ($interaction->comprobantes as $comprobante)
                             {{-- Tarjeta principal con borde cálido y esquinas muy suaves --}}
                             <div class="bg-white p-4 rounded-4 shadow-sm mb-4" style="border: 1px solid #f0ece1;">
-                                
+
                                 {{-- Fila 1: Monto y Fecha --}}
-                                <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom" style="border-color: #f0ece1 !important;">
+                                <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom"
+                                    style="border-color: #f0ece1 !important;">
                                     <div>
                                         <span class="text-muted d-block fs-8 fw-medium mb-1">Monto Pagado</span>
                                         <div class="fs-1 fw-bolder text-dark" style="letter-spacing: -1px;">
@@ -476,27 +483,35 @@
                                         </div>
                                     </div>
                                     <div class="text-end">
-                                        <span class="badge bg-light text-dark border px-3 py-2 rounded-pill fw-medium fs-8" style="border-color: #e8e5dc !important;">
-                                            <i class="far fa-calendar-alt text-muted me-1"></i> {{ date('d/m/Y', strtotime($comprobante->fecha_pago)) }}
+                                        <span
+                                            class="badge bg-light text-dark border px-3 py-2 rounded-pill fw-medium fs-8"
+                                            style="border-color: #e8e5dc !important;">
+                                            <i class="far fa-calendar-alt text-muted me-1"></i>
+                                            {{ date('d/m/Y', strtotime($comprobante->fecha_pago)) }}
                                         </span>
                                     </div>
                                 </div>
 
                                 {{-- Fila 2: Información de Origen/Destino (Fondo crema muy sutil) --}}
-                                <div class="rounded-4 p-3 mb-4" style="background-color: #fcfbf8; border: 1px solid #f4f1ea;">
-                                    
+                                <div class="rounded-4 p-3 mb-4"
+                                    style="background-color: #fcfbf8; border: 1px solid #f4f1ea;">
+
                                     {{-- Obligación / Línea de Crédito --}}
-                                    <div class="d-flex align-items-center mb-3 pb-3 border-bottom" style="border-color: #f0ece1 !important;">
-                                        <div class="bg-white rounded-circle d-flex justify-content-center align-items-center me-3 shadow-sm flex-shrink-0" style="width: 42px; height: 42px; color: #e5a93d;">
+                                    <div class="d-flex align-items-center mb-3 pb-3 border-bottom"
+                                        style="border-color: #f0ece1 !important;">
+                                        <div class="bg-white rounded-circle d-flex justify-content-center align-items-center me-3 shadow-sm flex-shrink-0"
+                                            style="width: 42px; height: 42px; color: #e5a93d;">
                                             <i class="fas fa-star fs-6"></i>
                                         </div>
                                         <div>
-                                            <span class="text-muted d-block fs-9 fw-medium text-uppercase mb-1">Tu Crédito</span>
+                                            <span class="text-muted d-block fs-9 fw-medium text-uppercase mb-1">Tu
+                                                Crédito</span>
                                             <span class="fw-bold text-dark fs-6">
                                                 @if ($comprobante->id_obligacion)
                                                     {{ optional($comprobante->obligacion)->nombre ?? 'Crédito no especificado' }}
                                                 @else
-                                                    <span class="fst-italic text-muted">No vinculado a un crédito</span>
+                                                    <span class="fst-italic text-muted">No vinculado a un
+                                                        crédito</span>
                                                 @endif
                                             </span>
                                         </div>
@@ -504,29 +519,34 @@
 
                                     {{-- Banco y Cuenta --}}
                                     <div class="d-flex align-items-center">
-                                        <div class="bg-white rounded-circle d-flex justify-content-center align-items-center me-3 shadow-sm flex-shrink-0" style="width: 42px; height: 42px; color: #4ea385;">
+                                        <div class="bg-white rounded-circle d-flex justify-content-center align-items-center me-3 shadow-sm flex-shrink-0"
+                                            style="width: 42px; height: 42px; color: #4ea385;">
                                             <i class="fas fa-building fs-6"></i>
                                         </div>
                                         <div>
-                                            <span class="text-muted d-block fs-9 fw-medium text-uppercase mb-1">Destino del Pago</span>
+                                            <span class="text-muted d-block fs-9 fw-medium text-uppercase mb-1">Destino
+                                                del Pago</span>
                                             <div class="d-flex align-items-baseline flex-wrap gap-1">
                                                 <span class="fw-bold text-dark fs-6">
                                                     {{ optional($comprobante->banco)->banco ?? 'Banco no registrado' }}
                                                 </span>
                                                 <span class="text-muted fs-8">
-                                                    • Cta: <span class="fw-medium text-dark">{{ optional($comprobante->banco)->numero_cuenta ?? 'N/A' }}</span>
+                                                    • Cta: <span
+                                                        class="fw-medium text-dark">{{ optional($comprobante->banco)->numero_cuenta ?? 'N/A' }}</span>
                                                 </span>
                                             </div>
                                         </div>
                                     </div>
-                                    
+
                                 </div>
 
                                 {{-- Fila 3: Detalles Contables (Píldora horizontal) --}}
-                                <div class="d-flex justify-content-around align-items-center mb-4 rounded-pill p-2" style="background-color: #f8f9fa; border: 1px solid #f0ece1;">
+                                <div class="d-flex justify-content-around align-items-center mb-4 rounded-pill p-2"
+                                    style="background-color: #f8f9fa; border: 1px solid #f0ece1;">
                                     <div class="text-center px-3">
                                         <span class="text-muted fs-9 d-block fw-medium mb-1">Cuota</span>
-                                        <span class="fw-bold text-dark fs-6">{{ $comprobante->numero_cuota ?? '--' }}</span>
+                                        <span
+                                            class="fw-bold text-dark fs-6">{{ $comprobante->numero_cuota ?? '--' }}</span>
                                     </div>
                                     <div style="width: 1px; height: 20px; background-color: #e8e5dc;"></div>
                                     <div class="text-center px-3">
@@ -548,7 +568,8 @@
                                             <i class="fas fa-file-invoice me-2"></i> Ver recibo completo
                                         </a>
                                     @else
-                                        <div class="d-inline-flex align-items-center px-4 py-2 bg-light rounded-pill text-muted fs-8 border" style="border-color: #e8e5dc !important;">
+                                        <div class="d-inline-flex align-items-center px-4 py-2 bg-light rounded-pill text-muted fs-8 border"
+                                            style="border-color: #e8e5dc !important;">
                                             <i class="fas fa-paperclip me-2"></i> Sin recibo adjunto
                                         </div>
                                     @endif
@@ -557,7 +578,7 @@
                         @endforeach
                     </div>
                 @endif
-                {{-- ======================================================== --}}      
+                {{-- ======================================================== --}}
             </div>
         </div>
     </div>
@@ -748,7 +769,7 @@
                 $('#modalSeguimiento').on('shown.bs.modal', function() {
                     $('#select_asignacion').select2({
                         dropdownParent: $(
-                        '#modalSeguimiento'), // Vital para que funcione en modales
+                            '#modalSeguimiento'), // Vital para que funcione en modales
                         placeholder: 'Buscar usuario...',
                         width: '100%',
                         language: {

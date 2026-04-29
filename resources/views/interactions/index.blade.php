@@ -212,8 +212,7 @@
                                             <td>
 
                                                 <a class="interaction-id fw-bold text-decoration-none pastel-link"
-                                                    href="#" 
-                                                    data-id="{{ $interaction->id }}"
+                                                    href="#" data-id="{{ $interaction->id }}"
                                                     data-fecha="{{ optional($interaction->interaction_date)->format('d/m/Y H:i') }}"
                                                     data-cliente="{{ $interaction->client->nom_ter ?? '—' }}"
                                                     data-client-id="{{ $interaction->client_id ?? '—' }}"
@@ -254,21 +253,19 @@
                                                 </p>
                                             </td>
 
-                                            <td style="width: 10%">                                                
+                                            <td style="width: 10%">
                                                 <span class="fw-semibold mb-1">
                                                     {{ $interaction->client->nom_ter ?? '-' }}
-                                                </span>                                                
+                                                </span>
                                                 <p class="fs-12 fw-semibold">
                                                     CC : {{ $interaction->client_id }}
                                                 </p>
                                             </td>
-
                                             <td>
                                                 <span class="small">
                                                     {{ $interaction->client->distrito->NOM_DIST ?? '—' }}
                                                 </span>
                                             </td>
-
                                             <td>
                                                 {{ optional($interaction->interaction_date)->format('d/m/Y H:i') }}
                                             </td>
@@ -279,26 +276,21 @@
                                                 {{ floor($interaction->duration / 60) }}m
                                                 {{ $interaction->duration % 60 }}s
                                             </td>
-
                                             <td>
                                                 <span class="small text-dark fw-medium">
                                                     {{ $interaction->type->name ?? 'N/A' }}
                                                 </span>
                                             </td>
-
                                             <td>
                                                 <div class="small mb-1 text-truncate-2-lines text-dark">
-                                                    @php
-                                                        // Obtenemos los nombres desde el array $lineas (cacheado) usando los IDs del modelo
-                                                        $idsActuales = is_array($interaction->id_linea_de_obligacion) ? $interaction->id_linea_de_obligacion : [];
-                                                        $nombresEncontrados = [];
-                                                        foreach($idsActuales as $idL) {
-                                                            if(isset($lineas[$idL])) $nombresEncontrados[] = $lineas[$idL];
-                                                        }
-                                                    @endphp
-                                                    {{ !empty($nombresEncontrados) ? implode(' / ', $nombresEncontrados) : 'General' }}
+                                                    @if ($interaction->lineas_detalle->isNotEmpty())
+                                                        @foreach ($interaction->lineas_detalle as $linea)
+                                                            <span style="display:block;">{{ $linea->nombre }}</span>
+                                                        @endforeach
+                                                    @endif
                                                 </div>
-                                                <span class="badge bg-soft-{{ $priorityColors[$interaction->outcome] ?? 'secondary' }} text-{{ $priorityColors[$interaction->outcome] ?? 'secondary' }}">
+                                                <span
+                                                    class="badge bg-soft-{{ $priorityColors[$interaction->outcome] ?? 'secondary' }} text-{{ $priorityColors[$interaction->outcome] ?? 'secondary' }}">
                                                     {{ $interaction->outcomeRelation?->name ?? ' ' }}
                                                 </span>
                                             </td>
@@ -610,14 +602,17 @@
                         document.getElementById('modal-id').textContent = `RADICADO #${el.id}`;
                         document.getElementById('modal-fecha').textContent = el.fecha;
                         document.getElementById('modal-cliente').textContent = el.cliente || '—';
-                        document.getElementById('modal-client-id').textContent = el.clientId ? `(CC: ${el.clientId})` : '';
+                        document.getElementById('modal-client-id').textContent = el.clientId ?
+                            `(CC: ${el.clientId})` : '';
                         document.getElementById('modal-agent').textContent = el.agent || '—';
                         document.getElementById('modal-motivo').textContent = el.motivo || '—';
                         document.getElementById('modal-duracion').textContent = el.duracion || '—';
                         document.getElementById('modal-llamante-nombre').textContent = el.llamanteNombre || '—';
                         document.getElementById('modal-llamante-cedula').textContent = el.llamanteCedula || '—';
-                        document.getElementById('modal-llamante-celular').textContent = el.llamanteCelular || '—';
-                        document.getElementById('modal-llamante-parentesco').textContent = el.llamanteParentesco || '—';
+                        document.getElementById('modal-llamante-celular').textContent = el.llamanteCelular ||
+                            '—';
+                        document.getElementById('modal-llamante-parentesco').textContent = el
+                            .llamanteParentesco || '—';
                         document.getElementById('modal-linea').textContent = el.linea || '—';
                         document.getElementById('modal-outcome').textContent = el.outcome || '—';
                         document.getElementById('modal-asignado').textContent = el.asignado || '—';
@@ -628,7 +623,8 @@
                         const counter = document.getElementById('modal-seguimientos-count');
 
                         // Estado de carga
-                        container.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary spinner-border-sm"></div><p class="small text-muted mt-2">Cargando historial...</p></div>';
+                        container.innerHTML =
+                            '<div class="text-center py-4"><div class="spinner-border text-primary spinner-border-sm"></div><p class="small text-muted mt-2">Cargando historial...</p></div>';
                         counter.textContent = '...';
 
                         // Petición al servidor (Ruta que agregamos al web.php)
@@ -655,12 +651,14 @@
                                     html += '</div>';
                                     container.innerHTML = html;
                                 } else {
-                                    container.innerHTML = '<p class="text-muted small mb-0 py-4 text-center">No hay seguimientos registrados.</p>';
+                                    container.innerHTML =
+                                        '<p class="text-muted small mb-0 py-4 text-center">No hay seguimientos registrados.</p>';
                                 }
                             })
                             .catch(err => {
                                 console.error(err);
-                                container.innerHTML = '<p class="text-danger small py-4 text-center">Error al cargar seguimientos.</p>';
+                                container.innerHTML =
+                                    '<p class="text-danger small py-4 text-center">Error al cargar seguimientos.</p>';
                                 counter.textContent = '0';
                             });
 
