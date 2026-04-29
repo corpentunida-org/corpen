@@ -524,9 +524,8 @@
                 {{-- TAB: TAREAS --}}
                 <div id="tasks" class="tab-content fade-in">
                     <div class="card-friendly" style="min-height: 400px;">
-                        <div
-                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                            <h3 style="margin: 0;">Lista de Pendientes</h3>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                            <h3 style="margin: 0;">Lista de Tareas</h3>
                             <a href="{{ route('flujo.tasks.create', ['workflow_id' => $workflow->id]) }}"
                                 class="btn-soft btn-primary">
                                 <i class="fas fa-plus"></i> Nueva
@@ -544,62 +543,96 @@
 
                         <div class="tasks-container">
                             @forelse($workflow->tasks as $task)
-                                <div class="task-item" data-title="{{ strtolower($task->titulo) }}">
-                                    <div style="flex: 1; min-width: 0;">
-                                        <div
-                                            style="font-weight: 700; color: #1e293b; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                            {{ $task->titulo }}</div>
-                                        <div
-                                            style="display: flex; gap: 10px; font-size: 0.8rem; color: #64748b; align-items: center; flex-wrap: wrap;">
+                                {{-- CÁLCULO DINÁMICO DE PROGRESO POR TAREA --}}
+                                @php
+                                    $rawDesc = trim($task->descripcion);
+                                    $isJson = str_starts_with($rawDesc, '[');
+                                    $totalItems = 0;
+                                    $itemsDone = 0;
+
+                                    if ($isJson) {
+                                        $sheetData = json_decode($rawDesc, true) ?? [];
+                                        $totalItems = count($sheetData);
+                                        foreach($sheetData as $row) {
+                                            if (isset($row['checked']) && $row['checked']) $itemsDone++;
+                                        }
+                                    } else {
+                                        $descLines = $rawDesc ? explode("\n", $rawDesc) : [];
+                                        foreach($descLines as $line) {
+                                            if (preg_match('/^\[([xX\s])\]\s*-?\s*(.*)$/', trim($line), $matches)) {
+                                                $totalItems++;
+                                                if (strtolower(trim($matches[1])) === 'x') $itemsDone++;
+                                            }
+                                        }
+                                    }
+                                    $pct = $totalItems > 0 ? round(($itemsDone / $totalItems) * 100) : 0;
+                                    $colorProgreso = $pct == 100 ? '#10b981' : ($pct > 50 ? '#3b82f6' : '#f59e0b');
+                                @endphp
+
+                                <div class="task-item" data-title="{{ strtolower($task->titulo) }}" style="display: flex; align-items: center; justify-content: space-between; padding: 15px; border-bottom: 1px solid #f1f5f9; transition: background 0.2s;">
+                                    
+                                    {{-- INFO DE LA TAREA --}}
+                                    <div style="flex: 1; min-width: 0; padding-right: 15px;">
+                                        <div style="font-weight: 700; color: #1e293b; margin-bottom: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                            {{ $task->titulo }}
+                                        </div>
+                                        <div style="display: flex; gap: 10px; font-size: 0.8rem; color: #64748b; align-items: center; flex-wrap: wrap;">
                                             <span style="display: flex; align-items: center;">
-                                                <span class="status-dot"
-                                                    style="background: {{ $task->estado == 'finalizado' ? '#10b981' : '#f59e0b' }};"></span>
-                                                {{ ucfirst($task->estado) }}
+                                                <span class="status-dot" style="width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; background: {{ strtolower($task->estado) == 'finalizado' ? '#10b981' : (strtolower($task->estado) == 'en_proceso' ? '#3b82f6' : '#f59e0b') }};"></span>
+                                                {{ str_replace('_', ' ', ucfirst($task->estado)) }}
                                             </span>
                                             <span>&bull;</span>
-                                            <span><i class="bi bi-calendar-plus"></i>
-                                                {{ $task->created_at->format('d M') }}</span>
+                                            <span><i class="bi bi-calendar-plus"></i> {{ $task->created_at->format('d M') }}</span>
                                             <span>&bull;</span>
-                                            <span style="display: flex; align-items: center; gap: 5px;"
-                                                title="Asignado a">
-                                                <div
-                                                    style="width: 20px; height: 20px; background: #e0e7ff; border-radius: 50%; color: #6366f1; font-size: 0.65rem; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+                                            <span style="display: flex; align-items: center; gap: 5px;" title="Asignado a">
+                                                <div style="width: 20px; height: 20px; background: #e0e7ff; border-radius: 50%; color: #6366f1; font-size: 0.65rem; display: flex; align-items: center; justify-content: center; font-weight: bold;">
                                                     {{ substr($task->user->name ?? ($task->asignado->name ?? '?'), 0, 1) }}
                                                 </div>
                                                 {{ $task->user->name ?? ($task->asignado->name ?? 'Sin Asignar') }}
-                                            </span><span>&bull;</span>
-                                            <span><span><i class="bi bi-calendar2-check"></i></span>
-                                                {{ $task->fecha_limite->format('d M') }}</span>
+                                            </span>
+                                            <span>&bull;</span>
+                                            <span class="{{ $task->fecha_limite && $task->fecha_limite->isPast() ? 'text-danger fw-bold' : '' }}">
+                                                <i class="bi bi-calendar2-check"></i> 
+                                                {{ $task->fecha_limite ? $task->fecha_limite->format('d M') : 'Sin fecha' }}
+                                            </span>
                                         </div>
                                     </div>
                                     
+                                    {{-- INDICADOR DE PROGRESO COMPACTO --}}
+                                    <div style="width: 130px; display: flex; flex-direction: column; gap: 5px; margin-right: 20px;">
+                                        <div style="display: flex; justify-content: space-between; font-size: 0.7rem; font-weight: 800; color: #64748b; text-transform: uppercase;">
+                                            <span>Avance</span>
+                                            <span style="color: {{ $colorProgreso }};">{{ $pct }}%</span>
+                                        </div>
+                                        <div style="height: 6px; background: #f1f5f9; border-radius: 10px; overflow: hidden; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);">
+                                            <div style="height: 100%; width: {{ $pct }}%; background: {{ $colorProgreso }}; border-radius: 10px; transition: width 0.5s ease;"></div>
+                                        </div>
+                                    </div>
+
                                     {{-- CONTENEDOR DE ACCIONES (VISOR Y GESTIONAR) --}}
-                                    <div style="display: flex; align-items: center; gap: 2px;">
-                                        
+                                    <div style="display: flex; align-items: center; gap: 5px;">
                                         {{-- BOTÓN VISOR (SHOW) --}}
                                         <a href="{{ route('flujo.tasks.show', $task->id) }}"
                                             title="Ver Detalles de Tarea"
-                                            style="color: #94a3b8; padding: 10px; transition: 0.2s;"
-                                            onmouseover="this.style.color='#4f46e5'"
-                                            onmouseout="this.style.color='#94a3b8'">
+                                            style="color: #94a3b8; padding: 8px; border-radius: 8px; transition: 0.2s;"
+                                            onmouseover="this.style.color='#4f46e5'; this.style.background='#e0e7ff';"
+                                            onmouseout="this.style.color='#94a3b8'; this.style.background='transparent';">
                                             <i class="fas fa-eye"></i>
                                         </a>
 
                                         {{-- BOTÓN GESTIONAR / EDITAR --}}
                                         <a href="{{ route('flujo.tasks.edit', $task->id) }}"
                                             title="Gestionar Tarea"
-                                            style="color: #94a3b8; padding: 10px; transition: 0.2s;"
-                                            onmouseover="this.style.color='var(--primary)'"
-                                            onmouseout="this.style.color='#94a3b8'">
+                                            style="color: #94a3b8; padding: 8px; border-radius: 8px; transition: 0.2s;"
+                                            onmouseover="this.style.color='var(--primary)'; this.style.background='#eff6ff';"
+                                            onmouseout="this.style.color='#94a3b8'; this.style.background='transparent';">
                                             <i class="fas fa-cog"></i>
                                         </a>
-                                        
                                     </div>
                                 </div>
                             @empty
                                 <div style="text-align: center; padding: 3rem; color: #94a3b8;">
-                                    <i class="fas fa-mug-hot"
-                                        style="font-size: 2.5rem; color: #e2e8f0; margin-bottom: 1rem;"></i>
+                                    <i class="fas fa-mug-hot" style="font-size: 2.5rem; color: #e2e8f0; margin-bottom: 1rem;"></i>
                                     <p>¡Todo limpio! No hay tareas pendientes.</p>
                                 </div>
                             @endforelse

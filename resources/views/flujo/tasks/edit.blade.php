@@ -23,9 +23,9 @@
         }
 
         .task-edit-wrapper {
-            max-width: 1200px;
-            margin: 40px auto;
-            padding: 0 24px;
+            max-width: 95%;
+            margin: 20px auto;
+            padding: 0 20px;
         }
 
         /* Header */
@@ -554,35 +554,158 @@
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="descripcion" class="form-label text-secondary fw-semibold">Descripción Detallada</label>
-                        
-                        <textarea name="descripcion" id="descripcion" rows="6" 
-                            class="form-control @error('descripcion') is-invalid @enderror">{{ old('descripcion', $task->descripcion) }}</textarea>
+                    {{-- INICIO DE LA TABLA EN FORMA DE EXCEL --}}
+<style>
+    /* ==========================================
+       1. ESTILOS MINIMALISTAS DE LA TABLA
+       ========================================== */
+    .sheet-container { 
+        background: #fff; 
+        overflow-x: auto; 
+        border-radius: 8px;
+        border: 1px solid #e5e7eb;
+        margin-bottom: 15px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+    .sheet-table { width: 100%; border-collapse: collapse; margin-bottom: 0; min-width: 750px; }
+    
+    .sheet-table th { 
+        background-color: #f9fafb; 
+        border-bottom: 1px solid #e5e7eb; 
+        text-align: left; 
+        font-size: 12px; 
+        padding: 12px 8px; 
+        font-weight: 600; 
+        color: #6b7280; 
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .sheet-table th:first-child { text-align: center; }
+    
+    .sheet-table tr {
+        border-bottom: 1px solid #f3f4f6;
+        border-left: 4px solid transparent; 
+        transition: background-color 0.2s ease;
+    }
+    .sheet-table tr:hover { background-color: #f8fafc; }
+    .sheet-table td { padding: 4px 8px; vertical-align: middle; }
+    
+    .sheet-table input:not([type="color"]):not([type="checkbox"]), .sheet-table select { 
+        width: 100%; border: 1px solid transparent; border-radius: 4px; height: 32px; 
+        padding: 4px 8px; box-sizing: border-box; outline: none; background: transparent; 
+        font-size: 13px; color: #374151; transition: all 0.2s; cursor: pointer;
+    }
+    .sheet-table input:hover:not([type="color"]):not([type="checkbox"]), .sheet-table select:hover { background: #f1f5f9; }
+    .sheet-table input:focus:not([type="color"]):not([type="checkbox"]), .sheet-table select:focus { 
+        border-color: #3b82f6; background: #fff; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); cursor: text;
+    }
+    
+    .desc-input-trigger { cursor: pointer !important; text-overflow: ellipsis; background-color: #f8fafc !important; border: 1px dashed #cbd5e1 !important; }
+    .desc-input-trigger:hover { background-color: #f1f5f9 !important; border-color: #94a3b8 !important; }
+    .sheet-checkbox { width: 16px; height: 16px; margin: 0 auto; display: block; cursor: pointer; accent-color: #10b981; }
+    
+    .actions-cell { display: flex; align-items: center; justify-content: center; gap: 10px; height: 100%; padding-top: 6px; }
+    .btn-delete-row { background: none; border: none; color: #9ca3af; font-size: 14px; cursor: pointer; padding: 6px; border-radius: 6px; transition: all 0.2s; display: flex; align-items: center; }
+    .btn-delete-row:hover { background-color: #fee2e2; color: #ef4444; }
+    
+    .color-dot-wrapper {
+        position: relative; width: 20px; height: 20px; border-radius: 50%; 
+        overflow: hidden; border: 1px solid #d1d5db; cursor: pointer;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    .color-dot-wrapper input[type="color"] {
+        position: absolute; top: -10px; left: -10px; width: 40px; height: 40px; 
+        border: none; cursor: pointer; padding: 0; background: none; outline: none;
+    }
 
-                        <div id="devModeContainer" class="border rounded p-3 bg-white shadow-sm" style="display: none;">
-                            
-                            {{-- NUEVO: Barra de progreso gerencial --}}
-                            <div id="progress-wrapper" style="display: none; margin-bottom: 15px;">
-                                <div class="d-flex justify-content-between align-items-center mb-1">
-                                    <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Progreso de la Tarea</span>
-                                    <span id="progress-text" style="font-size: 12px; font-weight: 800; color: var(--accent-blue);">0%</span>
-                                </div>
-                                <div style="width: 100%; height: 8px; background-color: #e2e8f0; border-radius: 10px; overflow: hidden;">
-                                    <div id="progress-bar" style="width: 0%; height: 100%; background-color: var(--accent-blue); transition: width 0.4s ease, background-color 0.4s ease;"></div>
-                                </div>
-                            </div>
-                            
-                            <div id="taskList"></div>
-                            
-                            <button type="button" id="addTaskBtn" class="btn btn-sm btn-outline-secondary mt-3 d-flex align-items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-2" viewBox="0 0 16 16">
-                                    <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
-                                </svg>
-                                Agregar Sub-tarea
-                            </button>
-                        </div>
-                    </div>
+    /* ==========================================
+       2. ESTILOS DEL MODAL DE DESCRIPCIÓN
+       ========================================== */
+    .desc-modal-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(15, 23, 42, 0.4); z-index: 1050; 
+        display: none; align-items: center; justify-content: center;
+        backdrop-filter: blur(2px);
+    }
+    .desc-modal-content {
+        background: #fff; width: 90%; max-width: 500px; border-radius: 12px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; flex-direction: column;
+        overflow: hidden; animation: modalFadeIn 0.2s ease-out;
+    }
+    @keyframes modalFadeIn { from { opacity: 0; transform: translateY(-15px); } to { opacity: 1; transform: translateY(0); } }
+    .desc-modal-header { padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
+    .desc-modal-body { padding: 20px; }
+    .desc-modal-footer { padding: 16px 20px; border-top: 1px solid #f1f5f9; text-align: right; background: #f8fafc; }
+    .btn-close-modal { background: none; border: none; font-size: 24px; color: #9ca3af; cursor: pointer; transition: color 0.2s; display: flex; }
+    .btn-close-modal:hover { color: #1e293b; }
+    .modal-textarea { width: 100%; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; font-size: 14px; color: #334155; outline: none; resize: vertical; min-height: 120px; }
+    .modal-textarea:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+</style>
+
+<div class="mb-3">
+    <label for="descripcion" class="form-label text-secondary fw-semibold">Detalle de SubTareas</label>
+    
+    <textarea name="descripcion" id="descripcion" style="display: none;"
+        class="form-control @error('descripcion') is-invalid @enderror">{{ old('descripcion', $task->descripcion) }}</textarea>
+
+    <div id="devModeContainer" class="border-0 rounded p-4 bg-white shadow-sm" style="border: 1px solid #e5e7eb !important;">
+        
+        <div id="progress-wrapper" style="margin-bottom: 20px;">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="d-flex align-items-center">
+                    <span style="font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">Progreso de la Sub_Tarea</span>
+                    <span id="task-counter" style="font-size: 11px; font-weight: 600; background: #f1f5f9; color: #475569; padding: 2px 8px; border-radius: 12px; margin-left: 10px;">0 SubTareas</span>
+                    <span id="task-completed-counter" style="font-size: 11px; font-weight: 600; background: #ecfdf5; color: #059669; padding: 2px 8px; border-radius: 12px; margin-left: 6px;">0 Hechas</span>
+                </div>
+                <span id="progress-text" style="font-size: 13px; font-weight: 800; color: #3b82f6;">0%</span>
+            </div>
+            <div style="width: 100%; height: 6px; background-color: #f1f5f9; border-radius: 10px; overflow: hidden;">
+                <div id="progress-bar" style="width: 0%; height: 100%; background-color: #3b82f6; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.5s ease;"></div>
+            </div>
+        </div>
+        
+        <div class="sheet-container">
+            <table class="sheet-table" id="spreadsheet">
+                <thead>
+                    <tr>
+                        <th style="width: 4%;">✓</th>
+                        <th style="width: 14%; min-width: 125px;">Fecha</th>
+                        <th style="width: 15%; min-width: 110px;">Responsable</th>
+                        <th style="width: 13%; min-width: 110px;">Estado</th>
+                        <th style="width: 9%; min-width: 70px;">Tiempo</th>
+                        <th style="width: 35%; min-width: 160px;">Descripción</th>
+                        <th style="width: 10%; min-width: 80px; text-align: center;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="spreadsheet-body">
+                    </tbody>
+            </table>
+        </div>
+        
+        <button type="button" id="addRowBtn" class="btn btn-sm btn-light border text-secondary mt-1 d-flex align-items-center fw-medium hover-bg-light transition-all">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-2" viewBox="0 0 16 16">
+                <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+            </svg>
+            Agregar Nueva Fila
+        </button>
+    </div>
+</div>
+
+<div id="descModal" class="desc-modal-overlay">
+    <div class="desc-modal-content">
+        <div class="desc-modal-header">
+            <h6 class="mb-0 fw-bold" style="color: #334155;">Detalle de la Tarea</h6>
+            <button type="button" id="closeDescModal" class="btn-close-modal">&times;</button>
+        </div>
+        <div class="desc-modal-body">
+            <textarea id="modalTextarea" class="modal-textarea" placeholder="Escribe todos los detalles de esta tarea aquí..."></textarea>
+        </div>
+        <div class="desc-modal-footer">
+            <button type="button" id="saveDescBtn" class="btn btn-primary btn-sm px-4 fw-medium">Guardar Descripción</button>
+        </div>
+    </div>
+</div>
+                    {{-- FIN DE LA TABLA EN FORMA DE EXCEL --}}
 
                     <div class="form-row-compact">
                         <div class="form-group flex-1">
@@ -1090,72 +1213,235 @@
         document.addEventListener('DOMContentLoaded', function() {
             
             // ==========================================
-            // 1. LÓGICA DE LOS INTERRUPTORES (TOGGLES)
+            // 0. LÓGICA DE LA HOJA DE CÁLCULO Y PROGRESO
             // ==========================================
+            const textarea = document.getElementById('descripcion');
+            const tbody = document.getElementById('spreadsheet-body');
+            const addRowBtn = document.getElementById('addRowBtn');
             
-            // Toggle de Formato de Reporte
-            let templateToggle = document.getElementById('templateToggle');
-            if(templateToggle && templateToggle.checked) {
-                // Simula que el usuario acaba de hacer click para forzar la lógica nativa
-                templateToggle.dispatchEvent(new Event('change'));
-            }
+            // Elementos del Modal
+            const descModal = document.getElementById('descModal');
+            const modalTextarea = document.getElementById('modalTextarea');
+            const closeDescModal = document.getElementById('closeDescModal');
+            const saveDescBtn = document.getElementById('saveDescBtn');
+            let currentEditIndex = null;
             
-            // Toggle de Habilitar Checklist
-            let devToggle = document.getElementById('devModeToggle');
-            if(devToggle && devToggle.checked) {
-                // Simula que el usuario acaba de hacer click
-                devToggle.dispatchEvent(new Event('change'));
+            let sheetData = [];
+
+            // INICIALIZAR DATOS
+            try {
+                if (textarea && textarea.value.trim() !== '') {
+                    if (textarea.value.trim().startsWith('[')) {
+                        sheetData = JSON.parse(textarea.value);
+                    } else {
+                        sheetData = [{ checked: false, date: '', responsable: '', status: 'pendiente', tiempo: '', descripcion: textarea.value, color: '#ffffff' }];
+                    }
+                }
+            } catch (e) {
+                sheetData = [{ checked: false, date: '', responsable: '', status: 'pendiente', tiempo: '', descripcion: textarea.value, color: '#ffffff' }];
             }
 
-            // ==========================================
-            // 2. LÓGICA DEL HOVER PREVIEW (ARCHIVOS)
-            // ==========================================
-            let previewModal = document.createElement('div');
-            previewModal.id = 'hover-preview-card';
-            previewModal.style.position = 'absolute';
-            previewModal.style.zIndex = '9999';
-            previewModal.style.display = 'none';
-            previewModal.style.opacity = '0';
-            previewModal.style.transition = 'opacity 0.2s ease';
-            previewModal.style.pointerEvents = 'none'; 
-            document.body.appendChild(previewModal);
+            if (sheetData.length === 0) {
+                sheetData.push({ checked: false, date: '', responsable: '', status: 'pendiente', tiempo: '', descripcion: '', color: '#ffffff' });
+            }
+
+            function updateTextarea() {
+                if (textarea) {
+                    textarea.value = JSON.stringify(sheetData);
+                }
+            }
+
+            function updateProgress() {
+                const progressWrapper = document.getElementById('progress-wrapper');
+                const progressBar = document.getElementById('progress-bar');
+                const progressText = document.getElementById('progress-text');
+                
+                // Elementos de los Contadores mejorados
+                const taskCounter = document.getElementById('task-counter'); 
+                const completedCounter = document.getElementById('task-completed-counter');
+
+                if (!progressWrapper || !progressBar || !progressText) return;
+
+                const totalTasks = sheetData.length;
+                const completedTasks = sheetData.filter(row => row.checked).length;
+                
+                // Actualizar Contadores Visuales
+                if (taskCounter) {
+                    taskCounter.innerText = totalTasks + (totalTasks === 1 ? ' Tarea' : ' SubTareas');
+                }
+                if (completedCounter) {
+                    completedCounter.innerText = completedTasks + ' Hechas';
+                }
+
+                if (totalTasks === 0) {
+                    progressWrapper.style.display = 'none';
+                    return;
+                }
+
+                progressWrapper.style.display = 'block';
+
+                const percentage = Math.round((completedTasks / totalTasks) * 100);
+
+                progressBar.style.width = percentage + '%';
+                progressText.innerText = percentage + '%';
+
+                if (percentage === 100) {
+                    progressBar.style.backgroundColor = '#10b981'; // Verde success
+                } else {
+                    progressBar.style.backgroundColor = '#3b82f6'; // Azul moderno
+                }
+            }
+
+            function renderTable() {
+                if (!tbody) return;
+                tbody.innerHTML = ''; 
+                
+                sheetData.forEach((row, index) => {
+                    const tr = document.createElement('tr');
+                    tr.style.borderLeftColor = (row.color && row.color !== '#ffffff') ? row.color : 'transparent';
+                    
+                    tr.innerHTML = `
+                        <td style="text-align: center;">
+                            <input type="checkbox" class="sheet-checkbox" data-index="${index}" data-field="checked" ${row.checked ? 'checked' : ''}>
+                        </td>
+                        <td>
+                            <input type="date" data-index="${index}" data-field="date" value="${row.date || ''}">
+                        </td>
+                        <td>
+                            <input type="text" data-index="${index}" data-field="responsable" placeholder="Quién..." value="${row.responsable || ''}">
+                        </td>
+                        <td>
+                            <select data-index="${index}" data-field="status">
+                                <option value="pendiente" ${row.status === 'pendiente' ? 'selected' : ''}>Pendiente</option>
+                                <option value="en proceso" ${row.status === 'en proceso' ? 'selected' : ''}>En Proceso</option>
+                                <option value="completa" ${row.status === 'completa' ? 'selected' : ''}>Completa</option>
+                            </select>
+                        </td>
+                        <td>
+                            <input type="number" step="0.5" min="0" data-index="${index}" data-field="tiempo" placeholder="Hrs..." value="${row.tiempo || ''}">
+                        </td>
+                        <td>
+                            <input type="text" readonly class="desc-input-trigger" data-index="${index}" data-field="descripcion" placeholder="Clic para detalles..." value="${row.descripcion || ''}">
+                        </td>
+                        <td>
+                            <div class="actions-cell">
+                                <div class="color-dot-wrapper" title="Color de etiqueta">
+                                    <input type="color" data-index="${index}" data-field="color" value="${row.color || '#ffffff'}">
+                                </div>
+                                <button type="button" class="btn-delete-row" data-index="${index}" title="Eliminar fila">
+                                    <svg pointer-events="none" xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                                    <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                updateProgress(); 
+                updateTextarea(); 
+            }
+
+            if (addRowBtn) {
+                addRowBtn.addEventListener('click', function() {
+                    sheetData.push({ checked: false, date: '', responsable: '', status: 'pendiente', tiempo: '', descripcion: '', color: '#ffffff' });
+                    renderTable();
+                });
+            }
+
+            if (tbody) {
+                tbody.addEventListener('input', function(e) {
+                    const target = e.target;
+                    const index = target.getAttribute('data-index');
+                    const field = target.getAttribute('data-field');
+
+                    if (index !== null && field && target.type !== 'checkbox' && target.tagName !== 'SELECT' && field !== 'descripcion') {
+                        sheetData[index][field] = target.value;
+                        if(field === 'color') target.closest('tr').style.borderLeftColor = target.value !== '#ffffff' ? target.value : 'transparent';
+                        updateTextarea(); 
+                    }
+                });
+                
+                tbody.addEventListener('change', function(e) {
+                    const target = e.target;
+                    const index = target.getAttribute('data-index');
+                    const field = target.getAttribute('data-field');
+
+                    if (index !== null && field) {
+                        if (target.type === 'checkbox') {
+                            sheetData[index][field] = target.checked;
+                            sheetData[index]['status'] = target.checked ? 'completa' : 'en proceso';
+                            renderTable(); 
+                        } else if (target.tagName === 'SELECT') {
+                            sheetData[index][field] = target.value;
+                            updateTextarea();
+                        }
+                    }
+                });
+
+                tbody.addEventListener('click', function(e) {
+                    if (e.target.classList.contains('btn-delete-row')) {
+                        sheetData.splice(e.target.getAttribute('data-index'), 1);
+                        renderTable(); 
+                    }
+                    
+                    if (e.target.classList.contains('desc-input-trigger')) {
+                        currentEditIndex = e.target.getAttribute('data-index');
+                        modalTextarea.value = sheetData[currentEditIndex].descripcion || '';
+                        descModal.style.display = 'flex';
+                        setTimeout(() => modalTextarea.focus(), 100);
+                    }
+                });
+            }
+
+            // LÓGICA DEL MODAL
+            const closeModal = () => { descModal.style.display = 'none'; currentEditIndex = null; };
+            closeDescModal.addEventListener('click', closeModal);
+            descModal.addEventListener('click', function(e) { if (e.target === descModal) closeModal(); });
+            saveDescBtn.addEventListener('click', function() {
+                if (currentEditIndex !== null) {
+                    sheetData[currentEditIndex].descripcion = modalTextarea.value;
+                    updateTextarea(); renderTable(); closeModal();
+                }
+            });
+
+            renderTable();
+
+            // LÓGICA TOGGLES Y PREVIEW ORIGINAL
+            let templateToggle = document.getElementById('templateToggle');
+            if(templateToggle && templateToggle.checked) templateToggle.dispatchEvent(new Event('change'));
+            let devToggle = document.getElementById('devModeToggle');
+            if(devToggle && devToggle.checked) devToggle.dispatchEvent(new Event('change'));
+
+            let previewModalHover = document.createElement('div');
+            previewModalHover.id = 'hover-preview-card';
+            previewModalHover.style.position = 'absolute'; previewModalHover.style.zIndex = '9999';
+            previewModalHover.style.display = 'none'; previewModalHover.style.opacity = '0';
+            previewModalHover.style.transition = 'opacity 0.2s ease'; previewModalHover.style.pointerEvents = 'none'; 
+            document.body.appendChild(previewModalHover);
 
             let hoverTimer; 
-
-            const triggers = document.querySelectorAll('.preview-trigger');
-
-            triggers.forEach(trigger => {
+            document.querySelectorAll('.preview-trigger').forEach(trigger => {
                 trigger.addEventListener('mouseenter', function(e) {
                     const url = this.getAttribute('data-url');
                     const type = this.getAttribute('data-type');
-
                     hoverTimer = setTimeout(() => {
-                        if (type === 'image') {
-                            previewModal.innerHTML = `<img src="${url}" style="max-width:300px; border-radius:10px; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);" alt="Vista previa">`;
-                        } else {
-                            previewModal.innerHTML = `<iframe src="${url}#toolbar=0&navpanes=0&scrollbar=0" style="width:300px; height:400px; border:none; border-radius:10px; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);"></iframe>`;
-                        }
-                        
-                        previewModal.style.display = 'block';
-                        setTimeout(() => previewModal.style.opacity = '1', 10); 
+                        previewModalHover.innerHTML = type === 'image' ? `<img src="${url}" style="max-width:300px; border-radius:10px; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);">` : `<iframe src="${url}#toolbar=0" style="width:300px; height:400px; border:none; border-radius:10px;"></iframe>`;
+                        previewModalHover.style.display = 'block';
+                        setTimeout(() => previewModalHover.style.opacity = '1', 10); 
                     }, 400); 
                 });
-
-                trigger.addEventListener('mousemove', function(e) {
-                    previewModal.style.left = (e.pageX + 15) + 'px';
-                    previewModal.style.top = (e.pageY + 15) + 'px';
+                trigger.addEventListener('mousemove', e => {
+                    previewModalHover.style.left = (e.pageX + 15) + 'px';
+                    previewModalHover.style.top = (e.pageY + 15) + 'px';
                 });
-
-                trigger.addEventListener('mouseleave', function() {
-                    clearTimeout(hoverTimer); 
-                    previewModal.style.opacity = '0';
-                    setTimeout(() => {
-                        previewModal.style.display = 'none';
-                        previewModal.innerHTML = ''; 
-                    }, 200); 
+                trigger.addEventListener('mouseleave', () => {
+                    clearTimeout(hoverTimer); previewModalHover.style.opacity = '0';
+                    setTimeout(() => { previewModalHover.style.display = 'none'; previewModalHover.innerHTML = ''; }, 200); 
                 });
             });
-
         });
     </script>
 

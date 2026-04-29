@@ -58,8 +58,21 @@
                         <i class="fas fa-chevron-down arrow-indicator"></i>
                     </button>
                     <div class="stack-body">
-                        <div class="stack-inner">
-                            @include('flujo.componentes.workflows-card')
+                        <div class="stack-inner" id="moduloWorkflows">
+                            
+                            {{-- Buscador Interno Compacto (Alineado a la derecha, no pierde espacio) --}}
+                            <div class="module-search-header">
+                                <div class="compact-search">
+                                    <i class="fas fa-search"></i>
+                                    <input type="text" onkeyup="filtrarContenido(this, 'moduloWorkflows')" placeholder="Filtrar en tiempo real..." autocomplete="off">
+                                </div>
+                            </div>
+
+                            {{-- Contenido del Componente --}}
+                            <div class="module-content">
+                                @include('flujo.componentes.workflows-card')
+                            </div>
+
                         </div>
                     </div>
                 </div>
@@ -77,8 +90,19 @@
                         <i class="fas fa-chevron-down arrow-indicator"></i>
                     </button>
                     <div class="stack-body">
-                        <div class="stack-inner">
-                            @include('flujo.componentes.tasks-card')
+                        <div class="stack-inner" id="moduloTareas">
+                            
+                            {{-- Buscador para Tareas --}}
+                            <div class="module-search-header">
+                                <div class="compact-search">
+                                    <i class="fas fa-search"></i>
+                                    <input type="text" onkeyup="filtrarContenido(this, 'moduloTareas')" placeholder="Filtrar tareas..." autocomplete="off">
+                                </div>
+                            </div>
+                            
+                            <div class="module-content">
+                                @include('flujo.componentes.tasks-card')
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -202,9 +226,46 @@
         .arrow-indicator { font-size: 0.9rem; color: var(--executive-muted); transition: 0.4s; }
         .stack-card.active .arrow-indicator { transform: rotate(180deg); color: var(--executive-text); }
 
-        .stack-body { max-height: 0; overflow: hidden; transition: max-height 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
-        .stack-card.active .stack-body { max-height: 5000px; }
+        /* Solución de visualización: height auto en lugar de max-height */
+        .stack-body { display: none; }
+        .stack-card.active .stack-body { display: block; }
         .stack-inner { padding: 0 30px 30px 30px; }
+
+        /* --- ESTILOS DEL BUSCADOR INTERNO COMPACTO --- */
+        .module-search-header {
+            display: flex;
+            justify-content: flex-end; /* Lo alinea a la derecha para ahorrar espacio */
+            margin-bottom: 15px;
+        }
+        .compact-search {
+            display: flex;
+            align-items: center;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 6px 14px;
+            width: 100%;
+            max-width: 320px; /* Tamaño compacto, no ocupa toda la pantalla */
+            transition: all 0.3s ease;
+        }
+        .compact-search:focus-within {
+            border-color: var(--executive-accent);
+            background: #fff;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+        .compact-search i {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            margin-right: 8px;
+        }
+        .compact-search input {
+            border: none;
+            background: transparent;
+            width: 100%;
+            font-size: 0.9rem;
+            color: var(--executive-text);
+            outline: none;
+        }
 
         /* --- MOBILE OPTIMIZATION --- */
         @media (max-width: 900px) {
@@ -212,35 +273,47 @@
             .welcome-bar { flex-direction: column; align-items: flex-start; margin-bottom: 30px; }
             .main-title { font-size: 1.7rem; }
             .btn-minimal-black { width: 100%; justify-content: center; }
-            
             .stats-row { grid-template-columns: repeat(2, 1fr); gap: 16px; padding-bottom: 20px; }
-            .stat-number { font-size: 1.6rem; }
-            
             .stack-trigger { padding: 20px; }
             .stack-inner { padding: 0 15px 20px 15px; }
-            .icon-box { width: 40px; height: 40px; font-size: 1rem; }
-            .title-main { font-size: 0.95rem; }
             .d-none-mobile { display: none !important; }
+            .module-search-header { justify-content: center; }
+            .compact-search { max-width: 100%; }
         }
     </style>
 
     <script>
+        // Función del acordeón
         function toggleStack(btn) {
             const card = btn.closest('.stack-card');
             const isActive = card.classList.contains('active');
             
-            // UX Corporativa: Cerrar otros para enfocar
             document.querySelectorAll('.stack-card').forEach(c => c.classList.remove('active'));
             
             if (!isActive) {
                 card.classList.add('active');
-                // Scroll suave al abrir en móvil
-                if(window.innerWidth < 900) {
-                    setTimeout(() => {
-                        card.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }, 300);
-                }
             }
+        }
+
+        // Función del Buscador Interno (Tiempo Real)
+        function filtrarContenido(input, containerId) {
+            const filtro = input.value.toLowerCase();
+            const contenedor = document.getElementById(containerId);
+            
+            // Busca dentro del div ".module-content" (donde esta tu include)
+            const areaContenido = contenedor.querySelector('.module-content');
+            
+            // Captura las filas de tablas (tr) o divs que suelen usarse en Laravel
+            const elementos = areaContenido.querySelectorAll('table tbody tr, .item-fila, .card');
+            
+            elementos.forEach(el => {
+                const texto = el.textContent || el.innerText;
+                if (texto.toLowerCase().indexOf(filtro) > -1) {
+                    el.style.display = ""; // Muestra si coincide
+                } else {
+                    el.style.display = "none"; // Oculta si no coincide
+                }
+            });
         }
     </script>
 </x-base-layout>
