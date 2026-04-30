@@ -155,7 +155,7 @@ class SegNovedadesController extends Controller
                 }
             }
             $this->auditoria('TERCERO CREAD0 ID ' . $terceroontable->cod_ter);
-            $this->auditoria('ASEGURADO CREADO ID ' . $asegurado->cedula);
+            $this->auditoria('ASEGURADO CREADO ID ' . ($aseguradontable ? $aseguradontable->cedula : $asegurado->cedula));
         }
         return redirect()->route('seguros.novedades.index')->with('success', 'Novedad registrada correctamente');
     }

@@ -74,8 +74,6 @@ class Interaction extends Model
     }
     public function getLineasDetalleAttribute()
     {
-        
-
         if (empty($this->id_linea_de_obligacion)) {
             return collect();
         }
