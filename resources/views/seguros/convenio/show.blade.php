@@ -40,12 +40,13 @@
                         <div>
                             <h5 class="mb-1">{{ $condicionId ?? '-' }}</h5>
                         </div>
-                        <form id="formDuplicarGrupo" method="POST"
+                        <form class="formDuplicarGrupo" method="POST"
                             action="{{ route('seguros.planes.duplicarGrupo') }}">
                             @csrf
-                            <input type="hidden" name="condicion_id" id="condicion_id">
-
-                            <button type="submit" id="btnDuplicarGrupo" class="btn btn-light-brand">
+                            <input type="hidden" name="condicion_id" class="condicion_id"
+                                value="{{ $planesGrupo->first()->condicion_id }}">
+                            <button type="submit" class="btn btn-light-brand btnDuplicarGrupo"
+                                data-condicion="{{ $condicionId }}" data-planes='@json($planesGrupo->pluck('condicion_id'))'>
                                 Duplicar Grupo
                             </button>
                         </form>
@@ -65,7 +66,6 @@
                                                 <i class="feather-more-vertical"></i>
                                             </a>
                                             <div class="dropdown-menu dropdown-menu-end">
-
                                                 @candirect('seguros.planes.update')
                                                 <a class="dropdown-item"
                                                     href="{{ route('seguros.planes.edit', ['plan' => $plan->id]) }}">
@@ -146,20 +146,24 @@
             });
         });
 
-        const planesGrupo = @json($planesGrupo->pluck('condicion_id'));
         const condiciones = @json($condiciones);
 
-        const form = document.getElementById('formDuplicarGrupo');
-
-        form.addEventListener('submit', function(e) {
+        $('.formDuplicarGrupo').on('submit', function(e) {
 
             e.preventDefault();
 
-            let opciones = {}
+            let form = $(this);
+            let btn = form.find('.btnDuplicarGrupo');
 
+            let planesGrupo = btn.data('planes');
+
+            let opciones = {};
+            let condicionesExistentes = $('.condicion_id').map(function() {
+                return Number($(this).val());
+            }).get();
             condiciones.forEach(c => {
-                opciones[c.id] = c.nombre
-            })
+                opciones[c.id] = c.descripcion;
+            });
 
             Swal.fire({
                 title: 'Duplicar grupo',
@@ -171,35 +175,40 @@
                 showCancelButton: true,
                 confirmButtonText: 'Duplicar',
 
-                /*preConfirm: () => {
-
-                    const condicionId = Number(Swal.getInput().value)
-
+                preConfirm: (condicionId) => {
+                    condicionId = Number(condicionId);
                     if (!condicionId) {
-                        Swal.showValidationMessage('Debe seleccionar una condición')
-                        return false
+                        Swal.showValidationMessage('Debe seleccionar una condición');
+                        return false;
                     }
 
-                    if (planesGrupo.includes(condicionId)) {
-                        Swal.showValidationMessage('Ya existe un grupo para esa condición')
-                        return false
+                    if (condicionesExistentes.includes(condicionId)) {
+                        Swal.showValidationMessage(
+                            'Ya existe un grupo en pantalla con esa condición');
+                        return false;
                     }
 
-                    return condicionId
-                }*/
-
-            }).then((result) => {
-console.log(result);
-                if (result.isConfirmed) {
-
-                    document.getElementById('condicion_id').value = result.value
-
-                    form.submit() // ← enviamos el formulario manualmente
-
+                    return condicionId;
                 }
 
-            })
+            }).then((result) => {
+                // CORRECCIÓN CRÍTICA: 
+                // Validamos tanto isConfirmed como la existencia de result.value
+                if (result.value || result.isConfirmed) {
 
+                    // 1. Extraemos el ID (el 8 que mencionaste)
+                    const seleccion = result.value;
+
+                    // 2. Buscamos el input oculto dentro de ESTE formulario y asignamos el valor
+                    form.find('input[name="condicion_id"]').val(seleccion);
+
+                    // 3. Enviamos al controlador
+                    // Usamos form[0].submit() para saltar cualquier otro preventDefault
+                    console.log("Enviando a controlador con ID:", seleccion);
+                    form[0].submit();
+                }
+            });
         });
+
     });
 </script>
