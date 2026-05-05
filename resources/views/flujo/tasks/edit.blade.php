@@ -224,11 +224,13 @@
             position: relative;
         }
 
-        .soporte-dropzone:hover, .soporte-dropzone.dragover {
+        .soporte-dropzone:hover,
+        .soporte-dropzone.dragover {
             border-color: var(--accent-blue);
             background: #eff6ff;
             color: var(--brand-primary);
         }
+
         /* --------------------------------------- */
 
         .hidden-input {
@@ -238,7 +240,7 @@
         /* --- MEJORA UX: Timeline para los comentarios --- */
         .comment-thread {
             position: relative;
-            padding-left: 30px; 
+            padding-left: 30px;
         }
 
         .comment-thread::before {
@@ -246,7 +248,7 @@
             position: absolute;
             top: 0;
             bottom: 0;
-            left: 12px; 
+            left: 12px;
             width: 2px;
             background: #e2e8f0;
             border-radius: 2px;
@@ -259,25 +261,25 @@
             padding: 16px;
             margin-bottom: 20px;
             position: relative;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
             transition: transform 0.2s, box-shadow 0.2s;
         }
 
         .comment-bubble:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(0,0,0,0.05);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.05);
             border-color: #cbd5e1;
         }
 
         .comment-bubble .avatar-circle {
             position: absolute;
-            left: -42px; 
+            left: -42px;
             top: 15px;
             width: 28px;
             height: 28px;
             background: var(--brand-primary);
             color: white;
-            border: 3px solid var(--bg-neutral); 
+            border: 3px solid var(--bg-neutral);
             box-shadow: 0 0 0 1px #e2e8f0;
             border-radius: 50%;
             display: flex;
@@ -286,6 +288,7 @@
             font-size: 10px;
             font-weight: 700;
         }
+
         /* ----------------------------------------------- */
 
         .comment-head {
@@ -363,31 +366,135 @@
         }
 
         @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+            0% {
+                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(34, 197, 94, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+            }
         }
 
         @media (max-width: 992px) {
-            .form-grid { grid-template-columns: 1fr; }
-            .form-row-compact { flex-direction: column; gap: 0; }
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-row-compact {
+                flex-direction: column;
+                gap: 0;
+            }
         }
 
         /* Estilos minimalistas para la lista de tareas */
-        .task-container { display: none; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .task-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        .btn-toggle { background: none; border: none; color: #64748b; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: color 0.2s; }
-        .btn-toggle:hover { color: #0f172a; }
-        .task-row { display: flex; align-items: center; padding: 6px 0; border-bottom: 1px solid transparent; transition: all 0.2s; }
-        .task-row:hover { border-bottom-color: #f1f5f9; }
-        .task-checkbox { width: 16px; height: 16px; margin-right: 12px; cursor: pointer; accent-color: #3b82f6; }
-        .task-input { flex: 1; border: none; outline: none; background: transparent; font-size: 14px; color: #334155; transition: all 0.2s; padding: 4px 0; }
-        .task-input:focus { border-bottom: 1px dashed #cbd5e1; }
-        .task-input.completed { text-decoration: line-through; color: #94a3b8; }
-        .task-delete { opacity: 0; background: none; border: none; color: #ef4444; cursor: pointer; font-size: 14px; padding: 0 8px; transition: opacity 0.2s; }
-        .task-row:hover .task-delete { opacity: 1; }
-        .btn-add-task { background: none; border: none; color: #94a3b8; font-size: 14px; cursor: pointer; padding: 8px 0 0 28px; display: flex; align-items: center; gap: 6px; width: 100%; text-align: left; }
-        .btn-add-task:hover { color: #3b82f6; }
+        .task-container {
+            display: none;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .btn-toggle {
+            background: none;
+            border: none;
+            color: #64748b;
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: color 0.2s;
+        }
+
+        .btn-toggle:hover {
+            color: #0f172a;
+        }
+
+        .task-row {
+            display: flex;
+            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .task-row:hover {
+            border-bottom-color: #f1f5f9;
+        }
+
+        .task-checkbox {
+            width: 16px;
+            height: 16px;
+            margin-right: 12px;
+            cursor: pointer;
+            accent-color: #3b82f6;
+        }
+
+        .task-input {
+            flex: 1;
+            border: none;
+            outline: none;
+            background: transparent;
+            font-size: 14px;
+            color: #334155;
+            transition: all 0.2s;
+            padding: 4px 0;
+        }
+
+        .task-input:focus {
+            border-bottom: 1px dashed #cbd5e1;
+        }
+
+        .task-input.completed {
+            text-decoration: line-through;
+            color: #94a3b8;
+        }
+
+        .task-delete {
+            opacity: 0;
+            background: none;
+            border: none;
+            color: #ef4444;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 0 8px;
+            transition: opacity 0.2s;
+        }
+
+        .task-row:hover .task-delete {
+            opacity: 1;
+        }
+
+        .btn-add-task {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 14px;
+            cursor: pointer;
+            padding: 8px 0 0 28px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            width: 100%;
+            text-align: left;
+        }
+
+        .btn-add-task:hover {
+            color: #3b82f6;
+        }
 
         /* Estilos para la previsualización al pasar el mouse (Hover Preview) */
         #hover-preview-card {
@@ -400,13 +507,14 @@
             background: white;
             padding: 10px;
             border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
             width: 500px;
             max-width: 90vw;
             pointer-events: none;
             opacity: 0;
             transition: opacity 0.2s ease-in-out;
         }
+
         #hover-preview-card img {
             width: 100%;
             height: auto;
@@ -414,6 +522,7 @@
             max-height: 70vh;
             object-fit: contain;
         }
+
         #hover-preview-card iframe {
             width: 100%;
             height: 60vh;
@@ -424,38 +533,42 @@
     </style>
 
     <div class="task-edit-wrapper">
-        
+
         {{-- Header Minimalista y Amigable (Bootstrap Nativo) --}}
         <header class="bg-white rounded-4 shadow-sm border p-4 mb-4">
-            
+
             {{-- Fila Superior: Navegación y Acciones Globales --}}
             <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-3">
                 <div class="d-flex flex-wrap gap-2">
-                    @if($task->workflow)
-                        <a href="{{ route('flujo.workflows.show', $task->workflow->id) }}" 
-                           class="btn btn-sm btn-light text-secondary rounded-pill fw-semibold px-3 border" title="Volver al Workflow">
+                    @if ($task->workflow)
+                        <a href="{{ route('flujo.workflows.show', $task->workflow->id) }}"
+                            class="btn btn-sm btn-light text-secondary rounded-pill fw-semibold px-3 border"
+                            title="Volver al Workflow">
                             <i class="fas fa-arrow-left me-1"></i> Proyecto
                         </a>
                     @endif
-                    <a href="{{ route('flujo.tasks.index') }}" 
-                       class="btn btn-sm btn-light text-secondary rounded-pill fw-semibold px-3 border">
+                    <a href="{{ route('flujo.tasks.index') }}"
+                        class="btn btn-sm btn-light text-secondary rounded-pill fw-semibold px-3 border">
                         <i class="fas fa-tasks me-1"></i> Tareas
                     </a>
-                    
+
                     {{-- MEJORA UX 2: Salto rápido a la vista de detalles --}}
-                    <a href="{{ route('flujo.tasks.show', $task->id) }}" 
-                       class="btn btn-sm btn-light text-primary rounded-pill fw-semibold px-3 border border-primary-subtle" title="Ver cómo se ve esta tarea">
+                    <a href="{{ route('flujo.tasks.show', $task->id) }}"
+                        class="btn btn-sm btn-light text-primary rounded-pill fw-semibold px-3 border border-primary-subtle"
+                        title="Ver cómo se ve esta tarea">
                         <i class="fas fa-eye me-1"></i> Visor
                     </a>
                 </div>
-                
+
                 <div class="d-flex align-items-center gap-2">
-                    <span class="badge bg-light text-secondary border px-3 py-2 rounded-pill fw-semibold d-none d-sm-inline-block">
+                    <span
+                        class="badge bg-light text-secondary border px-3 py-2 rounded-pill fw-semibold d-none d-sm-inline-block">
                         <span class="text-primary">Edición</span> / #{{ $task->id }}
                     </span>
-                    
+
                     {{-- MEJORA UX 1: Botón de Guardado Superior (Vinculado al ID del formulario abajo) --}}
-                    <button type="submit" form="task-update-form" class="btn btn-sm btn-dark rounded-pill fw-semibold px-4 shadow-sm d-flex align-items-center gap-2">
+                    <button type="submit" form="task-update-form"
+                        class="btn btn-sm btn-dark rounded-pill fw-semibold px-4 shadow-sm d-flex align-items-center gap-2">
                         <i class="fas fa-save"></i> <span class="d-none d-md-inline">Guardar Cambios</span>
                     </button>
                 </div>
@@ -463,20 +576,22 @@
 
             {{-- Fila Inferior: Título, Meta-datos y Badges --}}
             <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-3">
-                
+
                 <div>
                     <h1 class="h2 fw-bolder text-dark mb-1">Edición de Tarea</h1>
                     {{-- MEJORA UX 3: Feedback de última actividad --}}
                     <p class="text-muted small mb-3 mb-md-0">
-                        <i class="fas fa-history me-1"></i> Última actualización: {{ $task->updated_at->diffForHumans() }}
+                        <i class="fas fa-history me-1"></i> Última actualización:
+                        {{ $task->updated_at->diffForHumans() }}
                     </p>
                 </div>
-                
+
                 <div class="d-flex flex-wrap align-items-center gap-2 text-secondary small fw-medium">
-                    
+
                     {{-- Badge de Estado con "Puntito" de color --}}
-                    <span class="badge bg-light text-dark border px-3 py-2 rounded-pill d-flex align-items-center gap-2 shadow-sm">
-                        @if(in_array(strtolower($task->estado), ['completado', 'finalizado', 'revisado']))
+                    <span
+                        class="badge bg-light text-dark border px-3 py-2 rounded-pill d-flex align-items-center gap-2 shadow-sm">
+                        @if (in_array(strtolower($task->estado), ['completado', 'finalizado', 'revisado']))
                             <i class="fas fa-circle text-success" style="font-size: 8px;"></i>
                         @elseif(strtolower($task->estado) == 'en_proceso')
                             <i class="fas fa-circle text-primary" style="font-size: 8px;"></i>
@@ -487,8 +602,9 @@
                     </span>
 
                     {{-- Badge de Prioridad --}}
-                    <span class="badge bg-light text-dark border px-3 py-2 rounded-pill d-flex align-items-center gap-2 shadow-sm">
-                        @if(strtolower($task->prioridad) == 'alta')
+                    <span
+                        class="badge bg-light text-dark border px-3 py-2 rounded-pill d-flex align-items-center gap-2 shadow-sm">
+                        @if (strtolower($task->prioridad) == 'alta')
                             <i class="fas fa-flag text-danger"></i>
                         @elseif(strtolower($task->prioridad) == 'media')
                             <i class="fas fa-flag text-warning"></i>
@@ -497,10 +613,10 @@
                         @endif
                         Prioridad {{ ucfirst($task->prioridad) }}
                     </span>
-                    
+
                 </div>
             </div>
-            
+
         </header>
 
         {{-- Banner de Contexto de Proyecto --}}
@@ -524,12 +640,14 @@
         <main class="form-grid">
             {{-- Columna Principal: Formulario --}}
             <div class="form-column">
-                <form action="{{ route('flujo.tasks.update', $task) }}" method="POST" id="task-update-form" class="card-minimal">
+                <form action="{{ route('flujo.tasks.update', $task) }}" method="POST" id="task-update-form"
+                    class="card-minimal">
                     @csrf
                     @method('PUT')
 
                     @if ($task->workflow)
-                        <input type="hidden" name="redirect_to" value="{{ route('flujo.workflows.show', $task->workflow->id) }}">
+                        <input type="hidden" name="redirect_to"
+                            value="{{ route('flujo.workflows.show', $task->workflow->id) }}">
                     @endif
 
                     <div class="mb-3">
@@ -544,10 +662,14 @@
                     <div class="d-flex align-items-center mb-3 p-2 bg-light border rounded">
                         <div class="form-check form-switch mb-0">
                             {{-- Agregamos el atributo 'checked' aquí --}}
-                            <input class="form-check-input" type="checkbox" role="switch" id="devModeToggle" style="cursor: pointer;" checked>
-                            <label class="form-check-label text-secondary fw-semibold ms-2" for="devModeToggle" style="cursor: pointer;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="me-1 mb-1" viewBox="0 0 16 16">
-                                    <path fill-rule="evenodd" d="M5 11.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zM3.854 2.146a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0l-.5-.5a.5.5 0 1 1 .708-.708L2 3.293l1.146-1.147a.5.5 0 0 1 .708 0zm0 4a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0l-.5-.5a.5.5 0 1 1 .708-.708L2 7.293l1.146-1.147a.5.5 0 0 1 .708 0zm0 4a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0l-.5-.5a.5.5 0 0 1 .708-.708l.146.147 1.146-1.147a.5.5 0 0 1 .708 0z"/>
+                            <input class="form-check-input" type="checkbox" role="switch" id="devModeToggle"
+                                style="cursor: pointer;" checked>
+                            <label class="form-check-label text-secondary fw-semibold ms-2" for="devModeToggle"
+                                style="cursor: pointer;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
+                                    fill="currentColor" class="me-1 mb-1" viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd"
+                                        d="M5 11.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5zM3.854 2.146a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0l-.5-.5a.5.5 0 1 1 .708-.708L2 3.293l1.146-1.147a.5.5 0 0 1 .708 0zm0 4a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0l-.5-.5a.5.5 0 1 1 .708-.708L2 7.293l1.146-1.147a.5.5 0 0 1 .708 0zm0 4a.5.5 0 0 1 0 .708l-1.5 1.5a.5.5 0 0 1-.708 0l-.5-.5a.5.5 0 0 1 .708-.708l.146.147 1.146-1.147a.5.5 0 0 1 .708 0z" />
                                 </svg>
                                 Habilitar Checklist
                             </label>
@@ -555,158 +677,328 @@
                     </div>
 
                     {{-- INICIO DE LA TABLA EN FORMA DE EXCEL --}}
-<style>
-    /* ==========================================
+                    <style>
+                        /* ==========================================
        1. ESTILOS MINIMALISTAS DE LA TABLA
        ========================================== */
-    .sheet-container { 
-        background: #fff; 
-        overflow-x: auto; 
-        border-radius: 8px;
-        border: 1px solid #e5e7eb;
-        margin-bottom: 15px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.03);
-    }
-    .sheet-table { width: 100%; border-collapse: collapse; margin-bottom: 0; min-width: 750px; }
-    
-    .sheet-table th { 
-        background-color: #f9fafb; 
-        border-bottom: 1px solid #e5e7eb; 
-        text-align: left; 
-        font-size: 12px; 
-        padding: 12px 8px; 
-        font-weight: 600; 
-        color: #6b7280; 
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-    .sheet-table th:first-child { text-align: center; }
-    
-    .sheet-table tr {
-        border-bottom: 1px solid #f3f4f6;
-        border-left: 4px solid transparent; 
-        transition: background-color 0.2s ease;
-    }
-    .sheet-table tr:hover { background-color: #f8fafc; }
-    .sheet-table td { padding: 4px 8px; vertical-align: middle; }
-    
-    .sheet-table input:not([type="color"]):not([type="checkbox"]), .sheet-table select { 
-        width: 100%; border: 1px solid transparent; border-radius: 4px; height: 32px; 
-        padding: 4px 8px; box-sizing: border-box; outline: none; background: transparent; 
-        font-size: 13px; color: #374151; transition: all 0.2s; cursor: pointer;
-    }
-    .sheet-table input:hover:not([type="color"]):not([type="checkbox"]), .sheet-table select:hover { background: #f1f5f9; }
-    .sheet-table input:focus:not([type="color"]):not([type="checkbox"]), .sheet-table select:focus { 
-        border-color: #3b82f6; background: #fff; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); cursor: text;
-    }
-    
-    .desc-input-trigger { cursor: pointer !important; text-overflow: ellipsis; background-color: #f8fafc !important; border: 1px dashed #cbd5e1 !important; }
-    .desc-input-trigger:hover { background-color: #f1f5f9 !important; border-color: #94a3b8 !important; }
-    .sheet-checkbox { width: 16px; height: 16px; margin: 0 auto; display: block; cursor: pointer; accent-color: #10b981; }
-    
-    .actions-cell { display: flex; align-items: center; justify-content: center; gap: 10px; height: 100%; padding-top: 6px; }
-    .btn-delete-row { background: none; border: none; color: #9ca3af; font-size: 14px; cursor: pointer; padding: 6px; border-radius: 6px; transition: all 0.2s; display: flex; align-items: center; }
-    .btn-delete-row:hover { background-color: #fee2e2; color: #ef4444; }
-    
-    .color-dot-wrapper {
-        position: relative; width: 20px; height: 20px; border-radius: 50%; 
-        overflow: hidden; border: 1px solid #d1d5db; cursor: pointer;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-    }
-    .color-dot-wrapper input[type="color"] {
-        position: absolute; top: -10px; left: -10px; width: 40px; height: 40px; 
-        border: none; cursor: pointer; padding: 0; background: none; outline: none;
-    }
+                        .sheet-container {
+                            background: #fff;
+                            overflow-x: auto;
+                            border-radius: 8px;
+                            border: 1px solid #e5e7eb;
+                            margin-bottom: 15px;
+                            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+                        }
 
-    /* ==========================================
+                        .sheet-table {
+                            width: 100%;
+                            border-collapse: collapse;
+                            margin-bottom: 0;
+                            min-width: 750px;
+                        }
+
+                        .sheet-table th {
+                            background-color: #f9fafb;
+                            border-bottom: 1px solid #e5e7eb;
+                            text-align: left;
+                            font-size: 12px;
+                            padding: 12px 8px;
+                            font-weight: 600;
+                            color: #6b7280;
+                            text-transform: uppercase;
+                            letter-spacing: 0.05em;
+                        }
+
+                        .sheet-table th:first-child {
+                            text-align: center;
+                        }
+
+                        .sheet-table tr {
+                            border-bottom: 1px solid #f3f4f6;
+                            border-left: 4px solid transparent;
+                            transition: background-color 0.2s ease;
+                        }
+
+                        .sheet-table tr:hover {
+                            background-color: #f8fafc;
+                        }
+
+                        .sheet-table td {
+                            padding: 4px 8px;
+                            vertical-align: middle;
+                        }
+
+                        .sheet-table input:not([type="color"]):not([type="checkbox"]),
+                        .sheet-table select {
+                            width: 100%;
+                            border: 1px solid transparent;
+                            border-radius: 4px;
+                            height: 32px;
+                            padding: 4px 8px;
+                            box-sizing: border-box;
+                            outline: none;
+                            background: transparent;
+                            font-size: 13px;
+                            color: #374151;
+                            transition: all 0.2s;
+                            cursor: pointer;
+                        }
+
+                        .sheet-table input:hover:not([type="color"]):not([type="checkbox"]),
+                        .sheet-table select:hover {
+                            background: #f1f5f9;
+                        }
+
+                        .sheet-table input:focus:not([type="color"]):not([type="checkbox"]),
+                        .sheet-table select:focus {
+                            border-color: #3b82f6;
+                            background: #fff;
+                            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+                            cursor: text;
+                        }
+
+                        .desc-input-trigger {
+                            cursor: pointer !important;
+                            text-overflow: ellipsis;
+                            background-color: #f8fafc !important;
+                            border: 1px dashed #cbd5e1 !important;
+                        }
+
+                        .desc-input-trigger:hover {
+                            background-color: #f1f5f9 !important;
+                            border-color: #94a3b8 !important;
+                        }
+
+                        .sheet-checkbox {
+                            width: 16px;
+                            height: 16px;
+                            margin: 0 auto;
+                            display: block;
+                            cursor: pointer;
+                            accent-color: #10b981;
+                        }
+
+                        .actions-cell {
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            gap: 10px;
+                            height: 100%;
+                            padding-top: 6px;
+                        }
+
+                        .btn-delete-row {
+                            background: none;
+                            border: none;
+                            color: #9ca3af;
+                            font-size: 14px;
+                            cursor: pointer;
+                            padding: 6px;
+                            border-radius: 6px;
+                            transition: all 0.2s;
+                            display: flex;
+                            align-items: center;
+                        }
+
+                        .btn-delete-row:hover {
+                            background-color: #fee2e2;
+                            color: #ef4444;
+                        }
+
+                        .color-dot-wrapper {
+                            position: relative;
+                            width: 20px;
+                            height: 20px;
+                            border-radius: 50%;
+                            overflow: hidden;
+                            border: 1px solid #d1d5db;
+                            cursor: pointer;
+                            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+                        }
+
+                        .color-dot-wrapper input[type="color"] {
+                            position: absolute;
+                            top: -10px;
+                            left: -10px;
+                            width: 40px;
+                            height: 40px;
+                            border: none;
+                            cursor: pointer;
+                            padding: 0;
+                            background: none;
+                            outline: none;
+                        }
+
+                        /* ==========================================
        2. ESTILOS DEL MODAL DE DESCRIPCIÓN
        ========================================== */
-    .desc-modal-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(15, 23, 42, 0.4); z-index: 1050; 
-        display: none; align-items: center; justify-content: center;
-        backdrop-filter: blur(2px);
-    }
-    .desc-modal-content {
-        background: #fff; width: 90%; max-width: 500px; border-radius: 12px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.1); display: flex; flex-direction: column;
-        overflow: hidden; animation: modalFadeIn 0.2s ease-out;
-    }
-    @keyframes modalFadeIn { from { opacity: 0; transform: translateY(-15px); } to { opacity: 1; transform: translateY(0); } }
-    .desc-modal-header { padding: 16px 20px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
-    .desc-modal-body { padding: 20px; }
-    .desc-modal-footer { padding: 16px 20px; border-top: 1px solid #f1f5f9; text-align: right; background: #f8fafc; }
-    .btn-close-modal { background: none; border: none; font-size: 24px; color: #9ca3af; cursor: pointer; transition: color 0.2s; display: flex; }
-    .btn-close-modal:hover { color: #1e293b; }
-    .modal-textarea { width: 100%; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px; font-size: 14px; color: #334155; outline: none; resize: vertical; min-height: 120px; }
-    .modal-textarea:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
-</style>
+                        .desc-modal-overlay {
+                            position: fixed;
+                            top: 0;
+                            left: 0;
+                            width: 100%;
+                            height: 100%;
+                            background: rgba(15, 23, 42, 0.4);
+                            z-index: 1050;
+                            display: none;
+                            align-items: center;
+                            justify-content: center;
+                            backdrop-filter: blur(2px);
+                        }
 
-<div class="mb-3">
-    <label for="descripcion" class="form-label text-secondary fw-semibold">Detalle de SubTareas</label>
-    
-    <textarea name="descripcion" id="descripcion" style="display: none;"
-        class="form-control @error('descripcion') is-invalid @enderror">{{ old('descripcion', $task->descripcion) }}</textarea>
+                        .desc-modal-content {
+                            background: #fff;
+                            width: 90%;
+                            max-width: 500px;
+                            border-radius: 12px;
+                            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+                            display: flex;
+                            flex-direction: column;
+                            overflow: hidden;
+                            animation: modalFadeIn 0.2s ease-out;
+                        }
 
-    <div id="devModeContainer" class="border-0 rounded p-4 bg-white shadow-sm" style="border: 1px solid #e5e7eb !important;">
-        
-        <div id="progress-wrapper" style="margin-bottom: 20px;">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <div class="d-flex align-items-center">
-                    <span style="font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">Progreso de la Sub_Tarea</span>
-                    <span id="task-counter" style="font-size: 11px; font-weight: 600; background: #f1f5f9; color: #475569; padding: 2px 8px; border-radius: 12px; margin-left: 10px;">0 SubTareas</span>
-                    <span id="task-completed-counter" style="font-size: 11px; font-weight: 600; background: #ecfdf5; color: #059669; padding: 2px 8px; border-radius: 12px; margin-left: 6px;">0 Hechas</span>
-                </div>
-                <span id="progress-text" style="font-size: 13px; font-weight: 800; color: #3b82f6;">0%</span>
-            </div>
-            <div style="width: 100%; height: 6px; background-color: #f1f5f9; border-radius: 10px; overflow: hidden;">
-                <div id="progress-bar" style="width: 0%; height: 100%; background-color: #3b82f6; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.5s ease;"></div>
-            </div>
-        </div>
-        
-        <div class="sheet-container">
-            <table class="sheet-table" id="spreadsheet">
-                <thead>
-                    <tr>
-                        <th style="width: 4%;">✓</th>
-                        <th style="width: 14%; min-width: 125px;">Fecha</th>
-                        <th style="width: 15%; min-width: 110px;">Responsable</th>
-                        <th style="width: 13%; min-width: 110px;">Estado</th>
-                        <th style="width: 9%; min-width: 70px;">Tiempo</th>
-                        <th style="width: 35%; min-width: 160px;">Descripción</th>
-                        <th style="width: 10%; min-width: 80px; text-align: center;">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody id="spreadsheet-body">
-                    </tbody>
-            </table>
-        </div>
-        
-        <button type="button" id="addRowBtn" class="btn btn-sm btn-light border text-secondary mt-1 d-flex align-items-center fw-medium hover-bg-light transition-all">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" class="me-2" viewBox="0 0 16 16">
-                <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
-            </svg>
-            Agregar Nueva Fila
-        </button>
-    </div>
-</div>
+                        @keyframes modalFadeIn {
+                            from {
+                                opacity: 0;
+                                transform: translateY(-15px);
+                            }
 
-<div id="descModal" class="desc-modal-overlay">
-    <div class="desc-modal-content">
-        <div class="desc-modal-header">
-            <h6 class="mb-0 fw-bold" style="color: #334155;">Detalle de la Tarea</h6>
-            <button type="button" id="closeDescModal" class="btn-close-modal">&times;</button>
-        </div>
-        <div class="desc-modal-body">
-            <textarea id="modalTextarea" class="modal-textarea" placeholder="Escribe todos los detalles de esta tarea aquí..."></textarea>
-        </div>
-        <div class="desc-modal-footer">
-            <button type="button" id="saveDescBtn" class="btn btn-primary btn-sm px-4 fw-medium">Guardar Descripción</button>
-        </div>
-    </div>
-</div>
+                            to {
+                                opacity: 1;
+                                transform: translateY(0);
+                            }
+                        }
+
+                        .desc-modal-header {
+                            padding: 16px 20px;
+                            border-bottom: 1px solid #f1f5f9;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                        }
+
+                        .desc-modal-body {
+                            padding: 20px;
+                        }
+
+                        .desc-modal-footer {
+                            padding: 16px 20px;
+                            border-top: 1px solid #f1f5f9;
+                            text-align: right;
+                            background: #f8fafc;
+                        }
+
+                        .btn-close-modal {
+                            background: none;
+                            border: none;
+                            font-size: 24px;
+                            color: #9ca3af;
+                            cursor: pointer;
+                            transition: color 0.2s;
+                            display: flex;
+                        }
+
+                        .btn-close-modal:hover {
+                            color: #1e293b;
+                        }
+
+                        .modal-textarea {
+                            width: 100%;
+                            border: 1px solid #cbd5e1;
+                            border-radius: 8px;
+                            padding: 12px;
+                            font-size: 14px;
+                            color: #334155;
+                            outline: none;
+                            resize: vertical;
+                            min-height: 120px;
+                        }
+
+                        .modal-textarea:focus {
+                            border-color: #3b82f6;
+                            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+                        }
+                    </style>
+
+                    <div class="mb-3">
+                        <label for="descripcion" class="form-label text-secondary fw-semibold">Detalle de
+                            SubTareas</label>
+
+                        <textarea name="descripcion" id="descripcion" style="display: none;"
+                            class="form-control @error('descripcion') is-invalid @enderror">{{ old('descripcion', $task->descripcion) }}</textarea>
+
+                        <div id="devModeContainer">
+                            <div id="progress-wrapper" style="margin-bottom: 20px;">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div class="d-flex align-items-center">
+                                        <span
+                                            style="font-size: 11px; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px;">Progreso
+                                            de la Sub_Tarea</span>
+                                        <span id="task-counter"
+                                            style="font-size: 11px; font-weight: 600; background: #f1f5f9; color: #475569; padding: 2px 8px; border-radius: 12px; margin-left: 10px;">0
+                                            SubTareas</span>
+                                        <span id="task-completed-counter"
+                                            style="font-size: 11px; font-weight: 600; background: #ecfdf5; color: #059669; padding: 2px 8px; border-radius: 12px; margin-left: 6px;">0
+                                            Hechas</span>
+                                    </div>
+                                    <span id="progress-text"
+                                        style="font-size: 13px; font-weight: 800; color: #3b82f6;">0%</span>
+                                </div>
+                                <div
+                                    style="width: 100%; height: 6px; background-color: #f1f5f9; border-radius: 10px; overflow: hidden;">
+                                    <div id="progress-bar"
+                                        style="width: 0%; height: 100%; background-color: #3b82f6; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.5s ease;">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="sheet-container">
+                                <table class="sheet-table" id="spreadsheet">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 4%;">✓</th>
+                                            <th style="width: 14%; min-width: 125px;">Fecha</th>
+                                            <th style="width: 15%; min-width: 110px;">Responsable</th>
+                                            <th style="width: 13%; min-width: 110px;">Estado</th>
+                                            <th style="width: 9%; min-width: 70px;">Tiempo</th>
+                                            <th style="width: 35%; min-width: 160px;">Descripción</th>
+                                            <th style="width: 10%; min-width: 80px; text-align: center;">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="spreadsheet-body">
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <button type="button" id="addRowBtn"
+                                class="btn btn-sm btn-light border text-secondary mt-1 d-flex align-items-center fw-medium hover-bg-light transition-all">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+                                    fill="currentColor" class="me-2" viewBox="0 0 16 16">
+                                    <path
+                                        d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z" />
+                                </svg>
+                                Agregar Nueva Fila
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="descModal" class="desc-modal-overlay">
+                        <div class="desc-modal-content">
+                            <div class="desc-modal-header">
+                                <h6 class="mb-0 fw-bold" style="color: #334155;">Detalle de la Tarea</h6>
+                                <button type="button" id="closeDescModal" class="btn-close-modal">&times;</button>
+                            </div>
+                            <div class="desc-modal-body">
+                                <textarea id="modalTextarea" class="modal-textarea" placeholder="Escribe todos los detalles de esta tarea aquí..."></textarea>
+                            </div>
+                            <div class="desc-modal-footer">
+                                <button type="button" id="saveDescBtn"
+                                    class="btn btn-primary btn-sm px-4 fw-medium">Guardar Descripción</button>
+                            </div>
+                        </div>
+                    </div>
                     {{-- FIN DE LA TABLA EN FORMA DE EXCEL --}}
-
                     <div class="form-row-compact">
                         <div class="form-group flex-1">
                             <label for="workflow_id">Workflow Asociado</label>
@@ -732,7 +1024,6 @@
                             </select>
                         </div>
                     </div>
-
                     <div class="form-row-compact">
                         <div class="form-group flex-1">
                             <label for="estado">Estado Operativo</label>
@@ -781,54 +1072,95 @@
             {{-- Columna Lateral: Canal de Feedback --}}
             <div class="form-column">
                 <div class="card-minimal feedback-section">
-                    <label class="section-label-header"><i class="fas fa-history"></i> Actualizaciones y Evidencias</label>
-
-                    <form action="{{ route('flujo.comments.store') }}" method="POST" enctype="multipart/form-data" class="comment-post-box">
+                    <label class="section-label-header"><i class="fas fa-history"></i> Actualizaciones y
+                        Evidencias</label>
+                    <form action="{{ route('flujo.comments.store') }}" method="POST" enctype="multipart/form-data"
+                        class="comment-post-box">
                         @csrf
-                        
                         <div class="d-flex align-items-center mb-3 p-2 bg-light border rounded">
                             <div class="form-check form-switch mb-0">
                                 {{-- Agregamos el atributo 'checked' aquí --}}
-                                <input class="form-check-input" type="checkbox" role="switch" id="templateToggle" onchange="alternarPlantilla(this)" style="cursor: pointer;" checked>
-                                <label class="form-check-label text-secondary fw-semibold ms-2" for="templateToggle" style="cursor: pointer; font-size: 0.9rem;">
+                                <input class="form-check-input" type="checkbox" role="switch" id="templateToggle"
+                                    onchange="alternarPlantilla(this)" style="cursor: pointer;" checked>
+                                <label class="form-check-label text-secondary fw-semibold ms-2" for="templateToggle"
+                                    style="cursor: pointer; font-size: 0.9rem;">
                                     Usar Formato de Reporte
                                 </label>
                             </div>
                         </div>
-
                         <div class="form-group m-0" id="normalComentarioContainer">
                             <label for="comentario">Comentario</label>
                             <input type="hidden" name="task_id" value="{{ $task->id }}">
-                            <textarea name="comentario" id="comentario" class="form-input mb-3" rows="7" placeholder="Escriba una actualización o descripción de la evidencia..." required></textarea>
+                            <textarea name="comentario" id="comentario" class="form-input mb-3" rows="7"
+                                placeholder="Escriba una actualización o descripción de la evidencia..." required></textarea>
                         </div>
 
-                        <div id="templateContainer" class="border rounded p-3 bg-white shadow-sm mb-3" style="display: none;">
+                        <div id="templateContainer" class="border rounded p-3 bg-white shadow-sm mb-3"
+                            style="display: none;">
                             <div class="row g-2">
-                                <div class="col-6"><label class="small text-muted mb-0" style="font-size: 10px;">FECHA:</label><input type="date" class="form-control form-control-sm dev-template-input" data-label="FECHA"></div>
-                                <div class="col-6"><label class="small text-muted mb-0" style="font-size: 10px;">RESPONSABLE:</label><input type="text" class="form-control form-control-sm dev-template-input" data-label="RESPONSABLE" value="Brayam Castillo"></div>
-                                <div class="col-12"><label class="small text-muted mb-0" style="font-size: 10px;">TIEMPO INVERTIDO:</label><input type="text" class="form-control form-control-sm dev-template-input" data-label="TIEMPO INVERTIDO" placeholder="Ej. 2 horas"></div>
-                                <div class="col-12"><label class="small text-muted mb-0" style="font-size: 10px;">OBJETIVO TAREA:</label><input type="text" class="form-control form-control-sm dev-template-input" data-label="OBJETIVO DE LA TAREA"></div>
-                                <div class="col-12"><label class="small text-muted mb-0" style="font-size: 10px;">DESARROLLO:</label><textarea class="form-control form-control-sm dev-template-input" data-label="DESARROLLO REALIZADO" rows="2"></textarea></div>
-                                <div class="col-12"><label class="small text-muted mb-0" style="font-size: 10px;">CAMBIOS:</label><textarea class="form-control form-control-sm dev-template-input" data-label="CAMBIOS IMPLEMENTADOS" rows="2"></textarea></div>
-                                <div class="col-12"><label class="small text-muted mb-0" style="font-size: 10px;">PROBLEMAS:</label><textarea class="form-control form-control-sm dev-template-input" data-label="PROBLEMAS IDENTIFICADOS" rows="2"></textarea></div>
-                                <div class="col-12"><label class="small text-muted mb-0" style="font-size: 10px;">SOLUCIÓN:</label><textarea class="form-control form-control-sm dev-template-input" data-label="SOLUCIÓN APLICADA" rows="2"></textarea></div>
-                                <div class="col-12"><label class="small text-muted mb-0" style="font-size: 10px;">PENDIENTES:</label><textarea class="form-control form-control-sm dev-template-input" data-label="PENDIENTES / PRÓXIMOS PASOS" rows="2"></textarea></div>
-                                <div class="col-12"><label class="small text-muted mb-0" style="font-size: 10px;">COMMIT GITHUB:</label><input type="text" class="form-control form-control-sm dev-template-input" data-label="COMMIT GITHUB" placeholder="Ej. fix/bug"></div>
+                                <div class="col-6"><label class="small text-muted mb-0"
+                                        style="font-size: 10px;">FECHA:</label><input type="date"
+                                        class="form-control form-control-sm dev-template-input" data-label="FECHA">
+                                </div>
+                                <div class="col-6"><label class="small text-muted mb-0"
+                                        style="font-size: 10px;">RESPONSABLE:</label><input type="text"
+                                        class="form-control form-control-sm dev-template-input"
+                                        data-label="RESPONSABLE" value="{{ Auth::user()->name }}"></div>
+                                <div class="col-12"><label class="small text-muted mb-0"
+                                        style="font-size: 10px;">TIEMPO INVERTIDO:</label><input type="text"
+                                        class="form-control form-control-sm dev-template-input"
+                                        data-label="TIEMPO INVERTIDO" placeholder="Ej. 2 horas"></div>
+                                <div class="col-12"><label class="small text-muted mb-0"
+                                        style="font-size: 10px;">OBJETIVO TAREA:</label><input type="text"
+                                        class="form-control form-control-sm dev-template-input"
+                                        data-label="OBJETIVO DE LA TAREA"></div>
+                                <div class="col-12"><label class="small text-muted mb-0"
+                                        style="font-size: 10px;">DESARROLLO:</label>
+                                    <textarea class="form-control form-control-sm dev-template-input" data-label="DESARROLLO REALIZADO" rows="2"></textarea>
+                                </div>
+                                <div class="col-12"><label class="small text-muted mb-0"
+                                        style="font-size: 10px;">CAMBIOS:</label>
+                                    <textarea class="form-control form-control-sm dev-template-input" data-label="CAMBIOS IMPLEMENTADOS" rows="2"></textarea>
+                                </div>
+                                <div class="col-12"><label class="small text-muted mb-0"
+                                        style="font-size: 10px;">PROBLEMAS:</label>
+                                    <textarea class="form-control form-control-sm dev-template-input" data-label="PROBLEMAS IDENTIFICADOS"
+                                        rows="2"></textarea>
+                                </div>
+                                <div class="col-12"><label class="small text-muted mb-0"
+                                        style="font-size: 10px;">SOLUCIÓN:</label>
+                                    <textarea class="form-control form-control-sm dev-template-input" data-label="SOLUCIÓN APLICADA" rows="2"></textarea>
+                                </div>
+                                <div class="col-12"><label class="small text-muted mb-0"
+                                        style="font-size: 10px;">PENDIENTES:</label>
+                                    <textarea class="form-control form-control-sm dev-template-input" data-label="PENDIENTES / PRÓXIMOS PASOS"
+                                        rows="2"></textarea>
+                                </div>
+                                <div class="col-12"><label class="small text-muted mb-0"
+                                        style="font-size: 10px;">COMMIT GITHUB:</label><input type="text"
+                                        class="form-control form-control-sm dev-template-input"
+                                        data-label="COMMIT GITHUB" placeholder="Ej. fix/bug"></div>
                             </div>
                         </div>
 
                         {{-- NUEVA DROPZONE: Icono, Drag & Drop y Preview integrados --}}
-                        <div class="soporte-dropzone" id="main-dropzone" onclick="document.getElementById('soporte').click()">
-                            <input type="file" name="soporte" id="soporte" class="hidden-input" accept=".pdf,image/*">
-                            
-                            <i class="fas fa-cloud-upload-alt fa-2x mb-2" id="dropzone-icon" style="color: var(--accent-blue);"></i>
-                            
+                        <div class="soporte-dropzone" id="main-dropzone"
+                            onclick="document.getElementById('soporte').click()">
+                            <input type="file" name="soporte" id="soporte" class="hidden-input"
+                                accept=".pdf,image/*">
+
+                            <i class="fas fa-cloud-upload-alt fa-2x mb-2" id="dropzone-icon"
+                                style="color: var(--accent-blue);"></i>
+
                             <div id="file-name-preview">
-                                <span style="font-weight: 600; color: var(--brand-primary); display: block;">Haz clic o arrastra tu evidencia aquí</span>
-                                <span style="font-size: 11px;">(También puedes pegar una imagen con <b>Ctrl+V</b>)</span>
+                                <span style="font-weight: 600; color: var(--brand-primary); display: block;">Haz clic o
+                                    arrastra tu evidencia aquí</span>
+                                <span style="font-size: 11px;">(También puedes pegar una imagen con
+                                    <b>Ctrl+V</b>)</span>
                             </div>
 
-                            <img id="image-preview-box" src="" style="display:none; max-width: 100%; max-height: 200px; margin: 15px auto 0; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                            <img id="image-preview-box" src=""
+                                style="display:none; max-width: 100%; max-height: 200px; margin: 15px auto 0; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                         </div>
 
                         <button type="submit" class="btn-save-corporate w-full mt-3">
@@ -838,7 +1170,7 @@
                 </div>
             </div>
         </main>
-        
+
         <div class="card-minimal col-md-12 mt-4">
             <div class="comment-thread mt-4">
                 @forelse($task->comments->sortByDesc('created_at') as $comment)
@@ -848,17 +1180,24 @@
                             <span class="user-name">{{ $comment->user->name ?? 'Sistema' }}</span>
                             <span class="comment-date">{{ $comment->created_at->diffForHumans() }}</span>
                         </div>
-                        
+
                         {{-- INICIO DE LA MEJORA VISUAL PARA LA PLANTILLA --}}
                         @php
                             $textoRaw = trim($comment->comentario);
                             $esDevTemplate = str_starts_with($textoRaw, '[') && str_ends_with($textoRaw, ']');
-                            
+
                             if ($esDevTemplate) {
                                 $textoLimpio = trim(substr($textoRaw, 1, -1));
                                 $textoLimpio = e($textoLimpio);
-                                $textoFormateado = preg_replace('/([A-ZÁÉÍÓÚÑ \/]+):/', '<span style="display: block; margin-top: 14px; font-size: 10px; font-weight: 800; color: var(--accent-blue); letter-spacing: 0.5px;">$1</span>', $textoLimpio);
-                                $htmlFinal = '<div style="background: #ffffff; border: 1px solid var(--border-color); border-left: 3px solid var(--accent-blue); padding: 5px 15px 15px; border-radius: 8px; margin-top: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">' . nl2br($textoFormateado) . '</div>';
+                                $textoFormateado = preg_replace(
+                                    '/([A-ZÁÉÍÓÚÑ \/]+):/',
+                                    '<span style="display: block; margin-top: 14px; font-size: 10px; font-weight: 800; color: var(--accent-blue); letter-spacing: 0.5px;">$1</span>',
+                                    $textoLimpio,
+                                );
+                                $htmlFinal =
+                                    '<div style="background: #ffffff; border: 1px solid var(--border-color); border-left: 3px solid var(--accent-blue); padding: 5px 15px 15px; border-radius: 8px; margin-top: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">' .
+                                    nl2br($textoFormateado) .
+                                    '</div>';
                             } else {
                                 $htmlFinal = nl2br(e($textoRaw));
                             }
@@ -874,14 +1213,14 @@
                                         $comment->soporte,
                                         now()->addMinutes(30),
                                     );
-                                    
+
                                     $extension = strtolower(pathinfo($comment->soporte, PATHINFO_EXTENSION));
                                     $isImage = in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg']);
                                 @endphp
-                                
-                                <a href="{{ $urlS3 }}" target="_blank" class="attachment-link preview-trigger" 
-                                   data-url="{{ $urlS3 }}" 
-                                   data-type="{{ $isImage ? 'image' : 'pdf' }}">
+
+                                <a href="{{ $urlS3 }}" target="_blank"
+                                    class="attachment-link preview-trigger" data-url="{{ $urlS3 }}"
+                                    data-type="{{ $isImage ? 'image' : 'pdf' }}">
                                     <i class="fas fa-file-download"></i> Ver Archivo
                                 </a>
                             </div>
@@ -902,13 +1241,24 @@
         document.addEventListener('DOMContentLoaded', function() {
             const commonConfig = {
                 create: false,
-                sortField: { field: "text", direction: "asc" },
+                sortField: {
+                    field: "text",
+                    direction: "asc"
+                },
                 plugins: ['dropdown_input'],
-                onInitialize: function() { this.wrapper.style.opacity = "1"; }
+                onInitialize: function() {
+                    this.wrapper.style.opacity = "1";
+                }
             };
 
-            new TomSelect("#user_id", { ...commonConfig, placeholder: 'Buscar responsable...' });
-            new TomSelect("#workflow_id", { ...commonConfig, placeholder: 'Buscar proyecto...' });
+            new TomSelect("#user_id", {
+                ...commonConfig,
+                placeholder: 'Buscar responsable...'
+            });
+            new TomSelect("#workflow_id", {
+                ...commonConfig,
+                placeholder: 'Buscar proyecto...'
+            });
 
             // =================================================================
             // LÓGICA DE DRAG & DROP, PORTAPAPELES Y PREVISUALIZACIÓN UNIFICADA
@@ -924,7 +1274,8 @@
                 if (!file) return;
 
                 // Actualizar texto
-                previewText.innerHTML = `<strong><i class="fas fa-check-circle me-1"></i> ${file.name || 'Imagen adjuntada'}</strong><br><span style="font-size:11px; color:#64748b;">Haz clic de nuevo para cambiar</span>`;
+                previewText.innerHTML =
+                    `<strong><i class="fas fa-check-circle me-1"></i> ${file.name || 'Imagen adjuntada'}</strong><br><span style="font-size:11px; color:#64748b;">Haz clic de nuevo para cambiar</span>`;
                 dropzone.style.borderColor = 'var(--accent-blue)';
                 dropzone.style.background = '#f5f3ff';
                 dropzone.style.color = 'var(--accent-blue)';
@@ -967,7 +1318,11 @@
             ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
                 dropzone.addEventListener(eventName, preventDefaults, false);
             });
-            function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
 
             ['dragenter', 'dragover'].forEach(eventName => {
                 dropzone.addEventListener(eventName, () => dropzone.classList.add('dragover'), false);
@@ -979,7 +1334,7 @@
 
             dropzone.addEventListener('drop', function(e) {
                 let droppedFiles = e.dataTransfer.files;
-                if(droppedFiles.length) {
+                if (droppedFiles.length) {
                     fileInput.files = droppedFiles;
                     processFile(droppedFiles[0]);
                 }
@@ -995,7 +1350,7 @@
             const container = document.getElementById('devModeContainer');
             const taskList = document.getElementById('taskList');
             const addTaskBtn = document.getElementById('addTaskBtn');
-            
+
             let isListMode = false;
 
             // Alternar entre vistas
@@ -1035,7 +1390,7 @@
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
                 checkbox.checked = isChecked;
-                checkbox.className = 'form-check-input mt-0 me-3'; 
+                checkbox.className = 'form-check-input mt-0 me-3';
                 checkbox.style.cursor = 'pointer';
 
                 // Input de texto
@@ -1043,9 +1398,9 @@
                 input.type = 'text';
                 input.value = text;
                 input.className = 'form-control form-control-sm';
-                
+
                 // Estilos iniciales si está checkeado
-                if(isChecked) {
+                if (isChecked) {
                     input.style.textDecoration = 'line-through';
                     input.classList.add('text-muted', 'bg-light');
                 }
@@ -1053,13 +1408,13 @@
                 // Botón de eliminar usando la clase nativa btn-close de Bootstrap
                 const deleteBtn = document.createElement('button');
                 deleteBtn.type = 'button';
-                deleteBtn.className = 'btn-close ms-2'; 
+                deleteBtn.className = 'btn-close ms-2';
                 deleteBtn.setAttribute('aria-label', 'Eliminar tarea');
-                deleteBtn.style.fontSize = '0.75rem'; 
+                deleteBtn.style.fontSize = '0.75rem';
 
                 // Eventos
                 checkbox.addEventListener('change', function() {
-                    if(this.checked) {
+                    if (this.checked) {
                         input.style.textDecoration = 'line-through';
                         input.classList.add('text-muted', 'bg-light');
                     } else {
@@ -1070,7 +1425,7 @@
                 });
 
                 input.addEventListener('input', syncTextarea);
-                
+
                 // UX: Enter crea nueva tarea
                 input.addEventListener('keydown', function(e) {
                     if (e.key === 'Enter') {
@@ -1091,7 +1446,7 @@
                 row.appendChild(deleteBtn);
                 taskList.appendChild(row);
 
-                if(focusOnCreate) input.focus();
+                if (focusOnCreate) input.focus();
             }
 
             // Botón Agregar
@@ -1110,11 +1465,11 @@
                 rows.forEach(row => {
                     const checkbox = row.querySelector('.form-check-input');
                     const input = row.querySelector('input[type="text"]');
-                    
+
                     if (input && input.value.trim() !== '') {
                         totalTasks++;
                         if (checkbox.checked) completedTasks++;
-                        
+
                         const mark = checkbox.checked ? '[x]' : '[ ]';
                         newText.push(`${mark} ${input.value}`);
                     }
@@ -1126,13 +1481,13 @@
                 const progressWrapper = document.getElementById('progress-wrapper');
                 const progressBar = document.getElementById('progress-bar');
                 const progressText = document.getElementById('progress-text');
-                
+
                 if (totalTasks > 0) {
                     progressWrapper.style.display = 'block';
                     let percentage = Math.round((completedTasks / totalTasks) * 100);
                     progressBar.style.width = percentage + '%';
                     progressText.innerText = percentage + '%';
-                    
+
                     // Semáforo de colores en la barra
                     if (percentage === 100) {
                         progressBar.style.backgroundColor = '#10b981'; // Verde completado
@@ -1158,19 +1513,19 @@
             var normalContainer = document.getElementById('normalComentarioContainer');
             var templateContainer = document.getElementById('templateContainer');
             var textarea = document.getElementById('comentario');
-            
+
             if (checkbox.checked) {
                 // Muestra la plantilla
                 normalContainer.style.display = 'none';
                 templateContainer.style.display = 'block';
                 textarea.removeAttribute('required');
-                actualizarPlantilla(); 
+                actualizarPlantilla();
             } else {
                 // Muestra el textarea normal
                 normalContainer.style.display = 'block';
                 templateContainer.style.display = 'none';
                 textarea.setAttribute('required', 'required');
-                textarea.value = ''; 
+                textarea.value = '';
             }
         }
 
@@ -1179,7 +1534,7 @@
             var inputs = document.querySelectorAll('.dev-template-input');
             var textarea = document.getElementById('comentario');
             var texto = "[\n";
-            
+
             inputs.forEach(function(input) {
                 var label = input.getAttribute('data-label');
                 var val = input.value.trim();
@@ -1189,7 +1544,7 @@
                     texto += label + ": " + val + "\n";
                 }
             });
-            
+
             texto += "]";
             if (textarea) textarea.value = texto.trim();
         }
@@ -1198,7 +1553,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Asignar fecha actual al input correspondiente
             var dateInput = document.querySelector('.dev-template-input[data-label="FECHA"]');
-            if(dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+            if (dateInput) dateInput.value = new Date().toISOString().split('T')[0];
 
             // Escuchar cambios en los inputs de la plantilla
             var inputs = document.querySelectorAll('.dev-template-input');
@@ -1211,21 +1566,21 @@
     {{-- NUEVO: Lógica visual del Hover Preview para archivos adjuntos y lo otro --}}
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            
+
             // ==========================================
             // 0. LÓGICA DE LA HOJA DE CÁLCULO Y PROGRESO
             // ==========================================
             const textarea = document.getElementById('descripcion');
             const tbody = document.getElementById('spreadsheet-body');
             const addRowBtn = document.getElementById('addRowBtn');
-            
+
             // Elementos del Modal
             const descModal = document.getElementById('descModal');
             const modalTextarea = document.getElementById('modalTextarea');
             const closeDescModal = document.getElementById('closeDescModal');
             const saveDescBtn = document.getElementById('saveDescBtn');
             let currentEditIndex = null;
-            
+
             let sheetData = [];
 
             // INICIALIZAR DATOS
@@ -1234,15 +1589,39 @@
                     if (textarea.value.trim().startsWith('[')) {
                         sheetData = JSON.parse(textarea.value);
                     } else {
-                        sheetData = [{ checked: false, date: '', responsable: '', status: 'pendiente', tiempo: '', descripcion: textarea.value, color: '#ffffff' }];
+                        sheetData = [{
+                            checked: false,
+                            date: '',
+                            responsable: '',
+                            status: 'pendiente',
+                            tiempo: '',
+                            descripcion: textarea.value,
+                            color: '#ffffff'
+                        }];
                     }
                 }
             } catch (e) {
-                sheetData = [{ checked: false, date: '', responsable: '', status: 'pendiente', tiempo: '', descripcion: textarea.value, color: '#ffffff' }];
+                sheetData = [{
+                    checked: false,
+                    date: '',
+                    responsable: '',
+                    status: 'pendiente',
+                    tiempo: '',
+                    descripcion: textarea.value,
+                    color: '#ffffff'
+                }];
             }
 
             if (sheetData.length === 0) {
-                sheetData.push({ checked: false, date: '', responsable: '', status: 'pendiente', tiempo: '', descripcion: '', color: '#ffffff' });
+                sheetData.push({
+                    checked: false,
+                    date: '',
+                    responsable: '',
+                    status: 'pendiente',
+                    tiempo: '',
+                    descripcion: '',
+                    color: '#ffffff'
+                });
             }
 
             function updateTextarea() {
@@ -1255,16 +1634,16 @@
                 const progressWrapper = document.getElementById('progress-wrapper');
                 const progressBar = document.getElementById('progress-bar');
                 const progressText = document.getElementById('progress-text');
-                
+
                 // Elementos de los Contadores mejorados
-                const taskCounter = document.getElementById('task-counter'); 
+                const taskCounter = document.getElementById('task-counter');
                 const completedCounter = document.getElementById('task-completed-counter');
 
                 if (!progressWrapper || !progressBar || !progressText) return;
 
                 const totalTasks = sheetData.length;
                 const completedTasks = sheetData.filter(row => row.checked).length;
-                
+
                 // Actualizar Contadores Visuales
                 if (taskCounter) {
                     taskCounter.innerText = totalTasks + (totalTasks === 1 ? ' Tarea' : ' SubTareas');
@@ -1294,12 +1673,13 @@
 
             function renderTable() {
                 if (!tbody) return;
-                tbody.innerHTML = ''; 
-                
+                tbody.innerHTML = '';
+
                 sheetData.forEach((row, index) => {
                     const tr = document.createElement('tr');
-                    tr.style.borderLeftColor = (row.color && row.color !== '#ffffff') ? row.color : 'transparent';
-                    
+                    tr.style.borderLeftColor = (row.color && row.color !== '#ffffff') ? row.color :
+                        'transparent';
+
                     tr.innerHTML = `
                         <td style="text-align: center;">
                             <input type="checkbox" class="sheet-checkbox" data-index="${index}" data-field="checked" ${row.checked ? 'checked' : ''}>
@@ -1340,13 +1720,21 @@
                     tbody.appendChild(tr);
                 });
 
-                updateProgress(); 
-                updateTextarea(); 
+                updateProgress();
+                updateTextarea();
             }
 
             if (addRowBtn) {
                 addRowBtn.addEventListener('click', function() {
-                    sheetData.push({ checked: false, date: '', responsable: '', status: 'pendiente', tiempo: '', descripcion: '', color: '#ffffff' });
+                    sheetData.push({
+                        checked: false,
+                        date: '',
+                        responsable: '',
+                        status: 'pendiente',
+                        tiempo: '',
+                        descripcion: '',
+                        color: '#ffffff'
+                    });
                     renderTable();
                 });
             }
@@ -1357,13 +1745,15 @@
                     const index = target.getAttribute('data-index');
                     const field = target.getAttribute('data-field');
 
-                    if (index !== null && field && target.type !== 'checkbox' && target.tagName !== 'SELECT' && field !== 'descripcion') {
+                    if (index !== null && field && target.type !== 'checkbox' && target.tagName !==
+                        'SELECT' && field !== 'descripcion') {
                         sheetData[index][field] = target.value;
-                        if(field === 'color') target.closest('tr').style.borderLeftColor = target.value !== '#ffffff' ? target.value : 'transparent';
-                        updateTextarea(); 
+                        if (field === 'color') target.closest('tr').style.borderLeftColor = target.value !==
+                            '#ffffff' ? target.value : 'transparent';
+                        updateTextarea();
                     }
                 });
-                
+
                 tbody.addEventListener('change', function(e) {
                     const target = e.target;
                     const index = target.getAttribute('data-index');
@@ -1373,7 +1763,7 @@
                         if (target.type === 'checkbox') {
                             sheetData[index][field] = target.checked;
                             sheetData[index]['status'] = target.checked ? 'completa' : 'en proceso';
-                            renderTable(); 
+                            renderTable();
                         } else if (target.tagName === 'SELECT') {
                             sheetData[index][field] = target.value;
                             updateTextarea();
@@ -1384,9 +1774,9 @@
                 tbody.addEventListener('click', function(e) {
                     if (e.target.classList.contains('btn-delete-row')) {
                         sheetData.splice(e.target.getAttribute('data-index'), 1);
-                        renderTable(); 
+                        renderTable();
                     }
-                    
+
                     if (e.target.classList.contains('desc-input-trigger')) {
                         currentEditIndex = e.target.getAttribute('data-index');
                         modalTextarea.value = sheetData[currentEditIndex].descripcion || '';
@@ -1397,13 +1787,20 @@
             }
 
             // LÓGICA DEL MODAL
-            const closeModal = () => { descModal.style.display = 'none'; currentEditIndex = null; };
+            const closeModal = () => {
+                descModal.style.display = 'none';
+                currentEditIndex = null;
+            };
             closeDescModal.addEventListener('click', closeModal);
-            descModal.addEventListener('click', function(e) { if (e.target === descModal) closeModal(); });
+            descModal.addEventListener('click', function(e) {
+                if (e.target === descModal) closeModal();
+            });
             saveDescBtn.addEventListener('click', function() {
                 if (currentEditIndex !== null) {
                     sheetData[currentEditIndex].descripcion = modalTextarea.value;
-                    updateTextarea(); renderTable(); closeModal();
+                    updateTextarea();
+                    renderTable();
+                    closeModal();
                 }
             });
 
@@ -1411,35 +1808,44 @@
 
             // LÓGICA TOGGLES Y PREVIEW ORIGINAL
             let templateToggle = document.getElementById('templateToggle');
-            if(templateToggle && templateToggle.checked) templateToggle.dispatchEvent(new Event('change'));
+            if (templateToggle && templateToggle.checked) templateToggle.dispatchEvent(new Event('change'));
             let devToggle = document.getElementById('devModeToggle');
-            if(devToggle && devToggle.checked) devToggle.dispatchEvent(new Event('change'));
+            if (devToggle && devToggle.checked) devToggle.dispatchEvent(new Event('change'));
 
             let previewModalHover = document.createElement('div');
             previewModalHover.id = 'hover-preview-card';
-            previewModalHover.style.position = 'absolute'; previewModalHover.style.zIndex = '9999';
-            previewModalHover.style.display = 'none'; previewModalHover.style.opacity = '0';
-            previewModalHover.style.transition = 'opacity 0.2s ease'; previewModalHover.style.pointerEvents = 'none'; 
+            previewModalHover.style.position = 'absolute';
+            previewModalHover.style.zIndex = '9999';
+            previewModalHover.style.display = 'none';
+            previewModalHover.style.opacity = '0';
+            previewModalHover.style.transition = 'opacity 0.2s ease';
+            previewModalHover.style.pointerEvents = 'none';
             document.body.appendChild(previewModalHover);
 
-            let hoverTimer; 
+            let hoverTimer;
             document.querySelectorAll('.preview-trigger').forEach(trigger => {
                 trigger.addEventListener('mouseenter', function(e) {
                     const url = this.getAttribute('data-url');
                     const type = this.getAttribute('data-type');
                     hoverTimer = setTimeout(() => {
-                        previewModalHover.innerHTML = type === 'image' ? `<img src="${url}" style="max-width:300px; border-radius:10px; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);">` : `<iframe src="${url}#toolbar=0" style="width:300px; height:400px; border:none; border-radius:10px;"></iframe>`;
+                        previewModalHover.innerHTML = type === 'image' ?
+                            `<img src="${url}" style="max-width:300px; border-radius:10px; box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);">` :
+                            `<iframe src="${url}#toolbar=0" style="width:300px; height:400px; border:none; border-radius:10px;"></iframe>`;
                         previewModalHover.style.display = 'block';
-                        setTimeout(() => previewModalHover.style.opacity = '1', 10); 
-                    }, 400); 
+                        setTimeout(() => previewModalHover.style.opacity = '1', 10);
+                    }, 400);
                 });
                 trigger.addEventListener('mousemove', e => {
                     previewModalHover.style.left = (e.pageX + 15) + 'px';
                     previewModalHover.style.top = (e.pageY + 15) + 'px';
                 });
                 trigger.addEventListener('mouseleave', () => {
-                    clearTimeout(hoverTimer); previewModalHover.style.opacity = '0';
-                    setTimeout(() => { previewModalHover.style.display = 'none'; previewModalHover.innerHTML = ''; }, 200); 
+                    clearTimeout(hoverTimer);
+                    previewModalHover.style.opacity = '0';
+                    setTimeout(() => {
+                        previewModalHover.style.display = 'none';
+                        previewModalHover.innerHTML = '';
+                    }, 200);
                 });
             });
         });

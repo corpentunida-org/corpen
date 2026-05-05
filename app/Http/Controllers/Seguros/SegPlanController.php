@@ -58,6 +58,7 @@ class SegPlanController extends Controller
             'condicion_corpen' => $request->input('condicion_id'),
             'seg_convenio_id' => $request->input('convenio'),
             'condicion_id' => $request->input('condicion_id'),
+            'vigente' => true,
         ]);
         if (!$plan->exists) {
             return redirect()->back()->with('error', 'No se pudo procesar el plan.');
@@ -178,6 +179,13 @@ class SegPlanController extends Controller
 
     public function duplicarGrupoCondicion(Request $request)
     {
-        return $request->all();
+        $planes = SegPlan::where('condicion_id', $request->condicion_id)->where('seg_convenio_id', $request->convenio_id)->get();
+        foreach ($planes as $plan) {
+            $nuevoPlan = $plan->replicate();
+            $nuevoPlan->condicion_id = $request->condicion_id_nuevo;
+            $nuevoPlan->condicion_id = $request->condicion_corpen;
+            $nuevoPlan->save();
+        }
+        return back()->with('success', 'Planes duplicados correctamente');
     }
 }

@@ -43,10 +43,9 @@
                         <form class="formDuplicarGrupo" method="POST"
                             action="{{ route('seguros.planes.duplicarGrupo') }}">
                             @csrf
-                            <input type="hidden" name="condicion_id" class="condicion_id"
-                                value="{{ $planesGrupo->first()->condicion_id }}">
-                            <button type="submit" class="btn btn-light-brand btnDuplicarGrupo"
-                                data-condicion="{{ $condicionId }}" data-planes='@json($planesGrupo->pluck('condicion_id'))'>
+                            <input type="hidden" name="condicion_id" class="condicion_id" value="{{ $planesGrupo->first()->condicion_id }}">                            
+                            <input type="hidden" name="convenio_id" value="{{ $convenio->idConvenio }}">                            
+                            <button type="submit" class="btn btn-light-brand btnDuplicarGrupo" data-condicion="{{ $condicionId }}" data-planes='@json($planesGrupo->pluck('condicion_id'))'>
                                 Duplicar Grupo
                             </button>
                         </form>
@@ -79,12 +78,10 @@
                                                     method="POST">
                                                     @csrf
                                                     @method('DELETE')
-
                                                     <button type="submit" class="dropdown-item btnAbrirModalDestroy"
                                                         data-text="plan">
                                                         Eliminar
                                                     </button>
-
                                                 </form>
                                                 @endcandirect
                                             </div>
@@ -118,9 +115,7 @@
                                                 <span class="fw-semibold text-dark">Corpen Pastor:</span>
                                                 ${{ number_format($plan->prima_pastor) }}
                                             </p>
-
                                         </div>
-
                                     </div>
                                 </div>
                             </div>
@@ -149,7 +144,6 @@
         const condiciones = @json($condiciones);
 
         $('.formDuplicarGrupo').on('submit', function(e) {
-
             e.preventDefault();
 
             let form = $(this);
@@ -192,19 +186,15 @@
                 }
 
             }).then((result) => {
-                // CORRECCIÓN CRÍTICA: 
-                // Validamos tanto isConfirmed como la existencia de result.value
                 if (result.value || result.isConfirmed) {
-
-                    // 1. Extraemos el ID (el 8 que mencionaste)
                     const seleccion = result.value;
-
-                    // 2. Buscamos el input oculto dentro de ESTE formulario y asignamos el valor
-                    form.find('input[name="condicion_id"]').val(seleccion);
-
-                    // 3. Enviamos al controlador
-                    // Usamos form[0].submit() para saltar cualquier otro preventDefault
-                    console.log("Enviando a controlador con ID:", seleccion);
+                    const Inputconidcrear = $('<input>', {
+                        type: 'hidden',
+                        name: 'condicion_id_nuevo',
+                        value: seleccion
+                    });
+                    
+                    form.append(Inputconidcrear);
                     form[0].submit();
                 }
             });
