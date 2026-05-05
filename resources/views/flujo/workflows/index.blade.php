@@ -6,15 +6,12 @@
 
     {{-- Lógica PHP --}}
     @php
-
         // Lógica de búsqueda y Pestaña Activa
         $searchWords = request()->filled('search') ? array_filter(explode(' ', request('search'))) : [];
         
         // Detectar filtros activos
         $hasActiveFilters = request()->filled('search') || request()->filled('page') || request()->filled('estado') || request()->filled('condicion') || request()->filled('asignado_a');
-        $activeTab = $hasActiveFilters ? 'gestion' : 'dashboard';
-
-       
+        $activeTab = $hasActiveFilters ? 'gestion' : 'dashboard';       
 
         // Datos Gráficas
         $baseMetrics = App\Models\Flujo\Workflow::query();
@@ -157,7 +154,6 @@
 
         {{-- VISTA 2: GESTIÓN --}}
         <div id="view-gestion" class="tab-content {{ $activeTab === 'gestion' ? 'active' : '' }}">
-            
             {{-- TOOLBAR --}}
             <div class="toolbar-panel">
                 <form action="{{ route('flujo.workflows.index') }}" method="GET" id="main-filter-form" class="toolbar-form">
@@ -223,7 +219,7 @@
                     $isOverdue = false;
                     if($wf->estado === 'activo'){
                         $isOverdue = $wf->fecha_fin && $wf->fecha_fin->isPast();
-                    }                        
+                    }
                         $progColor = $isOverdue ? '#ef4444' : match($wf->estado) {
                             'completado' => '#6366f1',
                             'activo'     => '#10b981',
