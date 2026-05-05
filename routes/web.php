@@ -202,6 +202,7 @@ Route::prefix('seguros')->group(function () {
     Route::get('/reclamacion/informe/excel', [SegReclamacionesController::class, 'exportexcel'])->middleware('auth')->name('seguros.reclamacion.download');
     Route::post('poliza/upload', [SegPolizaController::class, 'upload'])->name('seguros.poliza.upload');
     Route::post('planes/duplicar-grupo',[SegPlanController::class,'duplicarGrupoCondicion'])->name('seguros.planes.duplicarGrupo');
+    Route::post('/planes/{plan}/duplicar', [SegPlanController::class, 'duplicarPlan'])->name('seguros.planes.duplicar');
     Route::post('poliza/create/upload', [SegPolizaController::class, 'uploadCreate'])->name('seguros.poliza.createupload');
     Route::get('/poliza/create/upload', function () {return view('seguros.polizas.upload');})->name('seguros.poliza.viewupload');
     Route::post('poliza/nuevo-convenio/upload', [SegPolizaController::class, 'masivamentenuevoconvenio'])->name('seguros.poliza.nuevo-convenio');

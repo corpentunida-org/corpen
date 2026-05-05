@@ -58,21 +58,18 @@
                         <i class="fas fa-chevron-down arrow-indicator"></i>
                     </button>
                     <div class="stack-body">
-                        <div class="stack-inner" id="moduloWorkflows">
-                            
+                        <div class="stack-inner" id="moduloWorkflows">                            
                             {{-- Buscador Interno Compacto (Alineado a la derecha, no pierde espacio) --}}
-                            <div class="module-search-header">
+                            {{-- <div class="module-search-header">
                                 <div class="compact-search">
                                     <i class="fas fa-search"></i>
                                     <input type="text" onkeyup="filtrarContenido(this, 'moduloWorkflows')" placeholder="Filtrar en tiempo real..." autocomplete="off">
                                 </div>
-                            </div>
-
+                            </div> --}}
                             {{-- Contenido del Componente --}}
                             <div class="module-content">
                                 @include('flujo.componentes.workflows-card')
                             </div>
-
                         </div>
                     </div>
                 </div>
@@ -90,8 +87,7 @@
                         <i class="fas fa-chevron-down arrow-indicator"></i>
                     </button>
                     <div class="stack-body">
-                        <div class="stack-inner" id="moduloTareas">
-                            
+                        <div class="stack-inner" id="moduloTareas">                            
                             {{-- Buscador para Tareas --}}
                             <div class="module-search-header">
                                 <div class="compact-search">
