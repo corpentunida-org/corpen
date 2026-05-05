@@ -188,4 +188,12 @@ class SegPlanController extends Controller
         }
         return back()->with('success', 'Planes duplicados correctamente');
     }
+
+    public function duplicarPlan($id)
+    {
+        $plan = SegPlan::findOrFail($id);
+        $nuevoPlan = $plan->replicate();
+        $nuevoPlan->save();
+        return back()->with('success', 'Plan duplicado correctamente');
+    }
 }
