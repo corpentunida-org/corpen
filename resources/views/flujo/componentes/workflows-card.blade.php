@@ -928,10 +928,8 @@
         searchInput.addEventListener('keyup', function() {
             const search = this.value.toLowerCase();
             const cards = document.querySelectorAll('.project-item-card');
-
             cards.forEach(card => {
                 const name = card.dataset.name;
-
                 if (name.includes(search)) {
                     card.style.display = "block";
                 } else {
