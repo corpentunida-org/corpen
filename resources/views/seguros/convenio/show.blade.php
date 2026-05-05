@@ -43,9 +43,11 @@
                         <form class="formDuplicarGrupo" method="POST"
                             action="{{ route('seguros.planes.duplicarGrupo') }}">
                             @csrf
-                            <input type="hidden" name="condicion_id" class="condicion_id" value="{{ $planesGrupo->first()->condicion_id }}">                            
-                            <input type="hidden" name="convenio_id" value="{{ $convenio->idConvenio }}">                            
-                            <button type="submit" class="btn btn-light-brand btnDuplicarGrupo" data-condicion="{{ $condicionId }}" data-planes='@json($planesGrupo->pluck('condicion_id'))'>
+                            <input type="hidden" name="condicion_id" class="condicion_id"
+                                value="{{ $planesGrupo->first()->condicion_id }}">
+                            <input type="hidden" name="convenio_id" value="{{ $convenio->idConvenio }}">
+                            <button type="submit" class="btn btn-light-brand btnDuplicarGrupo"
+                                data-condicion="{{ $condicionId }}" data-planes='@json($planesGrupo->pluck('condicion_id'))'>
                                 Duplicar Grupo
                             </button>
                         </form>
@@ -67,11 +69,13 @@
                                             <div class="dropdown-menu dropdown-menu-end">
                                                 @candirect('seguros.planes.update')
                                                 <a class="dropdown-item"
-                                                    href="{{ route('seguros.planes.edit', ['plan' => $plan->id]) }}">
-                                                    Editar
-                                                </a>
+                                                    href="{{ route('seguros.planes.edit', ['plan' => $plan->id]) }}">Editar</a>
+                                                <form action="{{ route('seguros.planes.duplicar', $plan->id) }}"
+                                                    method="POST" class="form-duplicar-plan">
+                                                    @csrf
+                                                    <button type="submit" class="dropdown-item">Duplicar plan </button>
+                                                </form>
                                                 @endcandirect
-
                                                 @candirect('seguros.planes.destroy')
                                                 <form
                                                     action="{{ route('seguros.planes.destroy', ['plan' => $plan->id]) }}"
@@ -193,12 +197,31 @@
                         name: 'condicion_id_nuevo',
                         value: seleccion
                     });
-                    
+
                     form.append(Inputconidcrear);
                     form[0].submit();
                 }
             });
         });
 
+        document.querySelectorAll('.form-duplicar-plan').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                Swal.fire({
+                    title: '¿Duplicar plan?',
+                    text: 'Se creará una copia de este plan.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, duplicar',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#3454D1',
+                    cancelButtonColor: '#6c757d'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
+            });
+        });
     });
 </script>
