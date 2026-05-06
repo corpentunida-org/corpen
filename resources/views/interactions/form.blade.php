@@ -876,6 +876,7 @@
                     <input type="hidden" name="temp_token" value="{{ $miTokenSesion ?? '' }}">
 
                     <div class="row g-5">
+                        <!-- COLUMNA IZQUIERDA -->
                         <div class="col-md-6">
                             <div class="fv-row mb-4">
                                 <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Código Tercero
@@ -921,8 +922,41 @@
                                     <input type="hidden" id="monto_pagado" name="monto_pagado">
                                 </div>
                             </div>
+
+                            <!-- NUEVO CAMPO: TIPO DE PAGO CON BUSCADOR -->
+                            <div class="fv-row mt-4 position-relative">
+                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Tipo de Pago *</label>
+                                <div class="input-group input-group-solid border border-gray-300 rounded shadow-sm">
+                                    <span class="input-group-text bg-transparent border-0"><i class="fas fa-search text-muted"></i></span>
+                                    <input type="text" id="search_tipo_pago" class="form-control border-0"
+                                        placeholder="Busca el tipo de pago..." autocomplete="off" required>
+                                    <!-- Aquí se guarda el valor que se enviará a la base de datos -->
+                                    <input type="hidden" id="tipo_pago" name="tipo_pago">
+                                </div>
+                                <div class="list-group position-absolute w-100 shadow-lg d-none custom-dropdown-list" id="list_tipo_pago">
+                                    <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="Pago normal">Pago normal</button>
+                                    <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="Pago parcial">Pago parcial</button>
+                                    <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="Pago total">Pago total</button>
+                                    <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="Pago anticipado">Pago anticipado</button>
+                                    <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="Pago de cuota atrasada">Pago de cuota atrasada</button>
+                                    <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="Abono a capital">Abono a capital</button>
+                                    <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="Pago de intereses">Pago de intereses</button>
+                                    <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="Pago mixto">Pago mixto</button>
+                                    <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="Pago acuerdo de pago">Pago acuerdo de pago</button>
+                                    <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="Pago refinanciación">Pago refinanciación</button>
+                                    <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="Pago reestructuración">Pago reestructuración</button>
+                                    <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="Pago cobro jurídico">Pago cobro jurídico</button>
+                                    <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="Pago extraordinario">Pago extraordinario</button>
+                                    <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="Pago con descuento">Pago con descuento</button>
+                                    <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="Ajuste de pago">Ajuste de pago</button>
+                                    <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="Reverso de pago">Reverso de pago</button>
+                                    <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="Condonación">Condonación</button>
+                                </div>
+                            </div>
+
                         </div>
 
+                        <!-- COLUMNA DERECHA -->
                         <div class="col-md-6">
                             <div class="fv-row mb-4">
                                 <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Fecha y Hora de Pago
@@ -968,6 +1002,7 @@
                             </div>
                         </div>
 
+                        <!-- DATOS EXTRA -->
                         <div class="col-12 mt-2">
                             <div class="p-4 bg-light-soft border border-dashed border-gray-300 rounded-3">
                                 <div class="row g-3">
@@ -991,6 +1026,14 @@
                                             placeholder="0">
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- NUEVO CAMPO: OBSERVACIÓN -->
+                        <div class="col-12 mt-4">
+                            <div class="fv-row">
+                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Observación</label>
+                                <textarea name="observacion" id="observacion" class="form-control form-control-solid border border-gray-300 shadow-sm" rows="2" placeholder="Agrega un comentario u observación opcional..." maxlength="255"></textarea>
                             </div>
                         </div>
 
@@ -1144,18 +1187,17 @@
 
         setupBuscadorNativo('search_obligacion', 'id_obligacion', 'list_obligacion');
         setupBuscadorNativo('search_banco', 'id_banco', 'list_banco');
+        setupBuscadorNativo('search_tipo_pago', 'tipo_pago', 'list_tipo_pago');
 
-        // --- 2. LÓGICA DEL HASH (14 DÍGITOS YYYYMMDDHHMMSS) ---
+        // --- 2. LÓGICA DEL HASH ---
         function actualizarHash() {
             const banco = document.getElementById('id_banco').value;
-            const fechaVal = fechaPagoInput.value; // Formato: YYYY-MM-DDTHH:MM
+            const fechaVal = fechaPagoInput.value;
             const monto = hiddenInput.value;
             const tercero = modalCodTercero.value;
 
-            // Limpiamos la fecha de guiones, puntos y la 'T'
             let fechaLimpia = fechaVal.replace(/[^0-9]/g, '');
 
-            // Si por alguna razón faltan los segundos (datetime-local suele dar 12 dígitos)
             if (fechaLimpia.length === 12) {
                 fechaLimpia += '00';
             }
@@ -1168,50 +1210,37 @@
         }
 
         // --- 3. MÁSCARA DE MONTO ---
-        displayInput.addEventListener('input', function () {
-            // 1. Quitar todos los puntos (separadores de miles) para evitar confusiones
-            let val = this.value.replace(/\./g, '');
-            
-            // 2. Dejar únicamente números y comas
-            val = val.replace(/[^0-9,]/g, '');
-            
-            // 3. Reemplazar la coma por un punto para que el input oculto (BD) lo entienda
-            val = val.replace(',', '.');
+        displayInput.addEventListener('input', function () {
+            let val = this.value.replace(/\./g, '');
+            val = val.replace(/[^0-9,]/g, '');
+            val = val.replace(',', '.');
 
-            // 4. Si intentan poner más de una coma, conservamos solo la primera
-            const parts = val.split('.');
-            if (parts.length > 2) {
-                val = parts[0] + '.' + parts.slice(1).join('');
-            }
+            const parts = val.split('.');
+            if (parts.length > 2) {
+                val = parts[0] + '.' + parts.slice(1).join('');
+            }
 
-            // 5. Limitar a máximo 2 decimales (sin rellenar ceros molestos mientras teclea)
-            if (parts[1] !== undefined && parts[1].length > 2) {
-                val = parts[0] + '.' + parts[1].substring(0, 2);
-            }
+            if (parts[1] !== undefined && parts[1].length > 2) {
+                val = parts[0] + '.' + parts[1].substring(0, 2);
+            }
 
-            // 6. Guardamos el valor limpio en el campo oculto (Ej: 20000.23)
-            hiddenInput.value = val;
+            hiddenInput.value = val;
 
-            // 7. Aplicamos el formato visual para que se vea bonito en pantalla
-            if (val !== '') {
-                let [entero, decimales] = val.split('.');
-                
-                // Formatear solo los miles (Ej: 20000 -> 20.000)
-                let visual = new Intl.NumberFormat('es-CO').format(parseInt(entero) || 0);
-                
-                // Devolverle la coma y los decimales a la vista
-                if (val.includes('.')) {
-                    visual += ',' + (decimales !== undefined ? decimales : '');
-                }
-                this.value = visual;
-            } else {
-                this.value = '';
-            }
-            
-            actualizarHash();
-        });
+            if (val !== '') {
+                let [entero, decimales] = val.split('.');
+                let visual = new Intl.NumberFormat('es-CO').format(parseInt(entero) || 0);
+                
+                if (val.includes('.')) {
+                    visual += ',' + (decimales !== undefined ? decimales : '');
+                }
+                this.value = visual;
+            } else {
+                this.value = '';
+            }
+            
+            actualizarHash();
+        });
 
-        // Escuchas globales para el hash
         document.querySelectorAll('.gen-hash').forEach(el => {
             el.addEventListener('input', actualizarHash);
             el.addEventListener('change', actualizarHash);
@@ -1237,7 +1266,7 @@
             if (forceSave) formData.append('force_save', '1');
 
             // Limpieza de nulos antes de enviar
-            ['numero_cuota', 'pr', 'cco'].forEach(f => { if (!formData.get(f)) formData.delete(f); });
+            ['numero_cuota', 'pr', 'cco', 'observacion'].forEach(f => { if (!formData.get(f)) formData.delete(f); });
 
             fetch(form.action, {
                 method: 'POST',
@@ -1266,7 +1295,7 @@
                                 form.reset();
                                 resetFile();
                                 modalCodTercero.value = clieID;
-                                // Reset fecha a ahora mismo
+                                
                                 const ahora = new Date();
                                 ahora.setMinutes(ahora.getMinutes() - ahora.getTimezoneOffset());
                                 fechaPagoInput.value = ahora.toISOString().slice(0, 16);
@@ -1332,11 +1361,12 @@
         });
     });
 
+    // --- ACTUALIZADO: AHORA LIMPIA TIPO_PAGO Y OBSERVACION ---
     function resetFile() {
         document.getElementById('archivo_soporte').value = '';
         const prev = document.getElementById('preview_container');
         if (prev) prev.classList.add('d-none');
-        ['numero_cuota', 'pr', 'cco', 'id_obligacion', 'id_banco', 'search_obligacion', 'search_banco', 'monto_pagado', 'monto_pagado_display'].forEach(id => {
+        ['numero_cuota', 'pr', 'cco', 'id_obligacion', 'id_banco', 'search_obligacion', 'search_banco', 'monto_pagado', 'monto_pagado_display', 'tipo_pago', 'search_tipo_pago', 'observacion'].forEach(id => {
             const el = document.getElementById(id); if (el) el.value = '';
         });
     }
