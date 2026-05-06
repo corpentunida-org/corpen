@@ -1168,12 +1168,48 @@
         }
 
         // --- 3. MÁSCARA DE MONTO ---
-        displayInput.addEventListener('input', function () {
-            let val = this.value.replace(/\D/g, '');
-            hiddenInput.value = val;
-            this.value = val !== '' ? new Intl.NumberFormat('es-CO').format(val) : '';
-            actualizarHash();
-        });
+        displayInput.addEventListener('input', function () {
+            // 1. Quitar todos los puntos (separadores de miles) para evitar confusiones
+            let val = this.value.replace(/\./g, '');
+            
+            // 2. Dejar únicamente números y comas
+            val = val.replace(/[^0-9,]/g, '');
+            
+            // 3. Reemplazar la coma por un punto para que el input oculto (BD) lo entienda
+            val = val.replace(',', '.');
+
+            // 4. Si intentan poner más de una coma, conservamos solo la primera
+            const parts = val.split('.');
+            if (parts.length > 2) {
+                val = parts[0] + '.' + parts.slice(1).join('');
+            }
+
+            // 5. Limitar a máximo 2 decimales (sin rellenar ceros molestos mientras teclea)
+            if (parts[1] !== undefined && parts[1].length > 2) {
+                val = parts[0] + '.' + parts[1].substring(0, 2);
+            }
+
+            // 6. Guardamos el valor limpio en el campo oculto (Ej: 20000.23)
+            hiddenInput.value = val;
+
+            // 7. Aplicamos el formato visual para que se vea bonito en pantalla
+            if (val !== '') {
+                let [entero, decimales] = val.split('.');
+                
+                // Formatear solo los miles (Ej: 20000 -> 20.000)
+                let visual = new Intl.NumberFormat('es-CO').format(parseInt(entero) || 0);
+                
+                // Devolverle la coma y los decimales a la vista
+                if (val.includes('.')) {
+                    visual += ',' + (decimales !== undefined ? decimales : '');
+                }
+                this.value = visual;
+            } else {
+                this.value = '';
+            }
+            
+            actualizarHash();
+        });
 
         // Escuchas globales para el hash
         document.querySelectorAll('.gen-hash').forEach(el => {
