@@ -31,7 +31,9 @@ class CarComprobantePago extends Model
         'id_obligacion',
         'pr',
         'cco',
-        'numero_cuota'
+        'numero_cuota',
+        'tipo_pago',
+        'observacion'
     ];
 
     protected $casts = [
@@ -95,15 +97,18 @@ class CarComprobantePago extends Model
     {
         return $this->belongsTo(MaeTerceros::class, 'cod_ter_MaeTerceros', 'cod_ter');
     }
+    
     public function interaccion(): BelongsTo
     {
         // Un comprobante pertenece a una interacción
         return $this->belongsTo(Interaction::class, 'id_interaction', 'id');
     }
+    
     public function obligacion(): BelongsTo
     {
         return $this->belongsTo(LineaCredito::class, 'id_obligacion', 'id');
     }
+    
     public function banco(): BelongsTo
     {
         return $this->belongsTo(ConCuentaBancaria::class, 'id_banco', 'id');
