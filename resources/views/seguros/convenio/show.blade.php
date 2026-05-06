@@ -45,6 +45,7 @@
                             @csrf
                             <input type="hidden" name="condicion_id" class="condicion_id"
                                 value="{{ $planesGrupo->first()->condicion_id }}">
+                            <input type="hidden" name="convenio_id" value="{{ $convenio->idConvenio }}">
                             <button type="submit" class="btn btn-light-brand btnDuplicarGrupo"
                                 data-condicion="{{ $condicionId }}" data-planes='@json($planesGrupo->pluck('condicion_id'))'>
                                 Duplicar Grupo
@@ -68,23 +69,23 @@
                                             <div class="dropdown-menu dropdown-menu-end">
                                                 @candirect('seguros.planes.update')
                                                 <a class="dropdown-item"
-                                                    href="{{ route('seguros.planes.edit', ['plan' => $plan->id]) }}">
-                                                    Editar
-                                                </a>
+                                                    href="{{ route('seguros.planes.edit', ['plan' => $plan->id]) }}">Editar</a>
+                                                <form action="{{ route('seguros.planes.duplicar', $plan->id) }}"
+                                                    method="POST" class="form-duplicar-plan">
+                                                    @csrf
+                                                    <button type="submit" class="dropdown-item">Duplicar plan </button>
+                                                </form>
                                                 @endcandirect
-
                                                 @candirect('seguros.planes.destroy')
                                                 <form
                                                     action="{{ route('seguros.planes.destroy', ['plan' => $plan->id]) }}"
                                                     method="POST">
                                                     @csrf
                                                     @method('DELETE')
-
                                                     <button type="submit" class="dropdown-item btnAbrirModalDestroy"
                                                         data-text="plan">
                                                         Eliminar
                                                     </button>
-
                                                 </form>
                                                 @endcandirect
                                             </div>
@@ -118,9 +119,7 @@
                                                 <span class="fw-semibold text-dark">Corpen Pastor:</span>
                                                 ${{ number_format($plan->prima_pastor) }}
                                             </p>
-
                                         </div>
-
                                     </div>
                                 </div>
                             </div>
@@ -149,7 +148,6 @@
         const condiciones = @json($condiciones);
 
         $('.formDuplicarGrupo').on('submit', function(e) {
-
             e.preventDefault();
 
             let form = $(this);
@@ -192,23 +190,38 @@
                 }
 
             }).then((result) => {
-                // CORRECCIÓN CRÍTICA: 
-                // Validamos tanto isConfirmed como la existencia de result.value
                 if (result.value || result.isConfirmed) {
-
-                    // 1. Extraemos el ID (el 8 que mencionaste)
                     const seleccion = result.value;
+                    const Inputconidcrear = $('<input>', {
+                        type: 'hidden',
+                        name: 'condicion_id_nuevo',
+                        value: seleccion
+                    });
 
-                    // 2. Buscamos el input oculto dentro de ESTE formulario y asignamos el valor
-                    form.find('input[name="condicion_id"]').val(seleccion);
-
-                    // 3. Enviamos al controlador
-                    // Usamos form[0].submit() para saltar cualquier otro preventDefault
-                    console.log("Enviando a controlador con ID:", seleccion);
+                    form.append(Inputconidcrear);
                     form[0].submit();
                 }
             });
         });
 
+        document.querySelectorAll('.form-duplicar-plan').forEach(form => {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                Swal.fire({
+                    title: '¿Duplicar plan?',
+                    text: 'Se creará una copia de este plan.',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, duplicar',
+                    cancelButtonText: 'Cancelar',
+                    confirmButtonColor: '#3454D1',
+                    cancelButtonColor: '#6c757d'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
+            });
+        });
     });
 </script>
