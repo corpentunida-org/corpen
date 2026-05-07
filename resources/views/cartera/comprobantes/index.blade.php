@@ -41,7 +41,7 @@
                 <label class="form-label fs-9 fw-bolder text-muted text-uppercase mb-1">Búsqueda General</label>
                 <div class="input-group input-group-sm">
                     <span class="input-group-text bg-light"><i class="fas fa-search text-muted"></i></span>
-                    <input type="text" name="buscar" value="{{ request('buscar') }}" class="form-control border-gray-300" placeholder="Buscar cédula, monto, cuota, PR, CCO...">
+                    <input type="text" name="buscar" value="{{ request('buscar') }}" class="form-control border-gray-300" placeholder="Buscar cédula, monto, cuota, PR, CCO, tipo pago, observación...">
                 </div>
             </div>
 
@@ -80,15 +80,17 @@
                             <th>CÓDIGO TERCERO</th>
                             <th>NOMBRE TERCERO</th>
                             <th>OBLIGACIÓN</th> 
-                            <th class="text-center">CUOTA</th> {{-- NUEVO --}}
-                            <th class="text-center">PR</th>    {{-- NUEVO --}}
-                            <th class="text-center">CCO</th>   {{-- NUEVO --}}
+                            <th class="text-center">CUOTA</th>
+                            <th class="text-center">PR</th>
+                            <th class="text-center">CCO</th>
+                            <th class="text-center">TIPO PAGO</th>
                             <th>AGENTE</th>
                             <th>MONTO PAGADO</th>
                             <th>FECHA PAGO</th>
                             <th>ID INTERACCIÓN</th>
-                            <th>TRANSACCIÓN BANCARIA</th> 
+                            <th>ID TRANSACCIÓN BANCARIA</th>
                             <th>BANCO DESTINO</th> 
+                            <th>OBSERVACIÓN</th>
                             <th>HASH TRANSACCIÓN</th>
                             <th>ESTADO</th>
                             <th>SOPORTE</th>
@@ -110,10 +112,13 @@
                                 {{ optional($comprobante->obligacion)->nombre ?? '---' }}
                             </td>
                             
-                            {{-- NUEVOS CAMPOS --}}
                             <td class="text-center font-monospace text-muted">{{ $comprobante->numero_cuota ?? '---' }}</td>
                             <td class="text-center font-monospace text-muted">{{ $comprobante->pr ?? '---' }}</td>
                             <td class="text-center font-monospace text-muted">{{ $comprobante->cco ?? '---' }}</td>
+
+                            <td class="text-center">
+                                <span class="badge badge-light-secondary fs-10 text-uppercase">{{ $comprobante->tipo_pago ?? '---' }}</span>
+                            </td>
 
                             <td>
                                 <div class="d-flex align-items-center">
@@ -150,6 +155,10 @@
                                 @endif
                             </td>
 
+                            <td class="text-muted italic" style="max-width: 200px; text-overflow: ellipsis; overflow: hidden;" title="{{ $comprobante->observacion }}">
+                                {{ $comprobante->observacion ?? '---' }}
+                            </td>
+
                             <td class="font-monospace fs-10 text-muted" style="max-width: 150px;">{{ $comprobante->hash_transaccion }}</td>
 
                             <td class="text-center p-0">
@@ -184,7 +193,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="17" class="text-center py-10 text-muted fs-8 italic">
+                            <td colspan="19" class="text-center py-10 text-muted fs-8 italic">
                                 <i class="fas fa-search text-gray-400 mb-3 fs-1 d-block opacity-50"></i>
                                 No hay datos para el periodo y filtros seleccionados.
                             </td>
