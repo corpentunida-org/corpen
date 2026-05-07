@@ -1141,6 +1141,25 @@
         background-color: #f1f1f4;
         color: #181c32;
     }
+    /*Resaltar en rojo los campos obligatorios del modal MIENTRAS ESTÉN VACÍOS */
+    #modalComprobante .form-control:required:invalid {
+        border-color: #f1416c !important;
+        border-left: 4px solid #f1416c !important;
+        background-color: #fff8fa !important;
+    }
+
+    /* 🔥 NUEVO: Resaltar el área de arrastrar archivo si es obligatorio y está vacío */
+    #modalComprobante input[type="file"]:required:invalid + label {
+        border: 2px dashed #f1416c !important;
+        background-color: #fff8fa !important;
+        border-radius: 8px;
+    }
+
+    /* Opcional: Hacer que los asteriscos de los labels obligatorios en el modal sean rojos nativamente */
+    #modalComprobante label:has(+ input:required),
+    #modalComprobante label:has(+ div input:required) {
+        color: #181c32; /* Color normal del texto */
+    }
 </style>
 
 <script>
@@ -1237,6 +1256,19 @@
         document.getElementById('id_obligacion').addEventListener('change', function () {
             const idLineaModal = this.value;
             if (!idLineaModal) return;
+
+            const ccoInput = document.getElementById('cco');
+            const ccoLabel = ccoInput.previousElementSibling;
+
+            if (idLineaModal === "5") {
+                ccoInput.setAttribute('required', 'required');
+                if (!ccoLabel.innerHTML.includes('*')) {
+                    ccoLabel.innerHTML = 'CCO <span class="text-danger fw-bolder">*</span>';
+                }
+            } else {
+                ccoInput.removeAttribute('required');
+                ccoLabel.innerHTML = 'CCO';
+            }
 
             const $selects = $('.select2-linea');
             let yaExiste = false;
@@ -1445,6 +1477,11 @@
         ['numero_cuota', 'pr', 'cco', 'id_obligacion', 'id_banco', 'search_obligacion', 'search_banco', 'monto_pagado', 'monto_pagado_display', 'tipo_pago', 'search_tipo_pago', 'observacion'].forEach(id => {
             const el = document.getElementById(id); if (el) el.value = '';
         }); 
+        const ccoInput = document.getElementById('cco');
+        if(ccoInput) {
+            ccoInput.removeAttribute('required');
+            ccoInput.previousElementSibling.innerHTML = 'CCO';
+        }
     }
 </script>
 
