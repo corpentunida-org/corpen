@@ -229,7 +229,6 @@
                 });
             }
 
-
             // cuando cambie el select
             $('#convenio_id').on('change', function() {
                 cargarCoberturas();
