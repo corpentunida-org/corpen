@@ -13,22 +13,23 @@ class CarComprobantePagoController extends Controller
 {
     public function index(Request $request)
     {
-        // 1. Filtro Obligatorio: Periodo (Año y Mes). Por defecto el mes actual.
+        // 1. Filtro de Periodo
         $periodo = $request->input('periodo', date('Y-m'));
         $parts = explode('-', $periodo);
         $year = $parts[0] ?? date('Y');
         $month = $parts[1] ?? date('m');
 
-        // 2. Consulta Base
-        $query = CarComprobantePago::whereYear('fecha_pago', $year)
-                                   ->whereMonth('fecha_pago', $month);
+        // 2. Consulta con Eager Loading (Evita que el servidor colapse con 500 filas)
+        $query = CarComprobantePago::with(['tercero', 'user', 'obligacion', 'banco', 'interaccion'])
+                                    ->whereYear('fecha_pago', $year)
+                                    ->whereMonth('fecha_pago', $month);
 
-        // 3. Filtrar por estado (Tabs de la interfaz)
+        // 3. Filtro por estado
         if ($request->filled('estado')) {
             $query->where('estado', $request->estado);
         }
 
-        // 4. Buscador backend (busca en toda la base de datos y ahora incluye los nuevos campos)
+        // 4. Buscador Global (Cubre todos los campos del Fillable)
         if ($request->filled('buscar')) {
             $busqueda = $request->buscar;
             $query->where(function($q) use ($busqueda) {
@@ -38,12 +39,16 @@ class CarComprobantePagoController extends Controller
                   ->orWhere('monto_pagado', 'LIKE', "%{$busqueda}%")
                   ->orWhere('numero_cuota', 'LIKE', "%{$busqueda}%")
                   ->orWhere('pr', 'LIKE', "%{$busqueda}%")
-                  ->orWhere('cco', 'LIKE', "%{$busqueda}%");
+                  ->orWhere('cco', 'LIKE', "%{$busqueda}%")
+                  ->orWhere('tipo_pago', 'LIKE', "%{$busqueda}%")
+                  ->orWhere('observacion', 'LIKE', "%{$busqueda}%")
+                  ->orWhere('hash_transaccion', 'LIKE', "%{$busqueda}%")
+                  ->orWhere('id_transaccion_bancaria', 'LIKE', "%{$busqueda}%");
             });
         }
 
-        // 5. Paginación robusta de 100 registros
-        $comprobantes = $query->latest()->paginate(100)->withQueryString(); 
+        // 5. Paginación aumentada a 500 para ver todos los registros
+        $comprobantes = $query->latest()->paginate(500)->withQueryString(); 
         
         return view('cartera.comprobantes.index', compact('comprobantes', 'periodo'));
     }
@@ -61,14 +66,11 @@ class CarComprobantePagoController extends Controller
     {
         // 1. Preprocesar fecha para que sea un número puro de 14 dígitos (YYYYMMDDHHMMSS)
         if ($request->filled('fecha_pago')) {
-            // Quitamos cualquier carácter que no sea número (guiones, espacios, dos puntos, la T del datetime-local)
             $soloNumeros = preg_replace('/[^0-9]/', '', $request->fecha_pago);
 
-            // Si solo enviaron la fecha (8 dígitos: YYYYMMDD), le pegamos la hora actual
             if (strlen($soloNumeros) === 8) {
                 $soloNumeros .= date('His');
             } 
-            // Si enviaron fecha y hora pero faltan los segundos (12 dígitos: YYYYMMDDHHMM), le ponemos 00
             elseif (strlen($soloNumeros) === 12) {
                 $soloNumeros .= '00';
             }
@@ -81,20 +83,24 @@ class CarComprobantePagoController extends Controller
             'pr'           => $request->filled('pr') ? $request->pr : null,
             'cco'          => $request->filled('cco') ? $request->cco : null,
             'numero_cuota' => $request->filled('numero_cuota') ? $request->numero_cuota : null,
+            'tipo_pago'    => $request->filled('tipo_pago') ? $request->tipo_pago : null, // AGREGADO
+            'observacion'  => $request->filled('observacion') ? $request->observacion : null, // AGREGADO
         ]);
 
         $validated = $request->validate([
             'cod_ter_MaeTerceros'     => 'required|integer',
             'id_obligacion'           => 'nullable|integer', 
             'monto_pagado'            => 'required|numeric',
-            'fecha_pago'              => 'required|numeric', // numeric permite los 14 dígitos sin desbordamiento
+            'fecha_pago'              => 'required|numeric',
             'archivo_soporte'         => 'required|file|mimes:pdf,jpg,jpeg,png|max:5120',
             'id_banco'                => 'required|integer',
             'temp_token'              => 'nullable|string|max:255',
             'id_interaction'          => 'nullable|integer',
             'pr'                      => 'nullable|integer', 
             'cco'                     => 'nullable|integer', 
-            'numero_cuota'            => 'nullable|integer', 
+            'numero_cuota'            => 'nullable|integer',
+            'tipo_pago'               => 'nullable|string|max:100', // AGREGADO
+            'observacion'             => 'nullable|string|max:255', // AGREGADO
         ]);
 
         try {
@@ -141,7 +147,9 @@ class CarComprobantePagoController extends Controller
                 'id_banco'                => $validated['id_banco'], 
                 'pr'                      => $validated['pr'],
                 'cco'                     => $validated['cco'],
-                'numero_cuota'            => $validated['numero_cuota']
+                'numero_cuota'            => $validated['numero_cuota'],
+                'tipo_pago'               => $validated['tipo_pago'], // AGREGADO
+                'observacion'             => $validated['observacion']  // AGREGADO
             ]);
 
             return response()->json(['success' => true, 'message' => 'Soporte almacenado correctamente.']);
