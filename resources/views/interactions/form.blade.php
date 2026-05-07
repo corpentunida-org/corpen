@@ -1213,6 +1213,8 @@
                     hidden.value = this.getAttribute('data-id');
                     list.classList.add('d-none');
                     actualizarHash();
+
+                    hidden.dispatchEvent(new Event('change', { bubbles: true }));
                 });
             });
 
@@ -1225,6 +1227,38 @@
         setupBuscadorNativo('search_banco', 'id_banco', 'list_banco');
         setupBuscadorNativo('search_tipo_pago', 'tipo_pago', 'list_tipo_pago');
 
+        // Sincronización automática de la línea de crédito seleccionada en el modal con los campos "Asignar Línea" del formulario principal
+        document.getElementById('id_obligacion').addEventListener('change', function() {
+            const idLineaModal = this.value;
+            if (!idLineaModal) return;
+
+            const $selects = $('.select2-linea');
+            let yaExiste = false;
+            let $selectVacio = null;
+
+            // Revisamos todos los campos de "Asignar Línea" actuales
+            $selects.each(function() {
+                if ($(this).val() == idLineaModal) {
+                    yaExiste = true; // La línea ya está seleccionada, no la duplicamos
+                }
+                if (!$(this).val() && !$selectVacio) {
+                    $selectVacio = $(this); // Capturamos el primer select que esté vacío
+                }
+            });
+
+            // Si la línea ya está asignada en el formulario principal, ignoramos
+            if (yaExiste) return;
+
+            if ($selectVacio) {
+                // Si encontramos un campo vacío, le asignamos el valor del modal
+                $selectVacio.val(idLineaModal).trigger('change');
+            } else {
+                // Si todos los campos actuales están llenos, forzamos un clic en el botón "+"
+                $('#btn-add-linea').trigger('click');
+                // Tomamos el ÚLTIMO campo creado y le asignamos el valor
+                $('.select2-linea').last().val(idLineaModal).trigger('change');
+            }
+        });
         // --- 2. LÓGICA DEL HASH ---
         function actualizarHash() {
             const banco = document.getElementById('id_banco').value;
