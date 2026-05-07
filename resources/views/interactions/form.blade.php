@@ -925,32 +925,46 @@
 
                             <!-- NUEVO CAMPO: TIPO DE PAGO CON BUSCADOR -->
                             <div class="fv-row mt-4 position-relative">
-                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Tipo de Pago *</label>
+                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Tipo de Pago
+                                    *</label>
                                 <div class="input-group input-group-solid border border-gray-300 rounded shadow-sm">
-                                    <span class="input-group-text bg-transparent border-0"><i class="fas fa-search text-muted"></i></span>
+                                    <span class="input-group-text bg-transparent border-0"><i
+                                            class="fas fa-search text-muted"></i></span>
                                     <input type="text" id="search_tipo_pago" class="form-control border-0"
                                         placeholder="Busca el tipo de pago..." autocomplete="off" required>
                                     <!-- Aquí se guarda el valor que se enviará a la base de datos -->
                                     <input type="hidden" id="tipo_pago" name="tipo_pago">
                                 </div>
-                                <div class="list-group position-absolute w-100 shadow-lg d-none custom-dropdown-list" id="list_tipo_pago">
-                                    <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="Pago normal">Pago normal</button>
-                                    <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="Pago parcial">Pago parcial</button>
-                                    <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="Pago total">Pago total</button>
-                                    <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="Pago anticipado">Pago anticipado</button>
-                                    <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="Pago de cuota atrasada">Pago de cuota atrasada</button>
-                                    <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="Abono a capital">Abono a capital</button>
-                                    <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="Pago de intereses">Pago de intereses</button>
-                                    <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="Pago mixto">Pago mixto</button>
-                                    <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="Pago acuerdo de pago">Pago acuerdo de pago</button>
-                                    <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="Pago refinanciación">Pago refinanciación</button>
-                                    <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="Pago reestructuración">Pago reestructuración</button>
-                                    <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="Pago cobro jurídico">Pago cobro jurídico</button>
-                                    <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="Pago extraordinario">Pago extraordinario</button>
-                                    <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="Pago con descuento">Pago con descuento</button>
-                                    <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="Ajuste de pago">Ajuste de pago</button>
-                                    <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="Reverso de pago">Reverso de pago</button>
-                                    <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="Condonación">Condonación</button>
+                                @php
+                                    $tiposPago = [
+                                        "Pago normal",
+                                        "Pago parcial",
+                                        "Pago total",
+                                        "Pago anticipado",
+                                        "Pago de cuota atrasada",
+                                        "Abono a capital",
+                                        "Pago de intereses",
+                                        "Pago mixto",
+                                        "Pago acuerdo de pago",
+                                        "Pago refinanciación",
+                                        "Pago reestructuración",
+                                        "Pago cobro jurídico",
+                                        "Pago extraordinario",
+                                        "Pago con descuento",
+                                        "Ajuste de pago",
+                                        "Reverso de pago",
+                                        "Condonación"
+                                    ];
+                                @endphp
+                                <div class="list-group position-absolute w-100 shadow-lg d-none custom-dropdown-list"
+                                    id="list_tipo_pago">
+                                    @foreach($tiposPago as $tipo)
+                                        <button type="button"
+                                            class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom"
+                                            data-id="{{ $tipo }}">
+                                            {{ $tipo }}
+                                        </button>
+                                    @endforeach
                                 </div>
                             </div>
 
@@ -1033,7 +1047,10 @@
                         <div class="col-12 mt-4">
                             <div class="fv-row">
                                 <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Observación</label>
-                                <textarea name="observacion" id="observacion" class="form-control form-control-solid border border-gray-300 shadow-sm" rows="2" placeholder="Agrega un comentario u observación opcional..." maxlength="255"></textarea>
+                                <textarea name="observacion" id="observacion"
+                                    class="form-control form-control-solid border border-gray-300 shadow-sm" rows="2"
+                                    placeholder="Agrega un comentario u observación opcional..."
+                                    maxlength="255"></textarea>
                             </div>
                         </div>
 
@@ -1141,6 +1158,25 @@
         const dropZone = document.getElementById('drop_zone_area');
         const fechaPagoInput = document.getElementById('fecha_pago');
 
+        // --- 7. RESETEAR TIPIFICACIÓN AL CERRAR MODAL ---
+        modalElement.addEventListener('hidden.bs.modal', function () {
+            // 1. Limpiar el buscador de motivos
+            const searchType = document.getElementById('search-type');
+            if (searchType) {
+                searchType.value = '';
+            }
+            // 2. Deseleccionar todos los radio buttons de tipificación
+            const typeRadios = document.querySelectorAll('.type-trigger');
+            typeRadios.forEach(radio => {
+                radio.checked = false;
+            });
+            // 3. (Opcional) Si ocultas los tags al buscar, volver a mostrarlos todos
+            const allTags = document.querySelectorAll('#container-list-types label');
+            allTags.forEach(tag => tag.classList.remove('d-none'));
+
+            //console.log('Modal cerrado: Tipificación reseteada.');
+        });
+
         // --- 1. LÓGICA DE BUSCADORES NATIVOS ---
         function setupBuscadorNativo(inputId, hiddenId, listId) {
             const input = document.getElementById(inputId);
@@ -1229,7 +1265,7 @@
             if (val !== '') {
                 let [entero, decimales] = val.split('.');
                 let visual = new Intl.NumberFormat('es-CO').format(parseInt(entero) || 0);
-                
+
                 if (val.includes('.')) {
                     visual += ',' + (decimales !== undefined ? decimales : '');
                 }
@@ -1237,7 +1273,7 @@
             } else {
                 this.value = '';
             }
-            
+
             actualizarHash();
         });
 
@@ -1295,7 +1331,7 @@
                                 form.reset();
                                 resetFile();
                                 modalCodTercero.value = clieID;
-                                
+
                                 const ahora = new Date();
                                 ahora.setMinutes(ahora.getMinutes() - ahora.getTimezoneOffset());
                                 fechaPagoInput.value = ahora.toISOString().slice(0, 16);
