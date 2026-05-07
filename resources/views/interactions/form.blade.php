@@ -1159,22 +1159,28 @@
         const fechaPagoInput = document.getElementById('fecha_pago');
 
         // --- 7. RESETEAR TIPIFICACIÓN AL CERRAR MODAL ---
-        modalElement.addEventListener('hidden.bs.modal', function () {
-            // 1. Limpiar el buscador de motivos
-            const searchType = document.getElementById('search-type');
-            if (searchType) {
-                searchType.value = '';
-            }
-            // 2. Deseleccionar todos los radio buttons de tipificación
-            const typeRadios = document.querySelectorAll('.type-trigger');
-            typeRadios.forEach(radio => {
-                radio.checked = false;
-            });
-            // 3. (Opcional) Si ocultas los tags al buscar, volver a mostrarlos todos
-            const allTags = document.querySelectorAll('#container-list-types label');
-            allTags.forEach(tag => tag.classList.remove('d-none'));
+        // --- 7. RESETEAR TIPIFICACIÓN SOLO AL CANCELAR/CERRAR MANUALMENTE ---
+        // Seleccionamos todos los botones que cierran el modal (la X y el botón cancelar)
+        const closeButtons = modalElement.querySelectorAll('[data-bs-dismiss="modal"]');
+        closeButtons.forEach(btn => {
+            btn.addEventListener('click', function () {
+                const searchType = document.getElementById('search-type');
+                if (searchType) {
+                    searchType.value = '';
+                }
 
-            //console.log('Modal cerrado: Tipificación reseteada.');
+                // 2. Deseleccionar los radio buttons de tipificación
+                const typeRadios = document.querySelectorAll('.type-trigger');
+                typeRadios.forEach(radio => {
+                    radio.checked = false;
+                });
+
+                // 3. Mostrar todos los tags (por si se estaban filtrando)
+                const allTags = document.querySelectorAll('#container-list-types label');
+                allTags.forEach(tag => tag.classList.remove('d-none'));
+
+                // console.log('Acción cancelada: Se desmarcó la tipificación.');
+            });
         });
 
         // --- 1. LÓGICA DE BUSCADORES NATIVOS ---
@@ -1228,7 +1234,7 @@
         setupBuscadorNativo('search_tipo_pago', 'tipo_pago', 'list_tipo_pago');
 
         // Sincronización automática de la línea de crédito seleccionada en el modal con los campos "Asignar Línea" del formulario principal
-        document.getElementById('id_obligacion').addEventListener('change', function() {
+        document.getElementById('id_obligacion').addEventListener('change', function () {
             const idLineaModal = this.value;
             if (!idLineaModal) return;
 
@@ -1237,7 +1243,7 @@
             let $selectVacio = null;
 
             // Revisamos todos los campos de "Asignar Línea" actuales
-            $selects.each(function() {
+            $selects.each(function () {
                 if ($(this).val() == idLineaModal) {
                     yaExiste = true; // La línea ya está seleccionada, no la duplicamos
                 }
@@ -1432,14 +1438,14 @@
     });
 
     // --- ACTUALIZADO: AHORA LIMPIA TIPO_PAGO Y OBSERVACION ---
-    function resetFile() {
+    /*function resetFile() {
         document.getElementById('archivo_soporte').value = '';
         const prev = document.getElementById('preview_container');
         if (prev) prev.classList.add('d-none');
         ['numero_cuota', 'pr', 'cco', 'id_obligacion', 'id_banco', 'search_obligacion', 'search_banco', 'monto_pagado', 'monto_pagado_display', 'tipo_pago', 'search_tipo_pago', 'observacion'].forEach(id => {
             const el = document.getElementById(id); if (el) el.value = '';
-        });
-    }
+        }); 
+    }*/
 </script>
 
 
