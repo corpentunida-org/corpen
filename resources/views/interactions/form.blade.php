@@ -1257,6 +1257,7 @@
             const idLineaModal = this.value;
             if (!idLineaModal) return;
 
+            // --- 1. LÓGICA PARA EL CAMPO CCO (Solo si es ID 5) ---
             const ccoInput = document.getElementById('cco');
             const ccoLabel = ccoInput.previousElementSibling;
 
@@ -1270,6 +1271,38 @@
                 ccoLabel.innerHTML = 'CCO';
             }
 
+            // --- 2. LÓGICA PARA N° CUOTA y PR ---
+            const cuotaInput = document.getElementById('numero_cuota');
+            const cuotaLabel = cuotaInput.previousElementSibling;
+            
+            const prInput = document.getElementById('pr');
+            const prLabel = prInput.previousElementSibling;
+
+            // Array de IDs que requieren N° Cuota y PR
+            const lineasRequeridas = ["1", "2", "3", "4", "6", "7", "8", "9", "10", "11", "12", "13", "14"];
+
+            if (lineasRequeridas.includes(idLineaModal)) {
+                // Hacer N° Cuota requerido
+                cuotaInput.setAttribute('required', 'required');
+                if (!cuotaLabel.innerHTML.includes('*')) {
+                    cuotaLabel.innerHTML = 'N° Cuota <span class="text-danger fw-bolder">*</span>';
+                }
+
+                // Hacer PR requerido
+                prInput.setAttribute('required', 'required');
+                if (!prLabel.innerHTML.includes('*')) {
+                    prLabel.innerHTML = 'PR <span class="text-danger fw-bolder">*</span>';
+                }
+            } else {
+                // Quitar los requeridos y los asteriscos
+                cuotaInput.removeAttribute('required');
+                cuotaLabel.innerHTML = 'N° Cuota';
+
+                prInput.removeAttribute('required');
+                prLabel.innerHTML = 'PR';
+            }
+
+            // --- 3. Sincronización con los selects del formulario principal ---
             const $selects = $('.select2-linea');
             let yaExiste = false;
             let $selectVacio = null;
@@ -1469,7 +1502,7 @@
         });
     });
 
-    // --- ACTUALIZADO: AHORA LIMPIA TIPO_PAGO Y OBSERVACION ---
+    // --- ACTUALIZADO: AHORA LIMPIA TIPO_PAGO Y OBSERVACION, CCO, PR Y N° CUOTA ---
     function resetFile() {
         document.getElementById('archivo_soporte').value = '';
         const prev = document.getElementById('preview_container');
@@ -1477,10 +1510,26 @@
         ['numero_cuota', 'pr', 'cco', 'id_obligacion', 'id_banco', 'search_obligacion', 'search_banco', 'monto_pagado', 'monto_pagado_display', 'tipo_pago', 'search_tipo_pago', 'observacion'].forEach(id => {
             const el = document.getElementById(id); if (el) el.value = '';
         }); 
+        
+        // Reset CCO
         const ccoInput = document.getElementById('cco');
         if(ccoInput) {
             ccoInput.removeAttribute('required');
             ccoInput.previousElementSibling.innerHTML = 'CCO';
+        }
+
+        // Reset N° Cuota
+        const cuotaInput = document.getElementById('numero_cuota');
+        if(cuotaInput) {
+            cuotaInput.removeAttribute('required');
+            cuotaInput.previousElementSibling.innerHTML = 'N° Cuota';
+        }
+
+        // Reset PR
+        const prInput = document.getElementById('pr');
+        if(prInput) {
+            prInput.removeAttribute('required');
+            prInput.previousElementSibling.innerHTML = 'PR';
         }
     }
 </script>
