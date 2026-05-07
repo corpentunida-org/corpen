@@ -1438,14 +1438,14 @@
     });
 
     // --- ACTUALIZADO: AHORA LIMPIA TIPO_PAGO Y OBSERVACION ---
-    /*function resetFile() {
+    function resetFile() {
         document.getElementById('archivo_soporte').value = '';
         const prev = document.getElementById('preview_container');
         if (prev) prev.classList.add('d-none');
         ['numero_cuota', 'pr', 'cco', 'id_obligacion', 'id_banco', 'search_obligacion', 'search_banco', 'monto_pagado', 'monto_pagado_display', 'tipo_pago', 'search_tipo_pago', 'observacion'].forEach(id => {
             const el = document.getElementById(id); if (el) el.value = '';
         }); 
-    }*/
+    }
 </script>
 
 
