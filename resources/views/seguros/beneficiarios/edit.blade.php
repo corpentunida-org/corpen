@@ -27,7 +27,7 @@
             <div class="card-header p-0">
                 <ul class="nav nav-tabs flex-wrap w-100 text-center customers-nav-tabs" id="myTab" role="tablist">
                     <li class="nav-item flex-fill border-top" role="presentation">
-                        <a href="javascript:void(0);" class="nav-link" data-bs-toggle="tab"
+                        <a class="nav-link active" data-bs-toggle="tab"
                             data-bs-target="#securityTab" role="tab" aria-selected="false">Beneficiarios</a>
                     </li>
                 </ul>
@@ -35,8 +35,7 @@
             <div class="tab-content">
                 <div class="tab-pane fade p-4 active show" id="securityTab" role="tabpanel">
                     <div class="col-lg-12">
-                        <div class="card stretch stretch-full">
-                            <div class="card-body">
+                        
                                 <form method="POST" action="{{ route('seguros.beneficiario.update', $beneficiario->id) }}" id="formUpdateBeneficiario" novalidate>
                                     @csrf
                                     @method('PUT')
@@ -117,8 +116,7 @@
                                         }
                                     });
                                 </script>
-                            </div>
-                        </div>
+                            
                     </div>
                 </div>
             </div>
