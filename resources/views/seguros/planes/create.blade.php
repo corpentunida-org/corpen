@@ -66,24 +66,25 @@
                                         <label class="form-label">Prima Aseguradora Pastor<span
                                                 class="text-danger">*</span></label>
                                         <input type="number" class="form-control" name="primaasepas" id="primaasepas"
-                                            required>                                        
+                                            required>
                                     </div>
                                     <div class="col-lg-2">
                                         <label class="form-label">Prima Aseguradora<span
                                                 class="text-danger">*</span></label>
                                         <input type="number" class="form-control" name="primaase" id="primaase"
-                                            required>                                        
+                                            required>
                                     </div>
                                     <div class="col-lg-2">
                                         <label class="form-label">Prima Corpentunida pastor<span
                                                 class="text-danger">*</span></label>
-                                        <input type="number" class="form-control" name="primacorpenpas" id="primacorpenpas"
-                                            required>                                        
+                                        <input type="number" class="form-control" name="primacorpenpas"
+                                            id="primacorpenpas" required>
                                     </div>
                                     <div class="col-lg-2">
                                         <label class="form-label">Prima Corpentunida<span
                                                 class="text-danger">*</span></label>
-                                        <input type="number" class="form-control" name="primacorpen" id="primacorpen"required>                                        
+                                        <input type="number" class="form-control" name="primacorpen"
+                                            id="primacorpen"required>
                                     </div>
                                 </div>
                             </div>
@@ -99,8 +100,7 @@
                                         <div class="col-lg-3">
                                             <label class="form-label">Valor Asegurado<span
                                                     class="text-danger">*</span></label>
-                                            <input type="number" class="form-control" name="valorAsegurado[]"
-                                                required>
+                                            <input type="number" class="form-control" name="valorAsegurado[]" required>
                                         </div>
                                         <div class="col-lg-2">
                                             <label class="form-label">Valor Cobertura<span
@@ -135,59 +135,6 @@
                                 </button>
                             </div>
                         </form>
-                        <script>
-                            $(document).ready(function() {
-                                $('#convenio_id').on('change', function() {
-                                    idAseguradora = $(this).find(':selected').data('idaseguradora');
-                                    idBusqueda = $(this).find(':selected').data('id');
-                                    $('#idConveniobusqueda').val(idBusqueda);
-                                    $('#cobertura_id').empty();
-                                    var url = '{{ route('seguros.cobertura.show', ':cobertura') }}';
-                                    $.ajax({
-                                        url: url.replace(':cobertura', idAseguradora),
-                                        method: 'GET',
-                                        success: function(data) {
-                                            data.forEach(function(cobertura) {
-                                                $('#cobertura_id').append(
-                                                    '<option value="' + cobertura.id +
-                                                    '" data-porcentaje="' + cobertura
-                                                    .porcentajeReclamacion + '">' +
-                                                    cobertura.nombre +
-                                                    '</option>'
-                                                );
-                                            });
-                                        },
-                                        error: function() {
-                                            alert('Hubo un error al cargar las coberturas.');
-                                        }
-                                    });
-                                });
-                                $('#cobertura_id').on('change', function() {
-                                    var porcentaje = $(this).find('option:selected').data('porcentaje');
-                                    $('#inputporcober').val(porcentaje ?? '');
-                                });
-
-                                $('#formAddPlan').submit(function(event) {
-                                    var form = this;
-                                    if (!form.checkValidity()) {
-                                        $(form).addClass('was-validated');
-                                        event.preventDefault();
-                                        event.stopPropagation();
-                                    }
-                                });
-                                $('#add-cobertura').click(function() {
-                                    const container = document.getElementById('coberturas-container');
-                                    const coberturaRow = document.querySelector('.cobertura-row');
-
-                                    const clonedRow = coberturaRow.cloneNode(true);
-
-                                    const inputs = clonedRow.querySelectorAll('input');
-                                    inputs.forEach(input => input.value = '');
-
-                                    container.appendChild(clonedRow);
-                                });
-                            });
-                        </script>
                     </div>
                 </div>
                 <div class="tab-pane fade p-4" id="taskTab" role="tabpanel">
@@ -241,20 +188,88 @@
                             </div>
 
                         </form>
-                        <script>
-                            $('#formAddCobertura').submit(function(event) {
-                                var form = this;
-                                if (!form.checkValidity()) {
-                                    $(form).addClass('was-validated');
-                                    event.preventDefault();
-                                    event.stopPropagation();
-                                }
-                            });
-                        </script>
+
                     </div>
                 </div>
             </div>
         </div>
     </div>
+    <script>
+        $(document).ready(function() {
+            function cargarCoberturas() {
+                let idAseguradora = $('#convenio_id').find(':selected').data('idaseguradora');
+                let idBusqueda = $('#convenio_id').find(':selected').data('id');
 
+                $('#idConveniobusqueda').val(idBusqueda);
+                $('#cobertura_id').empty();
+
+                var url = '{{ route('seguros.cobertura.show', ':cobertura') }}';
+
+                $.ajax({
+                    url: url.replace(':cobertura', idAseguradora),
+                    method: 'GET',
+                    success: function(data) {
+
+                        data.forEach(function(cobertura) {
+
+                            $('#cobertura_id').append(
+                                '<option value="' + cobertura.id +
+                                '" data-porcentaje="' + cobertura.porcentajeReclamacion +
+                                '">' +
+                                cobertura.nombre +
+                                '</option>'
+                            );
+
+                        });
+
+                    },
+                    error: function() {
+                        alert('Hubo un error al cargar las coberturas.');
+                    }
+                });
+            }
+
+            // cuando cambie el select
+            $('#convenio_id').on('change', function() {
+                cargarCoberturas();
+            });
+
+
+            cargarCoberturas();
+
+            $('#cobertura_id').on('change', function() {
+                var porcentaje = $(this).find('option:selected').data('porcentaje');
+                $('#inputporcober').val(porcentaje ?? '');
+            });
+
+            $('#formAddPlan').submit(function(event) {
+                var form = this;
+                if (!form.checkValidity()) {
+                    $(form).addClass('was-validated');
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+            });
+            $('#add-cobertura').click(function() {
+                const container = document.getElementById('coberturas-container');
+                const coberturaRow = document.querySelector('.cobertura-row');
+
+                const clonedRow = coberturaRow.cloneNode(true);
+
+                const inputs = clonedRow.querySelectorAll('input');
+                inputs.forEach(input => input.value = '');
+
+                container.appendChild(clonedRow);
+            });
+        });
+
+        $('#formAddCobertura').submit(function(event) {
+            var form = this;
+            if (!form.checkValidity()) {
+                $(form).addClass('was-validated');
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        });
+    </script>
 </x-base-layout>

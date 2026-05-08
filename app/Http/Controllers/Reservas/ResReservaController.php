@@ -31,7 +31,6 @@ class ResReservaController extends Controller implements HasMiddleware
 
     public function index()
     {
-        
         $reservas = Res_reserva::where('user_id', auth()->user()->id)
             ->where('puntuacion_asociado', null)
             ->orderBy('fecha_inicio', 'desc')
@@ -214,9 +213,11 @@ class ResReservaController extends Controller implements HasMiddleware
     public function indexConfirmacion()
     {
         $reservas = Res_reserva::select('id', 'res_inmueble_id', 'res_status_id', 'user_id', 'nid', 'fecha_inicio', 'fecha_fin')
-            ->where('res_status_id', [2])
-            ->orderBy('fecha_inicio', 'asc')
+            ->where('res_status_id', 2)
             ->with(['tercero', 'user'])
+            ->orderByRaw(
+                "CASE WHEN fecha_inicio >= CURDATE() THEN 0 ELSE 1 END",)
+            ->orderBy('fecha_inicio', 'asc')
             ->get();
         return view('reserva.funcionario.indexConfirmacion', compact('reservas'));
     }
@@ -286,7 +287,7 @@ class ResReservaController extends Controller implements HasMiddleware
 
     public function indexHistorico()
     {
-        $historicosres = Res_reserva::select('id', 'res_inmueble_id', 'res_status_id', 'user_id', 'nid', 'fecha_inicio', 'fecha_fin','celular','celular_respaldo')
+        $historicosres = Res_reserva::select('id', 'res_inmueble_id', 'res_status_id', 'user_id', 'nid', 'fecha_inicio', 'fecha_fin', 'celular', 'celular_respaldo')
             ->with(['res_inmueble:id,name', 'user:id,name'])
             ->orderby('fecha_solicitud', 'desc')
             ->get();
@@ -335,7 +336,9 @@ class ResReservaController extends Controller implements HasMiddleware
                 'deleted_at' => now(),
             ]);
             $texto = 'Lamentamos informarle que su reserva ha sido cancelada automáticamente debido a que no se recibió el soporte de pago en la aplicación dentro del plazo establecido. Si desea realizar una nueva reserva, por favor siga el proceso habitual en nuestra plataforma. ¡Dios le bendiga!';
-            Mail::to($reserva->user->email)->send(new ReservaInmueble($reserva->user->name, $texto, 'Su reserva ha sido cancelada', false, $reserva->res_inmueble));
+            Mail::to($reserva->user->email)
+                ->cc('elpastorc@gmail.com')
+                ->send(new ReservaInmueble($reserva->user->name, $texto, 'Su reserva ha sido cancelada', false, $reserva->res_inmueble));
             $canceladas++;
         }
         return response()->json([

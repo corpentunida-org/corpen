@@ -191,8 +191,10 @@ class SegNovedadesController extends Controller
         if ($request->has('individual') || $request->individual) {
             $novedad = SegNovedades::findOrFail($id);
             $novedad->update([
+                'primaAseguradora' => $request->primaAseguradora,
                 'primaCorpen' => $request->primaPagar,
                 'extraprima' => $request->extraprima,
+                'valorAsegurado' => $request->valAsegurado,
             ]);
             SegCambioEstadoNovedad::create([
                 'novedad' => $id,
