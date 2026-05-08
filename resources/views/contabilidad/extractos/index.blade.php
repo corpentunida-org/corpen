@@ -50,23 +50,12 @@
                 </select>
             </div>
 
-            {{-- Filtro Opcional: Distrito --}}
-            <div>
-                <label class="form-label fs-9 fw-bolder text-muted text-uppercase mb-1">Distrito (Opcional)</label>
-                <select name="distrito" class="form-select form-select-sm border-gray-300" style="min-width: 150px;">
-                    <option value="">Todos...</option>
-                    @foreach($distritos as $dist)
-                        <option value="{{ $dist }}" {{ $distrito == $dist ? 'selected' : '' }}>{{ $dist }}</option>
-                    @endforeach
-                </select>
-            </div>
-
-            {{-- Filtro Opcional: Búsqueda Global --}}
+            {{-- Filtro Opcional: Búsqueda Global (Sin los campos eliminados) --}}
             <div class="flex-grow-1">
                 <label class="form-label fs-9 fw-bolder text-muted text-uppercase mb-1">Búsqueda Exacta</label>
                 <div class="input-group input-group-sm">
                     <span class="input-group-text bg-light"><i class="fas fa-search text-muted"></i></span>
-                    <input type="text" name="search" value="{{ $search }}" class="form-control border-gray-300" placeholder="Buscar cédula, referencia, nombre o monto...">
+                    <input type="text" name="search" value="{{ $search }}" class="form-control border-gray-300" placeholder="Buscar cédula, monto o hash...">
                 </div>
             </div>
 
@@ -99,9 +88,7 @@
                             <th>FECHA</th>
                             <th>CUENTA / BANCO</th>
                             <th>CÉDULA/NIT</th>
-                            <th>NOMBRE TERCERO</th>
-                            <th>DISTRITO</th>
-                            <th style="width: 250px;">DESCRIPCIÓN BANCO</th>
+                            <th>OFICINA</th>
                             <th>MONTO INGRESO</th>
                             <th>HASH TRANSACCIÓN</th>
                             <th>ESTADO</th>
@@ -127,15 +114,7 @@
                             </td>
                             
                             <td class="text-uppercase text-gray-800 fw-bold">
-                                {{ $movimiento->referencia_nombre ?? '---' }}
-                            </td>
-
-                            <td class="text-uppercase text-gray-600">
-                                {{ $movimiento->referencia_distrito ?? '---' }}
-                            </td>
-
-                            <td class="text-gray-700" title="{{ $movimiento->descripcion_banco }}">
-                                {{ $movimiento->descripcion_banco }}
+                                {{ $movimiento->referencia_oficina ?? '---' }}
                             </td>
 
                             <td class="text-end fw-bold text-success pe-4">
@@ -164,7 +143,8 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="11" class="text-center py-10 text-muted fs-8 italic">
+                            {{-- Colspan ajustado a 9 columnas --}}
+                            <td colspan="9" class="text-center py-10 text-muted fs-8 italic">
                                 <i class="fas fa-search mb-3 fs-1 text-gray-400 d-block"></i>
                                 No se encontraron registros para los filtros seleccionados.
                             </td>
