@@ -273,6 +273,11 @@ Route::middleware(['auth'])
         // ---------------------------------------------------
         
         // --- FLUJO DE IMPORTACIÓN ---
+        
+        // Descarga la plantilla estructurada
+        Route::get('extractos/plantilla', [ConExtractoTransaccionController::class, 'descargarPlantilla'])
+            ->name('extractos.plantilla');
+
         // Vista del formulario inicial para subir el archivo
         Route::get('extractos/importar', [ConExtractoTransaccionController::class, 'importar'])
             ->name('extractos.importar');

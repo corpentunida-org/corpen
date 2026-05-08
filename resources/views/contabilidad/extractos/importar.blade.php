@@ -30,17 +30,27 @@
                             <div class="mb-5">
                                 <label class="form-label fw-bolder text-dark fs-5">Archivo del Banco</label>
                                 <div class="border border-2 border-dashed border-primary rounded-3 text-center p-5 bg-light-primary position-relative" style="transition: all 0.3s;">
-                                    {{-- AQUÍ SE HABILITAN LOS FORMATOS EXCEL (.xls, .xlsx) --}}
-                                    <input type="file" name="archivo_extracto" class="position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer" accept=".csv, .txt, .xls, .xlsx" required>
+                                    
+                                    {{-- INPUT DE ARCHIVO (Se agregó z-index: 1 para no bloquear el botón) --}}
+                                    <input type="file" name="archivo_extracto" class="position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer" accept=".csv, .txt, .xls, .xlsx" style="z-index: 1;" required>
                                     
                                     <i class="fas fa-file-excel fa-3x text-primary mb-3"></i>
                                     <h5 class="fw-bolder text-dark">Haz clic o arrastra tu archivo Excel/CSV aquí</h5>
                                     <p class="text-muted mb-1 fs-6">Formatos soportados: Excel (.xlsx, .xls) y CSV</p>
                                     
-                                    {{-- TEXTO DE ESTRUCTURA ACTUALIZADO --}}
-                                    <span class="badge bg-light-info text-info fs-8 mt-2">
-                                        Estructura: Fecha | Cédula | Nombre | Valor | Oficina | Distrito | Descripción
-                                    </span>
+                                    {{-- CONTENEDOR DEL BOTÓN Y ESTRUCTURA (z-index: 2 para que sea clickeable) --}}
+                                    <div class="mt-3 d-flex flex-column align-items-center position-relative" style="z-index: 2;">
+                                        
+                                        <span class="badge bg-light-info text-info fs-8 mb-3">
+                                            Estructura: Fecha | Cédula | Valor | Oficina
+                                        </span>
+                                        
+                                        {{-- BOTÓN DE DESCARGA DE PLANTILLA DINÁMICA --}}
+                                        <a href="{{ route('contabilidad.extractos.plantilla') }}" class="btn btn-sm btn-outline-primary rounded-pill px-4">
+                                            <i class="fas fa-download me-2"></i> Descargar Plantilla
+                                        </a>
+                                        
+                                    </div>
                                 </div>
                             </div>
 
