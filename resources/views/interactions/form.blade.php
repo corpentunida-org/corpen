@@ -1279,7 +1279,7 @@
             const prLabel = prInput.previousElementSibling;
 
             // Array de IDs que requieren N° Cuota y PR
-            const lineasRequeridas = ["1", "2", "3", "4", "6", "7", "8", "9", "10", "11", "12", "13", "14"];
+            const lineasRequeridas = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14"];
 
             if (lineasRequeridas.includes(idLineaModal)) {
                 // Hacer N° Cuota requerido
