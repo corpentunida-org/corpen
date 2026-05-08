@@ -10,6 +10,7 @@ use App\Models\Seguros\SegAsegurado;
 use App\Models\Seguros\SegPlan;
 use App\Models\Seguros\SegPoliza;
 use App\Models\Seguros\SegCambioEstadoNovedad;
+use App\Models\Seguros\SegBeneficiario;
 use App\Http\Controllers\Exequial\ComaeTerController;
 use App\Models\Maestras\MaeTerceros;
 use Carbon\Carbon;
