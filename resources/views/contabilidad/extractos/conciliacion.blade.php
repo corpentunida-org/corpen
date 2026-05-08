@@ -46,23 +46,12 @@
                 </select>
             </div>
 
-            {{-- Filtro Opcional: Distrito (Aplica a lado izquierdo) --}}
-            <div>
-                <label class="form-label fs-9 fw-bolder text-muted text-uppercase mb-1">Distrito Origen</label>
-                <select name="distrito" class="form-select form-select-sm border-gray-300" style="min-width: 120px;">
-                    <option value="">Todos...</option>
-                    @foreach($distritos as $dist)
-                        <option value="{{ $dist }}" {{ $distrito == $dist ? 'selected' : '' }}>{{ $dist }}</option>
-                    @endforeach
-                </select>
-            </div>
-
-            {{-- Filtro Opcional: Búsqueda Global (Aplica a ambos lados) --}}
+            {{-- Filtro Opcional: Búsqueda Global (Aplica a ambos lados) - (Ajustado el texto del placeholder) --}}
             <div class="flex-grow-1">
                 <label class="form-label fs-9 fw-bolder text-muted text-uppercase mb-1">Búsqueda General</label>
                 <div class="input-group input-group-sm">
                     <span class="input-group-text bg-light"><i class="fas fa-search text-muted"></i></span>
-                    <input type="text" name="search" value="{{ $search }}" class="form-control border-gray-300" placeholder="Buscar valor exacto, ref, tercero...">
+                    <input type="text" name="search" value="{{ $search }}" class="form-control border-gray-300" placeholder="Buscar valor exacto, ref, cédula...">
                 </div>
             </div>
 
@@ -98,7 +87,7 @@
                                 <tr>
                                     <th class="col-index" style="width: 30px;">#</th>
                                     <th style="width: 85px;">FECHA</th>
-                                    <th>DESCRIPCIÓN BANCO</th>
+                                    <th>CÉDULA / OFICINA</th>
                                     <th class="text-end" style="width: 110px;">INGRESO</th>
                                 </tr>
                             </thead>
@@ -109,9 +98,9 @@
                                         <td class="col-index">{{ $extractosPendientes->firstItem() + $index }}</td>
                                         <td class="text-center text-gray-700">{{ $movimiento->fecha_movimiento->format('d/m/Y') }}</td>
                                         
-                                        <td class="text-truncate" style="max-width: 200px;" title="{{ $movimiento->descripcion_banco }} | Ref: {{ $movimiento->hash_transaccion }}">
-                                            <span class="text-dark fw-bold d-block text-truncate">{{ $movimiento->descripcion_banco }}</span>
-                                            <span class="text-muted fs-9 font-monospace">Ref: {{ substr($movimiento->hash_transaccion, 0, 15) }}...</span>
+                                        <td class="text-truncate" style="max-width: 200px;" title="Cédula: {{ $movimiento->referencia_cedula }} | Oficina: {{ $movimiento->referencia_oficina }}">
+                                            <span class="text-dark fw-bold d-block text-truncate">C.C: {{ $movimiento->referencia_cedula ?? 'N/A' }}</span>
+                                            <span class="text-muted fs-9 font-monospace">Oficina: {{ $movimiento->referencia_oficina ?? '---' }}</span>
                                         </td>
                                         
                                         <td class="text-end fw-bolder text-success">

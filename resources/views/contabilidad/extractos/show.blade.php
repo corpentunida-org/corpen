@@ -40,7 +40,6 @@
                         <div class="row g-4">
                             <div class="col-md-6">
                                 <span class="text-gray-500 fw-bold d-block text-uppercase ls-1 fs-8 mb-1">Monto de Ingreso</span>
-                                {{-- CAMBIO A 2 DECIMALES AQUÍ --}}
                                 <span class="text-success fw-bolder fs-1 lh-1">${{ number_format($extracto->valor_ingreso, 2, ',', '.') }}</span>
                             </div>
                             <div class="col-md-6">
@@ -50,12 +49,6 @@
                                 </span>
                             </div>
                             <div class="col-12 mt-4">
-                                <span class="text-gray-500 fw-bold d-block text-uppercase ls-1 fs-8 mb-1">Descripción Reportada por el Banco</span>
-                                <div class="bg-light p-3 rounded text-dark fs-5">
-                                    {{ $extracto->descripcion_banco }}
-                                </div>
-                            </div>
-                            <div class="col-12">
                                 <span class="text-gray-500 fw-bold d-block text-uppercase ls-1 fs-8 mb-1">Hash / ID Único de Transacción</span>
                                 <code class="bg-light p-2 rounded text-dark fs-6 d-block text-break border border-light">
                                     <i class="fas fa-fingerprint text-muted me-2"></i>{{ $extracto->hash_transaccion }}
@@ -65,7 +58,7 @@
                     </div>
                 </div>
 
-                {{-- Tarjeta 2: Detalles de Referencia (Tus nuevos campos) --}}
+                {{-- Tarjeta 2: Detalles de Referencia --}}
                 <div class="card border-0 shadow-sm bg-white" style="border-radius: 12px;">
                     <div class="card-header bg-transparent border-bottom border-light p-4">
                         <h4 class="fw-bolder m-0 text-dark fs-4"><i class="fas fa-user-tag text-primary me-2"></i>Detalles de Referencia</h4>
@@ -73,20 +66,12 @@
                     <div class="card-body p-5">
                         <div class="row g-4">
                             <div class="col-md-6">
-                                <span class="text-gray-500 fw-bold d-block text-uppercase ls-1 fs-8 mb-1">Nombre de Referencia</span>
-                                <span class="text-dark fw-bolder fs-5">{{ $extracto->referencia_nombre ?? 'No registrado' }}</span>
-                            </div>
-                            <div class="col-md-6">
                                 <span class="text-gray-500 fw-bold d-block text-uppercase ls-1 fs-8 mb-1">Documento / Cédula / NIT</span>
                                 <span class="text-dark fw-bolder fs-5">{{ $extracto->referencia_cedula ?? 'No registrado' }}</span>
                             </div>
-                            <div class="col-md-6 mt-4">
+                            <div class="col-md-6">
                                 <span class="text-gray-500 fw-bold d-block text-uppercase ls-1 fs-8 mb-1">Oficina de Origen</span>
                                 <span class="text-dark fw-bolder fs-5"><i class="fas fa-building text-muted me-1"></i> {{ $extracto->referencia_oficina ?? 'N/A' }}</span>
-                            </div>
-                            <div class="col-md-6 mt-4">
-                                <span class="text-gray-500 fw-bold d-block text-uppercase ls-1 fs-8 mb-1">Distrito / Ciudad</span>
-                                <span class="text-dark fw-bolder fs-5"><i class="fas fa-map-marker-alt text-muted me-1"></i> {{ $extracto->referencia_distrito ?? 'N/A' }}</span>
                             </div>
                         </div>
                     </div>

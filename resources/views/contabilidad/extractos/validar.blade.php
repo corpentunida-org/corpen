@@ -46,14 +46,9 @@
                             <th class="col-index"></th>
                             <th>FECHA MOVIMIENTO</th>
                             <th>HASH TRANSACCIÓN (Único)</th>
-                            <th style="min-width: 250px;">DESCRIPCIÓN DEL BANCO</th>
-                            <th>VALOR INGRESO</th>
-                            {{-- NUEVAS COLUMNAS --}}
                             <th>CÉDULA/REF</th>
-                            <th>NOMBRE REFERENCIA</th>
+                            <th>VALOR INGRESO</th>
                             <th>OFICINA</th>
-                            <th>DISTRITO</th>
-                            {{-- FIN NUEVAS --}}
                             <th>ESTADO A ASIGNAR</th>
                         </tr>
                     </thead>
@@ -68,21 +63,13 @@
                             
                             <td class="font-monospace fs-10 text-muted">{{ $fila['hash_transaccion'] }}</td>
                             
-                            <td class="text-uppercase text-gray-800">
-                                {{ $fila['descripcion_banco'] }}
-                            </td>
+                            <td class="text-center text-gray-700 fw-bold">{{ $fila['referencia_cedula'] ?? '---' }}</td>
                             
-                            {{-- CAMBIO A 2 DECIMALES AQUÍ --}}
                             <td class="text-end fw-bold text-success pe-4">
                                 $ {{ number_format($fila['valor_ingreso'], 2, ',', '.') }}
                             </td>
 
-                            {{-- NUEVAS COLUMNAS --}}
-                            <td class="text-center text-gray-700">{{ $fila['referencia_cedula'] ?? '---' }}</td>
-                            <td class="text-uppercase text-gray-700">{{ $fila['referencia_nombre'] ?? '---' }}</td>
                             <td class="text-center text-gray-600">{{ $fila['referencia_oficina'] ?? '---' }}</td>
-                            <td class="text-center text-gray-600">{{ $fila['referencia_distrito'] ?? '---' }}</td>
-                            {{-- FIN NUEVAS --}}
 
                             <td class="text-center p-0">
                                 <div class="gs-badge gs-warning">PENDIENTE</div>
@@ -90,7 +77,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="10" class="text-center py-10 text-muted fs-8 italic">El archivo parece estar vacío o no tiene el formato correcto.</td>
+                            <td colspan="7" class="text-center py-10 text-muted fs-8 italic">El archivo parece estar vacío o no tiene el formato correcto.</td>
                         </tr>
                         @endforelse
                     </tbody>
