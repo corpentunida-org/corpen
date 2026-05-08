@@ -54,8 +54,7 @@
                 </div>
             </div>
             @if ($editar)
-                <form method="POST" action="{{ route('seguros.novedades.update', $novedad->id) }}"
-                    id="formUpdateNovedad" novalidate>
+                <form method="POST" action="{{ route('seguros.novedades.update', $novedad->id) }}" id="formUpdateNovedad" novalidate>
                     @csrf
                     @method('PUT')
             @endif
@@ -120,7 +119,7 @@
                     <input type="hidden" class="form-control" name="individual" value=true>
                 </div>
                 @if ($novedad->formulario)
-                    <a href="{{ $novedad->getFile($novedad->formulario) }}" target="_blank">Ver Formulario PDF</a>
+                    <a style="text-decoration: underline;" href="{{ $novedad->getFile($novedad->formulario) }}" target="_blank">Ver Formulario PDF</a>
                 @endif
             </div>
             <div class="accordion proposal-faq-accordion mt-4">
