@@ -1164,6 +1164,14 @@
 
 <script>
     document.addEventListener("DOMContentLoaded", function () {
+        // --- LATIDO ANTI-DESCONEXIÓN 
+        setInterval(function() {
+            fetch(window.location.href, { 
+                method: 'HEAD',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            }).catch(() => {}); 
+        }, 60000); 
+        // ---------------------------------------
         const modalElement = document.getElementById('modalComprobante');
         if (!modalElement) return;
 
@@ -1418,7 +1426,14 @@
                     'Accept': 'application/json'
                 }
             })
-                .then(res => res.json())
+                .then(async res => {
+                    if (!res.ok) {
+                        if (res.status === 419) throw new Error('La sesión ha caducado por inactividad. Por favor, recarga la página.');
+                        const errData = await res.json().catch(() => ({}));
+                        throw new Error(errData.message || 'Error interno del servidor');
+                    }
+                    return res.json();
+                })
                 .then(data => {
                     if (data.success) {
                         myModal.hide();
@@ -1457,7 +1472,9 @@
                         Swal.fire('Error', data.message, 'error');
                     }
                 })
-                .catch(() => Swal.fire('Error', 'Servidor no responde', 'error'))
+                .catch(error => {
+                    Swal.fire('Error', error.message !== 'Failed to fetch' ? error.message : 'Error de red o servidor no responde', 'error');
+                })
                 .finally(() => { btnSubmit.disabled = false; btnSubmit.innerHTML = originalText; });
         }
 
