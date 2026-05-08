@@ -40,6 +40,7 @@
             ],
         ];
     @endphp
+
     {{-- Filtros: Solo Búsqueda y Rango de Fechas --}}
     <div class="card shadow-sm mb-3 glassmorphism-card">
         <div class="d-flex justify-content-between align-items-center py-2 px-3 border-bottom">
@@ -195,6 +196,16 @@
                                         <th class="py-2">Tiempo</th>
                                         <th class="py-2">Motivo</th>
                                         <th class="py-2">Línea y Resultado</th>
+                                        
+                                        {{-- INICIO AGREGADO: Columnas ocultas para exportación --}}
+                                        <th class="d-none">Línea 1</th>
+                                        <th class="d-none">Línea 2</th>
+                                        <th class="d-none">Línea 3</th>
+                                        <th class="d-none">Línea 4</th>
+                                        <th class="d-none">Línea 5</th>
+                                        <th class="d-none">Resultado</th>
+                                        {{-- FIN AGREGADO --}}
+
                                         <th class="py-2 text-end">Acciones</th>
                                     </tr>
                                 </thead>
@@ -295,23 +306,16 @@
                                                 </span>
                                             </td>
 
-                                            {{-- <td>
-                                                @if ($interaction->next_action_date)
-                                                    <div
-                                                        class="fs-12 {{ $isPast ? 'text-danger' : ($isToday ? 'text-warning' : 'text-success') }}">
-                                                        {{ $interaction->client->nom_ter ?? '' }}
-                                                    </div>
-
-                                                    <div class="fs-12 text-muted">
-
-                                                        {{ optional($interaction->next_action_date)->format('H:i') }}
-
-                                                        @if ($interaction->nextAction)
-                                                            ({{ $interaction->nextAction->name }})
-                                                        @endif
-                                                    </div>                                                
-                                                @endif
-                                            </td> --}}
+                                            {{-- INICIO AGREGADO: Datos ocultos para exportación --}}
+                                            @for ($i = 0; $i < 5; $i++)
+                                                <td class="d-none">
+                                                    {{ isset($interaction->lineas_detalle[$i]) ? $interaction->lineas_detalle[$i]->nombre : '' }}
+                                                </td>
+                                            @endfor
+                                            <td class="d-none">
+                                                {{ $interaction->outcomeRelation?->name ?? ' ' }}
+                                            </td>
+                                            {{-- FIN AGREGADO --}}
 
                                             <td class="text-end py-2">
 
@@ -353,7 +357,7 @@
         </div>
     </div>
 
-    {{-- Modal de Detalles (Mantiene tu diseño Pastel/Glassmorphism) --}}
+    {{-- Modal de Detalles --}}
     <div class="modal fade" id="detalleInteractionModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content glassmorphism-modal">
@@ -503,6 +507,12 @@
                                 className: 'buttons-excel',
                                 title: 'Reporte de Interacciones',
                                 filename: nombrePersonalizado,
+                                exportOptions: {
+                                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14],
+                                    modifier: {
+                                        search: 'applied'
+                                    }
+                                }
                             },
                             {
                                 extend: 'pdfHtml5',
@@ -512,6 +522,7 @@
                                 orientation: 'landscape',
                                 pageSize: 'LEGAL',
                                 exportOptions: {
+                                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14],
                                     modifier: {
                                         search: 'applied'
                                     }
@@ -522,6 +533,7 @@
                                 className: 'buttons-csv',
                                 filename: nombrePersonalizado,
                                 exportOptions: {
+                                    columns: [0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14],
                                     modifier: {
                                         search: 'applied'
                                     }
@@ -627,7 +639,7 @@
                             '<div class="text-center py-4"><div class="spinner-border text-primary spinner-border-sm"></div><p class="small text-muted mt-2">Cargando historial...</p></div>';
                         counter.textContent = '...';
 
-                        // Petición al servidor (Ruta que agregamos al web.php)
+                        // Petición al servidor
                         fetch(`/interactions/${el.id}/seguimientos`)
                             .then(res => res.json())
                             .then(seguimientos => {
