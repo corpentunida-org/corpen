@@ -172,19 +172,22 @@ class SegNovedadesController extends Controller
 
     public function edit($id)
     {
-        $novedad = SegNovedades::with(['poliza', 'estadoNovedad', 'cambiosEstado'])->findOrFail($id);
         $actividadnov = SegCambioEstadoNovedad::where('novedad', $id)->with('estadosname')->get();
+        $novedad = SegNovedades::with(['poliza', 'estadoNovedad', 'cambiosEstado'])->findOrFail($id);      
         if ($novedad->estado != 1) {
             $editar = false;
-            return view('seguros.novedades.edit', compact('novedad', 'editar', 'actividadnov'))->with('error', 'La novedad no esta en estado nueva solicitud. No se puede editar.');
+            $planesGrupo = SegPlan::where('id', $novedad->id_plan)->get();
+            return view('seguros.novedades.edit', compact('novedad', 'editar', 'actividadnov','planesGrupo'))->with('error', 'La novedad no esta en estado nueva solicitud. No se puede editar.');
             //return back()->with('error', 'La novedad no esta en estado nueva solicitud. No se puede editar.');
         }
         if ($novedad->tipo == 4) {
             return redirect()->route('seguros.beneficiario.edit', $novedad->beneficiario_id);
             //return redirect()->route('seguros.novedades.index')->with('error', 'La novedad de ingresar beneficiario no se puede editar.');
         }
+        $planBase = SegPlan::findOrFail($novedad->id_plan);
+        $planesGrupo = SegPlan::where('seg_convenio_id', $planBase->seg_convenio_id)->where('condicion_id', $planBase->condicion_id)->get();
         $editar = true;
-        return view('seguros.novedades.edit', compact('novedad', 'editar', 'actividadnov'));
+        return view('seguros.novedades.edit', compact('novedad', 'editar', 'actividadnov','planesGrupo'));
     }
 
     public function update(Request $request, $id)
@@ -195,6 +198,7 @@ class SegNovedadesController extends Controller
                 'primaAseguradora' => $request->primaAseguradora,
                 'primaCorpen' => $request->primaPagar,
                 'extraprima' => $request->extraprima,
+                'id_plan' => $request->id_plan,
                 'valorAsegurado' => $request->valAsegurado,
             ]);
             SegCambioEstadoNovedad::create([
