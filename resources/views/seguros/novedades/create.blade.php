@@ -549,10 +549,8 @@
                     type: 'GET',
                     success: function(planes) {
                         const $select = $('#selectPlanes');
-                        $select.empty().append(
-                            '<option value="">Seleccione un plan</option>');
-                        planes.forEach(function(plan) {
-                            //console.log(plan);
+                        $select.empty().append('<option value="">Seleccione un plan</option>');
+                        planes.forEach(function(plan) {                            
                             $select.append(
                                 `<option value="${plan.id}"
                                         data-as="${plan.prima_asegurado}" 
