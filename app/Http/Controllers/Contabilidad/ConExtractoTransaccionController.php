@@ -7,6 +7,9 @@ use App\Models\Contabilidad\ConExtractoTransaccion;
 use App\Models\Contabilidad\ConCuentaBancaria;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ConExtractoTransaccionController extends Controller
 {
@@ -114,28 +117,49 @@ class ConExtractoTransaccionController extends Controller
      */
     public function descargarPlantilla()
     {
-        $headers = [
-            "Content-type"        => "text/csv",
-            "Content-Disposition" => "attachment; filename=plantilla_importacion.csv",
-            "Pragma"              => "no-cache",
-            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
-            "Expires"             => "0"
-        ];
+        // 1. Crear una nueva hoja de cálculo
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
 
-        $columnas = ['Fecha', 'Cedula', 'Valor', 'Oficina'];
-        $ejemplo1 = ['2023-10-27', '12345678', '50000.00', 'Oficina Central'];
-        $ejemplo2 = ['2023-10-28', '87654321', '1250.50', 'Sucursal Norte'];
+        // 2. Definir los encabezados (Fila 1)
+        $sheet->setCellValue('A1', 'Fecha');
+        $sheet->setCellValue('B1', 'Cedula');
+        $sheet->setCellValue('C1', 'Valor');
+        $sheet->setCellValue('D1', 'Oficina');
 
-        $callback = function() use($columnas, $ejemplo1, $ejemplo2) {
-            $file = fopen('php://output', 'w');
-            fputs($file, chr(0xEF) . chr(0xBB) . chr(0xBF)); // BOM para tildes en Excel
-            fputcsv($file, $columnas, ';');
-            fputcsv($file, $ejemplo1, ';');
-            fputcsv($file, $ejemplo2, ';');
-            fclose($file);
-        };
+        // Opcional: Poner los encabezados en negrita
+        $sheet->getStyle('A1:D1')->getFont()->setBold(true);
 
-        return response()->stream($callback, 200, $headers);
+        // 3. Insertar datos de ejemplo (Filas 2 y 3)
+        $sheet->setCellValue('A2', '2023-10-27');
+        $sheet->setCellValue('B2', '12345678');
+        $sheet->setCellValue('C2', 50000.00);
+        $sheet->setCellValue('D2', 'Oficina Central');
+
+        $sheet->setCellValue('A3', '2023-10-28');
+        $sheet->setCellValue('B3', '87654321');
+        $sheet->setCellValue('C3', 1250.50);
+        $sheet->setCellValue('D3', 'Sucursal Norte');
+
+        // Opcional: Auto-ajustar el ancho de las columnas
+        foreach (range('A', 'D') as $columna) {
+            $sheet->getColumnDimension($columna)->setAutoSize(true);
+        }
+
+        // 4. Preparar el escritor para XLSX
+        $writer = new Xlsx($spreadsheet);
+
+        // 5. Devolver la respuesta como un archivo descargable
+        $response = new StreamedResponse(function () use ($writer) {
+            $writer->save('php://output');
+        });
+
+        // Configurar las cabeceras para Excel
+        $response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        $response->headers->set('Content-Disposition', 'attachment; filename="plantilla_importacion.xlsx"');
+        $response->headers->set('Cache-Control', 'max-age=0');
+
+        return $response;
     }
 
     public function conciliacion(Request $request)
@@ -268,37 +292,67 @@ class ConExtractoTransaccionController extends Controller
 
     public function confirmarImportacion(Request $request)
     {
-        $registros = session('importacion_temporal');
         $idCuenta = session('importacion_cuenta_id');
+        $jsonDatos = $request->input('registros_json');
+        $registrosEditados = json_decode($jsonDatos, true); 
 
-        if (!$registros || !$idCuenta) {
+        if (!$registrosEditados || !$idCuenta) {
             return redirect()->route('contabilidad.extractos.importar')
                              ->withErrors('La sesión expiró o no hay datos para importar. Por favor, sube el archivo de nuevo.');
         }
 
         $registrosImportados = 0;
+        $registrosOmitidos = 0;
 
-        foreach ($registros as $row) {
-            ConExtractoTransaccion::updateOrCreate(
-                ['hash_transaccion' => $row['hash_transaccion']], 
-                [
-                    'id_con_cuentas_bancaria' => $idCuenta,
-                    'fecha_movimiento'        => $row['fecha_movimiento'],
-                    'valor_ingreso'           => $row['valor_ingreso'],
-                    'referencia_cedula'       => $row['referencia_cedula'],
-                    'referencia_oficina'      => $row['referencia_oficina'],
-                    'estado_conciliacion'     => 'Pendiente',
-                ]
-            );
-            $registrosImportados++;
+        try {
+            foreach ($registrosEditados as $row) {
+                // 1. Limpieza de montos y strings
+                $montoBruto = str_replace(',', '.', $row['valor_ingreso']);
+                $monto      = (float) $montoBruto;
+                $cedula     = trim($row['referencia_cedula'] ?? '');
+                $oficina    = trim($row['referencia_oficina'] ?? '');
+                
+                // 2. Formateo de fecha estricto para MySQL (Y-m-d)
+                $fechaRaw = $row['fecha_movimiento']; // Viene como "20260506"
+                $fechaDB  = strlen($fechaRaw) === 8 
+                            ? substr($fechaRaw, 0, 4) . '-' . substr($fechaRaw, 4, 2) . '-' . substr($fechaRaw, 6, 2) 
+                            : $fechaRaw;
+
+                // 3. Calculamos el Hash (usamos la fechaRaw para que el hash coincida con el Excel original)
+                $hashCalculado = "{$idCuenta}-{$fechaRaw}-{$monto}-{$cedula}";
+
+                // 4. Intentamos guardar
+                $transaccion = ConExtractoTransaccion::firstOrCreate(
+                    ['hash_transaccion' => $hashCalculado], 
+                    [
+                        'id_con_cuentas_bancaria' => $idCuenta,
+                        'fecha_movimiento'        => $fechaDB, // Usamos la fecha formateada aquí
+                        'valor_ingreso'           => $monto,
+                        'referencia_cedula'       => $cedula,
+                        'referencia_oficina'      => $oficina,
+                        'estado_conciliacion'     => 'Pendiente',
+                    ]
+                );
+
+                if ($transaccion->wasRecentlyCreated) {
+                    $registrosImportados++;
+                } else {
+                    $registrosOmitidos++;
+                }
+            }
+
+            session()->forget(['importacion_temporal', 'importacion_cuenta_id']);
+
+            return redirect()->route('contabilidad.extractos.index')
+                             ->with('success', "Proceso completado: Se guardaron $registrosImportados registros nuevos. Se omitieron $registrosOmitidos repetidos.");
+
+        } catch (\Exception $e) {
+            // Si hay un error silencioso de base de datos, ¡ahora lo veremos!
+            return redirect()->route('contabilidad.extractos.index')
+                             ->withErrors("Hubo un error al guardar en la base de datos: " . $e->getMessage());
         }
-
-        session()->forget(['importacion_temporal', 'importacion_cuenta_id']);
-
-        return redirect()->route('contabilidad.extractos.index')
-                         ->with('success', "¡Aprobación exitosa! Se procesaron $registrosImportados movimientos bancarios.");
     }
-
+    
     public function conciliacionAutomatica()
     {
         $extractosPendientes = ConExtractoTransaccion::where('estado_conciliacion', 'Pendiente')->get();
