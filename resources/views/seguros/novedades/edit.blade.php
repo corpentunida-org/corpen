@@ -44,85 +44,120 @@
                 </div>
                 <div class="col-lg-4 mb-4">
                     <label class="form-label">Prima Plan Actual</label>
-                    <input type="text" id="valoraseguradoplan" name="valorAsegurado" class="form-control"
-                        value="{{ optional($novedad->poliza)->valor_prima ? '$ '.number_format($novedad->poliza->valor_prima) : '' }}" disabled>
+                    <input type="text" class="form-control"
+                        value="{{ optional($novedad->poliza)->valor_prima ? '$ ' . number_format($novedad->poliza->valor_prima) : '' }}"
+                        disabled>
                 </div>
                 <div class="col-lg-4 mb-4">
                     <label class="form-label">Valor a Pagar Mensualidad</label>
                     <input type="text" id="primaplan" class="form-control" name="valorPrima"
-                        value="{{ optional($novedad->poliza)->primapagar ? '$ '.number_format($novedad->poliza->primapagar) : '' }}" disabled>
+                        value="{{ optional($novedad->poliza)->primapagar ? '$ ' . number_format($novedad->poliza->primapagar) : '' }}"
+                        disabled>
                 </div>
             </div>
-            @if ($editar)
-                <form method="POST" action="{{ route('seguros.novedades.update', $novedad->id) }}" id="formUpdateNovedad" novalidate>
-                    @csrf
-                    @method('PUT')
-            @endif
-            <div class="row">
-                <div class="col-lg-2 mb-4">
-                    <label class="form-label">Tipo</label>
-                    <input class="form-control" name="tipo"
-                        value="{{ $novedad->tipo == '1' ? 'MODIFICACIÓN' : 'INGRESO' }}" readonly>
-                </div>
-                <div class="col-lg-3 mb-4">
-                    <label class="form-label">Valor Asegurado Solicitado<span class="text-danger">*</span></label>
-                    <input type="number" class="form-control" name="valAsegurado"
-                        value="{{ $novedad->valorAsegurado }}">
-                    <input type="hidden" class="form-control" name="planid" value="{{ $novedad->id_plan }}">
-                </div>
-                <div class="col-lg-2 mb-4">
-                    <label class="form-label">Prima Aseguradora Solicitado</label>
-                    <input type="number" class="form-control" name="primaAseguradora" id="primaaseguradora"
-                        value="{{ $novedad->primaAseguradora }}">
-                </div>
-                <div class="col-lg-2 mb-4">
-                    <label class="form-label">Prima Pagar</label>
-                    <input type="number" class="form-control" name="primaPagar" value="{{ $novedad->primaCorpen }}"
-                        id="valorapagarcorpen">
-                </div>
-                <div class="col-lg-3 mb-4">
-                    <label class="form-label">Extraprima</label>
-                    <input type="number" class="form-control" name="extraprima" value="{{ $novedad->extraprima }}"
-                        id="inputextraprima">
-                    <input type="hidden" id="valorprimaaumentar" name="valorprimaaumentar">
-                    <div class="fs-12 fw-normal text-muted text-truncate-1-line text-wrap pt-1">
-                        <div class="custom-control custom-checkbox" id="checkextraprimaval" style="display: none;">
-                            <input type="checkbox" class="form-check-input ml-3" id="checkbox2"
-                                name="checkconfirmarextra" value=true>
-                            <label class="form-check-label text-wrap" for="checkbox2" id="labeltextextra"
-                                style="white-space: normal; word-wrap: break-word; max-width: 100%;"></label>
-                        </div>
+            <hr>
+            <div class="p-5">
+                @if ($editar)
+                    <form method="POST" action="{{ route('seguros.novedades.update', $novedad->id) }}"
+                        id="formUpdateNovedad" novalidate>
+                        @csrf
+                        @method('PUT')
+                @endif
+                <div class="row">
+                    <div class="col-lg-2 mb-4">
+                        <label class="form-label">Tipo</label>
+                        <input class="form-control" name="tipo"
+                            value="{{ $novedad->tipo == '1' ? 'MODIFICACIÓN' : 'INGRESO' }}" readonly>
+                    </div>
+                    @php
+                        $estados = [
+                            1 => 'SOLICITUD',
+                            2 => 'RADICADO',
+                            3 => 'APROBADO',
+                            4 => 'NEGADO',
+                        ];
+                    @endphp
+                    <div class="col-lg-2 mb-4">
+                        <label class="form-label">Estado de la Novedad<span class="text-danger">*</span></label>
+                        <input class="form-control" name="estado" value="{{ $estados[$novedad->estado] ?? '' }}"
+                            readonly>
+                    </div>
+                    <div class="col-lg-8 mb-4">
+                        <label class="form-label">Plan Solicitado<span class="text-danger">*</span></label>
+                        <select class="form-control" name="id_plan">
+                            @foreach ($planesGrupo as $plan)
+                                <option value="{{ $plan->id }}" data-as="{{ $plan->prima_asegurado }}"
+                                    data-valase="{{ $plan->valor }}" data-base="{{ $plan->prima_aseguradora }}"
+                                    {{ $plan->id == $novedad->id_plan ? 'selected' : '' }}>
+                                    {{ $plan->name }} -
+                                    ${{ number_format($plan->valor, 0, ',', '.') }} -
+                                    ${{ number_format($plan->prima_aseguradora, 0, ',', '.') }}
+                                </option>
+                            @endforeach
+                        </select>
                     </div>
                 </div>
+                <div class="row">
+                    <div class="col-lg-4 mb-4">
+                        <label class="form-label">Valor Asegurado Solicitado<span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" name="valAsegurado"
+                            value="{{ $novedad->valorAsegurado }}" id="inputValorAsegurado" required>
+                        <input type="hidden" class="form-control" name="planid" value="{{ $novedad->id_plan }}">
+                    </div>
+                    <div class="col-lg-2 mb-4">
+                        <label class="form-label">Prima Aseguradora Solicitado</label>
+                        <input type="number" class="form-control" name="primaAseguradora" id="primaaseguradora"
+                            value="{{ $novedad->primaAseguradora }}" required>
+                    </div>
+                    <div class="col-lg-2 mb-4">
+                        <label class="form-label">Prima Pagar</label>
+                        <input type="number" class="form-control" name="primaPagar"
+                            value="{{ $novedad->primaCorpen }}" id="valorapagarcorpen" required>
+                    </div>
+                    <div class="col-lg-2 mb-4">
+                        <label class="form-label">Extraprima</label>
+                        <input type="number" class="form-control" name="extraprima" value="{{ $novedad->extraprima }}"
+                            id="inputextraprima" required>
+                        <input type="hidden" id="valorprimaaumentar" name="valorprimaaumentar">
+                        <div class="fs-12 fw-normal text-muted text-truncate-1-line text-wrap pt-1">
+                            <div class="custom-control custom-checkbox" id="checkextraprimaval"
+                                style="display: none;">
+                                <input type="checkbox" class="form-check-input ml-3" id="checkbox2"
+                                    name="checkconfirmarextra" value=true>
+                                <label class="form-check-label text-wrap" for="checkbox2" id="labeltextextra"
+                                    style="white-space: normal; word-wrap: break-word; max-width: 100%;"></label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-2 mb-4">
+                        <label class="form-label">Fecha de Inicio<span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" name="fecha_inicio"
+                            value="{{ optional($novedad->cambiosEstado->last())->fechaInicio?->format('Y-m-d') }}"
+                            readonly>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-lg-9 mb-4">
+                        <label class="form-label">Observación<span class="text-danger">*</span></label>
+                        <input type="text" class="form-control text-uppercase" name="observaciones" required>
+                        <span
+                            class="fs-12 fw-bold text-uppercase text-truncate-1-line pt-1">{{ $novedad->cambiosEstado->last()->observaciones }}</span>
+                        <input type="hidden" class="form-control" name="individual" value=true>
+                    </div>
+                    @if ($novedad->formulario)
+                        {{--  <a style="text-decoration: underline;" href="{{ $novedad->getFile($novedad->formulario) }}"
+                        target="_blank">Ver Formulario PDF</a> --}}
+                        <div class="col-lg-1 mb-3 d-flex align-items-center">
+                            <a href="{{ $novedad->getFile($novedad->formulario) }}"
+                                class="badge bg-soft-primary text-primary text-capitalize p-2 link-soporte"
+                                target="_blank">
+                                <i class="bi bi-paperclip"></i> Ver Formulario PDF
+                            </a>
+                        </div>
+                    @endif
+                </div>
             </div>
-            <div class="row">
-                <div class="col-lg-2 mb-4">
-                    <label class="form-label">Fecha de Inicio<span class="text-danger">*</span></label>
-                    <input type="date" class="form-control" name="fecha_inicio"
-                        value="{{ optional($novedad->cambiosEstado->last())->fechaInicio?->format('Y-m-d') }}"
-                        readonly>
-                </div>
-                <div class="col-lg-2 mb-4">
-                    <label class="form-label">Estado de la Novedad<span class="text-danger">*</span></label>
-                    <select class="form-control" name="estado" readonly>
-                        <option value="1">SOLICITUD</option>
-                        <option value="2">RADICADO</option>
-                        <option value="3">APROBADO</option>
-                        <option value="4">NEGADO</option>
-                    </select>
-                </div>
-                <div class="col-lg-8 mb-4">
-                    <label class="form-label">Observación<span class="text-danger">*</span></label>
-                    <input type="text" class="form-control text-uppercase" name="observaciones" required>
-                    <span
-                        class="fs-12 fw-bold text-uppercase text-truncate-1-line pt-1">{{ $novedad->cambiosEstado->last()->observaciones }}</span>
-                    <input type="hidden" class="form-control" name="individual" value=true>
-                </div>
-                @if ($novedad->formulario)
-                    <a style="text-decoration: underline;" href="{{ $novedad->getFile($novedad->formulario) }}" target="_blank">Ver Formulario PDF</a>
-                @endif
-            </div>
-            <div class="accordion proposal-faq-accordion mt-4">
+            <div class="accordion proposal-faq-accordion">
                 <div class="accordion-item mt-2">
                     <h2 class="accordion-header" id="flush-headingOne">
                         <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
@@ -172,6 +207,15 @@
         </div>
         <script>
             $(document).ready(function() {
+                $('#formUpdateNovedad').submit(function(event) {
+                    var form = this;
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        $(form).addClass('was-validated');
+                    }
+                });
+
                 $('#inputextraprima').on('input', function() {
                     var valor = parseFloat($(this).val().trim());
                     var valorOriginal = parseFloat({{ floatval($novedad->primaAseguradora) }});
@@ -197,6 +241,25 @@
                     }
                     $("#valorapagarcorpen").val(valorFinal);
                 });
+
+                function actualizarPrimas() {
+                    const select = document.querySelector('select[name="id_plan"]');
+                    const option = select.options[select.selectedIndex];
+
+                    const primaAsegurado = option.dataset.as;
+                    const valorAsegurado = option.dataset.valase;
+                    const primaBase = option.dataset.base;
+
+
+                    document.getElementById('inputValorAsegurado').value = valorAsegurado;
+                    document.getElementById('valorapagarcorpen').value = primaAsegurado;
+                    document.getElementById('primaaseguradora').value = primaBase;
+
+                }
+
+                // cuando cambia el select
+                document.querySelector('select[name="id_plan"]').addEventListener('change', actualizarPrimas);
+
             });
         </script>
 </x-base-layout>
