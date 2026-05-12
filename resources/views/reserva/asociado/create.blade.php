@@ -432,14 +432,14 @@
 
                             const startDate = new Date(info.dateStr);
 
-                            // 🔥 fecha inicio bloqueada correctamente
+                            
                             $('#fechaInicio')
                                 .val(info.dateStr)
                                 .data('locked', info.dateStr);
 
                             $('#endDate').val('');
 
-                            // 🔥 fin mínimo = inicio + 1 día
+                            
                             const minEnd = new Date(startDate);
                             minEnd.setDate(minEnd.getDate() + 1);
 
