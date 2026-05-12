@@ -6,10 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\Contabilidad\ConExtractoTransaccion;
 use App\Models\Contabilidad\ConCuentaBancaria;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB; // Añadido para inserción masiva
 use Maatwebsite\Excel\Facades\Excel;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Carbon\Carbon;
 
 class ConExtractoTransaccionController extends Controller
 {
@@ -216,6 +218,9 @@ class ConExtractoTransaccionController extends Controller
         ));
     }
 
+    /**
+     * PASO 1: Procesa el archivo y envía los hashes existentes a la vista para validación dinámica.
+     */
     public function procesarImportacion(Request $request)
     {
         $request->validate([
@@ -227,44 +232,44 @@ class ConExtractoTransaccionController extends Controller
         $archivo = $request->file('archivo_extracto');
         $registrosPrevia = [];
 
+        // Traemos los hashes ya existentes en esta cuenta para que el JS los use en tiempo real
+        $hashesExistentes = ConExtractoTransaccion::where('id_con_cuentas_bancaria', $idCuenta)
+                            ->pluck('hash_transaccion')
+                            ->toArray();
+
         try {
-            $datosArchivo = Excel::toArray([], $archivo)[0];
+            $datosArchivo = Excel::toArray(new class {}, $archivo)[0];
             $isHeader = true;
 
             foreach ($datosArchivo as $row) {
-                if ($isHeader) {
-                    $isHeader = false;
-                    continue;
-                }
+                if ($isHeader) { $isHeader = false; continue; }
 
                 if (!empty($row[0])) {
-                    // SE AJUSTARON LOS ÍNDICES PARA LA NUEVA ESTRUCTURA: Fecha(0), Cedula(1), Valor(2), Oficina(3)
                     $fechaRow    = trim($row[0]);
                     $cedula      = isset($row[1]) ? trim($row[1]) : '';
-                    
                     $montoBruto  = isset($row[2]) ? trim($row[2]) : '0';
                     $montoBruto  = str_replace(',', '.', $montoBruto);
                     $monto       = (float) $montoBruto;
-                    
                     $oficina     = isset($row[3]) ? trim($row[3]) : null;
 
                     // Formateo de fecha
                     if (is_numeric($fechaRow)) {
-                        $fechaFormateada = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($fechaRow)->format('Ymd');
-                        $fechaVista = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($fechaRow)->format('d/m/Y');
+                        $excelDate = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($fechaRow);
+                        $fechaFormateada = $excelDate->format('YmdHis');
+                        $fechaVista = $excelDate->format('Y-m-d\TH:i');
                     } else {
                         try {
-                            $fechaCarbon = \Carbon\Carbon::parse(str_replace('/', '-', $fechaRow));
-                            $fechaFormateada = $fechaCarbon->format('Ymd');
-                            $fechaVista = $fechaCarbon->format('d/m/Y');
+                            $fechaCarbon = Carbon::parse(str_replace('/', '-', $fechaRow));
+                            $fechaFormateada = $fechaCarbon->format('YmdHis');
+                            $fechaVista = $fechaCarbon->format('Y-m-d\TH:i');
                         } catch (\Exception $e) {
-                            $fechaFormateada = str_replace(['-', '/'], '', $fechaRow);
+                            $fechaFormateada = str_replace(['-', '/', ':', ' '], '', $fechaRow);
                             $fechaVista = $fechaRow;
                         }
                     }
 
-                    // Autogeneramos el Hash
                     $hashCalculado = "{$idCuenta}-{$fechaFormateada}-{$monto}-{$cedula}";
+                    $esDuplicado = in_array($hashCalculado, $hashesExistentes);
 
                     $registrosPrevia[] = [
                         'fecha_movimiento'   => $fechaFormateada,
@@ -273,83 +278,110 @@ class ConExtractoTransaccionController extends Controller
                         'valor_ingreso'      => $monto,
                         'referencia_cedula'  => $cedula,
                         'referencia_oficina' => $oficina,
+                        'es_duplicado'       => $esDuplicado,
                     ];
                 }
             }
         } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'Error leyendo el archivo. Asegúrate de que el formato sea correcto. Error: ' . $e->getMessage()]);
+            return back()->withErrors(['error' => 'Error leyendo el archivo: ' . $e->getMessage()]);
         }
 
         $cuenta = ConCuentaBancaria::find($idCuenta);
+        session(['importacion_cuenta_id' => $idCuenta]);
 
-        session([
-            'importacion_temporal' => $registrosPrevia, 
-            'importacion_cuenta_id' => $idCuenta
-        ]);
-
-        return view('contabilidad.extractos.validar', compact('registrosPrevia', 'cuenta'));
+        return view('contabilidad.extractos.validar', compact('registrosPrevia', 'cuenta', 'hashesExistentes'));
     }
 
+    /**
+     * PASO 2: Confirmación TURBO (Bulk Insert) optimizado para alto volumen.
+     */
     public function confirmarImportacion(Request $request)
     {
+        // 1. Aumentamos recursos para evitar Timeouts
+        ini_set('max_execution_time', 600); 
+        ini_set('memory_limit', '512M');
+
         $idCuenta = session('importacion_cuenta_id');
         $jsonDatos = $request->input('registros_json');
         $registrosEditados = json_decode($jsonDatos, true); 
 
         if (!$registrosEditados || !$idCuenta) {
             return redirect()->route('contabilidad.extractos.importar')
-                             ->withErrors('La sesión expiró o no hay datos para importar. Por favor, sube el archivo de nuevo.');
+                             ->withErrors('La sesión expiró o los datos están vacíos.');
         }
 
-        $registrosImportados = 0;
-        $registrosOmitidos = 0;
+        $dataParaInsertar = [];
+        $detallesOmitidos = []; 
+        $ahora = now();
 
         try {
+            // 2. Traemos todos los hashes existentes de una sola vez para búsqueda instantánea
+            $hashesExistentes = ConExtractoTransaccion::where('id_con_cuentas_bancaria', $idCuenta)
+                                ->pluck('hash_transaccion')
+                                ->toArray();
+
+            $hashesLookup = array_flip($hashesExistentes);
+
             foreach ($registrosEditados as $row) {
-                // 1. Limpieza de montos y strings
-                $montoBruto = str_replace(',', '.', $row['valor_ingreso']);
-                $monto      = (float) $montoBruto;
-                $cedula     = trim($row['referencia_cedula'] ?? '');
-                $oficina    = trim($row['referencia_oficina'] ?? '');
+                $monto = (float) $row['valor_ingreso'];
+                $cedula = trim($row['referencia_cedula'] ?? '');
                 
-                // 2. Formateo de fecha estricto para MySQL (Y-m-d)
-                $fechaRaw = $row['fecha_movimiento']; // Viene como "20260506"
-                $fechaDB  = strlen($fechaRaw) === 8 
-                            ? substr($fechaRaw, 0, 4) . '-' . substr($fechaRaw, 4, 2) . '-' . substr($fechaRaw, 6, 2) 
-                            : $fechaRaw;
+                $fechaCarbon = Carbon::parse($row['fecha_movimiento']);
+                $fechaDB = $fechaCarbon->format('Y-m-d H:i:s');
+                $fechaParaHash = $fechaCarbon->format('YmdHis');
 
-                // 3. Calculamos el Hash (usamos la fechaRaw para que el hash coincida con el Excel original)
-                $hashCalculado = "{$idCuenta}-{$fechaRaw}-{$monto}-{$cedula}";
+                $hashCalculado = "{$idCuenta}-{$fechaParaHash}-{$monto}-{$cedula}";
 
-                // 4. Intentamos guardar
-                $transaccion = ConExtractoTransaccion::firstOrCreate(
-                    ['hash_transaccion' => $hashCalculado], 
-                    [
+                if (!isset($hashesLookup[$hashCalculado])) {
+                    // Preparamos para Bulk Insert
+                    $dataParaInsertar[] = [
+                        'hash_transaccion'        => $hashCalculado,
                         'id_con_cuentas_bancaria' => $idCuenta,
-                        'fecha_movimiento'        => $fechaDB, // Usamos la fecha formateada aquí
+                        'fecha_movimiento'        => $fechaDB,
                         'valor_ingreso'           => $monto,
                         'referencia_cedula'       => $cedula,
-                        'referencia_oficina'      => $oficina,
+                        'referencia_oficina'      => trim($row['referencia_oficina'] ?? ''),
                         'estado_conciliacion'     => 'Pendiente',
-                    ]
-                );
-
-                if ($transaccion->wasRecentlyCreated) {
-                    $registrosImportados++;
+                        'created_at'              => $ahora,
+                        'updated_at'              => $ahora,
+                    ];
+                    
+                    $hashesLookup[$hashCalculado] = true; 
                 } else {
-                    $registrosOmitidos++;
+                    $detallesOmitidos[] = [
+                        'fecha'  => $fechaDB,
+                        'cedula' => $cedula,
+                        'valor'  => $monto,
+                        'hash'   => $hashCalculado
+                    ];
                 }
             }
 
-            session()->forget(['importacion_temporal', 'importacion_cuenta_id']);
+            // 3. INSERCIÓN TURBO: Insertamos en bloques de 1,000 registros
+            if (count($dataParaInsertar) > 0) {
+                $chunks = array_chunk($dataParaInsertar, 1000);
+                foreach ($chunks as $chunk) {
+                    DB::table('con_extractos_transacciones')->insert($chunk);
+                }
+            }
 
-            return redirect()->route('contabilidad.extractos.index')
-                             ->with('success', "Proceso completado: Se guardaron $registrosImportados registros nuevos. Se omitieron $registrosOmitidos repetidos.");
+            session()->forget(['importacion_cuenta_id']);
+
+            $reporteLimitado = array_slice($detallesOmitidos, 0, 100);
+
+            return redirect()->route('contabilidad.extractos.index')->with([
+                'success' => "Proceso completado. Se guardaron " . count($dataParaInsertar) . " registros nuevos.",
+                'reporte_importacion' => [
+                    'nuevos'            => count($dataParaInsertar),
+                    'omitidos_count'    => count($detallesOmitidos),
+                    'detalles_omitidos' => $reporteLimitado,
+                    'tiene_exceso'      => count($detallesOmitidos) > 100
+                ]
+            ]);
 
         } catch (\Exception $e) {
-            // Si hay un error silencioso de base de datos, ¡ahora lo veremos!
             return redirect()->route('contabilidad.extractos.index')
-                             ->withErrors("Hubo un error al guardar en la base de datos: " . $e->getMessage());
+                             ->withErrors("Error crítico en la importación: " . $e->getMessage());
         }
     }
     

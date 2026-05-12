@@ -14,12 +14,27 @@
     </div>
 
     <div class="app-container py-5" style="background-color: #f8f9fa;">
+
+        {{-- RESUMEN DE VALIDACIÓN (Detección de Duplicados Dinámica) --}}
+        @php
+            $duplicadosCount = collect($registrosPrevia)->where('es_duplicado', true)->count();
+            $totalCount = count($registrosPrevia);
+        @endphp
+
+        <div id="js-alerta-duplicados" class="alert alert-danger d-flex align-items-center p-5 mx-3 mb-4 shadow-sm border-danger" style="display: {{ $duplicadosCount > 0 ? 'flex' : 'none' }} !important;">
+            <i class="fas fa-exclamation-triangle fs-2hx text-danger me-4"></i>
+            <div class="d-flex flex-column">
+                <h4 class="mb-1 text-danger fw-bolder">Registros Duplicados Detectados</h4>
+                <span>Se han identificado <strong id="js-conteo-duplicados">{{ $duplicadosCount }}</strong> registros que ya existen en la base de datos (marcados en rojo). Serán omitidos automáticamente al procesar para evitar duplicidad contable.</span>
+            </div>
+        </div>
         
         <form id="form-importacion" action="{{ route('contabilidad.extractos.confirmar-importacion') }}" method="POST">
             @csrf
 
-            {{-- INPUT CLAVE DONDE VIAJARÁN TODOS LOS DATOS EN MASA (JSON) --}}
+            {{-- INPUTS CLAVE PARA JAVASCRIPT --}}
             <input type="hidden" name="registros_json" id="input_registros_json">
+            <input type="hidden" id="id-cuenta-js" value="{{ $cuenta->id }}">
 
             {{-- Barra de Herramientas Estilo Google Workspace --}}
             <div class="d-flex align-items-center mb-4 px-3 pb-3 border-bottom border-gray-300">
@@ -29,13 +44,18 @@
                     </div>
                 </div>
                 <div>
-                    <h3 class="fw-bold m-0 text-dark fs-4">Previsualización de Extracto</h3>
+                    <h3 class="fw-bold m-0 text-dark fs-4">Previsualización y Edición de Extracto</h3>
                     <div class="d-flex align-items-center gap-3 mt-1">
                         <span class="text-muted fs-8">Cuenta: <strong>{{ $cuenta->banco }} - {{ $cuenta->numero_cuenta }}</strong></span>
-                        <span class="badge bg-light-success text-success fw-bold px-2 py-1 fs-9 border border-success">GUARDADO AUTOMÁTICO DESACTIVADO</span>
+                        <span class="badge bg-light-success text-success fw-bold px-2 py-1 fs-9 border border-success">SISTEMA DE HASH DINÁMICO</span>
                     </div>
                 </div>
                 <div class="ms-auto d-flex gap-2 align-items-center">
+                    {{-- BOTÓN NUEVO: FILTRAR DUPLICADOS --}}
+                    <button type="button" id="btn-toggle-duplicados" class="btn btn-sm btn-outline-danger fw-bold px-4 rounded-1 shadow-sm me-2">
+                        <i class="fas fa-filter me-1"></i> Ver Solo Duplicados
+                    </button>
+                    
                     <a href="{{ route('contabilidad.extractos.importar') }}" class="btn btn-sm btn-light fw-bold px-4 rounded-1 border border-gray-300">
                         Cancelar
                     </a>
@@ -62,10 +82,10 @@
                             <tr>
                                 <th class="col-index-header"></th>
                                 
-                                {{-- COLUMNA: FECHA --}}
-                                <th class="resizable-th">
+                                {{-- COLUMNA: FECHA Y HORA --}}
+                                <th class="resizable-th" style="width: 230px;">
                                     <div class="th-content">
-                                        <span>FECHA MOVIMIENTO</span>
+                                        <span>FECHA Y HORA MOVIMIENTO</span>
                                         <button type="button" class="btn-filter" data-col="0"><i class="fas fa-filter"></i></button>
                                     </div>
                                     <div class="filter-container" id="filter-col-0">
@@ -75,9 +95,9 @@
                                 </th>
 
                                 {{-- COLUMNA: HASH --}}
-                                <th class="resizable-th">
+                                <th class="resizable-th" style="width: 300px;">
                                     <div class="th-content">
-                                        <span>HASH TRANSACCIÓN</span>
+                                        <span>HASH TRANSACCIÓN (ID ÚNICO)</span>
                                         <button type="button" class="btn-filter" data-col="1"><i class="fas fa-filter"></i></button>
                                     </div>
                                     <div class="filter-container" id="filter-col-1">
@@ -127,46 +147,46 @@
                         </thead>
                         <tbody id="table-body">
                             @forelse($registrosPrevia as $index => $fila)
-                            <tr class="data-row">
+                            <tr class="data-row {{ $fila['es_duplicado'] ? 'bg-light-danger row-is-duplicate' : '' }}">
                                 <td class="col-index">{{ $index + 1 }}</td>
                                 
-                                {{-- FECHA EDITABLE --}}
-                                @php
-                                    $f = $fila['fecha_movimiento'];
-                                    $dateValue = strlen($f) == 8 ? substr($f,0,4).'-'.substr($f,4,2).'-'.substr($f,6,2) : '';
-                                @endphp
+                                {{-- FECHA Y HORA EDITABLE (Input datetime-local) --}}
                                 <td class="cell-editable">
-                                    <input type="date" value="{{ $dateValue }}" class="gs-input date-sync" data-target="hidden-date-{{ $index }}">
-                                    {{-- El controlador recibirá este campo oculto con formato Ymd dentro del JSON --}}
-                                    <input type="hidden" id="hidden-date-{{ $index }}" class="field-fecha" value="{{ $fila['fecha_movimiento'] }}">
+                                    <input type="datetime-local" 
+                                           value="{{ $fila['fecha_vista'] }}" 
+                                           class="gs-input input-rehash field-fecha-hora">
                                 </td>
                                 
+                                {{-- HASH QUE SE ACTUALIZA DINÁMICAMENTE POR JS --}}
                                 <td class="cell-readonly font-monospace text-muted">
-                                    <input type="text" value="{{ $fila['hash_transaccion'] }}" class="gs-input" readonly>
+                                    <input type="text" value="{{ $fila['hash_transaccion'] }}" class="gs-input field-hash" readonly>
                                 </td>
                                 
                                 <td class="cell-editable">
-                                    {{-- Se quitó el atributo name y se agregó class="field-cedula" --}}
-                                    <input type="text" value="{{ $fila['referencia_cedula'] }}" class="gs-input field-cedula text-gray-800 fw-bold">
+                                    <input type="text" value="{{ $fila['referencia_cedula'] }}" class="gs-input input-rehash field-cedula text-gray-800 fw-bold">
                                 </td>
                                 
                                 <td class="cell-editable">
-                                    {{-- Se quitó el atributo name y se agregó class="field-valor" --}}
-                                    <input type="text" value="{{ $fila['valor_ingreso'] }}" class="gs-input field-valor text-end fw-bold text-success pe-2" required>
+                                    <input type="text" value="{{ $fila['valor_ingreso'] }}" class="gs-input input-rehash field-valor text-end fw-bold text-success pe-2" required>
                                 </td>
 
                                 <td class="cell-editable">
-                                    {{-- Se quitó el atributo name y se agregó class="field-oficina" --}}
                                     <input type="text" value="{{ $fila['referencia_oficina'] }}" class="gs-input field-oficina text-gray-700">
                                 </td>
 
-                                <td class="text-center bg-light">
-                                    <span class="badge bg-light-warning text-warning fw-bolder fs-9">PENDIENTE</span>
+                                <td class="text-center container-badge">
+                                    @if($fila['es_duplicado'])
+                                        <span class="badge bg-danger text-white fw-bolder fs-9 shadow-sm">
+                                            <i class="fas fa-copy me-1 text-white"></i> DUPLICADO
+                                        </span>
+                                    @else
+                                        <span class="badge bg-light-warning text-warning fw-bolder fs-9">PENDIENTE</span>
+                                    @endif
                                 </td>
                             </tr>
                             @empty
                             <tr>
-                                <td colspan="7" class="text-center py-10 text-muted fs-8 italic">El archivo no tiene el formato correcto.</td>
+                                <td colspan="7" class="text-center py-10 text-muted fs-8 italic">El archivo no tiene el formato correcto o está vacío.</td>
                             </tr>
                             @endforelse
                         </tbody>
@@ -175,8 +195,8 @@
 
                 {{-- Barra de Estado Inferior --}}
                 <div class="bg-white border-top border-gray-300 px-3 py-1 d-flex justify-content-between align-items-center fs-9 text-dark font-monospace">
-                    <div>Filas: <strong id="total-rows">{{ count($registrosPrevia) }}</strong> | Resultados filtro: <strong id="filtered-rows">{{ count($registrosPrevia) }}</strong></div>
-                    <div><i class="fas fa-info-circle text-primary me-1"></i> Optimizado con JSON (Supera límites de PHP)</div>
+                    <div>Filas totales: <strong id="total-rows">{{ $totalCount }}</strong> | Duplicados: <strong id="js-total-duplicados-footer" class="text-danger">{{ $duplicadosCount }}</strong> | Visibles: <strong id="filtered-rows">{{ $totalCount }}</strong></div>
+                    <div><i class="fas fa-info-circle text-primary me-1"></i> El Hash ID se sincroniza automáticamente al editar celdas clave.</div>
                 </div>
             </div>
         </form>
@@ -203,7 +223,7 @@
             border-collapse: collapse;
             table-layout: fixed;
             width: 100%;
-            min-width: 900px;
+            min-width: 1100px;
             font-size: 13px;
         }
 
@@ -267,10 +287,20 @@
             outline: 2px solid #1a73e8;
             outline-offset: -2px;
             z-index: 10;
+            background: #fff;
         }
         
         .gs-input:focus {
             background-color: #fff;
+        }
+
+        .bg-light-danger {
+            background-color: #fff5f8 !important;
+        }
+
+        /* NUEVA CLASE PARA EL FILTRO DE DUPLICADOS */
+        .hide-by-dup {
+            display: none !important;
         }
 
         .resizable-th { position: relative; }
@@ -317,17 +347,103 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             
-            // 1. SINCRONIZACIÓN DE FECHAS
-            const dateInputs = document.querySelectorAll('.date-sync');
-            dateInputs.forEach(input => {
-                input.addEventListener('change', function() {
-                    const targetId = this.getAttribute('data-target');
-                    const hiddenInput = document.getElementById(targetId);
-                    hiddenInput.value = this.value.replace(/-/g, '');
+            const hashesExistentes = @json($hashesExistentes ?? []);
+            const idCuenta = document.getElementById('id-cuenta-js').value;
+            
+            // VARIABLES GLOBALES DEL NUEVO FILTRO
+            const btnToggleDuplicados = document.getElementById('btn-toggle-duplicados');
+            let showOnlyDuplicates = false;
+
+            // --- 1. LÓGICA DE ACTUALIZACIÓN DE CONTADORES Y ALERTAS EN TIEMPO REAL ---
+            function actualizarContadoresGlobales() {
+                const totalDuplicados = document.querySelectorAll('.row-is-duplicate').length;
+                
+                // Actualizar Alerta Superior
+                const alerta = document.getElementById('js-alerta-duplicados');
+                const conteoTexto = document.getElementById('js-conteo-duplicados');
+                
+                if (totalDuplicados > 0) {
+                    alerta.setAttribute('style', 'display: flex !important');
+                    conteoTexto.innerText = totalDuplicados;
+                } else {
+                    alerta.setAttribute('style', 'display: none !important');
+                }
+
+                // Actualizar Footer
+                document.getElementById('js-total-duplicados-footer').innerText = totalDuplicados;
+            }
+
+            // --- 2. LÓGICA DE RECALCULADO DE HASH Y VALIDACIÓN ---
+            function recalcularHashYValidar(row) {
+                const fechaInput = row.querySelector('.field-fecha-hora').value; // Formato: YYYY-MM-DDTHH:mm
+                const cedula = row.querySelector('.field-cedula').value.trim();
+                const valor = parseFloat(row.querySelector('.field-valor').value) || 0;
+                const hashField = row.querySelector('.field-hash');
+                const badgeContainer = row.querySelector('.container-badge');
+
+                if (fechaInput) {
+                    // Convertir fecha a formato compacto YYYYMMDDHHmmss
+                    let datePart = fechaInput.replace(/[-T:]/g, '');
+                    if(datePart.length === 12) datePart += '00';
+                    
+                    const nuevoHash = `${idCuenta}-${datePart}-${valor}-${cedula}`;
+                    hashField.value = nuevoHash;
+
+                    // Verificar contra la lista de hashes que vienen de la BD
+                    if (hashesExistentes.includes(nuevoHash)) {
+                        row.classList.add('bg-light-danger', 'row-is-duplicate');
+                        row.classList.remove('hide-by-dup'); // Si se vuelve duplicado, aseguramos que se vea
+                        badgeContainer.innerHTML = '<span class="badge bg-danger text-white fw-bolder fs-9 shadow-sm"><i class="fas fa-copy me-1 text-white"></i> DUPLICADO</span>';
+                    } else {
+                        row.classList.remove('bg-light-danger', 'row-is-duplicate');
+                        badgeContainer.innerHTML = '<span class="badge bg-light-warning text-warning fw-bolder fs-9">PENDIENTE</span>';
+                        // Si estamos en modo "Ver solo duplicados" y este registro se arregló, lo ocultamos
+                        if (showOnlyDuplicates) {
+                            row.classList.add('hide-by-dup');
+                        }
+                    }
+                }
+                
+                // Llamar a actualizar la UI global cada vez que una fila cambia de estado
+                actualizarContadoresGlobales();
+                applyFilters(); // Recalcular contador de "Visibles" en el footer
+            }
+
+            // EVENTO DEL BOTÓN: VER SOLO DUPLICADOS
+            btnToggleDuplicados.addEventListener('click', function() {
+                showOnlyDuplicates = !showOnlyDuplicates;
+                
+                if (showOnlyDuplicates) {
+                    this.classList.remove('btn-outline-danger');
+                    this.classList.add('btn-danger', 'text-white');
+                    this.innerHTML = '<i class="fas fa-filter me-1"></i> Mostrando Duplicados';
+                } else {
+                    this.classList.add('btn-outline-danger');
+                    this.classList.remove('btn-danger', 'text-white');
+                    this.innerHTML = '<i class="fas fa-filter me-1"></i> Ver Solo Duplicados';
+                }
+                
+                document.querySelectorAll('.data-row').forEach(row => {
+                    // Si el modo está activo y la fila NO es duplicada, la ocultamos
+                    if (showOnlyDuplicates && !row.classList.contains('row-is-duplicate')) {
+                        row.classList.add('hide-by-dup');
+                    } else {
+                        row.classList.remove('hide-by-dup');
+                    }
+                });
+                
+                applyFilters(); // Recalcula el número de filas visibles en el footer
+            });
+
+            // Escuchar cambios en los inputs clave (Fecha, Cédula, Valor)
+            document.querySelectorAll('.input-rehash').forEach(input => {
+                input.addEventListener('input', function() {
+                    const row = this.closest('.data-row');
+                    recalcularHashYValidar(row);
                 });
             });
 
-            // 2. REDIMENSIONAMIENTO DE COLUMNAS (RESIZER)
+            // --- 3. REDIMENSIONAMIENTO DE COLUMNAS ---
             const resizers = document.querySelectorAll('.resizer');
             let startX, startWidth, currentTh;
 
@@ -357,7 +473,7 @@
                 document.removeEventListener('mouseup', mouseUpHandler);
             }
 
-            // 3. SISTEMA DE FILTROS ENCABEZADOS
+            // --- 4. SISTEMA DE FILTROS ---
             const filterButtons = document.querySelectorAll('.btn-filter');
             const filterInputs = document.querySelectorAll('.gs-filter-input');
             const tableRows = document.querySelectorAll('.data-row');
@@ -367,10 +483,8 @@
                 btn.addEventListener('click', function() {
                     const colIndex = this.getAttribute('data-col');
                     const filterContainer = document.getElementById('filter-col-' + colIndex);
-                    
                     this.classList.toggle('active');
                     filterContainer.classList.toggle('show');
-                    
                     if (filterContainer.classList.contains('show')) {
                         filterContainer.querySelector('input').focus();
                     } else {
@@ -380,7 +494,7 @@
                 });
             });
 
-            filterInputs.forEach((input, index) => {
+            filterInputs.forEach((input) => {
                 input.addEventListener('keyup', applyFilters);
             });
 
@@ -393,10 +507,16 @@
                 });
 
                 let visibleCount = 0;
-
                 tableRows.forEach(row => {
                     let match = true;
-                    const inputsInRow = row.querySelectorAll('.gs-input'); 
+                    // Mapeo de columnas para el filtro según el orden de la tabla
+                    const inputsInRow = [
+                        row.querySelector('.field-fecha-hora'),
+                        row.querySelector('.field-hash'),
+                        row.querySelector('.field-cedula'),
+                        row.querySelector('.field-valor'),
+                        row.querySelector('.field-oficina')
+                    ];
                     
                     activeFilters.forEach(filter => {
                         const cellInput = inputsInRow[filter.index];
@@ -410,53 +530,46 @@
 
                     if (match) {
                         row.style.display = '';
-                        visibleCount++;
+                        // Contamos como visible solo si NO está oculta por el botón de duplicados
+                        if (!row.classList.contains('hide-by-dup')) {
+                            visibleCount++;
+                        }
                     } else {
                         row.style.display = 'none';
                     }
                 });
-
                 filteredRowsCount.innerText = visibleCount;
             }
 
-            // 4. GENERACIÓN DE JSON Y ANIMACIÓN DEL MODAL AL GUARDAR
+            // --- 5. GENERACIÓN DE JSON Y ENVÍO MASIVO ---
             const form = document.getElementById('form-importacion');
             const overlay = document.getElementById('loading-overlay');
             const timerElement = document.getElementById('countdown-timer');
             const totalRows = parseInt(document.getElementById('total-rows').innerText);
 
             form.addEventListener('submit', function(e) {
-                // Prevenir el envío automático
                 e.preventDefault();
 
                 const submitBtn = form.querySelector('button[type="submit"]');
                 submitBtn.disabled = true;
 
-                // RECOLECTAR DATOS DE LA TABLA Y CREAR EL JSON
                 let datosJson = [];
                 const filas = document.querySelectorAll('.data-row');
 
                 filas.forEach(fila => {
-                    let fecha = fila.querySelector('.field-fecha').value;
-                    let cedula = fila.querySelector('.field-cedula').value;
-                    let valor = fila.querySelector('.field-valor').value;
-                    let oficina = fila.querySelector('.field-oficina').value;
-
                     datosJson.push({
-                        fecha_movimiento: fecha,
-                        referencia_cedula: cedula,
-                        valor_ingreso: valor,
-                        referencia_oficina: oficina
+                        fecha_movimiento: fila.querySelector('.field-fecha-hora').value,
+                        referencia_cedula: fila.querySelector('.field-cedula').value,
+                        valor_ingreso: fila.querySelector('.field-valor').value,
+                        referencia_oficina: fila.querySelector('.field-oficina').value
                     });
                 });
 
-                // Insertar el JSON en el input oculto
                 document.getElementById('input_registros_json').value = JSON.stringify(datosJson);
 
-                // Mostrar overlay y empezar el contador
                 overlay.style.display = 'flex';
 
-                let timeRemaining = Math.max(1, Math.ceil((totalRows * 30) / 1000));
+                let timeRemaining = Math.max(1, Math.ceil((totalRows * 50) / 1000));
                 timerElement.innerText = timeRemaining;
 
                 const countdown = setInterval(() => {
@@ -470,7 +583,6 @@
                     }
                 }, 1000);
 
-                // Enviar el formulario manualmente ahora que tiene el JSON cargado
                 form.submit();
             });
         });
