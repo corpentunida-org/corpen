@@ -93,6 +93,7 @@
             position: static;
         }
     </style>
+    
     @if ($historicosres != null)
         <div class="col-lg-12">
             <div class="card stretch stretch-full">

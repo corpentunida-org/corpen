@@ -487,7 +487,6 @@ class InteractionController extends Controller
         $pendingOutcomeIds = $outcomesData->where('estado', 0)->pluck('id')->toArray();
 
         $baseQuery = Interaction::query();
-
         // 2. Filtros (Buscador General Potente)
         if ($request->filled('search')) {
             $search = "%{$request->input('search')}%";
@@ -518,7 +517,7 @@ class InteractionController extends Controller
         }
 
         // Seguridad de Agente
-        if (! auth()->user()->hasPermission('interacciones.listado.todos')) {
+        if (!auth()->user()->hasPermission('interacciones.listado.todos')) {
             $baseQuery->where(fn ($q) => $q->where('agent_id', Auth::id())->orWhere('id_user_asignacion', Auth::id()));
         }
 
