@@ -21,26 +21,49 @@
                     @csrf
                     <div class="modal-body">
                         <input type="hidden" name="inmueble_id" id="inmueble_id" value="{{ $inmueble->id }}">
+                        @candirect('reservas.crearreserva.otroasociado')
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" id="mostrarlistaAsociado"
+                                name="otroAsociado">
+                            <label class="form-check-label" for="mostrarlistaAsociado">
+                                ¿Desea crear la reserva para otro asociado?
+                            </label>
+                        </div>
+                        @endcandirect
                         <div>
                             <p><span class="fw-semibold mt-4">Estimado asociado:</span>
                             <p>Le recordamos tener en cuenta sus planes de viaje, los costos de desplazamiento y
                                 cualquier otro gasto en el que pueda incurrir al realizar esta reserva.
                                 Es importante que tenga presente que la responsabilidad total de la reserva recae sobre
-                                usted.
-                                En caso de presentarse inconvenientes,<span class="fw-semibold mt-4"> Corpentunida no
+                                usted. En caso de presentarse inconvenientes,<span class="fw-semibold mt-4">
+                                    Corpentunida no
                                     podrá realizar reembolsos del valor consignado</span>, dado que este corresponde a
                                 una donación destinada a la continuidad del beneficio.</p>
                         </div>
-                        </p>
-                        <div class="mb-3">
-                            <label for="fechaInicio" class="form-label">Fecha de Inicio</label>
-                            <input type="text" class="form-control" id="fechaInicio" name="fechaInicio" required
-                                readonly>
-                        </div>
-                        <div class="mb-3">
-                            <label for="endDate" class="form-label">Fecha de Fin</label>
-                            <input type="text" class="form-control" id="endDate" name="endDate"
-                                placeholder="Seleccione una fecha" required>
+                        @if (!empty($users))
+                            <div id="contenedorExtraAsociado" style="display:none;">
+                                <div class="mb-3">
+                                    <label class="form-label">Asociado para asignar la reserva</label>
+                                    <select type="text" class="form-control" name="asociado_id" id="asociado_select" required>
+                                        <option value="">Seleccione un asociado...</option>
+                                        @foreach ($users as $user)
+                                            <option value="{{ $user->id }}">{{ $user->nid }} - {{ $user->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                        @endif
+                        <div class="row">
+                            <div class="col-lg-6 mb-3">
+                                <label for="fechaInicio" class="form-label">Fecha de Inicio</label>
+                                <input type="text" class="form-control" id="fechaInicio" name="fechaInicio" required
+                                    readonly>
+                            </div>
+                            <div class="col-lg-6 mb-3">
+                                <label for="endDate" class="form-label">Fecha de Fin</label>
+                                <input type="text" class="form-control" id="endDate" name="endDate"
+                                    placeholder="Seleccione una fecha" required>
+                            </div>
                         </div>
                         <div class="row">
                             <div class="col-lg-6 mb-3">
@@ -115,7 +138,8 @@
                     </p>
                     <p>
                         <strong class="text-bold">¿Cómo pagar?</strong>
-                        <a href="https://corpentunida.org.co/reservas/#contOpcionesPago" class="text-primary fw-bold">Clic aquí para conocer cómo realizar el pago</a>
+                        <a href="https://corpentunida.org.co/reservas/#contOpcionesPago"
+                            class="text-primary fw-bold">Clic aquí para conocer cómo realizar el pago</a>
                     </p>
                     <p>
                         <span class="text-danger fw-bold">Importante:</span><br>
@@ -432,14 +456,14 @@
 
                             const startDate = new Date(info.dateStr);
 
-                            // 🔥 fecha inicio bloqueada correctamente
+
                             $('#fechaInicio')
                                 .val(info.dateStr)
                                 .data('locked', info.dateStr);
 
                             $('#endDate').val('');
 
-                            // 🔥 fin mínimo = inicio + 1 día
+
                             const minEnd = new Date(startDate);
                             minEnd.setDate(minEnd.getDate() + 1);
 
@@ -463,7 +487,6 @@
                         }
 
                     });
-
                     calendar.render();
                 }
 
@@ -472,7 +495,6 @@
                 ========================= */
 
                 document.getElementById('btnConfirmar').addEventListener('click', function() {
-
                     const form = document.getElementById('reservaForm');
                     if (!form.checkValidity()) {
                         form.classList.add('was-validated');
@@ -514,6 +536,19 @@
                     if (form.length) {
                         form.submit();
                     }
+                });
+
+                $('#mostrarlistaAsociado').on('change', function() {
+                    if ($(this).is(':checked')) {
+                        $('#contenedorExtraAsociado').show();
+                    } else {
+                        $('#contenedorExtraAsociado').hide();
+                    }
+                });
+                $('#asociado_select').select2({
+                    dropdownParent: $('#reservaModal'),
+                    placeholder: "Buscar asociado...",
+                    width: '100%'
                 });
             });
         </script>
