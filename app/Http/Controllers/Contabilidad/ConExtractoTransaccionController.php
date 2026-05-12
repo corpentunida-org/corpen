@@ -232,10 +232,13 @@ class ConExtractoTransaccionController extends Controller
         $archivo = $request->file('archivo_extracto');
         $registrosPrevia = [];
 
-        // Traemos los hashes ya existentes en esta cuenta para que el JS los use en tiempo real
+        // 1. Cargamos hashes de la BD para validación contra registros antiguos
         $hashesExistentes = ConExtractoTransaccion::where('id_con_cuentas_bancaria', $idCuenta)
                             ->pluck('hash_transaccion')
                             ->toArray();
+
+        // 2. Rastreador para detectar duplicados DENTRO del mismo archivo
+        $hashesVistosEnArchivo = [];
 
         try {
             $datosArchivo = Excel::toArray(new class {}, $archivo)[0];
@@ -269,7 +272,10 @@ class ConExtractoTransaccionController extends Controller
                     }
 
                     $hashCalculado = "{$idCuenta}-{$fechaFormateada}-{$monto}-{$cedula}";
-                    $esDuplicado = in_array($hashCalculado, $hashesExistentes);
+
+                    // --- LÓGICA DE DETECCIÓN MEJORADA ---
+                    // Es duplicado si: YA está en la BD  O  YA apareció en una fila anterior de este archivo
+                    $esDuplicado = in_array($hashCalculado, $hashesExistentes) || isset($hashesVistosEnArchivo[$hashCalculado]);
 
                     $registrosPrevia[] = [
                         'fecha_movimiento'   => $fechaFormateada,
@@ -280,6 +286,9 @@ class ConExtractoTransaccionController extends Controller
                         'referencia_oficina' => $oficina,
                         'es_duplicado'       => $esDuplicado,
                     ];
+
+                    // Importante: Marcamos este hash como "ya visto" para las siguientes filas del ciclo
+                    $hashesVistosEnArchivo[$hashCalculado] = true;
                 }
             }
         } catch (\Exception $e) {
