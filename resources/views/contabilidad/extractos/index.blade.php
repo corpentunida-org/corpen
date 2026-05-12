@@ -1,4 +1,18 @@
 <x-base-layout>
+    {{-- MODAL DE CARGA (Bloqueo de Pantalla) --}}
+    <div id="loading-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.95); z-index: 9999; flex-direction: column; justify-content: center; align-items: center; backdrop-filter: blur(5px);">
+        <div class="spinner-border text-primary mb-4" style="width: 4rem; height: 4rem; border-width: 0.3em;" role="status"></div>
+        <h2 class="fw-bolder text-dark fs-1">Guardando Registros...</h2>
+        <p class="text-muted fs-5 mb-5">Por favor, no recargues ni cierres esta ventana.</p>
+        
+        <div class="bg-light-primary border border-primary border-dashed rounded-3 px-5 py-4 text-center">
+            <span class="fs-3 fw-bold text-primary d-block mb-1">Tiempo estimado restante</span>
+            <div class="display-4 fw-bolder text-dark">
+                <span id="countdown-timer">0</span> <span class="fs-3 text-muted">segundos</span>
+            </div>
+        </div>
+    </div>
+
     <div class="app-container py-5" style="background-color: #f8f9fa;">
         
         {{-- Barra de Título Estilo Documento --}}
@@ -69,6 +83,81 @@
                 </a>
             </div>
         </form>
+
+        {{-- ========================================================== --}}
+        {{-- BLOQUE DE REPORTE DE IMPORTACIÓN (NUEVO)                   --}}
+        {{-- ========================================================== --}}
+        @if(session('reporte_importacion'))
+            <div class="alert bg-light-primary border border-primary d-flex flex-column flex-sm-row p-5 mx-3 mb-4 shadow-sm" style="border-radius: 4px;">
+                <i class="fas fa-info-circle fs-2hx text-primary me-4 mb-3 mb-sm-0"></i>
+                <div class="d-flex flex-column pe-0 pe-sm-10 flex-grow-1">
+                    <h4 class="fw-bolder text-primary mb-2">Resumen de la última importación</h4>
+                    <ul class="list-unstyled mb-0 fs-5">
+                        <li class="mb-1"><i class="fas fa-check text-success me-2"></i> Registros nuevos guardados: <strong class="text-success">{{ session('reporte_importacion')['nuevos'] }}</strong></li>
+                        <li><i class="fas fa-exclamation-triangle text-danger me-2"></i> Registros omitidos (Duplicados): <strong class="text-danger">{{ session('reporte_importacion')['omitidos_count'] }}</strong></li>
+                    </ul>
+                </div>
+                
+                @if(session('reporte_importacion')['omitidos_count'] > 0)
+                <div class="d-flex align-items-center mt-3 mt-sm-0">
+                    <button type="button" class="btn btn-danger fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalOmitidos">
+                        <i class="fas fa-eye me-1"></i> Ver los {{ session('reporte_importacion')['omitidos_count'] }} omitidos
+                    </button>
+                </div>
+                @endif
+            </div>
+
+            @if(session('reporte_importacion')['omitidos_count'] > 0)
+            <div class="modal fade" id="modalOmitidos" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+                    <div class="modal-content shadow-lg">
+                        <div class="modal-header bg-danger">
+                            <h5 class="modal-title text-white fw-bolder"><i class="fas fa-copy me-2"></i> Registros Omitidos (Ya existen en la base de datos)</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body p-0">
+                            <div class="p-4 bg-light-danger border-bottom border-danger">
+                                <p class="text-dark m-0 fs-5">Estos registros no se subieron porque su <strong>Hash (ID Único generado por Fecha + Monto + Cédula)</strong> es exactamente igual a uno que ya está guardado en el sistema.</p>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover table-striped table-row-dashed border mb-0">
+                                    <thead class="bg-light fw-bolder text-gray-800">
+                                        <tr>
+                                            <th class="ps-4">Fecha Transacción</th>
+                                            <th>Cédula / Ref</th>
+                                            <th>Valor Ingreso</th>
+                                            <th>Hash Conflictivo</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach(session('reporte_importacion')['detalles_omitidos'] as $omitido)
+                                        <tr>
+                                            <td class="ps-4 fs-7">{{ $omitido['fecha'] }}</td>
+                                            <td class="fw-bold text-dark">{{ $omitido['cedula'] }}</td>
+                                            <td class="text-success fw-bolder">${{ number_format($omitido['valor'], 2) }}</td>
+                                            <td class="text-muted fs-8 font-monospace">{{ $omitido['hash'] }}</td>
+                                        </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="modal-footer d-flex justify-content-between bg-light">
+                            @if(session('reporte_importacion')['tiene_exceso'])
+                                <div class="text-warning fw-bold fs-7">
+                                    <i class="fas fa-exclamation-circle me-1"></i> Mostrando los primeros 100 errores.
+                                </div>
+                            @else
+                                <div></div>
+                            @endif
+                            <button type="button" class="btn btn-secondary fw-bold" data-bs-dismiss="modal">Cerrar Reporte</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            @endif
+        @endif
+        {{-- ========================================================== --}}
 
         {{-- Contenedor de la Hoja --}}
         <div class="bg-white shadow-sm border border-gray-300 mx-3 d-flex flex-column" style="border-radius: 0px; overflow: hidden; min-height: 500px;">

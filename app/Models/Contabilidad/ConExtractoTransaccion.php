@@ -13,16 +13,13 @@ class ConExtractoTransaccion extends Model
     protected $primaryKey = 'id_transaccion';
 
     protected $fillable = [
-        'id_con_cuentas_bancaria',
-        'hash_transaccion',
         'fecha_movimiento',
         'referencia_cedula',     
-        'referencia_nombre',     
         'valor_ingreso',
         'referencia_oficina',    
-        'referencia_distrito',   
-        'descripcion_banco',
+        'id_con_cuentas_bancaria',
         'estado_conciliacion',
+        'hash_transaccion',
     ];
 
     protected $casts = [
