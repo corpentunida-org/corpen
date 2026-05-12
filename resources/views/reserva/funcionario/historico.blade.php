@@ -3,78 +3,92 @@
     <x-success />
     <style>
         @media (max-width: 768px) {
-            table thead {
+            .tabla-responsive thead {
                 display: none;
             }
 
-            table,
-            table tbody,
-            table tr,
-            table td {
+            .tabla-responsive,
+            .tabla-responsive tbody,
+            .tabla-responsive tr,
+            .tabla-responsive td {
                 display: block;
                 width: 100%;
             }
 
-            table tr {
+            .tabla-responsive tr {
                 border-bottom: 1px solid #eee;
-                padding-left: 10px;
-                padding-bottom: 0;
+                padding-left: 20px;
                 margin-bottom: 10px;
             }
 
-            table td {
+            .tabla-responsive td {
                 display: block !important;
                 text-align: left !important;
                 border: none;
                 padding: 2px !important;
             }
 
-            table td a {
-                display: inline-block;
-            }
-
-            table td::before {
+            .tabla-responsive td::before {
                 content: attr(data-label) ": ";
                 font-weight: 600;
                 color: #6c757d;
             }
 
-            table td.text-center {
-                display: block !important;
-                text-align: left !important;
+            #calendar {
+                margin: 3px !important;
             }
 
-            td[data-label="Acciones"] a {
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                /*margin-top: 4px;*/
+            .card-body-calendar {
+                padding: 0 !important;
             }
 
-            table td.sorting_1 {
-                display: block !important;
-                padding: 4px 0 !important;
-                margin-left: 15px !important;
-            }
-
-            .fc-toolbar {
+            .fc-header-toolbar {
+                display: flex;
                 flex-direction: column;
-                gap: 10px;
+                align-items: center;
+                gap: 6px;
             }
 
+            /* Título */
             .fc-toolbar-title {
-                font-size: 18px;
+                order: 1;
                 text-align: center;
+                padding-top: 10px;
+                font-size: 18px;
             }
 
-            .fc-daygrid-day-frame {
-                min-height: 60px;
+            /* Navegación prev next today */
+            .fc-toolbar .fc-toolbar-chunk:first-child {
+                order: 2;
+                display: flex;
+                justify-content: center;
+                gap: 6px;
             }
+
+            /* Botones de vista */
+            .fc-toolbar .fc-toolbar-chunk:last-child {
+                order: 3;
+                display: flex;
+                justify-content: center;
+                gap: 6px;
+            }
+
+            /* Ocultar botón month */
+            .fc-dayGridMonth-button {
+                display: none !important;
+            }
+
+            /* Botones más pequeños */
+            .fc .fc-button {
+                padding: 2px 6px !important;
+                font-size: 12px !important;
+            }
+
         }
 
         #calendar {
             background-color: white;
-            with: 100%;
+            width: 100%;
             padding: 10px;
             position: static;
         }
@@ -101,7 +115,7 @@
                                     </div>
                                 </div>
                             </div> --}}
-                            <table class="table table-hover" {{-- id="tablaReservas" --}} id="customerList">
+                            <table class="table table-hover tabla-responsive" id="customerList">
                                 <thead>
                                     <tr>
                                         <th>Inmueble</th>
@@ -147,8 +161,6 @@
                                                     href="{{ route('reserva.inmueble.confirmacion.show', $hisres->id) }}">
                                                     <i class="bi bi-eye"></i>
                                                 </a>
-                                                {{-- <a href="#" href="{{ route('reserva.reserva.edit', $reserva->id) }}" class="btn btn-sm btn-warning"> <i class="bi bi-pencil-square"></i> </a> --}}
-                                                {{-- <form action="{{ route('reserva.reserva.destroy', $reserva->id) }}" method="POST"> @csrf @method('DELETE') <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Está seguro de eliminar esta reserva?')"> <i class="bi bi-trash"></i> </button> </form> --}}
                                             </td>
                                         </tr>
                                     @endforeach
@@ -173,7 +185,7 @@
                     Calendario detallado de reservas activas.
                 </p>
             </div>
-            <div class="card-body">
+            <div class="card-body card-body-calendar">
                 <div id="calendar"></div>
             </div>
         </div>
@@ -189,22 +201,26 @@
                     height: 'auto',
                     contentHeight: 'auto',
                     expandRows: true,
+                    windowResize: function(view) {
+                        calendar.updateSize();
+                    },
+                    dayMaxEvents: true,
                     handleWindowResize: true,
-                    initialDate: '{{ optional($historicosres->min('fecha_inicio'))?->format('Y-m-d') }}',
+                    
                     headerToolbar: {
                         left: 'prev,next today',
                         center: 'title',
                         right: 'dayGridMonth'
                     },
                     events: [
-                        @foreach ($historicosres as $r)                        
+                        @foreach ($historicosres as $r)
                             {
                                 title: '{{ $r->res_status_id == 4 ? 'RESERVA CANCELADA ' . $r->res_inmueble->name : 'RESERVA ' . $r->res_inmueble->name }}',
                                 start: '{{ \Carbon\Carbon::parse($r->fecha_inicio)->format('Y-m-d') }}',
                                 end: '{{ \Carbon\Carbon::parse($r->fecha_fin)->addDay()->format('Y-m-d') }}',
                                 color: '{{ $r->res_status_id == 4 ? '#ffb3b3' : ($r->res_inmueble_id == 1 ? '#c8b6ff' : '#b6e3ff') }}',
                                 textColor: '#2b1a55',
-                                aspectRatio: 1.35,
+                                aspectRatio: 1,
                                 extendedProps: {
                                     id: '{{ $r->id }}',
                                     apto: '{{ $r->res_inmueble->name ?? '' }}',
@@ -231,7 +247,8 @@
 
                         let fechaInicio = inicio.toLocaleDateString('es-ES', opciones);
                         let fechaFin = fin.toLocaleDateString('es-ES', opciones);
-                        const telefono = `${info.event.extendedProps.celular} ${info.event.extendedProps.celular_respaldo ? ' - ' + info.event.extendedProps.celular_respaldo : ''}`;
+                        const telefono =
+                            `${info.event.extendedProps.celular} ${info.event.extendedProps.celular_respaldo ? ' - ' + info.event.extendedProps.celular_respaldo : ''}`;
                         Swal.fire({
                             title: 'Detalle de Reserva',
                             icon: 'info',
@@ -248,9 +265,6 @@
                     }
                 });
                 calendar.render();
-                window.addEventListener('resize', function() {
-                    calendar.updateSize();
-                });
             }
         });
     </script>

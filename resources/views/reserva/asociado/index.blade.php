@@ -110,7 +110,7 @@
                                                         </a>
                                                     @endif
                                                 @endif
-                                                <form action="{{ route('reserva.reserva.destroy', $reserva->id) }}"
+                                                {{-- <form action="{{ route('reserva.reserva.destroy', $reserva->id) }}"
                                                     method="POST">
                                                     @csrf
                                                     @method('DELETE')
@@ -118,7 +118,7 @@
                                                         onclick="return confirm('¿Está seguro de eliminar esta reserva?')">
                                                         <i class="bi bi-trash"></i>
                                                     </button>
-                                                </form>
+                                                </form> --}}
                                             </div>
                                         </td>
                                     </tr>
