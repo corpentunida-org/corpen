@@ -7,6 +7,7 @@ use App\Mail\ReservaInmueble;
 use App\Models\Reserva\Res_inmueble;
 use App\Models\Reserva\Res_reserva;
 use App\Models\Reserva\Res_reserva_evidencia;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
@@ -63,7 +64,14 @@ class ResReservaController extends Controller implements HasMiddleware
             ->whereIn('res_status_id', [1, 2, 5])
             ->orderBy('fecha_inicio', 'asc')
             ->get();
-        return view('reserva.asociado.create', compact('inmueble', 'reservas'));
+
+        $users = [];
+        if (auth()->user()->hasPermission('reservas.crearreserva.otroasociado')) {
+            $users = User::where('id', '!=', auth()->user()->id)
+                ->where('type', 'ASOCIADO')
+                ->get();
+        }
+        return view('reserva.asociado.create', compact('inmueble', 'reservas', 'users'));
     }
 
     public function storeReserva(Request $request)
@@ -80,6 +88,7 @@ class ResReservaController extends Controller implements HasMiddleware
         date_default_timezone_set('America/Bogota');
         $fecha_actual = Carbon::now()->toDateString();
 
+
         if ($fechaInicio < $fecha_actual) {
             return redirect()->back()->with('error', 'No se puede procesar la reserva, ya que la fecha de inicio seleccionada es anterior a la fecha actual.');
         }
@@ -90,8 +99,14 @@ class ResReservaController extends Controller implements HasMiddleware
             return redirect()->back()->with('error', 'No se puede procesar la reserva, ya que la fecha de inicio seleccionada es mayor a 365 días a partir de la fecha actual.');
         }
 
+        if ($request->has('otroAsociado')) {
+            $usuarioReservando = User::find($request->input('asociado_id'));
+        }
+        else{
+            $usuarioReservando = auth()->user();
+        }
         //consultar si el usuario ya tiene una reserva en el ultimo año
-        $reservaExistente = Res_reserva::where('user_id', auth()->user()->id)
+        $reservaExistente = Res_reserva::where('user_id', $usuarioReservando->id)
             ->where('res_status_id', '!=', 4)
             ->where('fecha_inicio', '>=', Carbon::parse($fechaInicio)->subYear()->format('Y-m-d'))
             ->count();
@@ -128,8 +143,8 @@ class ResReservaController extends Controller implements HasMiddleware
         $reservaacrear = Res_reserva::create([
             'res_inmueble_id' => $request->inmueble_id,
             'res_status_id' => 1,
-            'user_id' => auth()->user()->id,
-            'nid' => auth()->user()->nid,
+            'user_id' => $usuarioReservando->id,
+            'nid' => $usuarioReservando->nid,
             'fecha_solicitud' => $fecha_actual,
             'fecha_inicio' => $request->fechaInicio,
             'fecha_fin' => $request->endDate,
@@ -139,7 +154,7 @@ class ResReservaController extends Controller implements HasMiddleware
         ]);
         $inmueble = Res_inmueble::findOrFail($inmueble_id);
         $texto = 'Hemos recibido su solicitud de reserva con ingreso el ' . $request->input('fechaInicio') . ' y salida el ' . $request->input('endDate') . '. En las próximas horas, un funcionario se comunicará con usted para validar los datos de la reserva. ¡Dios le bendiga!.';
-        Mail::to(auth()->user()->email)->send(new ReservaInmueble(auth()->user()->name, $texto, 'Reserva de Inmueble ' . $inmueble->name, true, $inmueble));
+        Mail::to($usuarioReservando->email)->send(new ReservaInmueble($usuarioReservando->name, $texto, 'Reserva de Inmueble ' . $inmueble->name, true, $inmueble));
         return redirect()->route('reserva.reserva.index')->with('success', 'Reserva creada con éxito');
     }
 
@@ -215,8 +230,7 @@ class ResReservaController extends Controller implements HasMiddleware
         $reservas = Res_reserva::select('id', 'res_inmueble_id', 'res_status_id', 'user_id', 'nid', 'fecha_inicio', 'fecha_fin')
             ->where('res_status_id', 2)
             ->with(['tercero', 'user'])
-            ->orderByRaw(
-                "CASE WHEN fecha_inicio >= CURDATE() THEN 0 ELSE 1 END",)
+            ->orderByRaw('CASE WHEN fecha_inicio >= CURDATE() THEN 0 ELSE 1 END')
             ->orderBy('fecha_inicio', 'asc')
             ->get();
         return view('reserva.funcionario.indexConfirmacion', compact('reservas'));
