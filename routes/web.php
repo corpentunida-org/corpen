@@ -12,6 +12,7 @@ use App\Http\Controllers\AuditoriaController;
 //CONTABILIDAD
 use App\Http\Controllers\Contabilidad\ConCuentaBancariaController;
 use App\Http\Controllers\Contabilidad\ConExtractoTransaccionController;
+use App\Http\Controllers\Contabilidad\ExcelSyncController;
 //CARTERA
 use App\Http\Controllers\Cartera\CarComprobantePagoController;
 use App\Http\Controllers\Cartera\ReadExelController;
@@ -309,6 +310,23 @@ Route::middleware(['auth'])
         // (index, store, show, update, destroy)
         Route::resource('extractos', ConExtractoTransaccionController::class)
             ->parameters(['extractos' => 'conExtractoTransaccion']);
+
+
+        // ---------------------------------------------------
+        // 3. SINCRONIZACIÓN EXCEL (MySQL <-> Excel Local)
+        // ---------------------------------------------------
+        
+        // Panel de Sincronización Excel
+        Route::get('sincronizar', [ExcelSyncController::class, 'index'])
+            ->name('sincronizar.index');
+
+        // Acción de descargar toda la tabla a un .xlsx
+        Route::get('descargar-excel', [ExcelSyncController::class, 'descargarExcel'])
+            ->name('sincronizar.descargar');
+
+        // Acción de subir y hacer el Upsert en la base de datos
+        Route::post('subir-excel', [ExcelSyncController::class, 'subirExcel'])
+            ->name('sincronizar.subir');
 
     });
 // FIN MÓDULO CONTABILIDAD

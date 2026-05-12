@@ -19,5 +19,12 @@
                 <i class="bi bi-file-earmark-ruled me-2"></i> Conciliación (Extractos)
             </a>
         </li>
+
+        {{-- Submenú de Sincronización Excel --}}
+        <li class="nxl-item {{ request()->routeIs('contabilidad.sincronizar.*') ? 'active' : '' }}">
+            <a class="nxl-link" href="{{ route('contabilidad.sincronizar.index') }}">
+                <i class="bi bi-cloud-sync me-2"></i> Sincronizar Excel
+            </a>
+        </li>
     </ul>
 </li>
