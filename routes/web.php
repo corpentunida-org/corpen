@@ -260,14 +260,17 @@ Route::post('/cartera/pdfMora', [ReadExelController::class, 'pdfMora'])
 // ==========================================
 //   MÓDULO DE CONTABILIDAD
 // ==========================================
-Route::middleware(['auth'])
+Route::middleware(['auth', 'check.mantenimiento'])
     ->prefix('contabilidad')
     ->name('contabilidad.')
     ->group(function () {
 
+        // ---------------------------------------------------
         // 1. GESTIÓN DE CUENTAS BANCARIAS
+        // ---------------------------------------------------
         Route::resource('cuentas-bancarias', ConCuentaBancariaController::class)
             ->parameters(['cuentas-bancarias' => 'conCuentaBancaria']);
+
 
         // ---------------------------------------------------
         // 2. CONCILIACIÓN Y EXTRACTOS BANCARIOS
@@ -293,6 +296,7 @@ Route::middleware(['auth'])
 
 
         // --- FLUJO DE CONCILIACIÓN ---
+        
         // Vista principal de la mesa de conciliación (Lado a Lado)
         Route::get('extractos/conciliacion', [ConExtractoTransaccionController::class, 'conciliacion'])
             ->name('extractos.conciliacion');
@@ -307,13 +311,12 @@ Route::middleware(['auth'])
 
 
         // --- CRUD ESTÁNDAR ---
-        // (index, store, show, update, destroy)
         Route::resource('extractos', ConExtractoTransaccionController::class)
             ->parameters(['extractos' => 'conExtractoTransaccion']);
 
 
         // ---------------------------------------------------
-        // 3. SINCRONIZACIÓN EXCEL (MySQL <-> Excel Local)
+        // 3. SINCRONIZACIÓN EXCEL (AWS Master Sync)
         // ---------------------------------------------------
         
         // Panel de Sincronización Excel
@@ -324,9 +327,26 @@ Route::middleware(['auth'])
         Route::get('descargar-excel', [ExcelSyncController::class, 'descargarExcel'])
             ->name('sincronizar.descargar');
 
-        // Acción de subir y hacer el Upsert en la base de datos
+        // Acción de subir y previsualizar la base de datos (PASO 1)
         Route::post('subir-excel', [ExcelSyncController::class, 'subirExcel'])
             ->name('sincronizar.subir');
+            
+        // Acción: Confirmar y guardar masivamente el Upsert (PASO 2)
+        Route::post('confirmar-sincronizacion', [ExcelSyncController::class, 'confirmarSincronizacion'])
+            ->name('sincronizar.confirmar');
+
+
+        // ---------------------------------------------------
+        // 4. SISTEMA Y MANTENIMIENTO
+        // ---------------------------------------------------
+        
+        // Vista Maestra de Mantenimiento (Ultra Profesional)
+        Route::get('mantenimiento', [ConExtractoTransaccionController::class, 'mantenimiento'])
+            ->name('mantenimiento');
+
+        // Ruta para cambiar el estado del mantenimiento (vía AJAX/Switch)
+        Route::post('mantenimiento/toggle', [ConExtractoTransaccionController::class, 'toggleMantenimiento'])
+            ->name('mantenimiento.toggle');
 
     });
 // FIN MÓDULO CONTABILIDAD
