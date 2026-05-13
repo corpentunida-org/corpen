@@ -429,9 +429,7 @@ Route::get('validar/asociado', function () {
 })->name('validar.asociado.form');
 Route::post('validar/asociado', [UserController::class, 'validarAsociado'])->name('validar.asociado');
 
-Route::prefix('reservas')
-    ->name('reserva.')
-    ->group(function () {
+Route::prefix('reservas')->name('reserva.')->group(function () {
         Route::get('dashboard', [ResDashboardController::class, 'index'])
             ->name('dashboard');
         Route::get('dashboard/exportar', [ResDashboardController::class, 'exportarInforme'])
@@ -455,13 +453,13 @@ Route::prefix('reservas')
             ->middleware(['auth', 'candirect:reservas.Reserva.pagos']);
         Route::get('reservaI/confirmacion', [ResReservaController::class, 'indexConfirmacion'])
             ->name('inmueble.confirmacion')
-            ->middleware(['auth', 'candirect:reservas.Reserva.lista']);
+            ->middleware(['auth', 'candirect:reservas.reserva.confirmadas']);
         Route::get('reservaI/cartera', [ResReservaController::class, 'indexCartera'])
             ->name('reservas.sinsoporte')
             ->middleware(['auth', 'candirect:reservas.Reserva.cartera']);
         Route::get('reservaI/confirmacion/{id}/show', [ResReservaController::class, 'showConfirmacion'])
             ->name('inmueble.confirmacion.show')
-            ->middleware(['auth', 'candirect:reservas.Reserva.lista']);
+            ->middleware(['auth', 'candirect:reservas.reserva.confirmadas']);
         //Route::post('reservaI/notificar/ajuste', [ResReservaController::class, 'notificarAjuste'])->name('inmueble.notificar.ajuste');
         Route::post('reservaI/calificacion', [ResReservaController::class, 'calificacionAsociado'])
             ->name('inmueble.resenia')
@@ -471,7 +469,7 @@ Route::prefix('reservas')
             ->middleware('auth');
         Route::get('reservaI/historico', [ResReservaController::class, 'indexHistorico'])
             ->name('inmueble.historico')
-            ->middleware(['auth', 'candirect:reservas.Reserva.lista']);
+            ->middleware(['auth', 'candirect:reservas.reserva.confirmadas']);
         Route::resource('inmueble', ResInmuebleController::class)
             ->names('crudinmuebles')
             ->middleware('auth')
@@ -717,7 +715,7 @@ Route::prefix('interactions')
         // ==========================================================
 
         // --- 🖥️ 0. RUTA PRINCIPAL (LA QUE FALTABA) ---
-        Route::get('/chat', [IntChatController::class, 'index'])->name('chat.index');
+        Route::get('/chat', [IntChatController::class, 'index'])->name('chat.index')->middleware('auth','can:interacciones.chat.index');
         // --- 📂 1. RUTAS PARA WORKSPACES (Espacios de trabajo) ---
         Route::prefix('workspaces')
             ->name('workspaces.')
