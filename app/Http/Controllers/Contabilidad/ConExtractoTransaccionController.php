@@ -12,9 +12,26 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 
 class ConExtractoTransaccionController extends Controller
 {
+    /**
+     * Muestra la vista de mantenimiento ultra-profesional.
+     */
+    public function mantenimiento()
+    {
+        return view('contabilidad.mantenimiento');
+    }
+    /**
+     * Activa o desactiva el modo mantenimiento en la caché del sistema.
+     */
+    public function toggleMantenimiento(Request $request)
+    {
+        Cache::forever('contabilidad_mantenimiento_active', $request->estado);
+        return response()->json(['success' => true, 'estado' => $request->estado]);
+    }
+
     public function index(Request $request)
     {
         // 1. Filtro Obligatorio: Periodo (Año y Mes). Por defecto el mes actual.
