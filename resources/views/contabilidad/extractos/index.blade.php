@@ -42,50 +42,101 @@
             </div>
         </div>
 
-        {{-- BARRA DE FILTROS BACKEND (ESTILO BARRA DE FÓRMULAS) --}}
-        <form method="GET" action="{{ route('contabilidad.extractos.index') }}" class="bg-white p-3 border border-gray-300 mx-3 mb-3 d-flex flex-wrap gap-3 align-items-end shadow-sm" style="border-radius: 4px;">
+        {{-- ========================================================== --}}
+        {{-- PANEL DE FILTRADO MAESTRO UNIFICADO                        --}}
+        {{-- ========================================================== --}}
+        <form method="GET" action="{{ route('contabilidad.extractos.index') }}" class="bg-white p-4 mx-3 mb-4 shadow-sm" style="border-radius: 12px; border: 1px solid #e4e6ef;">
             
-            {{-- Filtro Obligatorio: Mes y Año --}}
-            <div>
-                <label class="form-label fs-9 fw-bolder text-muted text-uppercase mb-1">Periodo (Año/Mes) *</label>
-                <input type="month" name="periodo" value="{{ $periodo }}" class="form-control form-control-sm border-gray-300 fw-bold text-primary" required>
-            </div>
+            <div class="row g-3 align-items-end">
+                
+                {{-- Filtro de Mes --}}
+                <div class="col-md-2">
+                    <label class="form-label fs-9 fw-bolder text-muted text-uppercase mb-1">Periodo</label>
+                    <input type="month" name="periodo" id="inputPeriodo" value="{{ $periodo }}" class="form-control border-gray-300 fw-bold text-primary" style="transition: 0.3s;">
+                </div>
 
-            {{-- Filtro Opcional: Banco --}}
-            <div>
-                <label class="form-label fs-9 fw-bolder text-muted text-uppercase mb-1">Cuenta / Banco</label>
-                <select name="banco_id" class="form-select form-select-sm border-gray-300" style="min-width: 180px;">
-                    <option value="">Todas las cuentas...</option>
-                    @foreach($cuentas as $cuenta)
-                        <option value="{{ $cuenta->id }}" {{ $banco_id == $cuenta->id ? 'selected' : '' }}>
-                            {{ $cuenta->banco }} - {{ substr($cuenta->numero_cuenta, -4) }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
+                {{-- Filtro de Estado --}}
+                <div class="col-md-2">
+                    <label class="form-label fs-9 fw-bolder text-muted text-uppercase mb-1">Estado</label>
+                    <select name="estado" class="form-select border-gray-300 fw-bold" style="color: #4b5675;">
+                        <option value="">Todos</option>
+                        <option value="Pendiente" {{ (isset($estado) && $estado == 'Pendiente') ? 'selected' : '' }}>Pendientes</option>
+                        <option value="Conciliados" {{ (isset($estado) && $estado == 'Conciliados') ? 'selected' : '' }}>Conciliados</option>
+                        <option value="Anulado" {{ (isset($estado) && $estado == 'Anulado') ? 'selected' : '' }}>Anulados</option>
+                    </select>
+                </div>
 
-            {{-- Filtro Opcional: Búsqueda Global (Sin los campos eliminados) --}}
-            <div class="flex-grow-1">
-                <label class="form-label fs-9 fw-bolder text-muted text-uppercase mb-1">Búsqueda Exacta</label>
-                <div class="input-group input-group-sm">
-                    <span class="input-group-text bg-light"><i class="fas fa-search text-muted"></i></span>
-                    <input type="text" name="search" value="{{ $search }}" class="form-control border-gray-300" placeholder="Buscar cédula, monto o hash...">
+                {{-- Filtro de Cuenta --}}
+                <div class="col-md-3">
+                    <label class="form-label fs-9 fw-bolder text-muted text-uppercase mb-1">Cuenta Bancaria</label>
+                    <select name="banco_id" class="form-select border-gray-300">
+                        <option value="">Todas las cuentas</option>
+                        @foreach($cuentas as $cuenta)
+                            <option value="{{ $cuenta->id }}" {{ $banco_id == $cuenta->id ? 'selected' : '' }}>
+                                {{ $cuenta->banco }} - {{ substr($cuenta->numero_cuenta, -4) }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                {{-- Búsqueda de Texto y Botones --}}
+                <div class="col-md-5">
+                    <label class="form-label fs-9 fw-bolder text-muted text-uppercase mb-1">Búsqueda Libre (Cédula, Monto, Hash)</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-gray-300"><i class="fas fa-search text-muted"></i></span>
+                        <input type="text" name="search" value="{{ $search }}" class="form-control border-gray-300" placeholder="Buscar coincidencia exacta...">
+                        <button type="submit" class="btn fw-bold px-4" style="background-color: #e1f0fa; color: #008be1; border: 1px solid #b9dfff;">Filtrar</button>
+                        <a href="{{ route('contabilidad.extractos.index') }}" class="btn btn-light px-3 border-gray-300" title="Limpiar todo">
+                            <i class="fas fa-times text-danger"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
 
-            {{-- Botones de Filtrado --}}
-            <div>
-                <button type="submit" class="btn btn-sm btn-success fw-bold px-4">
-                    <i class="fas fa-filter me-1"></i> Filtrar Base
-                </button>
-                <a href="{{ route('contabilidad.extractos.index') }}" class="btn btn-sm btn-light-danger btn-icon ms-1" title="Limpiar Filtros">
-                    <i class="fas fa-times"></i>
-                </a>
+            {{-- Switch para Modo Global --}}
+            <div class="mt-4 pt-3 border-top border-gray-200 d-flex justify-content-between align-items-center">
+                <div class="form-check form-switch d-flex align-items-center gap-2 m-0 p-0">
+                    <input class="form-check-input m-0 cursor-pointer" type="checkbox" role="switch" id="switchGlobal" name="is_global" value="1" {{ isset($is_global) && $is_global ? 'checked' : '' }} style="height: 22px; width: 44px;">
+                    <label class="form-check-label fs-8 fw-bold text-dark cursor-pointer ms-2" for="switchGlobal">
+                        Rastreo Global Histórico 
+                        <span class="text-muted fw-normal ms-1">(Ignora el mes y busca en toda la base de datos)</span>
+                    </label>
+                </div>
+
+                @if(isset($is_global) && $is_global)
+                    <span class="badge rounded-pill fs-10 px-3 py-2" style="background-color: #fff4f4; color: #d9214e; border: 1px solid #ffe2e5;">
+                        <i class="fas fa-globe me-1"></i> Mostrando historial completo
+                    </span>
+                @endif
             </div>
         </form>
 
+        {{-- Script para opacar el selector de mes cuando el Rastreo Global está encendido --}}
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const switchGlobal = document.getElementById('switchGlobal');
+                const inputPeriodo = document.getElementById('inputPeriodo');
+
+                if(switchGlobal && inputPeriodo) {
+                    function togglePeriodo() {
+                        if(switchGlobal.checked) {
+                            inputPeriodo.style.opacity = '0.4';
+                            inputPeriodo.style.pointerEvents = 'none';
+                        } else {
+                            inputPeriodo.style.opacity = '1';
+                            inputPeriodo.style.pointerEvents = 'auto';
+                        }
+                    }
+
+                    switchGlobal.addEventListener('change', togglePeriodo);
+                    togglePeriodo(); // Ejecutar al cargar la página
+                }
+            });
+        </script>
         {{-- ========================================================== --}}
-        {{-- BLOQUE DE REPORTE DE IMPORTACIÓN (NUEVO)                   --}}
+
+        {{-- ========================================================== --}}
+        {{-- BLOQUE DE REPORTE DE IMPORTACIÓN                           --}}
         {{-- ========================================================== --}}
         @if(session('reporte_importacion'))
             <div class="alert bg-light-primary border border-primary d-flex flex-column flex-sm-row p-5 mx-3 mb-4 shadow-sm" style="border-radius: 4px;">
@@ -232,7 +283,6 @@
                         </tr>
                         @empty
                         <tr>
-                            {{-- Colspan ajustado a 9 columnas --}}
                             <td colspan="9" class="text-center py-10 text-muted fs-8 italic">
                                 <i class="fas fa-search mb-3 fs-1 text-gray-400 d-block"></i>
                                 No se encontraron registros para los filtros seleccionados.
@@ -256,7 +306,7 @@
                 </div>
 
                 <div class="d-flex gap-4">
-                    <span>Total en BD (este mes): <strong class="text-dark">{{ $extractos->total() }}</strong></span>
+                    <span>Total Encontrados: <strong class="text-dark">{{ $extractos->total() }}</strong></span>
                     <span>Mostrando: <strong class="text-dark">{{ $extractos->firstItem() ?? 0 }} - {{ $extractos->lastItem() ?? 0 }}</strong></span>
                 </div>
             </div>
