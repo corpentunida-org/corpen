@@ -13,23 +13,29 @@ class CarComprobantePagoController extends Controller
 {
     public function index(Request $request)
     {
-        // 1. Filtro de Periodo
+        // 1. Recibir parámetros
         $periodo = $request->input('periodo', date('Y-m'));
-        $parts = explode('-', $periodo);
-        $year = $parts[0] ?? date('Y');
-        $month = $parts[1] ?? date('m');
+        $is_global = $request->has('is_global'); // <-- NUEVO: Switch histórico
 
-        // 2. Consulta con Eager Loading (Evita que el servidor colapse con 500 filas)
-        $query = CarComprobantePago::with(['tercero', 'user', 'obligacion', 'banco', 'interaccion'])
-                                    ->whereYear('fecha_pago', $year)
-                                    ->whereMonth('fecha_pago', $month);
+        // 2. Consulta base con Eager Loading
+        $query = CarComprobantePago::with(['tercero', 'user', 'obligacion', 'banco', 'interaccion']);
 
-        // 3. Filtro por estado
+        // 3. Lógica de Periodo (Aplica solo si el Switch NO está activo)
+        if (!$is_global) {
+            $parts = explode('-', $periodo);
+            $year = $parts[0] ?? date('Y');
+            $month = $parts[1] ?? date('m');
+            
+            $query->whereYear('fecha_pago', $year)
+                  ->whereMonth('fecha_pago', $month);
+        }
+
+        // 4. Filtro por estado
         if ($request->filled('estado')) {
             $query->where('estado', $request->estado);
         }
 
-        // 4. Buscador Global (Cubre todos los campos del Fillable)
+        // 5. Buscador Global
         if ($request->filled('buscar')) {
             $busqueda = $request->buscar;
             $query->where(function($q) use ($busqueda) {
@@ -47,10 +53,10 @@ class CarComprobantePagoController extends Controller
             });
         }
 
-        // 5. Paginación aumentada a 500 para ver todos los registros
+        // 6. Paginación
         $comprobantes = $query->latest()->paginate(500)->withQueryString(); 
         
-        return view('cartera.comprobantes.index', compact('comprobantes', 'periodo'));
+        return view('cartera.comprobantes.index', compact('comprobantes', 'periodo', 'is_global'));
     }
 
     public function create()
