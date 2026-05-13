@@ -9,11 +9,15 @@
                 </div>
             </div>
             <div>
-                <h3 class="fw-bold m-0 text-dark fs-4">Soportes_Pago_Cartera_{{ str_replace('-', '', $periodo) }}.gsheet
+                <h3 class="fw-bold m-0 text-dark fs-4" id="docTitle">
+                    Soportes_Pago_Cartera_{{ isset($is_global) && $is_global ? 'HISTORICO' : str_replace('-', '', $periodo) }}.gsheet
                 </h3>
                 <div class="d-flex align-items-center gap-3 fs-9 mt-1">
                     <span class="text-muted">Archivo guardado en Drive</span>
                     <span class="badge badge-light-success text-success fw-bold px-2 py-1">SOLO LECTURA</span>
+                    @if(isset($is_global) && $is_global)
+                        <span class="badge badge-light-danger text-danger fw-bold px-2 py-1"><i class="fas fa-globe me-1 text-danger"></i> MODO GLOBAL</span>
+                    @endif
                 </div>
             </div>
             <div class="ms-auto d-flex gap-2">
@@ -37,8 +41,8 @@
             {{-- Filtro Obligatorio: Mes y Año --}}
             <div>
                 <label class="form-label fs-9 fw-bolder text-muted text-uppercase mb-1">Periodo (Año/Mes) *</label>
-                <input type="month" name="periodo" value="{{ $periodo }}"
-                    class="form-control form-control-sm border-gray-300 fw-bold text-primary" required>
+                <input type="month" name="periodo" id="inputPeriodo" value="{{ $periodo }}"
+                    class="form-control form-control-sm border-gray-300 fw-bold text-primary" required style="transition: 0.3s;">
             </div>
 
             {{-- Filtro Opcional: Búsqueda Global --}}
@@ -49,6 +53,16 @@
                     <input type="text" name="buscar" value="{{ request('buscar') }}"
                         class="form-control border-gray-300"
                         placeholder="Buscar cédula, monto, cuota, PR, CCO, tipo pago, observación...">
+                </div>
+            </div>
+
+            {{-- Switch para Rastreo Global --}}
+            <div class="pb-1">
+                <div class="form-check form-switch d-flex align-items-center gap-2 m-0 p-0" title="Buscar en toda la base de datos sin importar la fecha">
+                    <input class="form-check-input m-0 cursor-pointer" type="checkbox" role="switch" id="switchGlobal" name="is_global" value="1" {{ isset($is_global) && $is_global ? 'checked' : '' }} style="height: 22px; width: 44px;">
+                    <label class="form-check-label fs-9 fw-bold text-dark cursor-pointer ms-2 text-uppercase" for="switchGlobal">
+                        Global
+                    </label>
                 </div>
             </div>
 
@@ -68,17 +82,17 @@
         <div class="bg-white shadow-sm border border-gray-300 mx-3 d-flex flex-column"
             style="border-radius: 0px; overflow: hidden; min-height: 500px;">
 
-            {{-- Pestañas de la Hoja (Preservando los filtros actuales) --}}
+            {{-- Pestañas de la Hoja (Preservando los filtros actuales incluyendo is_global) --}}
             <div class="d-flex bg-gray-100 border-bottom border-gray-300">
-                <a href="{{ route('cartera.comprobantes.index', ['periodo' => $periodo, 'buscar' => request('buscar')]) }}"
+                <a href="{{ route('cartera.comprobantes.index', ['periodo' => $periodo, 'buscar' => request('buscar'), 'is_global' => request('is_global')]) }}"
                     class="sheet-tab {{ !request('estado') ? 'active' : '' }}">
                     <i class="fas fa-table me-2 fs-9"></i> Todos los registros
                 </a>
-                <a href="{{ route('cartera.comprobantes.index', ['estado' => 'pendiente', 'periodo' => $periodo, 'buscar' => request('buscar')]) }}"
+                <a href="{{ route('cartera.comprobantes.index', ['estado' => 'pendiente', 'periodo' => $periodo, 'buscar' => request('buscar'), 'is_global' => request('is_global')]) }}"
                     class="sheet-tab {{ request('estado') == 'pendiente' ? 'active' : '' }}">
                     Pendientes
                 </a>
-                <a href="{{ route('cartera.comprobantes.index', ['estado' => 'conciliado', 'periodo' => $periodo, 'buscar' => request('buscar')]) }}"
+                <a href="{{ route('cartera.comprobantes.index', ['estado' => 'conciliado', 'periodo' => $periodo, 'buscar' => request('buscar'), 'is_global' => request('is_global')]) }}"
                     class="sheet-tab {{ request('estado') == 'conciliado' ? 'active' : '' }}">
                     Conciliados
                 </a>
@@ -248,11 +262,6 @@
     @push('scripts')
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <style>
-            /* body { 
-                background-color: #f8f9fa; 
-                font-family: 'Roboto', 'Arial', sans-serif !important; 
-            } */
-
             /* TABLA ESTILO GOOGLE SHEETS */
             .table-gsheets {
                 width: auto;
@@ -376,6 +385,32 @@
 
         <script>
             document.addEventListener('DOMContentLoaded', function () {
+                
+                // LÓGICA PARA EL SWITCH GLOBAL
+                const switchGlobal = document.getElementById('switchGlobal');
+                const inputPeriodo = document.getElementById('inputPeriodo');
+                const docTitle = document.getElementById('docTitle');
+
+                if(switchGlobal && inputPeriodo) {
+                    function togglePeriodo() {
+                        if(switchGlobal.checked) {
+                            inputPeriodo.style.opacity = '0.4';
+                            inputPeriodo.style.pointerEvents = 'none';
+                            // El título ya se cambia en el HTML, pero aseguramos la UX:
+                            if(docTitle && !docTitle.innerHTML.includes('HISTORICO')) {
+                                docTitle.innerHTML = docTitle.innerHTML.replace(/\d{6}/, 'HISTORICO');
+                            }
+                        } else {
+                            inputPeriodo.style.opacity = '1';
+                            inputPeriodo.style.pointerEvents = 'auto';
+                        }
+                    }
+
+                    switchGlobal.addEventListener('change', togglePeriodo);
+                    togglePeriodo(); // Ejecutar al inicio
+                }
+
+                // LÓGICA PARA REDIMENSIONAR COLUMNAS
                 const table = document.getElementById('main-table');
                 const cols = table.querySelectorAll('th');
 
@@ -413,6 +448,7 @@
                 });
             });
 
+            // LÓGICA PARA ELIMINAR FILAS
             $(document).on('click', '.btn-delete', function () {
                 let form = $(this).closest('form');
                 Swal.fire({

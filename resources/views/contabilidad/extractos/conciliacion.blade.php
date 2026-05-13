@@ -216,7 +216,31 @@
                                         <td class="col-index align-middle">{{ $comprobantesCartera->firstItem() + $index }}</td>
                                         
                                         <td class="text-center text-gray-700 align-middle">
-                                            {{ \Carbon\Carbon::parse($comprobante->fecha_pago)->format('d/m/Y') }}
+                                            @php
+                                                $f_str = (string) $comprobante->fecha_pago;
+                                                $fecha_dmy = $f_str;
+                                                $fecha_hora = '';
+                                                
+                                                try {
+                                                    if (strlen($f_str) === 14) {
+                                                        $c = \Carbon\Carbon::createFromFormat('YmdHis', $f_str);
+                                                        $fecha_dmy = $c->format('d/m/Y');
+                                                        $fecha_hora = $c->format('H:i');
+                                                    } elseif (strlen($f_str) === 8) {
+                                                        $c = \Carbon\Carbon::createFromFormat('Ymd', $f_str);
+                                                        $fecha_dmy = $c->format('d/m/Y');
+                                                    } else {
+                                                        $c = \Carbon\Carbon::parse($f_str);
+                                                        $fecha_dmy = $c->format('d/m/Y');
+                                                    }
+                                                } catch (\Exception $e) {
+                                                    $fecha_dmy = $f_str;
+                                                }
+                                            @endphp
+                                            <span class="fw-bold d-block">{{ $fecha_dmy }}</span>
+                                            @if($fecha_hora)
+                                                <span class="text-muted fs-10">{{ $fecha_hora }}</span>
+                                            @endif
                                         </td>
                                         
                                         <td class="text-truncate" style="max-width: 250px;">
@@ -246,6 +270,23 @@
                                                 @if($comprobante->tipo_pago)
                                                     <span class="ms-2 badge bg-light-primary text-primary">{{ $comprobante->tipo_pago }}</span>
                                                 @endif
+
+                                                {{-- Badge con Tooltip HTML para mostrar Banco y Usuario --}}
+                                                <span class="ms-2 badge bg-light text-dark border cursor-pointer" 
+                                                    data-bs-toggle="tooltip" 
+                                                    data-bs-html="true" 
+                                                    title="<div class='text-start p-1' style='min-width: 160px;'>
+                                                                <div class='mb-2'>
+                                                                    <i class='fas fa-university text-primary me-1'></i> <strong class='text-white'>Banco Destino:</strong> <br> 
+                                                                    <span class='text-light'>{{ optional($comprobante->banco)->banco ?? 'No especificado' }}</span>
+                                                                </div>
+                                                                <div>
+                                                                    <i class='fas fa-user-edit text-success me-1'></i> <strong class='text-white'>Subido por:</strong> <br> 
+                                                                    <span class='text-light'>{{ optional($comprobante->user)->name ?? (optional($comprobante->user)->nombres ?? 'Desconocido') }}</span>
+                                                                </div>
+                                                            </div>">
+                                                    <i class="fas fa-info-circle text-info me-1"></i> Más detalles
+                                                </span>
                                             </span>
                                         </td>
                                         
@@ -298,6 +339,13 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            
+            // Inicializar Tooltips de Bootstrap para permitir HTML en el hover
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+
             let selectedExtractoId = null;
 
             // Seleccionar fila del banco

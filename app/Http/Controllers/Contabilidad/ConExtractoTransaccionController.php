@@ -414,8 +414,8 @@ class ConExtractoTransaccionController extends Controller
                         ->where('estado_conciliacion', 'Pendiente');
 
         // LADO DERECHO: CARTERA (Siempre no conciliados en la mesa de conciliación)
-        $queryCartera = \App\Models\Cartera\CarComprobantePago::with(['tercero', 'obligacion', 'banco'])
-                        ->where('estado', '!=', 'conciliado');
+        $queryCartera = \App\Models\Cartera\CarComprobantePago::with(['tercero', 'obligacion', 'banco', 'user'])
+                ->where('estado', '!=', 'conciliado');
 
         // ==========================================
         // LÓGICA DE PERIODO (Local vs Global)
