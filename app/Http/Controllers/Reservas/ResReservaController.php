@@ -88,7 +88,6 @@ class ResReservaController extends Controller implements HasMiddleware
         date_default_timezone_set('America/Bogota');
         $fecha_actual = Carbon::now()->toDateString();
 
-
         if ($fechaInicio < $fecha_actual) {
             return redirect()->back()->with('error', 'No se puede procesar la reserva, ya que la fecha de inicio seleccionada es anterior a la fecha actual.');
         }
@@ -101,8 +100,7 @@ class ResReservaController extends Controller implements HasMiddleware
 
         if ($request->has('otroAsociado')) {
             $usuarioReservando = User::find($request->input('asociado_id'));
-        }
-        else{
+        } else {
             $usuarioReservando = auth()->user();
         }
         //consultar si el usuario ya tiene una reserva en el ultimo año
@@ -232,6 +230,19 @@ class ResReservaController extends Controller implements HasMiddleware
             ->with(['tercero', 'user'])
             ->orderByRaw('CASE WHEN fecha_inicio >= CURDATE() THEN 0 ELSE 1 END')
             ->orderBy('fecha_inicio', 'asc')
+            ->where(function ($query) {
+                $tienePermiso = false;
+                for ($i = 1; $i <= 10; $i++) {
+                    if (auth()->user()->hasPermission("reservas.inmuebles.$i")
+                    ) {
+                        $query->orWhere('res_inmueble_id', $i);
+                        $tienePermiso = true;
+                    }
+                }
+                if (!$tienePermiso) {
+                    $query->whereRaw('1 = 0');
+                }
+            })
             ->get();
         return view('reserva.funcionario.indexConfirmacion', compact('reservas'));
     }
