@@ -102,7 +102,8 @@
                 <table class="table-gsheets" id="main-table">
                     <thead>
                         <tr>
-                            <th class="col-index"></th>
+                            <th class="col-index">#</th>
+                            <th class="text-center" style="width: 40px;" title="Detalles Técnicos"><i class="fas fa-info-circle text-primary"></i></th>
                             <th>CÓDIGO TERCERO</th>
                             <th>NOMBRE TERCERO</th>
                             <th>OBLIGACIÓN</th>
@@ -113,11 +114,8 @@
                             <th>AGENTE</th>
                             <th>MONTO PAGADO</th>
                             <th>FECHA PAGO</th>
-                            <th>ID INTERACCIÓN</th>
-                            <th>ID TRANSACCIÓN BANCARIA</th>
                             <th>BANCO DESTINO</th>
                             <th>OBSERVACIÓN</th>
-                            <th>HASH TRANSACCIÓN</th>
                             <th>ESTADO</th>
                             <th>SOPORTE</th>
                             <th style="text-align: center; width: 80px;">...</th>
@@ -127,6 +125,27 @@
                         @forelse($comprobantes as $index => $comprobante)
                             <tr>
                                 <td class="col-index">{{ $comprobantes->firstItem() + $index }}</td>
+
+                                {{-- COLUMNA DE HOVER (TOOLTIP) CON DATOS TÉCNICOS OCULTOS --}}
+                                <td class="text-center">
+                                    @php
+                                        // Manejo del Array de la Super Mejora
+                                        $txs = $comprobante->id_transaccion_bancaria;
+                                        $txStr = is_array($txs) && count($txs) > 0 ? implode(', ', $txs) : ($txs ? $txs : 'Ninguna');
+                                    @endphp
+                                    <i class="fas fa-info-circle text-info" 
+                                       style="cursor: help;"
+                                       data-bs-toggle="tooltip" 
+                                       data-bs-html="true" 
+                                       title="<div class='text-start p-1' style='font-size: 11px; min-width: 200px;'>
+                                                <div class='mb-2 text-warning fw-bolder border-bottom border-secondary pb-1'><i class='fas fa-code me-1'></i> DATOS TÉCNICOS</div>
+                                                <div class='mb-1'><strong class='text-white'>ID Interacción:</strong> <span class='text-light'>{{ $comprobante->id_interaction ?? 'N/A' }}</span></div>
+                                                <div class='mb-1'><strong class='text-white'>IDs Trans. Banco:</strong> <span class='text-light'>{{ $txStr }}</span></div>
+                                                <div class='mb-1'><strong class='text-white'>Hash Trans.:</strong> <span class='text-light' style='word-break: break-all;'>{{ $comprobante->hash_transaccion }}</span></div>
+                                                <div class='mb-1'><strong class='text-white'>Token Temp:</strong> <span class='text-light'>{{ $comprobante->temp_token ?? 'N/A' }}</span></div>
+                                              </div>">
+                                    </i>
+                                </td>
 
                                 <td class="fw-bold text-center bg-light-soft">{{ $comprobante->cod_ter_MaeTerceros }}</td>
 
@@ -159,7 +178,7 @@
                                                 {{ substr(optional($comprobante->user)->name ?? 'A', 0, 1) }}
                                             </div>
                                         </div>
-                                        {{ optional($comprobante->user)->nombre_corto ?? 'SISTEMA' }}
+                                        {{ optional($comprobante->user)->nombre_corto ?? (optional($comprobante->user)->name ?? 'SISTEMA') }}
                                     </div>
                                 </td>
 
@@ -175,11 +194,6 @@
                                     {{ $f }}
                                 </td>
 
-                                <td class="text-center text-muted italic">#{{ $comprobante->id_interaction ?? '---' }}</td>
-
-                                <td class="text-center fw-bold text-primary">
-                                    {{ $comprobante->id_transaccion_bancaria ?? '---' }}</td>
-
                                 <td class="text-gray-700"
                                     style="max-width: 150px; text-overflow: ellipsis; overflow: hidden;">
                                     @if($comprobante->id_banco)
@@ -194,9 +208,6 @@
                                     title="{{ $comprobante->observacion }}">
                                     {{ $comprobante->observacion ?? '---' }}
                                 </td>
-
-                                <td class="font-monospace fs-10 text-muted" style="max-width: 150px;">
-                                    {{ $comprobante->hash_transaccion }}</td>
 
                                 <td class="text-center p-0">
                                     @if($comprobante->estado == 'conciliado')
@@ -235,7 +246,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="19" class="text-center py-10 text-muted fs-8 italic">
+                                <td colspan="17" class="text-center py-10 text-muted fs-8 italic">
                                     <i class="fas fa-search text-gray-400 mb-3 fs-1 d-block opacity-50"></i>
                                     No hay datos para el periodo y filtros seleccionados.
                                 </td>
@@ -386,6 +397,12 @@
         <script>
             document.addEventListener('DOMContentLoaded', function () {
                 
+                // INICIALIZAR TOOLTIPS (PARA LA INFORMACIÓN AL PONER EL MOUSE)
+                const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                    return new bootstrap.Tooltip(tooltipTriggerEl);
+                });
+
                 // LÓGICA PARA EL SWITCH GLOBAL
                 const switchGlobal = document.getElementById('switchGlobal');
                 const inputPeriodo = document.getElementById('inputPeriodo');
