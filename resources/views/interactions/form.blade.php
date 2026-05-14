@@ -1405,78 +1405,100 @@
             ejecutarEnvio(false);
         });
 
-        function ejecutarEnvio(forceSave = false) {
-            const btnSubmit = document.getElementById('btnSubmitComprobante');
-            const originalText = btnSubmit.innerHTML;
-            btnSubmit.disabled = true;
-            btnSubmit.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> PROCESANDO...`;
+function ejecutarEnvio(forceSave = false) {
+    const btnSubmit = document.getElementById('btnSubmitComprobante');
+    const originalText = btnSubmit.innerHTML;
+    
+    btnSubmit.disabled = true;
+    btnSubmit.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> PROCESANDO...`;
 
-            const formData = new FormData(form);
-            if (forceSave) formData.append('force_save', '1');
+    const formData = new FormData(form);
 
-            // Limpieza de nulos antes de enviar
-            ['numero_cuota', 'pr', 'cco', 'observacion'].forEach(f => { if (!formData.get(f)) formData.delete(f); });
+    // --- 🚀 ARREGLO PARA COLUMNA JSON Y EVITAR EL NULL ---
+    // Obtenemos el valor del token que tienes en el HTML
+    const tokenVal = formData.get('temp_token');
+    
+    if (tokenVal) {
+        const tokenJson = JSON.stringify(tokenVal);
+        
+        // 1. Lo enviamos como 'id_transaccion_bancaria' que es lo que pide la BD
+        formData.append('id_transaccion_bancaria', tokenJson);
+        
+        // 2. Lo mantenemos en 'temp_token' por si el controlador lo usa
+        formData.set('temp_token', tokenJson);
+    }
+    // ----------------------------------------------------
 
-            fetch(form.action, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
-                    'Accept': 'application/json'
-                }
-            })
-                .then(async res => {
-                    if (!res.ok) {
-                        if (res.status === 419) throw new Error('La sesión ha caducado por inactividad. Por favor, recarga la página.');
-                        const errData = await res.json().catch(() => ({}));
-                        throw new Error(errData.message || 'Error interno del servidor');
-                    }
-                    return res.json();
-                })
-                .then(data => {
-                    if (data.success) {
-                        myModal.hide();
-                        Swal.fire({
-                            title: '¡Pago Vinculado!',
-                            text: "¿Deseas adjuntar otro comprobante?",
-                            icon: 'success',
-                            showCancelButton: true,
-                            confirmButtonText: 'Sí, otro',
-                            cancelButtonText: 'Terminar',
-                            confirmButtonColor: '#198754'
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                const clieID = modalCodTercero.value;
-                                form.reset();
-                                resetFile();
-                                modalCodTercero.value = clieID;
+    if (forceSave) formData.append('force_save', '1');
 
-                                const ahora = new Date();
-                                ahora.setMinutes(ahora.getMinutes() - ahora.getTimezoneOffset());
-                                fechaPagoInput.value = ahora.toISOString().slice(0, 16);
-                                actualizarHash();
-                                myModal.show();
-                            }
-                        });
-                    } else if (data.is_duplicate) {
-                        Swal.fire({
-                            title: '¿Duplicado?',
-                            text: data.message,
-                            icon: 'warning',
-                            showCancelButton: true,
-                            confirmButtonText: 'Sí, forzar',
-                            confirmButtonColor: '#f1416c'
-                        }).then((r) => { if (r.isConfirmed) ejecutarEnvio(true); });
-                    } else {
-                        Swal.fire('Error', data.message, 'error');
-                    }
-                })
-                .catch(error => {
-                    Swal.fire('Error', error.message !== 'Failed to fetch' ? error.message : 'Error de red o servidor no responde', 'error');
-                })
-                .finally(() => { btnSubmit.disabled = false; btnSubmit.innerHTML = originalText; });
+    // Limpieza de nulos antes de enviar
+    ['numero_cuota', 'pr', 'cco', 'observacion'].forEach(f => { 
+        if (!formData.get(f)) formData.delete(f); 
+    });
+
+    fetch(form.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+            'Accept': 'application/json'
         }
+    })
+    .then(async res => {
+        if (!res.ok) {
+            if (res.status === 419) throw new Error('La sesión ha caducado por inactividad. Por favor, recarga la página.');
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.message || 'Error interno del servidor');
+        }
+        return res.json();
+    })
+    .then(data => {
+        if (data.success) {
+            myModal.hide();
+            Swal.fire({
+                title: '¡Pago Vinculado!',
+                text: "¿Deseas adjuntar otro comprobante?",
+                icon: 'success',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, otro',
+                cancelButtonText: 'Terminar',
+                confirmButtonColor: '#198754'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const clieID = modalCodTercero.value;
+                    form.reset();
+                    resetFile();
+                    modalCodTercero.value = clieID;
+
+                    const ahora = new Date();
+                    ahora.setMinutes(ahora.getMinutes() - ahora.getTimezoneOffset());
+                    fechaPagoInput.value = ahora.toISOString().slice(0, 16);
+                    actualizarHash();
+                    myModal.show();
+                }
+            });
+        } else if (data.is_duplicate) {
+            Swal.fire({
+                title: '¿Duplicado?',
+                text: data.message,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, forzar',
+                confirmButtonColor: '#f1416c'
+            }).then((r) => { if (r.isConfirmed) ejecutarEnvio(true); });
+        } else {
+            Swal.fire('Error', data.message, 'error');
+        }
+    })
+    .catch(error => {
+        Swal.fire('Error', error.message !== 'Failed to fetch' ? error.message : 'Error de red o servidor no responde', 'error');
+    })
+    .finally(() => { 
+        btnSubmit.disabled = false; 
+        btnSubmit.innerHTML = originalText; 
+    });
+}
 
         // --- 5. ARCHIVOS Y PORTAPAPELES ---
         function procesarArchivo(file) {

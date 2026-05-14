@@ -45,6 +45,7 @@ class CarComprobantePago extends Model
         'pr'             => 'integer',
         'cco'            => 'integer',
         'numero_cuota'   => 'integer',
+        'id_transaccion_bancaria' => 'array',
     ];
 
     /**
@@ -75,9 +76,13 @@ class CarComprobantePago extends Model
         return $url;
     }
 
-    public function extractoBancario(): BelongsTo
+    public function extractosBancarios()
     {
-        return $this->belongsTo(ConExtractoTransaccion::class, 'id_transaccion_bancaria', 'id_transaccion');
+        // Obtiene el array de IDs o un array vacío si es null
+        $ids = $this->id_transaccion_bancaria ?? [];
+        
+        // Retorna todos los extractos que coincidan con esos IDs
+        return ConExtractoTransaccion::whereIn('id_transaccion', $ids)->get();
     }
 
     public function getNombreArchivoSimpleAttribute()
@@ -112,5 +117,12 @@ class CarComprobantePago extends Model
     public function banco(): BelongsTo
     {
         return $this->belongsTo(ConCuentaBancaria::class, 'id_banco', 'id');
+    }
+    public function setIdTransaccionBancariaAttribute($value)
+    {
+        // Si el valor es nulo o un string "null", lo guardamos como un array vacío
+        $this->attributes['id_transaccion_bancaria'] = is_null($value) || $value === 'null' 
+            ? json_encode([]) 
+            : (is_string($value) ? $value : json_encode($value));
     }
 }

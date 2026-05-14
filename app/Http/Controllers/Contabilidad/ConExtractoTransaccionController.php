@@ -32,30 +32,58 @@ class ConExtractoTransaccionController extends Controller
         return response()->json(['success' => true, 'estado' => $request->estado]);
     }
 
+  /**
+     * Muestra el listado de extractos bancarios.
+     * Incluye lógica de rastreo mensual y global unificada.
+     */
     public function index(Request $request)
     {
-        // 1. Filtro Obligatorio: Periodo (Año y Mes). Por defecto el mes actual.
-        $periodo = $request->input('periodo', date('Y-m'));
-        $parts = explode('-', $periodo);
-        $year = $parts[0] ?? date('Y');
-        $month = $parts[1] ?? date('m');
+        // 1. Recibir todas las variables del formulario unificado
+        $periodo   = $request->input('periodo', date('Y-m'));
+        $banco_id  = $request->input('banco_id');
+        $search    = $request->input('search');
+        $estado    = $request->input('estado');
+        $is_global = $request->has('is_global'); // Switch: ¿Buscar en toda la historia (ignorar mes)?
 
-        // 2. Filtros Opcionales
-        $banco_id = $request->input('banco_id');
-        $search = $request->input('search');
+        // Inicializar la consulta base con su relación (Eager Loading para optimizar memoria)
+        $query = ConExtractoTransaccion::with('cuentaBancaria');
 
-        // 3. Consulta Base (Obligatorio filtrar por Año y Mes para no saturar la BD)
-        $query = ConExtractoTransaccion::with('cuentaBancaria')
-                    ->whereYear('fecha_movimiento', $year)
-                    ->whereMonth('fecha_movimiento', $month);
+        // ==========================================
+        // 2. LÓGICA DE PERIODO (Local vs Global)
+        // ==========================================
+        // Si el switch de "Rastreo Global" NO está activo, limitamos la carga al mes seleccionado
+        if (!$is_global) {
+            $parts = explode('-', $periodo);
+            $year  = $parts[0] ?? date('Y');
+            $month = $parts[1] ?? date('m');
 
-        // Aplicar Filtro de Banco si existe
-        if ($banco_id) {
+            $query->whereYear('fecha_movimiento', $year)
+                  ->whereMonth('fecha_movimiento', $month);
+        }
+
+        // ==========================================
+        // 3. APLICACIÓN DE FILTROS COMPARTIDOS
+        // (Estos aplican tanto si buscas en el mes como si buscas en toda la BD)
+        // ==========================================
+        
+        // Filtro A: Por Cuenta Bancaria específica
+        if (!empty($banco_id)) {
             $query->where('id_con_cuentas_bancaria', $banco_id);
         }
 
-        // Aplicar Buscador Global (ajustado sin los campos eliminados)
-        if ($search) {
+        // Filtro B: Por Estado de Conciliación
+        if (!empty($estado)) {
+            if ($estado === 'Conciliados') {
+                // Agrupamos las dos variantes de éxito bajo la misma etiqueta
+                $query->whereIn('estado_conciliacion', ['Conciliado_Auto', 'Conciliado_Manual']);
+            } else {
+                // Busca la coincidencia exacta ('Pendiente' o 'Anulado')
+                $query->where('estado_conciliacion', $estado);
+            }
+        }
+
+        // Filtro C: Búsqueda Libre Multicolumna (Cédula, Hash o Valor Exacto)
+        if (!empty($search)) {
             $query->where(function($q) use ($search) {
                 $q->where('hash_transaccion', 'LIKE', "%{$search}%")
                   ->orWhere('referencia_cedula', 'LIKE', "%{$search}%")
@@ -63,13 +91,28 @@ class ConExtractoTransaccionController extends Controller
             });
         }
 
-        // 4. Paginación
-        $extractos = $query->orderBy('fecha_movimiento', 'desc')->paginate(100)->withQueryString();
+        // ==========================================
+        // 4. EJECUCIÓN Y RETORNO DE DATOS
+        // ==========================================
+        
+        // Ejecutar consulta con paginación de alto rendimiento (100 por página)
+        // withQueryString() garantiza que al cambiar de página (2, 3...) no se borren los filtros
+        $extractos = $query->orderBy('fecha_movimiento', 'desc')
+                           ->paginate(100)
+                           ->withQueryString();
 
-        // 5. Datos para llenar los Selects
+        // Obtener solo las cuentas activas para el select del formulario
         $cuentas = ConCuentaBancaria::where('estado', 'Activa')->get();
 
-        return view('contabilidad.extractos.index', compact('extractos', 'cuentas', 'periodo', 'banco_id', 'search'));
+        return view('contabilidad.extractos.index', compact(
+            'extractos', 
+            'cuentas', 
+            'periodo', 
+            'banco_id', 
+            'search', 
+            'estado', 
+            'is_global'
+        ));
     }
 
     public function store(Request $request)
@@ -181,59 +224,6 @@ class ConExtractoTransaccionController extends Controller
         return $response;
     }
 
-    public function conciliacion(Request $request)
-    {
-        $periodo = $request->input('periodo', date('Y-m'));
-        $parts = explode('-', $periodo);
-        $year = $parts[0] ?? date('Y');
-        $month = $parts[1] ?? date('m');
-
-        $banco_id = $request->input('banco_id');
-        $search = $request->input('search');
-
-        // LADO IZQUIERDO: EXTRACTOS BANCO
-        $queryBanco = ConExtractoTransaccion::with('cuentaBancaria')
-                        ->where('estado_conciliacion', 'Pendiente')
-                        ->whereYear('fecha_movimiento', $year)
-                        ->whereMonth('fecha_movimiento', $month);
-
-        if ($banco_id) {
-            $queryBanco->where('id_con_cuentas_bancaria', $banco_id);
-        }
-        if ($search) {
-            $queryBanco->where(function($q) use ($search) {
-                $q->where('hash_transaccion', 'LIKE', "%{$search}%")
-                  ->orWhere('referencia_cedula', 'LIKE', "%{$search}%")
-                  ->orWhere('valor_ingreso', 'LIKE', "%{$search}%");
-            });
-        }
-        $extractosPendientes = $queryBanco->orderBy('fecha_movimiento', 'desc')
-                                          ->paginate(100, ['*'], 'banco_page')
-                                          ->withQueryString();
-
-        // LADO DERECHO: CARTERA
-        $queryCartera = \App\Models\Cartera\CarComprobantePago::where('estado', '!=', 'conciliado')
-                        ->whereYear('fecha_pago', $year)
-                        ->whereMonth('fecha_pago', $month);
-
-        if ($search) {
-            $queryCartera->where(function($q) use ($search) {
-                $q->where('cod_ter_MaeTerceros', 'LIKE', "%{$search}%")
-                  ->orWhere('ruta_archivo', 'LIKE', "%{$search}%")
-                  ->orWhere('monto_pagado', 'LIKE', "%{$search}%");
-            });
-        }
-        $comprobantesCartera = $queryCartera->orderBy('fecha_pago', 'desc')
-                                            ->paginate(100, ['*'], 'cartera_page')
-                                            ->withQueryString();
-
-        $cuentas = ConCuentaBancaria::where('estado', 'Activa')->get();
-
-        return view('contabilidad.extractos.conciliacion', compact(
-            'extractosPendientes', 'comprobantesCartera', 
-            'cuentas', 'periodo', 'banco_id', 'search'
-        ));
-    }
 
     /**
      * PASO 1: Procesa el archivo y envía los hashes existentes a la vista para validación dinámica.
@@ -411,6 +401,78 @@ class ConExtractoTransaccionController extends Controller
         }
     }
     
+
+    public function conciliacion(Request $request)
+    {
+        $periodo   = $request->input('periodo', date('Y-m'));
+        $banco_id  = $request->input('banco_id');
+        $search    = $request->input('search');
+        $is_global = $request->has('is_global'); // Switch: ¿Buscar en toda la historia (ignorar mes)?
+
+        // LADO IZQUIERDO: EXTRACTOS BANCO (Siempre pendientes en la mesa de conciliación)
+        $queryBanco = ConExtractoTransaccion::with('cuentaBancaria')
+                        ->where('estado_conciliacion', 'Pendiente');
+
+        // LADO DERECHO: CARTERA (Siempre no conciliados en la mesa de conciliación)
+        $queryCartera = \App\Models\Cartera\CarComprobantePago::with(['tercero', 'obligacion', 'banco', 'user'])
+                ->where('estado', '!=', 'conciliado');
+
+        // ==========================================
+        // LÓGICA DE PERIODO (Local vs Global)
+        // ==========================================
+        if (!$is_global) {
+            $parts = explode('-', $periodo);
+            $year  = $parts[0] ?? date('Y');
+            $month = $parts[1] ?? date('m');
+
+            $queryBanco->whereYear('fecha_movimiento', $year)
+                       ->whereMonth('fecha_movimiento', $month);
+
+            $queryCartera->whereYear('fecha_pago', $year)
+                         ->whereMonth('fecha_pago', $month);
+        }
+
+        // ==========================================
+        // FILTROS ESPECÍFICOS LADO IZQUIERDO (BANCO)
+        // ==========================================
+        if (!empty($banco_id)) {
+            $queryBanco->where('id_con_cuentas_bancaria', $banco_id);
+        }
+        if (!empty($search)) {
+            $queryBanco->where(function($q) use ($search) {
+                $q->where('hash_transaccion', 'LIKE', "%{$search}%")
+                  ->orWhere('referencia_cedula', 'LIKE', "%{$search}%")
+                  ->orWhere('valor_ingreso', 'LIKE', "%{$search}%");
+            });
+        }
+        
+        $extractosPendientes = $queryBanco->orderBy('fecha_movimiento', 'desc')
+                                          ->paginate(100, ['*'], 'banco_page')
+                                          ->withQueryString();
+
+        // ==========================================
+        // FILTROS ESPECÍFICOS LADO DERECHO (CARTERA)
+        // ==========================================
+        if (!empty($search)) {
+            $queryCartera->where(function($q) use ($search) {
+                $q->where('cod_ter_MaeTerceros', 'LIKE', "%{$search}%")
+                  ->orWhere('ruta_archivo', 'LIKE', "%{$search}%")
+                  ->orWhere('monto_pagado', 'LIKE', "%{$search}%");
+            });
+        }
+
+        $comprobantesCartera = $queryCartera->orderBy('fecha_pago', 'desc')
+                                            ->paginate(100, ['*'], 'cartera_page')
+                                            ->withQueryString();
+
+        $cuentas = ConCuentaBancaria::where('estado', 'Activa')->get();
+
+        return view('contabilidad.extractos.conciliacion', compact(
+            'extractosPendientes', 'comprobantesCartera', 
+            'cuentas', 'periodo', 'banco_id', 'search', 'is_global'
+        ));
+    }
+
     public function conciliacionAutomatica()
     {
         $extractosPendientes = ConExtractoTransaccion::where('estado_conciliacion', 'Pendiente')->get();
@@ -425,7 +487,7 @@ class ConExtractoTransaccionController extends Controller
                 ->first();
 
             if ($comprobante) {
-                $comprobante->id_transaccion_bancaria = $extracto->id_transaccion;
+                $comprobante->id_transaccion_bancaria = [$extracto->id_transaccion];
                 $comprobante->estado = 'conciliado';
                 $comprobante->save();
 
@@ -441,21 +503,31 @@ class ConExtractoTransaccionController extends Controller
 
     public function conciliacionManual(Request $request)
     {
+        // 1. Validar que recibimos un texto (JSON) con los IDs
         $request->validate([
-            'id_transaccion' => 'required|exists:con_extractos_transacciones,id_transaccion',
-            'id_comprobante' => 'required|exists:car_comprobantes_pagos,id',
+            'id_transacciones' => 'required|string', // AHORA ES PLURAL Y STRING JSON
+            'id_comprobante'   => 'required|exists:car_comprobantes_pagos,id',
         ]);
 
-        $extracto = ConExtractoTransaccion::findOrFail($request->id_transaccion);
-        $comprobante = \App\Models\Cartera\CarComprobantePago::findOrFail($request->id_comprobante);
+        // 2. Decodificar el JSON a un array de PHP
+        $idsTransacciones = json_decode($request->id_transacciones, true);
 
-        $comprobante->id_transaccion_bancaria = $extracto->id_transaccion;
+        if (!is_array($idsTransacciones) || empty($idsTransacciones)) {
+            return redirect()->back()->withErrors('Debes seleccionar al menos un movimiento bancario.');
+        }
+
+        // 3. Actualizar el comprobante de cartera
+        $comprobante = \App\Models\Cartera\CarComprobantePago::findOrFail($request->id_comprobante);
+        
+        // Asignamos el array (Laravel lo convierte a JSON en BD por el $casts del modelo)
+        $comprobante->id_transaccion_bancaria = $idsTransacciones;
         $comprobante->estado = 'conciliado';
         $comprobante->save();
 
-        $extracto->estado_conciliacion = 'Conciliado_Manual';
-        $extracto->save();
+        // 4. Actualizar masivamente TODOS los extractos seleccionados a 'Conciliado_Manual'
+        ConExtractoTransaccion::whereIn('id_transaccion', $idsTransacciones)
+            ->update(['estado_conciliacion' => 'Conciliado_Manual']);
 
-        return redirect()->back()->with('success', 'Los registros fueron vinculados manualmente con éxito.');
+        return redirect()->back()->with('success', 'Los ' . count($idsTransacciones) . ' registros fueron vinculados manualmente con éxito.');
     }
 }
