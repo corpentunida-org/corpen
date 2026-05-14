@@ -487,7 +487,7 @@ class ConExtractoTransaccionController extends Controller
                 ->first();
 
             if ($comprobante) {
-                $comprobante->id_transaccion_bancaria = $extracto->id_transaccion;
+                $comprobante->id_transaccion_bancaria = [$extracto->id_transaccion];
                 $comprobante->estado = 'conciliado';
                 $comprobante->save();
 
@@ -503,21 +503,31 @@ class ConExtractoTransaccionController extends Controller
 
     public function conciliacionManual(Request $request)
     {
+        // 1. Validar que recibimos un texto (JSON) con los IDs
         $request->validate([
-            'id_transaccion' => 'required|exists:con_extractos_transacciones,id_transaccion',
-            'id_comprobante' => 'required|exists:car_comprobantes_pagos,id',
+            'id_transacciones' => 'required|string', // AHORA ES PLURAL Y STRING JSON
+            'id_comprobante'   => 'required|exists:car_comprobantes_pagos,id',
         ]);
 
-        $extracto = ConExtractoTransaccion::findOrFail($request->id_transaccion);
-        $comprobante = \App\Models\Cartera\CarComprobantePago::findOrFail($request->id_comprobante);
+        // 2. Decodificar el JSON a un array de PHP
+        $idsTransacciones = json_decode($request->id_transacciones, true);
 
-        $comprobante->id_transaccion_bancaria = $extracto->id_transaccion;
+        if (!is_array($idsTransacciones) || empty($idsTransacciones)) {
+            return redirect()->back()->withErrors('Debes seleccionar al menos un movimiento bancario.');
+        }
+
+        // 3. Actualizar el comprobante de cartera
+        $comprobante = \App\Models\Cartera\CarComprobantePago::findOrFail($request->id_comprobante);
+        
+        // Asignamos el array (Laravel lo convierte a JSON en BD por el $casts del modelo)
+        $comprobante->id_transaccion_bancaria = $idsTransacciones;
         $comprobante->estado = 'conciliado';
         $comprobante->save();
 
-        $extracto->estado_conciliacion = 'Conciliado_Manual';
-        $extracto->save();
+        // 4. Actualizar masivamente TODOS los extractos seleccionados a 'Conciliado_Manual'
+        ConExtractoTransaccion::whereIn('id_transaccion', $idsTransacciones)
+            ->update(['estado_conciliacion' => 'Conciliado_Manual']);
 
-        return redirect()->back()->with('success', 'Los registros fueron vinculados manualmente con éxito.');
+        return redirect()->back()->with('success', 'Los ' . count($idsTransacciones) . ' registros fueron vinculados manualmente con éxito.');
     }
 }

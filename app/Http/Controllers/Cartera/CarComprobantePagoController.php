@@ -146,7 +146,9 @@ class CarComprobantePagoController extends Controller
                 'hash_transaccion'        => $hash_transaccion,
                 'ruta_archivo'            => $rutaArchivo,
                 'id_interaction'          => $validated['id_interaction'] ?? 0,
-                'id_transaccion_bancaria' => 0,
+                'id_transaccion_bancaria' => $request->filled('id_transaccion_bancaria') 
+                                            ? $request->id_transaccion_bancaria 
+                                            : [],
                 'temp_token'              => $validated['temp_token'] ?? null, 
                 'id_user'                 => auth()->id(), 
                 'estado'                  => 'pendiente', 

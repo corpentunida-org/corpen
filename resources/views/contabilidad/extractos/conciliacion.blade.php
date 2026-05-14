@@ -276,15 +276,15 @@
                                                     data-bs-toggle="tooltip" 
                                                     data-bs-html="true" 
                                                     title="<div class='text-start p-1' style='min-width: 160px;'>
-                                                                <div class='mb-2'>
-                                                                    <i class='fas fa-university text-primary me-1'></i> <strong class='text-white'>Banco Destino:</strong> <br> 
-                                                                    <span class='text-light'>{{ optional($comprobante->banco)->banco ?? 'No especificado' }}</span>
-                                                                </div>
-                                                                <div>
-                                                                    <i class='fas fa-user-edit text-success me-1'></i> <strong class='text-white'>Subido por:</strong> <br> 
-                                                                    <span class='text-light'>{{ optional($comprobante->user)->name ?? (optional($comprobante->user)->nombres ?? 'Desconocido') }}</span>
-                                                                </div>
-                                                            </div>">
+                                                        <div class='mb-2'>
+                                                            <i class='fas fa-university text-primary me-1'></i> <strong class='text-white'>Banco Destino:</strong> <br> 
+                                                            <span class='text-light'>{{ optional($comprobante->banco)->banco ?? 'No especificado' }}</span>
+                                                        </div>
+                                                        <div>
+                                                            <i class='fas fa-user-edit text-success me-1'></i> <strong class='text-white'>Subido por:</strong> <br> 
+                                                            <span class='text-light'>{{ optional($comprobante->user)->name ?? (optional($comprobante->user)->nombres ?? 'Desconocido') }}</span>
+                                                        </div>
+                                                    </div>">
                                                     <i class="fas fa-info-circle text-info me-1"></i> Más detalles
                                                 </span>
                                             </span>
@@ -328,10 +328,10 @@
         </div>
     </div>
 
-    {{-- Formulario Oculto para la Conciliación Manual --}}
+    {{-- Formulario Oculto para la Conciliación Manual (Actualizado para múltiples) --}}
     <form id="formConciliacionManual" action="{{ route('contabilidad.extractos.conciliacion-manual') }}" method="POST" style="display: none;">
         @csrf
-        <input type="hidden" name="id_transaccion" id="manual_id_transaccion">
+        <input type="hidden" name="id_transacciones" id="manual_id_transacciones">
         <input type="hidden" name="id_comprobante" id="manual_id_comprobante">
     </form>
 
@@ -346,35 +346,50 @@
                 return new bootstrap.Tooltip(tooltipTriggerEl);
             });
 
-            let selectedExtractoId = null;
+            // Arreglo para almacenar múltiples IDs seleccionados
+            let selectedExtractosIds = [];
 
-            // Seleccionar fila del banco
+            // Seleccionar/Deseleccionar fila del banco
             $('.item-extracto').on('click', function() {
-                $('.item-extracto').removeClass('selected-row');
-                $(this).addClass('selected-row');
-                selectedExtractoId = $(this).data('id');
+                const id = $(this).data('id');
+                const index = selectedExtractosIds.indexOf(id);
+
+                if (index > -1) {
+                    // Si ya estaba seleccionado, lo quitamos del arreglo y le quitamos la clase
+                    selectedExtractosIds.splice(index, 1);
+                    $(this).removeClass('selected-row');
+                } else {
+                    // Si no estaba, lo agregamos al arreglo y le ponemos la clase
+                    selectedExtractosIds.push(id);
+                    $(this).addClass('selected-row');
+                }
                 
-                // Efecto visual para indicar que estamos listos para cruzar
-                $('.btn-vincular').removeClass('btn-outline-info').addClass('btn-info text-white shadow');
+                // Efecto visual para indicar que estamos listos para cruzar dependiendo de la cantidad
+                if (selectedExtractosIds.length > 0) {
+                    $('.btn-vincular').removeClass('btn-outline-info').addClass('btn-info text-white shadow');
+                } else {
+                    $('.btn-vincular').removeClass('btn-info text-white shadow').addClass('btn-outline-info');
+                }
             });
 
             // Botón Cruzar
             $('.btn-vincular').on('click', function() {
-                if(!selectedExtractoId) {
+                if(selectedExtractosIds.length === 0) {
                     Swal.fire({
                         icon: 'warning',
-                        title: 'Selecciona un movimiento',
-                        text: 'Primero debes hacer clic en una fila del "Extracto Bancario" (Lado Izquierdo) para vincularlo con este pago.',
+                        title: 'Selecciona al menos un movimiento',
+                        text: 'Primero debes hacer clic en una o más filas del "Extracto Bancario" (Lado Izquierdo) para vincularlas con este pago.',
                         confirmButtonColor: '#3085d6'
                     });
                     return;
                 }
 
                 let idComprobante = $(this).data('comprobante-id');
+                let cantidadSeleccionada = selectedExtractosIds.length;
 
                 Swal.fire({
-                    title: '¿Confirmar Cruce?',
-                    html: "Estás a punto de conciliar el comprobante de cartera con el movimiento bancario seleccionado. <br><br><b>Esta acción los sacará de esta lista.</b>",
+                    title: '¿Confirmar Cruce Múltiple?',
+                    html: `Estás a punto de conciliar el comprobante de cartera con <b>${cantidadSeleccionada}</b> movimiento(s) bancario(s) seleccionado(s). <br><br><b>Esta acción los sacará de esta lista.</b>`,
                     icon: 'question',
                     showCancelButton: true,
                     confirmButtonColor: '#188038',
@@ -383,7 +398,8 @@
                     cancelButtonText: 'Cancelar'
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        $('#manual_id_transaccion').val(selectedExtractoId);
+                        // Enviamos el array de IDs en formato JSON al input oculto
+                        $('#manual_id_transacciones').val(JSON.stringify(selectedExtractosIds));
                         $('#manual_id_comprobante').val(idComprobante);
                         
                         // Mostrar loader antes de enviar
