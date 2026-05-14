@@ -9,11 +9,15 @@
                 </div>
             </div>
             <div>
-                <h3 class="fw-bold m-0 text-dark fs-4">Soportes_Pago_Cartera_{{ str_replace('-', '', $periodo) }}.gsheet
+                <h3 class="fw-bold m-0 text-dark fs-4" id="docTitle">
+                    Soportes_Pago_Cartera_{{ isset($is_global) && $is_global ? 'HISTORICO' : str_replace('-', '', $periodo) }}.gsheet
                 </h3>
                 <div class="d-flex align-items-center gap-3 fs-9 mt-1">
                     <span class="text-muted">Archivo guardado en Drive</span>
                     <span class="badge badge-light-success text-success fw-bold px-2 py-1">SOLO LECTURA</span>
+                    @if(isset($is_global) && $is_global)
+                        <span class="badge badge-light-danger text-danger fw-bold px-2 py-1"><i class="fas fa-globe me-1 text-danger"></i> MODO GLOBAL</span>
+                    @endif
                 </div>
             </div>
             <div class="ms-auto d-flex gap-2">
@@ -37,8 +41,8 @@
             {{-- Filtro Obligatorio: Mes y Año --}}
             <div>
                 <label class="form-label fs-9 fw-bolder text-muted text-uppercase mb-1">Periodo (Año/Mes) *</label>
-                <input type="month" name="periodo" value="{{ $periodo }}"
-                    class="form-control form-control-sm border-gray-300 fw-bold text-primary" required>
+                <input type="month" name="periodo" id="inputPeriodo" value="{{ $periodo }}"
+                    class="form-control form-control-sm border-gray-300 fw-bold text-primary" required style="transition: 0.3s;">
             </div>
 
             {{-- Filtro Opcional: Búsqueda Global --}}
@@ -49,6 +53,16 @@
                     <input type="text" name="buscar" value="{{ request('buscar') }}"
                         class="form-control border-gray-300"
                         placeholder="Buscar cédula, monto, cuota, PR, CCO, tipo pago, observación...">
+                </div>
+            </div>
+
+            {{-- Switch para Rastreo Global --}}
+            <div class="pb-1">
+                <div class="form-check form-switch d-flex align-items-center gap-2 m-0 p-0" title="Buscar en toda la base de datos sin importar la fecha">
+                    <input class="form-check-input m-0 cursor-pointer" type="checkbox" role="switch" id="switchGlobal" name="is_global" value="1" {{ isset($is_global) && $is_global ? 'checked' : '' }} style="height: 22px; width: 44px;">
+                    <label class="form-check-label fs-9 fw-bold text-dark cursor-pointer ms-2 text-uppercase" for="switchGlobal">
+                        Global
+                    </label>
                 </div>
             </div>
 
@@ -68,17 +82,17 @@
         <div class="bg-white shadow-sm border border-gray-300 mx-3 d-flex flex-column"
             style="border-radius: 0px; overflow: hidden; min-height: 500px;">
 
-            {{-- Pestañas de la Hoja (Preservando los filtros actuales) --}}
+            {{-- Pestañas de la Hoja (Preservando los filtros actuales incluyendo is_global) --}}
             <div class="d-flex bg-gray-100 border-bottom border-gray-300">
-                <a href="{{ route('cartera.comprobantes.index', ['periodo' => $periodo, 'buscar' => request('buscar')]) }}"
+                <a href="{{ route('cartera.comprobantes.index', ['periodo' => $periodo, 'buscar' => request('buscar'), 'is_global' => request('is_global')]) }}"
                     class="sheet-tab {{ !request('estado') ? 'active' : '' }}">
                     <i class="fas fa-table me-2 fs-9"></i> Todos los registros
                 </a>
-                <a href="{{ route('cartera.comprobantes.index', ['estado' => 'pendiente', 'periodo' => $periodo, 'buscar' => request('buscar')]) }}"
+                <a href="{{ route('cartera.comprobantes.index', ['estado' => 'pendiente', 'periodo' => $periodo, 'buscar' => request('buscar'), 'is_global' => request('is_global')]) }}"
                     class="sheet-tab {{ request('estado') == 'pendiente' ? 'active' : '' }}">
                     Pendientes
                 </a>
-                <a href="{{ route('cartera.comprobantes.index', ['estado' => 'conciliado', 'periodo' => $periodo, 'buscar' => request('buscar')]) }}"
+                <a href="{{ route('cartera.comprobantes.index', ['estado' => 'conciliado', 'periodo' => $periodo, 'buscar' => request('buscar'), 'is_global' => request('is_global')]) }}"
                     class="sheet-tab {{ request('estado') == 'conciliado' ? 'active' : '' }}">
                     Conciliados
                 </a>
@@ -88,7 +102,8 @@
                 <table class="table-gsheets" id="main-table">
                     <thead>
                         <tr>
-                            <th class="col-index"></th>
+                            <th class="col-index">#</th>
+                            <th class="text-center" style="width: 40px;" title="Detalles Técnicos"><i class="fas fa-info-circle text-primary"></i></th>
                             <th>CÓDIGO TERCERO</th>
                             <th>NOMBRE TERCERO</th>
                             <th>OBLIGACIÓN</th>
@@ -99,11 +114,8 @@
                             <th>AGENTE</th>
                             <th>MONTO PAGADO</th>
                             <th>FECHA PAGO</th>
-                            <th>ID INTERACCIÓN</th>
-                            <th>ID TRANSACCIÓN BANCARIA</th>
                             <th>BANCO DESTINO</th>
                             <th>OBSERVACIÓN</th>
-                            <th>HASH TRANSACCIÓN</th>
                             <th>ESTADO</th>
                             <th>SOPORTE</th>
                             <th style="text-align: center; width: 80px;">...</th>
@@ -113,6 +125,27 @@
                         @forelse($comprobantes as $index => $comprobante)
                             <tr>
                                 <td class="col-index">{{ $comprobantes->firstItem() + $index }}</td>
+
+                                {{-- COLUMNA DE HOVER (TOOLTIP) CON DATOS TÉCNICOS OCULTOS --}}
+                                <td class="text-center">
+                                    @php
+                                        // Manejo del Array de la Super Mejora
+                                        $txs = $comprobante->id_transaccion_bancaria;
+                                        $txStr = is_array($txs) && count($txs) > 0 ? implode(', ', $txs) : ($txs ? $txs : 'Ninguna');
+                                    @endphp
+                                    <i class="fas fa-info-circle text-info" 
+                                       style="cursor: help;"
+                                       data-bs-toggle="tooltip" 
+                                       data-bs-html="true" 
+                                       title="<div class='text-start p-1' style='font-size: 11px; min-width: 200px;'>
+                                                <div class='mb-2 text-warning fw-bolder border-bottom border-secondary pb-1'><i class='fas fa-code me-1'></i> DATOS TÉCNICOS</div>
+                                                <div class='mb-1'><strong class='text-white'>ID Interacción:</strong> <span class='text-light'>{{ $comprobante->id_interaction ?? 'N/A' }}</span></div>
+                                                <div class='mb-1'><strong class='text-white'>IDs Trans. Banco:</strong> <span class='text-light'>{{ $txStr }}</span></div>
+                                                <div class='mb-1'><strong class='text-white'>Hash Trans.:</strong> <span class='text-light' style='word-break: break-all;'>{{ $comprobante->hash_transaccion }}</span></div>
+                                                <div class='mb-1'><strong class='text-white'>Token Temp:</strong> <span class='text-light'>{{ $comprobante->temp_token ?? 'N/A' }}</span></div>
+                                              </div>">
+                                    </i>
+                                </td>
 
                                 <td class="fw-bold text-center bg-light-soft">{{ $comprobante->cod_ter_MaeTerceros }}</td>
 
@@ -145,7 +178,7 @@
                                                 {{ substr(optional($comprobante->user)->name ?? 'A', 0, 1) }}
                                             </div>
                                         </div>
-                                        {{ optional($comprobante->user)->nombre_corto ?? 'SISTEMA' }}
+                                        {{ optional($comprobante->user)->nombre_corto ?? (optional($comprobante->user)->name ?? 'SISTEMA') }}
                                     </div>
                                 </td>
 
@@ -161,11 +194,6 @@
                                     {{ $f }}
                                 </td>
 
-                                <td class="text-center text-muted italic">#{{ $comprobante->id_interaction ?? '---' }}</td>
-
-                                <td class="text-center fw-bold text-primary">
-                                    {{ $comprobante->id_transaccion_bancaria ?? '---' }}</td>
-
                                 <td class="text-gray-700"
                                     style="max-width: 150px; text-overflow: ellipsis; overflow: hidden;">
                                     @if($comprobante->id_banco)
@@ -180,9 +208,6 @@
                                     title="{{ $comprobante->observacion }}">
                                     {{ $comprobante->observacion ?? '---' }}
                                 </td>
-
-                                <td class="font-monospace fs-10 text-muted" style="max-width: 150px;">
-                                    {{ $comprobante->hash_transaccion }}</td>
 
                                 <td class="text-center p-0">
                                     @if($comprobante->estado == 'conciliado')
@@ -221,7 +246,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="19" class="text-center py-10 text-muted fs-8 italic">
+                                <td colspan="17" class="text-center py-10 text-muted fs-8 italic">
                                     <i class="fas fa-search text-gray-400 mb-3 fs-1 d-block opacity-50"></i>
                                     No hay datos para el periodo y filtros seleccionados.
                                 </td>
@@ -248,11 +273,6 @@
     @push('scripts')
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <style>
-            /* body { 
-                background-color: #f8f9fa; 
-                font-family: 'Roboto', 'Arial', sans-serif !important; 
-            } */
-
             /* TABLA ESTILO GOOGLE SHEETS */
             .table-gsheets {
                 width: auto;
@@ -376,6 +396,38 @@
 
         <script>
             document.addEventListener('DOMContentLoaded', function () {
+                
+                // INICIALIZAR TOOLTIPS (PARA LA INFORMACIÓN AL PONER EL MOUSE)
+                const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                    return new bootstrap.Tooltip(tooltipTriggerEl);
+                });
+
+                // LÓGICA PARA EL SWITCH GLOBAL
+                const switchGlobal = document.getElementById('switchGlobal');
+                const inputPeriodo = document.getElementById('inputPeriodo');
+                const docTitle = document.getElementById('docTitle');
+
+                if(switchGlobal && inputPeriodo) {
+                    function togglePeriodo() {
+                        if(switchGlobal.checked) {
+                            inputPeriodo.style.opacity = '0.4';
+                            inputPeriodo.style.pointerEvents = 'none';
+                            // El título ya se cambia en el HTML, pero aseguramos la UX:
+                            if(docTitle && !docTitle.innerHTML.includes('HISTORICO')) {
+                                docTitle.innerHTML = docTitle.innerHTML.replace(/\d{6}/, 'HISTORICO');
+                            }
+                        } else {
+                            inputPeriodo.style.opacity = '1';
+                            inputPeriodo.style.pointerEvents = 'auto';
+                        }
+                    }
+
+                    switchGlobal.addEventListener('change', togglePeriodo);
+                    togglePeriodo(); // Ejecutar al inicio
+                }
+
+                // LÓGICA PARA REDIMENSIONAR COLUMNAS
                 const table = document.getElementById('main-table');
                 const cols = table.querySelectorAll('th');
 
@@ -413,6 +465,7 @@
                 });
             });
 
+            // LÓGICA PARA ELIMINAR FILAS
             $(document).on('click', '.btn-delete', function () {
                 let form = $(this).closest('form');
                 Swal.fire({
