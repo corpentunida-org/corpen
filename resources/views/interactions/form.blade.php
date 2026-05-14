@@ -872,7 +872,8 @@
                 <form id="formModalComprobante" action="{{ route('cartera.comprobantes.store') }}" method="POST"
                     enctype="multipart/form-data">
                     @csrf
-                    <input type="hidden" name="id_interaction" value="{{ $interaction->id ?? '' }}">
+                    <!-- Se corrige el name a id_interaccion y el fallback a 0 -->
+                    <input type="hidden" name="id_interaccion" value="{{ $interaction->id ?? 0 }}">
                     <input type="hidden" name="temp_token" value="{{ $miTokenSesion ?? '' }}">
 
                     <div class="row g-5">
@@ -1414,20 +1415,10 @@ function ejecutarEnvio(forceSave = false) {
 
     const formData = new FormData(form);
 
-    // --- 🚀 ARREGLO PARA COLUMNA JSON Y EVITAR EL NULL ---
-    // Obtenemos el valor del token que tienes en el HTML
-    const tokenVal = formData.get('temp_token');
-    
-    if (tokenVal) {
-        const tokenJson = JSON.stringify(tokenVal);
-        
-        // 1. Lo enviamos como 'id_transaccion_bancaria' que es lo que pide la BD
-        formData.append('id_transaccion_bancaria', tokenJson);
-        
-        // 2. Lo mantenemos en 'temp_token' por si el controlador lo usa
-        formData.set('temp_token', tokenJson);
+    // 🚀 CORRECCIÓN: Garantizar que id_interaccion viaje siempre como 0 si está vacío o es nulo
+    if (!formData.get('id_interaccion') || formData.get('id_interaccion') === '') {
+        formData.set('id_interaccion', '0');
     }
-    // ----------------------------------------------------
 
     if (forceSave) formData.append('force_save', '1');
 
@@ -1435,6 +1426,8 @@ function ejecutarEnvio(forceSave = false) {
     ['numero_cuota', 'pr', 'cco', 'observacion'].forEach(f => { 
         if (!formData.get(f)) formData.delete(f); 
     });
+
+    // ❌ SE ELIMINÓ EL BLOQUE QUE DAÑABA 'id_transaccion_bancaria' CON EL JSON DEL UUID
 
     fetch(form.action, {
         method: 'POST',
@@ -1499,7 +1492,6 @@ function ejecutarEnvio(forceSave = false) {
         btnSubmit.innerHTML = originalText; 
     });
 }
-
         // --- 5. ARCHIVOS Y PORTAPAPELES ---
         function procesarArchivo(file) {
             if (!file) return;
