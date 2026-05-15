@@ -335,6 +335,9 @@ Route::middleware(['auth', 'check.mantenimiento'])
         Route::post('confirmar-sincronizacion', [ExcelSyncController::class, 'confirmarSincronizacion'])
             ->name('sincronizar.confirmar');
 
+        /* MODAL */
+        Route::get('extractos-buscar-modal', [ConExtractoTransaccionController::class, 'buscarModalApi'])
+            ->name('extractos.buscar-modal');
 
         // ---------------------------------------------------
         // 4. SISTEMA Y MANTENIMIENTO
