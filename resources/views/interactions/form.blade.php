@@ -130,7 +130,7 @@
     }
 
     #btn-submit-interaccion:disabled {
-        background-color: #64748B !important border-color: #64748B !important;
+        background-color: #64748B !important; border-color: #64748B !important;
         cursor: not-allowed;
         opacity: 0.8;
     }
@@ -842,8 +842,9 @@
 
     </div>
 </form>
-
-
+<!-- ============================================================== -->
+<!-- MODAL DE ADJUNTAR SOPORTES -->
+<!-- ============================================================== -->
 <div class="modal fade" id="modalComprobante" data-bs-backdrop="static" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
@@ -1098,6 +1099,816 @@
         </div>
     </div>
 </div>
+<!-- ============================================================== -->
+<!-- MODAL DE IDENTIFICACIÓN DE BANCOS -->
+<!-- ============================================================== -->
+<div class="modal fade" id="modalComprobante" data-bs-backdrop="static" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
+            <div class="modal-header border-0 pb-0 pt-8 px-8 d-flex flex-column align-items-start text-white bg-success">
+                <div class="d-flex align-items-center justify-content-between w-100">
+                    <div class="d-flex align-items-center">
+                        <div class="symbol symbol-45px me-3">
+                            <div class="symbol-label bg-white bg-opacity-25">
+                                <i class="fas fa-file-invoice-dollar fs-2x text-white"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="fw-bolder m-0 text-white">Registrar Soporte de Pago</h3>
+                            <span class="text-white opacity-75 fs-9">Sesión: {{ substr($miTokenSesion ?? '', 0, 8) }}...</span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="separator separator-dashed w-100 mt-5 opacity-25"></div>
+            </div>
+
+            <div class="modal-body p-8">
+                <form id="formModalComprobante" action="{{ route('cartera.comprobantes.store') }}" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    <input type="hidden" name="id_interaccion" value="{{ $interaction->id ?? 0 }}">
+                    <input type="hidden" name="temp_token" value="{{ $miTokenSesion ?? '' }}">
+
+                    <div class="row g-5">
+                        <div class="col-md-6">
+                            <div class="fv-row mb-4">
+                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Código Tercero *</label>
+                                <div class="input-group input-group-solid border border-gray-300 rounded shadow-sm">
+                                    <span class="input-group-text bg-transparent border-0"><i class="fas fa-id-card text-muted"></i></span>
+                                    <input type="number" id="cod_tercero" name="cod_ter_MaeTerceros" class="form-control border-0 gen-hash fw-bolder" readonly required>
+                                </div>
+                            </div>
+
+                            <div class="fv-row mb-4 position-relative">
+                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Obligación / Línea de Crédito *</label>
+                                <div class="input-group input-group-solid border border-gray-300 rounded shadow-sm">
+                                    <span class="input-group-text bg-transparent border-0"><i class="fas fa-search text-muted"></i></span>
+                                    <input type="text" id="search_obligacion" class="form-control border-0" placeholder="Escribe para buscar..." autocomplete="off" required>
+                                    <input type="hidden" id="id_obligacion" name="id_obligacion">
+                                </div>
+                                <div class="list-group position-absolute w-100 shadow-lg d-none custom-dropdown-list" id="list_obligacion">
+                                    @if (isset($lineasCredito))
+                                        @foreach ($lineasCredito as $id => $nombre)
+                                            <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="{{ $id }}">{{ $nombre }}</button>
+                                        @endforeach
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div class="fv-row mb-0">
+                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Monto Pagado *</label>
+                                <div class="input-group input-group-solid border border-gray-300 rounded shadow-sm">
+                                    <span class="input-group-text bg-transparent border-0 fw-bold">$</span>
+                                    <input type="text" id="monto_pagado_display" class="form-control border-0 fw-bolder text-success gen-hash" placeholder="0" required>
+                                    <input type="hidden" id="monto_pagado" name="monto_pagado">
+                                </div>
+                            </div>
+
+                            <div class="fv-row mt-4 position-relative">
+                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Tipo de Pago *</label>
+                                <div class="input-group input-group-solid border border-gray-300 rounded shadow-sm">
+                                    <span class="input-group-text bg-transparent border-0"><i class="fas fa-search text-muted"></i></span>
+                                    <input type="text" id="search_tipo_pago" class="form-control border-0" placeholder="Busca el tipo de pago..." autocomplete="off" required>
+                                    <input type="hidden" id="tipo_pago" name="tipo_pago">
+                                </div>
+                                @php
+                                    $tiposPago = [
+                                        "Pago normal", "Pago parcial", "Pago total", "Pago anticipado", 
+                                        "Pago de cuota atrasada", "Abono a capital", "Pago de intereses", 
+                                        "Pago mixto", "Pago acuerdo de pago", "Pago refinanciación", 
+                                        "Pago reestructuración", "Pago cobro jurídico", "Pago extraordinario", 
+                                        "Pago con descuento", "Ajuste de pago", "Reverso de pago", "Condonación"
+                                    ];
+                                @endphp
+                                <div class="list-group position-absolute w-100 shadow-lg d-none custom-dropdown-list" id="list_tipo_pago">
+                                    @foreach($tiposPago as $tipo)
+                                        <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="{{ $tipo }}">
+                                            {{ $tipo }}
+                                        </button>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="fv-row mb-4">
+                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Fecha y Hora de Pago *</label>
+                                <input type="datetime-local" id="fecha_pago" name="fecha_pago" class="form-control form-control-solid border border-gray-300 gen-hash" required value="{{ date('Y-m-d\TH:i') }}">
+                            </div>
+
+                            <div class="fv-row mb-4 position-relative">
+                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Banco *</label>
+                                <div class="input-group input-group-solid border border-gray-300 rounded shadow-sm">
+                                    <span class="input-group-text bg-transparent border-0"><i class="fas fa-search text-muted"></i></span>
+                                    <input type="text" id="search_banco" class="form-control border-0" placeholder="Escribe para buscar banco..." autocomplete="off" required>
+                                    <input type="hidden" id="id_banco" name="id_banco">
+                                </div>
+                                <div class="list-group position-absolute w-100 shadow-lg d-none custom-dropdown-list" id="list_banco">
+                                    @if (isset($idBanco))
+                                        @foreach ($idBanco as $idb)
+                                            <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="{{ $idb->id }}">{{ $idb->numero_cuenta }} - {{ $idb->banco }}</button>
+                                        @endforeach
+                                    @endif
+                                </div>
+                            </div>
+
+                            <div class="fv-row">
+                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Documento Soporte *</label>
+                                <div class="drop-zone-custom position-relative" id="drop_zone_area">
+                                    <input type="file" id="archivo_soporte" name="archivo_soporte" class="d-none" accept=".pdf,.jpg,.jpeg,.png" required>
+                                    <label for="archivo_soporte" class="w-100 h-100 cursor-pointer d-flex flex-column align-items-center justify-content-center py-2 text-center">
+                                        <i class="fas fa-cloud-upload-alt fs-4 text-primary mb-1"></i>
+                                        <span class="fs-9 text-gray-800 fw-bold">Clic, Arrastra o Pega (Ctrl+V)</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12 mt-2">
+                            <div class="p-4 bg-light-soft border border-dashed border-gray-300 rounded-3">
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-bold text-gray-600 fs-9 text-uppercase">N° Cuota</label>
+                                        <input type="number" name="numero_cuota" id="numero_cuota" class="form-control form-control-sm border-gray-300 bg-white" placeholder="Ej: 1">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-bold text-gray-600 fs-9 text-uppercase">PR</label>
+                                        <input type="number" name="pr" id="pr" class="form-control form-control-sm border-gray-300 bg-white" placeholder="0">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label fw-bold text-gray-600 fs-9 text-uppercase">CCO</label>
+                                        <input type="number" name="cco" id="cco" class="form-control form-control-sm border-gray-300 bg-white" placeholder="0">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12 mt-4">
+                            <div class="fv-row">
+                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Observación</label>
+                                <textarea name="observacion" id="observacion" class="form-control form-control-solid border border-gray-300 shadow-sm" rows="2" placeholder="Agrega un comentario u observación opcional..." maxlength="255"></textarea>
+                            </div>
+                        </div>
+
+                        <div id="preview_container" class="col-12 d-none">
+                            <div class="bg-light rounded p-4 d-flex align-items-center border border-dashed border-gray-400">
+                                <div class="symbol symbol-50px me-4">
+                                    <img id="image_preview" src="" class="d-none shadow-sm rounded" style="width: 50px; height: 50px; object-fit: cover;">
+                                    <div id="pdf_preview_icon" class="symbol-label bg-white d-none shadow-sm"><i class="fas fa-file-pdf text-danger fs-2"></i></div>
+                                </div>
+                                <div class="flex-grow-1 overflow-hidden">
+                                    <span id="file_name_preview" class="text-gray-800 fw-bolder fs-8 d-block text-truncate">Nombre.pdf</span>
+                                </div>
+                                <button type="button" class="btn btn-icon btn-sm btn-active-light-danger border-0 ms-2" onclick="resetFile()"><i class="fas fa-times"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="bg-light-primary rounded-pill px-4 py-2 border border-primary border-dashed d-flex align-items-center">
+                                <i class="fas fa-fingerprint text-primary me-2"></i>
+                                <span class="fs-9 text-primary fw-bold me-2 uppercase">Integridad (Hash):</span>
+                                <input type="text" id="hash_transaccion" name="hash_transaccion" class="bg-transparent border-0 p-0 text-primary fs-9 font-monospace w-100" readonly placeholder="Calculando...">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-footer bg-light py-4 px-8 border-0">
+                <button type="button" class="btn btn-light fw-bold rounded-pill px-6" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" form="formModalComprobante" class="btn btn-success rounded-pill fw-bolder px-10 shadow-sm" id="btnSubmitComprobante">
+                    <i class="fas fa-save me-2 text-white"></i> Guardar y Vincular Pago
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalIdentificacionBancos" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden; background-color: #f8f9fa;">
+            
+            <div class="modal-header border-bottom border-gray-200 py-3 px-5 bg-white d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <div class="symbol symbol-35px me-3">
+                        <div class="symbol-label bg-light-primary text-primary rounded-circle">
+                            <i class="fas fa-search-dollar fs-5"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="fw-bolder m-0 text-dark fs-5">Buscador Global de Conciliación</h3>
+                        <span class="text-muted fs-9">Cruza movimientos bancarios con pagos de cartera</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="bg-white px-5 py-4 border-bottom border-gray-200 shadow-sm">
+                <div class="d-flex gap-2">
+                    <div class="input-group input-group-solid">
+                        <span class="input-group-text"><i class="fas fa-search fs-4"></i></span>
+                        <input type="text" id="modalBuscadorGlobal" class="form-control ps-0 fs-6 fw-bold" placeholder="Escribe Cédula, Nombre del Cliente, Valor o Hash...">
+                    </div>
+                    <button class="btn btn-primary fw-bolder px-8" type="button" id="btnBuscarModal">BUSCAR</button>
+                </div>
+                <div class="mt-2 ps-1">
+                    <span class="text-muted fs-10 text-uppercase fw-bolder">Sugerencia: Puedes buscar por valores exactos sin puntos ni comas para mayor precisión.</span>
+                </div>
+            </div>
+
+            <div class="modal-body p-3">
+                <div class="row g-2">
+                    <div class="col-lg-5">
+                        <div class="bg-white shadow-sm border border-gray-300 rounded-3 overflow-hidden d-flex flex-column" style="height: 55vh;">
+                            <div class="bg-gray-100 border-bottom border-gray-300 px-3 py-2">
+                                <span class="fw-bold text-primary fs-9 text-uppercase"><i class="fas fa-university me-1"></i> Extractos Bancarios</span>
+                            </div>
+                            <div class="table-responsive flex-grow-1">
+                                <table class="table-gsheets table-hover m-0">
+                                    <thead class="sticky-top bg-white">
+                                        <tr>
+                                            <th class="col-index" style="width: 30px;">#</th>
+                                            <th style="width: 70px;">FECHA</th>
+                                            <th>REFERENCIA / BANCO</th>
+                                            <th class="text-end" style="width: 100px;">VALOR</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbodyBancosModal">
+                                        <tr class="empty-placeholder">
+                                            <td colspan="4" class="text-center py-10 text-muted">
+                                                <i class="fas fa-arrow-up d-block fs-1 opacity-25 mb-2"></i>
+                                                Escribe algo arriba para buscar
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-7">
+                        <div class="bg-white shadow-sm border border-gray-300 rounded-3 overflow-hidden d-flex flex-column" style="height: 55vh;">
+                            <div class="bg-gray-100 border-bottom border-gray-300 px-3 py-2">
+                                <span class="fw-bold text-info fs-9 text-uppercase"><i class="fas fa-receipt me-1"></i> Pagos en Cartera</span>
+                            </div>
+                            <div class="table-responsive flex-grow-1">
+                                <table class="table-gsheets table-hover m-0">
+                                    <thead class="sticky-top bg-white">
+                                        <tr>
+                                            <th class="col-index" style="width: 30px;">#</th>
+                                            <th style="width: 70px;">FECHA</th>
+                                            <th>CLIENTE / OBLIGACIÓN</th>
+                                            <th class="text-end" style="width: 90px;">MONTO</th>
+                                            <th class="text-center" style="width: 80px;">ACCIÓN</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbodyCarteraModal">
+                                        <tr class="empty-placeholder">
+                                            <td colspan="5" class="text-center py-10 text-muted">
+                                                <i class="fas fa-search d-block fs-1 opacity-25 mb-2"></i>
+                                                Resultados de cartera aparecerán aquí
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer bg-light py-2 px-5 border-0">
+                <button type="button" class="btn btn-sm btn-secondary fw-bold rounded-pill" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+            
+        </div>
+    </div>
+</div>
+
+{{-- Formulario Oculto para procesar el cruce --}}
+<form id="formConciliacionModal" action="{{ route('contabilidad.extractos.conciliacion-manual') }}" method="POST" style="display: none;">
+    @csrf
+    <input type="hidden" name="id_interaccion" value="{{ $interaction->id ?? 0 }}">
+    <input type="hidden" name="id_transacciones" id="modal_input_transacciones">
+    <input type="hidden" name="id_comprobante" id="modal_input_comprobante">
+</form>
+
+<style>
+    /* Estilo tipo Hoja de Cálculo (Google Sheets) */
+    .table-gsheets { width: 100%; border-collapse: collapse; font-size: 11px; color: #3c4043; table-layout: fixed; }
+    .table-gsheets thead th { background-color: #f8f9fa; border: 1px solid #dadce0; padding: 6px 8px; font-weight: bold; color: #5f6368; text-align: left; text-transform: uppercase; font-size: 9px; }
+    .table-gsheets tbody td { border: 1px solid #dadce0; padding: 5px 8px; vertical-align: middle; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .table-gsheets .col-index { background-color: #f8f9fa; text-align: center; font-weight: bold; border-right: 2px solid #dadce0 !important; color: #5f6368; }
+    
+    /* Selección de filas */
+    .selected-row td { background-color: #e8f0fe !important; border-top: 1px solid #1a73e8 !important; border-bottom: 1px solid #1a73e8 !important; }
+    .selected-row .col-index { background-color: #1a73e8 !important; color: white !important; }
+    
+    .cursor-pointer { cursor: pointer; }
+    .transition-2ms { transition: all 0.2s; }
+
+    .drop-zone-custom {
+        border: 2px dashed #dbdfe9;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        background-color: #f9fafb;
+        height: 85px;
+    }
+
+    .drop-zone-custom:hover,
+    .drop-zone-custom.dragover {
+        border-color: #198754;
+        background-color: #e8f5e9;
+    }
+
+    .bg-light-soft { background-color: #fcfcfc; }
+    .font-monospace { font-family: 'Roboto Mono', monospace !important; }
+    .border-dashed { border-style: dashed !important; }
+
+    .custom-dropdown-list {
+        z-index: 1060;
+        max-height: 180px;
+        overflow-y: auto;
+        top: 100%;
+        left: 0;
+        margin-top: 5px;
+        background: #fff;
+        border: 1px solid #e4e6ef;
+        border-radius: 0.475rem;
+    }
+
+    .custom-dropdown-list button:hover {
+        background-color: #f1f1f4;
+        color: #181c32;
+    }
+
+    #modalComprobante .form-control:required:invalid {
+        border-color: #f1416c !important;
+        border-left: 4px solid #f1416c !important;
+        background-color: #fff8fa !important;
+    }
+
+    #modalComprobante input[type="file"]:required:invalid + label {
+        border: 2px dashed #f1416c !important;
+        background-color: #fff8fa !important;
+        border-radius: 8px;
+    }
+
+    #modalComprobante label:has(+ input:required),
+    #modalComprobante label:has(+ div input:required) {
+        color: #181c32;
+    }
+</style>
+
+<script>
+// =================================================================
+// LÓGICA ESPECÍFICA PARA LOS MODALES
+// =================================================================
+document.addEventListener('DOMContentLoaded', function () {
+    // ---- MODAL IDENTIFICACIÓN BANCOS (BUSCADOR Y CRUCE) ----
+    let selectedModalIds = [];
+    const btnBuscar = document.getElementById('btnBuscarModal');
+    const inputBuscar = document.getElementById('modalBuscadorGlobal');
+
+    // --- FUNCIÓN DE BÚSQUEDA MEJORADA ---
+    function buscarGlobal() {
+        const valor = inputBuscar.value.trim();
+        if(valor.length < 2) return;
+
+        btnBuscar.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        btnBuscar.disabled = true;
+
+        fetch(`{{ route('contabilidad.extractos.buscar-modal') }}?search=${valor}`)
+            .then(res => {
+                if (!res.ok) throw new Error(`Error HTTP: ${res.status}`);
+                return res.json();
+            })
+            .then(data => {
+                // ESTA LÍNEA ES MAGIA: Muestra en la consola (F12) exactamente qué manda Laravel
+                console.log("Respuesta del servidor:", data); 
+
+                selectedModalIds = [];
+                
+                // Validación de seguridad: si data.bancos no existe, usamos un array vacío []
+                const arrayBancos = data.bancos || (data.data && data.data.bancos) || [];
+                const arrayCartera = data.cartera || (data.data && data.data.cartera) || [];
+                
+                // Render Lado Banco
+                const tbodyBanco = document.getElementById('tbodyBancosModal');
+                tbodyBanco.innerHTML = arrayBancos.length ? '' : '<tr><td colspan="4" class="text-center py-5">No hay resultados en bancos</td></tr>';
+                arrayBancos.forEach((b, i) => {
+                    tbodyBanco.innerHTML += `
+                        <tr class="item-extracto cursor-pointer transition-2ms" data-id="${b.id}">
+                            <td class="col-index">${i+1}</td>
+                            <td class="text-center fw-bold fs-9">${b.fecha}</td>
+                            <td>
+                                <span class="text-dark fw-bold d-block fs-9">${b.oficina || 'N/A'}</span>
+                                <span class="text-primary fs-10">${b.banco || ''}</span>
+                            </td>
+                            <td class="text-end fw-bold text-success">$${b.valor}</td>
+                        </tr>`;
+                });
+
+                // Render Lado Cartera
+                const tbodyCartera = document.getElementById('tbodyCarteraModal');
+                tbodyCartera.innerHTML = arrayCartera.length ? '' : '<tr><td colspan="5" class="text-center py-5">No hay resultados en cartera</td></tr>';
+                arrayCartera.forEach((c, i) => {
+                    let archivoIcon = c.url_archivo ? `<a href="${c.url_archivo}" target="_blank" class="ms-2 text-info"><i class="fas fa-file-pdf"></i></a>` : '';
+                    tbodyCartera.innerHTML += `
+                        <tr class="transition-2ms">
+                            <td class="col-index">${i+1}</td>
+                            <td class="text-center fs-9">${c.fecha}</td>
+                            <td>
+                                <span class="text-dark fw-bold d-block fs-9">Oblig: ${c.obligacion || 'N/A'}</span>
+                                <span class="text-muted fs-10">Cuota: ${c.cuota || ''} ${archivoIcon}</span>
+                            </td>
+                            <td class="text-end fw-bold">$${c.valor}</td>
+                            <td class="text-center">
+                                <button type="button" class="btn btn-sm btn-outline-info py-0 px-2 fs-10 fw-bold btn-cruce" data-id="${c.id}">CRUZAR</button>
+                            </td>
+                        </tr>`;
+                });
+            })
+            .catch(err => {
+                console.error("Error al procesar la búsqueda:", err);
+                Swal.fire('Error', 'No se pudo completar la búsqueda. Revisa la consola.', 'error');
+            })
+            .finally(() => {
+                btnBuscar.innerHTML = 'BUSCAR';
+                btnBuscar.disabled = false;
+            });
+    }
+
+    if(btnBuscar && inputBuscar) {
+        btnBuscar.addEventListener('click', buscarGlobal);
+        inputBuscar.addEventListener('keyup', e => { if(e.key === 'Enter') buscarGlobal(); });
+    }
+
+    $('#tbodyBancosModal').on('click', '.item-extracto', function() {
+        const id = $(this).data('id');
+        $(this).toggleClass('selected-row');
+        const idx = selectedModalIds.indexOf(id);
+        if(idx > -1) selectedModalIds.splice(idx, 1); else selectedModalIds.push(id);
+    });
+
+    $('#tbodyCarteraModal').on('click', '.btn-cruce', function() {
+        const idComp = $(this).data('id');
+        if(!selectedModalIds.length) {
+            Swal.fire({ icon:'warning', title:'Atención', text:'Selecciona movimientos del banco a la izquierda.', target:'#modalIdentificacionBancos'});
+            return;
+        }
+
+        Swal.fire({
+            title: '¿Confirmar Cruce?',
+            text: `Vincularás ${selectedModalIds.length} movimiento(s) con este pago.`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, Cruzar',
+            target: '#modalIdentificacionBancos'
+        }).then(res => {
+            if(res.isConfirmed) {
+                const form = document.getElementById('formConciliacionModal');
+                const fd = new FormData(form);
+                fd.append('id_transacciones', JSON.stringify(selectedModalIds));
+                fd.append('id_comprobante', idComp);
+
+                fetch(form.action, { method:'POST', body:fd, headers: {'X-Requested-With': 'XMLHttpRequest'} })
+                .then(r => r.json())
+                .then(data => {
+                    if(data.success) {
+                        Swal.fire('¡Éxito!', 'Cruce realizado', 'success');
+                        $('#modalIdentificacionBancos').modal('hide');
+                    }
+                });
+            }
+        });
+    });
+
+    $('#modalIdentificacionBancos').on('hidden.bs.modal', function () {
+        selectedModalIds = [];
+        if(inputBuscar) inputBuscar.value = '';
+        const tbBancos = document.getElementById('tbodyBancosModal');
+        const tbCartera = document.getElementById('tbodyCarteraModal');
+        if(tbBancos) tbBancos.innerHTML = '<tr class="empty-placeholder"><td colspan="4" class="text-center py-10 text-muted">Escribe algo arriba para buscar</td></tr>';
+        if(tbCartera) tbCartera.innerHTML = '<tr class="empty-placeholder"><td colspan="5" class="text-center py-10 text-muted">Resultados aparecerán aquí</td></tr>';
+    });
+
+
+    // ---- MODAL COMPROBANTE DE PAGO ----
+    const modalElement = document.getElementById('modalComprobante');
+    if (!modalElement) return;
+
+    let myModal;
+    if (typeof bootstrap !== 'undefined') {
+        myModal = new bootstrap.Modal(modalElement);
+    }
+    
+    const formComprobante = document.getElementById('formModalComprobante');
+    const modalCodTercero = document.getElementById('cod_tercero');
+    const displayInput = document.getElementById('monto_pagado_display');
+    const hiddenInput = document.getElementById('monto_pagado');
+    const hashTarget = document.getElementById('hash_transaccion');
+    const fileInput = document.getElementById('archivo_soporte');
+    const dropZone = document.getElementById('drop_zone_area');
+    const fechaPagoInput = document.getElementById('fecha_pago');
+
+    // Reset Tipificación al cancelar
+    const closeButtons = modalElement.querySelectorAll('[data-bs-dismiss="modal"]');
+    closeButtons.forEach(btn => {
+        btn.addEventListener('click', function () {
+            const searchType = document.getElementById('search-type');
+            if (searchType) searchType.value = '';
+            document.querySelectorAll('.type-trigger').forEach(radio => radio.checked = false);
+            document.querySelectorAll('#container-list-types label').forEach(tag => tag.classList.remove('d-none'));
+        });
+    });
+
+    // Buscadores Nativos Modal
+    function setupBuscadorNativo(inputId, hiddenId, listId) {
+        const input = document.getElementById(inputId);
+        const hidden = document.getElementById(hiddenId);
+        const list = document.getElementById(listId);
+        if (!input || !list) return;
+
+        const items = list.querySelectorAll('button');
+
+        input.addEventListener('focus', () => {
+            if (items.length > 0) {
+                items.forEach(i => i.style.display = 'block');
+                list.classList.remove('d-none');
+            }
+        });
+
+        input.addEventListener('input', function () {
+            const val = this.value.toLowerCase().trim();
+            let hasVisible = false;
+            hidden.value = '';
+            if(hiddenId !== 'tipo_pago') actualizarHash();
+            items.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                if (text.includes(val)) { item.style.display = 'block'; hasVisible = true; }
+                else { item.style.display = 'none'; }
+            });
+            if (hasVisible) list.classList.remove('d-none'); else list.classList.add('d-none');
+        });
+
+        items.forEach(item => {
+            item.addEventListener('click', function (e) {
+                e.preventDefault();
+                input.value = this.textContent.trim();
+                hidden.value = this.getAttribute('data-id');
+                list.classList.add('d-none');
+                if(hiddenId !== 'tipo_pago') actualizarHash();
+                hidden.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!input.contains(e.target) && !list.contains(e.target)) list.classList.add('d-none');
+        });
+    }
+
+    setupBuscadorNativo('search_obligacion', 'id_obligacion', 'list_obligacion');
+    setupBuscadorNativo('search_banco', 'id_banco', 'list_banco');
+    setupBuscadorNativo('search_tipo_pago', 'tipo_pago', 'list_tipo_pago');
+
+    // Requerir CCO y N° Cuota dependiendo de la línea
+    const idObligacionInput = document.getElementById('id_obligacion');
+    if (idObligacionInput) {
+        idObligacionInput.addEventListener('change', function () {
+            const idLineaModal = this.value;
+            if (!idLineaModal) return;
+
+            const ccoInput = document.getElementById('cco');
+            const ccoLabel = ccoInput ? ccoInput.previousElementSibling : null;
+
+            if (idLineaModal === "5" && ccoInput) {
+                ccoInput.setAttribute('required', 'required');
+                if (!ccoLabel.innerHTML.includes('*')) ccoLabel.innerHTML = 'CCO <span class="text-danger fw-bolder">*</span>';
+            } else if (ccoInput) {
+                ccoInput.removeAttribute('required');
+                ccoLabel.innerHTML = 'CCO';
+            }
+
+            const cuotaInput = document.getElementById('numero_cuota');
+            const cuotaLabel = cuotaInput ? cuotaInput.previousElementSibling : null;
+            const prInput = document.getElementById('pr');
+            const prLabel = prInput ? prInput.previousElementSibling : null;
+
+            const lineasRequeridas = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14"];
+
+            if (lineasRequeridas.includes(idLineaModal)) {
+                if(cuotaInput) {
+                    cuotaInput.setAttribute('required', 'required');
+                    if (!cuotaLabel.innerHTML.includes('*')) cuotaLabel.innerHTML = 'N° Cuota <span class="text-danger fw-bolder">*</span>';
+                }
+                if(prInput) {
+                    prInput.setAttribute('required', 'required');
+                    if (!prLabel.innerHTML.includes('*')) prLabel.innerHTML = 'PR <span class="text-danger fw-bolder">*</span>';
+                }
+            } else {
+                if(cuotaInput) {
+                    cuotaInput.removeAttribute('required');
+                    cuotaLabel.innerHTML = 'N° Cuota';
+                }
+                if(prInput) {
+                    prInput.removeAttribute('required');
+                    prLabel.innerHTML = 'PR';
+                }
+            }
+        });
+    }
+
+    function actualizarHash() {
+        const banco = document.getElementById('id_banco')?.value;
+        const fechaVal = fechaPagoInput?.value;
+        const monto = hiddenInput?.value;
+        const tercero = modalCodTercero?.value;
+
+        if(!fechaVal) return;
+        let fechaLimpia = fechaVal.replace(/[^0-9]/g, '');
+        if (fechaLimpia.length === 12) fechaLimpia += '00';
+
+        if (banco && fechaLimpia && monto && tercero && hashTarget) {
+            hashTarget.value = `${banco}-${fechaLimpia}-${monto}-${tercero}`;
+        } else if (hashTarget) {
+            hashTarget.value = '';
+        }
+    }
+
+    if(displayInput) {
+        displayInput.addEventListener('input', function () {
+            let val = this.value.replace(/\./g, '');
+            val = val.replace(/[^0-9,]/g, '').replace(',', '.');
+            const parts = val.split('.');
+            if (parts.length > 2) val = parts[0] + '.' + parts.slice(1).join('');
+            if (parts[1] !== undefined && parts[1].length > 2) val = parts[0] + '.' + parts[1].substring(0, 2);
+            hiddenInput.value = val;
+
+            if (val !== '') {
+                let [entero, decimales] = val.split('.');
+                let visual = new Intl.NumberFormat('es-CO').format(parseInt(entero) || 0);
+                if (val.includes('.')) visual += ',' + (decimales !== undefined ? decimales : '');
+                this.value = visual;
+            } else {
+                this.value = '';
+            }
+            actualizarHash();
+        });
+    }
+
+    document.querySelectorAll('#modalComprobante .gen-hash').forEach(el => {
+        el.addEventListener('input', actualizarHash);
+        el.addEventListener('change', actualizarHash);
+    });
+
+    // Envío del Modal Comprobante
+    if(formComprobante) {
+        formComprobante.addEventListener('submit', function (e) {
+            e.preventDefault();
+            if (!document.getElementById('id_obligacion').value || !document.getElementById('id_banco').value) {
+                Swal.fire('Atención', 'Selecciona Obligación y Banco válidos.', 'warning');
+                return;
+            }
+            ejecutarEnvioComprobante(false);
+        });
+    }
+
+    function ejecutarEnvioComprobante(forceSave = false) {
+        const btnSubmit = document.getElementById('btnSubmitComprobante');
+        const originalText = btnSubmit.innerHTML;
+        
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> PROCESANDO...`;
+
+        const formData = new FormData(formComprobante);
+        if (!formData.get('id_interaccion') || formData.get('id_interaccion') === '') formData.set('id_interaccion', '0');
+        if (forceSave) formData.append('force_save', '1');
+
+        ['numero_cuota', 'pr', 'cco', 'observacion'].forEach(f => { if (!formData.get(f)) formData.delete(f); });
+
+        fetch(formComprobante.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+                'Accept': 'application/json'
+            }
+        })
+        .then(async res => {
+            if (!res.ok) {
+                if (res.status === 419) throw new Error('La sesión ha caducado por inactividad. Por favor, recarga la página.');
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.message || 'Error interno del servidor');
+            }
+            return res.json();
+        })
+        .then(data => {
+            if (data.success) {
+                if(myModal) myModal.hide();
+                Swal.fire({
+                    title: '¡Pago Vinculado!',
+                    text: "¿Deseas adjuntar otro comprobante?",
+                    icon: 'success',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, otro',
+                    cancelButtonText: 'Terminar',
+                    confirmButtonColor: '#198754'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        const clieID = modalCodTercero.value;
+                        formComprobante.reset();
+                        if(typeof window.resetFile === 'function') window.resetFile();
+                        modalCodTercero.value = clieID;
+                        const ahora = new Date();
+                        ahora.setMinutes(ahora.getMinutes() - ahora.getTimezoneOffset());
+                        fechaPagoInput.value = ahora.toISOString().slice(0, 16);
+                        actualizarHash();
+                        if(myModal) myModal.show();
+                    }
+                });
+            } else if (data.is_duplicate) {
+                Swal.fire({
+                    title: '¿Duplicado?',
+                    text: data.message,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, forzar',
+                    confirmButtonColor: '#f1416c'
+                }).then((r) => { if (r.isConfirmed) ejecutarEnvioComprobante(true); });
+            } else {
+                Swal.fire('Error', data.message, 'error');
+            }
+        })
+        .catch(error => Swal.fire('Error', error.message !== 'Failed to fetch' ? error.message : 'Error de red o servidor no responde', 'error'))
+        .finally(() => { 
+            btnSubmit.disabled = false; 
+            btnSubmit.innerHTML = originalText; 
+        });
+    }
+
+    // Funciones Drag & Drop y Portapapeles para el Modal
+    function procesarArchivo(file) {
+        if (!file) return;
+        const valid = ['image/jpeg', 'image/png', 'application/pdf'];
+        if (!valid.includes(file.type)) return Swal.fire('Error', 'Solo imágenes o PDF.', 'warning');
+
+        const dt = new DataTransfer(); dt.items.add(file);
+        if(fileInput) fileInput.files = dt.files;
+
+        const previewContainer = document.getElementById('preview_container');
+        if(previewContainer) previewContainer.classList.remove('d-none');
+        
+        const fileNameEl = document.getElementById('file_name_preview');
+        if(fileNameEl) fileNameEl.textContent = file.name;
+        
+        const img = document.getElementById('image_preview');
+        const pdf = document.getElementById('pdf_preview_icon');
+
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (e) => { 
+                if(img) { img.src = e.target.result; img.classList.remove('d-none'); }
+                if(pdf) pdf.classList.add('d-none'); 
+            };
+            reader.readAsDataURL(file);
+        } else { 
+            if(img) img.classList.add('d-none'); 
+            if(pdf) pdf.classList.remove('d-none'); 
+        }
+    }
+
+    if(fileInput) fileInput.addEventListener('change', e => { if (e.target.files.length) procesarArchivo(e.target.files[0]); });
+    window.addEventListener('paste', e => { if (modalElement.classList.contains('show') && e.clipboardData.files.length) procesarArchivo(e.clipboardData.files[0]); });
+    
+    if(dropZone) {
+        dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragover'); if (e.dataTransfer.files.length) procesarArchivo(e.dataTransfer.files[0]); });
+    }
+
+    // Limpieza global de File Input
+    window.resetFile = function() {
+        if(fileInput) fileInput.value = '';
+        const prev = document.getElementById('preview_container');
+        if (prev) prev.classList.add('d-none');
+        ['numero_cuota', 'pr', 'cco', 'id_obligacion', 'id_banco', 'search_obligacion', 'search_banco', 'monto_pagado', 'monto_pagado_display', 'tipo_pago', 'search_tipo_pago', 'observacion'].forEach(id => {
+            const el = document.getElementById(id); if (el) el.value = '';
+        }); 
+        
+        const ccoInput = document.getElementById('cco');
+        if(ccoInput) { ccoInput.removeAttribute('required'); ccoInput.previousElementSibling.innerHTML = 'CCO'; }
+        
+        const cuotaInput = document.getElementById('numero_cuota');
+        if(cuotaInput) { cuotaInput.removeAttribute('required'); cuotaInput.previousElementSibling.innerHTML = 'N° Cuota'; }
+        
+        const prInput = document.getElementById('pr');
+        if(prInput) { prInput.removeAttribute('required'); prInput.previousElementSibling.innerHTML = 'PR'; }
+    };
+});
+</script>
+{{-- FIN MODAL --}}
 
 <style>
     .drop-zone-custom {
@@ -1406,92 +2217,155 @@
             ejecutarEnvio(false);
         });
 
-function ejecutarEnvio(forceSave = false) {
-    const btnSubmit = document.getElementById('btnSubmitComprobante');
-    const originalText = btnSubmit.innerHTML;
-    
-    btnSubmit.disabled = true;
-    btnSubmit.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> PROCESANDO...`;
+        function ejecutarEnvio(forceSave = false) {
+            const btnSubmit = document.getElementById('btnSubmitComprobante');
+            const originalText = btnSubmit.innerHTML;
+            
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> PROCESANDO...`;
 
-    const formData = new FormData(form);
+            const formData = new FormData(form);
 
-    // 🚀 CORRECCIÓN: Garantizar que id_interaccion viaje siempre como 0 si está vacío o es nulo
-    if (!formData.get('id_interaccion') || formData.get('id_interaccion') === '') {
-        formData.set('id_interaccion', '0');
-    }
+            // 🚀 CORRECCIÓN: Garantizar que id_interaccion viaje siempre como 0 si está vacío o es nulo
+            if (!formData.get('id_interaccion') || formData.get('id_interaccion') === '') {
+                formData.set('id_interaccion', '0');
+            }
 
-    if (forceSave) formData.append('force_save', '1');
+            if (forceSave) formData.append('force_save', '1');
 
-    // Limpieza de nulos antes de enviar
-    ['numero_cuota', 'pr', 'cco', 'observacion'].forEach(f => { 
-        if (!formData.get(f)) formData.delete(f); 
-    });
-
-    // ❌ SE ELIMINÓ EL BLOQUE QUE DAÑABA 'id_transaccion_bancaria' CON EL JSON DEL UUID
-
-    fetch(form.action, {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
-            'Accept': 'application/json'
-        }
-    })
-    .then(async res => {
-        if (!res.ok) {
-            if (res.status === 419) throw new Error('La sesión ha caducado por inactividad. Por favor, recarga la página.');
-            const errData = await res.json().catch(() => ({}));
-            throw new Error(errData.message || 'Error interno del servidor');
-        }
-        return res.json();
-    })
-    .then(data => {
-        if (data.success) {
-            myModal.hide();
-            Swal.fire({
-                title: '¡Pago Vinculado!',
-                text: "¿Deseas adjuntar otro comprobante?",
-                icon: 'success',
-                showCancelButton: true,
-                confirmButtonText: 'Sí, otro',
-                cancelButtonText: 'Terminar',
-                confirmButtonColor: '#198754'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    const clieID = modalCodTercero.value;
-                    form.reset();
-                    resetFile();
-                    modalCodTercero.value = clieID;
-
-                    const ahora = new Date();
-                    ahora.setMinutes(ahora.getMinutes() - ahora.getTimezoneOffset());
-                    fechaPagoInput.value = ahora.toISOString().slice(0, 16);
-                    actualizarHash();
-                    myModal.show();
-                }
+            // Limpieza de nulos antes de enviar
+            ['numero_cuota', 'pr', 'cco', 'observacion'].forEach(f => { 
+                if (!formData.get(f)) formData.delete(f); 
             });
-        } else if (data.is_duplicate) {
-            Swal.fire({
-                title: '¿Duplicado?',
-                text: data.message,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Sí, forzar',
-                confirmButtonColor: '#f1416c'
-            }).then((r) => { if (r.isConfirmed) ejecutarEnvio(true); });
-        } else {
-            Swal.fire('Error', data.message, 'error');
+
+            // ❌ SE ELIMINÓ EL BLOQUE QUE DAÑABA 'id_transaccion_bancaria' CON EL JSON DEL UUID
+
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+                    'Accept': 'application/json'
+                }
+            })
+            .then(async res => {
+                if (!res.ok) {
+                    if (res.status === 419) throw new Error('La sesión ha caducado por inactividad. Por favor, recarga la página.');
+                    const errData = await res.json().catch(() => ({}));
+                    throw new Error(errData.message || 'Error interno del servidor');
+                }
+                return res.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    myModal.hide();
+                    Swal.fire({
+                        title: '¡Pago Vinculado!',
+                        text: "¿Deseas adjuntar otro comprobante?",
+                        icon: 'success',
+                        showCancelButton: true,
+                        confirmButtonText: 'Sí, otro',
+                        cancelButtonText: 'Terminar',
+                        confirmButtonColor: '#198754'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            const clieID = modalCodTercero.value;
+                            form.reset();
+                            resetFile();
+                            modalCodTercero.value = clieID;
+
+                            const ahora = new Date();
+                            ahora.setMinutes(ahora.getMinutes() - ahora.getTimezoneOffset());
+                            fechaPagoInput.value = ahora.toISOString().slice(0, 16);
+                            actualizarHash();
+                            myModal.show();
+                        }
+                    });
+                } else if (data.is_duplicate) {
+                    Swal.fire({
+                        title: '¿Duplicado?',
+                        text: data.message,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Sí, forzar',
+                        confirmButtonColor: '#f1416c'
+                    }).then((r) => { if (r.isConfirmed) ejecutarEnvio(true); });
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                }
+            })
+            .catch(error => {
+                Swal.fire('Error', error.message !== 'Failed to fetch' ? error.message : 'Error de red o servidor no responde', 'error');
+            })
+            .finally(() => { 
+                btnSubmit.disabled = false; 
+                btnSubmit.innerHTML = originalText; 
+            });
         }
-    })
-    .catch(error => {
-        Swal.fire('Error', error.message !== 'Failed to fetch' ? error.message : 'Error de red o servidor no responde', 'error');
-    })
-    .finally(() => { 
-        btnSubmit.disabled = false; 
-        btnSubmit.innerHTML = originalText; 
-    });
-}
+
+        // =================================================================
+        // ENVÍO DE FORMULARIO: IDENTIFICACIÓN DE BANCOS
+        // =================================================================
+        const formBancos = document.getElementById('formModalIdentificacionBancos');
+        if (formBancos) {
+            formBancos.addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                const btnSubmit = document.getElementById('btnSubmitBancos');
+                const originalText = btnSubmit.innerHTML;
+                btnSubmit.disabled = true;
+                btnSubmit.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> PROCESANDO...`;
+
+                // Convertir el número ingresado a un Array JSON (Ej: de 8854 pasa a "[8854]")
+                const inputVisible = document.getElementById('input_transaccion_visible').value;
+                const inputHidden = document.getElementById('id_transacciones_bancos');
+                if (inputVisible) {
+                    inputHidden.value = JSON.stringify([parseInt(inputVisible)]);
+                }
+
+                const formData = new FormData(this);
+
+                fetch(this.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(async res => {
+                    if (!res.ok) {
+                        const errData = await res.json().catch(() => ({}));
+                        throw new Error(errData.message || 'Error interno del servidor');
+                    }
+                    return res.json();
+                })
+                .then(data => {
+                    // Cierra el modal y limpia el formulario
+                    const modalBancosEl = document.getElementById('modalIdentificacionBancos');
+                    const modalInst = bootstrap.Modal.getInstance(modalBancosEl);
+                    if (modalInst) modalInst.hide();
+                    formBancos.reset();
+
+                    // Notificación de éxito
+                    Swal.fire({
+                        title: '¡Conciliado!',
+                        text: data.message || 'La transacción se ha vinculado correctamente.',
+                        icon: 'success',
+                        confirmButtonColor: '#198754'
+                    });
+                })
+                .catch(error => {
+                    Swal.fire('Error', error.message !== 'Failed to fetch' ? error.message : 'Error de red o el servidor no responde', 'error');
+                })
+                .finally(() => {
+                    btnSubmit.disabled = false;
+                    btnSubmit.innerHTML = originalText;
+                });
+            });
+        }
         // --- 5. ARCHIVOS Y PORTAPAPELES ---
         function procesarArchivo(file) {
             if (!file) return;
@@ -1522,12 +2396,35 @@ function ejecutarEnvio(forceSave = false) {
         // --- 6. GESTIÓN DE TIPIFICACIÓN (EXTERNO) ---
         document.querySelectorAll('.type-trigger').forEach(radio => {
             radio.addEventListener('change', function () {
-                if (this.value == '3') {
-                    const cID = document.getElementById('client_id')?.value || '';
+                const labelText = this.nextElementSibling.textContent.trim().toLowerCase();
+                const cID = document.getElementById('client_id')?.value || '';
+
+                // 1. Lógica Original (Soporte de pago)
+                if (this.value == '3' || labelText === 'soporte de pago') {
                     if (!cID) { Swal.fire('Error', 'Selecciona un cliente.', 'warning'); this.checked = false; return; }
-                    modalCodTercero.value = cID;
+                    document.getElementById('cod_tercero').value = cID;
                     actualizarHash();
                     myModal.show();
+                }
+
+                // 2. NUEVA Lógica (Identificación Bancos) - Añadido this.value == '20'
+                if (this.value == '20' || labelText === 'identificación bancos' || labelText === 'identificacion bancos') {
+                    if (!cID) { Swal.fire('Error', 'Selecciona un cliente primero.', 'warning'); this.checked = false; return; }
+                    
+                    // Pasamos el ID del cliente al nuevo modal
+                    const modalCodTerceroBancos = document.getElementById('bancos_cod_tercero');
+                    if (modalCodTerceroBancos) modalCodTerceroBancos.value = cID;
+                    
+                    // Instanciamos y abrimos el modal
+                    const modalBancosElement = document.getElementById('modalIdentificacionBancos');
+                    if (modalBancosElement) {
+                        // Busca si ya existe, si no, lo crea
+                        let modalBancos = bootstrap.Modal.getInstance(modalBancosElement);
+                        if (!modalBancos) {
+                            modalBancos = new bootstrap.Modal(modalBancosElement);
+                        }
+                        modalBancos.show();
+                    }
                 }
             });
         });
