@@ -747,6 +747,13 @@ class InteractionController extends Controller
 
         $agentId = Auth::id();
 
+        // LÓGICA DE ASIGNACIÓN: 
+        // Si no llega un ID en el formulario, se asigna por defecto al agente actual (Yo me encargo)
+        $idAsignacion = $request->filled('id_user_asignacion') 
+                        ? $validated['id_user_asignacion'] 
+                        : $agentId;
+
+        // 1. Crear la interacción
         $interaction = Interaction::create([
             'client_id' => $validated['client_id'],
             'agent_id' => $agentId,
@@ -758,13 +765,14 @@ class InteractionController extends Controller
             'notes' => $validated['notes'] ?? null,
             'parent_interaction_id' => $validated['parent_interaction_id'] ?? null,
             'id_linea_de_obligacion' => $validated['id_linea_de_obligacion'] ?? null,
-            'id_user_asignacion' => $validated['id_user_asignacion'] ?? null,
+            'id_user_asignacion' => $idAsignacion, // Usamos la variable segura
             'cedula_quien_llama' => $validated['cedula_quien_llama'] ?? null,
             'nombre_quien_llama' => $validated['nombre_quien_llama'] ?? null,
             'celular_quien_llama' => $validated['celular_quien_llama'] ?? null,
             'parentesco_quien_llama' => $validated['parentesco_quien_llama'] ?? null,
         ]);
 
+        // 2. Procesar comprobantes temporales
         if ($request->filled('temp_token')) {
             CarComprobantePago::where('temp_token', $request->temp_token)
                 ->where(function ($query) {
@@ -772,20 +780,21 @@ class InteractionController extends Controller
                 })
                 ->update([
                     'id_interaction' => $interaction->id,
-                    'temp_token' => null, // Limpiamos el token para cerrar el ciclo
+                    'temp_token' => null, 
                 ]);
         }
 
+        // 3. Procesar archivo adjunto
         $rutaArchivo = null;
         if ($request->hasFile('attachment')) {
-            // Ruta dinámica: cartera/comprobantes/{codigo_tercero}/archivo.ext
             $folderPath = "corpentunida/interacciones/evidencia_{$interaction->id}_{$interaction->client_id}";
             $rutaArchivo = $request->file('attachment')->store($folderPath, 's3');
         }
 
+        // 4. Crear el seguimiento
         $interaction->seguimientos()->create([
             'agent_id' => $agentId,
-            'id_user_asignacion' => $validated['id_user_asignacion'] ?? null,
+            'id_user_asignacion' => $idAsignacion, // Usamos la variable segura
             'outcome' => $validated['outcome'],
             'next_action_type' => $validated['next_action_type'] ?? 1,
             'next_action_date' => $validated['next_action_date'] ?? now(),

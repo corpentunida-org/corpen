@@ -72,7 +72,9 @@ class Interaction extends Model
     {
         return $this->belongsTo(LineaCredito::class, 'id_linea_de_obligacion', 'id');
     }
-    /* public function getLineasDetalleAttribute()
+
+    /* Se emplea en la vista show por eso lo descomente de nuevo ya que lo habia comentado para mejor rendimiento - requiere revision */
+    public function getLineasDetalleAttribute()
     {
         if (empty($this->id_linea_de_obligacion)) {
             return collect();
@@ -81,7 +83,7 @@ class Interaction extends Model
         return LineaCredito::whereIn('id',$this->id_linea_de_obligacion)
             ->select('id', 'nombre')->get();
     
-    } */
+    } 
     /* public function getLineasIdsAttribute() {
         return is_array($this->id_linea_de_obligacion) ? $this->id_linea_de_obligacion : [];
     } */

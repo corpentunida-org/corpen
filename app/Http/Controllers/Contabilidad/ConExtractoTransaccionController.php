@@ -587,7 +587,7 @@ class ConExtractoTransaccionController extends Controller
                 ->map(function($item) {
                     try {
                         $fechaBanco = is_string($item->fecha_movimiento) 
-                            ? \Carbon\Carbon::parse($item->fecha_movimiento)->format('d/m/Y')
+                            ? Carbon::parse($item->fecha_movimiento)->format('d/m/Y')
                             : (is_object($item->fecha_movimiento) ? $item->fecha_movimiento->format('d/m/Y') : $item->fecha_movimiento);
                     } catch (\Exception $e) {
                         $fechaBanco = (string) $item->fecha_movimiento;
@@ -616,8 +616,8 @@ class ConExtractoTransaccionController extends Controller
                 ->map(function($item) {
                     try {
                         $fecha = is_numeric($item->fecha_pago) 
-                            ? \Carbon\Carbon::createFromTimestamp($item->fecha_pago)->format('d/m/Y')
-                            : \Carbon\Carbon::parse($item->fecha_pago)->format('d/m/Y');
+                            ? Carbon::createFromTimestamp($item->fecha_pago)->format('d/m/Y')
+                            : Carbon::parse($item->fecha_pago)->format('d/m/Y');
                     } catch (\Exception $e) {
                         $fecha = (string) $item->fecha_pago;
                     }
