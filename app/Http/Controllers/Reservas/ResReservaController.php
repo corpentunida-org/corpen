@@ -225,7 +225,7 @@ class ResReservaController extends Controller implements HasMiddleware
 
     public function indexConfirmacion()
     {
-        $reservas = Res_reserva::select('id', 'res_inmueble_id', 'res_status_id', 'user_id', 'nid', 'fecha_inicio', 'fecha_fin')
+        $reservas = Res_reserva::select('id', 'res_inmueble_id', 'res_status_id', 'user_id', 'nid', 'celular', 'celular_respaldo', 'fecha_inicio', 'fecha_fin')
             ->where('res_status_id', 2)
             ->with(['tercero', 'user'])
             ->orderByRaw('CASE WHEN fecha_inicio >= CURDATE() THEN 0 ELSE 1 END')
