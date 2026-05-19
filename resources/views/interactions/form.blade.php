@@ -4,14 +4,12 @@
 @endphp
 
 <style>
+    /* =================================================================
+       0. ANIMACIONES Y ESTILOS BASE
+       ================================================================= */
     @keyframes fadeIn {
-        from {
-            opacity: 0;
-        }
-
-        to {
-            opacity: 1;
-        }
+        from { opacity: 0; }
+        to { opacity: 1; }
     }
 
     .category-container {
@@ -24,7 +22,6 @@
         font-size: 1.1rem;
         font-weight: 600;
     }
-
 
     .form-label {
         font-weight: 500;
@@ -42,55 +39,95 @@
         box-shadow: none !important;
     }
 
+    /* =================================================================
+       1. ESTILOS GLOBALES Y TABLAS (Google Sheets Style)
+       ================================================================= */
+    .table-gsheets { width: 100%; border-collapse: collapse; font-size: 11px; color: #3c4043; table-layout: fixed; }
+    .table-gsheets thead th { background-color: #f8f9fa; border: 1px solid #dadce0; padding: 6px 8px; font-weight: bold; color: #5f6368; text-align: left; text-transform: uppercase; font-size: 9px; }
+    .table-gsheets tbody td { border: 1px solid #dadce0; padding: 5px 8px; vertical-align: middle; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .table-gsheets .col-index { background-color: #f8f9fa; text-align: center; font-weight: bold; border-right: 2px solid #dadce0 !important; color: #5f6368; }
+    
+    /* Selección de filas */
+    .selected-row td { background-color: #e8f0fe !important; border-top: 1px solid #1a73e8 !important; border-bottom: 1px solid #1a73e8 !important; }
+    .selected-row .col-index { background-color: #1a73e8 !important; color: white !important; }
+    
+    .cursor-pointer { cursor: pointer; }
+    .transition-2ms { transition: all 0.2s; }
+    .bg-light-soft { background-color: #fcfcfc; }
+    .font-monospace { font-family: 'Roboto Mono', monospace !important; }
+    .border-dashed { border-style: dashed !important; }
+
+    /* =================================================================
+       2. COMPONENTES CUSTOM (Tarjetas, Drag & Drop, Listas, Tags)
+       ================================================================= */
     .visual-card {
         border-radius: 6px;
         cursor: pointer;
         transition: var(--transition-fast);
         border-color: #EFF0F6;
     }
+    .visual-card:hover { background-color: #F1F1FC; }
+    .visual-card:checked { background-color: #3454D1; }
 
-    .visual-card:hover {
-        background-color: #F1F1FC;
-    }
+    .option-card-titular input:checked+label { border: 1px dashed #3454D1; }
+    .btn-check:checked+.visual-card { color: #3454D1; }
+    .btn-check:checked+.visual-card .card-icon { color: #3454D1 !important; }
 
-    .visual-card:checked {
-        background-color: #3454D1;
-    }
-
-    .option-card-titular input:checked+label {
-        border: 1px dashed #3454D1;
-    }
-
-    .btn-check:checked+.visual-card {
-        color: #3454D1;
-    }
-
-    .btn-check:checked+.visual-card .card-icon {
-        color: #3454D1 !important;
-
-    }
-
-    .check-badge {
-        transition: var(--transition-fast);
-        opacity: 0;
-    }
-
-    .btn-check:checked+label .check-badge {
-        opacity: 1;
-    }
+    .check-badge { transition: var(--transition-fast); opacity: 0; }
+    .btn-check:checked+label .check-badge { opacity: 1; }
 
     .smart-tag {
         border: 1px solid #64748B;
         background: #EFF0F6;
         border-radius: 4px;
     }
-
     .btn-check:checked+.smart-tag {
         background-color: #64748B;
         color: white;
     }
 
+    .drop-zone-custom {
+        border: 2px dashed #dbdfe9;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        background-color: #f9fafb;
+        height: 85px;
+    }
+    .drop-zone-custom:hover,
+    .drop-zone-custom.dragover {
+        border-color: #198754;
+        background-color: #e8f5e9;
+    }
 
+    .custom-dropdown-list {
+        z-index: 1060;
+        max-height: 180px;
+        overflow-y: auto;
+        top: 100%;
+        left: 0;
+        margin-top: 5px;
+        background: #fff;
+        border: 1px solid #e4e6ef;
+        border-radius: 0.475rem;
+    }
+    .custom-dropdown-list button:hover {
+        background-color: #f1f1f4;
+        color: #181c32;
+    }
+
+    .drop-zone-pro {
+        border: 1px dashed var(--border-hover);
+        background: var(--bg-card);
+        transition: var(--transition-fast);
+    }
+    .drop-zone-pro:hover {
+        border-color: var(--crm-primary);
+        background: var(--crm-primary-light);
+    }
+
+    /* =================================================================
+       3. TIMELINE Y PROGRESO
+       ================================================================= */
     .timeline-item {
         position: relative;
         margin-bottom: 1.5rem;
@@ -108,6 +145,9 @@
         z-index: 2;
     }
 
+    /* =================================================================
+       4. VALIDACIÓN VISUAL Y OVERLAYS
+       ================================================================= */
     .input-error,
     .select2-error+.select2-container .select2-selection {
         border-color: var(--crm-danger) !important;
@@ -118,22 +158,32 @@
         transition: opacity 0.3s ease;
     }
 
-    .drop-zone-pro {
-        border: 1px dashed var(--border-hover);
-        background: var(--bg-card);
-        transition: var(--transition-fast);
-    }
-
-    .drop-zone-pro:hover {
-        border-color: var(--crm-primary);
-        background: var(--crm-primary-light);
-    }
-
     #btn-submit-interaccion:disabled {
-        background-color: #64748B !important; border-color: #64748B !important;
+        background-color: #64748B !important; 
+        border-color: #64748B !important;
         cursor: not-allowed;
         opacity: 0.8;
     }
+
+    /* Resaltar en rojo los campos obligatorios del modal MIENTRAS ESTÉN VACÍOS */
+    #modalComprobante .form-control:required:invalid {
+        border-color: #f1416c !important;
+        border-left: 4px solid #f1416c !important;
+        background-color: #fff8fa !important;
+    }
+
+    /* Resaltar el área de arrastrar archivo si es obligatorio y está vacío */
+    #modalComprobante input[type="file"]:required:invalid + label {
+        border: 2px dashed #f1416c !important;
+        background-color: #fff8fa !important;
+        border-radius: 8px;
+    }
+
+    /* Hacer que los asteriscos de los labels obligatorios en el modal sean rojos nativamente */
+    #modalComprobante label:has(+ input:required),
+    #modalComprobante label:has(+ div input:required) {
+        color: #181c32;
+    }    
 </style>
 
 {{-- Generamos el UUID único para esta sesión de trabajo --}}
@@ -150,65 +200,63 @@
         @method('PUT')
     @endif
 
-    <div
-        class="bg-white border-bottom p-4 mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+    <!-- ============================================================
+         HEADER DE LA INTERACCIÓN
+         ============================================================ -->
+    <div class="bg-white border-bottom p-4 mb-4 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
         <div class="d-flex align-items-center gap-3">
-            <div>
-                <i class="bi bi-headset fs-2"></i>
-            </div>
+            <div><i class="bi bi-headset fs-2"></i></div>
             <div>
                 <h4 class="fw-bold mb-1 text-dark" style="font-size: 1.25rem;">
                     {{ $modoEdicion ? 'Editar Interacción #' . $interaction->id : 'Registro de Seguimiento Diario' }}
                 </h4>
-                <p class="text-muted small mb-0">
-                    <i class="bi bi-clock me-1"></i> Sesión iniciada • Completa la gestión
-                </p>
+                <p class="text-muted small mb-0"><i class="bi bi-clock me-1"></i> Sesión iniciada • Completa la gestión</p>
             </div>
         </div>
 
         @if ($modoEdicion && $interaction->id)
             <div>
-                <a href="{{ route('interactions.show', $interaction->id) }}"
-                    class="btn btn-outline-secondary px-3 py-2 d-inline-flex align-items-center gap-2">
+                <a href="{{ route('interactions.show', $interaction->id) }}" class="btn btn-outline-secondary px-3 py-2 d-inline-flex align-items-center gap-2">
                     <i class="bi bi-eye"></i> Ver Detalles
                 </a>
             </div>
         @endif
     </div>
 
+    <!-- ============================================================
+         TABS Y BARRA DE PROGRESO
+         ============================================================ -->
     <ul class="nav nav-tabs w-100 text-center customers-nav-tabs" id="TabMenu" role="tablist">
-
         <li class="nav-item flex-fill" role="presentation">
-            <button class="nav-link active border-0 w-100" id="home-tab" data-bs-toggle="tab"
-                data-bs-target="#principal-tab" type="button" role="tab" data-progress="50">
+            <button class="nav-link active border-0 w-100" id="home-tab" data-bs-toggle="tab" data-bs-target="#principal-tab" type="button" role="tab" data-progress="50">
                 <i class="bi bi-info-circle"></i> Principal
             </button>
         </li>
-
         <li class="nav-item flex-fill" role="presentation">
-            <button class="nav-link border-0 w-100" id="profile-tab" data-bs-toggle="tab"
-                data-bs-target="#resultado-tab" type="button" role="tab" data-progress="100">
+            <button class="nav-link border-0 w-100" id="profile-tab" data-bs-toggle="tab" data-bs-target="#resultado-tab" type="button" role="tab" data-progress="100">
                 <i class="bi bi-check2-circle"></i> Resultado
             </button>
         </li>
-
     </ul>
 
     <div class="progress mt-0 mb-4" style="height: 2px; border-radius: 0; background-color: var(--border-color);">
-        <div id="form-progress" class="progress-bar bg-primary" role="progressbar"
-            style="width: 50%; transition: width 0.3s ease;" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100">
-        </div>
+        <div id="form-progress" class="progress-bar bg-primary" role="progressbar" style="width: 50%; transition: width 0.3s ease;" aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
     </div>
 
+    <!-- ============================================================
+         CONTENIDO DE LOS TABS
+         ============================================================ -->
     <div class="tab-content position-relative px-4">
+
+        <!-- ============================================================
+             TAB 1: PRINCIPAL
+             ============================================================ -->
         <div class="tab-pane fade show active" id="principal-tab" role="tabpanel">
+            
+            <!-- Origen del Contacto -->
             <div class="category-container mb-4">
-                <div class="category-header p-3 d-flex justify-content-between align-items-center cursor-pointer"
-                    data-bs-toggle="collapse" data-bs-target="#originCollapse" aria-expanded="true"
-                    aria-controls="originCollapse" style="user-select: none;">
-                    <h5 class="category-title mb-0">
-                        Origen del Contacto
-                    </h5>
+                <div class="category-header p-3 d-flex justify-content-between align-items-center cursor-pointer" data-bs-toggle="collapse" data-bs-target="#originCollapse" aria-expanded="true" aria-controls="originCollapse" style="user-select: none;">
+                    <h5 class="category-title mb-0">Origen del Contacto</h5>
                     <i class="bi bi-chevron-down text-muted accordion-arrow transition-all"></i>
                 </div>
 
@@ -218,68 +266,53 @@
                         <div class="row g-3">
                             <div class="col-md-6">
                                 <div class="border border-dashed rounded-3 option-card-titular">
-                                    <input type="radio" class="btn-check" name="caller_type" id="caller_client"
-                                        value="client" checked>
-                                    <label
-                                        class="visual-card d-flex flex-row align-items-center p-3 gap-3 position-relative h-100"
-                                        for="caller_client">
+                                    <input type="radio" class="btn-check" name="caller_type" id="caller_client" value="client" checked>
+                                    <label class="visual-card d-flex flex-row align-items-center p-3 gap-3 position-relative h-100" for="caller_client">
                                         <i class="bi bi-person card-icon mb-0 fs-3 text-muted"></i>
                                         <div class="text-start flex-grow-1">
                                             <div class="fw-bold mb-0 text-dark">Titular</div>
                                             <small class="text-muted">Cliente registrado</small>
                                         </div>
-                                        <i class="bi bi-check L check-badge fs-5 position-absolute end-0 me-3 text-dark"
-                                            style="opacity: 0;"></i>
+                                        <i class="bi bi-check L check-badge fs-5 position-absolute end-0 me-3 text-dark" style="opacity: 0;"></i>
                                     </label>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="border border-dashed rounded-3 option-card-titular">
-                                    <input type="radio" class="btn-check" name="caller_type" id="caller_third"
-                                        value="third_party">
-                                    <label
-                                        class="visual-card d-flex flex-row align-items-center p-3 gap-3 position-relative h-100"
-                                        for="caller_third">
+                                    <input type="radio" class="btn-check" name="caller_type" id="caller_third" value="third_party">
+                                    <label class="visual-card d-flex flex-row align-items-center p-3 gap-3 position-relative h-100" for="caller_third">
                                         <i class="bi bi-people card-icon mb-0 fs-3 text-muted"></i>
                                         <div class="text-start flex-grow-1">
                                             <div class="fw-bold mb-0 text-dark">Tercero</div>
                                             <small class="text-muted">Familiar o autorizado</small>
                                         </div>
-                                        <i class="bi bi-check check-badge fs-5 position-absolute end-0 me-3 text-dark"
-                                            style="opacity: 0;"></i>
+                                        <i class="bi bi-check check-badge fs-5 position-absolute end-0 me-3 text-dark" style="opacity: 0;"></i>
                                     </label>
                                 </div>
                             </div>
                         </div>
 
-                        <div id="third-party-fields" class="mt-4 p-4 bg-light border"
-                            style="display: none; border-radius: 4px;">
+                        <div id="third-party-fields" class="mt-4 p-4 bg-light border" style="display: none; border-radius: 4px;">
                             <h6 class="text-dark fw-bold small text-uppercase mb-3">Datos de quien llama</h6>
                             <div class="row g-3">
                                 <div class="col-md-4">
                                     <label class="form-label">Nombre Completo <span class="text-muted">*</span></label>
-                                    <input type="text" class="form-control" id="nombre_quien_llama"
-                                        name="nombre_quien_llama" placeholder="Ej. Juan Pérez">
+                                    <input type="text" class="form-control" id="nombre_quien_llama" name="nombre_quien_llama" placeholder="Ej. Juan Pérez">
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label">Identificación <span class="text-muted">*</span></label>
-                                    <input type="text" class="form-control" id="cedula_quien_llama"
-                                        name="cedula_quien_llama" placeholder="Número de documento">
+                                    <input type="text" class="form-control" id="cedula_quien_llama" name="cedula_quien_llama" placeholder="Número de documento">
                                 </div>
                                 <div class="col-md-4">
                                     <label class="form-label">Teléfono <span class="text-muted">*</span></label>
-                                    <input type="text" class="form-control" id="celular_quien_llama"
-                                        name="celular_quien_llama" placeholder="Número de contacto">
+                                    <input type="text" class="form-control" id="celular_quien_llama" name="celular_quien_llama" placeholder="Número de contacto">
                                 </div>
                                 <div class="col-12 pt-2" id="container-parentesco">
-                                    <label class="form-label mb-2">Relación con el titular: <span
-                                            class="text-muted">*</span></label>
+                                    <label class="form-label mb-2">Relación con el titular: <span class="text-muted">*</span></label>
                                     <div class="d-flex flex-wrap gap-2">
                                         @foreach (['familiar' => 'Familiar', 'amigo' => 'Amigo', 'representante' => 'Representante', 'empleado' => 'Empleado', 'IPUC CAN' => 'IPUC CAN', 'otro' => 'Otro'] as $v => $l)
-                                            <input type="radio" class="btn-check" name="parentesco_quien_llama"
-                                                id="rel_{{ $v }}" value="{{ $v }}">
-                                            <label class="smart-tag py-1 px-3 small cursor-pointer"
-                                                for="rel_{{ $v }}">{{ $l }}</label>
+                                            <input type="radio" class="btn-check" name="parentesco_quien_llama" id="rel_{{ $v }}" value="{{ $v }}">
+                                            <label class="smart-tag py-1 px-3 small cursor-pointer" for="rel_{{ $v }}">{{ $l }}</label>
                                         @endforeach
                                     </div>
                                 </div>
@@ -289,6 +322,7 @@
                 </div>
             </div>
 
+            <!-- Cliente y Agente -->
             <div class="category-container mb-4 p-4">
                 <div class="row align-items-start g-4">
                     <div class="col-md-8">
@@ -298,45 +332,32 @@
                         <select class="form-select select2" id="client_id" name="client_id" required>
                             <option value="">Buscar por nombre, documento o código...</option>
                             @if ($modoEdicion && $interaction->client_id)
-                                <option value="{{ $interaction->client_id }}" selected>
-                                    {{ $interaction->client->nom_ter }}
-                                </option>
+                                <option value="{{ $interaction->client_id }}" selected>{{ $interaction->client->nom_ter }}</option>
                             @endif
                         </select>
-                        <div id="error-client-msg" class="text-danger small mt-2" style="display:none;">
-                            Debes seleccionar un cliente.
-                        </div>
+                        <div id="error-client-msg" class="text-danger small mt-2" style="display:none;">Debes seleccionar un cliente.</div>
                     </div>
 
+                    {{-- Bloque comentado mantenido intacto por requerimiento --}}
                     {{-- <div class="col-md-4">
-                        <div class="bg-white border p-3 d-flex flex-column justify-content-center h-100"
-                            style="border-radius: 4px;">
+                        <div class="bg-white border p-3 d-flex flex-column justify-content-center h-100" style="border-radius: 4px;">
                             <div class="d-flex align-items-center mb-2">
                                 <div class="lh-sm">
                                     <div class="small text-muted" style="font-size: 0.70rem;">AGENTE RESPONSABLE</div>
-                                    <div class="fw-bold text-dark text-truncate" style="max-width: 150px;"
-                                        title="{{ auth()->user()->name }}">{{ auth()->user()->name }}</div>
+                                    <div class="fw-bold text-dark text-truncate" style="max-width: 150px;" title="{{ auth()->user()->name }}">{{ auth()->user()->name }}</div>
                                 </div>
                             </div>
                             <div class="border-top pt-2 mt-1 d-flex justify-content-between align-items-center">
                                 <div>
                                     <small class="text-muted d-block" style="font-size: 0.70rem;">DURACIÓN</small>
                                     <div class="d-flex align-items-center mt-1">
-                                        <span id="timer-indicator" class="me-2"
-                                            style="width: 8px; height: 8px; background-color: #333; border-radius: 50%;"></span>
-                                        <div class="fw-bold text-dark font-monospace fs-5 lh-1" id="timer">00:00
-                                        </div>
+                                        <span id="timer-indicator" class="me-2" style="width: 8px; height: 8px; background-color: #333; border-radius: 50%;"></span>
+                                        <div class="fw-bold text-dark font-monospace fs-5 lh-1" id="timer">00:00</div>
                                     </div>
                                 </div>
                                 <div class="d-flex gap-1">
-                                    <button type="button" class="btn btn-sm btn-light border py-1 px-2"
-                                        id="btn-timer-toggle" title="Pausar/Reanudar">
-                                        <i class="bi bi-pause"></i>
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-light border py-1 px-2"
-                                        id="btn-timer-reset" title="Reiniciar">
-                                        <i class="bi bi-arrow-counterclockwise"></i>
-                                    </button>
+                                    <button type="button" class="btn btn-sm btn-light border py-1 px-2" id="btn-timer-toggle" title="Pausar/Reanudar"><i class="bi bi-pause"></i></button>
+                                    <button type="button" class="btn btn-sm btn-light border py-1 px-2" id="btn-timer-reset" title="Reiniciar"><i class="bi bi-arrow-counterclockwise"></i></button>
                                 </div>
                             </div>
                         </div>
@@ -344,16 +365,13 @@
                         <input type="hidden" name="interaction_date" value="{{ now()->toDateTimeString() }}">
                         <input type="hidden" name="duration" id="duration" value="0">
                     </div> --}}
+
                     <div class="col-md-4">
-                        <div class="bg-white border p-2 mt-4 d-flex align-items-center justify-content-between h-100"
-                            style="border-radius: 4px;">
+                        <div class="bg-white border p-2 mt-4 d-flex align-items-center justify-content-between h-100" style="border-radius: 4px;">
                             <div class="d-flex align-items-center flex-grow-1 pe-2">
                                 <div class="lh-sm">
                                     <div class="small text-muted">Agente Responsable</div>
-                                    <div class="fw-bold text-dark" style="max-width: 120px;"
-                                        title="{{ auth()->user()->name }}">
-                                        {{ auth()->user()->name }}
-                                    </div>
+                                    <div class="fw-bold text-dark" style="max-width: 120px;" title="{{ auth()->user()->name }}">{{ auth()->user()->name }}</div>
                                 </div>
                             </div>
 
@@ -361,25 +379,16 @@
 
                             <div class="d-flex align-items-center flex-grow-1">
                                 <div class="me-auto">
-                                    <small class="text-muted d-block"
-                                        style="font-size: 0.65rem; text-transform: uppercase;">Duración</small>
+                                    <small class="text-muted d-block" style="font-size: 0.65rem; text-transform: uppercase;">Duración</small>
                                     <div class="d-flex align-items-center">
-                                        <span id="timer-indicator" class="me-1"
-                                            style="width: 7px; height: 7px; background-color: #333; border-radius: 50%;"></span>
-                                        <div class="fw-bold text-dark fs-6 lh-1" id="timer">00:00
-                                        </div>
+                                        <span id="timer-indicator" class="me-1" style="width: 7px; height: 7px; background-color: #333; border-radius: 50%;"></span>
+                                        <div class="fw-bold text-dark fs-6 lh-1" id="timer">00:00</div>
                                     </div>
                                 </div>
 
                                 <div class="d-flex gap-1 ms-2">
-                                    <button type="button" class="btn btn-sm btn-light border p-1" id="btn-timer-toggle"
-                                        title="Pausar/Reanudar">
-                                        <i class="bi bi-pause" style="font-size: 0.8rem;"></i>
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-light border p-1" id="btn-timer-reset"
-                                        title="Reiniciar">
-                                        <i class="bi bi-arrow-counterclockwise" style="font-size: 0.8rem;"></i>
-                                    </button>
+                                    <button type="button" class="btn btn-sm btn-light border p-1" id="btn-timer-toggle" title="Pausar/Reanudar"><i class="bi bi-pause" style="font-size: 0.8rem;"></i></button>
+                                    <button type="button" class="btn btn-sm btn-light border p-1" id="btn-timer-reset" title="Reiniciar"><i class="bi bi-arrow-counterclockwise" style="font-size: 0.8rem;"></i></button>
                                 </div>
                             </div>
                         </div>
@@ -388,23 +397,20 @@
                         <input type="hidden" name="duration" id="duration" value="0">
                     </div>
 
+                    <!-- Tarjeta de Información del Cliente -->
                     <div id="client-info-card" class="col-12 mt-4" style="display:none;">
-                        <div class="border p-4 bg-light"
-                            style="border-radius: 4px; border-left: 3px solid var(--text-main) !important;">
+                        <div class="border p-4 bg-light" style="border-radius: 4px; border-left: 3px solid var(--text-main) !important;">
                             <div class="row align-items-center" id="client-info-content">
                                 <div class="col-md-5 border-end border-secondary border-opacity-10">
                                     <div class="d-flex align-items-center mb-3">
                                         <div>
                                             <h6 class="fw-bold text-dark mb-1" id="info-nombre">Nombre Cliente</h6>
-                                            <div class="text-muted small">ID: <span id="info-id"
-                                                    class="text-dark">-</span></div>
+                                            <div class="text-muted small">ID: <span id="info-id" class="text-dark">-</span></div>
                                         </div>
                                     </div>
                                     <div class="d-flex gap-2">
-                                        <span class="smart-tag px-2 py-1 small border"><span
-                                                id="info-categoria">Cat</span></span>
-                                        <span class="smart-tag px-2 py-1 small border"><span
-                                                id="info-distrito">Zona</span></span>
+                                        <span class="smart-tag px-2 py-1 small border"><span id="info-categoria">Cat</span></span>
+                                        <span class="smart-tag px-2 py-1 small border"><span id="info-distrito">Zona</span></span>
                                     </div>
                                 </div>
                                 <div class="col-md-7 ps-md-4 mt-3 mt-md-0">
@@ -423,10 +429,8 @@
                                         </div>
                                     </div>
                                     <div class="d-flex justify-content-end gap-2 mt-2 pt-2 border-top">
-                                        <a id="btn-editar-cliente" href="#" target="_blank"
-                                            class="btn btn-sm btn-light border text-dark">Editar</a>
-                                        <a id="btn-ver-cliente" href="#" target="_blank" class="btn btn-sm btn-dark">Ver
-                                            Ficha</a>
+                                        <a id="btn-editar-cliente" href="#" target="_blank" class="btn btn-sm btn-light border text-dark">Editar</a>
+                                        <a id="btn-ver-cliente" href="#" target="_blank" class="btn btn-sm btn-dark">Ver Ficha</a>
                                     </div>
                                 </div>
                             </div>
@@ -435,41 +439,29 @@
                 </div>
             </div>
 
+            <!-- Historial del Cliente -->
             <div class="category-container mb-4">
-                <div class="category-header p-3 d-flex justify-content-between align-items-center cursor-pointer"
-                    data-bs-toggle="collapse" data-bs-target="#historyCollapse" aria-expanded="false"
-                    aria-controls="historyCollapse" style="user-select: none;">
-                    <h5 class="category-title mb-0">
-                        Historial del Cliente
-                    </h5>
+                <div class="category-header p-3 d-flex justify-content-between align-items-center cursor-pointer" data-bs-toggle="collapse" data-bs-target="#historyCollapse" aria-expanded="false" aria-controls="historyCollapse" style="user-select: none;">
+                    <h5 class="category-title mb-0">Historial del Cliente</h5>
                     <i class="bi bi-chevron-down text-muted accordion-arrow transition-all"></i>
                 </div>
 
                 <div class="collapse m-2" id="historyCollapse">
                     <div id="history-content" class="position-relative bg-white">
                         <div>
-                            <div id="interaction-history-list" class="history-list"
-                                style="max-height: 300px; overflow-y: auto; min-height: 100px;">
-                                <div id="history-loading-skeleton" class="py-3 px-2 text-muted small">
-                                    Cargando historial...
-                                </div>
-                                <div id="history-empty-state" class="text-center py-4 d-none">
-                                    <p class="text-muted small mb-0">No se encontraron interacciones previas.</p>
-                                </div>
+                            <div id="interaction-history-list" class="history-list" style="max-height: 300px; overflow-y: auto; min-height: 100px;">
+                                <div id="history-loading-skeleton" class="py-3 px-2 text-muted small">Cargando historial...</div>
+                                <div id="history-empty-state" class="text-center py-4 d-none"><p class="text-muted small mb-0">No se encontraron interacciones previas.</p></div>
                             </div>
                         </div>
                     </div>
-
                 </div>
             </div>
 
+            <!-- Parametrización -->
             <div class="category-container mb-4">
-                <div class="category-header p-3 d-flex justify-content-between align-items-center cursor-pointer"
-                    data-bs-toggle="collapse" data-bs-target="#paramCollapse" aria-expanded="true"
-                    aria-controls="paramCollapse" style="user-select: none;">
-                    <h5 class="category-title mb-0">
-                        Parametrización
-                    </h5>
+                <div class="category-header p-3 d-flex justify-content-between align-items-center cursor-pointer" data-bs-toggle="collapse" data-bs-target="#paramCollapse" aria-expanded="true" aria-controls="paramCollapse" style="user-select: none;">
+                    <h5 class="category-title mb-0">Parametrización</h5>
                     <i class="bi bi-chevron-down text-muted accordion-arrow transition-all"></i>
                 </div>
 
@@ -477,16 +469,12 @@
                     <div class="category-content p-4">
 
                         <div class="mb-4" id="container-channel">
-                            <label class="form-label text-uppercase text-muted mb-2 d-block">
-                                Canal de Entrada <span class="text-muted">*</span>
-                            </label>
+                            <label class="form-label text-uppercase text-muted mb-2 d-block">Canal de Entrada <span class="text-muted">*</span></label>
                             <div class="grid-gallery d-flex flex-wrap gap-2">
                                 @foreach ($channels as $channel)
                                     <div class="position-relative">
-                                        <input type="radio" class="btn-check" name="interaction_channel"
-                                            id="ch_{{ $channel->id }}" value="{{ $channel->id }}" {{ old('interaction_channel', $interaction->interaction_channel ?? '') == $channel->id ? 'checked' : '' }} required>
-                                        <label class="smart-tag py-1 px-3 border cursor-pointer text-center transition-all"
-                                            for="ch_{{ $channel->id }}">
+                                        <input type="radio" class="btn-check" name="interaction_channel" id="ch_{{ $channel->id }}" value="{{ $channel->id }}" {{ old('interaction_channel', $interaction->interaction_channel ?? '') == $channel->id ? 'checked' : '' }} required>
+                                        <label class="smart-tag py-1 px-3 border cursor-pointer text-center transition-all" for="ch_{{ $channel->id }}">
                                             <span class="small">{{ $channel->name }}</span>
                                         </label>
                                     </div>
@@ -498,20 +486,15 @@
                         </div>
 
                         <div class="mb-2" id="container-type">
-                            <label class="form-label text-uppercase text-muted mb-2 d-block">
-                                Motivo / Tipificación <span class="text-muted">*</span>
-                            </label>
+                            <label class="form-label text-uppercase text-muted mb-2 d-block">Motivo / Tipificación <span class="text-muted">*</span></label>
                             <div class="input-group input-group-sm mb-4" style="width: 300px;">
                                 <div class="input-group-text"><i class="bi bi-search small"></i></div>
-                                <input class="form-control" id="search-type"
-                                    placeholder="Buscar motivo / tipificacion..." type="text" name="name">
+                                <input class="form-control" id="search-type" placeholder="Buscar motivo / tipificacion..." type="text" name="name">
                             </div>
                             <div class="d-flex flex-wrap gap-2" id="container-list-types">
                                 @foreach ($types as $type)
-                                    <input type="radio" class="btn-check type-trigger" name="interaction_type"
-                                        id="tp_{{ $type->id }}" value="{{ $type->id }}" {{ old('interaction_type', $interaction->interaction_type ?? '') == $type->id ? 'checked' : '' }} required>
-                                    <label class="smart-tag py-1 px-3 border cursor-pointer transition-all small"
-                                        for="tp_{{ $type->id }}">
+                                    <input type="radio" class="btn-check type-trigger" name="interaction_type" id="tp_{{ $type->id }}" value="{{ $type->id }}" {{ old('interaction_type', $interaction->interaction_type ?? '') == $type->id ? 'checked' : '' }} required>
+                                    <label class="smart-tag py-1 px-3 border cursor-pointer transition-all small" for="tp_{{ $type->id }}">
                                         {{ $type->name }}
                                     </label>
                                 @endforeach
@@ -524,29 +507,23 @@
                 </div>
             </div>
 
+            <!-- Asignación y Contexto -->
             <div class="category-container mb-4">
                 <div class="category-header p-3">
                     <h5 class="category-title mb-1">Asignación y Contexto</h5>
                 </div>
                 <div class="category-content p-4">
                     <div class="mb-4">
-                        <label class="form-label text-muted mb-3 d-block">¿Quién es el responsable de esta
-                            gestión?</label>
+                        <label class="form-label text-muted mb-3 d-block">¿Quién es el responsable de esta gestión?</label>
 
                         <div class="d-flex gap-3 mb-4">
                             <div>
-                                <input type="radio" class="btn-check" name="handled_by_agent" id="handled_by_me"
-                                    value="yes" checked>
-                                <label class="btn btn-outline-dark px-4 py-2" for="handled_by_me">
-                                    Yo me encargo
-                                </label>
+                                <input type="radio" class="btn-check" name="handled_by_agent" id="handled_by_me" value="yes" checked>
+                                <label class="btn btn-outline-dark px-4 py-2" for="handled_by_me">Yo me encargo</label>
                             </div>
                             <div>
-                                <input type="radio" class="btn-check" name="handled_by_agent" id="handled_by_other"
-                                    value="no">
-                                <label class="btn btn-outline-secondary px-4 py-2" for="handled_by_other">
-                                    Delegar a otro
-                                </label>
+                                <input type="radio" class="btn-check" name="handled_by_agent" id="handled_by_other" value="no">
+                                <label class="btn btn-outline-secondary px-4 py-2" for="handled_by_other">Delegar a otro</label>
                             </div>
                         </div>
 
@@ -556,27 +533,24 @@
                                     <strong>{{ Auth::user()->name ?? '' }}</strong> -
                                     <strong>{{ $idCargoAgente ? $cargos[$idCargoAgente] ?? 'Cargo' : 'Sin Cargo' }}</strong>
                                 </p>
+                                <input type="hidden" name="id_user_asignacion" id="assigned_user_hidden" required>
                             </div>
                         </div>
 
                         <div id="panel-other" style="display: none;">
                             <div class="bg-white border rounded p-3">
-                                <label for="id_user_asignacion" class="form-label small">Buscar Usuario <span
-                                        class="text-muted">*</span></label>
-                                <select class="form-select" id="id_user_asignacion" name="id_user_asignacion" required>
+                                <label for="id_user_asignacion" class="form-label small">Buscar Usuario <span class="text-muted">*</span></label>
+                                <select class="form-select" id="id_user_asignacion">
                                     <option value="">Buscar usuario por nombre o correo...</option>
-                                    <option value="{{ Auth::id() }}" id="option-me">
-                                        -
-                                    </option>
+                                    <option value="{{ Auth::id() }}" id="option-me">-</option>
                                     @if (isset($interaction) && $interaction->usuarioAsignado)
-                                        <option value="{{ $interaction->id_user_asignacion }}" selected>
-                                            {{ $interaction->usuarioAsignado->name }}
-                                        </option>
+                                        <option value="{{ $interaction->id_user_asignacion }}" selected>{{ $interaction->usuarioAsignado->name }}</option>
                                     @endif
                                 </select>
                             </div>
                         </div>
                     </div>
+                    
                     <div class="d-flex flex-wrap gap-3 align-items-center" id="container-lineas">
                         <div class="linea-item-wrapper d-flex align-items-center gap-2" style="width: 320px;">
                             <div class="flex-grow-1" style="min-width: 0;">
@@ -590,23 +564,24 @@
                                 </select>
                             </div>
                         </div>
-                        <button type="button"
-                            class="btn btn-primary rounded-circle shadow-sm d-flex align-items-center justify-content-center"
-                            id="btn-add-linea" style="width: 32px; height: 32px; flex-shrink: 0;">
+                        <button type="button" class="btn btn-primary rounded-circle shadow-sm d-flex align-items-center justify-content-center" id="btn-add-linea" style="width: 32px; height: 32px; flex-shrink: 0;">
                             <i class="bi bi-plus-lg"></i>
                         </button>
                     </div>
                 </div>
             </div>
+
             <div class="text-end mb-4">
-                <button type="button" class="btn btn-dark px-4 py-2" id="btn-siguiente-paso">
-                    Continuar
-                </button>
+                <button type="button" class="btn btn-dark px-4 py-2" id="btn-siguiente-paso">Continuar</button>
             </div>
         </div>
 
+        <!-- ============================================================
+             TAB 2: RESULTADO
+             ============================================================ -->
         <div class="tab-pane fade" id="resultado-tab" role="tabpanel">
 
+            <!-- Documentación de Soporte -->
             <div class="category-container mb-4 p-4">
                 <div class="mb-4 pb-2 border-bottom">
                     <h5 class="fw-bold text-dark mb-0">Documentación de Soporte (Opcional)</h5>
@@ -615,13 +590,9 @@
                 <div class="row g-4">
                     <div class="col-lg-6">
                         <label class="form-label text-muted d-block">Archivo Físico</label>
-                        <div class="drop-zone-pro position-relative bg-light p-4 text-center cursor-pointer"
-                            id="drop-zone" style="border-radius: 4px;">
-                            <input type="file" id="attachment" name="attachment"
-                                class="drop-zone-input position-absolute w-100 h-100 top-0 start-0 opacity-0 cursor-pointer @error('attachment') is-invalid @enderror"
-                                accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" onchange="handleFileSelect(this)">
-                            <div class="dz-message d-flex flex-column align-items-center justify-content-center"
-                                style="min-height: 80px;" id="upload-icon-wrapper">
+                        <div class="drop-zone-pro position-relative bg-light p-4 text-center cursor-pointer" id="drop-zone" style="border-radius: 4px;">
+                            <input type="file" id="attachment" name="attachment" class="drop-zone-input position-absolute w-100 h-100 top-0 start-0 opacity-0 cursor-pointer @error('attachment') is-invalid @enderror" accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" onchange="handleFileSelect(this)">
+                            <div class="dz-message d-flex flex-column align-items-center justify-content-center" style="min-height: 80px;" id="upload-icon-wrapper">
                                 <h6 class="text-dark mb-1" id="file-label">Adjuntar archivo</h6>
                                 <p class="text-muted small mb-0">PDF, Word, Excel, Img (Max 10MB)</p>
                             </div>
@@ -632,8 +603,7 @@
                         @enderror
 
                         <div id="image-preview-wrapper" class="mt-3 text-center" style="display: none;">
-                            <img id="img-preview-element" class="img-fluid border p-1"
-                                style="max-height: 100px; object-fit: contain;" alt="Vista Previa">
+                            <img id="img-preview-element" class="img-fluid border p-1" style="max-height: 100px; object-fit: contain;" alt="Vista Previa">
                         </div>
 
                         @if ($modoEdicion && $interaction->attachment_urls)
@@ -641,13 +611,10 @@
                                 <label class="form-label small text-dark">Archivo Guardado</label>
                                 <div class="d-flex align-items-center p-2 bg-light border">
                                     <div class="flex-grow-1 overflow-hidden me-2">
-                                        <div class="text-dark text-truncate small">
-                                            {{ basename($interaction->attachment_urls) }}
-                                        </div>
+                                        <div class="text-dark text-truncate small">{{ basename($interaction->attachment_urls) }}</div>
                                     </div>
                                     <div class="d-flex gap-1">
-                                        <a href="{{ route('interactions.download', basename($interaction->attachment_urls)) }}"
-                                            class="btn btn-sm btn-light border" target="_blank">Descargar</a>
+                                        <a href="{{ route('interactions.download', basename($interaction->attachment_urls)) }}" class="btn btn-sm btn-light border" target="_blank">Descargar</a>
                                     </div>
                                 </div>
                             </div>
@@ -656,9 +623,7 @@
 
                     <div class="col-lg-6">
                         <label class="form-label text-muted d-block">Enlace Externo (URL)</label>
-                        <input type="url" class="form-control @error('interaction_url') is-invalid @enderror"
-                            id="interaction_url" name="interaction_url" placeholder="https://..."
-                            value="{{ old('interaction_url', $interaction->interaction_url ?? '') }}">
+                        <input type="url" class="form-control @error('interaction_url') is-invalid @enderror" id="interaction_url" name="interaction_url" placeholder="https://..." value="{{ old('interaction_url', $interaction->interaction_url ?? '') }}">
                         @error('interaction_url')
                             <div class="text-danger small mt-1">{{ $message }}</div>
                         @enderror
@@ -666,46 +631,35 @@
                 </div>
             </div>
 
+            <!-- Vincular a Caso Anterior -->
             <div class="category-container mb-4">
                 <div class="category-header p-3 bg-light d-flex justify-content-between align-items-center">
                     <h5 class="category-title mb-0">Vincular a Caso Anterior</h5>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" id="refresh-history"
-                        title="Recargar lista">
-                        Actualizar
-                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="refresh-history" title="Recargar lista">Actualizar</button>
                 </div>
 
                 <div class="category-content p-0">
-
                     <div id="no-client-selected" class="text-center py-4 bg-white">
-                        <p class="text-muted small mb-0">Busca un cliente en la pestaña "Principal" para cargar su
-                            historial.</p>
+                        <p class="text-muted small mb-0">Busca un cliente en la pestaña "Principal" para cargar su historial.</p>
                     </div>
                     <div id="history-section" style="display:none;">
                         <input type="hidden" id="parent_interaction_id" name="parent_interaction_id" value="">
                         <div class="p-3 bg-white border-bottom">
-                            <div id="selected-parent-info"
-                                class="bg-light border p-2 d-flex align-items-center justify-content-between"
-                                style="display:none; border-radius: 4px;">
+                            <div id="selected-parent-info" class="bg-light border p-2 d-flex align-items-center justify-content-between" style="display:none; border-radius: 4px;">
                                 <div class="small">
-                                    <strong class="text-dark">Escalando de:</strong> <span id="selected-parent-text"
-                                        class="text-muted">...</span>
+                                    <strong class="text-dark">Escalando de:</strong> <span id="selected-parent-text" class="text-muted">...</span>
                                 </div>
-                                <button type="button" class="btn btn-sm btn-light border text-danger"
-                                    id="clear-parent-selection">
-                                    Desvincular
-                                </button>
+                                <button type="button" class="btn btn-sm btn-light border text-danger" id="clear-parent-selection">Desvincular</button>
                             </div>
                         </div>
                         <div id="history-content" class="p-3 bg-white">
-                            <div id="interaction-history-list-bottom" class="history-list"
-                                style="max-height: 250px; overflow-y: auto;">
-                            </div>
+                            <div id="interaction-history-list-bottom" class="history-list" style="max-height: 250px; overflow-y: auto;"></div>
                         </div>
                     </div>
                 </div>
             </div>
 
+            <!-- Cierre de Gestión -->
             <div class="category-container mb-4 p-4">
                 <div class="mb-4 pb-3 border-bottom">
                     <h5 class="fw-bold text-dark mb-0">Cierre de Gestión</h5>
@@ -714,18 +668,12 @@
                     <div class="col-lg-6">
                         <div class="border h-100 bg-white" style="border-radius: 4px;">
                             <div class="p-4">
-                                <label class="form-label text-muted text-uppercase mb-3">Resultado de Interacción <span
-                                        class="text-muted">*</span></label>
+                                <label class="form-label text-muted text-uppercase mb-3">Resultado de Interacción <span class="text-muted">*</span></label>
                                 <div class="row g-2">
                                     @foreach ($outcomes as $outcome)
                                         <div class="col-sm-6">
-                                            <input type="radio" class="btn-check outcome-radio" name="outcome"
-                                                id="outcome_{{ $outcome->id }}" value="{{ $outcome->id }}"
-                                                data-requires-planning="{{ !$outcome->estado ? 'true' : 'false' }}" {{ old('outcome', $interaction->outcome ?? '') == $outcome->id ? 'checked' : '' }} required>
-                                            <label class="btn btn-outline-secondary w-100 text-start "
-                                                for="outcome_{{ $outcome->id }}">
-                                                {{ $outcome->name }}
-                                            </label>
+                                            <input type="radio" class="btn-check outcome-radio" name="outcome" id="outcome_{{ $outcome->id }}" value="{{ $outcome->id }}" data-requires-planning="{{ !$outcome->estado ? 'true' : 'false' }}" {{ old('outcome', $interaction->outcome ?? '') == $outcome->id ? 'checked' : '' }} required>
+                                            <label class="btn btn-outline-secondary w-100 text-start " for="outcome_{{ $outcome->id }}">{{ $outcome->name }}</label>
                                         </div>
                                     @endforeach
                                 </div>
@@ -748,12 +696,8 @@
                                     <div class="row g-2">
                                         @foreach ($nextActions as $action)
                                             <div class="col-6 col-sm-4">
-                                                <input type="radio" class="btn-check" name="next_action_type"
-                                                    id="action_{{ $action->id }}" value="{{ $action->id }}" {{ old('next_action_type', $interaction->next_action_type ?? '') == $action->id ? 'checked' : '' }}>
-                                                <label class="btn btn-outline-dark w-100 border small text-truncate"
-                                                    for="action_{{ $action->id }}" title="{{ $action->name }}">
-                                                    {{ $action->name }}
-                                                </label>
+                                                <input type="radio" class="btn-check" name="next_action_type" id="action_{{ $action->id }}" value="{{ $action->id }}" {{ old('next_action_type', $interaction->next_action_type ?? '') == $action->id ? 'checked' : '' }}>
+                                                <label class="btn btn-outline-dark w-100 border small text-truncate" for="action_{{ $action->id }}" title="{{ $action->name }}">{{ $action->name }}</label>
                                             </div>
                                         @endforeach
                                     </div>
@@ -763,20 +707,13 @@
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="next_action_date" class="form-label small text-muted">Fecha y Hora
-                                        Programada</label>
-                                    <input type="datetime-local"
-                                        class="form-control @error('next_action_date') is-invalid @enderror"
-                                        id="next_action_date" name="next_action_date"
-                                        value="{{ old('next_action_date', $interaction->next_action_date ?? '') }}">
+                                    <label for="next_action_date" class="form-label small text-muted">Fecha y Hora Programada</label>
+                                    <input type="datetime-local" class="form-control @error('next_action_date') is-invalid @enderror" id="next_action_date" name="next_action_date" value="{{ old('next_action_date', $interaction->next_action_date ?? '') }}">
 
                                     <div class="d-flex gap-2 mt-2">
-                                        <button type="button" class="btn btn-sm btn-light border flex-grow-1"
-                                            onclick="addDays(1)">Mañana</button>
-                                        <button type="button" class="btn btn-sm btn-light border flex-grow-1"
-                                            onclick="addDays(3)">En 3 días</button>
-                                        <button type="button" class="btn btn-sm btn-light border flex-grow-1"
-                                            onclick="addDays(7)">En 1 sem</button>
+                                        <button type="button" class="btn btn-sm btn-light border flex-grow-1" onclick="addDays(1)">Mañana</button>
+                                        <button type="button" class="btn btn-sm btn-light border flex-grow-1" onclick="addDays(3)">En 3 días</button>
+                                        <button type="button" class="btn btn-sm btn-light border flex-grow-1" onclick="addDays(7)">En 1 sem</button>
                                     </div>
                                     @error('next_action_date')
                                         <div class="text-danger small mt-1">{{ $message }}</div>
@@ -784,12 +721,8 @@
                                 </div>
 
                                 <div class="form-group mb-0">
-                                    <label for="next_action_notes"
-                                        class="form-label small text-muted">Instrucciones</label>
-                                    <textarea
-                                        class="form-control bg-white @error('next_action_notes') is-invalid @enderror"
-                                        id="next_action_notes" name="next_action_notes" rows="2"
-                                        style="resize: vertical;" placeholder="Ej. Llamar para confirmar..."></textarea>
+                                    <label for="next_action_notes" class="form-label small text-muted">Instrucciones</label>
+                                    <textarea class="form-control bg-white @error('next_action_notes') is-invalid @enderror" id="next_action_notes" name="next_action_notes" rows="2" style="resize: vertical;" placeholder="Ej. Llamar para confirmar..."></textarea>
                                 </div>
                             </div>
                         </div>
@@ -797,43 +730,35 @@
                 </div>
             </div>
 
+            <!-- Notas Finales -->
             <div class="row mb-4">
                 <div class="col-12">
-                    <label class="form-label text-muted d-block">
-                        Notas Finales <span class="text-muted">*</span>
-                    </label>
-                    <textarea class="form-control bg-white" name="notes" id="notes" rows="4" lang="es" spellcheck="true"
-                        autocorrect="on" autocapitalize="sentences" placeholder="Resumen de la interacción..."
-                        required>{{ old('notes', $interaction->notes ?? '') }}</textarea>
+                    <label class="form-label text-muted d-block">Notas Finales <span class="text-muted">*</span></label>
+                    <textarea class="form-control bg-white" name="notes" id="notes" rows="4" lang="es" spellcheck="true" autocorrect="on" autocapitalize="sentences" placeholder="Resumen de la interacción..." required>{{ old('notes', $interaction->notes ?? '') }}</textarea>
                     @error('notes')
                         <div class="text-danger small mt-1">{{ $message }}</div>
                     @enderror
                 </div>
             </div>
 
+            <!-- Botones de Acción -->
             <div class="d-flex justify-content-between mb-4">
                 <button type="button" class="btn btn-light border px-4" id="btn-volver">Volver</button>
                 <div class="d-flex gap-2">
-                    <button type="button" class="btn btn-light border text-danger px-3 btn-limpiar-borrador">
-                        <i class="bi bi-trash me-1"></i> Borrar Borrador
-                    </button>
-
-                    <button type="submit" id="btn-submit-interaccion" class="btn btn-dark px-4">
-                        {{ $modoEdicion ? 'Actualizar' : 'Guardar' }}
-                    </button>
+                    <button type="button" class="btn btn-light border text-danger px-3 btn-limpiar-borrador"><i class="bi bi-trash me-1"></i> Borrar Borrador</button>
+                    <button type="submit" id="btn-submit-interaccion" class="btn btn-dark px-4">{{ $modoEdicion ? 'Actualizar' : 'Guardar' }}</button>
                 </div>
             </div>
 
         </div>
 
-        <div id="loading-overlay" class="d-none"
-            style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+        <!-- Overlays de Carga -->
+        <div id="loading-overlay" class="d-none" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center;">
             <div class="spinner-border text-dark" role="status"></div>
             <div class="mt-2 small text-dark">Procesando...</div>
         </div>
 
-        <div id="ajax-loader" class="ajax-loader" aria-hidden="true"
-            style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,0.9);z-index:9999;align-items:center;justify-content:center;">
+        <div id="ajax-loader" class="ajax-loader" aria-hidden="true" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(255,255,255,0.9);z-index:9999;align-items:center;justify-content:center;">
             <div class="text-center p-4">
                 <div class="spinner-border text-dark mb-2" role="status"></div>
                 <div class="small text-muted">Consultando base de datos...</div>
@@ -842,276 +767,19 @@
 
     </div>
 </form>
-<!-- ============================================================== -->
-<!-- MODAL DE ADJUNTAR SOPORTES -->
-<!-- ============================================================== -->
-<div class="modal fade" id="modalComprobante" data-bs-backdrop="static" aria-hidden="true">
+
+<!-- ============================================================
+     MODAL 1: COMPROBANTE DE PAGO
+     ============================================================ -->
+<div class="modal fade" id="modalComprobante" data-bs-backdrop="static" aria-hidden="true" tabindex="-1">
     <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
-            <div
-                class="modal-header border-0 pb-0 pt-8 px-8 d-flex flex-column align-items-start text-white bg-success">
-                <div class="d-flex align-items-center justify-content-between w-100">
-                    <div class="d-flex align-items-center">
-                        <div class="symbol symbol-45px me-3">
-                            <div class="symbol-label bg-white bg-opacity-25">
-                                <i class="fas fa-file-invoice-dollar fs-2x text-white"></i>
-                            </div>
-                        </div>
-                        <div>
-                            <h3 class="fw-bolder m-0 text-white">Registrar Soporte de Pago</h3>
-                            <span class="text-white opacity-75 fs-9">Sesión:
-                                {{ substr($miTokenSesion ?? '', 0, 8) }}...</span>
-                        </div>
-                    </div>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
-                </div>
-                <div class="separator separator-dashed w-100 mt-5 opacity-25"></div>
-            </div>
-
-            <div class="modal-body p-8">
-                <form id="formModalComprobante" action="{{ route('cartera.comprobantes.store') }}" method="POST"
-                    enctype="multipart/form-data">
-                    @csrf
-                    <!-- Se corrige el name a id_interaccion y el fallback a 0 -->
-                    <input type="hidden" name="id_interaccion" value="{{ $interaction->id ?? 0 }}">
-                    <input type="hidden" name="temp_token" value="{{ $miTokenSesion ?? '' }}">
-
-                    <div class="row g-5">
-                        <!-- COLUMNA IZQUIERDA -->
-                        <div class="col-md-6">
-                            <div class="fv-row mb-4">
-                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Código Tercero
-                                    *</label>
-                                <div class="input-group input-group-solid border border-gray-300 rounded shadow-sm">
-                                    <span class="input-group-text bg-transparent border-0"><i
-                                            class="fas fa-id-card text-muted"></i></span>
-                                    <input type="number" id="cod_tercero" name="cod_ter_MaeTerceros"
-                                        class="form-control border-0 gen-hash fw-bolder" readonly required>
-                                </div>
-                            </div>
-
-                            <div class="fv-row mb-4 position-relative">
-                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Obligación / Línea
-                                    de Crédito *</label>
-                                <div class="input-group input-group-solid border border-gray-300 rounded shadow-sm">
-                                    <span class="input-group-text bg-transparent border-0"><i
-                                            class="fas fa-search text-muted"></i></span>
-                                    <input type="text" id="search_obligacion" class="form-control border-0"
-                                        placeholder="Escribe para buscar..." autocomplete="off" required>
-                                    <input type="hidden" id="id_obligacion" name="id_obligacion">
-                                </div>
-                                <div class="list-group position-absolute w-100 shadow-lg d-none custom-dropdown-list"
-                                    id="list_obligacion">
-                                    @if (isset($lineasCredito))
-                                        @foreach ($lineasCredito as $id => $nombre)
-                                            <button type="button"
-                                                class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom"
-                                                data-id="{{ $id }}">{{ $nombre }}</button>
-                                        @endforeach
-                                    @endif
-                                </div>
-                            </div>
-
-                            <div class="fv-row mb-0">
-                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Monto Pagado
-                                    *</label>
-                                <div class="input-group input-group-solid border border-gray-300 rounded shadow-sm">
-                                    <span class="input-group-text bg-transparent border-0 fw-bold">$</span>
-                                    <input type="text" id="monto_pagado_display"
-                                        class="form-control border-0 fw-bolder text-success gen-hash" placeholder="0"
-                                        required>
-                                    <input type="hidden" id="monto_pagado" name="monto_pagado">
-                                </div>
-                            </div>
-
-                            <!-- NUEVO CAMPO: TIPO DE PAGO CON BUSCADOR -->
-                            <div class="fv-row mt-4 position-relative">
-                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Tipo de Pago
-                                    *</label>
-                                <div class="input-group input-group-solid border border-gray-300 rounded shadow-sm">
-                                    <span class="input-group-text bg-transparent border-0"><i
-                                            class="fas fa-search text-muted"></i></span>
-                                    <input type="text" id="search_tipo_pago" class="form-control border-0"
-                                        placeholder="Busca el tipo de pago..." autocomplete="off" required>
-                                    <!-- Aquí se guarda el valor que se enviará a la base de datos -->
-                                    <input type="hidden" id="tipo_pago" name="tipo_pago">
-                                </div>
-                                @php
-                                    $tiposPago = [
-                                        "Pago normal",
-                                        "Pago parcial",
-                                        "Pago total",
-                                        "Pago anticipado",
-                                        "Pago de cuota atrasada",
-                                        "Abono a capital",
-                                        "Pago de intereses",
-                                        "Pago mixto",
-                                        "Pago acuerdo de pago",
-                                        "Pago refinanciación",
-                                        "Pago reestructuración",
-                                        "Pago cobro jurídico",
-                                        "Pago extraordinario",
-                                        "Pago con descuento",
-                                        "Ajuste de pago",
-                                        "Reverso de pago",
-                                        "Condonación"
-                                    ];
-                                @endphp
-                                <div class="list-group position-absolute w-100 shadow-lg d-none custom-dropdown-list"
-                                    id="list_tipo_pago">
-                                    @foreach($tiposPago as $tipo)
-                                        <button type="button"
-                                            class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom"
-                                            data-id="{{ $tipo }}">
-                                            {{ $tipo }}
-                                        </button>
-                                    @endforeach
-                                </div>
-                            </div>
-
-                        </div>
-
-                        <!-- COLUMNA DERECHA -->
-                        <div class="col-md-6">
-                            <div class="fv-row mb-4">
-                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Fecha y Hora de Pago
-                                    *</label>
-                                <input type="datetime-local" id="fecha_pago" name="fecha_pago"
-                                    class="form-control form-control-solid border border-gray-300 gen-hash" required
-                                    value="{{ date('Y-m-d\TH:i') }}">
-                            </div>
-
-                            <div class="fv-row mb-4 position-relative">
-                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Banco *</label>
-                                <div class="input-group input-group-solid border border-gray-300 rounded shadow-sm">
-                                    <span class="input-group-text bg-transparent border-0"><i
-                                            class="fas fa-search text-muted"></i></span>
-                                    <input type="text" id="search_banco" class="form-control border-0"
-                                        placeholder="Escribe para buscar banco..." autocomplete="off" required>
-                                    <input type="hidden" id="id_banco" name="id_banco">
-                                </div>
-                                <div class="list-group position-absolute w-100 shadow-lg d-none custom-dropdown-list"
-                                    id="list_banco">
-                                    @if (isset($idBanco))
-                                        @foreach ($idBanco as $idb)
-                                            <button type="button"
-                                                class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom"
-                                                data-id="{{ $idb->id }}">{{ $idb->numero_cuenta }} - {{ $idb->banco }}</button>
-                                        @endforeach
-                                    @endif
-                                </div>
-                            </div>
-
-                            <div class="fv-row">
-                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Documento Soporte
-                                    *</label>
-                                <div class="drop-zone-custom position-relative" id="drop_zone_area">
-                                    <input type="file" id="archivo_soporte" name="archivo_soporte" class="d-none"
-                                        accept=".pdf,.jpg,.jpeg,.png" required>
-                                    <label for="archivo_soporte"
-                                        class="w-100 h-100 cursor-pointer d-flex flex-column align-items-center justify-content-center py-2 text-center">
-                                        <i class="fas fa-cloud-upload-alt fs-4 text-primary mb-1"></i>
-                                        <span class="fs-9 text-gray-800 fw-bold">Clic, Arrastra o Pega (Ctrl+V)</span>
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- DATOS EXTRA -->
-                        <div class="col-12 mt-2">
-                            <div class="p-4 bg-light-soft border border-dashed border-gray-300 rounded-3">
-                                <div class="row g-3">
-                                    <div class="col-md-4">
-                                        <label class="form-label fw-bold text-gray-600 fs-9 text-uppercase">N°
-                                            Cuota</label>
-                                        <input type="number" name="numero_cuota" id="numero_cuota"
-                                            class="form-control form-control-sm border-gray-300 bg-white"
-                                            placeholder="Ej: 1">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label fw-bold text-gray-600 fs-9 text-uppercase">PR</label>
-                                        <input type="number" name="pr" id="pr"
-                                            class="form-control form-control-sm border-gray-300 bg-white"
-                                            placeholder="0">
-                                    </div>
-                                    <div class="col-md-4">
-                                        <label class="form-label fw-bold text-gray-600 fs-9 text-uppercase">CCO</label>
-                                        <input type="number" name="cco" id="cco"
-                                            class="form-control form-control-sm border-gray-300 bg-white"
-                                            placeholder="0">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- NUEVO CAMPO: OBSERVACIÓN -->
-                        <div class="col-12 mt-4">
-                            <div class="fv-row">
-                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Observación</label>
-                                <textarea name="observacion" id="observacion"
-                                    class="form-control form-control-solid border border-gray-300 shadow-sm" rows="2"
-                                    placeholder="Agrega un comentario u observación opcional..."
-                                    maxlength="255"></textarea>
-                            </div>
-                        </div>
-
-                        <div id="preview_container" class="col-12 d-none">
-                            <div
-                                class="bg-light rounded p-4 d-flex align-items-center border border-dashed border-gray-400">
-                                <div class="symbol symbol-50px me-4">
-                                    <img id="image_preview" src="" class="d-none shadow-sm rounded"
-                                        style="width: 50px; height: 50px; object-fit: cover;">
-                                    <div id="pdf_preview_icon" class="symbol-label bg-white d-none shadow-sm"><i
-                                            class="fas fa-file-pdf text-danger fs-2"></i></div>
-                                </div>
-                                <div class="flex-grow-1 overflow-hidden">
-                                    <span id="file_name_preview"
-                                        class="text-gray-800 fw-bolder fs-8 d-block text-truncate">Nombre.pdf</span>
-                                </div>
-                                <button type="button" class="btn btn-icon btn-sm btn-active-light-danger border-0 ms-2"
-                                    onclick="resetFile()"><i class="fas fa-times"></i></button>
-                            </div>
-                        </div>
-
-                        <div class="col-12">
-                            <div
-                                class="bg-light-primary rounded-pill px-4 py-2 border border-primary border-dashed d-flex align-items-center">
-                                <i class="fas fa-fingerprint text-primary me-2"></i>
-                                <span class="fs-9 text-primary fw-bold me-2 uppercase">Integridad (Hash):</span>
-                                <input type="text" id="hash_transaccion" name="hash_transaccion"
-                                    class="bg-transparent border-0 p-0 text-primary fs-9 font-monospace w-100" readonly
-                                    placeholder="Calculando...">
-                            </div>
-                        </div>
-                    </div>
-                </form>
-            </div>
-
-            <div class="modal-footer bg-light py-4 px-8 border-0">
-                <button type="button" class="btn btn-light fw-bold rounded-pill px-6"
-                    data-bs-dismiss="modal">Cancelar</button>
-                <button type="submit" form="formModalComprobante"
-                    class="btn btn-success rounded-pill fw-bolder px-10 shadow-sm" id="btnSubmitComprobante">
-                    <i class="fas fa-save me-2 text-white"></i> Guardar y Vincular Pago
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-<!-- ============================================================== -->
-<!-- MODAL DE IDENTIFICACIÓN DE BANCOS -->
-<!-- ============================================================== -->
-<div class="modal fade" id="modalComprobante" data-bs-backdrop="static" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden;">
+            
             <div class="modal-header border-0 pb-0 pt-8 px-8 d-flex flex-column align-items-start text-white bg-success">
                 <div class="d-flex align-items-center justify-content-between w-100">
                     <div class="d-flex align-items-center">
                         <div class="symbol symbol-45px me-3">
-                            <div class="symbol-label bg-white bg-opacity-25">
-                                <i class="fas fa-file-invoice-dollar fs-2x text-white"></i>
-                            </div>
+                            <div class="symbol-label bg-white bg-opacity-25"><i class="fas fa-file-invoice-dollar fs-2x text-white"></i></div>
                         </div>
                         <div>
                             <h3 class="fw-bolder m-0 text-white">Registrar Soporte de Pago</h3>
@@ -1130,6 +798,7 @@
                     <input type="hidden" name="temp_token" value="{{ $miTokenSesion ?? '' }}">
 
                     <div class="row g-5">
+                        <!-- Columna Izquierda -->
                         <div class="col-md-6">
                             <div class="fv-row mb-4">
                                 <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Código Tercero *</label>
@@ -1173,23 +842,22 @@
                                 </div>
                                 @php
                                     $tiposPago = [
-                                        "Pago normal", "Pago parcial", "Pago total", "Pago anticipado", 
-                                        "Pago de cuota atrasada", "Abono a capital", "Pago de intereses", 
-                                        "Pago mixto", "Pago acuerdo de pago", "Pago refinanciación", 
-                                        "Pago reestructuración", "Pago cobro jurídico", "Pago extraordinario", 
+                                        "Pago normal", "Pago parcial", "Pago total", "Pago anticipado",
+                                        "Pago de cuota atrasada", "Abono a capital", "Pago de intereses",
+                                        "Pago mixto", "Pago acuerdo de pago", "Pago refinanciación",
+                                        "Pago reestructuración", "Pago cobro jurídico", "Pago extraordinario",
                                         "Pago con descuento", "Ajuste de pago", "Reverso de pago", "Condonación"
                                     ];
                                 @endphp
                                 <div class="list-group position-absolute w-100 shadow-lg d-none custom-dropdown-list" id="list_tipo_pago">
                                     @foreach($tiposPago as $tipo)
-                                        <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="{{ $tipo }}">
-                                            {{ $tipo }}
-                                        </button>
+                                        <button type="button" class="list-group-item list-group-item-action py-2 px-4 fs-8 border-0 border-bottom" data-id="{{ $tipo }}">{{ $tipo }}</button>
                                     @endforeach
                                 </div>
                             </div>
                         </div>
 
+                        <!-- Columna Derecha -->
                         <div class="col-md-6">
                             <div class="fv-row mb-4">
                                 <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Fecha y Hora de Pago *</label>
@@ -1224,6 +892,7 @@
                             </div>
                         </div>
 
+                        <!-- Fila Inferior Completa -->
                         <div class="col-12 mt-2">
                             <div class="p-4 bg-light-soft border border-dashed border-gray-300 rounded-3">
                                 <div class="row g-3">
@@ -1284,6 +953,9 @@
     </div>
 </div>
 
+<!-- ============================================================
+     MODAL 2: IDENTIFICACIÓN BANCOS (BUSCADOR Y CRUCE)
+     ============================================================ -->
 <div class="modal fade" id="modalIdentificacionBancos" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 12px; overflow: hidden; background-color: #f8f9fa;">
@@ -1291,9 +963,7 @@
             <div class="modal-header border-bottom border-gray-200 py-3 px-5 bg-white d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center">
                     <div class="symbol symbol-35px me-3">
-                        <div class="symbol-label bg-light-primary text-primary rounded-circle">
-                            <i class="fas fa-search-dollar fs-5"></i>
-                        </div>
+                        <div class="symbol-label bg-light-primary text-primary rounded-circle"><i class="fas fa-search-dollar fs-5"></i></div>
                     </div>
                     <div>
                         <h3 class="fw-bolder m-0 text-dark fs-5">Buscador Global de Conciliación</h3>
@@ -1336,8 +1006,7 @@
                                     <tbody id="tbodyBancosModal">
                                         <tr class="empty-placeholder">
                                             <td colspan="4" class="text-center py-10 text-muted">
-                                                <i class="fas fa-arrow-up d-block fs-1 opacity-25 mb-2"></i>
-                                                Escribe algo arriba para buscar
+                                                <i class="fas fa-arrow-up d-block fs-1 opacity-25 mb-2"></i> Escribe algo arriba para buscar
                                             </td>
                                         </tr>
                                     </tbody>
@@ -1365,8 +1034,7 @@
                                     <tbody id="tbodyCarteraModal">
                                         <tr class="empty-placeholder">
                                             <td colspan="5" class="text-center py-10 text-muted">
-                                                <i class="fas fa-search d-block fs-1 opacity-25 mb-2"></i>
-                                                Resultados de cartera aparecerán aquí
+                                                <i class="fas fa-search d-block fs-1 opacity-25 mb-2"></i> Resultados de cartera aparecerán aquí
                                             </td>
                                         </tr>
                                     </tbody>
@@ -1380,7 +1048,6 @@
             <div class="modal-footer bg-light py-2 px-5 border-0">
                 <button type="button" class="btn btn-sm btn-secondary fw-bold rounded-pill" data-bs-dismiss="modal">Cerrar</button>
             </div>
-            
         </div>
     </div>
 </div>
@@ -1393,107 +1060,622 @@
     <input type="hidden" name="id_comprobante" id="modal_input_comprobante">
 </form>
 
-<style>
-    /* Estilo tipo Hoja de Cálculo (Google Sheets) */
-    .table-gsheets { width: 100%; border-collapse: collapse; font-size: 11px; color: #3c4043; table-layout: fixed; }
-    .table-gsheets thead th { background-color: #f8f9fa; border: 1px solid #dadce0; padding: 6px 8px; font-weight: bold; color: #5f6368; text-align: left; text-transform: uppercase; font-size: 9px; }
-    .table-gsheets tbody td { border: 1px solid #dadce0; padding: 5px 8px; vertical-align: middle; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .table-gsheets .col-index { background-color: #f8f9fa; text-align: center; font-weight: bold; border-right: 2px solid #dadce0 !important; color: #5f6368; }
-    
-    /* Selección de filas */
-    .selected-row td { background-color: #e8f0fe !important; border-top: 1px solid #1a73e8 !important; border-bottom: 1px solid #1a73e8 !important; }
-    .selected-row .col-index { background-color: #1a73e8 !important; color: white !important; }
-    
-    .cursor-pointer { cursor: pointer; }
-    .transition-2ms { transition: all 0.2s; }
-
-    .drop-zone-custom {
-        border: 2px dashed #dbdfe9;
-        border-radius: 8px;
-        transition: all 0.3s ease;
-        background-color: #f9fafb;
-        height: 85px;
-    }
-
-    .drop-zone-custom:hover,
-    .drop-zone-custom.dragover {
-        border-color: #198754;
-        background-color: #e8f5e9;
-    }
-
-    .bg-light-soft { background-color: #fcfcfc; }
-    .font-monospace { font-family: 'Roboto Mono', monospace !important; }
-    .border-dashed { border-style: dashed !important; }
-
-    .custom-dropdown-list {
-        z-index: 1060;
-        max-height: 180px;
-        overflow-y: auto;
-        top: 100%;
-        left: 0;
-        margin-top: 5px;
-        background: #fff;
-        border: 1px solid #e4e6ef;
-        border-radius: 0.475rem;
-    }
-
-    .custom-dropdown-list button:hover {
-        background-color: #f1f1f4;
-        color: #181c32;
-    }
-
-    #modalComprobante .form-control:required:invalid {
-        border-color: #f1416c !important;
-        border-left: 4px solid #f1416c !important;
-        background-color: #fff8fa !important;
-    }
-
-    #modalComprobante input[type="file"]:required:invalid + label {
-        border: 2px dashed #f1416c !important;
-        background-color: #fff8fa !important;
-        border-radius: 8px;
-    }
-
-    #modalComprobante label:has(+ input:required),
-    #modalComprobante label:has(+ div input:required) {
-        color: #181c32;
-    }
-</style>
 
 <script>
-// =================================================================
-// LÓGICA ESPECÍFICA PARA LOS MODALES
-// =================================================================
+/**
+ * =========================================================================
+ * 1. UTILIDADES GLOBALES Y ESTADO
+ * =========================================================================
+ */
+// Exponer función global para calcular fechas automáticas de la agenda
+window.addDays = function (days) {
+    const date = new Date();
+    date.setDate(date.getDate() + days);
+    const tzOffset = (new Date()).getTimezoneOffset() * 60000;
+    const localISOTime = (new Date(date - tzOffset)).toISOString().slice(0, 16);
+    const $dateInput = $('#next_action_date');
+    $dateInput.val(localISOTime).trigger('change');
+    $dateInput.removeClass('is-invalid input-error').addClass('is-valid');
+};
+
+const myUserId = "{{ Auth::id() }}";
+
+function toggleAssignment() {
+    if ($('#handled_by_me').is(':checked')) {
+        $('#panel-me').show();
+        $('#panel-other').hide();
+        $('#assigned_user_hidden').val(myUserId);
+        $('#id_user_asignacion').prop('required', false).val(myUserId).trigger('change');
+    } else {
+        $('#panel-me').hide();
+        $('#panel-other').show();
+        $('#assigned_user_hidden').val(
+                $('#id_user_asignacion').val()
+            );
+        $('#id_user_asignacion').prop('required', true).val('').trigger('change');
+    }
+}
+
+// Latido Anti-desconexión
+setInterval(function() {
+    fetch(window.location.href, { 
+        method: 'HEAD',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    }).catch(() => {}); 
+}, 60000); 
+
+
+/**
+ * =========================================================================
+ * 2. APP DE INTERACCIONES CRM (Arquitectura Modular Escalable)
+ * =========================================================================
+ */
+const CRMApp = (function ($) {
+    'use strict';
+    
+    // --- Configuración ---
+    const CONFIG = {
+        urls: { searchClients: @json(route('interactions.search-clients') ?? '') }
+    };
+
+    const DOM = {
+        form: '#interaction-form',
+        loader: '#ajax-loader',
+        overlay: '#loading-overlay',
+        timer: '#timer',
+        durationInp: '#duration',
+        durationDisp: '#duration-display',
+        startTimeInp: '#start_time',
+        btnSiguiente1: '#btn-siguiente-paso',
+        clientSelect: '#client_id',
+        clientCard: '#client-info-card',
+        thirdFields: '#third-party-fields',
+        thirdPartyCheck: '#caller_third',
+        handledByMe: '#handled_by_me',
+        handledByOther: '#handled_by_other',
+        panelMe: '#panel-me',
+        panelOther: '#panel-other',
+        areaSelect: '#id_area_de_asignacion',
+        cargoSelect: '#id_cargo_asignacion',
+        lineaSelect: 'select[name="id_linea_de_obligacion[]"]',
+        distritoSelect: '#id_distrito_interaccion',
+        btnSyncFrom: '#sync-from-client-btn',
+        btnSyncTo: '#sync-to-client-btn',
+        outcome: '#outcome',
+        planningSection: '#planning-section',
+        historySection: '#history-section',
+        historyList: '#interaction-history-list',
+        parentIdInp: '#parent_interaction_id'
+    };
+
+    let state = {
+        startTimeInterval: null,
+        startTime: null,
+        accumulatedTime: 0,
+        isPaused: false
+    };
+
+    // --- Módulo UI ---
+    const UI = {
+        showLoader: () => $(DOM.loader).show(),
+        hideLoader: () => $(DOM.loader).hide(),
+        markError: function (element, isWrapper = false) {
+            const $el = $(element);
+            if (!$el.prop('required') && !isWrapper) return;
+            if (isWrapper || $el.hasClass('grid-gallery') || $el.hasClass('bg-light')) {
+                $el.addClass(isWrapper ? 'sync-wrapper-error' : 'container-error');
+            } else if ($el.hasClass('select2-hidden-accessible')) {
+                $el.next('.select2-container').addClass('select2-error');
+            } else {
+                $el.addClass('input-error is-invalid').removeClass('is-valid');
+            }
+        },
+        cleanError: function (element, isWrapper = false) {
+            const $el = $(element);
+            if (isWrapper || $el.hasClass('grid-gallery') || $el.hasClass('bg-light')) {
+                $el.removeClass('sync-wrapper-error container-error');
+            } else if ($el.hasClass('select2-hidden-accessible')) {
+                $el.next('.select2-container').removeClass('select2-error');
+            } else {
+                $el.removeClass('input-error is-invalid');
+                if ($el.prop('required')) $el.addClass('is-valid');
+                else $el.removeClass('is-valid');
+            }
+        },
+        showTab: function (tabId) {
+            let tabElement = (tabId === 'resultado-tab') ? document.getElementById('profile-tab') : document.getElementById('home-tab');
+            new bootstrap.Tab(tabElement).show();
+            const progress = tabId === 'principal-tab' ? 50 : 100;
+            $('#form-progress').css('width', progress + '%').attr('aria-valuenow', progress);
+        },
+        handleFileSelect: function (input) {
+            const label = document.getElementById('file-label');
+            const dropZone = document.getElementById('drop-zone');
+            const previewWrapper = document.getElementById('image-preview-wrapper');
+            const previewImg = document.getElementById('img-preview-element');
+
+            if (input.files && input.files[0]) {
+                let file = input.files[0];
+                label.innerHTML = `<span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i> ${file.name}</span>`;
+                dropZone.style.borderColor = '#198754';
+                dropZone.style.backgroundColor = '#f8fff9';
+
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = e => {
+                        previewImg.src = e.target.result;
+                        previewWrapper.style.display = 'block';
+                    }
+                    reader.readAsDataURL(file);
+                } else {
+                    previewWrapper.style.display = 'none';
+                }
+            } else {
+                label.innerText = 'Adjuntar archivo';
+                label.classList.remove('text-success');
+                dropZone.style.borderColor = '';
+                dropZone.style.backgroundColor = '';
+                previewWrapper.style.display = 'none';
+            }
+        }
+    };
+
+    // --- Módulo Clientes ---
+    const ClientManager = {
+        toggleThirdParty: function () {
+            const isThird = $(DOM.thirdPartyCheck).is(':checked');
+            $(DOM.thirdFields).toggle(isThird);
+            if (!isThird) {
+                ['#nombre_quien_llama', '#cedula_quien_llama', '#celular_quien_llama'].forEach(s => UI.cleanError(s));
+                UI.cleanError('#container-parentesco', true);
+            }
+        },
+        generateAvatar: function (name) {
+            const colors = ['#6B9BD1', '#7FA9D3', '#93B7D5', '#A7C5D7', '#BBD3D9'];
+            const initials = name.split(' ').map(n => n.charAt(0)).join('').toUpperCase().substring(0, 2);
+            return { initials: initials || '—', color: colors[name.charCodeAt(0) % colors.length] };
+        },
+        updateClientCard: function (clientId) {
+            if (!clientId) {
+                $(DOM.clientCard).fadeOut();
+                $(DOM.historySection).fadeOut();
+                Timer.reset();
+                return;
+            }
+            UI.cleanError(DOM.clientSelect);
+            $('#error-client-msg').hide();
+            Timer.start();
+            UI.showLoader();
+
+            const url = @json(route('interactions.cliente.show', ['cod_ter' => ':cod_ter']) ?? '').replace(':cod_ter', clientId);
+            $(DOM.historyList).html('<div class="text-center py-4 small"><div class="spinner-border spinner-border-sm text-dark"></div> Cargando datos...</div>');
+
+            $.ajax({ url: url, type: 'GET', dataType: 'json', timeout: 15000 })
+                .done(data => {
+                    if (data.error) throw new Error(data.error);
+                    $('#info-nombre').text(data.nom_ter || 'No registrado');
+                    $('#info-id').text(`${data.cod_ter || 'N/A'}`);
+                    $('#info-distrito').text(data.distrito?.NOM_DIST || 'No registrado');
+                    $('#info-categoria').text(data.maeTipos?.nombre || 'No registrado');
+                    $('#info-email').text(data.email || 'No registrado');
+                    $('#info-telefono').text(data.tel1 || 'No registrado');
+                    $('#info-direccion').text(data.dir || 'No registrado');
+                    $('#btn-editar-cliente').attr('href', `/maestras/terceros/${data.cod_ter}/edit`);
+                    $('#btn-ver-cliente').attr('href', `/maestras/terceros/${data.cod_ter}`);
+                    HistoryManager.renderFull(data.history);
+                    $(DOM.clientCard).fadeIn();
+                    ClientManager.toggleThirdParty();
+                    toastr.success('Información cargada');
+                })
+                .fail(HistoryManager.handleAjaxError)
+                .always(() => UI.hideLoader());
+        }
+    };
+
+    // --- Módulo Cronómetro ---
+    const Timer = {
+        start: function (resume = false) {
+            if (!resume) {
+                this.stop();
+                state.startTime = new Date();
+                state.accumulatedTime = 0;
+                $(DOM.startTimeInp).val(state.startTime.toISOString());
+            } else {
+                state.startTime = new Date(); 
+            }
+            state.isPaused = false;
+            $('#timer-indicator').css({'background-color': '#059669'});
+            $('#btn-timer-toggle').html('<i class="bi bi-pause"></i>').attr('title', 'Pausar');
+
+            state.startTimeInterval = setInterval(() => {
+                if (!state.isPaused) {
+                    const now = new Date();
+                    const diff = Math.round((now - state.startTime) / 1000) + state.accumulatedTime;
+                    this.updateDisplay(diff);
+                }
+            }, 1000);
+        },
+        pause: function () {
+            if (state.isPaused) {
+                this.start(true); 
+            } else {
+                state.isPaused = true;
+                clearInterval(state.startTimeInterval);
+                const now = new Date();
+                state.accumulatedTime += Math.round((now - state.startTime) / 1000);
+                $('#timer-indicator').css({'background-color': '#D97706'});
+                $('#btn-timer-toggle').html('<i class="bi bi-play"></i>').attr('title', 'Reanudar');
+            }
+        },
+        stop: function () {
+            if (state.startTimeInterval) clearInterval(state.startTimeInterval);
+            state.startTimeInterval = null;
+        },
+        reset: function () {
+            this.stop();
+            state.startTime = null;
+            state.accumulatedTime = 0;
+            state.isPaused = false;
+            $(DOM.startTimeInp).val('');
+            this.updateDisplay(0);
+            $('#timer-indicator').css({'background-color': '#333'});
+            $('#btn-timer-toggle').html('<i class="bi bi-pause"></i>').attr('title', 'Pausar');
+        },
+        updateDisplay: function (seconds) {
+            $(DOM.durationInp).val(seconds);
+            $(DOM.durationDisp).val(`${seconds} segundos`);
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            $(DOM.timer).text(`${mins < 10 ? '0' + mins : mins}:${secs < 10 ? '0' + secs : secs}`);
+        }
+    };
+
+    // --- Módulo Historial ---
+    const HistoryManager = {
+        renderFull: function (historyData) {
+            const $list = $(DOM.historyList);
+            const $listBottom = $('#interaction-history-list-bottom');
+            $list.empty();
+            if ($listBottom.length) $listBottom.empty();
+
+            if (historyData && historyData.length > 0) {
+                const html = historyData.map(item => this.buildCardHtml(item)).join('');
+                $list.html(html);
+                if ($listBottom.length) $listBottom.html(html);
+                $(DOM.historySection).fadeIn();
+                this.restoreParentSelection();
+            } else {
+                const emptyHtml = `<div class="text-center py-4 text-muted small"><p>No hay interacciones previas.</p></div>`;
+                $list.html(emptyHtml);
+                if ($listBottom.length) $listBottom.html(emptyHtml);
+            }
+        },
+        buildCardHtml: function (item) {
+            const url = `/interactions/${item.id}/show`;
+            const isSuccess = ['2', '3', '5'].includes(item.outcome);
+            const isPending = ['1', '4'].includes(item.outcome);
+            const badgeColor = isSuccess ? '#39C666' : (isPending ? '#FFA21D' : '#596CD8');
+            const safeNotes = item.notes ? $('<div>').text(item.notes).html() : '<em>Sin notas.</em>';
+
+            return `
+            <div class="history-item mb-3 timeline-item" id="history-item-${item.id}">
+                <div class="border" style="border-radius: 4px;">
+                    <div class="bg-light d-flex justify-content-between align-items-center py-2 px-3 collapsed" 
+                         data-bs-toggle="collapse" data-bs-target="#collapseInteraction-${item.id}" style="cursor:pointer">
+                        <div class="d-flex align-items-center gap-2 small">                                
+                            <span style="color: ${badgeColor}; font-weight: bold;">[${item.outcome}]</span>
+                            <span class="text-muted border-start ps-2">${item.type}</span>
+                        </div>
+                        <small class="text-muted">${item.date}</small>
+                    </div>
+                    <div id="collapseInteraction-${item.id}" class="collapse">
+                        <div class="p-3 bg-white border-top">
+                            <div class="mb-2"><div class="small text-dark">${safeNotes}</div></div>
+                            <div class="d-flex justify-content-between align-items-end pt-2 border-top mt-2">
+                                <div class="small text-muted">Gestor: <strong>${item.agent}</strong></div>
+                                <div class="d-flex gap-2">
+                                    <a href="${url}" target="_blank" class="text-primary small text-decoration-none">Ver caso</a>
+                                    <a href="javascript:void(0)" class="text-dark small text-decoration-none fw-bold btn-escalate" 
+                                       data-id="${item.id}" data-info="${item.type} - ${item.date}">Vincular</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+        },
+        selectParent: function (id, info) {
+            $(DOM.parentIdInp).val(id);
+            $('#selected-parent-text').text(info);
+            $('#selected-parent-info').fadeIn();
+            $('.history-item > div').removeClass('border-dark');
+            $(`.history-list #history-item-${id} > div`).addClass('border-dark');
+            toastr.info('Interacción vinculada');
+        },
+        clearParent: function () {
+            $(DOM.parentIdInp).val('');
+            $('#selected-parent-info').fadeOut();
+            $('.history-item > div').removeClass('border-dark');
+        },
+        restoreParentSelection: function () {
+            const parentId = $(DOM.parentIdInp).val();
+            if (parentId) {
+                const $items = $(`.history-list #history-item-${parentId} > div`);
+                if ($items.length) {
+                    $items.addClass('border-dark');
+                    $('#selected-parent-info').show();
+                }
+            }
+        },
+        handleAjaxError: function (xhr, status, error) {
+            const msg = xhr.responseJSON?.error || (status === 'timeout' ? 'Timeout.' : 'Error de conexión.');
+            Swal.fire({ icon: 'error', title: 'Error', text: msg, confirmButtonColor: '#111827' });
+        }
+    };
+
+    // --- Módulo Sincronización ---
+    const SyncManager = {
+        syncFromClient: function () {
+            const clientId = $(DOM.clientSelect).val();
+            if (!clientId) return Swal.fire('Aviso', 'Selecciona un cliente.', 'warning');
+            const btn = $(DOM.btnSyncFrom);
+            const ogHtml = btn.html();
+            btn.html('<span class="spinner-border spinner-border-sm"></span>');
+            setTimeout(() => {
+                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Datos cargados', showConfirmButton: false, timer: 3000 });
+                btn.html(ogHtml);
+            }, 800);
+        },
+        syncToClient: function () {
+            const clientId = $(DOM.clientSelect).val();
+            const distId = $(DOM.distritoSelect).val();
+            if (!clientId) return Swal.fire('Aviso', 'Falta cliente', 'warning');
+            if (!distId) return Swal.fire('Aviso', 'Selecciona dato a guardar', 'warning');
+            Swal.fire({
+                title: 'Actualizar', text: '¿Guardar este dato permanentemente en el cliente?', icon: 'question',
+                showCancelButton: true, confirmButtonText: 'Sí', confirmButtonColor: '#111827'
+            }).then(res => {
+                if (res.isConfirmed) {
+                    const btn = $(DOM.btnSyncTo);
+                    const ogHtml = btn.html();
+                    btn.html('<span class="spinner-border spinner-border-sm"></span>');
+                    setTimeout(() => {
+                        Swal.fire('Guardado', 'Actualizado con éxito', 'success');
+                        btn.html(ogHtml);
+                    }, 1000);
+                }
+            });
+        }
+    };
+
+    // --- Módulo Validación ---
+    const Validation = {
+        toggleResponsibility: function () {
+            UI.cleanError(DOM.areaSelect);
+            UI.cleanError(DOM.cargoSelect);
+            if ($(DOM.handledByMe).is(':checked')) {
+                $(DOM.panelMe).show(); $(DOM.panelOther).hide();
+            } else {
+                $(DOM.panelMe).hide(); $(DOM.panelOther).show();
+            }
+        },
+        validateStep1: function () {
+            let isValid = true; let firstErr = null;
+            if (!$(DOM.clientSelect).val()) {
+                UI.markError(DOM.clientSelect); $('#error-client-msg').show();
+                isValid = false; firstErr = firstErr || $(DOM.clientSelect).parent();
+            }
+            if ($(DOM.thirdPartyCheck).is(':checked')) {
+                ['#nombre_quien_llama', '#cedula_quien_llama', '#celular_quien_llama'].forEach(id => {
+                    if (!$(id).val().trim()) { UI.markError(id); isValid = false; firstErr = firstErr || $(id); }
+                });
+                if (!$('input[name="parentesco_quien_llama"]:checked').length) {
+                    UI.markError('#container-parentesco', true); isValid = false; firstErr = firstErr || $('#container-parentesco');
+                }
+            }
+            if (!$('input[name="interaction_channel"]:checked').length) {
+                UI.markError('#container-channel .grid-gallery', true); isValid = false; firstErr = firstErr || $('#container-channel');
+            }
+            if (!$('input[name="interaction_type"]:checked').length) {
+                UI.markError('#container-type', true); isValid = false; firstErr = firstErr || $('#container-type');
+            }
+
+            let allLineasValid = true;
+            const $allLineas = $(DOM.lineaSelect);
+            $allLineas.each(function () {
+                if (!$(this).val()) { UI.markError(this); allLineasValid = false; } else { UI.cleanError(this); }
+            });
+            if (!allLineasValid) {
+                isValid = false;
+                firstErr = firstErr || $allLineas.filter(function () { return !$(this).val(); }).first();
+            }
+
+            if ($(DOM.handledByOther).is(':checked') && !$('#id_user_asignacion').val()) {
+                UI.markError('#id_user_asignacion'); isValid = false; firstErr = firstErr || $('#id_user_asignacion').parent();
+            }
+            return { isValid, firstErr };
+        },
+        submitForm: function (e) {
+            e.preventDefault();
+            Timer.stop();
+            Swal.fire({
+                title: 'Confirmar guardado', text: "¿Deseas guardar la interacción ahora?", icon: 'question',
+                showCancelButton: true, confirmButtonText: 'Guardar', cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#111827', cancelButtonColor: '#d1d5db', allowOutsideClick: false, allowEscapeKey: false
+            }).then((result) => {
+                if (result.isConfirmed || result.value || result === true) {
+                    document.querySelector(DOM.form).submit();
+                }
+            });
+        }
+    };
+
+    // --- Inicialización Plugins y Eventos ---
+    function initPlugins() {
+        $('.select2').select2({ theme: 'bootstrap-5', dropdownParent: $('body') });
+        $(DOM.clientSelect).select2({
+            theme: 'bootstrap-5', placeholder: 'Buscar...', allowClear: true, minimumInputLength: 2,
+            ajax: {
+                url: CONFIG.urls.searchClients, dataType: 'json', delay: 250,
+                data: p => ({ q: p.term, page: p.page || 1 }),
+                processResults: d => ({
+                    results: d.results.map(i => ({ id: i.cod_ter, text: `${i.cod_ter} - ${i.apl1} ${i.apl2} ${i.nom1} ${i.nom2}` })),
+                    pagination: { more: d.pagination.more }
+                })
+            }
+        });
+        $('#id_user_asignacion').select2({
+            theme: 'bootstrap-5', placeholder: 'Buscar usuario...', allowClear: true, minimumInputLength: 3,
+            ajax: {
+                url: '/interactions/search-users', dataType: 'json', delay: 250,
+                data: p => ({ q: p.term, page: p.page || 1 }),
+                processResults: d => ({ results: d.results, pagination: { more: d.pagination.more } })
+            },
+            language: {
+                inputTooShort: () => 'Ingresa 3 letras...',
+                noResults: () => 'No hay usuarios.',
+                searching: () => 'Buscando...'
+            }
+        });
+        toastr.options = { "positionClass": "toast-bottom-right", "timeOut": "2500" };
+    }
+
+    function bindEvents() {
+        // Interacción Tabs (General y Formulario)
+        $('.tab-button').on('click', function () { UI.showTab($(this).data('tab')); });
+        const showTabLinks = document.querySelectorAll('#TabMenu .nav-link');
+        const formprogress = document.getElementById('form-progress');
+        showTabLinks.forEach(btn => {
+            btn.addEventListener('click', function () {
+                formprogress.style.width = this.getAttribute('data-progress') + '%';
+                showTabLinks.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        $(DOM.form).on('input change', 'input, textarea, select', function () { UI.cleanError(this); });
+        $(DOM.form).on('select2:select', '.select2', function () { UI.cleanError(this); });
+
+        $(DOM.clientSelect).on('change', function () { ClientManager.updateClientCard($(this).val()); });
+        $('input[name="caller_type"]').on('change', ClientManager.toggleThirdParty);
+        $(DOM.btnSiguiente1).on('click', e => {
+            e.preventDefault();
+            const v = Validation.validateStep1();
+            v.isValid ? UI.showTab('resultado-tab') : v.firstErr[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+
+        $('input[name="handled_by_agent"]').on('change', toggleAssignment);
+        $(DOM.handledByMe + ', ' + DOM.handledByOther).on('change', Validation.toggleResponsibility);
+        $(DOM.btnSyncFrom).on('click', SyncManager.syncFromClient);
+        $(DOM.btnSyncTo).on('click', SyncManager.syncToClient);
+
+        $('#btn-timer-toggle').on('click', () => Timer.pause());
+        $('#btn-timer-reset').on('click', () => Timer.reset());
+
+        const radioNames = ['interaction_channel', 'interaction_type', 'parentesco_quien_llama'];
+        radioNames.forEach(name => {
+            $(`input[name="${name}"]`).on('change', function () {
+                const map = { interaction_channel: '#container-channel', interaction_type: '#container-type', parentesco_quien_llama: '#container-parentesco' };
+                UI.cleanError($(map[name]).find('.grid-gallery, .bg-light')[0] || map[name], true);
+            });
+        });
+
+        $('input[name="outcome"]').on('change', function () {
+            const val = $(this).next('label').text().trim().toLowerCase();
+            const reqPlan = $(this).data('requires-planning') === true || $(this).data('requires-planning') === 'true';
+            if (reqPlan || val.includes('pendiente') || val.includes('no contesta') || val.includes('seguimiento')) {
+                $('#planning-section').slideDown();
+            } else {
+                $('#planning-section').slideUp();
+            }
+        });
+
+        $(document).on('click', '.btn-escalate', function () { HistoryManager.selectParent($(this).data('id'), $(this).data('info')); });
+        $('#clear-parent-selection').on('click', HistoryManager.clearParent);
+        $('#refresh-history').on('click', () => ClientManager.updateClientCard($(DOM.clientSelect).val()));
+        $(DOM.form).on('submit', Validation.submitForm);
+
+        // Limpiar Borrador
+        $(document).on('click', '.btn-limpiar-borrador', function (e) {
+            e.preventDefault();
+            Swal.fire({
+                title: '¿Limpiar el borrador?', text: "Se perderán todos los datos que hayas escrito.", icon: 'warning',
+                showCancelButton: true, confirmButtonColor: '#111827', cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, borrar', cancelButtonText: 'Cancelar'
+            }).then((r) => {
+                if (r.isConfirmed || r.value || r === true) {
+                    $('#interaction-form').off();
+                    window.location.reload();
+                }
+            });
+        });
+    }
+
+    function init() {
+        initPlugins();
+        bindEvents();
+        Validation.toggleResponsibility();
+        if (!$(DOM.clientSelect).val()) Timer.reset();
+        $('input[name="outcome"]:checked').trigger('change');
+    }
+
+    return {
+        init, showTab: UI.showTab, handleFileSelect: UI.handleFileSelect,
+        selectParentInteraction: HistoryManager.selectParent, clearParentSelection: HistoryManager.clearParent
+    };
+})(jQuery);
+
+document.addEventListener("DOMContentLoaded", CRMApp.init);
+window.handleFileSelect = CRMApp.handleFileSelect;
+window.selectParentInteraction = CRMApp.selectParentInteraction;
+window.clearParentSelection = CRMApp.clearParentSelection;
+
+
+/**
+ * =========================================================================
+ * 3. LÓGICA DE MODALES: COMPROBANTE DE PAGO Y BANCOS
+ * =========================================================================
+ */
 document.addEventListener('DOMContentLoaded', function () {
-    // ---- MODAL IDENTIFICACIÓN BANCOS (BUSCADOR Y CRUCE) ----
+    
+    // --- 3.1. Funciones Globales para Archivos en Modales ---
+    window.resetFile = function() {
+        const fileInput = document.getElementById('archivo_soporte');
+        if(fileInput) fileInput.value = '';
+        const prev = document.getElementById('preview_container');
+        if (prev) prev.classList.add('d-none');
+        ['numero_cuota', 'pr', 'cco', 'id_obligacion', 'id_banco', 'search_obligacion', 'search_banco', 'monto_pagado', 'monto_pagado_display', 'tipo_pago', 'search_tipo_pago', 'observacion'].forEach(id => {
+            const el = document.getElementById(id); if (el) el.value = '';
+        }); 
+        
+        // Reset validación visual obligatoria
+        const ccoInput = document.getElementById('cco');
+        if(ccoInput) { ccoInput.removeAttribute('required'); ccoInput.previousElementSibling.innerHTML = 'CCO'; }
+        const cuotaInput = document.getElementById('numero_cuota');
+        if(cuotaInput) { cuotaInput.removeAttribute('required'); cuotaInput.previousElementSibling.innerHTML = 'N° Cuota'; }
+        const prInput = document.getElementById('pr');
+        if(prInput) { prInput.removeAttribute('required'); prInput.previousElementSibling.innerHTML = 'PR'; }
+    };
+
+    // --- 3.2. MODAL IDENTIFICACIÓN BANCOS (BUSCADOR Y CRUCE) ---
     let selectedModalIds = [];
     const btnBuscar = document.getElementById('btnBuscarModal');
     const inputBuscar = document.getElementById('modalBuscadorGlobal');
 
-    // --- FUNCIÓN DE BÚSQUEDA MEJORADA ---
     function buscarGlobal() {
         const valor = inputBuscar.value.trim();
         if(valor.length < 2) return;
-
         btnBuscar.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
         btnBuscar.disabled = true;
 
         fetch(`{{ route('contabilidad.extractos.buscar-modal') }}?search=${valor}`)
-            .then(res => {
-                if (!res.ok) throw new Error(`Error HTTP: ${res.status}`);
-                return res.json();
-            })
+            .then(res => { if (!res.ok) throw new Error(`Error HTTP: ${res.status}`); return res.json(); })
             .then(data => {
-                // ESTA LÍNEA ES MAGIA: Muestra en la consola (F12) exactamente qué manda Laravel
-                console.log("Respuesta del servidor:", data); 
-
                 selectedModalIds = [];
-                
-                // Validación de seguridad: si data.bancos no existe, usamos un array vacío []
                 const arrayBancos = data.bancos || (data.data && data.data.bancos) || [];
                 const arrayCartera = data.cartera || (data.data && data.data.cartera) || [];
                 
-                // Render Lado Banco
+                // Lado Banco
                 const tbodyBanco = document.getElementById('tbodyBancosModal');
                 tbodyBanco.innerHTML = arrayBancos.length ? '' : '<tr><td colspan="4" class="text-center py-5">No hay resultados en bancos</td></tr>';
                 arrayBancos.forEach((b, i) => {
@@ -1501,15 +1683,12 @@ document.addEventListener('DOMContentLoaded', function () {
                         <tr class="item-extracto cursor-pointer transition-2ms" data-id="${b.id}">
                             <td class="col-index">${i+1}</td>
                             <td class="text-center fw-bold fs-9">${b.fecha}</td>
-                            <td>
-                                <span class="text-dark fw-bold d-block fs-9">${b.oficina || 'N/A'}</span>
-                                <span class="text-primary fs-10">${b.banco || ''}</span>
-                            </td>
+                            <td><span class="text-dark fw-bold d-block fs-9">${b.oficina || 'N/A'}</span><span class="text-primary fs-10">${b.banco || ''}</span></td>
                             <td class="text-end fw-bold text-success">$${b.valor}</td>
                         </tr>`;
                 });
 
-                // Render Lado Cartera
+                // Lado Cartera
                 const tbodyCartera = document.getElementById('tbodyCarteraModal');
                 tbodyCartera.innerHTML = arrayCartera.length ? '' : '<tr><td colspan="5" class="text-center py-5">No hay resultados en cartera</td></tr>';
                 arrayCartera.forEach((c, i) => {
@@ -1518,25 +1697,14 @@ document.addEventListener('DOMContentLoaded', function () {
                         <tr class="transition-2ms">
                             <td class="col-index">${i+1}</td>
                             <td class="text-center fs-9">${c.fecha}</td>
-                            <td>
-                                <span class="text-dark fw-bold d-block fs-9">Oblig: ${c.obligacion || 'N/A'}</span>
-                                <span class="text-muted fs-10">Cuota: ${c.cuota || ''} ${archivoIcon}</span>
-                            </td>
+                            <td><span class="text-dark fw-bold d-block fs-9">Oblig: ${c.obligacion || 'N/A'}</span><span class="text-muted fs-10">Cuota: ${c.cuota || ''} ${archivoIcon}</span></td>
                             <td class="text-end fw-bold">$${c.valor}</td>
-                            <td class="text-center">
-                                <button type="button" class="btn btn-sm btn-outline-info py-0 px-2 fs-10 fw-bold btn-cruce" data-id="${c.id}">CRUZAR</button>
-                            </td>
+                            <td class="text-center"><button type="button" class="btn btn-sm btn-outline-info py-0 px-2 fs-10 fw-bold btn-cruce" data-id="${c.id}">CRUZAR</button></td>
                         </tr>`;
                 });
             })
-            .catch(err => {
-                console.error("Error al procesar la búsqueda:", err);
-                Swal.fire('Error', 'No se pudo completar la búsqueda. Revisa la consola.', 'error');
-            })
-            .finally(() => {
-                btnBuscar.innerHTML = 'BUSCAR';
-                btnBuscar.disabled = false;
-            });
+            .catch(err => Swal.fire('Error', 'No se pudo completar la búsqueda.', 'error'))
+            .finally(() => { btnBuscar.innerHTML = 'BUSCAR'; btnBuscar.disabled = false; });
     }
 
     if(btnBuscar && inputBuscar) {
@@ -1553,25 +1721,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
     $('#tbodyCarteraModal').on('click', '.btn-cruce', function() {
         const idComp = $(this).data('id');
-        if(!selectedModalIds.length) {
-            Swal.fire({ icon:'warning', title:'Atención', text:'Selecciona movimientos del banco a la izquierda.', target:'#modalIdentificacionBancos'});
-            return;
-        }
-
+        if(!selectedModalIds.length) return Swal.fire({ icon:'warning', title:'Atención', text:'Selecciona movimientos.', target:'#modalIdentificacionBancos'});
+        
         Swal.fire({
-            title: '¿Confirmar Cruce?',
-            text: `Vincularás ${selectedModalIds.length} movimiento(s) con este pago.`,
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'Sí, Cruzar',
-            target: '#modalIdentificacionBancos'
+            title: '¿Confirmar Cruce?', text: `Vincularás ${selectedModalIds.length} movimiento(s) con este pago.`, icon: 'question',
+            showCancelButton: true, confirmButtonText: 'Sí, Cruzar', target: '#modalIdentificacionBancos'
         }).then(res => {
-            if(res.isConfirmed) {
+            if(res.value || res.isConfirmed || res === true) {
                 const form = document.getElementById('formConciliacionModal');
                 const fd = new FormData(form);
                 fd.append('id_transacciones', JSON.stringify(selectedModalIds));
                 fd.append('id_comprobante', idComp);
-
                 fetch(form.action, { method:'POST', body:fd, headers: {'X-Requested-With': 'XMLHttpRequest'} })
                 .then(r => r.json())
                 .then(data => {
@@ -1593,15 +1753,43 @@ document.addEventListener('DOMContentLoaded', function () {
         if(tbCartera) tbCartera.innerHTML = '<tr class="empty-placeholder"><td colspan="5" class="text-center py-10 text-muted">Resultados aparecerán aquí</td></tr>';
     });
 
+    const formBancos = document.getElementById('formModalIdentificacionBancos');
+    if (formBancos) {
+        formBancos.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const btnSubmit = document.getElementById('btnSubmitBancos');
+            const originalText = btnSubmit.innerHTML;
+            btnSubmit.disabled = true; btnSubmit.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> PROCESANDO...`;
 
-    // ---- MODAL COMPROBANTE DE PAGO ----
+            const inputVisible = document.getElementById('input_transaccion_visible').value;
+            const inputHidden = document.getElementById('id_transacciones_bancos');
+            if (inputVisible) inputHidden.value = JSON.stringify([parseInt(inputVisible)]);
+
+            fetch(this.action, {
+                method: 'POST', body: new FormData(this),
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value, 'Accept': 'application/json' }
+            })
+            .then(async res => {
+                if (!res.ok) { const err = await res.json().catch(() => ({})); throw new Error(err.message || 'Error interno'); }
+                return res.json();
+            })
+            .then(data => {
+                const modalInst = bootstrap.Modal.getInstance(document.getElementById('modalIdentificacionBancos'));
+                if (modalInst) modalInst.hide();
+                formBancos.reset();
+                Swal.fire({ title: '¡Conciliado!', text: data.message || 'La transacción se ha vinculado correctamente.', icon: 'success', confirmButtonColor: '#198754' });
+            })
+            .catch(error => Swal.fire('Error', error.message, 'error'))
+            .finally(() => { btnSubmit.disabled = false; btnSubmit.innerHTML = originalText; });
+        });
+    }
+
+    // --- 3.3. MODAL COMPROBANTE DE PAGO ---
     const modalElement = document.getElementById('modalComprobante');
     if (!modalElement) return;
-
+    
     let myModal;
-    if (typeof bootstrap !== 'undefined') {
-        myModal = new bootstrap.Modal(modalElement);
-    }
+    if (typeof bootstrap !== 'undefined') myModal = new bootstrap.Modal(modalElement);
     
     const formComprobante = document.getElementById('formModalComprobante');
     const modalCodTercero = document.getElementById('cod_tercero');
@@ -1613,8 +1801,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const fechaPagoInput = document.getElementById('fecha_pago');
 
     // Reset Tipificación al cancelar
-    const closeButtons = modalElement.querySelectorAll('[data-bs-dismiss="modal"]');
-    closeButtons.forEach(btn => {
+    modalElement.querySelectorAll('[data-bs-dismiss="modal"]').forEach(btn => {
         btn.addEventListener('click', function () {
             const searchType = document.getElementById('search-type');
             if (searchType) searchType.value = '';
@@ -1631,48 +1818,34 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!input || !list) return;
 
         const items = list.querySelectorAll('button');
-
-        input.addEventListener('focus', () => {
-            if (items.length > 0) {
-                items.forEach(i => i.style.display = 'block');
-                list.classList.remove('d-none');
-            }
-        });
-
+        input.addEventListener('focus', () => { if (items.length > 0) { items.forEach(i => i.style.display = 'block'); list.classList.remove('d-none'); } });
         input.addEventListener('input', function () {
             const val = this.value.toLowerCase().trim();
             let hasVisible = false;
             hidden.value = '';
             if(hiddenId !== 'tipo_pago') actualizarHash();
             items.forEach(item => {
-                const text = item.textContent.toLowerCase();
-                if (text.includes(val)) { item.style.display = 'block'; hasVisible = true; }
+                if (item.textContent.toLowerCase().includes(val)) { item.style.display = 'block'; hasVisible = true; }
                 else { item.style.display = 'none'; }
             });
-            if (hasVisible) list.classList.remove('d-none'); else list.classList.add('d-none');
+            hasVisible ? list.classList.remove('d-none') : list.classList.add('d-none');
         });
-
         items.forEach(item => {
             item.addEventListener('click', function (e) {
                 e.preventDefault();
-                input.value = this.textContent.trim();
-                hidden.value = this.getAttribute('data-id');
+                input.value = this.textContent.trim(); hidden.value = this.getAttribute('data-id');
                 list.classList.add('d-none');
                 if(hiddenId !== 'tipo_pago') actualizarHash();
                 hidden.dispatchEvent(new Event('change', { bubbles: true }));
             });
         });
-
-        document.addEventListener('click', (e) => {
-            if (!input.contains(e.target) && !list.contains(e.target)) list.classList.add('d-none');
-        });
+        document.addEventListener('click', (e) => { if (!input.contains(e.target) && !list.contains(e.target)) list.classList.add('d-none'); });
     }
-
     setupBuscadorNativo('search_obligacion', 'id_obligacion', 'list_obligacion');
     setupBuscadorNativo('search_banco', 'id_banco', 'list_banco');
     setupBuscadorNativo('search_tipo_pago', 'tipo_pago', 'list_tipo_pago');
 
-    // Requerir CCO y N° Cuota dependiendo de la línea
+    // Sincronización automática línea crédito y campos requeridos
     const idObligacionInput = document.getElementById('id_obligacion');
     if (idObligacionInput) {
         idObligacionInput.addEventListener('change', function () {
@@ -1681,40 +1854,39 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const ccoInput = document.getElementById('cco');
             const ccoLabel = ccoInput ? ccoInput.previousElementSibling : null;
-
             if (idLineaModal === "5" && ccoInput) {
                 ccoInput.setAttribute('required', 'required');
                 if (!ccoLabel.innerHTML.includes('*')) ccoLabel.innerHTML = 'CCO <span class="text-danger fw-bolder">*</span>';
             } else if (ccoInput) {
-                ccoInput.removeAttribute('required');
-                ccoLabel.innerHTML = 'CCO';
+                ccoInput.removeAttribute('required'); ccoLabel.innerHTML = 'CCO';
             }
 
             const cuotaInput = document.getElementById('numero_cuota');
             const cuotaLabel = cuotaInput ? cuotaInput.previousElementSibling : null;
             const prInput = document.getElementById('pr');
             const prLabel = prInput ? prInput.previousElementSibling : null;
-
             const lineasRequeridas = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14"];
 
             if (lineasRequeridas.includes(idLineaModal)) {
-                if(cuotaInput) {
-                    cuotaInput.setAttribute('required', 'required');
-                    if (!cuotaLabel.innerHTML.includes('*')) cuotaLabel.innerHTML = 'N° Cuota <span class="text-danger fw-bolder">*</span>';
-                }
-                if(prInput) {
-                    prInput.setAttribute('required', 'required');
-                    if (!prLabel.innerHTML.includes('*')) prLabel.innerHTML = 'PR <span class="text-danger fw-bolder">*</span>';
-                }
+                if(cuotaInput) { cuotaInput.setAttribute('required', 'required'); if (!cuotaLabel.innerHTML.includes('*')) cuotaLabel.innerHTML = 'N° Cuota <span class="text-danger fw-bolder">*</span>'; }
+                if(prInput) { prInput.setAttribute('required', 'required'); if (!prLabel.innerHTML.includes('*')) prLabel.innerHTML = 'PR <span class="text-danger fw-bolder">*</span>'; }
             } else {
-                if(cuotaInput) {
-                    cuotaInput.removeAttribute('required');
-                    cuotaLabel.innerHTML = 'N° Cuota';
-                }
-                if(prInput) {
-                    prInput.removeAttribute('required');
-                    prLabel.innerHTML = 'PR';
-                }
+                if(cuotaInput) { cuotaInput.removeAttribute('required'); cuotaLabel.innerHTML = 'N° Cuota'; }
+                if(prInput) { prInput.removeAttribute('required'); prLabel.innerHTML = 'PR'; }
+            }
+
+            // Sincronización con los selects del formulario principal
+            const $selects = $('.select2-linea');
+            let yaExiste = false; let $selectVacio = null;
+            $selects.each(function () {
+                if ($(this).val() == idLineaModal) yaExiste = true;
+                if (!$(this).val() && !$selectVacio) $selectVacio = $(this);
+            });
+            if (yaExiste) return;
+            if ($selectVacio) { $selectVacio.val(idLineaModal).trigger('change'); } 
+            else {
+                $('#btn-add-linea').trigger('click');
+                $('.select2-linea').last().val(idLineaModal).trigger('change');
             }
         });
     }
@@ -1724,22 +1896,18 @@ document.addEventListener('DOMContentLoaded', function () {
         const fechaVal = fechaPagoInput?.value;
         const monto = hiddenInput?.value;
         const tercero = modalCodTercero?.value;
-
         if(!fechaVal) return;
         let fechaLimpia = fechaVal.replace(/[^0-9]/g, '');
         if (fechaLimpia.length === 12) fechaLimpia += '00';
 
         if (banco && fechaLimpia && monto && tercero && hashTarget) {
             hashTarget.value = `${banco}-${fechaLimpia}-${monto}-${tercero}`;
-        } else if (hashTarget) {
-            hashTarget.value = '';
-        }
+        } else if (hashTarget) { hashTarget.value = ''; }
     }
 
     if(displayInput) {
         displayInput.addEventListener('input', function () {
-            let val = this.value.replace(/\./g, '');
-            val = val.replace(/[^0-9,]/g, '').replace(',', '.');
+            let val = this.value.replace(/\./g, '').replace(/[^0-9,]/g, '').replace(',', '.');
             const parts = val.split('.');
             if (parts.length > 2) val = parts[0] + '.' + parts.slice(1).join('');
             if (parts[1] !== undefined && parts[1].length > 2) val = parts[0] + '.' + parts[1].substring(0, 2);
@@ -1750,9 +1918,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 let visual = new Intl.NumberFormat('es-CO').format(parseInt(entero) || 0);
                 if (val.includes('.')) visual += ',' + (decimales !== undefined ? decimales : '');
                 this.value = visual;
-            } else {
-                this.value = '';
-            }
+            } else { this.value = ''; }
             actualizarHash();
         });
     }
@@ -1767,8 +1933,7 @@ document.addEventListener('DOMContentLoaded', function () {
         formComprobante.addEventListener('submit', function (e) {
             e.preventDefault();
             if (!document.getElementById('id_obligacion').value || !document.getElementById('id_banco').value) {
-                Swal.fire('Atención', 'Selecciona Obligación y Banco válidos.', 'warning');
-                return;
+                return Swal.fire('Atención', 'Selecciona Obligación y Banco válidos.', 'warning');
             }
             ejecutarEnvioComprobante(false);
         });
@@ -1777,30 +1942,21 @@ document.addEventListener('DOMContentLoaded', function () {
     function ejecutarEnvioComprobante(forceSave = false) {
         const btnSubmit = document.getElementById('btnSubmitComprobante');
         const originalText = btnSubmit.innerHTML;
-        
-        btnSubmit.disabled = true;
-        btnSubmit.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> PROCESANDO...`;
+        btnSubmit.disabled = true; btnSubmit.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> PROCESANDO...`;
 
         const formData = new FormData(formComprobante);
         if (!formData.get('id_interaccion') || formData.get('id_interaccion') === '') formData.set('id_interaccion', '0');
         if (forceSave) formData.append('force_save', '1');
-
         ['numero_cuota', 'pr', 'cco', 'observacion'].forEach(f => { if (!formData.get(f)) formData.delete(f); });
 
         fetch(formComprobante.action, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest',
-                'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
-                'Accept': 'application/json'
-            }
+            method: 'POST', body: formData,
+            headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value, 'Accept': 'application/json' }
         })
         .then(async res => {
             if (!res.ok) {
-                if (res.status === 419) throw new Error('La sesión ha caducado por inactividad. Por favor, recarga la página.');
-                const errData = await res.json().catch(() => ({}));
-                throw new Error(errData.message || 'Error interno del servidor');
+                if (res.status === 419) throw new Error('La sesión ha caducado por inactividad. Por favor, recarga.');
+                const errData = await res.json().catch(() => ({})); throw new Error(errData.message || 'Error interno del servidor');
             }
             return res.json();
         })
@@ -1808,21 +1964,15 @@ document.addEventListener('DOMContentLoaded', function () {
             if (data.success) {
                 if(myModal) myModal.hide();
                 Swal.fire({
-                    title: '¡Pago Vinculado!',
-                    text: "¿Deseas adjuntar otro comprobante?",
-                    icon: 'success',
-                    showCancelButton: true,
-                    confirmButtonText: 'Sí, otro',
-                    cancelButtonText: 'Terminar',
-                    confirmButtonColor: '#198754'
+                    title: '¡Pago Vinculado!', text: "¿Deseas adjuntar otro comprobante?", icon: 'success',
+                    showCancelButton: true, confirmButtonText: 'Sí, otro', cancelButtonText: 'Terminar', confirmButtonColor: '#198754'
                 }).then((result) => {
                     if (result.isConfirmed) {
                         const clieID = modalCodTercero.value;
                         formComprobante.reset();
                         if(typeof window.resetFile === 'function') window.resetFile();
                         modalCodTercero.value = clieID;
-                        const ahora = new Date();
-                        ahora.setMinutes(ahora.getMinutes() - ahora.getTimezoneOffset());
+                        const ahora = new Date(); ahora.setMinutes(ahora.getMinutes() - ahora.getTimezoneOffset());
                         fechaPagoInput.value = ahora.toISOString().slice(0, 16);
                         actualizarHash();
                         if(myModal) myModal.show();
@@ -1830,25 +1980,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
             } else if (data.is_duplicate) {
                 Swal.fire({
-                    title: '¿Duplicado?',
-                    text: data.message,
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonText: 'Sí, forzar',
-                    confirmButtonColor: '#f1416c'
+                    title: '¿Duplicado?', text: data.message, icon: 'warning',
+                    showCancelButton: true, confirmButtonText: 'Sí, forzar', confirmButtonColor: '#f1416c'
                 }).then((r) => { if (r.isConfirmed) ejecutarEnvioComprobante(true); });
-            } else {
-                Swal.fire('Error', data.message, 'error');
-            }
+            } else { Swal.fire('Error', data.message, 'error'); }
         })
         .catch(error => Swal.fire('Error', error.message !== 'Failed to fetch' ? error.message : 'Error de red o servidor no responde', 'error'))
-        .finally(() => { 
-            btnSubmit.disabled = false; 
-            btnSubmit.innerHTML = originalText; 
-        });
+        .finally(() => { btnSubmit.disabled = false; btnSubmit.innerHTML = originalText; });
     }
 
-    // Funciones Drag & Drop y Portapapeles para el Modal
+    // Funciones Drag & Drop para Modal
     function procesarArchivo(file) {
         if (!file) return;
         const valid = ['image/jpeg', 'image/png', 'application/pdf'];
@@ -1859,1619 +2000,150 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const previewContainer = document.getElementById('preview_container');
         if(previewContainer) previewContainer.classList.remove('d-none');
-        
         const fileNameEl = document.getElementById('file_name_preview');
         if(fileNameEl) fileNameEl.textContent = file.name;
         
         const img = document.getElementById('image_preview');
         const pdf = document.getElementById('pdf_preview_icon');
-
         if (file.type.startsWith('image/')) {
             const reader = new FileReader();
-            reader.onload = (e) => { 
-                if(img) { img.src = e.target.result; img.classList.remove('d-none'); }
-                if(pdf) pdf.classList.add('d-none'); 
-            };
+            reader.onload = (e) => { if(img) { img.src = e.target.result; img.classList.remove('d-none'); } if(pdf) pdf.classList.add('d-none'); };
             reader.readAsDataURL(file);
         } else { 
-            if(img) img.classList.add('d-none'); 
-            if(pdf) pdf.classList.remove('d-none'); 
+            if(img) img.classList.add('d-none'); if(pdf) pdf.classList.remove('d-none'); 
         }
     }
 
     if(fileInput) fileInput.addEventListener('change', e => { if (e.target.files.length) procesarArchivo(e.target.files[0]); });
-    window.addEventListener('paste', e => { if (modalElement.classList.contains('show') && e.clipboardData.files.length) procesarArchivo(e.clipboardData.files[0]); });
+    window.addEventListener('paste', e => { if (modalElement && modalElement.classList.contains('show') && e.clipboardData.files.length) procesarArchivo(e.clipboardData.files[0]); });
     
     if(dropZone) {
         dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
         dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
         dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragover'); if (e.dataTransfer.files.length) procesarArchivo(e.dataTransfer.files[0]); });
     }
-
-    // Limpieza global de File Input
-    window.resetFile = function() {
-        if(fileInput) fileInput.value = '';
-        const prev = document.getElementById('preview_container');
-        if (prev) prev.classList.add('d-none');
-        ['numero_cuota', 'pr', 'cco', 'id_obligacion', 'id_banco', 'search_obligacion', 'search_banco', 'monto_pagado', 'monto_pagado_display', 'tipo_pago', 'search_tipo_pago', 'observacion'].forEach(id => {
-            const el = document.getElementById(id); if (el) el.value = '';
-        }); 
-        
-        const ccoInput = document.getElementById('cco');
-        if(ccoInput) { ccoInput.removeAttribute('required'); ccoInput.previousElementSibling.innerHTML = 'CCO'; }
-        
-        const cuotaInput = document.getElementById('numero_cuota');
-        if(cuotaInput) { cuotaInput.removeAttribute('required'); cuotaInput.previousElementSibling.innerHTML = 'N° Cuota'; }
-        
-        const prInput = document.getElementById('pr');
-        if(prInput) { prInput.removeAttribute('required'); prInput.previousElementSibling.innerHTML = 'PR'; }
-    };
 });
-</script>
-{{-- FIN MODAL --}}
 
-<style>
-    .drop-zone-custom {
-        border: 2px dashed #dbdfe9;
-        border-radius: 8px;
-        transition: all 0.3s ease;
-        background-color: #f9fafb;
-        height: 85px;
-    }
 
-    .drop-zone-custom:hover,
-    .drop-zone-custom.dragover {
-        border-color: #198754;
-        background-color: #e8f5e9;
-    }
+/**
+ * =========================================================================
+ * 4. EVENTOS ADICIONALES DEL FORMULARIO Y TIPOLOGÍAS
+ * =========================================================================
+ */
+document.addEventListener("DOMContentLoaded", function () {
+    
+    // Botón Volver
+    const btnVolver = document.getElementById('btn-volver');
+    if(btnVolver) btnVolver.addEventListener('click', function () { document.getElementById('home-tab').click(); });
 
-    .bg-light-soft {
-        background-color: #fcfcfc;
-    }
-
-    .font-monospace {
-        font-family: 'Roboto Mono', monospace !important;
-    }
-
-    .border-dashed {
-        border-style: dashed !important;
-    }
-
-    .custom-dropdown-list {
-        z-index: 1060;
-        max-height: 180px;
-        overflow-y: auto;
-        top: 100%;
-        left: 0;
-        margin-top: 5px;
-        background: #fff;
-        border: 1px solid #e4e6ef;
-        border-radius: 0.475rem;
-    }
-
-    .custom-dropdown-list button:hover {
-        background-color: #f1f1f4;
-        color: #181c32;
-    }
-    /*Resaltar en rojo los campos obligatorios del modal MIENTRAS ESTÉN VACÍOS */
-    #modalComprobante .form-control:required:invalid {
-        border-color: #f1416c !important;
-        border-left: 4px solid #f1416c !important;
-        background-color: #fff8fa !important;
-    }
-
-    /* 🔥 NUEVO: Resaltar el área de arrastrar archivo si es obligatorio y está vacío */
-    #modalComprobante input[type="file"]:required:invalid + label {
-        border: 2px dashed #f1416c !important;
-        background-color: #fff8fa !important;
-        border-radius: 8px;
-    }
-
-    /* Opcional: Hacer que los asteriscos de los labels obligatorios en el modal sean rojos nativamente */
-    #modalComprobante label:has(+ input:required),
-    #modalComprobante label:has(+ div input:required) {
-        color: #181c32; /* Color normal del texto */
-    }
-</style>
-
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        // --- LATIDO ANTI-DESCONEXIÓN 
-        setInterval(function() {
-            fetch(window.location.href, { 
-                method: 'HEAD',
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            }).catch(() => {}); 
-        }, 60000); 
-        // ---------------------------------------
-        const modalElement = document.getElementById('modalComprobante');
-        if (!modalElement) return;
-
-        const myModal = new bootstrap.Modal(modalElement);
-        const form = document.getElementById('formModalComprobante');
-        const modalCodTercero = document.getElementById('cod_tercero');
-        const displayInput = document.getElementById('monto_pagado_display');
-        const hiddenInput = document.getElementById('monto_pagado');
-        const hashTarget = document.getElementById('hash_transaccion');
-        const fileInput = document.getElementById('archivo_soporte');
-        const dropZone = document.getElementById('drop_zone_area');
-        const fechaPagoInput = document.getElementById('fecha_pago');
-
-        // --- 7. RESETEAR TIPIFICACIÓN AL CERRAR MODAL ---
-        // --- 7. RESETEAR TIPIFICACIÓN SOLO AL CANCELAR/CERRAR MANUALMENTE ---
-        // Seleccionamos todos los botones que cierran el modal (la X y el botón cancelar)
-        const closeButtons = modalElement.querySelectorAll('[data-bs-dismiss="modal"]');
-        closeButtons.forEach(btn => {
-            btn.addEventListener('click', function () {
-                const searchType = document.getElementById('search-type');
-                if (searchType) {
-                    searchType.value = '';
-                }
-
-                // 2. Deseleccionar los radio buttons de tipificación
-                const typeRadios = document.querySelectorAll('.type-trigger');
-                typeRadios.forEach(radio => {
-                    radio.checked = false;
-                });
-
-                // 3. Mostrar todos los tags (por si se estaban filtrando)
-                const allTags = document.querySelectorAll('#container-list-types label');
-                allTags.forEach(tag => tag.classList.remove('d-none'));
-
-                // console.log('Acción cancelada: Se desmarcó la tipificación.');
-            });
-        });
-
-        // --- 1. LÓGICA DE BUSCADORES NATIVOS ---
-        function setupBuscadorNativo(inputId, hiddenId, listId) {
-            const input = document.getElementById(inputId);
-            const hidden = document.getElementById(hiddenId);
-            const list = document.getElementById(listId);
-            if (!input || !list) return;
-
-            const items = list.querySelectorAll('button');
-
-            input.addEventListener('focus', () => {
-                if (items.length > 0) {
-                    items.forEach(i => i.style.display = 'block');
-                    list.classList.remove('d-none');
-                }
-            });
-
-            input.addEventListener('input', function () {
-                const val = this.value.toLowerCase().trim();
-                let hasVisible = false;
-                hidden.value = '';
-                actualizarHash();
-                items.forEach(item => {
-                    const text = item.textContent.toLowerCase();
-                    if (text.includes(val)) { item.style.display = 'block'; hasVisible = true; }
-                    else { item.style.display = 'none'; }
-                });
-                if (hasVisible) list.classList.remove('d-none'); else list.classList.add('d-none');
-            });
-
-            items.forEach(item => {
-                item.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    input.value = this.textContent.trim();
-                    hidden.value = this.getAttribute('data-id');
-                    list.classList.add('d-none');
-                    actualizarHash();
-
-                    hidden.dispatchEvent(new Event('change', { bubbles: true }));
-                });
-            });
-
-            document.addEventListener('click', (e) => {
-                if (!input.contains(e.target) && !list.contains(e.target)) list.classList.add('d-none');
-            });
-        }
-
-        setupBuscadorNativo('search_obligacion', 'id_obligacion', 'list_obligacion');
-        setupBuscadorNativo('search_banco', 'id_banco', 'list_banco');
-        setupBuscadorNativo('search_tipo_pago', 'tipo_pago', 'list_tipo_pago');
-
-        // Sincronización automática de la línea de crédito seleccionada en el modal con los campos "Asignar Línea" del formulario principal
-        document.getElementById('id_obligacion').addEventListener('change', function () {
-            const idLineaModal = this.value;
-            if (!idLineaModal) return;
-
-            // --- 1. LÓGICA PARA EL CAMPO CCO (Solo si es ID 5) ---
-            const ccoInput = document.getElementById('cco');
-            const ccoLabel = ccoInput.previousElementSibling;
-
-            if (idLineaModal === "5") {
-                ccoInput.setAttribute('required', 'required');
-                if (!ccoLabel.innerHTML.includes('*')) {
-                    ccoLabel.innerHTML = 'CCO <span class="text-danger fw-bolder">*</span>';
-                }
-            } else {
-                ccoInput.removeAttribute('required');
-                ccoLabel.innerHTML = 'CCO';
-            }
-
-            // --- 2. LÓGICA PARA N° CUOTA y PR ---
-            const cuotaInput = document.getElementById('numero_cuota');
-            const cuotaLabel = cuotaInput.previousElementSibling;
-            
-            const prInput = document.getElementById('pr');
-            const prLabel = prInput.previousElementSibling;
-
-            // Array de IDs que requieren N° Cuota y PR
-            const lineasRequeridas = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14"];
-
-            if (lineasRequeridas.includes(idLineaModal)) {
-                // Hacer N° Cuota requerido
-                cuotaInput.setAttribute('required', 'required');
-                if (!cuotaLabel.innerHTML.includes('*')) {
-                    cuotaLabel.innerHTML = 'N° Cuota <span class="text-danger fw-bolder">*</span>';
-                }
-
-                // Hacer PR requerido
-                prInput.setAttribute('required', 'required');
-                if (!prLabel.innerHTML.includes('*')) {
-                    prLabel.innerHTML = 'PR <span class="text-danger fw-bolder">*</span>';
-                }
-            } else {
-                // Quitar los requeridos y los asteriscos
-                cuotaInput.removeAttribute('required');
-                cuotaLabel.innerHTML = 'N° Cuota';
-
-                prInput.removeAttribute('required');
-                prLabel.innerHTML = 'PR';
-            }
-
-            // --- 3. Sincronización con los selects del formulario principal ---
-            const $selects = $('.select2-linea');
-            let yaExiste = false;
-            let $selectVacio = null;
-
-            // Revisamos todos los campos de "Asignar Línea" actuales
-            $selects.each(function () {
-                if ($(this).val() == idLineaModal) {
-                    yaExiste = true; // La línea ya está seleccionada, no la duplicamos
-                }
-                if (!$(this).val() && !$selectVacio) {
-                    $selectVacio = $(this); // Capturamos el primer select que esté vacío
-                }
-            });
-
-            // Si la línea ya está asignada en el formulario principal, ignoramos
-            if (yaExiste) return;
-
-            if ($selectVacio) {
-                // Si encontramos un campo vacío, le asignamos el valor del modal
-                $selectVacio.val(idLineaModal).trigger('change');
-            } else {
-                // Si todos los campos actuales están llenos, forzamos un clic en el botón "+"
-                $('#btn-add-linea').trigger('click');
-                // Tomamos el ÚLTIMO campo creado y le asignamos el valor
-                $('.select2-linea').last().val(idLineaModal).trigger('change');
+    // Bloqueo del botón de interacción en submit
+    const interactionForm = document.getElementById('interaction-form');
+    if(interactionForm) {
+        interactionForm.addEventListener('submit', function (e) {
+            const btn = document.getElementById('btn-submit-interaccion');
+            if (this.checkValidity()) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Guardando...';
             }
         });
-        // --- 2. LÓGICA DEL HASH ---
-        function actualizarHash() {
-            const banco = document.getElementById('id_banco').value;
-            const fechaVal = fechaPagoInput.value;
-            const monto = hiddenInput.value;
-            const tercero = modalCodTercero.value;
+    }
 
-            let fechaLimpia = fechaVal.replace(/[^0-9]/g, '');
-
-            if (fechaLimpia.length === 12) {
-                fechaLimpia += '00';
-            }
-
-            if (banco && fechaLimpia && monto && tercero) {
-                hashTarget.value = `${banco}-${fechaLimpia}-${monto}-${tercero}`;
-            } else {
-                hashTarget.value = '';
-            }
-        }
-
-        // --- 3. MÁSCARA DE MONTO ---
-        displayInput.addEventListener('input', function () {
-            let val = this.value.replace(/\./g, '');
-            val = val.replace(/[^0-9,]/g, '');
-            val = val.replace(',', '.');
-
-            const parts = val.split('.');
-            if (parts.length > 2) {
-                val = parts[0] + '.' + parts.slice(1).join('');
-            }
-
-            if (parts[1] !== undefined && parts[1].length > 2) {
-                val = parts[0] + '.' + parts[1].substring(0, 2);
-            }
-
-            hiddenInput.value = val;
-
-            if (val !== '') {
-                let [entero, decimales] = val.split('.');
-                let visual = new Intl.NumberFormat('es-CO').format(parseInt(entero) || 0);
-
-                if (val.includes('.')) {
-                    visual += ',' + (decimales !== undefined ? decimales : '');
-                }
-                this.value = visual;
-            } else {
-                this.value = '';
-            }
-
-            actualizarHash();
-        });
-
-        document.querySelectorAll('.gen-hash').forEach(el => {
-            el.addEventListener('input', actualizarHash);
-            el.addEventListener('change', actualizarHash);
-        });
-
-        // --- 4. ENVÍO Y RESETEO ---
-        form.addEventListener('submit', function (e) {
-            e.preventDefault();
-            if (!document.getElementById('id_obligacion').value || !document.getElementById('id_banco').value) {
-                Swal.fire('Atención', 'Selecciona Obligación y Banco válidos.', 'warning');
-                return;
-            }
-            ejecutarEnvio(false);
-        });
-
-        function ejecutarEnvio(forceSave = false) {
-            const btnSubmit = document.getElementById('btnSubmitComprobante');
-            const originalText = btnSubmit.innerHTML;
-            
-            btnSubmit.disabled = true;
-            btnSubmit.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> PROCESANDO...`;
-
-            const formData = new FormData(form);
-
-            // 🚀 CORRECCIÓN: Garantizar que id_interaccion viaje siempre como 0 si está vacío o es nulo
-            if (!formData.get('id_interaccion') || formData.get('id_interaccion') === '') {
-                formData.set('id_interaccion', '0');
-            }
-
-            if (forceSave) formData.append('force_save', '1');
-
-            // Limpieza de nulos antes de enviar
-            ['numero_cuota', 'pr', 'cco', 'observacion'].forEach(f => { 
-                if (!formData.get(f)) formData.delete(f); 
-            });
-
-            // ❌ SE ELIMINÓ EL BLOQUE QUE DAÑABA 'id_transaccion_bancaria' CON EL JSON DEL UUID
-
-            fetch(form.action, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
-                    'Accept': 'application/json'
-                }
-            })
-            .then(async res => {
-                if (!res.ok) {
-                    if (res.status === 419) throw new Error('La sesión ha caducado por inactividad. Por favor, recarga la página.');
-                    const errData = await res.json().catch(() => ({}));
-                    throw new Error(errData.message || 'Error interno del servidor');
-                }
-                return res.json();
-            })
-            .then(data => {
-                if (data.success) {
-                    myModal.hide();
-                    Swal.fire({
-                        title: '¡Pago Vinculado!',
-                        text: "¿Deseas adjuntar otro comprobante?",
-                        icon: 'success',
-                        showCancelButton: true,
-                        confirmButtonText: 'Sí, otro',
-                        cancelButtonText: 'Terminar',
-                        confirmButtonColor: '#198754'
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            const clieID = modalCodTercero.value;
-                            form.reset();
-                            resetFile();
-                            modalCodTercero.value = clieID;
-
-                            const ahora = new Date();
-                            ahora.setMinutes(ahora.getMinutes() - ahora.getTimezoneOffset());
-                            fechaPagoInput.value = ahora.toISOString().slice(0, 16);
-                            actualizarHash();
-                            myModal.show();
-                        }
-                    });
-                } else if (data.is_duplicate) {
-                    Swal.fire({
-                        title: '¿Duplicado?',
-                        text: data.message,
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonText: 'Sí, forzar',
-                        confirmButtonColor: '#f1416c'
-                    }).then((r) => { if (r.isConfirmed) ejecutarEnvio(true); });
+    // Buscador Motivo / Tipificación
+    const searchType = document.getElementById('search-type');
+    if(searchType) {
+        searchType.addEventListener('input', function (e) {
+            const term = e.target.value.toLowerCase();
+            document.querySelectorAll('#container-list-types label').forEach(label => {
+                const text = label.textContent.toLowerCase();
+                const input = document.getElementById(label.getAttribute('for'));
+                if (text.includes(term)) {
+                    label.classList.remove('d-none'); if (input) input.classList.remove('d-none');
                 } else {
-                    Swal.fire('Error', data.message, 'error');
-                }
-            })
-            .catch(error => {
-                Swal.fire('Error', error.message !== 'Failed to fetch' ? error.message : 'Error de red o servidor no responde', 'error');
-            })
-            .finally(() => { 
-                btnSubmit.disabled = false; 
-                btnSubmit.innerHTML = originalText; 
-            });
-        }
-
-        // =================================================================
-        // ENVÍO DE FORMULARIO: IDENTIFICACIÓN DE BANCOS
-        // =================================================================
-        const formBancos = document.getElementById('formModalIdentificacionBancos');
-        if (formBancos) {
-            formBancos.addEventListener('submit', function (e) {
-                e.preventDefault();
-
-                const btnSubmit = document.getElementById('btnSubmitBancos');
-                const originalText = btnSubmit.innerHTML;
-                btnSubmit.disabled = true;
-                btnSubmit.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> PROCESANDO...`;
-
-                // Convertir el número ingresado a un Array JSON (Ej: de 8854 pasa a "[8854]")
-                const inputVisible = document.getElementById('input_transaccion_visible').value;
-                const inputHidden = document.getElementById('id_transacciones_bancos');
-                if (inputVisible) {
-                    inputHidden.value = JSON.stringify([parseInt(inputVisible)]);
-                }
-
-                const formData = new FormData(this);
-
-                fetch(this.action, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRF-TOKEN': document.querySelector('input[name="_token"]').value,
-                        'Accept': 'application/json'
-                    }
-                })
-                .then(async res => {
-                    if (!res.ok) {
-                        const errData = await res.json().catch(() => ({}));
-                        throw new Error(errData.message || 'Error interno del servidor');
-                    }
-                    return res.json();
-                })
-                .then(data => {
-                    // Cierra el modal y limpia el formulario
-                    const modalBancosEl = document.getElementById('modalIdentificacionBancos');
-                    const modalInst = bootstrap.Modal.getInstance(modalBancosEl);
-                    if (modalInst) modalInst.hide();
-                    formBancos.reset();
-
-                    // Notificación de éxito
-                    Swal.fire({
-                        title: '¡Conciliado!',
-                        text: data.message || 'La transacción se ha vinculado correctamente.',
-                        icon: 'success',
-                        confirmButtonColor: '#198754'
-                    });
-                })
-                .catch(error => {
-                    Swal.fire('Error', error.message !== 'Failed to fetch' ? error.message : 'Error de red o el servidor no responde', 'error');
-                })
-                .finally(() => {
-                    btnSubmit.disabled = false;
-                    btnSubmit.innerHTML = originalText;
-                });
-            });
-        }
-        // --- 5. ARCHIVOS Y PORTAPAPELES ---
-        function procesarArchivo(file) {
-            if (!file) return;
-            const valid = ['image/jpeg', 'image/png', 'application/pdf'];
-            if (!valid.includes(file.type)) return Swal.fire('Error', 'Solo imágenes o PDF.', 'warning');
-
-            const dt = new DataTransfer(); dt.items.add(file);
-            fileInput.files = dt.files;
-
-            document.getElementById('preview_container').classList.remove('d-none');
-            document.getElementById('file_name_preview').textContent = file.name;
-            const img = document.getElementById('image_preview');
-            const pdf = document.getElementById('pdf_preview_icon');
-
-            if (file.type.startsWith('image/')) {
-                const reader = new FileReader();
-                reader.onload = (e) => { img.src = e.target.result; img.classList.remove('d-none'); pdf.classList.add('d-none'); };
-                reader.readAsDataURL(file);
-            } else { img.classList.add('d-none'); pdf.classList.remove('d-none'); }
-        }
-
-        fileInput.addEventListener('change', e => { if (e.target.files.length) procesarArchivo(e.target.files[0]); });
-        window.addEventListener('paste', e => { if (modalElement.classList.contains('show') && e.clipboardData.files.length) procesarArchivo(e.clipboardData.files[0]); });
-        dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
-        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-        dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.remove('dragover'); if (e.dataTransfer.files.length) procesarArchivo(e.dataTransfer.files[0]); });
-
-        // --- 6. GESTIÓN DE TIPIFICACIÓN (EXTERNO) ---
-        document.querySelectorAll('.type-trigger').forEach(radio => {
-            radio.addEventListener('change', function () {
-                const labelText = this.nextElementSibling.textContent.trim().toLowerCase();
-                const cID = document.getElementById('client_id')?.value || '';
-
-                // 1. Lógica Original (Soporte de pago)
-                if (this.value == '3' || labelText === 'soporte de pago') {
-                    if (!cID) { Swal.fire('Error', 'Selecciona un cliente.', 'warning'); this.checked = false; return; }
-                    document.getElementById('cod_tercero').value = cID;
-                    actualizarHash();
-                    myModal.show();
-                }
-
-                // 2. NUEVA Lógica (Identificación Bancos) - Añadido this.value == '20'
-                if (this.value == '20' || labelText === 'identificación bancos' || labelText === 'identificacion bancos') {
-                    if (!cID) { Swal.fire('Error', 'Selecciona un cliente primero.', 'warning'); this.checked = false; return; }
-                    
-                    // Pasamos el ID del cliente al nuevo modal
-                    const modalCodTerceroBancos = document.getElementById('bancos_cod_tercero');
-                    if (modalCodTerceroBancos) modalCodTerceroBancos.value = cID;
-                    
-                    // Instanciamos y abrimos el modal
-                    const modalBancosElement = document.getElementById('modalIdentificacionBancos');
-                    if (modalBancosElement) {
-                        // Busca si ya existe, si no, lo crea
-                        let modalBancos = bootstrap.Modal.getInstance(modalBancosElement);
-                        if (!modalBancos) {
-                            modalBancos = new bootstrap.Modal(modalBancosElement);
-                        }
-                        modalBancos.show();
-                    }
+                    label.classList.add('d-none'); if (input) input.classList.add('d-none');
                 }
             });
         });
+    }
+
+    // Lógica para pegar archivos globalmente (Portapapeles) en el input attachment
+    document.addEventListener('paste', function (e) {
+        let pastedFiles = e.clipboardData.files;
+        if (pastedFiles.length === 0) return;
+        let inputDocumento = document.getElementById('attachment');
+        if (inputDocumento) {
+            const dt = new DataTransfer(); dt.items.add(pastedFiles[0]);
+            inputDocumento.files = dt.files;
+            if(window.handleFileSelect) window.handleFileSelect(inputDocumento);
+            if(typeof toastr !== 'undefined') toastr.success("¡Archivo adjuntado desde el portapapeles!");
+        }
     });
 
-    // --- ACTUALIZADO: AHORA LIMPIA TIPO_PAGO Y OBSERVACION, CCO, PR Y N° CUOTA ---
-    function resetFile() {
-        document.getElementById('archivo_soporte').value = '';
-        const prev = document.getElementById('preview_container');
-        if (prev) prev.classList.add('d-none');
-        ['numero_cuota', 'pr', 'cco', 'id_obligacion', 'id_banco', 'search_obligacion', 'search_banco', 'monto_pagado', 'monto_pagado_display', 'tipo_pago', 'search_tipo_pago', 'observacion'].forEach(id => {
-            const el = document.getElementById(id); if (el) el.value = '';
-        }); 
+    // Gestión de Tipificación (Apertura de Modales desde las opciones)
+    document.querySelectorAll('.type-trigger').forEach(radio => {
+        radio.addEventListener('change', function () {
+            const labelText = this.nextElementSibling.textContent.trim().toLowerCase();
+            const cID = document.getElementById('client_id')?.value || '';
+
+            // Soporte de pago (ID 3)
+            if (this.value == '3' || labelText === 'soporte de pago') {
+                if (!cID) { Swal.fire('Error', 'Selecciona un cliente.', 'warning'); this.checked = false; return; }
+                const modalCodTercero = document.getElementById('cod_tercero');
+                if(modalCodTercero) modalCodTercero.value = cID;
+                const modalElement = document.getElementById('modalComprobante');
+                if(modalElement) {
+                    let modalInst = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
+                    modalInst.show();
+                }
+            }
+
+            // Identificación Bancos (ID 20)
+            if (this.value == '20' || labelText === 'identificación bancos' || labelText === 'identificacion bancos') {
+                if (!cID) { Swal.fire('Error', 'Selecciona un cliente primero.', 'warning'); this.checked = false; return; }
+                const modalCodTerceroBancos = document.getElementById('bancos_cod_tercero');
+                if (modalCodTerceroBancos) modalCodTerceroBancos.value = cID;
+                const modalBancosElement = document.getElementById('modalIdentificacionBancos');
+                if (modalBancosElement) {
+                    let modalBancos = bootstrap.Modal.getInstance(modalBancosElement) || new bootstrap.Modal(modalBancosElement);
+                    modalBancos.show();
+                }
+            }
+        });
+    });
+});
+
+
+/**
+ * =========================================================================
+ * 5. LÓGICA DE JQUERY PARA LÍNEAS DE OBLIGACIÓN MULTIPLES (Select2 dinámico)
+ * =========================================================================
+ */
+ $(document).ready(function () {
+    const select2Options = { theme: 'bootstrap-5', placeholder: 'Selecciona la línea...', width: '100%', allowClear: true };
+    $('.select2-linea').select2(select2Options);
+
+    $('#btn-add-linea').on('click', function () {
+        let $firstRow = $('.linea-item-wrapper').first();
+        $firstRow.find('.select2-linea').select2('destroy');
         
-        // Reset CCO
-        const ccoInput = document.getElementById('cco');
-        if(ccoInput) {
-            ccoInput.removeAttribute('required');
-            ccoInput.previousElementSibling.innerHTML = 'CCO';
-        }
-
-        // Reset N° Cuota
-        const cuotaInput = document.getElementById('numero_cuota');
-        if(cuotaInput) {
-            cuotaInput.removeAttribute('required');
-            cuotaInput.previousElementSibling.innerHTML = 'N° Cuota';
-        }
-
-        // Reset PR
-        const prInput = document.getElementById('pr');
-        if(prInput) {
-            prInput.removeAttribute('required');
-            prInput.previousElementSibling.innerHTML = 'PR';
-        }
-    }
-</script>
-
-
-<script>
-    // Exponer función global para calcular fechas automáticas de la agenda
-    window.addDays = function (days) {
-        const date = new Date();
-        // Sumar los días solicitados
-        date.setDate(date.getDate() + days);
-
-        // Ajustar a la zona horaria local para el input datetime-local
-        const tzOffset = (new Date()).getTimezoneOffset() * 60000;
-        const localISOTime = (new Date(date - tzOffset)).toISOString().slice(0, 16);
-
-        // Asignar el valor al input y limpiar posibles errores visuales
-        const $dateInput = $('#next_action_date');
-        $dateInput.val(localISOTime).trigger('change');
-        $dateInput.removeClass('is-invalid input-error').addClass('is-valid');
-    };
-
-    /**
-     * =========================================================================
-     * APP DE INTERACCIONES CRM
-     * Arquitectura Modular Escalable
-     * =========================================================================
-     */
-    const showTab = document.querySelectorAll('#TabMenu .nav-link');
-    const formprogress = document.getElementById('form-progress');
-    showTab.forEach(btn => {
-        btn.addEventListener('click', function () {
-            let progreso = this.getAttribute('data-progress');
-            formprogress.style.width = progreso + '%';
-            showTab.forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-        });
+        let $newRow = $firstRow.clone();
+        $newRow.find('select').val('');
+        
+        let btnDelete = `
+            <button type="button" class="btn btn-outline-danger border-0 ps-1 pe-1 btn-remove-linea" title="Eliminar">
+                <i class="bi bi-x-circle-fill"></i>
+            </button>`;
+            
+        $newRow.find('.btn-remove-linea').remove(); 
+        $newRow.append(btnDelete); 
+        $(this).before($newRow);
+        
+        $firstRow.find('.select2-linea').select2(select2Options);
+        $newRow.find('.select2-linea').select2(select2Options);
     });
 
-
-
-    const myUserId = "{{ Auth::id() }}";
-
-    function toggleAssignment() {
-
-        if ($('#handled_by_me').is(':checked')) {
-
-            $('#panel-me').show();
-            $('#panel-other').hide();
-
-            $('#id_user_asignacion')
-                .prop('required', false)
-                .val(myUserId)
-                .trigger('change');
-
-        } else {
-
-            $('#panel-me').hide();
-            $('#panel-other').show();
-
-            $('#id_user_asignacion')
-                .prop('required', true)
-                .val('')
-                .trigger('change');
-
-        }
-
-    }
-
-    $('input[name="handled_by_agent"]').on('change', toggleAssignment);
-    toggleAssignment();
-
-    const CRMApp = (function ($) {
-        'use strict';
-        // =====================================================================
-        // 1. CONFIGURACIÓN Y SELECTORES (DOM Cache)
-        // =====================================================================
-        const CONFIG = {
-            urls: {
-                searchClients: @json(route('interactions.search-clients') ?? ''),
-                // La ruta cliente show se genera dinámicamente en HistoryManager
-            }
-        };
-
-        const DOM = {
-            form: '#interaction-form',
-            loader: '#ajax-loader',
-            overlay: '#loading-overlay',
-            timer: '#timer',
-            durationInp: '#duration',
-            durationDisp: '#duration-display',
-            startTimeInp: '#start_time',
-
-            // Pestañas y Navegación
-            btnSiguiente1: '#btn-siguiente-paso',
-            btnSiguiente2: '#btn-paso2-siguiente',
-            btnSubmit: '#btn-submit-interaccion',
-
-            // Clientes y Terceros
-            clientSelect: '#client_id',
-            clientCard: '#client-info-card',
-            thirdFields: '#third-party-fields',
-            thirdPartyCheck: '#caller_third',
-
-            // Paso 2 (Responsabilidad)
-            handledByMe: '#handled_by_me',
-            handledByOther: '#handled_by_other',
-            panelMe: '#panel-me',
-            panelOther: '#panel-other',
-
-            // Selects Paso 2
-            areaSelect: '#id_area_de_asignacion',
-            cargoSelect: '#id_cargo_asignacion',
-            lineaSelect: 'select[name="id_linea_de_obligacion[]"]',
-            distritoSelect: '#id_distrito_interaccion',
-
-            // Sincronización
-            btnSyncFrom: '#sync-from-client-btn',
-            btnSyncTo: '#sync-to-client-btn',
-
-            // Historial y Planificación
-            outcome: '#outcome',
-            planningSection: '#planning-section',
-            historySection: '#history-section',
-            historyList: '#interaction-history-list',
-            parentIdInp: '#parent_interaction_id'
-        };
-
-        let state = {
-            startTimeInterval: null,
-            startTime: null,
-            // INYECTADO: Variables para la pausa del cronómetro
-            accumulatedTime: 0,
-            isPaused: false
-        };
-
-        // =====================================================================
-        // 2. MÓDULO DE INTERFAZ (UI Helpers)
-        // =====================================================================
-        const UI = {
-            showLoader: () => $(DOM.loader).show(),
-            hideLoader: () => $(DOM.loader).hide(),
-
-            markError: function (element, isWrapper = false) {
-                const $el = $(element);
-                if (!$el.prop('required') && !isWrapper) {
-                    return;
-                }
-                if (isWrapper || $el.hasClass('grid-gallery') || $el.hasClass('bg-light')) {
-                    $el.addClass(isWrapper ? 'sync-wrapper-error' : 'container-error');
-                } else if ($el.hasClass('select2-hidden-accessible')) {
-                    $el.next('.select2-container').addClass('select2-error');
-                } else {
-                    $el.addClass('input-error is-invalid').removeClass('is-valid');
-                }
-            },
-
-            cleanError: function (element, isWrapper = false) {
-                const $el = $(element);
-                if (isWrapper || $el.hasClass('grid-gallery') || $el.hasClass('bg-light')) {
-                    $el.removeClass('sync-wrapper-error container-error');
-                } else if ($el.hasClass('select2-hidden-accessible')) {
-                    $el.next('.select2-container').removeClass('select2-error');
-                } else {
-                    $el.removeClass('input-error is-invalid');
-                    if ($el.prop('required')) {
-                        $el.addClass('is-valid');
-                    } else {
-                        $el.removeClass('is-valid');
-                    }
-                }
-            },
-
-            showTab: function (tabId) {
-
-                let tabElement;
-                if (tabId === 'resultado-tab') {
-                    tabElement = document.getElementById('profile-tab');
-                } else {
-                    tabElement = document.getElementById('home-tab');
-                }
-                const tab = new bootstrap.Tab(tabElement);
-                tab.show();
-
-                const progress = tabId === 'principal-tab' ? 50 : 100;
-                $('#form-progress')
-                    .css('width', progress + '%')
-                    .attr('aria-valuenow', progress);
-
-            },
-
-
-            handleFileSelect: function (input) {
-                const label = document.getElementById('file-label');
-                const dropZone = document.getElementById('drop-zone');
-                const previewWrapper = document.getElementById('image-preview-wrapper');
-                const previewImg = document.getElementById('img-preview-element');
-
-                if (input.files && input.files[0]) {
-                    let file = input.files[0];
-
-                    // ---> NUEVO: Feedback visual estilo "Carga Exitosa" <---
-                    label.innerHTML =
-                        `<span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i> ${file.name}</span>`;
-                    dropZone.style.borderColor = '#198754';
-                    dropZone.style.backgroundColor = '#f8fff9';
-
-                    // ---> NUEVO: Generar vista previa <---
-                    if (file.type.startsWith('image/')) {
-                        const reader = new FileReader();
-                        reader.onload = e => {
-                            previewImg.src = e.target.result;
-                            previewWrapper.style.display = 'block';
-                        }
-                        reader.readAsDataURL(file);
-                    } else {
-                        previewWrapper.style.display = 'none';
-                    }
-                } else {
-                    // Restaurar estado por defecto si el usuario cancela
-                    label.innerText = 'Adjuntar archivo';
-                    label.classList.remove('text-success');
-                    dropZone.style.borderColor = '';
-                    dropZone.style.backgroundColor = '';
-                    previewWrapper.style.display = 'none';
-                }
-            }
-        };
-
-        // =====================================================================
-        // 3. MÓDULO DE CLIENTES Y TERCEROS
-        // =====================================================================
-        const ClientManager = {
-            toggleThirdParty: function () {
-                const isThird = $(DOM.thirdPartyCheck).is(':checked');
-                $(DOM.thirdFields).toggle(isThird);
-
-                if (!isThird) {
-                    // Limpiar errores
-                    ['#nombre_quien_llama', '#cedula_quien_llama', '#celular_quien_llama'].forEach(s =>
-                        UI.cleanError(s));
-                    UI.cleanError('#container-parentesco', true);
-                }
-            },
-
-            generateAvatar: function (name) {
-                const colors = ['#6B9BD1', '#7FA9D3', '#93B7D5', '#A7C5D7', '#BBD3D9'];
-                const initials = name.split(' ').map(n => n.charAt(0)).join('').toUpperCase().substring(
-                    0, 2);
-                const colorIndex = name.charCodeAt(0) % colors.length;
-                return {
-                    initials: initials || '—',
-                    color: colors[colorIndex]
-                };
-            },
-
-            updateClientCard: function (clientId) {
-                if (!clientId) {
-                    $(DOM.clientCard).fadeOut();
-                    $(DOM.historySection).fadeOut();
-                    Timer.reset();
-                    return;
-                }
-
-                UI.cleanError(DOM.clientSelect);
-                $('#error-client-msg').hide();
-                Timer.start();
-                UI.showLoader();
-
-                // Cargar datos
-                const url = @json(route('interactions.cliente.show', ['cod_ter' => ':cod_ter']) ?? '').replace(':cod_ter', clientId);
-
-                $(DOM.historyList).html(
-                    '<div class="text-center py-4 small"><div class="spinner-border spinner-border-sm text-dark"></div> Cargando datos...</div>'
-                );
-
-                $.ajax({
-                    url: url,
-                    type: 'GET',
-                    dataType: 'json',
-                    timeout: 15000
-                })
-                    .done(data => {
-                        if (data.error) throw new Error(data.error);
-                        const avatar = ClientManager.generateAvatar(data.nom_ter || '');
-                        $('#info-nombre').text(data.nom_ter || 'No registrado');
-                        $('#info-id').text(`${data.cod_ter || 'N/A'}`);
-                        $('#info-distrito').text(data.distrito?.NOM_DIST || 'No registrado');
-                        $('#info-categoria').text(data.maeTipos?.nombre || 'No registrado');
-                        $('#info-email').text(data.email || 'No registrado');
-                        $('#info-telefono').text(data.tel1 || 'No registrado');
-                        $('#info-direccion').text(data.dir || 'No registrado');
-
-                        $('#btn-editar-cliente').attr('href',
-                            `/maestras/terceros/${data.cod_ter}/edit`);
-                        $('#btn-ver-cliente').attr('href', `/maestras/terceros/${data.cod_ter}`);
-
-                        HistoryManager.renderFull(data.history);
-                        $(DOM.clientCard).fadeIn();
-                        ClientManager.toggleThirdParty();
-                        toastr.success('Información cargada');
-                    })
-                    .fail(HistoryManager.handleAjaxError)
-                    .always(() => UI.hideLoader());
-            }
-        };
-
-        // =====================================================================
-        // 4. MÓDULO DEL CRONÓMETRO (MODIFICADO PARA PAUSA/REANUDAR)
-        // =====================================================================
-        const Timer = {
-            start: function (resume = false) {
-                if (!resume) {
-                    this.stop();
-                    state.startTime = new Date();
-                    state.accumulatedTime = 0;
-                    $(DOM.startTimeInp).val(state.startTime.toISOString());
-                } else {
-                    state.startTime = new Date(); // Resetear el tiempo base para el nuevo segmento
-                }
-
-                state.isPaused = false;
-                $('#timer-indicator').css({
-                    'background-color': '#059669'
-                });
-                $('#btn-timer-toggle').html('<i class="bi bi-pause"></i>').attr('title', 'Pausar');
-
-                state.startTimeInterval = setInterval(() => {
-                    if (!state.isPaused) {
-                        const now = new Date();
-                        const diff = Math.round((now - state.startTime) / 1000) + state
-                            .accumulatedTime;
-                        this.updateDisplay(diff);
-                    }
-                }, 1000);
-            },
-            pause: function () {
-                if (state.isPaused) {
-                    this.start(true); // Reanudar
-                } else {
-                    state.isPaused = true;
-                    clearInterval(state.startTimeInterval);
-                    const now = new Date();
-                    state.accumulatedTime += Math.round((now - state.startTime) / 1000);
-
-                    $('#timer-indicator').css({
-                        'background-color': '#D97706'
-                    });
-                    $('#btn-timer-toggle').html('<i class="bi bi-play"></i>').attr('title', 'Reanudar');
-                }
-            },
-            stop: function () {
-                if (state.startTimeInterval) clearInterval(state.startTimeInterval);
-                state.startTimeInterval = null;
-            },
-            reset: function () {
-                this.stop();
-                state.startTime = null;
-                state.accumulatedTime = 0;
-                state.isPaused = false;
-                $(DOM.startTimeInp).val('');
-                this.updateDisplay(0);
-                $('#timer-indicator').css({
-                    'background-color': '#333'
-                });
-                $('#btn-timer-toggle').html('<i class="bi bi-pause"></i>').attr('title', 'Pausar');
-            },
-            updateDisplay: function (seconds) {
-                $(DOM.durationInp).val(seconds);
-                $(DOM.durationDisp).val(`${seconds} segundos`);
-
-                const mins = Math.floor(seconds / 60);
-                const secs = seconds % 60;
-                $(DOM.timer).text(`${mins < 10 ? '0' + mins : mins}:${secs < 10 ? '0' + secs : secs}`);
-            }
-        };
-
-        // =====================================================================
-        // 5. MÓDULO DE HISTORIAL Y ESCALAMIENTO
-        // =====================================================================
-        const HistoryManager = {
-            updateVisibility: function () {
-                if ($(DOM.clientSelect).val()) {
-                    $('#no-client-selected').hide();
-                    $(DOM.historySection).show();
-                } else {
-                    $('#no-client-selected').show();
-                    $(DOM.historySection).hide();
-                }
-            },
-
-            renderFull: function (historyData) {
-                const $list = $(DOM.historyList);
-                const $listBottom = $('#interaction-history-list-bottom');
-
-                $list.empty();
-                if ($listBottom.length) $listBottom.empty();
-
-                if (historyData && historyData.length > 0) {
-                    const html = historyData.map(item => this.buildCardHtml(item)).join('');
-                    $list.html(html);
-                    if ($listBottom.length) $listBottom.html(html);
-
-                    $(DOM.historySection).fadeIn();
-                    this.restoreParentSelection();
-                } else {
-                    const emptyHtml =
-                        `<div class="text-center py-4 text-muted small"><p>No hay interacciones previas.</p></div>`;
-                    $list.html(emptyHtml);
-                    if ($listBottom.length) $listBottom.html(emptyHtml);
-                }
-            },
-
-            buildCardHtml: function (item) {
-                const url = `/interactions/${item.id}/show`;
-                const isSuccess = ['2', '3', '5'].includes(item.outcome);
-                const isPending = ['1', '4'].includes(item.outcome);
-                const badgeColor = isSuccess ? '#39C666' : (isPending ? '#FFA21D' : '#596CD8');
-
-                const safeNotes = item.notes ? $('<div>').text(item.notes).html() :
-                    '<em>Sin notas.</em>';
-
-                return `
-                <div class="history-item mb-3 timeline-item" id="history-item-${item.id}">
-                    <div class="border" style="border-radius: 4px;">
-                        <div class="bg-light d-flex justify-content-between align-items-center py-2 px-3 collapsed" 
-                             data-bs-toggle="collapse" data-bs-target="#collapseInteraction-${item.id}" style="cursor:pointer">
-                            <div class="d-flex align-items-center gap-2 small">                                
-                                <span style="color: ${badgeColor}; font-weight: bold;">[${item.outcome}]</span>
-                                <span class="text-muted border-start ps-2">${item.type}</span>
-                            </div>
-                            <small class="text-muted">${item.date}</small>
-                        </div>
-                        <div id="collapseInteraction-${item.id}" class="collapse">
-                            <div class="p-3 bg-white border-top">
-                                <div class="mb-2">
-                                    <div class="small text-dark">${safeNotes}</div>
-                                </div>
-                                <div class="d-flex justify-content-between align-items-end pt-2 border-top mt-2">
-                                    <div class="small text-muted">Gestor: <strong>${item.agent}</strong></div>
-                                    <div class="d-flex gap-2">
-                                        <a href="${url}" target="_blank" class="text-primary small text-decoration-none">Ver caso</a>
-                                        <a href="javascript:void(0)" class="text-dark small text-decoration-none fw-bold btn-escalate" 
-                                           data-id="${item.id}" data-info="${item.type} - ${item.date}">Vincular</a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            },
-
-            selectParent: function (id, info) {
-                $(DOM.parentIdInp).val(id);
-                $('#selected-parent-text').text(info);
-                $('#selected-parent-info').fadeIn();
-
-                $('.history-item > div').removeClass('border-dark');
-                $(`.history-list #history-item-${id} > div`).addClass('border-dark');
-
-                toastr.info('Interacción vinculada');
-            },
-
-            clearParent: function () {
-                $(DOM.parentIdInp).val('');
-                $('#selected-parent-info').fadeOut();
-                $('.history-item > div').removeClass('border-dark');
-            },
-
-            restoreParentSelection: function () {
-                const parentId = $(DOM.parentIdInp).val();
-                if (parentId) {
-                    const $items = $(`.history-list #history-item-${parentId} > div`);
-                    if ($items.length) {
-                        $items.addClass('border-dark');
-                        $('#selected-parent-info').show();
-                    }
-                }
-            },
-
-            handleAjaxError: function (xhr, status, error) {
-                console.error('AJAX Error:', error);
-                const msg = xhr.responseJSON?.error || (status === 'timeout' ? 'Timeout.' :
-                    'Error de conexión.');
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error',
-                    text: msg,
-                    confirmButtonColor: '#111827'
-                });
-            }
-        };
-
-        // =====================================================================
-        // 6. MÓDULO DE BORRADORES (Auto-Guardado)
-        // =====================================================================
-
-
-        // =====================================================================
-        // 7. MÓDULO DE VALIDACIÓN Y SINCRONIZACIÓN (Form Validator)
-        // =====================================================================
-        const Validation = {
-            toggleResponsibility: function () {
-                UI.cleanError(DOM.areaSelect);
-                UI.cleanError(DOM.cargoSelect);
-
-                if ($(DOM.handledByMe).is(':checked')) {
-                    $(DOM.panelMe).show();
-                    $(DOM.panelOther).hide();
-                } else {
-                    $(DOM.panelMe).hide();
-                    $(DOM.panelOther).show();
-                }
-            },
-
-            validateStep1: function () {
-                let isValid = true;
-                let firstErr = null;
-
-                // 1. Cliente
-                if (!$(DOM.clientSelect).val()) {
-                    UI.markError(DOM.clientSelect);
-                    $('#error-client-msg').show();
-                    isValid = false;
-                    firstErr = firstErr || $(DOM.clientSelect).parent();
-                }
-
-                // 2. Tercero
-                if ($(DOM.thirdPartyCheck).is(':checked')) {
-                    ['#nombre_quien_llama', '#cedula_quien_llama', '#celular_quien_llama'].forEach(
-                        id => {
-                            if (!$(id).val().trim()) {
-                                UI.markError(id);
-                                isValid = false;
-                                firstErr = firstErr || $(id);
-                            }
-                        });
-                    if (!$('input[name="parentesco_quien_llama"]:checked').length) {
-                        UI.markError('#container-parentesco', true);
-                        isValid = false;
-                        firstErr = firstErr || $('#container-parentesco');
-                    }
-                }
-
-                // 3. Canal y Tipo
-                if (!$('input[name="interaction_channel"]:checked').length) {
-                    UI.markError('#container-channel .grid-gallery', true);
-                    isValid = false;
-                    firstErr = firstErr || $('#container-channel');
-                }
-                if (!$('input[name="interaction_type"]:checked').length) {
-                    UI.markError('#container-type', true);
-                    isValid = false;
-                    firstErr = firstErr || $('#container-type');
-                }
-
-                // 4. Asignación (Linea Obligación)
-                let allLineasValid = true;
-                const $allLineas = $(DOM.lineaSelect);
-                $allLineas.each(function () {
-                    if (!$(this).val()) {
-                        UI.markError(
-                            this); // Marca error en el select específico que esté vacío
-                        allLineasValid = false;
-                    } else {
-                        UI.cleanError(this);
-                    }
-                });
-
-                if (!allLineasValid) {
-                    isValid = false;
-                    // Guardamos el primer select con error para el scroll
-                    firstErr = firstErr || $allLineas.filter(function () {
-                        return !$(this).val();
-                    }).first();
-                }
-
-                // 5. Asignación a Otro Usuario
-                if ($(DOM.handledByOther).is(':checked')) {
-                    if (!$('#id_user_asignacion').val()) {
-                        UI.markError('#id_user_asignacion');
-                        isValid = false;
-                        firstErr = firstErr || $('#id_user_asignacion').parent();
-                    }
-                }
-
-                return {
-                    isValid,
-                    firstErr
-                };
-            },
-
-            submitForm: function (e) {
-                console.log('submit ejecutado');
-                e.preventDefault();
-                Timer.stop(); // Fija la duración final
-
-                // Validar HTML5 Nativo
-                /*if (!$(DOM.form)[0].checkValidity()) {
-                    $(DOM.form)[0].reportValidity();
-                    return;
-                }*/
-
-                Swal.fire({
-                    title: 'Confirmar guardado',
-                    text: "¿Deseas guardar la interacción ahora?",
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonText: 'Guardar',
-                    cancelButtonText: 'Cancelar',
-                    confirmButtonColor: '#111827',
-                    cancelButtonColor: '#d1d5db',
-                    allowOutsideClick: false,
-                    allowEscapeKey: false
-                }).then((result) => {
-                    // Usamos la misma lógica de validación que mostraste
-                    if (result.isConfirmed || result.value || result === true) {
-
-                        // 1. Limpieza del borrador antes de enviar
-
-                        // 2. Envío físico del formulario
-                        document.querySelector(DOM.form).submit();
-                    }
-                });
-            }
-        };
-
-        const SyncManager = {
-            syncFromClient: function () {
-                const clientId = $(DOM.clientSelect).val();
-                if (!clientId) return Swal.fire('Aviso', 'Selecciona un cliente.', 'warning');
-
-                const btn = $(DOM.btnSyncFrom);
-                const ogHtml = btn.html();
-                btn.html('<span class="spinner-border spinner-border-sm"></span>');
-
-                setTimeout(() => {
-                    Swal.fire({
-                        toast: true,
-                        position: 'top-end',
-                        icon: 'success',
-                        title: 'Datos cargados',
-                        showConfirmButton: false,
-                        timer: 3000
-                    });
-                    btn.html(ogHtml);
-                }, 800);
-            },
-            syncToClient: function () {
-                const clientId = $(DOM.clientSelect).val();
-                const distId = $(DOM.distritoSelect).val();
-
-                if (!clientId) return Swal.fire('Aviso', 'Falta cliente', 'warning');
-                if (!distId) return Swal.fire('Aviso', 'Selecciona dato a guardar', 'warning');
-
-                Swal.fire({
-                    title: 'Actualizar',
-                    text: '¿Guardar este dato permanentemente en el cliente?',
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonText: 'Sí',
-                    confirmButtonColor: '#111827'
-                }).then(res => {
-                    if (res.isConfirmed) {
-                        const btn = $(DOM.btnSyncTo);
-                        const ogHtml = btn.html();
-                        btn.html('<span class="spinner-border spinner-border-sm"></span>');
-                        setTimeout(() => {
-                            Swal.fire('Guardado', 'Actualizado con éxito', 'success');
-                            btn.html(ogHtml);
-                        }, 1000);
-                    }
-                });
-            }
-        };
-
-        // =====================================================================
-        // 8. INICIALIZADOR Y EVENT BINDING
-        // =====================================================================
-        function initPlugins() {
-            // 1. Select2 básicos
-            $('.select2').select2({
-                theme: 'bootstrap-5',
-                dropdownParent: $('body')
-            });
-
-            // 2. Buscador de Clientes
-            $(DOM.clientSelect).select2({
-                theme: 'bootstrap-5',
-                placeholder: 'Buscar...',
-                allowClear: true,
-                minimumInputLength: 2,
-                ajax: {
-                    url: CONFIG.urls.searchClients,
-                    dataType: 'json',
-                    delay: 250,
-                    data: p => ({
-                        q: p.term,
-                        page: p.page || 1
-                    }),
-                    processResults: d => ({
-                        results: d.results.map(i => ({
-                            id: i.cod_ter,
-                            text: `${i.cod_ter} - ${i.apl1} ${i.apl2} ${i.nom1} ${i.nom2}`
-                        })),
-                        pagination: {
-                            more: d.pagination.more
-                        }
-                    })
-                }
-            });
-
-            // 3. Buscador de Usuarios para Delegar
-            $('#id_user_asignacion').select2({
-                theme: 'bootstrap-5',
-                placeholder: 'Buscar usuario...',
-                allowClear: true,
-                minimumInputLength: 3,
-                ajax: {
-                    url: '/interactions/search-users',
-                    dataType: 'json',
-                    delay: 250,
-                    data: p => ({
-                        q: p.term,
-                        page: p.page || 1
-                    }),
-                    processResults: d => ({
-                        results: d.results,
-                        pagination: {
-                            more: d.pagination.more
-                        }
-                    })
-                },
-                language: {
-                    inputTooShort: function () {
-                        return 'Ingresa 3 letras...';
-                    },
-                    noResults: function () {
-                        return 'No hay usuarios.';
-                    },
-                    searching: function () {
-                        return 'Buscando...';
-                    }
-                }
-            });
-
-            toastr.options = {
-                "positionClass": "toast-bottom-right",
-                "timeOut": "2500"
-            };
-        }
-
-        function bindEvents() {
-            // =================================================================
-            // NUEVO: LÓGICA PARA PEGAR ARCHIVOS CON CTRL+V (PORTAPAPELES)
-            // =================================================================
-            document.addEventListener('paste', function (e) {
-                // 1. Obtener archivos del portapapeles
-                let pastedFiles = e.clipboardData.files;
-                if (pastedFiles.length === 0) return; // Si es solo texto, lo ignoramos
-
-                // 2. Buscar el input de archivo de esta vista
-                let inputDocumento = document.getElementById('attachment');
-
-                if (inputDocumento) {
-                    // 3. Transferir el archivo pegado al input
-                    const dt = new DataTransfer();
-                    dt.items.add(pastedFiles[0]); // Tomamos solo el primero (carga individual)
-                    inputDocumento.files = dt.files;
-
-                    // 4. Disparar la función de la UI para actualizar diseño y vista previa
-                    UI.handleFileSelect(inputDocumento);
-
-                    // 5. Notificación usando el toastr que ya tienes configurado
-                    toastr.success("¡Archivo adjuntado desde el portapapeles!");
-                }
-            });
-
-            // Navegación Tabs (Tu código existente sigue aquí abajo...)
-            $('.tab-button').on('click', function () {
-                UI.showTab($(this).data('tab'));
-            });
-            // Navegación Tabs
-            $('.tab-button').on('click', function () {
-                UI.showTab($(this).data('tab'));
-            });
-
-            // Auto-Guardado y Limpieza Visual
-            $(DOM.form).on('input change', 'input, textarea, select', function () {
-                UI.cleanError(this);
-            });
-
-            // Select2 Limpieza visual
-            $(DOM.form).on('select2:select', '.select2', function () {
-                UI.cleanError(this);
-            });
-
-            // Eventos Paso 1 y Continuar
-            $(DOM.clientSelect).on('change', function () {
-                ClientManager.updateClientCard($(this).val());
-            });
-            $('input[name="caller_type"]').on('change', ClientManager.toggleThirdParty);
-            $(DOM.btnSiguiente1).on('click', e => {
-                e.preventDefault();
-                const v = Validation.validateStep1();
-                v.isValid ? UI.showTab('resultado-tab') : v.firstErr[0].scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'center'
-                });
-            });
-
-            // Eventos Asignación y Sync
-            $(DOM.handledByMe + ', ' + DOM.handledByOther).on('change', Validation.toggleResponsibility);
-            $(DOM.btnSyncFrom).on('click', SyncManager.syncFromClient);
-            $(DOM.btnSyncTo).on('click', SyncManager.syncToClient);
-
-            // Cronómetro
-            $('#btn-timer-toggle').on('click', () => Timer.pause());
-            $('#btn-timer-reset').on('click', () => Timer.reset());
-
-            // Limpieza de radios complejos
-            const radioNames = ['interaction_channel', 'interaction_type', 'parentesco_quien_llama'];
-            radioNames.forEach(name => {
-                $(`input[name="${name}"]`).on('change', function () {
-                    const map = {
-                        interaction_channel: '#container-channel',
-                        interaction_type: '#container-type',
-                        parentesco_quien_llama: '#container-parentesco'
-                    };
-                    UI.cleanError($(map[name]).find('.grid-gallery, .bg-light')[0] || map[name],
-                        true);
-                });
-            });
-
-            // Eventos Historial / Planificación
-            $('input[name="outcome"]').on('change', function () {
-                const val = $(this).next('label').text().trim().toLowerCase();
-                const requiresPlanning = $(this).data('requires-planning') === true || $(this).data(
-                    'requires-planning') === 'true';
-
-                if (requiresPlanning || val.includes('pendiente') || val.includes('no contesta') || val
-                    .includes('seguimiento')) {
-                    $('#planning-section').slideDown();
-                } else {
-                    $('#planning-section').slideUp();
-                }
-            });
-
-            $(document).on('click', '.btn-escalate', function () {
-                HistoryManager.selectParent($(this).data('id'), $(this).data('info'));
-            });
-            $('#clear-parent-selection').on('click', HistoryManager.clearParent);
-            $('#refresh-history').on('click', () => ClientManager.updateClientCard($(DOM.clientSelect).val()));
-
-            // Submit
-            $(DOM.form).on('submit', Validation.submitForm);
-
-            // =================================================================
-            // BOTÓN LIMPIAR (A prueba de balas y versiones de SweetAlert)
-            // =================================================================
-            $(document).on('click', '.btn-limpiar-borrador', function (e) {
-                e.preventDefault();
-                Swal.fire({
-                    title: '¿Limpiar el borrador?',
-                    text: "Se perderán todos los datos que hayas escrito.",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#111827',
-                    cancelButtonColor: '#d33',
-                    confirmButtonText: 'Sí, borrar',
-                    cancelButtonText: 'Cancelar'
-                }).then((r) => {
-                    // Validamos isConfirmed, value o si es un simple true (cubre todas las versiones de SweetAlert)
-                    if (r.isConfirmed || r.value || r === true) {
-                        // 1. Apagamos el auto-guardado para que no intente guardar mientras borramos
-                        $('#interaction-form').off();
-
-                        // 2. Borramos la memoria local de tu llave
-
-                        // 3. Forzamos la recarga de la página
-                        window.location.reload();
-                    }
-                });
-            });
-        }
-
-        // Método Público de Inicialización
-        function init() {
-            initPlugins();
-            bindEvents();
-            Validation.toggleResponsibility();
-
-            // Disparar triggers iniciales
-            if (!$(DOM.clientSelect).val()) Timer.reset();
-            $('input[name="outcome"]:checked').trigger('change');
-        }
-
-        // Exportar API Pública
-        return {
-            init,
-            showTab: UI.showTab,
-            handleFileSelect: UI.handleFileSelect,
-            selectParentInteraction: HistoryManager.selectParent,
-            clearParentSelection: HistoryManager.clearParent
-        };
-
-    })(jQuery);
-
-    /**
-     * =========================================================================
-     * ARRANQUE DE LA APLICACIÓN
-     * =========================================================================
-     */
-    document.addEventListener("DOMContentLoaded", CRMApp.init);
-
-    // Exponer métodos globales
-    //window.showTab = CRMApp.showTab;
-    window.handleFileSelect = CRMApp.handleFileSelect;
-    window.selectParentInteraction = CRMApp.selectParentInteraction;
-    window.clearParentSelection = CRMApp.clearParentSelection;
-
-    document.addEventListener("DOMContentLoaded", function () {
-        document.getElementById('btn-volver').addEventListener('click', function () {
-            document.getElementById('home-tab').click();
-        });
+    $(document).on('click', '.btn-remove-linea', function (e) {
+        e.preventDefault(); 
+        $(this).closest('.linea-item-wrapper').remove();
     });
-
-    // Este bloque detecta cuando el formulario se envía y bloquea el botón
-    document.getElementById('interaction-form').addEventListener('submit', function (e) {
-        const btn = document.getElementById('btn-submit-interaccion');
-
-        // Si el formulario es válido, nos aseguramos de matar el caché
-        if (this.checkValidity()) {
-            // Limpieza de seguridad: si por alguna razón el paso anterior falló, este no falla.
-
-            btn.disabled = true;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Guardando...';
-        }
-    });
-
-    // Este bloque Motivo / Tipificación *
-    document.getElementById('search-type').addEventListener('input', function (e) {
-        const term = e.target.value.toLowerCase();
-        // Buscamos todos los labels dentro del contenedor
-        const labels = document.querySelectorAll('#container-list-types label');
-
-        labels.forEach(label => {
-            const text = label.textContent.toLowerCase();
-            const input = document.getElementById(label.getAttribute('for'));
-
-            if (text.includes(term)) {
-                label.classList.remove('d-none');
-                if (input) input.classList.remove('d-none');
-            } else {
-                label.classList.add('d-none');
-                if (input) input.classList.add('d-none');
-            }
-        });
-    });
-
-    // Líneas de Obligación *
-    $(document).ready(function () {
-        // 1. CONFIGURACIÓN GLOBAL
-        const select2Options = {
-            theme: 'bootstrap-5',
-            placeholder: 'Selecciona la línea...',
-            width: '100%',
-            allowClear: true
-        };
-
-        // 2. CAPTURAR EL TEMPLATE LIMPIO
-        // Guardamos el HTML del primer item antes de inicializar Select2
-        const $masterRow = $('.linea-item-wrapper').first().clone();
-
-        // 3. INICIALIZAR EL PRIMER SELECT
-        $('.select2-linea').select2(select2Options);
-
-        // 4. EVENTO AGREGAR (+)
-        // 4. EVENTO AGREGAR (+)
-        $('#btn-add-linea').on('click', function () {
-            let $firstRow = $('.linea-item-wrapper').first();
-
-            // 1. Destruimos Select2 temporalmente en el original para hacer un clon limpio
-            $firstRow.find('.select2-linea').select2('destroy');
-
-            // 2. Clonamos el primer item
-            let $newRow = $firstRow.clone();
-
-            // 3. Limpiamos el valor seleccionado en el clon
-            $newRow.find('select').val('');
-
-            // 4. Creamos el botón de eliminar
-            let btnDelete = `
-    <button type="button" class="btn btn-outline-danger border-0 ps-1 pe-1 btn-remove-linea" title="Eliminar">
-        <i class="bi bi-x-circle-fill"></i>
-    </button>`;
-
-            // 5. Limpiamos basura clonada y AÑADIMOS EL BOTÓN AL CONTENEDOR FLEX
-            $newRow.find('.btn-remove-linea').remove(); // Evita duplicados si clonas una fila que ya tenía botón
-            $newRow.append(btnDelete); // <-- Cambio clave: se usa append directamente en $newRow
-
-            // 6. Insertamos el clon antes del botón de agregar (+)
-            $(this).before($newRow);
-
-            // 7. Volvemos a inicializar Select2 usando tus opciones en ambos elementos
-            $firstRow.find('.select2-linea').select2(select2Options);
-            $newRow.find('.select2-linea').select2(select2Options);
-        });
-
-        // Evento delegado para eliminar la fila (funciona para elementos dinámicos)
-        $(document).on('click', '.btn-remove-linea', function (e) {
-            e.preventDefault(); // Evita cualquier comportamiento por defecto del botón
-            $(this).closest('.linea-item-wrapper').remove();
-        });
-    });
+});
 </script>

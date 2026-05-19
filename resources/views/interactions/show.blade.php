@@ -234,7 +234,7 @@
                                         <span class="border-start ps-3">
                                             <i class="feather-tag me-1 text-primary"></i>
                                             Línea <strong class="text-dark">
-                                                @foreach ($interaction->lineas_detalle as $linea)
+                                                @foreach ($interaction->lineas_detalle ?? [] as $linea)
                                                     <span class="badge bg-primary">
                                                         ID: {{ $linea->id }} - {{ $linea->nombre }}
                                                     </span>
@@ -587,9 +587,8 @@
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content shadow-lg">
                 <div class="modal-header border-0 pt-4 px-4">
-                    <h5 class="modal-title fw-bold"><i class="fas fa-plus-circle text-primary me-2"></i>Nuevo
-                        Seguimiento</h5>
-                    <button type="button" class="btn-close" data-bs-close="modal" aria-label="Close"></button>
+                    <h5 class="modal-title fw-bold"><i class="fas fa-plus-circle text-primary me-2"></i>Nuevo Seguimiento</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <form action="{{ route('interactions.seguimientos.store') }}" method="POST"
                     enctype="multipart/form-data">

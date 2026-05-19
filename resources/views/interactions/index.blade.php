@@ -161,7 +161,7 @@
                 @foreach ($tabs as $key => $tabId)
                     <div class="tab-pane fade {{ $loop->first ? 'show active' : '' }}" id="tab-{{ $key }}" role="tabpanel">
                         <div class="table-responsive">
-                            <table class="table table-sm table-hover align-middle interactionTable excel-table w-100" id="{{ $tabId }}">
+                            <table class="table table-sm table-hover align-middle w-100" id="{{ $tabId }}">
                                 <thead class="table-light pastel-thead">
                                     <tr>
                                         <th class="py-2">ID</th>
@@ -400,8 +400,10 @@
                                 orderable: false,
                                 className: 'text-end py-2',
                                 render: function(data, type, row) {
+                                    let url = "{{ route('interactions.show', ':interaction') }}";
+                                    url = url.replace(':interaction', row.id);
                                     return `<div class="btn-group btn-group-sm">
-                                                <a class="btn btn-sm btn-light" title="Ver detalles" href="/interactions/${row.id}">
+                                                <a class="btn btn-sm btn-light" title="Ver detalles" href="${url}">
                                                     <i class="feather-eye"></i>
                                                 </a>
                                             </div>`;
