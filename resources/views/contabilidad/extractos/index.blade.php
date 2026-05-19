@@ -1,115 +1,127 @@
 <x-base-layout>
-    {{-- 1. MODAL DE CARGA REFORZADO --}}
-    <div id="loading-overlay" style="display: none; position: fixed; inset: 0; background: rgba(255, 255, 255, 0.98); z-index: 10000; flex-direction: column; justify-content: center; align-items: center; backdrop-filter: blur(8px); transition: all 0.5s ease;">
-        <div class="spinner-border text-primary mb-4" style="width: 4rem; height: 4rem; border-width: 0.20em;" role="status"></div>
-        <h2 class="fw-bold text-dark fs-2 mb-1">Sincronizando Siasoft</h2>
-        <p class="text-muted fs-6 mb-5">Validando integridad de movimientos bancarios...</p>
+    {{-- 1. OVERLAY DE CARGA --}}
+    <div id="loading-overlay" class="d-none" style="position: fixed; inset: 0; background: rgba(255, 255, 255, 0.85); z-index: 10000; flex-direction: column; justify-content: center; align-items: center; backdrop-filter: blur(4px); transition: opacity 0.3s ease;">
+        <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem; border-width: 0.15em;" role="status"></div>
+        <h3 class="fw-bolder text-dark tracking-tight">Procesando...</h3>
     </div>
 
-    <div class="app-container py-5" style="background-color: #f1f4f9;">
+    <div class="app-container py-6" style="background-color: #fafbfc; min-height: 100vh;">
         
         {{-- 2. HEADER DE CONTROL --}}
-        <div class="d-flex align-items-center mb-6 px-4">
-            <div class="symbol symbol-45px me-4">
-                <div class="symbol-label bg-dark shadow-sm">
-                    <i class="fas fa-shield-alt text-success fs-2"></i>
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-6 px-5">
+            <div class="d-flex align-items-center gap-4">
+                <div class="bg-white p-3 rounded-circle shadow-sm border border-gray-200 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                    <i class="fas fa-file-invoice-dollar text-primary fs-3"></i>
                 </div>
-            </div>
-            <div class="flex-grow-1">
-                <h3 class="fw-bold m-0 text-gray-900 fs-3 tracking-tight">EXTRATOS BANCÁRIOS <span class="text-primary fw-normal ms-2 fs-7">v1.0 Corpe</span></h3>
-                <div class="d-flex align-items-center gap-3 fs-10 mt-1">
-                    <span class="text-muted fw-bold text-uppercase">Contabilidad / Auditoría / Movimientos</span>
-                    <span class="badge badge-light-success fw-bold px-2 py-1 fs-10">CIFRADO AES-256</span>
+                <div>
+                    <h2 class="fw-bolder text-gray-900 mb-0 tracking-tight fs-2">Extractos Bancarios</h2>
+                    <div class="text-muted fs-8 fw-semibold mt-1 d-flex align-items-center gap-2">
+                        <span>Auditoría y Movimientos</span>
+                        <span class="bullet bullet-dot bg-gray-400 h-4px w-4px"></span>
+                        <span class="text-success fw-bold"><i class="fas fa-lock fs-10 me-1"></i> S3 Seguro</span>
+                    </div>
                 </div>
             </div>
             
-            <div class="d-flex align-items-center gap-2">
-                <a href="{{ route('contabilidad.extractos.importar') }}" class="btn btn-sm btn-white border-gray-300 fw-bold px-4 h-35px d-flex align-items-center">
-                    <i class="fas fa-upload me-2 fs-9 text-primary"></i> IMPORTAR
+            <div class="d-flex align-items-center gap-3 mt-4 mt-sm-0">
+                <a href="{{ route('contabilidad.extractos.importar') }}" class="btn btn-light fw-bolder px-5 py-2 shadow-sm fs-8 text-gray-700 hover-elevate-up">
+                    <i class="fas fa-cloud-upload-alt me-2 text-primary"></i> Importar Datos
                 </a>
-                <a href="{{ route('contabilidad.extractos.conciliacion') }}" class="btn btn-sm btn-dark fw-bold px-4 h-35px d-flex align-items-center">
-                    <i class="fas fa-project-diagram me-2 fs-9 text-success"></i> MESA DE IDENTIFICACIÓN
+                <a href="{{ route('contabilidad.extractos.conciliacion') }}" class="btn btn-dark fw-bolder px-5 py-2 shadow-sm fs-8 hover-elevate-up">
+                    <i class="fas fa-compress-arrows-alt me-2 text-white"></i> Mesa de Conciliación
                 </a>
             </div>
         </div>
 
-        {{-- 3. PANEL DE FILTRADO MAESTRO --}}
-        <form method="GET" action="{{ route('contabilidad.extractos.index') }}" id="form-master-filter" class="bg-white p-5 mx-4 mb-6 shadow-sm border border-gray-200" style="border-radius: 8px;">
-            <div class="row g-4 align-items-end">
-                <div class="col-md-2">
-                    <label class="form-label fs-9 fw-bold text-gray-600 text-uppercase mb-2">Ciclo Contable</label>
-                    <input type="month" name="periodo" value="{{ $periodo }}" class="form-control form-control-sm form-control-solid fw-bold h-35px">
+        {{-- 3. TOOLBAR DE FILTRADO --}}
+        <div class="mx-5 mb-5">
+            <form method="GET" action="{{ route('contabilidad.extractos.index') }}" id="form-master-filter" class="bg-white p-2 rounded-3 shadow-sm border border-gray-200 d-flex flex-wrap align-items-center gap-2">
+                
+                <div class="input-group input-group-sm w-auto flex-grow-1" style="min-width: 200px;">
+                    <span class="input-group-text bg-transparent border-0 text-muted"><i class="fas fa-search"></i></span>
+                    <input type="text" name="search" value="{{ $search }}" class="form-control form-control-solid bg-transparent border-0 fs-8 fw-semibold" placeholder="Buscar Hash, Cédula o Valor...">
                 </div>
 
-                <div class="col-md-2">
-                    <label class="form-label fs-9 fw-bold text-gray-600 text-uppercase mb-2">Estado</label>
-                    <select name="estado" class="form-select form-select-sm form-select-solid fw-bold h-35px">
-                        <option value="">TODOS</option>
-                        <option value="Pendiente" {{ (isset($estado) && $estado == 'Pendiente') ? 'selected' : '' }}>PENDIENTES</option>
-                        <option value="Conciliados" {{ (isset($estado) && $estado == 'Conciliados') ? 'selected' : '' }}>CONCILIADOS</option>
+                <div class="vr bg-gray-300 mx-2 d-none d-md-block" style="width: 1px; height: 25px;"></div>
+
+                <div class="d-flex align-items-center gap-3 flex-wrap">
+                    {{-- SWITCH DE RASTREO GLOBAL RESTAURADO --}}
+                    <div class="form-check form-switch form-check-custom form-check-solid form-check-sm" data-bs-toggle="tooltip" title="Ignorar el mes y buscar en toda la base">
+                        <input class="form-check-input" type="checkbox" name="is_global" value="1" id="isGlobalCheck" {{ isset($is_global) && $is_global ? 'checked' : '' }} />
+                        <label class="form-check-label text-gray-700 fs-9 fw-bold text-uppercase" for="isGlobalCheck">
+                            Global
+                        </label>
+                    </div>
+
+                    <input type="month" name="periodo" id="periodoInput" value="{{ $periodo }}" class="form-control form-control-sm form-control-solid bg-light border-0 fs-9 fw-bold text-muted" style="width: 130px; cursor: pointer;" {{ isset($is_global) && $is_global ? 'disabled' : '' }}>
+                    
+                    <select name="estado" class="form-select form-select-sm form-select-solid bg-light border-0 fs-9 fw-bold text-muted" style="width: 140px; cursor: pointer;">
+                        <option value="">Cualquier Estado</option>
+                        <option value="Pendiente" {{ $estado == 'Pendiente' ? 'selected' : '' }}>Pendientes</option>
+                        <option value="Conciliados" {{ $estado == 'Conciliados' ? 'selected' : '' }}>Conciliados</option>
                     </select>
-                </div>
 
-                <div class="col-md-3">
-                    <label class="form-label fs-9 fw-bold text-gray-600 text-uppercase mb-2">Cuenta Origen</label>
-                    <select name="banco_id" class="form-select form-select-sm form-select-solid h-35px">
-                        <option value="">CONSOLIDADO GLOBAL</option>
+                    <select name="banco_id" class="form-select form-select-sm form-select-solid bg-light border-0 fs-9 fw-bold text-muted" style="width: 160px; cursor: pointer;">
+                        <option value="">Todas las Cuentas</option>
                         @foreach($cuentas as $cuenta)
                             <option value="{{ $cuenta->id }}" {{ $banco_id == $cuenta->id ? 'selected' : '' }}>
-                                {{ $cuenta->banco }} - {{ substr($cuenta->numero_cuenta, -4) }}
+                                {{ $cuenta->banco }} (...{{ substr($cuenta->numero_cuenta, -4) }})
                             </option>
                         @endforeach
                     </select>
                 </div>
 
-                <div class="col-md-5">
-                    <label class="form-label fs-9 fw-bold text-gray-600 text-uppercase mb-2">Búsqueda de Alta Precisión</label>
-                    <div class="input-group input-group-sm">
-                        <input type="text" name="search" value="{{ $search }}" class="form-control form-control-solid h-35px fs-8" placeholder="Hash, Cédula o Valor...">
-                        <button type="submit" class="btn btn-secondary fw-bold px-6">EJECUTAR</button>
-                        <a href="{{ route('contabilidad.extractos.index') }}" class="btn btn-light-danger btn-icon w-35px h-35px border-gray-200">
-                            <i class="fas fa-sync fs-9"></i>
+                <div class="d-flex align-items-center gap-1 ms-auto">
+                    <button type="submit" class="btn btn-sm btn-primary fw-bolder px-4 fs-9">Filtrar</button>
+                    @if($search || $estado || $banco_id || (isset($is_global) && $is_global))
+                        <a href="{{ route('contabilidad.extractos.index') }}" class="btn btn-sm btn-icon btn-light-danger" data-bs-toggle="tooltip" title="Limpiar Filtros">
+                            <i class="fas fa-times"></i>
                         </a>
+                    @endif
+                </div>
+            </form>
+        </div>
+
+        {{-- 4. GRID DE DATOS --}}
+        <div class="bg-white shadow-sm border border-gray-200 mx-5 d-flex flex-column" style="border-radius: 8px; overflow: hidden; min-height: 65vh;">
+            
+            <div class="d-flex justify-content-between align-items-center px-4 py-2 bg-white border-bottom border-gray-200">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="fw-bolder fs-9 text-gray-500 tracking-widest text-uppercase">
+                        Registros Encontrados <span class="badge badge-circle badge-light-primary ms-1 fs-10 w-20px h-20px">{{ $extractos->total() }}</span>
+                    </div>
+                    <div id="js-filter-active" class="d-none animate__animated animate__fadeIn">
+                        <span class="badge badge-light-warning fs-10 fw-bold"><i class="fas fa-filter fs-10 me-1 text-warning"></i> Búsqueda local activa</span>
                     </div>
                 </div>
-            </div>
-        </form>
-
-        {{-- 4. GRID DE DATOS PROFESIONAL --}}
-        <div class="bg-white shadow-sm border border-gray-300 mx-4 d-flex flex-column" style="border-radius: 4px; overflow: hidden; min-height: 650px;">
-            
-            <div class="d-flex bg-light border-bottom border-gray-200">
-                <div class="px-6 py-3 bg-white border-end border-gray-300 fw-bolder fs-10 text-primary text-uppercase tracking-widest">
-                    REGISTROS <span class="badge badge-light-info ms-2">{{ $extractos->total() }}</span>
-                </div>
+                <div class="fs-10 text-muted font-monospace">Página {{ $extractos->currentPage() }} de {{ $extractos->lastPage() }}</div>
             </div>
 
-            <div class="table-responsive flex-grow-1" id="table-container">
+            <div class="table-responsive flex-grow-1 custom-scrollbar" id="table-container">
                 <table class="table-gsheets" id="main-table">
                     <thead>
                         <tr class="header-titles">
                             <th class="col-index">#</th>
-                            <th style="width: 100px;">FECHA</th>
-                            <th style="width: 180px;">ENTIDAD</th>
-                            <th style="width: 120px;">ID FISCAL</th>
-                            <th style="width: 140px;">REF. OFICINA</th>
-                            <th style="width: 180px;">LÍNEA / PRODUCTO</th> {{-- NUEVA COLUMNA --}}
-                            <th style="width: 100px;">TIPO</th>
-                            <th style="width: 140px;" class="text-end">IMPORTE</th>
-                            <th style="width: 110px;" class="text-center">ESTADO</th>
-                            <th style="width: 45px;" class="text-center">SOP</th>
-                            <th style="width: 45px;" class="text-center">INS</th>
+                            <th style="width: 90px;">Fecha</th>
+                            <th style="width: 150px;">Entidad Bancaria</th>
+                            <th style="width: 120px;">Ref. Cliente</th>
+                            <th style="width: 130px;">Oficina / Origen</th>
+                            <th style="width: 180px;">Línea Afectada</th>
+                            <th style="width: 100px;">Tipología</th>
+                            <th style="width: 120px;" class="text-end">Monto ($)</th>
+                            <th style="width: 100px;" class="text-center">Estado</th>
+                            <th style="width: 60px;" class="text-center">Soporte</th>
                         </tr>
                         <tr class="filter-row">
-                            <td class="col-index"></td>
-                            <td><input type="text" class="column-filter"></td>
-                            <td><input type="text" class="column-filter"></td>
-                            <td><input type="text" class="column-filter"></td>
-                            <td><input type="text" class="column-filter"></td>
-                            <td><input type="text" class="column-filter"></td> {{-- FILTRO LÍNEA --}}
-                            <td><input type="text" class="column-filter"></td>
-                            <td><input type="text" class="column-filter text-end"></td>
-                            <td colspan="3" class="bg-light"></td>
+                            <td class="col-index bg-light"></td>
+                            <td><input type="text" class="column-filter" placeholder="Filtrar..."></td>
+                            <td><input type="text" class="column-filter" placeholder="Filtrar..."></td>
+                            <td><input type="text" class="column-filter" placeholder="Filtrar..."></td>
+                            <td><input type="text" class="column-filter" placeholder="Filtrar..."></td>
+                            <td><input type="text" class="column-filter" placeholder="Filtrar..."></td>
+                            <td><input type="text" class="column-filter" placeholder="Filtrar..."></td>
+                            <td><input type="text" class="column-filter text-end" placeholder="Filtrar..."></td>
+                            <td colspan="2" class="bg-light"></td>
                         </tr>
                     </thead>
                     <tbody>
@@ -120,184 +132,294 @@
                                 ->orWhereJsonContains('id_transaccion_bancaria', (string) $movimiento->id_transaccion)
                                 ->first();
                             
-                            // CONSTRUCCIÓN DEL POPOVER CON TODO EL FILLABLE
-                            $popoverContent = "
-                                <div class='p-3' style='min-width: 350px;'>
-                                    <div class='mb-2 border-bottom pb-2 d-flex justify-content-between align-items-center'>
-                                        <strong class='text-primary fs-7 text-uppercase'>Detalle del Registro</strong>
-                                        <span class='badge badge-light-dark fs-10'>ID: {$movimiento->id_transaccion}</span>
-                                    </div>
-                                    <div class='row g-2'>
-                                        <div class='col-6'>
-                                            <div class='fs-10 text-muted text-uppercase fw-bold'>Tercero (Mae)</div>
-                                            <div class='fs-9 fw-bold'>".($comprobante->cod_ter_MaeTerceros ?? 'N/A')."</div>
-                                        </div>
-                                        <div class='col-6'>
-                                            <div class='fs-10 text-muted text-uppercase fw-bold'>Monto Pagado</div>
-                                            <div class='fs-9 fw-bold text-success'>$ ".number_format($comprobante->monto_pagado ?? 0, 2)."</div>
-                                        </div>
-                                        <div class='col-6'>
-                                            <div class='fs-10 text-muted text-uppercase fw-bold'>Interacción ID</div>
-                                            <div class='fs-9 fw-bold'>".($comprobante->id_interaction ?? 'N/A')."</div>
-                                        </div>
-                                        <div class='col-6'>
-                                            <div class='fs-10 text-muted text-uppercase fw-bold'>Usuario Procesador</div>
-                                            <div class='fs-9 fw-bold'>".($comprobante->user->name ?? 'SYSTEM')."</div>
-                                        </div>
-                                        <div class='col-6'>
-                                            <div class='fs-10 text-muted text-uppercase fw-bold'>PR / CCO</div>
-                                            <div class='fs-9 fw-bold'>".($comprobante->pr ?? '0')." / ".($comprobante->cco ?? '0')."</div>
-                                        </div>
-                                        <div class='col-6'>
-                                            <div class='fs-10 text-muted text-uppercase fw-bold'>N° Cuota</div>
-                                            <div class='fs-9 fw-bold text-primary'>".($comprobante->numero_cuota ?? 'N/A')."</div>
-                                        </div>
-                                    </div>
-                                    <div class='mt-3 p-2 bg-light rounded'>
-                                        <div class='text-muted fs-10 mb-1 fw-bold text-uppercase'>Token Temporal</div>
-                                        <code class='text-dark fs-10'>".($comprobante->temp_token ?? '---')."</code>
-                                    </div>
-                                    <div class='mt-2'>
-                                        <div class='text-muted fs-10 mb-1 fw-bold text-uppercase'>Observación Técnica</div>
-                                        <div class='fs-9 italic text-gray-700'>".($comprobante->observacion ?? 'Sin notas')."</div>
-                                    </div>
-                                    <div class='mt-3 border-top pt-2'>
-                                        <div class='text-muted fs-10 mb-1 fw-bold text-uppercase'>Hash de Seguridad</div>
-                                        <code class='text-dark fs-10 cursor-pointer copy-hash' title='Click para copiar'>{$movimiento->hash_transaccion}</code>
-                                    </div>
-                                </div>";
+                            $isConciliado = str_contains($movimiento->estado_conciliacion, 'Conciliado');
+                            $montoFormat = number_format($movimiento->valor_ingreso, 0, ',', '.');
+                            $fechaFormat = $movimiento->fecha_movimiento->format('d/m/Y');
                         @endphp
 
-                        <tr class="data-row" 
-                            data-bs-toggle="popover" data-bs-trigger="hover" data-bs-placement="right" 
-                            data-bs-html="true" data-bs-content="{{ $popoverContent }}">
-                            
-                            <td class="col-index">{{ $extractos->firstItem() + $index }}</td>
-                            <td class="fw-bold text-dark font-monospace fs-9">{{ $movimiento->fecha_movimiento->format('d/m/Y') }}</td>
+                        <tr class="data-row cursor-pointer" onclick="toggleDetails(this, {{ $movimiento->id_transaccion }})">
+                            <td class="col-index text-muted">{{ $extractos->firstItem() + $index }}</td>
+                            <td class="font-monospace fs-9 text-gray-700">{{ $fechaFormat }}</td>
                             <td>
-                                <div class="d-flex flex-column">
-                                    <span class="fw-bold text-gray-800 fs-9">{{ $movimiento->cuentaBancaria->banco ?? 'N/A' }}</span>
-                                    <span class="text-muted fs-10 font-monospace">****{{ substr($movimiento->cuentaBancaria->numero_cuenta, -4) }}</span>
+                                <div class="fw-bold text-gray-800 fs-9 text-truncate" title="{{ $movimiento->cuentaBancaria->banco ?? 'N/A' }}">
+                                    {{ $movimiento->cuentaBancaria->banco ?? 'N/A' }}
                                 </div>
+                                <div class="text-muted fs-11 font-monospace">CTA: *{{ substr($movimiento->cuentaBancaria->numero_cuenta ?? '0000', -4) }}</div>
                             </td>
-                            <td class="font-monospace text-gray-600 fw-bold fs-9">{{ $movimiento->referencia_cedula ?? '---' }}</td>
-                            <td class="text-uppercase text-gray-600 fs-9">{{ $movimiento->referencia_oficina ?? '---' }}</td>
-                            
-                            {{-- COLUMNA LÍNEA --}}
-                            <td class="fw-bold text-primary fs-9 text-truncate" style="max-width: 180px;">
-                                {{ $comprobante?->obligacion?->nombre ?? 'NO VINCULADO' }}
+                            <td class="font-monospace fw-semibold text-primary fs-9">{{ $movimiento->referencia_cedula ?? '---' }}</td>
+                            <td class="text-gray-600 fs-9 text-truncate" title="{{ $movimiento->referencia_oficina }}">{{ $movimiento->referencia_oficina ?? '---' }}</td>
+                            <td class="fs-9 text-truncate text-gray-700" title="{{ $comprobante?->obligacion?->nombre }}">
+                                {{ $comprobante?->obligacion?->nombre ?? '---' }}
                             </td>
-
-                            <td class="text-muted fs-10 fw-bold text-uppercase">{{ $comprobante?->tipo_pago ?? 'EXTRACTO' }}</td>
-                            <td class="text-end fw-bold text-dark pe-4 fs-8">$ {{ number_format($movimiento->valor_ingreso, 0, ',', '.') }}</td>
+                            <td class="text-muted fs-10 text-uppercase fw-semibold">{{ $comprobante?->tipo_pago ?? 'EXTRACTO' }}</td>
+                            <td class="text-end fw-bolder text-gray-900 fs-9">{{ $montoFormat }}</td>
                             <td class="text-center">
-                                @php
-                                    $isConciliado = str_contains($movimiento->estado_conciliacion, 'Conciliado');
-                                @endphp
-                                <span class="gs-pill {{ $isConciliado ? 'pill-success' : 'pill-warning' }}">
+                                <span class="badge {{ $isConciliado ? 'badge-light-success' : 'badge-light-warning' }} fs-10 fw-bolder px-2 py-1">
                                     {{ $isConciliado ? 'CONCILIADO' : 'PENDIENTE' }}
                                 </span>
                             </td>
-                            <td class="text-center">
-                                @if($comprobante && $comprobante->ruta_archivo != '#')
-                                    <a href="{{ $comprobante->ruta_archivo }}" target="_blank" class="text-primary"><i class="fas fa-file-pdf fs-5"></i></a>
+                            <td class="text-center" onclick="event.stopPropagation();">
+                                @if($comprobante && $comprobante->url_archivo !== '#')
+                                    <button type="button" 
+                                            onclick="abrirModalSoporte('{{ $comprobante->url_archivo }}', 'Soporte del Tercero: {{ $comprobante->cod_ter_MaeTerceros ?? 'N/A' }}')" 
+                                            class="btn btn-icon btn-sm btn-light-primary hover-elevate-up shadow-sm" 
+                                            data-bs-toggle="tooltip" 
+                                            title="Visualizar Soporte">
+                                        <i class="fas fa-file-invoice fs-5"></i>
+                                    </button>
                                 @else
-                                    <span class="text-gray-300">-</span>
+                                    <span class="text-gray-300 fs-8 fw-bold" data-bs-toggle="tooltip" title="No hay soporte vinculado">-</span>
                                 @endif
                             </td>
-                            <td class="text-center">
-                                <a href="{{ route('contabilidad.extractos.show', $movimiento->id_transaccion) }}" class="text-gray-400 hover-primary"><i class="fas fa-external-link-alt fs-10"></i></a>
+                        </tr>
+                        
+                        {{-- FILA OCULTA CON LOS DETALLES --}}
+                        <tr class="detail-row d-none" id="detail-{{ $movimiento->id_transaccion }}">
+                            <td colspan="10" class="p-0 border-0">
+                                <div class="bg-light-primary border-bottom border-primary border-opacity-25 px-6 py-4 shadow-inner">
+                                    <div class="row g-4">
+                                        <div class="col-md-3">
+                                            <div class="fs-11 text-uppercase text-muted fw-bold mb-1">Hash de Transacción</div>
+                                            <div class="d-flex align-items-center">
+                                                <code class="fs-10 text-dark bg-white px-2 py-1 rounded border">{{ $movimiento->hash_transaccion }}</code>
+                                                <button class="btn btn-sm btn-icon btn-active-color-primary ms-1 h-20px w-20px" onclick="copyToClipboard('{{ $movimiento->hash_transaccion }}')" title="Copiar Hash"><i class="fas fa-copy fs-10"></i></button>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="fs-11 text-uppercase text-muted fw-bold mb-1">Tercero Validado</div>
+                                            <div class="fs-9 fw-bold text-gray-800">{{ $comprobante->cod_ter_MaeTerceros ?? 'Sin procesar' }}</div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="fs-11 text-uppercase text-muted fw-bold mb-1">PR / CCO</div>
+                                            <div class="fs-9 fw-bold text-gray-800">{{ $comprobante->pr ?? '0' }} / {{ $comprobante->cco ?? '0' }}</div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="fs-11 text-uppercase text-muted fw-bold mb-1">Cuota N°</div>
+                                            <div class="fs-9 fw-bold text-gray-800">{{ $comprobante->numero_cuota ?? '---' }}</div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="fs-11 text-uppercase text-muted fw-bold mb-1">Usuario Gestor</div>
+                                            <div class="fs-9 fw-bold text-gray-800">
+                                                <i class="fas fa-user-circle text-muted me-1"></i> {{ $comprobante->user->name ?? 'Sistema' }}
+                                            </div>
+                                        </div>
+                                        <div class="col-12 mt-3">
+                                            <div class="fs-11 text-uppercase text-muted fw-bold mb-1">Observaciones</div>
+                                            <div class="fs-9 text-gray-700 fst-italic">{{ $comprobante->observacion ?? 'Sin observaciones registradas.' }}</div>
+                                        </div>
+                                        <div class="col-12 mt-2 d-flex justify-content-end">
+                                            <a href="{{ route('contabilidad.extractos.show', $movimiento->id_transaccion) }}" class="btn btn-sm btn-primary fs-10 fw-bolder px-4 py-2">
+                                                Abrir Ficha Completa <i class="fas fa-arrow-right ms-1 fs-10"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
                             </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="11" class="text-center py-20 text-muted fw-bold">NO SE ENCONTRARON MOVIMIENTOS</td>
+                            <td colspan="10" class="text-center py-15">
+                                <i class="fas fa-search-minus fs-1 text-gray-300 mb-3 d-block"></i>
+                                <span class="text-muted fw-bold fs-7">No se encontraron movimientos.</span>
+                            </td>
                         </tr>
                         @endforelse
                     </tbody>
                 </table>
             </div>
 
-            {{-- 5. FOOTER --}}
-            <div class="bg-dark p-4 d-flex justify-content-between align-items-center text-white">
-                <div class="d-flex align-items-center gap-5 fs-10 fw-bold text-gray-500">
-                    <span>VISIBLES: <strong id="visible-count" class="text-white">{{ $extractos->count() }}</strong> / {{ $extractos->total() }}</span>
-                    <span id="js-filter-active" style="display:none" class="text-warning"><i class="fas fa-filter me-1"></i> FILTRO DINÁMICO ACTIVO</span>
+            {{-- 5. PAGINACIÓN --}}
+            <div class="border-top border-gray-200 px-5 py-3 bg-white d-flex justify-content-between align-items-center flex-wrap">
+                <div class="text-muted fs-9 fw-semibold">
+                    Mostrando <span class="text-gray-900 fw-bolder">{{ $extractos->firstItem() ?? 0 }}</span> a <span class="text-gray-900 fw-bolder">{{ $extractos->lastItem() ?? 0 }}</span> de <span class="text-gray-900 fw-bolder">{{ $extractos->total() }}</span> registros
                 </div>
-                <div class="pagination-dark">
+                <div class="custom-pagination">
                     {{ $extractos->links('pagination::bootstrap-4') }}
                 </div>
             </div>
         </div>
+
+        {{-- MODAL VISOR DE SOPORTES CORREGIDO --}}
+        <div class="modal fade" id="modalVisorSoporte" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-xl">
+                <div class="modal-content shadow-lg border-0" style="border-radius: 12px; overflow: hidden;">
+                    <div class="modal-header bg-light-primary border-bottom border-primary border-opacity-10 py-3">
+                        <h5 class="modal-title fw-bolder text-gray-800 d-flex align-items-center gap-2">
+                            <i class="fas fa-file-pdf text-primary fs-3"></i> 
+                            <span id="visorSoporteTitulo">Soporte de Pago</span>
+                        </h5>
+                        <div class="d-flex align-items-center gap-2">
+                            <a href="#" id="btnDescargarSoporte" target="_blank" class="btn btn-sm btn-icon btn-active-light-primary text-gray-600" data-bs-toggle="tooltip" title="Abrir en pestaña nueva">
+                                <i class="fas fa-external-link-alt"></i>
+                            </a>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                    </div>
+                    <div class="modal-body p-0 bg-dark" style="height: 75vh;">
+                        {{-- Iframe directo, sin bloqueos JS cruzados --}}
+                        <iframe id="visorSoporteFrame" src="" class="w-100 h-100 border-0 bg-white"></iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     @push('scripts')
     <style>
-        .table-gsheets { width: 100%; border-collapse: collapse; font-size: 11px; table-layout: fixed; }
-        .table-gsheets thead th { background: #f8f9fa; border: 1px solid #e2e8f0; padding: 10px 12px; font-weight: 800; color: #475569; position: sticky; top: 0; z-index: 20; text-transform: uppercase; }
-        .table-gsheets tbody td { border: 1px solid #e2e8f0; padding: 8px 12px; vertical-align: middle; transition: background 0.1s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .table-gsheets tbody tr:hover { background-color: #f1f5f9 !important; outline: 1px solid #3b82f6; z-index: 5; position: relative; }
-        .col-index { width: 45px; text-align: center !important; background: #f1f5f9; color: #64748b; font-weight: 800; border-right: 2px solid #e2e8f0 !important; }
-        .gs-pill { padding: 3px 8px; border-radius: 4px; font-size: 9px; font-weight: 800; display: inline-block; min-width: 85px; text-align: center; }
-        .pill-success { background: #dcfce7; color: #15803d; }
-        .pill-warning { background: #fef3c7; color: #b45309; }
-        .column-filter { width: 100%; border: 1px solid #cbd5e0; border-radius: 3px; font-size: 9px; padding: 3px 6px; }
-        .pagination-dark .page-link { background: #1e293b; border-color: #334155; color: #94a3b8; font-size: 9px; padding: 4px 8px; }
-        .pagination-dark .page-item.active .page-link { background: #3b82f6; border-color: #3b82f6; color: white; }
+        :root {
+            --gs-border: #e2e8f0;
+            --gs-header-bg: #f8fafc;
+            --gs-hover-bg: #f1f5f9;
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .table-gsheets { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12px; table-layout: fixed; }
+        .table-gsheets thead { position: sticky; top: 0; z-index: 20; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .table-gsheets thead th { background: var(--gs-header-bg); border-bottom: 1px solid var(--gs-border); border-right: 1px solid var(--gs-border); padding: 10px 12px; font-weight: 700; color: #475569; text-transform: capitalize; font-size: 11px; }
+        .table-gsheets tbody td { border-bottom: 1px solid var(--gs-border); border-right: 1px solid var(--gs-border); padding: 8px 12px; vertical-align: middle; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: background 0.15s ease; }
+        .table-gsheets tbody tr.data-row:hover td { background-color: var(--gs-hover-bg); }
+        .col-index { width: 40px; text-align: center !important; background: var(--gs-header-bg); color: #94a3b8; font-weight: 600; font-size: 10px; }
+        .filter-row td { padding: 4px 6px !important; background: var(--gs-header-bg); }
+        .column-filter { width: 100%; border: 1px solid transparent; background: transparent; border-radius: 4px; font-size: 10px; padding: 4px 8px; color: #475569; transition: all 0.2s; }
+        .column-filter:focus, .column-filter:hover { background: white; border-color: #cbd5e1; outline: none; }
+        .shadow-inner { box-shadow: inset 0 3px 6px -4px rgba(0,0,0,0.1); }
+        .custom-pagination .pagination { margin-bottom: 0; gap: 4px; }
+        .custom-pagination .page-link { border: none; color: #64748b; background: transparent; border-radius: 6px; font-size: 11px; font-weight: 600; padding: 6px 12px; }
+        .custom-pagination .page-link:hover { background: #f1f5f9; color: #0f172a; }
+        .custom-pagination .page-item.active .page-link { background: #eff6ff; color: #2563eb; font-weight: 700; }
+        .custom-pagination .page-item.disabled .page-link { color: #cbd5e1; }
     </style>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Popovers
-            const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'))
-            const popoverInstances = popoverTriggerList.map(el => new bootstrap.Popover(el, { container: 'body', delay: { "show": 200, "hide": 100 } }));
+        let modalVisor;
 
-            // Filtrado JS
+        document.addEventListener('DOMContentLoaded', function () {
+            // Inicializar el modal de Bootstrap
+            const modalEl = document.getElementById('modalVisorSoporte');
+            if (modalEl) {
+                modalVisor = new bootstrap.Modal(modalEl);
+                modalEl.addEventListener('hidden.bs.modal', function () {
+                    // Limpiar el src para que no quede el PDF anterior en memoria
+                    document.getElementById('visorSoporteFrame').src = '';
+                });
+            }
+
+            // Activar tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            });
+
+            // Lógica para que el checkbox "Global" deshabilite el campo del mes automáticamente
+            const isGlobalCheck = document.getElementById('isGlobalCheck');
+            const periodoInput = document.getElementById('periodoInput');
+            
+            if(isGlobalCheck && periodoInput) {
+                isGlobalCheck.addEventListener('change', function() {
+                    periodoInput.disabled = this.checked;
+                    if(this.checked) {
+                        periodoInput.value = ''; // Limpiar el mes si se activa global
+                    }
+                });
+            }
+
+            // Filtrado Local
             const rows = document.querySelectorAll('#main-table tbody tr.data-row');
             const filters = document.querySelectorAll('.column-filter');
-            const countLabel = document.getElementById('visible-count');
             const filterIndicator = document.getElementById('js-filter-active');
 
-            filters.forEach((filter) => {
-                filter.addEventListener('keyup', () => {
-                    popoverInstances.forEach(p => p.hide());
-                    let visibleCount = 0;
+            filters.forEach((filter, index) => {
+                filter.addEventListener('input', () => {
                     let active = false;
 
                     rows.forEach(row => {
                         let isMatch = true;
+                        
                         filters.forEach((f, i) => {
-                            let val = f.value.toLowerCase();
+                            let val = f.value.toLowerCase().trim();
                             if(val) {
                                 active = true;
-                                if (!row.cells[i+1].innerText.toLowerCase().includes(val)) isMatch = false;
+                                let cellText = row.cells[i + 1].innerText.toLowerCase();
+                                if (!cellText.includes(val)) {
+                                    isMatch = false;
+                                }
                             }
                         });
-                        row.style.display = isMatch ? '' : 'none';
-                        if(isMatch) visibleCount++;
+
+                        const detailRow = row.nextElementSibling;
+                        
+                        if (isMatch) {
+                            row.style.display = '';
+                        } else {
+                            row.style.display = 'none';
+                            if (detailRow && detailRow.classList.contains('detail-row')) {
+                                detailRow.classList.add('d-none');
+                            }
+                        }
                     });
-                    countLabel.innerText = visibleCount;
-                    filterIndicator.style.display = active ? 'inline-block' : 'none';
+
+                    if (active) {
+                        filterIndicator.classList.remove('d-none');
+                    } else {
+                        filterIndicator.classList.add('d-none');
+                    }
                 });
             });
 
-            // Resizer de columnas
-            const table = document.getElementById('main-table');
-            table.querySelectorAll('th').forEach(th => {
-                const resizer = document.createElement('div');
-                resizer.classList.add('resizer');
-                resizer.style.cssText = "position:absolute;right:0;top:0;width:4px;cursor:col-resize;height:100%;";
-                th.appendChild(resizer);
-                let x = 0, w = 0;
-                const md = (e) => {
-                    x = e.clientX; w = parseInt(window.getComputedStyle(th).width, 10);
-                    document.addEventListener('mousemove', mm); document.addEventListener('mouseup', mu);
-                };
-                const mm = (e) => { th.style.width = `${w + (e.clientX - x)}px`; };
-                const mu = () => { document.removeEventListener('mousemove', mm); document.removeEventListener('mouseup', mu); };
-                resizer.addEventListener('mousedown', md);
+            // Enviar formulario al cambiar Selects
+            const masterForm = document.getElementById('form-master-filter');
+            const masterSelects = masterForm.querySelectorAll('select');
+            masterSelects.forEach(select => {
+                select.addEventListener('change', () => {
+                    document.getElementById('loading-overlay').classList.remove('d-none');
+                    document.getElementById('loading-overlay').style.display = 'flex';
+                    masterForm.submit();
+                });
             });
         });
+
+        // Abrir Modal de Soporte Corregido (Sin bloqueos de Onload)
+        window.abrirModalSoporte = function(url, titulo) {
+            if(!url || url === '#') {
+                alert('El enlace al documento no es válido o ha expirado.');
+                return;
+            }
+            document.getElementById('visorSoporteTitulo').innerText = titulo;
+            document.getElementById('btnDescargarSoporte').href = url;
+            
+            // Asignar la URL directamente al iframe renderiza el archivo nativamente
+            document.getElementById('visorSoporteFrame').src = url;
+            modalVisor.show();
+        };
+
+        // Expandir detalles
+        function toggleDetails(rowElement, id) {
+            const detailRow = document.getElementById('detail-' + id);
+            const isHidden = detailRow.classList.contains('d-none');
+            
+            if (isHidden) {
+                detailRow.classList.remove('d-none');
+                detailRow.classList.add('animate__animated', 'animate__fadeIn', 'animate__faster');
+                rowElement.style.backgroundColor = '#f8fafc';
+            } else {
+                detailRow.classList.add('d-none');
+                rowElement.style.backgroundColor = '';
+            }
+        }
+
+        // Copiar Hash
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                if(typeof toastr !== 'undefined') {
+                    toastr.success('Hash copiado al portapapeles');
+                } else {
+                    alert('Copiado: ' + text);
+                }
+            });
+        }
     </script>
     @endpush
 </x-base-layout>
