@@ -159,7 +159,9 @@ class InteractionController extends Controller
             'data' => $clientesData->pluck('total')->toArray(),
         ];
 
-        // e. Agrupación por Línea de Crédito
+        // e. Agrupación por Línea de Crédito (CORREGIDO PARA USAR CACHÉ Y EVITAR ERROR NULL)
+        $allLineas = Cache::remember('all_lineas_list', 3600, fn () => LineaCredito::pluck('nombre', 'id'));
+
         $lineasData = (clone $baseQuery)
             ->select('id_linea_de_obligacion', DB::raw('count(*) as total'))
             ->groupBy('id_linea_de_obligacion')
@@ -168,7 +170,16 @@ class InteractionController extends Controller
             ->get();
 
         $chartLineas = [
-            'labels' => $lineasData->map(fn ($item) => optional($item->lineas_detalle[0])->nombre ?? 'Sin Línea')->toArray(),
+            'labels' => $lineasData->map(function ($item) use ($allLineas) {
+                // Verificamos si es string JSON y lo decodificamos, o si ya es array
+                $ids = is_array($item->id_linea_de_obligacion) 
+                        ? $item->id_linea_de_obligacion 
+                        : json_decode($item->id_linea_de_obligacion, true);
+                
+                $primerId = $ids[0] ?? null;
+                
+                return $primerId && isset($allLineas[$primerId]) ? $allLineas[$primerId] : 'Sin Línea';
+            })->toArray(),
             'data' => $lineasData->pluck('total')->toArray(),
         ];
 
@@ -252,11 +263,13 @@ class InteractionController extends Controller
             ->groupBy('agent_id')
             ->orderByDesc('vencidas')
             ->get();
+            
         $chartAccionesAgentes = [
             'labels' => $accionesAgentes->map(fn ($item) => optional($item->creator)->name ?? 'Sin Agente')->toArray(),
             'pendientes' => $accionesAgentes->pluck('pendientes')->toArray(),
             'vencidas' => $accionesAgentes->pluck('vencidas')->toArray(),
         ];
+        
         // 5. Listas para los select de Filtro
         // Asegúrate de tener el modelo MaeDistritos importado arriba
         $listDistritos = MaeDistritos::all();
@@ -284,12 +297,12 @@ class InteractionController extends Controller
                 'endDate',
                 'filtroDistrito',
                 'filtroLinea',
-                'filtroAgente', // NUEVO
-                'filtroCliente', // NUEVO
+                'filtroAgente', 
+                'filtroCliente', 
                 'listDistritos',
                 'listLineas',
-                'listAgentes', // NUEVO
-                'listClientes', // NUEVO
+                'listAgentes', 
+                'listClientes', 
             ),
         );
     }
@@ -481,109 +494,132 @@ class InteractionController extends Controller
      */
     public function index(Request $request)
     {
-        // 1. Obtener IDs de resultados una sola vez
+        // 1. Estadísticas (esto se mantiene, es súper rápido)
         $outcomesData = IntOutcome::select('id', 'estado')->get();
         $successfulOutcomeIds = $outcomesData->where('estado', 1)->pluck('id')->toArray();
         $pendingOutcomeIds = $outcomesData->where('estado', 0)->pluck('id')->toArray();
 
         $baseQuery = Interaction::query();
-        // 2. Filtros (Buscador General Potente)
-        if ($request->filled('search')) {
-            $search = "%{$request->input('search')}%";
-
-            $baseQuery->where(function ($q) use ($search) {
-                $q->where('notes', 'LIKE', $search)
-                    ->orWhere('nombre_quien_llama', 'LIKE', $search)
-                    ->orWhere('id', 'LIKE', $search)
-                    ->orWhere('client_id', 'LIKE', $search) // Busca por Cédula directamente
-
-                // Busca en el nombre del Cliente (Relación)
-                    ->orWhereHas('client', function ($query) use ($search) {
-                        $query->where('nom_ter', 'LIKE', $search);
-                    })
-
-                // Busca en el nombre del Agente/Asesor (Relación)
-                    ->orWhereHas('agent', function ($query) use ($search) {
-                        $query->where('name', 'LIKE', $search);
-                    });
-            });
-        }
-
-        if ($request->filled('start_date')) {
-            $baseQuery->where('interaction_date', '>=', $request->start_date.' 00:00:00');
-        }
-        if ($request->filled('end_date')) {
-            $baseQuery->where('interaction_date', '<=', $request->end_date.' 23:59:59');
-        }
-
+        
         // Seguridad de Agente
         if (!auth()->user()->hasPermission('interacciones.listado.todos')) {
             $baseQuery->where(fn ($q) => $q->where('agent_id', Auth::id())->orWhere('id_user_asignacion', Auth::id()));
         }
 
-        // 3. ESTADÍSTICAS EN UNA SOLA CONSULTA (Clave del rendimiento)
-        // En lugar de 5 counts, hacemos uno solo con SUM condicional
         $stats = (clone $baseQuery)->selectRaw('
             COUNT(*) as total,
             SUM(CASE WHEN outcome IN ('.implode(',', $successfulOutcomeIds ?: [0]).') THEN 1 ELSE 0 END) as successful,
             SUM(CASE WHEN outcome IN ('.implode(',', $pendingOutcomeIds ?: [0]).') THEN 1 ELSE 0 END) as pending,
             SUM(CASE WHEN DATE(interaction_date) = CURDATE() THEN 1 ELSE 0 END) as today
         ')->first()->toArray();
+
         $stats['overdue'] = (clone $baseQuery)
-            ->whereHas('outcomeRelation', function ($q) {
-                $q->where('estado', '!=', 1)->orWhereNull('estado');
-            })
-            ->whereHas('seguimientos', function ($q) {
-                $q->whereNotNull('next_action_date')
-                    ->where('next_action_date', '<', now());
-            })
+            ->whereHas('outcomeRelation', fn($q) => $q->where('estado', '!=', 1)->orWhereNull('estado'))
+            ->whereHas('seguimientos', fn($q) => $q->whereNotNull('next_action_date')->where('next_action_date', '<', now()))
             ->count();
-        // 4. RELACIONES (Eager Loading)
-        // Agregamos 'lineas_detalle' si fuera relación, pero como es Accessor,
-        // lo manejaremos en la vista o mediante un "Manual Eager Loading"
-        $relations = ['client.distrito', 'agent.cargoRelation.gdoArea', 'channel', 'type', 'outcomeRelation', 'usuarioAsignado'];
 
-        $collectionsForTabs = [
-            // EXITOSAS: estado = 1
-            'successful' => (clone $baseQuery)->whereHas('outcomeRelation', function ($q) {
-                $q->where('estado', 1);
-            })->with($relations)->limit(50)->get(),
-
-            // PENDIENTES: estado != 1 o Null
-            'pending' => (clone $baseQuery)->whereHas('outcomeRelation', function ($q) {
-                $q->where('estado', '!=', 1)->orWhereNull('estado');
-            })->with($relations)->limit(50)->get(),
-
-            // HOY: Interacciones creadas hoy
-            'today' => (clone $baseQuery)->whereDate('interaction_date', now())->with($relations)->get(),
-
-            // VENCIDAS: Lógica de IntSeguimiento (Basado en tu guía)
-            'overdue' => (clone $baseQuery)
-                    // 1. Solo las que NO son exitosas (estado != 1 o null)
-                ->whereHas('outcomeRelation', function ($q) {
-                    $q->where('estado', '!=', 1)->orWhereNull('estado');
-                })
-                    // 2. Que tengan seguimientos vencidos
-                ->whereHas('seguimientos', function ($q) {
-                    $q->whereNotNull('next_action_date')
-                        ->where('next_action_date', '<', now());
-                })
-                    // 3. Respetamos el rango de fecha de la interacción que ya definió tu fórmula
-
-                ->with($relations)
-                ->limit(50)
-                ->get(),
-        ];
-        $interactions = $baseQuery->orderBy('id', 'desc')
-            ->with($relations)
-            ->paginate(50)
-            ->appends($request->query());
-        // 6. CATÁLOGOS CON CACHE
+        // 2. Catálogos en Caché
         $allLineas = Cache::remember('all_lineas_list', 3600, fn () => LineaCredito::pluck('nombre', 'id'));
         $channels = Cache::remember('cat_channels', 86400, fn () => IntChannel::orderBy('name')->pluck('name', 'id'));
         $outcomes = Cache::remember('cat_outcomes', 86400, fn () => IntOutcome::orderBy('name')->pluck('name', 'id'));
 
-        return view('interactions.index', compact('interactions', 'stats', 'collectionsForTabs', 'channels', 'outcomes', 'allLineas'));
+        // ==========================================
+        // 3. RESPUESTA AJAX PARA DATATABLES (SERVER-SIDE)
+        // ==========================================
+        if ($request->ajax()) {
+            $query = Interaction::with(['client.distrito', 'agent.cargoRelation.gdoArea', 'channel', 'type', 'outcomeRelation', 'usuarioAsignado']);
+
+            // A) Filtro por pestaña activa
+            $tab = $request->input('tab', 'all');
+            if ($tab === 'success') {
+                $query->whereHas('outcomeRelation', fn($q) => $q->where('estado', 1));
+            } elseif ($tab === 'pending') {
+                $query->whereHas('outcomeRelation', fn($q) => $q->where('estado', '!=', 1)->orWhereNull('estado'));
+            } elseif ($tab === 'today') {
+                $query->whereDate('interaction_date', now());
+            } elseif ($tab === 'overdue') {
+                $query->whereHas('outcomeRelation', fn($q) => $q->where('estado', '!=', 1)->orWhereNull('estado'))
+                      ->whereHas('seguimientos', fn($q) => $q->whereNotNull('next_action_date')->where('next_action_date', '<', now()));
+            }
+
+            // B) Filtros del usuario (Buscador general)
+            // DataTables envía la búsqueda en $request->input('search.value')
+            if ($request->filled('search.value')) {
+                $search = "%{$request->input('search.value')}%";
+                $query->where(function ($q) use ($search) {
+                    $q->where('notes', 'LIKE', $search)
+                      ->orWhere('nombre_quien_llama', 'LIKE', $search)
+                      ->orWhere('id', 'LIKE', $search)
+                      ->orWhere('client_id', 'LIKE', $search)
+                      ->orWhereHas('client', fn($sq) => $sq->where('nom_ter', 'LIKE', $search))
+                      ->orWhereHas('agent', fn($sq) => $sq->where('name', 'LIKE', $search));
+                });
+            }
+
+            // Fechas personalizadas
+            if ($request->filled('start_date')) $query->where('interaction_date', '>=', $request->start_date.' 00:00:00');
+            if ($request->filled('end_date')) $query->where('interaction_date', '<=', $request->end_date.' 23:59:59');
+
+            // C) Totales para la paginación
+            $totalRecords = (clone $baseQuery)->count();
+            $filteredRecords = $query->count();
+
+            // D) Paginación y Orden (DataTables envía start y length)
+            $start = $request->input('start', 0);
+            $length = $request->input('length', 20);
+            $query->orderBy('id', 'desc'); // Orden fijo por ahora
+
+            $data = $query->skip($start)->take($length)->get();
+
+            // E) Formatear datos para el Javascript
+            $data->transform(function($item) use ($allLineas) {
+                $lineasIds = is_array($item->id_linea_de_obligacion) ? $item->id_linea_de_obligacion : [];
+                $nombresLineas = [];
+                for ($i = 0; $i < 5; $i++) {
+                    $nombresLineas[] = isset($lineasIds[$i]) ? ($allLineas[$lineasIds[$i]] ?? '') : '';
+                }
+
+                return [
+                    'id' => $item->id,
+                    'fecha' => optional($item->interaction_date)->format('d/m/Y H:i'),
+                    'duracion' => floor($item->duration / 60).'m '.($item->duration % 60).'s',
+                    'cliente_nombre' => $item->client->nom_ter ?? '—',
+                    'cliente_cc' => $item->client_id ?? '—',
+                    'distrito' => $item->client->distrito->NOM_DIST ?? '—',
+                    'agente' => $item->agent->name ?? '—',
+                    'agente_area' => $item->agent->cargoRelation->gdoArea->nombre ?? '',
+                    'agente_cargo' => $item->agent->cargoRelation->nombre_cargo ?? '',
+                    'canal' => $item->channel->name ?? '—',
+                    'motivo' => $item->type->name ?? 'N/A',
+                    'resultado' => $item->outcomeRelation->name ?? ' ',
+                    'outcome_val' => $item->outcome,
+                    'lineas_array' => array_filter($nombresLineas), // Solo las que tienen datos
+                    'linea_1' => $nombresLineas[0],
+                    'linea_2' => $nombresLineas[1],
+                    'linea_3' => $nombresLineas[2],
+                    'linea_4' => $nombresLineas[3],
+                    'linea_5' => $nombresLineas[4],
+                    // Modal datos extra
+                    'asignado' => $item->usuarioAsignado->name ?? '—',
+                    'llamante_nombre' => $item->nombre_quien_llama ?? '—',
+                    'llamante_cedula' => $item->cedula_quien_llama ?? '—',
+                    'llamante_celular' => $item->celular_quien_llama ?? '—',
+                    'llamante_parentesco' => $item->parentesco_quien_llama ?? '—',
+                    'notas' => $item->notes ?? 'Sin notas.',
+                    'archivo' => !empty($item->attachment_urls) ? $item->getFile($item->attachment_urls) : null,
+                ];
+            });
+
+            return response()->json([
+                'draw' => intval($request->input('draw')),
+                'recordsTotal' => $totalRecords,
+                'recordsFiltered' => $filteredRecords,
+                'data' => $data
+            ]);
+        }
+
+        // 4. Si es la carga normal de la vista, YA NO ENVIAMOS $interactions NI $collectionsForTabs
+        return view('interactions.index', compact('stats', 'channels', 'outcomes'));
     }
 
     /**
@@ -711,6 +747,13 @@ class InteractionController extends Controller
 
         $agentId = Auth::id();
 
+        // LÓGICA DE ASIGNACIÓN: 
+        // Si no llega un ID en el formulario, se asigna por defecto al agente actual (Yo me encargo)
+        $idAsignacion = $request->filled('id_user_asignacion') 
+                        ? $validated['id_user_asignacion'] 
+                        : $agentId;
+
+        // 1. Crear la interacción
         $interaction = Interaction::create([
             'client_id' => $validated['client_id'],
             'agent_id' => $agentId,
@@ -722,13 +765,14 @@ class InteractionController extends Controller
             'notes' => $validated['notes'] ?? null,
             'parent_interaction_id' => $validated['parent_interaction_id'] ?? null,
             'id_linea_de_obligacion' => $validated['id_linea_de_obligacion'] ?? null,
-            'id_user_asignacion' => $validated['id_user_asignacion'] ?? null,
+            'id_user_asignacion' => $idAsignacion, // Usamos la variable segura
             'cedula_quien_llama' => $validated['cedula_quien_llama'] ?? null,
             'nombre_quien_llama' => $validated['nombre_quien_llama'] ?? null,
             'celular_quien_llama' => $validated['celular_quien_llama'] ?? null,
             'parentesco_quien_llama' => $validated['parentesco_quien_llama'] ?? null,
         ]);
 
+        // 2. Procesar comprobantes temporales
         if ($request->filled('temp_token')) {
             CarComprobantePago::where('temp_token', $request->temp_token)
                 ->where(function ($query) {
@@ -736,20 +780,21 @@ class InteractionController extends Controller
                 })
                 ->update([
                     'id_interaction' => $interaction->id,
-                    'temp_token' => null, // Limpiamos el token para cerrar el ciclo
+                    'temp_token' => null, 
                 ]);
         }
 
+        // 3. Procesar archivo adjunto
         $rutaArchivo = null;
         if ($request->hasFile('attachment')) {
-            // Ruta dinámica: cartera/comprobantes/{codigo_tercero}/archivo.ext
             $folderPath = "corpentunida/interacciones/evidencia_{$interaction->id}_{$interaction->client_id}";
             $rutaArchivo = $request->file('attachment')->store($folderPath, 's3');
         }
 
+        // 4. Crear el seguimiento
         $interaction->seguimientos()->create([
             'agent_id' => $agentId,
-            'id_user_asignacion' => $validated['id_user_asignacion'] ?? null,
+            'id_user_asignacion' => $idAsignacion, // Usamos la variable segura
             'outcome' => $validated['outcome'],
             'next_action_type' => $validated['next_action_type'] ?? 1,
             'next_action_date' => $validated['next_action_date'] ?? now(),

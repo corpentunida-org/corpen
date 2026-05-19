@@ -503,31 +503,146 @@ class ConExtractoTransaccionController extends Controller
 
     public function conciliacionManual(Request $request)
     {
-        // 1. Validar que recibimos un texto (JSON) con los IDs
+        // 1. Validar que recibimos un texto (JSON) con los IDs y los datos de la interacción
         $request->validate([
-            'id_transacciones' => 'required|string', // AHORA ES PLURAL Y STRING JSON
+            'id_transacciones' => 'required|string', 
             'id_comprobante'   => 'required|exists:car_comprobantes_pagos,id',
+            'id_interaccion'   => 'nullable|integer',
+            'temp_token'       => 'nullable|string'
         ]);
 
         // 2. Decodificar el JSON a un array de PHP
         $idsTransacciones = json_decode($request->id_transacciones, true);
 
         if (!is_array($idsTransacciones) || empty($idsTransacciones)) {
+            // Si es petición del modal (AJAX)
+            if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') == 'XMLHttpRequest') {
+                return response()->json(['success' => false, 'message' => 'Debes seleccionar al menos un movimiento bancario.']);
+            }
             return redirect()->back()->withErrors('Debes seleccionar al menos un movimiento bancario.');
         }
 
-        // 3. Actualizar el comprobante de cartera
-        $comprobante = \App\Models\Cartera\CarComprobantePago::findOrFail($request->id_comprobante);
-        
-        // Asignamos el array (Laravel lo convierte a JSON en BD por el $casts del modelo)
-        $comprobante->id_transaccion_bancaria = $idsTransacciones;
-        $comprobante->estado = 'conciliado';
-        $comprobante->save();
+        try {
+            // 3. Actualizar el comprobante de cartera
+            $comprobante = \App\Models\Cartera\CarComprobantePago::findOrFail($request->id_comprobante);
+            
+            // Asignamos el array (Laravel lo convierte a JSON en BD por el $casts del modelo)
+            $comprobante->id_transaccion_bancaria = $idsTransacciones;
+            $comprobante->estado = 'conciliado';
 
-        // 4. Actualizar masivamente TODOS los extractos seleccionados a 'Conciliado_Manual'
-        ConExtractoTransaccion::whereIn('id_transaccion', $idsTransacciones)
-            ->update(['estado_conciliacion' => 'Conciliado_Manual']);
+            // Vinculamos la interacción si el modal la envía
+            if ($request->has('id_interaccion') && $request->id_interaccion > 0) {
+                $comprobante->id_interaccion = $request->id_interaccion;
+            }
 
-        return redirect()->back()->with('success', 'Los ' . count($idsTransacciones) . ' registros fueron vinculados manualmente con éxito.');
+            $comprobante->save();
+
+            // 4. Actualizar masivamente TODOS los extractos seleccionados a 'Conciliado_Manual'
+            ConExtractoTransaccion::whereIn('id_transaccion', $idsTransacciones)
+                ->update(['estado_conciliacion' => 'Conciliado_Manual']);
+
+            // 5. RESPUESTA JSON PARA EL MODAL (ÉXITO)
+            if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') == 'XMLHttpRequest') {
+                return response()->json([
+                    'success' => true, 
+                    'message' => 'Los ' . count($idsTransacciones) . ' registros fueron vinculados manualmente con éxito.'
+                ]);
+            }
+
+            // Fallback por si se envía desde un formulario normal sin AJAX
+            return redirect()->back()->with('success', 'Los ' . count($idsTransacciones) . ' registros fueron vinculados manualmente con éxito.');
+
+        } catch (\Exception $e) {
+            \Log::error("Error en conciliacionManual: " . $e->getMessage());
+            
+            // Respuesta de error para el Modal
+            if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') == 'XMLHttpRequest') {
+                return response()->json(['success' => false, 'message' => 'Error crítico: ' . $e->getMessage()], 500);
+            }
+            
+            return redirect()->back()->withErrors('Error crítico: ' . $e->getMessage());
+        }
+    }
+
+    public function buscarModalApi(Request $request)
+    {
+        try {
+            $search = $request->input('search');
+
+            if (empty($search)) {
+                return response()->json(['bancos' => [], 'cartera' => []]);
+            }
+
+            // LADO IZQUIERDO: BANCOS PENDIENTES
+            $bancos = ConExtractoTransaccion::with('cuentaBancaria')
+                ->where('estado_conciliacion', 'Pendiente')
+                ->where(function($q) use ($search) {
+                    $q->where('hash_transaccion', 'LIKE', "%{$search}%")
+                      ->orWhere('referencia_cedula', 'LIKE', "%{$search}%")
+                      ->orWhere('valor_ingreso', 'LIKE', "%{$search}%");
+                })
+                ->orderBy('fecha_movimiento', 'desc')
+                ->limit(50)
+                ->get()
+                ->map(function($item) {
+                    try {
+                        $fechaBanco = is_string($item->fecha_movimiento) 
+                            ? Carbon::parse($item->fecha_movimiento)->format('d/m/Y')
+                            : (is_object($item->fecha_movimiento) ? $item->fecha_movimiento->format('d/m/Y') : $item->fecha_movimiento);
+                    } catch (\Exception $e) {
+                        $fechaBanco = (string) $item->fecha_movimiento;
+                    }
+
+                    return [
+                        'id' => $item->id_transaccion ?? $item->id,
+                        'fecha' => $fechaBanco,
+                        'oficina' => $item->referencia_oficina ?? '---',
+                        'banco' => optional($item->cuentaBancaria)->banco ?? 'Banco',
+                        'valor' => number_format((float)($item->valor_ingreso ?? 0), 0, ',', '.')
+                    ];
+                });
+
+            // LADO DERECHO: CARTERA NO CONCILIADA (CERO TERCEROS AQUÍ)
+            $cartera = \App\Models\Cartera\CarComprobantePago::with(['obligacion', 'banco']) 
+                ->where('estado', '!=', 'conciliado')
+                ->where(function($q) use ($search) {
+                    $q->where('cod_ter_MaeTerceros', 'LIKE', "%{$search}%")
+                      ->orWhere('monto_pagado', 'LIKE', "%{$search}%")
+                      ->orWhere('ruta_archivo', 'LIKE', "%{$search}%");
+                })
+                ->orderBy('fecha_pago', 'desc')
+                ->limit(50)
+                ->get()
+                ->map(function($item) {
+                    try {
+                        $fecha = is_numeric($item->fecha_pago) 
+                            ? Carbon::createFromTimestamp($item->fecha_pago)->format('d/m/Y')
+                            : Carbon::parse($item->fecha_pago)->format('d/m/Y');
+                    } catch (\Exception $e) {
+                        $fecha = (string) $item->fecha_pago;
+                    }
+
+                    return [
+                        'id' => $item->id,
+                        'fecha' => $fecha,
+                        'obligacion' => optional($item->obligacion)->nombre ?? 'N/A',
+                        'cuota' => $item->numero_cuota ?? '-',
+                        'valor' => number_format((float)($item->monto_pagado ?? 0), 0, ',', '.'),
+                        'url_archivo' => (isset($item->url_archivo) && $item->url_archivo != '#') ? $item->url_archivo : null,
+                    ];
+                });
+
+            return response()->json([
+                'bancos' => $bancos,
+                'cartera' => $cartera
+            ]);
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'bancos' => [],
+                'cartera' => [],
+                'ERROR_LARAVEL' => $e->getMessage()
+            ]);
+        }
     }
 }
