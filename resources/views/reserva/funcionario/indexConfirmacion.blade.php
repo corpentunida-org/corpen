@@ -6,7 +6,58 @@
             background-color: white;
             padding: 10px;
             position: static;
-            /*z-index: auto;*/
+        }
+        @media (max-width: 768px) {
+            #calendar {
+                margin: 0 !important;
+            }
+
+            .card-body-calendar {
+                padding: 0 !important;
+            }
+
+            .fc-header-toolbar {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 6px;
+            }
+
+            /* Título */
+            .fc-toolbar-title {
+                order: 1;
+                text-align: center;
+                padding-top: 10px;
+                font-size: 18px;
+            }
+
+            /* Navegación prev next today */
+            .fc-toolbar .fc-toolbar-chunk:first-child {
+                order: 2;
+                display: flex;
+                justify-content: center;
+                gap: 6px;
+            }
+
+            /* Botones de vista */
+            .fc-toolbar .fc-toolbar-chunk:last-child {
+                order: 3;
+                display: flex;
+                justify-content: center;
+                gap: 6px;
+            }
+
+            /* Ocultar botón month */
+            .fc-dayGridMonth-button {
+                display: none !important;
+            }
+
+            /* Botones más pequeños */
+            .fc .fc-button {
+                padding: 2px 6px !important;
+                font-size: 12px !important;
+            }
+
         }
     </style>
     <div class="col-lg-12">
@@ -88,7 +139,7 @@
 
     <div class="col-lg-12">
         <div class="card" data-scrollbar-target="#psScrollbarInit">
-            <div class="card-body p-4">
+            <div class="card-body p-4 card-body-calendar">
                 <div id="calendar" class="p-4"></div>
             </div>
         </div>
@@ -126,13 +177,12 @@
                                 fecha_inicio: '{{ $r->fecha_inicio }}',
                                 fecha_fin: '{{ $r->fecha_fin }}',
                                 usuario: '{{ $r->nid }} - {{ $r->user->name }}',
-                                telefono: '{{ $r->celular }} - {{ $r->celular_respaldo }}'
+                                telefono: '{{ $r->celular }} - {{ $r->celular_respaldo }}',
                             }
                         },                    
                     @endforeach
                 ],
                 eventClick: function(info) {
-
                     let inicio = new Date(info.event.extendedProps.fecha_inicio);
                     let fin = new Date(info.event.extendedProps.fecha_fin);
 
@@ -140,7 +190,7 @@
 
                     let fechaInicio = inicio.toLocaleDateString('es-ES', opciones);
                     let fechaFin = fin.toLocaleDateString('es-ES', opciones);
-
+                    
                     Swal.fire({
                         title: 'Detalle de Reserva',
                         icon: 'info',
@@ -154,7 +204,6 @@
                         `,
                         confirmButtonText: 'Cerrar'
                     });
-
                 }
             });
             calendar.render();

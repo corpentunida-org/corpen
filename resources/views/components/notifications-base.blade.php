@@ -12,13 +12,14 @@
 </noscript>
 
 <div class="d-flex align-items-center">
-
+    @candirect('interacciones.chat.index')
     <div class="nxl-h-item d-none d-sm-flex me-2" id="messengerComponent">
         <div class="nxl-head-link position-relative" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMessenger"
             aria-controls="offcanvasMessenger" role="button" title="Mensajes Directos">
             <i class="feather-message-square notification-bell"></i>
         </div>
     </div>
+    @endcandirect
 
     <div class="dropdown nxl-h-item d-none" id="notificationComponent">
         <div class="nxl-head-link me-3 position-relative" data-bs-toggle="dropdown" role="button"
