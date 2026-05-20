@@ -1,7 +1,7 @@
 <x-base-layout>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     @php
-        // Lógica de colores y configuración visual
+        // 1. Configuración visual de la prioridad
         $priorityConfig = match ($workflow->prioridad) {
             'crítica' => ['bg' => '#FFE4E6', 'text' => '#BE123C', 'icon_bg' => '#FDA4AF', 'icon' => 'fa-fire'],
             'alta' => ['bg' => '#FFEDD5', 'text' => '#C2410C', 'icon_bg' => '#FDBA74', 'icon' => 'fa-arrow-trend-up'],
@@ -9,10 +9,60 @@
             default => ['bg' => '#F1F5F9', 'text' => '#475569', 'icon_bg' => '#CBD5E1', 'icon' => 'fa-arrow-down'],
         };
 
-        $progressColor =
-            $progress == 100
-                ? 'linear-gradient(135deg, #34d399 0%, #059669 100%)'
-                : 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)';
+        // 2. CÁLCULO DINÁMICO DEL PROGRESO GENERAL
+        $globalTotalItems = 0;
+        $globalItemsDone = 0;
+
+        if (isset($workflow->tasks) && $workflow->tasks->count() > 0) {
+            foreach($workflow->tasks as $t) {
+                $rawDesc = trim($t->descripcion ?? '');
+                $isJson = str_starts_with($rawDesc, '[');
+                $hasChecklist = false; // Bandera para saber si la tarea tiene subtareas/checklist
+                
+                // Procesar si es formato JSON
+                if ($isJson) {
+                    $sheetData = json_decode($rawDesc, true) ?? [];
+                    if (is_array($sheetData) && count($sheetData) > 0) {
+                        $hasChecklist = true;
+                        $globalTotalItems += count($sheetData);
+                        foreach($sheetData as $row) {
+                            if (isset($row['checked']) && $row['checked']) {
+                                $globalItemsDone++;
+                            }
+                        }
+                    }
+                } 
+                // Procesar si es formato Markdown [ ] o [x]
+                else {
+                    $descLines = $rawDesc ? explode("\n", $rawDesc) : [];
+                    foreach($descLines as $line) {
+                        if (preg_match('/^\[([xX\s])\]\s*-?\s*(.*)$/', trim($line), $matches)) {
+                            $hasChecklist = true;
+                            $globalTotalItems++;
+                            if (strtolower(trim($matches[1])) === 'x') {
+                                $globalItemsDone++;
+                            }
+                        }
+                    }
+                }
+
+                // Si la tarea NO tiene checklist, la contamos como 1 sola unidad de esfuerzo
+                if (!$hasChecklist) {
+                    $globalTotalItems++;
+                    if (strtolower($t->estado) === 'finalizado') {
+                        $globalItemsDone++;
+                    }
+                }
+            }
+        }
+
+        // 3. Ponderación final (porcentaje del 0 al 100)
+        $progress = $globalTotalItems > 0 ? round(($globalItemsDone / $globalTotalItems) * 100) : 0;
+
+        // 4. Color del widget circular
+        $progressColor = $progress == 100
+            ? 'linear-gradient(135deg, #34d399 0%, #059669 100%)'
+            : 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)';
     @endphp
 
     <style>
