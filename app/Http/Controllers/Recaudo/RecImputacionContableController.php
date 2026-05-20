@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Recaudo;
 
 use App\Http\Controllers\Controller;
 use App\Models\Recaudo\RecImputacionContable;
+use App\Models\Contabilidad\ConExtractoTransaccion; // <-- 1. IMPORTAMOS EL MODELO AQUÍ
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -47,9 +48,17 @@ class RecImputacionContableController extends Controller
     /**
      * Muestra el formulario de creación.
      */
-    public function create()
+    public function create(Request $request) // <-- 2. INYECTAMOS EL REQUEST AQUÍ
     {
-        return view('recaudo.imputaciones.create');
+        $extracto = null;
+        
+        // 3. SI LA URL TRAE UN ID, BUSCAMOS EL EXTRACTO EN LA BASE DE DATOS
+        if ($request->has('id_transaccion')) {
+            $extracto = ConExtractoTransaccion::find($request->id_transaccion);
+        }
+
+        // 4. PASAMOS LA VARIABLE A LA VISTA
+        return view('recaudo.imputaciones.create', compact('extracto'));
     }
 
     /**
