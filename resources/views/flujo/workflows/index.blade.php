@@ -26,6 +26,48 @@
             ->whereNotNull('asignado_a')
             ->groupBy('asignado_a')
             ->get();
+
+        // === NUEVO: FUNCIÓN HELPER PARA CÁLCULO DINÁMICO ===
+        // Evita repetir las 30 líneas de cálculo en los dos ciclos foreach de abajo
+        if (!function_exists('calculateWorkflowProgress')) {
+            function calculateWorkflowProgress($workflow) {
+                $total = 0;
+                $done = 0;
+                if (isset($workflow->tasks) && $workflow->tasks->count() > 0) {
+                    foreach($workflow->tasks as $t) {
+                        $rawDesc = trim($t->descripcion ?? '');
+                        $isJson = str_starts_with($rawDesc, '[');
+                        $hasChecklist = false; 
+                        
+                        if ($isJson) {
+                            $sheetData = json_decode($rawDesc, true) ?? [];
+                            if (is_array($sheetData) && count($sheetData) > 0) {
+                                $hasChecklist = true;
+                                $total += count($sheetData);
+                                foreach($sheetData as $row) {
+                                    if (isset($row['checked']) && $row['checked']) $done++;
+                                }
+                            }
+                        } else {
+                            $descLines = $rawDesc ? explode("\n", $rawDesc) : [];
+                            foreach($descLines as $line) {
+                                if (preg_match('/^\[([xX\s])\]\s*-?\s*(.*)$/', trim($line), $matches)) {
+                                    $hasChecklist = true;
+                                    $total++;
+                                    if (strtolower(trim($matches[1])) === 'x') $done++;
+                                }
+                            }
+                        }
+
+                        if (!$hasChecklist) {
+                            $total++;
+                            if (in_array(strtolower($t->estado), ['finalizado', 'completado'])) $done++;
+                        }
+                    }
+                }
+                return $total > 0 ? round(($done / $total) * 100) : 0;
+            }
+        }
     @endphp
     
     <div class="app-container">
@@ -97,17 +139,10 @@
                             'completado' => '#6366f1', // Indigo
                             'archivado' => '#475569', // Slate
                         };
-                        /*$label = match($est) {
-                            'borrador' => 'Inicialización',
-                            'activo' => 'Ejecución',
-                            'pausado' => 'En Cola',
-                            'completado' => 'Terminado',
-                            'archivado' => 'Rechazado',
-                        };*/
                     @endphp
                     <div class="kpi-box clickable" onclick="applyFilter('estado', '{{ $est }}')" style="border-top-color: {{ $color }};">
                         <div class="kpi-inner">
-                            <span class="kpi-label" style="color: {{ $color }};">{{-- $label --}} {{ $est }}</span>
+                            <span class="kpi-label" style="color: {{ $color }};">{{ $est }}</span>
                             <span class="kpi-number">{{ $rawCounts[$est] ?? 0 }}</span>
                         </div>
                     </div>
@@ -220,13 +255,17 @@
                     if($wf->estado === 'activo'){
                         $isOverdue = $wf->fecha_fin && $wf->fecha_fin->isPast();
                     }
-                        $progColor = $isOverdue ? '#ef4444' : match($wf->estado) {
-                            'completado' => '#6366f1',
-                            'activo'     => '#10b981',
-                            'pausado'    => '#f59e0b',
-                            'archivado'  => '#475569',
-                            default      => '#94a3b8'
-                        };                        
+                    
+                    // LLAMADA AL HELPER DINÁMICO
+                    $calculatedProgress = calculateWorkflowProgress($wf);
+                    
+                    $progColor = $isOverdue ? '#ef4444' : match($wf->estado) {
+                        'completado' => '#6366f1',
+                        'activo'     => '#10b981',
+                        'pausado'    => '#f59e0b',
+                        'archivado'  => '#475569',
+                        default      => '#94a3b8'
+                    };                        
                     @endphp
 
                     <div class="project-row {{ $isOverdue ? 'row-overdue' : '' }}">
@@ -249,9 +288,10 @@
                         <div class="col-progress">
                             <div class="progress-container-neo">
                                 <div class="progress-track">
-                                    <div class="progress-fill" style="width: {{ $wf->progreso }}%; background: {{ $progColor }};"></div>
+                                    {{-- Usamos $calculatedProgress --}}
+                                    <div class="progress-fill" style="width: {{ $calculatedProgress }}%; background: {{ $progColor }};"></div>
                                 </div>
-                                <span class="progress-val">{{ $wf->progreso }}%</span>
+                                <span class="progress-val">{{ $calculatedProgress }}%</span>
                             </div>
                             @if($isOverdue)
                                 <span class="overdue-text">Vencido</span>
@@ -310,8 +350,9 @@
                         <tbody>
                             @forelse($workflows as $wf)
                                 @php
-                                    // Lógica de progreso visual (Misma que en gestión)
-                                    $progWidth = in_array($wf->estado, ['completado', 'archivado']) ? 100 : ($wf->estado == 'activo' ? 65 : 20);
+                                    // LLAMADA AL HELPER DINÁMICO (Reemplaza la lógica hardcodeada)
+                                    $progWidth = calculateWorkflowProgress($wf);
+                                    
                                     $progColor = match($wf->estado) {
                                         'completado' => '#10b981', // Verde
                                         'archivado' => '#94a3b8',  // Gris
@@ -433,7 +474,6 @@
 
         .kpi-strip {
             display: grid;
-            /* Aquí forzamos 6 columnas iguales para que abarque todo el horizontal */
             grid-template-columns: repeat(6, 1fr);
             gap: 12px;
             margin-bottom: 30px;
@@ -552,7 +592,6 @@
         .empty-icon { font-size: 24px; margin-bottom: 10px; opacity: 0.5; }
 
         @media (max-width: 1024px) {
-            /* En pantallas medianas, dividir en 2 filas de 3 */
             .kpi-strip { grid-template-columns: repeat(3, 1fr); }
         }
 
@@ -567,7 +606,6 @@
         }
         
         @media (max-width: 600px) {
-            /* En móvil, 2 columnas */
             .kpi-strip { grid-template-columns: repeat(2, 1fr); }
         }
     </style>
@@ -575,16 +613,12 @@
     <script>
         // --- 1. Control de Pestañas (ACTUALIZADO) ---
         function switchTab(tabName) {
-            // Ocultar todos los contenidos
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            // Desactivar todos los botones
             document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
             
-            // Activar el contenido seleccionado
             const targetView = document.getElementById('view-' + tabName);
             if(targetView) targetView.classList.add('active');
             
-            // Activar el botón correspondiente (lógica por índice)
             const btns = document.querySelectorAll('.tab-btn');
             if(tabName === 'dashboard' && btns[0]) btns[0].classList.add('active');
             if(tabName === 'gestion' && btns[1]) btns[1].classList.add('active');
@@ -681,7 +715,7 @@
                 new Chart(ctxWork, {
                     type: 'bar',
                     data: {
-                        labels: {!! json_encode($leadersData->map(fn($l) => explode(' ', $l->asignado->name)[0])) !!},
+                        labels: {!! json_encode($leadersData->map(fn($l) => explode(' ', $l->asignado->name ?? 'N/A')[0])) !!},
                         ids: {!! json_encode($leadersData->pluck('asignado_a')) !!},
                         datasets: [{
                             label: 'Proyectos',
