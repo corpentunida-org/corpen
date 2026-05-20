@@ -586,11 +586,9 @@ class ConExtractoTransaccionController extends Controller
                 ->get()
                 ->map(function($item) {
                     try {
-                        $fechaBanco = is_string($item->fecha_movimiento) 
-                            ? Carbon::parse($item->fecha_movimiento)->format('d/m/Y')
-                            : (is_object($item->fecha_movimiento) ? $item->fecha_movimiento->format('d/m/Y') : $item->fecha_movimiento);
+                        $fechaBanco = Carbon::parse($item->fecha_movimiento)->format('d/m/Y');
                     } catch (\Exception $e) {
-                        $fechaBanco = (string) $item->fecha_movimiento;
+                        $fechaBanco = substr((string)$item->fecha_movimiento, 0, 10);
                     }
 
                     return [
@@ -615,10 +613,20 @@ class ConExtractoTransaccionController extends Controller
                 ->get()
                 ->map(function($item) {
                     try {
-                        $fecha = is_numeric($item->fecha_pago) 
-                            ? Carbon::createFromTimestamp($item->fecha_pago)->format('d/m/Y')
-                            : Carbon::parse($item->fecha_pago)->format('d/m/Y');
+                        // 1. Convertir a string para manipular los dígitos
+                        $valorFecha = (string) $item->fecha_pago;
+                        
+                        // 2. Si tiene ese "2" extra al inicio (o cualquier otro prefijo)
+                        // y supera los 14 dígitos de un formato YmdHis normal, cortamos los últimos 14.
+                        if (strlen($valorFecha) > 14) {
+                            $valorFecha = substr($valorFecha, -14);
+                        }
+
+                        // 3. Leemos el formato exacto YmdHis (AñoMesDiaHoraMinutoSegundo)
+                        $fecha = Carbon::createFromFormat('YmdHis', $valorFecha)->format('d/m/Y');
+                        
                     } catch (\Exception $e) {
+                        // Si por algún motivo llega un dato corrupto que no cumple el formato
                         $fecha = (string) $item->fecha_pago;
                     }
 
