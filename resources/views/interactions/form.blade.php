@@ -861,7 +861,7 @@
                         <div class="col-md-6">
                             <div class="fv-row mb-4">
                                 <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Fecha y Hora de Pago *</label>
-                                <input type="datetime-local" id="fecha_pago" name="fecha_pago" class="form-control form-control-solid border border-gray-300 gen-hash" required value="{{ date('Y-m-d\TH:i') }}">
+                                <input type="datetime-local" id="fecha_pago" name="fecha_pago" class="form-control form-control-solid border border-gray-300 gen-hash" required> {{-- 'Y-m-d\TH:i' --}}
                             </div>
 
                             <div class="fv-row mb-4 position-relative">
@@ -1678,6 +1678,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Lado Banco
                 const tbodyBanco = document.getElementById('tbodyBancosModal');
                 tbodyBanco.innerHTML = arrayBancos.length ? '' : '<tr><td colspan="4" class="text-center py-5">No hay resultados en bancos</td></tr>';
+       
+                function formatearFecha(fechaStr) {
+                    const date = new Date(fechaStr);
+                    // Ajusta el formato según prefieras: 'es-CO' es útil para Colombia
+                    return date.toLocaleDateString('es-CO', { 
+                        year: '2-digit', month: '2-digit', day: '2-digit' 
+                    });
+                }
+            
                 arrayBancos.forEach((b, i) => {
                     tbodyBanco.innerHTML += `
                         <tr class="item-extracto cursor-pointer transition-2ms" data-id="${b.id}">
@@ -1788,6 +1797,15 @@ document.addEventListener('DOMContentLoaded', function () {
     const modalElement = document.getElementById('modalComprobante');
     if (!modalElement) return;
     
+    // ------------------------------------------
+    modalElement.addEventListener('show.bs.modal', function () {
+        const fechaInput = document.getElementById('fecha_pago');
+        if (fechaInput) {
+            fechaInput.value = ''; // Esto fuerza que esté en blanco al abrir
+        }
+    });
+    // ------------------------------------------
+
     let myModal;
     if (typeof bootstrap !== 'undefined') myModal = new bootstrap.Modal(modalElement);
     
