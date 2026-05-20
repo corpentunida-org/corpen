@@ -160,7 +160,6 @@
                                 <div class="btn btn-sm btn-icon btn-light btn-active-light-primary w-25px h-25px rounded-circle">
                                     <i class="fas fa-chevron-down fs-10 text-gray-500 chevron-icon transition-transform" id="icon-{{ $movimiento->id_transaccion }}"></i>
                                 </div>
-                                <div class="text-muted fs-11 font-monospace">CTA: *{{ substr($movimiento->cuentaBancaria->numero_cuenta ?? '0000', -4) }}</div>
                             </td>
                             <td class="col-index text-muted fw-bold">{{ $extractos->firstItem() + $index }}</td>
                             <td class="font-monospace fs-8 text-gray-700 fw-semibold">{{ $fechaFormat }}</td>
