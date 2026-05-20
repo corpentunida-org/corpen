@@ -29,7 +29,7 @@
             @endcandirect
 
             {{-- Botón rápido para gestionar reservas (si aplica el permiso) --}}
-            @candirect('reservas.Reserva.lista')
+            @candirect('reservas.reserva.confirmadas')
             <a href="{{ route('reserva.inmueble.confirmacion') }}" class="btn btn-primary shadow-sm rounded-pill px-4 fw-bold">
                 <i class="bi bi-calendar-check me-1"></i> Gestionar Reservas
             </a>

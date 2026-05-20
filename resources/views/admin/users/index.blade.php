@@ -7,6 +7,10 @@
             <div class="card-header">
                 <h5 class="card-title">Usuarios</h5>
                 <div class="card-header-action">
+                <a class="btn btn-success" href="{{ route('admin.users.create') }}">
+                    <i class="feather-plus me-2"></i>
+                    <span>Crear Usuario</span>
+                </a>
                     <div class="card-header-btn">
                         <div data-bs-toggle="tooltip" title="" data-bs-original-title="Delete">
                             <a href="javascript:void(0);" class="avatar-text avatar-xs bg-danger"
@@ -31,10 +35,10 @@
                                 <i class="feather-more-vertical"></i>
                             </div>
                         </a>
-                        <div class="dropdown-menu dropdown-menu-end">
+                        {{-- <div class="dropdown-menu dropdown-menu-end">
                             <a href="{{ route('admin.users.create') }}" class="dropdown-item"><i
                                     class="feather-plus"></i>Crear Usuario</a>
-                        </div>
+                        </div> --}}
                     </div>
                 </div>
             </div>
@@ -119,8 +123,8 @@
                                     {{-- Acciones --}}
                                     <td class="text-end" style="width:70px">
                                         <a href="{{ route('admin.users.edit', $user->id) }}"
-                                            class="avatar-text avatar-md ms-auto" data-bs-toggle="tooltip" data-title="Ver Detalle"><i
-                                                class="bi bi-arrow-right"></i></a>
+                                            class="avatar-text avatar-md ms-auto" data-bs-toggle="tooltip"
+                                            data-title="Ver Detalle"><i class="bi bi-arrow-right"></i></a>
                                     </td>
 
                                 </tr>
