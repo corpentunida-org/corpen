@@ -236,16 +236,13 @@
                         @endforeach
                     ],
                     eventClick: function(info) {
-
                         let inicio = new Date(info.event.extendedProps.fecha_inicio);
                         let fin = new Date(info.event.extendedProps.fecha_fin);
-
                         let opciones = {
                             day: 'numeric',
                             month: 'long',
                             year: 'numeric'
                         };
-
                         let fechaInicio = inicio.toLocaleDateString('es-ES', opciones);
                         let fechaFin = fin.toLocaleDateString('es-ES', opciones);
                         const telefono =
@@ -257,7 +254,7 @@
                             <p><b>ID Reserva:</b> ${info.event.extendedProps.id}</p>
                             <p><b>Apartamento:</b> ${info.event.extendedProps.apto}</p>
                             <p><b>Usuario:</b> ${info.event.extendedProps.usuario}</p>
-                            <p><b>Teléfonos:</b> ${telefono}</p>                            
+                            <p><b>Teléfonos:</b> ${telefono}</p>
                             <p><b>Fecha Inicio:</b> ${fechaInicio} </p>
                             <p><b>Fecha Fin:</b> ${fechaFin}</p>
                         `,

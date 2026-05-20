@@ -58,7 +58,7 @@
     <div class="col-xxl-4">
         <div class="card stretch stretch-full">
             <div class="card-header">
-                <h5 class="card-title">Revenue Forecast</h5>
+                <h5 class="card-title">Gráficos relacionados</h5>
                 <div class="card-header-action">
                     <div class="card-header-btn">
                         <div data-bs-toggle="tooltip" title="Delete">
@@ -110,9 +110,25 @@
                     <div class="col-sm-6">
                         <div class="px-4 py-3 text-center border border-dashed rounded-3">
                             <canvas id="chartSatisfaccionSoft"></canvas>
+                            @php
+                                $labelsPuntaje = [
+                                    3 => '3 Estrellas',
+                                    4 => '4 Estrellas',
+                                    5 => '5 Estrellas',
+                                ];
+                            @endphp
+
+                            @foreach ($datacharts['ticcorpen'] as $puntaje => $cantidad)
+                                @if (isset($labelsPuntaje[$puntaje]))
+                                    <div class="fs-11 text-muted">
+                                        {{ $labelsPuntaje[$puntaje] }}:
+                                        <span class="fs-11 fw-bold">{{ $cantidad }}</span> Registros
+                                    </div>
+                                @endif
+                            @endforeach
                         </div>
                     </div>
-                    <div class="col-sm-6">
+                    {{-- <div class="col-sm-6">
                         <div class="px-4 py-3 text-center border border-dashed rounded-3">
                             <div class="avatar-text bg-gray-200 mx-auto mb-2">
                                 <i class="feather-dollar-sign"></i>
@@ -120,7 +136,7 @@
                             <h2 class="fs-13 tx-spacing-1">Revenue Goal</h2>
                             <div class="fs-11 text-muted">$5,655/$12,500 USD</div>
                         </div>
-                    </div>
+                    </div> --}}
                 </div>
             </div>
             <div class="card-footer">

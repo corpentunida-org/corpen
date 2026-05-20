@@ -28,7 +28,7 @@
     </ul>
     @endcandirect
     
-    @candirect('reservas.Reserva.lista')
+    @candirect('reservas.reserva.confirmadas')
     <ul class="nxl-submenu">
         <li class="nxl-item"><a class="nxl-link" href="{{ route('reserva.inmueble.confirmacion') }}">Confirmadas</a></li>
     </ul>
