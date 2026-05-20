@@ -173,6 +173,58 @@
     </style>
 </head>
 <body>
+    @php
+        // === CÁLCULO DINÁMICO DEL PROGRESO GLOBAL ===
+        $globalTotalItems = 0;
+        $globalItemsDone = 0;
+
+        if (isset($workflow->tasks) && $workflow->tasks->count() > 0) {
+            foreach($workflow->tasks as $t) {
+                $rawDesc = trim($t->descripcion ?? '');
+                $isJson = str_starts_with($rawDesc, '[');
+                $hasChecklist = false; 
+                
+                // Procesar si es formato JSON
+                if ($isJson) {
+                    $sheetData = json_decode($rawDesc, true) ?? [];
+                    if (is_array($sheetData) && count($sheetData) > 0) {
+                        $hasChecklist = true;
+                        $globalTotalItems += count($sheetData);
+                        foreach($sheetData as $row) {
+                            if (isset($row['checked']) && $row['checked']) {
+                                $globalItemsDone++;
+                            }
+                        }
+                    }
+                } 
+                // Procesar si es formato Markdown [ ] o [x]
+                else {
+                    $descLines = $rawDesc ? explode("\n", $rawDesc) : [];
+                    foreach($descLines as $line) {
+                        if (preg_match('/^\[([xX\s])\]\s*-?\s*(.*)$/', trim($line), $matches)) {
+                            $hasChecklist = true;
+                            $globalTotalItems++;
+                            if (strtolower(trim($matches[1])) === 'x') {
+                                $globalItemsDone++;
+                            }
+                        }
+                    }
+                }
+
+                // Si la tarea NO tiene checklist, la contamos como 1 sola unidad
+                if (!$hasChecklist) {
+                    $globalTotalItems++;
+                    // Para el PDF se considera tanto 'finalizado' como 'completado'
+                    if (in_array(strtolower($t->estado), ['finalizado', 'completado'])) {
+                        $globalItemsDone++;
+                    }
+                }
+            }
+        }
+
+        // Variable final que reemplaza a la que viene del controlador para asegurar consistencia
+        $progress = $globalTotalItems > 0 ? round(($globalItemsDone / $globalTotalItems) * 100) : 0;
+    @endphp
 
     {{-- === ENCABEZADO FIJO (Todas las páginas) === --}}
     <header>
