@@ -411,7 +411,9 @@ Route::middleware(['auth'])
         // ---------------------------------------------------
         Route::resource('imputaciones', RecImputacionContableController::class)
             ->parameters(['imputaciones' => 'recImputacionContable']);
-
+        // Se define como GET para consultar el dato del tercero
+        Route::get('buscar-distrito/{terceroId}', [RecImputacionContableController::class, 'buscarDistrito'])
+            ->name('buscar-distrito');
     });
 // FIN MÓDULO RECAUDO
 
