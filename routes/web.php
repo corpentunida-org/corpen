@@ -976,8 +976,11 @@ Route::middleware(['auth'])
 
         // --- Rutas Específicas ---
 
-        // Generar Reporte PDF Profesional de Activos (Filtrado) <-- RUTA AÑADIDA AQUÍ
+        // Generar Reporte PDF Profesional de Activos (Filtrado)
         Route::get('activos/reporte-pdf', [ActivoController::class, 'generarReportePdf'])->name('activos.pdf');
+        
+        // Generar Reporte Excel de Activos (Filtrado) <-- NUEVA RUTA
+        Route::get('activos/reporte-excel', [ActivoController::class, 'generarReporteExcel'])->name('activos.excel');
 
         // Vista de Alertas (Garantías por vencer)
         Route::get('activos/alertas', [ActivoController::class, 'alertas'])->name('activos.alertas');
