@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Maestras\MaeDistritos;
 use App\Models\Maestras\MaeTerceros;
 use App\Models\Contabilidad\ConExtractoTransaccion;
+use App\Models\Cartera\CarComprobantePago;
+use App\Models\User; // <-- Asegúrate de importar el modelo User si lo usas en la cabecera
 
 class RecImputacionContable extends Model
 {
@@ -15,14 +17,17 @@ class RecImputacionContable extends Model
     protected $table = 'rec_imputaciones_contables';
 
     protected $fillable = [
+        'id',
         'id_transaccion',
         'id_tercero_origen',
         'id_distrito',
         'id_recibo',
+        'tipo', 
         'concepto_contable',
         'link_ecm',
         'valor_imputado',
         'estado_conciliacion',
+        'id_user', 
     ];
 
     /**
@@ -47,5 +52,25 @@ class RecImputacionContable extends Model
     public function distrito()
     {
         return $this->belongsTo(MaeDistritos::class, 'id_distrito', 'COD_DIST');
+    }
+
+    /**
+     * Relación con el Usuario (User)
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'id_user');
+    }
+
+    public function getComprobanteAttribute()
+    {
+        if (!$this->id_transaccion) {
+            return null;
+        }
+
+        return CarComprobantePago::with('obligacion')
+            ->whereJsonContains('id_transaccion_bancaria', (string) $this->id_transaccion)
+            ->orWhereJsonContains('id_transaccion_bancaria', (int) $this->id_transaccion)
+            ->first();
     }
 }
