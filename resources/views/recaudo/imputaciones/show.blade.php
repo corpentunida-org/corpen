@@ -11,7 +11,7 @@
                     <i class="fas fa-arrow-left"></i> <span>Volver</span>
                 </a>
                 <a href="{{ route('recaudo.imputaciones.edit', $recImputacionContable->id) }}" class="btn-corporate-black">
-                    <i class="fas fa-pen-nib"></i> <span>Editar Registro</span>
+                    <i class="fas fa-pen-nib"></i> <span>Editar</span>
                 </a>
             </div>
         </header>
@@ -25,7 +25,18 @@
             </div>
             
             <div class="show-body">
-                <div class="info-block">
+                <div class="grid-3">
+                    <div class="info-block">
+                        <h4>Tipo de Imputación</h4>
+                        <p class="text-primary fw-bold">{{ $recImputacionContable->tipo ?? 'N/A' }}</p>
+                    </div>
+                    <div class="info-block">
+                        <h4>Registrado por</h4>
+                        <p><i class="fas fa-user-circle"></i> {{ $recImputacionContable->user->name ?? 'Sistema' }}</p>
+                    </div>
+                </div>
+
+                <div class="info-block mt-3">
                     <h4>Concepto Contable</h4>
                     <p>{{ $recImputacionContable->concepto_contable }}</p>
                 </div>
@@ -34,7 +45,7 @@
                     <div class="detail-item">
                         <i class="fas fa-university icon-muted"></i>
                         <div>
-                            <span class="label">ID Transacción (Extracto)</span>
+                            <span class="label">ID Transacción</span>
                             <strong>{{ $recImputacionContable->id_transaccion }}</strong>
                         </div>
                     </div>
@@ -42,9 +53,8 @@
                     <div class="detail-item">
                         <i class="fas fa-user-tie icon-muted"></i>
                         <div>
-                            <span class="label">Tercero Relacionado</span>
+                            <span class="label">Tercero</span>
                             <strong>{{ $recImputacionContable->tercero->nom_ter ?? $recImputacionContable->id_tercero_origen }}</strong>
-                            <small class="d-block text-muted">ID: {{ $recImputacionContable->id_tercero_origen }}</small>
                         </div>
                     </div>
 
@@ -56,21 +66,8 @@
                         </div>
                     </div>
                 </div>
-
-                @if($recImputacionContable->link_ecm)
-                <div class="ecm-attachment-box mt-4">
-                    <div class="d-flex align-items-center">
-                        <i class="fas fa-file-pdf file-icon"></i>
-                        <div class="ml-3">
-                            <strong class="d-block">Soporte Documental Indexado</strong>
-                            <a href="{{ $recImputacionContable->link_ecm }}" target="_blank" class="text-info">Abrir documento en el Gestor (ECM) <i class="fas fa-external-link-alt"></i></a>
-                        </div>
-                    </div>
-                </div>
-                @endif
             </div>
         </div>
     </div>
-
     @include('recaudo.imputaciones.partials.styles')
 </x-base-layout>

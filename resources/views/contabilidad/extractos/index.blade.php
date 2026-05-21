@@ -31,7 +31,7 @@
                     <i class="fas fa-cloud-upload-alt me-2"></i> Importar Datos
                 </a>
                 <a href="{{ route('contabilidad.extractos.conciliacion') }}" class="btn btn-dark fw-bolder px-5 py-2 shadow-sm fs-8 hover-elevate-up transition-all">
-                    <i class="fas fa-compress-arrows-alt me-2 text-white"></i> Mesa de Conciliación
+                    <i class="fas fa-compress-arrows-alt me-2 text-white"></i> Mesa de Identificación
                 </a>
             </div>
         </div>
@@ -62,12 +62,12 @@
                     
                     <select name="estado" class="form-select form-select-solid bg-light border-0 fs-8 fw-bold text-gray-700 rounded-3 hover-elevate-up" style="width: 150px; cursor: pointer;">
                         <option value="">Cualquier Estado</option>
-                        <option value="Pendiente" {{ $estado == 'Pendiente' ? 'selected' : '' }}>⏳ Pendientes</option>
-                        <option value="Conciliados" {{ $estado == 'Conciliados' ? 'selected' : '' }}>✅ Conciliados</option>
+                        <option value="Pendiente" {{ $estado == 'Pendiente' ? 'selected' : '' }}>Pendientes</option>
+                        <option value="Conciliados" {{ $estado == 'Conciliados' ? 'selected' : '' }}>Identificado</option>
                     </select>
 
                     <select name="banco_id" class="form-select form-select-solid bg-light border-0 fs-8 fw-bold text-gray-700 rounded-3 hover-elevate-up" style="width: 180px; cursor: pointer;">
-                        <option value="">🏦 Todas las Cuentas</option>
+                        <option value="">Todas las Cuentas</option>
                         @foreach($cuentas as $cuenta)
                             <option value="{{ $cuenta->id }}" {{ $banco_id == $cuenta->id ? 'selected' : '' }}>
                                 {{ $cuenta->banco }} (...{{ substr($cuenta->numero_cuenta, -4) }})
@@ -121,6 +121,9 @@
                             <th style="width: 200px;">Línea Afectada</th>
                             <th style="width: 120px;">Tipología</th>
                             <th style="width: 140px;" class="text-end">Monto ($)</th>
+                            <th style="width: 130px;">Recibo</th>
+                            <th style="width: 140px;" class="text-end">Valor Recibo</th>
+                            <th style="width: 150px;">Usuario Recaudo</th>
                             <th style="width: 130px;" class="text-center">Estado</th>
                             <th style="width: 80px;" class="text-center">Soporte</th>
                         </tr>
@@ -138,6 +141,9 @@
                                 </div>
                             </td>
                             <td><div class="filter-wrapper"><i class="fas fa-search filter-icon"></i><input type="text" class="column-filter text-end" placeholder="Filtrar monto..."></div></td>
+                            <td><div class="filter-wrapper"><i class="fas fa-search filter-icon"></i><input type="text" class="column-filter" placeholder="Filtrar recibo..."></div></td>
+                            <td><div class="filter-wrapper"><i class="fas fa-search filter-icon"></i><input type="text" class="column-filter text-end" placeholder="Filtrar valor rec..."></div></td>
+                            <td><div class="filter-wrapper"><i class="fas fa-search filter-icon"></i><input type="text" class="column-filter" placeholder="Filtrar usuario..."></div></td>
                             <td colspan="2" class="bg-light"></td>
                         </tr>
                     </thead>
@@ -149,23 +155,40 @@
                                 ->orWhereJsonContains('id_transaccion_bancaria', (string) $movimiento->id_transaccion)
                                 ->first();
                             
+                            $imputacion = \App\Models\Recaudo\RecImputacionContable::with('user')
+                                ->where('id_transaccion', $movimiento->id_transaccion)
+                                ->first();
+
                             $isConciliado = str_contains($movimiento->estado_conciliacion, 'Conciliado');
                             $montoFormat = number_format($movimiento->valor_ingreso, 0, ',', '.');
                             $fechaFormat = $movimiento->fecha_movimiento->format('d/m/Y');
+                            $valorImputadoFormat = $imputacion ? number_format($imputacion->valor_imputado, 0, ',', '.') : null;
+                            
+                            // LOGICA DE TONALIDADES:
+                            $hasRecibo = $imputacion && !empty($imputacion->id_recibo);
+                            $rowColorClass = '';
+                            
+                            if ($isConciliado) {
+                                if ($hasRecibo) {
+                                    $rowColorClass = 'row-identificado-ok'; // Tonalidad A (Verde)
+                                } else {
+                                    $rowColorClass = 'row-identificado-sin-recibo'; // Tonalidad B (Ambar/Amarillo)
+                                }
+                            }
                         @endphp
 
                         {{-- Fila Principal --}}
-                        <tr class="data-row cursor-pointer transition-all hover-row" onclick="toggleDetails(this, {{ $movimiento->id_transaccion }})">
-                            <td class="text-center">
+                        <tr class="data-row cursor-pointer transition-all hover-row {{ $rowColorClass }}" onclick="toggleDetails(this, {{ $movimiento->id_transaccion }})">
+                            <td class="text-center bg-transparent">
                                 <div class="btn btn-sm btn-icon btn-light btn-active-light-primary w-25px h-25px rounded-circle">
                                     <i class="fas fa-chevron-down fs-10 text-gray-500 chevron-icon transition-transform" id="icon-{{ $movimiento->id_transaccion }}"></i>
                                 </div>
                             </td>
                             <td class="col-index text-muted fw-bold">{{ $extractos->firstItem() + $index }}</td>
-                            <td class="font-monospace fs-8 text-gray-700 fw-semibold">{{ $fechaFormat }}</td>
-                            <td>
+                            <td class="font-monospace fs-8 text-gray-700 fw-semibold bg-transparent">{{ $fechaFormat }}</td>
+                            <td class="bg-transparent">
                                 <div class="d-flex align-items-center gap-2">
-                                    <div class="symbol symbol-30px symbol-circle bg-light-primary d-flex align-items-center justify-content-center">
+                                    <div class="symbol symbol-30px symbol-circle bg-white shadow-sm d-flex align-items-center justify-content-center">
                                         <i class="fas fa-university text-primary fs-9"></i>
                                     </div>
                                     <div class="d-flex flex-column">
@@ -176,45 +199,58 @@
                                     </div>
                                 </div>
                             </td>
-                            <td class="font-monospace fw-bolder text-primary fs-8">
+                            <td class="font-monospace fw-bolder text-primary fs-8 bg-transparent">
                                 {{ $movimiento->referencia_cedula ?? '---' }}
                             </td>
-                            <td class="text-gray-600 fs-9 text-truncate fw-semibold" title="{{ $movimiento->referencia_oficina }}">
+                            <td class="text-gray-600 fs-9 text-truncate fw-semibold bg-transparent" title="{{ $movimiento->referencia_oficina }}">
                                 <i class="fas fa-map-marker-alt text-gray-400 me-1"></i> {{ $movimiento->referencia_oficina ?? '---' }}
                             </td>
-                            <td class="fs-9 text-truncate text-gray-800 fw-semibold" title="{{ $comprobante?->obligacion?->nombre }}">
+                            <td class="fs-9 text-truncate text-gray-800 fw-semibold bg-transparent" title="{{ $comprobante?->obligacion?->nombre }}">
                                 {{ $comprobante?->obligacion?->nombre ?? '---' }}
                             </td>
-                            <td>
-                                <span class="badge bg-light text-secondary border border-secondary-subtle fs-10 text-uppercase fw-bolder px-3 py-2 rounded-pill shadow-sm">
+                            <td class="bg-transparent">
+                                <span class="badge bg-white text-secondary border border-secondary-subtle fs-10 text-uppercase fw-bolder px-3 py-2 rounded-pill shadow-sm">
                                     {{ $comprobante?->tipo_pago ?? 'EXTRACTO' }}
                                 </span>
                             </td>
-                            <td class="text-end">
+                            <td class="text-end bg-transparent">
                                 <span class="fw-bolder fs-8 {{ $isConciliado ? 'text-success' : 'text-gray-900' }}">${{ $montoFormat }}</span>
                             </td>
-                            <td class="text-center">
+                            <td class="text-gray-800 fs-9 fw-semibold text-truncate bg-transparent" title="{{ $imputacion ? ($imputacion->tipo . ($imputacion->id_recibo ? ' - ' . $imputacion->id_recibo : '')) : '---' }}">
+                                {{ $imputacion ? ($imputacion->tipo . ($imputacion->id_recibo ? ' - ' . $imputacion->id_recibo : '')) : '---' }}
+                            </td>
+                            <td class="text-end bg-transparent">
+                                <span class="fw-bolder fs-8 text-gray-900">{{ $valorImputadoFormat ? '$'.$valorImputadoFormat : '---' }}</span>
+                            </td>
+                            <td class="fs-9 text-truncate text-gray-800 fw-semibold bg-transparent" title="{{ $imputacion?->user?->name }}">
+                                @if($imputacion && $imputacion->user)
+                                    <i class="fas fa-user-circle text-gray-400 me-1"></i> {{ $imputacion->user->name }}
+                                @else
+                                    ---
+                                @endif
+                            </td>
+                            <td class="text-center bg-transparent">
                                 @if($isConciliado)
-                                    <span class="badge bg-light-success text-success border border-success border-opacity-25 fs-10 fw-bolder px-3 py-2 rounded-pill shadow-sm d-flex align-items-center justify-content-center mx-auto" style="width: max-content;">
-                                        <i class="fas fa-check-circle me-1 text-success fs-10"></i> CONCILIADO
+                                    <span class="badge bg-white text-success border border-success border-opacity-25 fs-10 fw-bolder px-3 py-2 rounded-pill shadow-sm d-flex align-items-center justify-content-center mx-auto" style="width: max-content;">
+                                        <i class="fas fa-check-circle me-1 text-success fs-10"></i> IDENTIFICADO
                                     </span>
                                 @else
-                                    <span class="badge bg-light-warning text-warning border border-warning border-opacity-25 fs-10 fw-bolder px-3 py-2 rounded-pill shadow-sm d-flex align-items-center justify-content-center mx-auto" style="width: max-content;">
+                                    <span class="badge bg-white text-warning border border-warning border-opacity-25 fs-10 fw-bolder px-3 py-2 rounded-pill shadow-sm d-flex align-items-center justify-content-center mx-auto" style="width: max-content;">
                                         <i class="fas fa-clock me-1 text-warning fs-10"></i> PENDIENTE
                                     </span>
                                 @endif
                             </td>
-                            <td class="text-center" onclick="event.stopPropagation();">
+                            <td class="text-center bg-transparent" onclick="event.stopPropagation();">
                                 @if($comprobante && $comprobante->url_archivo !== '#')
                                     <button type="button" 
                                             onclick="abrirModalSoporte('{{ $comprobante->url_archivo }}', 'Soporte del Tercero: {{ $comprobante->cod_ter_MaeTerceros ?? 'N/A' }}')" 
-                                            class="btn btn-icon btn-sm btn-light-danger hover-elevate-up shadow-sm rounded-circle transition-all" 
+                                            class="btn btn-icon btn-sm btn-light-danger hover-elevate-up shadow-sm rounded-circle transition-all bg-white" 
                                             data-bs-toggle="tooltip" 
                                             title="Visualizar PDF del Soporte">
-                                        <i class="fas fa-file-pdf fs-6"></i>
+                                        <i class="fas fa-file-pdf fs-6 text-danger"></i>
                                     </button>
                                 @else
-                                    <div class="bg-light rounded-circle d-flex justify-content-center align-items-center mx-auto" style="width: 30px; height: 30px;" data-bs-toggle="tooltip" title="No hay soporte vinculado">
+                                    <div class="bg-white shadow-sm border border-gray-200 rounded-circle d-flex justify-content-center align-items-center mx-auto" style="width: 30px; height: 30px;" data-bs-toggle="tooltip" title="No hay soporte vinculado">
                                         <span class="text-gray-400 fs-8 fw-bold">-</span>
                                     </div>
                                 @endif
@@ -223,7 +259,7 @@
                         
                         {{-- Fila Desplegable (Detalles) --}}
                         <tr class="detail-row d-none bg-light" id="detail-{{ $movimiento->id_transaccion }}">
-                            <td colspan="11" class="p-0 border-0">
+                            <td colspan="14" class="p-0 border-0">
                                 <div class="px-6 py-5 shadow-inner" style="background-color: #f8fafc; border-bottom: 2px solid #e2e8f0;">
                                     <div class="row g-5">
                                         {{-- Hash Card --}}
@@ -313,7 +349,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="11" class="text-center py-15 bg-light">
+                            <td colspan="14" class="text-center py-15 bg-light">
                                 <div class="d-flex flex-column align-items-center justify-content-center p-10">
                                     <div class="bg-white p-5 rounded-circle shadow-sm mb-4">
                                         <i class="fas fa-search-minus fs-2hx text-gray-400"></i>
@@ -396,25 +432,112 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; border: 2px solid #f8fafc; }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         
-        /* Tabla Principal */
-        .table-gsheets { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; table-layout: fixed; }
-        .table-gsheets thead { position: sticky; top: 0; z-index: 20; box-shadow: 0 2px 4px rgba(0,0,0,0.03); }
-        .table-gsheets thead th { background: var(--gs-header-bg); border-bottom: 1px solid var(--gs-border); border-right: 1px solid var(--gs-border); padding: 14px 16px; font-weight: 800; color: #475569; text-transform: uppercase; font-size: 10px; letter-spacing: 0.5px; }
-        .table-gsheets tbody td { border-bottom: 1px solid var(--gs-border); border-right: 1px solid var(--gs-border); padding: 10px 16px; vertical-align: middle; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background-color: #ffffff; }
+        /* =========================================================
+           TABLA ESTILO GOOGLE SHEETS MODERNIZADO (UX AMIGABLE)
+           ========================================================= */
+        .table-gsheets { 
+            width: 100%; 
+            border-collapse: collapse; 
+            font-size: 13px; 
+            table-layout: fixed; 
+            background-color: #ffffff;
+        }
         
-        /* Hover de Filas */
-        .hover-row:hover td { background-color: var(--gs-hover-bg); }
-        .row-active td { background-color: #f8fafc !important; border-bottom-color: transparent !important; }
+        .table-gsheets thead { 
+            position: sticky; 
+            top: 0; 
+            z-index: 20; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.03); 
+        }
         
-        /* Utilidades de columnas */
-        .col-index { width: 45px; text-align: center !important; background: var(--gs-header-bg); color: #64748b; font-size: 11px; }
+        .table-gsheets thead th { 
+            background: var(--gs-header-bg); 
+            border: 1px solid var(--gs-border); 
+            padding: 12px 14px; 
+            font-weight: 700; 
+            color: #475569; 
+            font-size: 11px; 
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
         
+        .table-gsheets tbody td { 
+            border: 1px solid var(--gs-border); 
+            padding: 8px 12px; 
+            vertical-align: middle; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis; 
+            background-color: transparent; /* Permite ver el color de fondo de la fila */
+        }
+        
+        /* Columna de Índices (estilo Excel/Sheets) */
+        .col-index { 
+            width: 45px; 
+            text-align: center !important; 
+            background: var(--gs-header-bg) !important; 
+            color: #64748b !important; 
+            font-size: 12px; 
+        }
+        
+        /* Efecto Hover Base para filas sin tonalidad especial */
+        .data-row:not(.row-identificado-ok):not(.row-identificado-sin-recibo):hover td:not(.col-index):not(:first-child) { 
+            background-color: var(--gs-hover-bg); 
+        }
+        
+        /* 
+         * ==========================================
+         * TONALIDADES CONDICIONALES PARA LAS FILAS
+         * ==========================================
+         */
+        
+        /* TONALIDAD A: Identificado Y CON Recibo (Verde suave) */
+        .row-identificado-ok td:not(.col-index):not(:first-child) {
+            background-color: #f0fdf4 !important; /* bg-green-50 */
+        }
+        .row-identificado-ok:hover td:not(.col-index):not(:first-child) {
+            background-color: #dcfce7 !important; /* bg-green-100 on hover */
+        }
+
+        /* TONALIDAD B: Identificado PERO SIN Recibo (Amarillo/Ámbar suave) */
+        .row-identificado-sin-recibo td:not(.col-index):not(:first-child) {
+            background-color: #fffbeb !important; /* bg-amber-50 */
+        }
+        .row-identificado-sin-recibo:hover td:not(.col-index):not(:first-child) {
+            background-color: #fef3c7 !important; /* bg-amber-100 on hover */
+        }
+
+        /* Fila Activa al Desplegar */
+        .row-active td:not(.col-index):not(:first-child) { 
+            background-color: #f8fafc !important; 
+            border-bottom-color: transparent !important; 
+        }
+
         /* Buscadores de columna (Filtro local UI) */
-        .filter-row td { padding: 6px 8px !important; background: #ffffff; border-bottom: 2px solid var(--gs-border); }
+        .filter-row td { 
+            padding: 6px 8px !important; 
+            background: #ffffff; 
+            border-bottom: 2px solid #cbd5e1; 
+        }
         .filter-wrapper { position: relative; display: flex; align-items: center; }
         .filter-icon { position: absolute; left: 10px; color: #94a3b8; font-size: 11px; }
-        .column-filter { width: 100%; border: 1px solid transparent; background: #f8fafc; border-radius: 6px; font-size: 11px; padding: 6px 8px 6px 28px; color: #475569; transition: all 0.2s; font-weight: 500; }
-        .column-filter:focus { background: #ffffff; border-color: #3b82f6; outline: none; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
+        .column-filter { 
+            width: 100%; 
+            border: 1px solid #e2e8f0; 
+            background: #f8fafc; 
+            border-radius: 6px; 
+            font-size: 11px; 
+            padding: 6px 8px 6px 28px; 
+            color: #475569; 
+            transition: all 0.2s; 
+            font-weight: 500; 
+        }
+        .column-filter:focus { 
+            background: #ffffff; 
+            border-color: #3b82f6; 
+            outline: none; 
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); 
+        }
         .column-filter::placeholder { color: #94a3b8; }
         
         /* Detalles Panel Sombras */
@@ -566,12 +689,9 @@
             const isHidden = detailRow.classList.contains('d-none');
             
             // Cerrar todas las demás filas primero (Acordeón funcional - Opcional, pero recomendado por UX)
-            // Descomentar el bloque abajo si deseas que solo haya 1 fila abierta a la vez
-            
-            document.querySelectorAll('.detail-row').forEach(row => row.classList.add('d-none'));
-            document.querySelectorAll('.data-row').forEach(row => row.classList.remove('row-active'));
-            document.querySelectorAll('.chevron-icon').forEach(icon => icon.classList.remove('rotate-180'));
-            
+            // document.querySelectorAll('.detail-row').forEach(row => row.classList.add('d-none'));
+            // document.querySelectorAll('.data-row').forEach(row => row.classList.remove('row-active'));
+            // document.querySelectorAll('.chevron-icon').forEach(icon => icon.classList.remove('rotate-180'));
             
             if (isHidden) {
                 // Abrir
