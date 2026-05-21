@@ -87,6 +87,10 @@
         /* Botón Registro - Verde Pastel */
         .btn-success-pastel { background-color: var(--accent-pastel); color: var(--accent-text); }
         .btn-success-pastel:hover { background-color: #dcfce7; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(22, 163, 74, 0.1); }
+        
+        /* Botón Excel - Verde Esmeralda Pastel */
+        .btn-excel-pastel { background-color: #ecfdf5; color: #059669; }
+        .btn-excel-pastel:hover { background-color: #d1fae5; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(5, 150, 105, 0.1); }
 
         /* Botón Tabla - Gris/White Minimal */
         .btn-table { background-color: #fff; border: 1px solid var(--slate-200); color: var(--slate-600); height: 36px; padding: 0 12px; border-radius: 10px; }
@@ -134,6 +138,10 @@
                 <a href="#" id="btn-generate-pdf" class="btn-action btn-pdf-pastel">
                     <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     Exportar Reporte
+                </a>
+                <a href="#" id="btn-generate-excel" class="btn-action btn-excel-pastel">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3M3 17V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z"></path></svg>
+                    Exportar Excel
                 </a>
                 <a href="{{ route('inventario.compras.create') }}" class="btn-action btn-success-pastel">
                     <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
@@ -329,7 +337,14 @@
             const searchParams = new URLSearchParams(formData).toString();
             window.location.href = "{{ route('inventario.activos.pdf') }}?" + searchParams;
         });
-
+        // Lógica de Exportación EXCEL con parámetros actuales
+        document.getElementById('btn-generate-excel').addEventListener('click', function(e) {
+            e.preventDefault();
+            const form = document.getElementById('live-search-form');
+            const formData = new FormData(form);
+            const searchParams = new URLSearchParams(formData).toString();
+            window.location.href = "{{ route('inventario.activos.excel') }}?" + searchParams;
+        });
         document.addEventListener('DOMContentLoaded', function() {
             const form = document.getElementById('live-search-form');
             const tableContainer = document.getElementById('table-container');
