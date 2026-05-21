@@ -11,8 +11,8 @@
                 ->first();
 
             $estadoConfig = match($extracto->estado_conciliacion) {
-                'Conciliado_Auto'   => ['color' => 'success', 'icon' => 'fa-robot', 'text' => 'Conciliado Auto'],
-                'Conciliado_Manual' => ['color' => 'primary', 'icon' => 'fa-user-check', 'text' => 'Conciliado Manual'],
+                'Recibo_Auto'   => ['color' => 'success', 'icon' => 'fa-robot', 'text' => 'Recibo Auto'],
+                'Recibo_Manual' => ['color' => 'primary', 'icon' => 'fa-user-check', 'text' => 'Recibo Manual'],
                 'Pendiente'         => ['color' => 'warning', 'icon' => 'fa-clock', 'text' => 'Pendiente'],
                 'Anulado'           => ['color' => 'danger',  'icon' => 'fa-times-circle', 'text' => 'Anulado'],
                 default             => ['color' => 'secondary', 'icon' => 'fa-question', 'text' => 'Desconocido']
@@ -24,14 +24,14 @@
         
         {{-- 1. Encabezado de Navegación --}}
         <header class="index-header mb-5">
-            <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
                 <div class="header-titles">
                     <span class="badge bg-light-primary text-primary fw-bold text-uppercase tracking-wider mb-2 fs-7">Módulo de Recaudo / Gestión Contable</span>
-                    <h1 class="main-title fw-bolder text-gray-900 mb-1">Nueva Imputación de Recaudo</h1>
+                    <h1 class="main-title fw-bolder text-gray-900 mb-1">Generación de Recibo de Recaudo</h1>
                     <p class="text-muted fs-6">Vincule movimientos bancarios con terceros y conceptos contables.</p>
                 </div>
                 <div class="header-actions">
-                    <a href="{{ route('recaudo.imputaciones.index') }}" class="btn btn-light shadow-sm fw-bolder hover-elevate-up fs-6">
+                    <a href="{{ route('recaudo.imputaciones.index') }}" class="btn btn-light shadow-sm fw-bolder hover-elevate-up fs-6 px-4 py-2">
                         <i class="fas fa-chevron-left me-2"></i> Volver al listado
                     </a>
                 </div>
@@ -40,11 +40,12 @@
 
         {{-- Manejo de Errores General --}}
         @if ($errors->any())
-            <div class="alert-error-modern mb-5">
-                <div class="alert-icon"><i class="fas fa-exclamation-circle text-danger fs-2"></i></div>
+            <div class="alert-error-modern mb-5 shadow-sm">
+                <div class="alert-icon"><i class="fas fa-exclamation-circle text-danger fs-1"></i></div>
                 <div class="alert-content">
-                    <strong class="text-danger fs-6">Atención:</strong> Por favor verifique los campos marcados en rojo.
-                    <ul class="mb-0 fs-7 text-danger mt-1">
+                    <strong class="text-danger fs-5">Atención: Se encontraron errores de validación</strong>
+                    <p class="text-danger opacity-75 mb-2 fs-7">Por favor verifique los siguientes campos para poder continuar:</p>
+                    <ul class="mb-0 fs-6 text-danger fw-semibold">
                         @foreach ($errors->all() as $error)
                             <li>{{ $error }}</li>
                         @endforeach
@@ -60,7 +61,10 @@
                  COLUMNA IZQUIERDA: FORMULARIO PRINCIPAL
                  ========================================== --}}
             <div class="col-xl-7">
-                <div class="form-card-corp shadow-sm">
+                <div class="form-card-corp shadow-sm position-relative overflow-hidden">
+                    {{-- Decoración visual sutil superior --}}
+                    <div class="position-absolute top-0 start-0 w-100 h-8px bg-primary bg-opacity-75"></div>
+                    
                     <form action="{{ route('recaudo.imputaciones.store') }}" method="POST" autocomplete="off" id="form-recaudo">
                         @csrf
 
@@ -90,8 +94,8 @@
                                             <label class="form-label-audit">Tercero (Cédula/NIT)</label>
                                             <div class="input-with-icon">
                                                 <i class="fas fa-id-card fs-5"></i>
-                                                <input type="text" name="id_tercero_origen" class="form-control-corp @error('id_tercero_origen') is-invalid @enderror" 
-                                                       required value="{{ old('id_tercero_origen') }}" placeholder="Documento">
+                                                <input type="text" name="id_tercero_origen" id="input_tercero" class="form-control-corp @error('id_tercero_origen') is-invalid @enderror" 
+                                                        required value="{{ old('id_tercero_origen') }}" placeholder="Documento">
                                             </div>
                                             @error('id_tercero_origen') <span class="invalid-feedback-force">{{ $message }}</span> @enderror
                                         </div>
@@ -102,8 +106,8 @@
                                             <label class="form-label-audit">Código de Distrito</label>
                                             <div class="input-with-icon">
                                                 <i class="fas fa-map-marked-alt fs-5"></i>
-                                                <input type="text" name="id_distrito" class="form-control-corp @error('id_distrito') is-invalid @enderror" 
-                                                       required value="{{ old('id_distrito') }}" placeholder="Ej: 01">
+                                                <input type="text" name="id_distrito" id="id_distrito" class="form-control-corp @error('id_distrito') is-invalid @enderror" 
+                                                        required value="{{ old('id_distrito') }}" placeholder="Ej: 28" readonly>
                                             </div>
                                             @error('id_distrito') <span class="invalid-feedback-force">{{ $message }}</span> @enderror
                                         </div>
@@ -120,12 +124,34 @@
                                             @error('id_recibo') <span class="invalid-feedback-force">{{ $message }}</span> @enderror
                                         </div>
                                     </div>
+
+                                    {{-- NUEVO CAMPO: TIPO --}}
+                                    <div class="col-md-12 mt-3">
+                                        <div class="form-group-corp">
+                                            <label class="form-label-audit">Tipo de Imputación</label>
+                                            <div class="input-with-icon">
+                                                <i class="fas fa-tags fs-5"></i>
+                                                <select name="tipo" class="form-select-corp select-with-icon @error('tipo') is-invalid @enderror" required>
+                                                    <option value="" disabled selected>Seleccione la clasificación contable...</option>
+                                                    <option value="RCA" {{ old('tipo') == 'RCA' ? 'selected' : '' }}>RCA -(Daniela)</option>
+                                                    <option value="RC" {{ old('tipo') == 'RC' ? 'selected' : '' }}>RC -(Ruth)</option>
+                                                    <option value="RCS" {{ old('tipo') == 'RCS' ? 'selected' : '' }}>RCS -(Andrea)</option>
+                                                    <option value="RCC" {{ old('tipo') == 'RCC' ? 'selected' : '' }}>RCC -(Adderley)</option>
+                                                    <option value="RCCE" {{ old('tipo') == 'RCCE' ? 'selected' : '' }}>RCCE -(Adderley)</option>
+                                                    <option value="RCZ" {{ old('tipo') == 'RCZ' ? 'selected' : '' }}>RCZ -(Florez)</option>
+                                                    <option value="RCY" {{ old('tipo') == 'RCY' ? 'selected' : '' }}>RCY -(Julio)</option>
+                                                    <option value="RCEE" {{ old('tipo') == 'RCEE' ? 'selected' : '' }}>RCEE -(Daniela)</option>
+                                                </select>
+                                            </div>
+                                            @error('tipo') <span class="invalid-feedback-force">{{ $message }}</span> @enderror
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div class="form-group-corp mt-6">
                                     <label class="form-label-audit">Concepto Contable (Descripción)</label>
                                     <textarea name="concepto_contable" class="form-control-corp @error('concepto_contable') is-invalid @enderror" rows="3" 
-                                              required placeholder="Especifique detalladamente el motivo del recaudo...">{{ old('concepto_contable') }}</textarea>
+                                              required placeholder="Especifique detalladamente el motivo y desglose del recaudo...">{{ old('concepto_contable') }}</textarea>
                                     @error('concepto_contable') <span class="invalid-feedback-force">{{ $message }}</span> @enderror
                                 </div>
                             </div>
@@ -139,9 +165,10 @@
                                 <div class="row g-4">
                                     <div class="col-md-6">
                                         <div class="card-highlight-corp h-100 @error('valor_imputado') border-danger-force @enderror">
-                                            <div class="form-group-corp p-4 h-100 d-flex flex-column justify-content-center">
-                                                <label class="form-label-audit text-white opacity-75 fs-7">Valor Total a Imputar</label>
-                                                <div class="d-flex align-items-center mt-2">
+                                            <div class="form-group-corp p-4 h-100 d-flex flex-column justify-content-center position-relative overflow-hidden">
+                                                <i class="fas fa-money-bill-wave position-absolute opacity-10" style="right: -20px; bottom: -20px; font-size: 8rem; color: #10b981;"></i>
+                                                <label class="form-label-audit text-white opacity-75 fs-7 position-relative z-index-1">Valor Total a Imputar</label>
+                                                <div class="d-flex align-items-center mt-2 position-relative z-index-1">
                                                     <span class="fs-1 text-white fw-bolder me-2">$</span>
                                                     <input type="text" id="valor_visual" class="form-control-transparent" 
                                                            placeholder="0" value="{{ old('valor_imputado') ? number_format(old('valor_imputado'), 0, ',', '.') : '' }}">
@@ -154,31 +181,44 @@
 
                                     <div class="col-md-6">
                                         <div class="form-group-corp mb-4">
-                                            <label class="form-label-audit">Estado de Conciliación</label>
-                                            <select name="estado_conciliacion" class="form-select-corp @error('estado_conciliacion') is-invalid @enderror" required>
-                                                <option value="Pendiente" {{ old('estado_conciliacion') == 'Pendiente' ? 'selected' : '' }}>PENDIENTE</option>
-                                                <option value="Conciliado_Manual" {{ old('estado_conciliacion') == 'Conciliado_Manual' ? 'selected' : '' }}>CONCILIADO MANUAL</option>
-                                                <option value="Conciliado_Auto" {{ old('estado_conciliacion') == 'Conciliado_Auto' ? 'selected' : '' }}>CONCILIADO AUTO</option>
-                                            </select>
+                                            <label class="form-label-audit">Estado de Recibo</label>
+                                            <div class="input-with-icon">
+                                                <i class="fas fa-tasks fs-5"></i>
+                                                <select name="estado_conciliacion" class="form-select-corp select-with-icon @error('estado_conciliacion') is-invalid @enderror" required>
+                                                    <option value="Pendiente" {{ old('estado_conciliacion') == 'Pendiente' ? 'selected' : '' }}>PENDIENTE</option>
+                                                    <option value="Recibo_Manual" {{ old('estado_conciliacion') == 'Recibo_Manual' ? 'selected' : '' }}>RECIBO MANUAL</option>
+                                                    <option value="Recibo_Auto" {{ old('estado_conciliacion') == 'Recibo_Auto' ? 'selected' : '' }}>RECIBO AUTO</option>
+                                                    <option value="Anulado" {{ old('estado_conciliacion') == 'Anulado' ? 'selected' : '' }}>ANULADO</option>
+                                                </select>
+                                            </div>
                                             @error('estado_conciliacion') <span class="invalid-feedback-force">{{ $message }}</span> @enderror
                                         </div>
 
                                         <div class="form-group-corp">
-                                            <label class="form-label-audit">Soporte ECM (URL Documento)</label>
+                                            <label class="form-label-audit">Soporte ECM (URL Carpeta mes)</label>
                                             <div class="input-with-icon">
                                                 <i class="fas fa-paperclip fs-5"></i>
                                                 <input type="url" name="link_ecm" class="form-control-corp @error('link_ecm') is-invalid @enderror" 
-                                                       value="{{ old('link_ecm') }}" placeholder="https://ecm.siasoft.com/...">
+                                                       value="{{ old('link_ecm') }}" placeholder="https://ecm.2026julio.com/...">
                                             </div>
                                             @error('link_ecm') <span class="invalid-feedback-force">{{ $message }}</span> @enderror
                                         </div>
                                     </div>
                                 </div>
 
+                                {{-- UX: AVISO DE USUARIO AUTENTICADO --}}
+                                <div class="d-flex align-items-center mt-5 bg-light-primary p-3 rounded-3 border border-primary border-opacity-25">
+                                    <i class="fas fa-user-shield text-primary fs-4 me-3"></i>
+                                    <div class="fs-7 text-gray-700">
+                                        <strong>Auditoría del Sistema:</strong> Esta imputación quedará registrada bajo la responsabilidad del usuario activo: 
+                                        <span class="fw-bolder text-primary ms-1">{{ auth()->user()->name ?? 'Usuario Actual' }}</span>.
+                                    </div>
+                                </div>
+
                                 <div class="form-actions-corp pt-6 mt-4 border-top border-gray-100 d-flex gap-3">
-                                    <button type="reset" class="btn btn-light fs-6 fw-bold px-6 py-3">LIMPIAR</button>
-                                    <button type="submit" class="btn-corporate-black flex-grow-1 py-3 fs-5">
-                                        <i class="fas fa-save me-2"></i> Registrar Imputación
+                                    <button type="reset" class="btn btn-light fs-6 fw-bold px-6 py-3 hover-elevate-up">LIMPIAR DATOS</button>
+                                    <button type="submit" class="btn-corporate-black flex-grow-1 py-3 fs-5 d-flex justify-content-center align-items-center">
+                                        <i class="fas fa-save me-2"></i> Confirmar y Registrar Recibo
                                     </button>
                                 </div>
                             </div>
@@ -203,7 +243,7 @@
                                 <p class="text-muted m-0 fs-6 fw-semibold mt-1">ID Sistema: <span class="text-dark font-monospace fw-bolder">#{{ $extracto->id_transaccion ?? request('id_transaccion') }}</span></p>
                             </div>
                             @if(isset($extracto))
-                                <span class="badge bg-light-{{ $estadoConfig['color'] }} text-{{ $estadoConfig['color'] }} border border-{{ $estadoConfig['color'] }} border-opacity-25 fs-7 px-4 py-2 rounded-pill fw-bolder">
+                                <span class="badge bg-light-{{ $estadoConfig['color'] }} text-{{ $estadoConfig['color'] }} border border-{{ $estadoConfig['color'] }} border-opacity-25 fs-7 px-4 py-2 rounded-pill fw-bolder shadow-sm">
                                     <i class="fas {{ $estadoConfig['icon'] }} me-1"></i> {{ $estadoConfig['text'] }}
                                 </span>
                             @endif
@@ -348,9 +388,24 @@
                     @else
                         {{-- Placeholder Vacío --}}
                         <div class="card border border-dashed border-gray-300 bg-transparent h-100 d-flex flex-column align-items-center justify-content-center p-8 text-center" style="min-height: 400px; border-radius: 12px;">
+                            
                             <i class="fas fa-search-dollar fs-4x text-gray-300 mb-4"></i>
-                            <span class="fs-4 fw-bolder text-gray-600 mb-2">Sin Extracto de Origen</span>
-                            <span class="fs-6 text-muted px-4">Ingrese un ID de Transacción válido en el formulario para cargar la ficha técnica automáticamente.</span>
+
+                            <span class="fs-4 fw-bolder text-gray-600 mb-2">
+                                Sin Extracto de Origen
+                            </span>
+
+                            <span class="fs-6 text-muted px-4 mb-5">
+                                Ingrese un ID de Transacción válido en el formulario para cargar la ficha técnica automáticamente.
+                            </span>
+
+                            {{-- Botón --}}
+                            <a href="{{ route('contabilidad.extractos.index') }}"
+                            class="btn btn-primary d-inline-flex align-items-center gap-2">
+                                <i class="fas fa-list"></i>
+                                Ver Extractos
+                            </a>
+
                         </div>
                     @endif
                 </div>
@@ -399,14 +454,24 @@
             position: absolute; left: 16px; top: 50%; transform: translateY(-50%);
             color: #64748b; font-size: 1.1rem;
         }
-        .input-with-icon .form-control-corp { padding-left: 50px; }
+        .input-with-icon .form-control-corp, .input-with-icon .select-with-icon { 
+            padding-left: 50px; 
+        }
 
-        .form-control-corp {
+        .form-control-corp, .form-select-corp {
             border: 1px solid #cbd5e1; background: #f8fafc; border-radius: 10px;
             padding: 16px 20px; font-size: 1rem; font-weight: 600; transition: all 0.2s;
-            width: 100%; color: #1e293b;
+            width: 100%; color: #1e293b; appearance: none;
         }
-        .form-control-corp:focus {
+        
+        .form-select-corp {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 1.25rem center;
+            background-size: 16px 12px;
+        }
+
+        .form-control-corp:focus, .form-select-corp:focus {
             border-color: #3b82f6; background: #ffffff; outline: none;
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
         }
@@ -427,11 +492,6 @@
         .form-control-transparent:focus { outline: none; }
         .form-control-transparent::placeholder { color: rgba(16, 185, 129, 0.3); }
 
-        .form-select-corp {
-            width: 100%; padding: 16px 20px; border-radius: 10px; border: 1px solid #cbd5e1;
-            background: #f8fafc; font-weight: 700; font-size: 1rem; color: #1e293b;
-        }
-
         .alert-error-modern {
             display: flex; align-items: flex-start; gap: 15px; background: #fef2f2;
             border: 1px solid #fecaca; border-radius: 12px; padding: 20px;
@@ -441,7 +501,7 @@
             background: #0f172a; color: white; border-radius: 10px;
             font-weight: 800; border: none; transition: all 0.3s;
         }
-        .btn-corporate-black:hover { background: #000; transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }
+        .btn-corporate-black:hover { background: #000; transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); color: white; }
         
         /* Utilidades Ficha Derecha */
         .ls-1 { letter-spacing: 0.05em; }
@@ -449,6 +509,7 @@
         .text-break { word-wrap: break-word; overflow-wrap: break-word; }
         .hover-elevate-up { transition: transform 0.2s ease; }
         .hover-elevate-up:hover { transform: translateY(-3px); }
+        .z-index-1 { z-index: 1; }
     </style>
 
     <script>
@@ -484,7 +545,33 @@
             var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
                 return new bootstrap.Tooltip(tooltipTriggerEl)
             });
-        });
+
+            // 4. LÓGICA DE BÚSQUEDA AUTOMÁTICA DE DISTRITO
+                    const inputTercero = document.getElementById('input_tercero');
+                    const inputDistrito = document.getElementById('id_distrito');
+
+                    if (inputTercero && inputDistrito) {
+                        inputTercero.addEventListener('blur', function() {
+                            const val = this.value;
+                            if (!val) return;
+
+                            // El route() de Laravel se procesará aquí perfectamente
+                            fetch("{{ route('recaudo.buscar-distrito', '') }}/" + val)
+                                .then(response => {
+                                    if (!response.ok) throw new Error('No encontrado');
+                                    return response.json();
+                                })
+                                .then(data => {
+                                    if (data.cod_dist) {
+                                        inputDistrito.value = data.cod_dist;
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error("No se pudo obtener el cod_dist:", error);
+                                });
+                        });
+                    }
+                });
 
         // Abrir Modal de S3
         window.abrirModalSoporte = function(url, titulo) {

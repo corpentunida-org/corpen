@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Recaudo;
 
 use App\Http\Controllers\Controller;
 use App\Models\Recaudo\RecImputacionContable;
-use App\Models\Contabilidad\ConExtractoTransaccion; // <-- 1. IMPORTAMOS EL MODELO AQUÍ
+use App\Models\Contabilidad\ConExtractoTransaccion;
+use App\Models\Maestras\MaeTerceros;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth; 
 
 class RecImputacionContableController extends Controller
 {
@@ -15,8 +17,8 @@ class RecImputacionContableController extends Controller
      */
     public function index(Request $request)
     {
-        // Iniciamos la consulta con Eager Loading para evitar el problema N+1
-        $query = RecImputacionContable::with(['transaccion', 'tercero', 'distrito']);
+        // Iniciamos la consulta con Eager Loading para evitar el problema N+1, incluyendo la nueva relación 'user'
+        $query = RecImputacionContable::with(['transaccion', 'tercero', 'distrito', 'user']);
 
         // 1. Filtro de búsqueda (Live Search)
         if ($request->filled('search')) {
@@ -31,6 +33,11 @@ class RecImputacionContableController extends Controller
         // 2. Filtro por Estado
         if ($request->filled('estado_conciliacion')) {
             $query->where('estado_conciliacion', $request->estado_conciliacion);
+        }
+
+        // (Opcional) Filtro por Tipo si lo implementas en la vista
+        if ($request->filled('tipo')) {
+            $query->where('tipo', $request->tipo);
         }
 
         // 3. Orden y Paginación
@@ -48,16 +55,15 @@ class RecImputacionContableController extends Controller
     /**
      * Muestra el formulario de creación.
      */
-    public function create(Request $request) // <-- 2. INYECTAMOS EL REQUEST AQUÍ
+    public function create(Request $request)
     {
         $extracto = null;
         
-        // 3. SI LA URL TRAE UN ID, BUSCAMOS EL EXTRACTO EN LA BASE DE DATOS
+        // SI LA URL TRAE UN ID, BUSCAMOS EL EXTRACTO EN LA BASE DE DATOS
         if ($request->has('id_transaccion')) {
             $extracto = ConExtractoTransaccion::find($request->id_transaccion);
         }
 
-        // 4. PASAMOS LA VARIABLE A LA VISTA
         return view('recaudo.imputaciones.create', compact('extracto'));
     }
 
@@ -71,11 +77,15 @@ class RecImputacionContableController extends Controller
             'id_tercero_origen'   => 'required|exists:MaeTerceros,cod_ter',
             'id_distrito'         => 'required|exists:MaeDistritos,COD_DIST',
             'id_recibo'           => 'required|unique:rec_imputaciones_contables,id_recibo',
+            'tipo'                => 'required|string|max:255', // <-- Nuevo campo validado
             'concepto_contable'   => 'required|string|max:1000',
             'valor_imputado'      => 'required|numeric|min:0',
             'link_ecm'            => 'nullable|url',
             'estado_conciliacion' => 'required|in:Pendiente,Conciliado_Auto,Conciliado_Manual,Anulado',
         ]);
+
+        // Inyectamos el ID del usuario autenticado automáticamente
+        $validatedData['id_user'] = Auth::id(); 
 
         try {
             DB::beginTransaction();
@@ -92,14 +102,28 @@ class RecImputacionContableController extends Controller
             return back()->withInput()->withErrors(['error' => 'Error al procesar el registro: ' . $e->getMessage()]);
         }
     }
+    public function buscarDistrito($terceroId)
+    {
+        // Agregar esto para ver si llega el dato
+        /* \Log::info("El ID recibido es: " . $terceroId);  */
 
+        $tercero = MaeTerceros::where('cod_ter', $terceroId)->first();
+
+        if (!$tercero) {
+            return response()->json(['message' => 'No encontrado'], 404);
+        }
+
+        return response()->json([
+            'cod_dist' => $tercero->cod_dist, 
+        ]);
+    }
     /**
      * Muestra el detalle completo (Ficha de Auditoría).
      */
     public function show(RecImputacionContable $recImputacionContable)
     {
-        // Cargamos relaciones anidadas (Extracto -> Cuenta Bancaria)
-        $recImputacionContable->load(['transaccion.cuentaBancaria', 'tercero', 'distrito']);
+        // Cargamos relaciones anidadas (Extracto -> Cuenta Bancaria) y el usuario
+        $recImputacionContable->load(['transaccion.cuentaBancaria', 'tercero', 'distrito', 'user']);
         
         return view('recaudo.imputaciones.show', compact('recImputacionContable'));
     }
@@ -118,11 +142,15 @@ class RecImputacionContableController extends Controller
     public function update(Request $request, RecImputacionContable $recImputacionContable)
     {
         $validatedData = $request->validate([
+            'tipo'                => 'required|string|max:255', // <-- Permitimos actualizar el tipo
             'concepto_contable'   => 'required|string|max:1000',
             'valor_imputado'      => 'required|numeric|min:0',
             'estado_conciliacion' => 'required|in:Pendiente,Conciliado_Auto,Conciliado_Manual,Anulado',
             'link_ecm'            => 'nullable|url',
         ]);
+
+        // Opcional: Podrías actualizar el id_user al usuario que realiza la modificación
+        // $validatedData['id_user'] = Auth::id(); 
 
         try {
             $recImputacionContable->update($validatedData);

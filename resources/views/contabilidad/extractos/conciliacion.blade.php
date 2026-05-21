@@ -8,7 +8,7 @@
                     <i class="fas fa-arrow-left"></i>
                 </a>
                 <div>
-                    <h3 class="fw-bolder m-0 text-dark fs-3"><i class="fas fa-columns text-primary me-2"></i>Mesa de Conciliación</h3>
+                    <h3 class="fw-bolder m-0 text-dark fs-3"><i class="fas fa-columns text-primary me-2"></i>Mesa de Identificación</h3>
                     <div class="d-flex align-items-center gap-2 mt-1">
                         <span class="badge bg-light-success text-success fw-bold"><i class="fas fa-sync fa-spin me-1"></i> Modo de Cruce Activo</span>
                     </div>
@@ -19,7 +19,7 @@
             <form action="{{ route('contabilidad.extractos.conciliacion-automatica') }}" method="POST" class="m-0">
                 @csrf
                 <button type="submit" class="btn btn-success fw-bolder fs-6 px-4 shadow-sm" {{ $extractosPendientes->count() == 0 ? 'disabled' : '' }}>
-                    <i class="fas fa-robot me-2"></i> Auto-Conciliar Mes Actual
+                    <i class="fas fa-robot me-2"></i> Auto-Identificación Mes Actual
                 </button>
             </form>
         </div>
