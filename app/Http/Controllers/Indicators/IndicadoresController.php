@@ -8,6 +8,8 @@ use App\Models\Indicators\IndUsuarios;
 use App\Models\Soportes\ScpSoporte;
 use App\Models\Flujo\Workflow;
 use App\Models\Archivo\GdoEmpleado;
+use App\Models\Inventario\InvMovimientoDetalle;
+use App\Models\Inventario\InvActivo;
 use App\Models\User;
 use App\Models\Indicators\IndRegistroInformes;
 use Illuminate\Support\Facades\DB;
@@ -35,7 +37,7 @@ class IndicadoresController extends Controller
         }
         $promedioAlcanzados = $totalIndicadores > 0 ? ($indicadoresAlcanzados / $totalIndicadores) * 100 : 0;
         $promedioAlcanzados = round($promedioAlcanzados, 2);
-        return view('indicators.index', compact('indicators', 'lastReport','promedioAlcanzados'));
+        return view('indicators.index', compact('indicators', 'lastReport', 'promedioAlcanzados'));
     }
 
     public function dataIndicadores()
@@ -44,7 +46,7 @@ class IndicadoresController extends Controller
         $calculos = [
             1 => function () {
                 $usuarios = IndUsuarios::whereRaw("CAST(SUBSTRING_INDEX(puntaje, '/', 1) AS UNSIGNED) > 3")->count();
-                return ($usuarios / GdoEmpleado::count()) * 100;
+                return ($usuarios / GdoEmpleado::where('id', '>', 11)->count()) * 100;
             },
             2 => function () {
                 $satisfaccion = IndUsuarios::whereRaw('JSON_VALID(respuestas)')->selectRaw("SUM(CAST(JSON_UNQUOTE(JSON_EXTRACT(respuestas, '$[5]')) AS UNSIGNED)) as total")->value('total');
@@ -54,12 +56,18 @@ class IndicadoresController extends Controller
                 $satisnuevastic = IndUsuarios::whereRaw("JSON_UNQUOTE(JSON_EXTRACT(respuestas, '$[6]')) != 'n/a'")->selectRaw("SUM(CAST(JSON_UNQUOTE(JSON_EXTRACT(respuestas, '$[6]')) AS UNSIGNED)) / COUNT(*) as promedio")->value('promedio');
                 return $satisnuevastic;
             },
+            4 => function () {
+                $totalActivos = InvActivo::count();
+                $activosAsignados = InvMovimientoDetalle::where('id_estado', 9)->count();
+                return ($activosAsignados / $totalActivos) * 100;
+            },
             5 => function () {
+                /* $totalDentroSLA = ScpSoporte::from('scp_soportes as s')
+                    ->joinSub(DB::table('scp_observaciones')->select('id_scp_soporte', DB::raw('MIN(timestam) as fecha_cierre'))->where('id_scp_estados', 4)->groupBy('id_scp_soporte'), 'o', 'o.id_scp_soporte', '=', 's.id')
+                    ->whereRaw("TIMESTAMPDIFF(DAY, s.timestam, o.fecha_cierre) <= CASE s.id_scp_prioridad WHEN 3 THEN 30 WHEN 2 THEN 20 WHEN 1 THEN 10 ELSE 0 END",)->count(); */
                 $totalDentroSLA = ScpSoporte::from('scp_soportes as s')
                     ->joinSub(DB::table('scp_observaciones')->select('id_scp_soporte', DB::raw('MIN(timestam) as fecha_cierre'))->where('id_scp_estados', 4)->groupBy('id_scp_soporte'), 'o', 'o.id_scp_soporte', '=', 's.id')
-                    ->whereRaw(
-                        "TIMESTAMPDIFF(DAY, s.timestam, o.fecha_cierre) <=
-                        CASE s.id_scp_prioridad WHEN 3 THEN 15 WHEN 2 THEN 10 WHEN 1 THEN 5 ELSE 0 END",)->count();
+                    ->count();
                 return ($totalDentroSLA / ScpSoporte::where('estado', 4)->count()) * 100;
             },
             6 => function () {
@@ -81,6 +89,10 @@ class IndicadoresController extends Controller
             10 => function () {
                 $users = User::where('type', null)->count();
                 return ($users / GdoEmpleado::count()) * 100;
+            },
+            11 => function () {
+                $globalCounts = Workflow::where('estado', '!=', 'borrador')->where('estado', '!=', 'archivado')->selectRaw('estado, count(*) as total')->groupBy('estado')->pluck('total', 'estado');
+                return (($globalCounts['completado'] ?? 0) / $globalCounts->sum()) * 100;
             },
         ];
 

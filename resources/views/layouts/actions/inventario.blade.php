@@ -15,7 +15,7 @@
         </li>
 
         {{-- SEPARADOR --}}
-        <li class="nxl-item-separator" style="height: 1px; background: rgba(0,0,0,0.04); margin: 5px 20px;"></li>
+        {{-- <li class="nxl-item-separator" style="height: 1px; background: rgba(0,0,0,0.04); margin: 5px 20px;"></li> --}}
         
         {{-- 2. REGISTRAR COMPRA --}}
         <li class="nxl-item">
@@ -39,7 +39,7 @@
         </li>
 
         {{-- SEPARADOR --}}
-        <li class="nxl-item-separator" style="height: 1px; background: rgba(0,0,0,0.04); margin: 10px 20px;"></li>
+        {{-- <li class="nxl-item-separator" style="height: 1px; background: rgba(0,0,0,0.04); margin: 10px 20px;"></li> --}}
 
         {{-- 5. ALMACÉN DE ACTIVOS --}}
         <li class="nxl-item">
@@ -63,7 +63,7 @@
         </li>
 
         {{-- SEPARADOR --}}
-        <li class="nxl-item-separator" style="height: 1px; background: rgba(0,0,0,0.04); margin: 10px 20px;"></li>
+        {{-- <li class="nxl-item-separator" style="height: 1px; background: rgba(0,0,0,0.04); margin: 10px 20px;"></li> --}}
 
         {{-- 8. HISTORIAL TÉCNICO --}}
         <li class="nxl-item">
@@ -80,7 +80,7 @@
         </li>
 
         {{-- SEPARADOR DE CONFIGURACIÓN --}}
-        <li class="nxl-item-separator" style="height: 1px; background: rgba(0,0,0,0.04); margin: 10px 20px;"></li>
+        {{-- <li class="nxl-item-separator" style="height: 1px; background: rgba(0,0,0,0.04); margin: 10px 20px;"></li> --}}
         
         {{-- 10. CONFIGURACIÓN Y CATÁLOGOS (NUEVA SECCIÓN) --}}
         
@@ -113,7 +113,7 @@
         </li>
 
         {{-- ZONA DE TRAMPA SCROLL --}}
-        <li class="nxl-item" style="height: 40px; pointer-events: none; list-style: none;"></li>
-        <li class="nxl-item" style="height: 40px; pointer-events: none; list-style: none;"></li>
+        {{-- <li class="nxl-item" style="height: 40px; pointer-events: none; list-style: none;"></li>
+        <li class="nxl-item" style="height: 40px; pointer-events: none; list-style: none;"></li> --}}
     </ul>
 </li>
