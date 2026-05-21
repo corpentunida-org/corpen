@@ -25,9 +25,20 @@ class QuizController extends Controller
     {
         $pruebausuarios = IndUsuarios::all();
         $respuestas = IndUsuarios::pluck('respuestas');
+        $puntajesQuiz = [1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0];
         $ticcorpen = [1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0];
         $ticsoft = [1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0, 'n/a' => 0];
-
+        foreach ($pruebausuarios as $usuario) {
+            if (!empty($usuario->puntaje)) {
+                $puntaje = explode('/', $usuario->puntaje)[0];
+                if (is_numeric($puntaje)) {
+                    $puntaje = (int) $puntaje;
+                    if ($puntaje >= 1 && $puntaje <= 5) {
+                        $puntajesQuiz[$puntaje]++;
+                    }
+                }
+            }
+        }
         foreach ($respuestas as $respuesta) {
             $array = is_string($respuesta) ? json_decode($respuesta, true) : $respuesta;
             if (isset($array[5]) && is_numeric($array[5])) {
@@ -39,8 +50,7 @@ class QuizController extends Controller
             if (isset($array[6])) {
                 if ($array[6] === 'n/a') {
                     $ticsoft['n/a']++;
-                }
-                elseif (is_numeric($array[6])) {
+                } elseif (is_numeric($array[6])) {
                     $valor6 = (int) $array[6];
                     if ($valor6 >= 1 && $valor6 <= 5) {
                         $ticsoft[$valor6]++;
@@ -52,6 +62,7 @@ class QuizController extends Controller
         $datacharts = [
             'usuariosmaspuntaje' => IndUsuarios::whereRaw("CAST(SUBSTRING_INDEX(puntaje, '/', 1) AS UNSIGNED) > 3")->count(),
             'totalempleados' => GdoEmpleado::count(),
+            'puntajesQuiz' => $puntajesQuiz,
             'ticcorpen' => $ticcorpen,
             'ticsoft' => $ticsoft,
         ];

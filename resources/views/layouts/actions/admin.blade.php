@@ -24,7 +24,7 @@
                     <a class="nxl-link" href="{{ route('indicators.indicadores.index') }}">Indicadores</a>
                 </li>
                 <li class="nxl-item">
-                    <a class="nxl-link" href="{{route('indicators.quizes.index')}}">Quizes</a>
+                    <a class="nxl-link" href="{{route('indicators.quizes.index')}}">Capacitaciones</a>
                 </li>
             </ul>
         </li>
