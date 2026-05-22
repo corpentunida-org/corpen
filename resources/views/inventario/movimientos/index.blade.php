@@ -1,128 +1,203 @@
 <x-base-layout>
-    <style>
-        .wrapper { max-width: 1300px; margin: 0 auto; padding: 30px; font-family: 'Inter', sans-serif; color: #0f172a; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-        .title { font-size: 1.8rem; font-weight: 800; margin: 0; display: flex; align-items: center; gap: 10px; }
-        
-        .table-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); overflow: hidden; }
-        .t-min { width: 100%; border-collapse: collapse; }
-        .t-min th { background: #f8fafc; text-align: left; padding: 16px 24px; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; color: #64748b; border-bottom: 1px solid #e2e8f0; }
-        .t-min td { padding: 16px 24px; border-bottom: 1px solid #f1f5f9; font-size: 0.9rem; vertical-align: middle; }
-        .t-min tr:hover { background-color: #f8fafc; }
-        
-        /* Etiquetas de Estado (Badges) */
-        .badge { padding: 6px 12px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; text-transform: uppercase; }
-        .badge-pending { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
-        .badge-success { background: #d1fae5; color: #047857; border: 1px solid #a7f3d0; }
-        
-        /* Botones de Acción */
-        .btn-group { display: flex; gap: 8px; align-items: center; }
-        .btn-icon { padding: 8px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 700; text-decoration: none; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 6px; transition: 0.2s; }
-        
-        .btn-download { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
-        .btn-download:hover { background: #e2e8f0; color: #0f172a; }
-        
-        .btn-upload { background: #eef2ff; color: #4f46e5; border: 1px dashed #a5b4fc; }
-        .btn-upload:hover { background: #e0e7ff; border-style: solid; }
-        
-        .btn-view { background: #10b981; color: #fff; box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2); }
-        .btn-view:hover { background: #059669; }
+    {{-- Importamos Chart.js para los gráficos --}}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-        .btn-create { background: #0f172a; color: #fff; font-size: 0.9rem; padding: 12px 24px; border-radius: 10px; text-decoration: none; font-weight: 700; transition: 0.2s; box-shadow: 0 4px 6px rgba(15, 23, 42, 0.2); }
-        .btn-create:hover { background: #334155; transform: translateY(-2px); }
+    <style>
+        /* Contenedor principal */
+        .sheets-wrapper {
+            font-family: 'Arial', 'Roboto', sans-serif;
+            width: 100%;
+            padding: 10px 15px;
+            background-color: #fff;
+            color: #000;
+        }
+
+        /* Cabecera principal */
+        .sheets-header {
+            display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 15px;
+        }
+        .sheets-header h1 {
+            font-size: 20px; font-weight: normal; margin: 0 0 4px 0; color: #202124; display: flex; align-items: center; gap: 8px;
+        }
+        .btn-sheets-primary {
+            background-color: #1a73e8; color: #fff; padding: 8px 16px; border-radius: 4px; text-decoration: none; font-size: 13px; font-weight: bold; display: inline-flex; align-items: center; gap: 6px; border: none; cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-sheets-primary:hover { background-color: #1b66c9; box-shadow: 0 1px 2px 0 rgba(60,64,67,.3), 0 1px 3px 1px rgba(60,64,67,.15); }
+
+        /* Dashboard Widgets */
+        .dashboard-grid { display: grid; grid-template-columns: 250px 1fr; gap: 15px; margin-bottom: 15px; }
+        .summary-column { display: flex; flex-direction: column; gap: 15px; }
+        .summary-card { border: 1px solid #ccc; border-radius: 4px; padding: 15px; background-color: #fff; transition: box-shadow 0.2s ease; }
+        .summary-card:hover { box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .summary-card h3 { margin: 0 0 5px 0; font-size: 12px; color: #5f6368; text-transform: uppercase; }
+        .summary-card .value { margin: 0; font-size: 24px; color: #1a73e8; font-weight: normal; }
+        .chart-card { border: 1px solid #ccc; border-radius: 4px; padding: 15px; background-color: #fff; position: relative; height: 200px; }
+
+        /* Dashboard / Panel de Filtros */
+        .filter-dashboard { background-color: #f8f9fa; border: 1px solid #ccc; border-bottom: none; padding: 10px 15px; display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end; }
+        .filter-group { display: flex; flex-direction: column; gap: 4px; }
+        .filter-group label { font-size: 11px; font-weight: bold; color: #5f6368; text-transform: uppercase; }
+        .filter-input { height: 28px; padding: 0 8px; border: 1px solid #ccc; border-radius: 2px; font-size: 13px; color: #202124; background-color: #fff; min-width: 150px; transition: border-color 0.2s ease; }
+        .filter-input:focus { outline: none; border-color: #1a73e8; box-shadow: inset 0 0 0 1px #1a73e8; }
+        .btn-filter { background-color: #f1f3f4; color: #3c4043; border: 1px solid #ccc; height: 28px; padding: 0 15px; border-radius: 2px; font-size: 13px; font-weight: 500; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; transition: background-color 0.2s ease; }
+        .btn-filter:hover { background-color: #e8eaed; }
+
+        /* Tabla estricta estilo Grid */
+        .sheets-table-container { width: 100%; overflow-x: auto; border: 1px solid #ccc; }
+        .sheets-table { width: 100%; border-collapse: collapse; white-space: nowrap; }
+        .sheets-table th { background-color: #e8f0fe; border-right: 1px solid #ccc; border-bottom: 1px solid #ccc; padding: 8px; font-size: 12px; font-weight: bold; color: #1967d2; text-align: left; }
+        .sheets-table td { border-right: 1px solid #ccc; border-bottom: 1px solid #ccc; padding: 6px 8px; font-size: 13px; color: #000; vertical-align: middle; }
+        .sheets-table th:last-child, .sheets-table td:last-child { border-right: none; }
+        .sheets-table tbody tr:hover { background-color: #f1f3f4; }
+
+        /* Celdas Pastel de Estado */
+        .cell-success { background-color: #ceead6; color: #0d652d; border-radius: 2px; padding: 2px 6px; font-size: 12px; }
+        .cell-warning { background-color: #fef0db; color: #b06000; border-radius: 2px; padding: 2px 6px; font-size: 12px; }
+
+        /* Utilidades y Acciones */
+        .text-right { text-align: right !important; }
+        .text-center { text-align: center !important; }
+        .text-muted { color: #5f6368; font-size: 11px; }
+        .font-mono { font-family: 'Consolas', 'Courier New', monospace; font-size: 13px; font-weight: bold;}
+        
+        .sheets-actions { display: flex; justify-content: flex-end; gap: 10px; align-items: center; }
+        .action-icon { color: #5f6368; font-size: 15px; text-decoration: none; cursor: pointer; border: none; background: transparent; padding: 0; transition: color 0.2s ease; }
+        .action-icon:hover { color: #1a73e8; }
+        .icon-upload:hover { color: #047857; } /* Verde para subir */
+        .icon-view:hover { color: #b91c1c; } /* Rojo para PDF */
+
+        /* Alertas Sheets */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+        .alert-sheets { padding: 8px 12px; border-radius: 4px; font-size: 13px; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; animation: fadeIn 0.3s ease-out; }
+        .alert-success { background-color: #e6f4ea; color: #137333; border: 1px solid #ceead6; }
+        .alert-error { background-color: #fce8e6; color: #c5221f; border: 1px solid #fad2cf; }
     </style>
 
-    {{-- Sistema de Alertas para éxito o error al subir el PDF --}}
-    @if(session('error'))
-        <div style="max-width: 1300px; margin: 0 auto 20px; background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; padding: 16px; border-radius: 12px; font-weight: 600;">
-            <i class="bi bi-exclamation-triangle-fill"></i> {{ session('error') }}
-        </div>
-    @endif
-    @if(session('success'))
-        <div style="max-width: 1300px; margin: 0 auto 20px; background: #ecfdf5; border: 1px solid #a7f3d0; color: #047857; padding: 16px; border-radius: 12px; font-weight: 600;">
-            <i class="bi bi-check-circle-fill"></i> {{ session('success') }}
-        </div>
-    @endif
+    <div class="sheets-wrapper">
 
-    <div class="wrapper">
-        <div class="header">
-            <h1 class="title"><i class="bi bi-journal-check"></i> Bitácora de Movimientos</h1>
-            <a href="{{ route('inventario.movimientos.create') }}" class="btn-create">
-                + Crear Nuevo Movimiento
+        {{-- Sistema de Alertas --}}
+        @if(session('error'))
+            <div class="alert-sheets alert-error">
+                <i class="bi bi-exclamation-triangle-fill"></i> {{ session('error') }}
+            </div>
+        @endif
+        @if(session('success'))
+            <div class="alert-sheets alert-success">
+                <i class="bi bi-check-circle-fill"></i> {{ session('success') }}
+            </div>
+        @endif
+        
+        <div class="sheets-header">
+            <div>
+                <h1><i class="bi bi-journal-check" style="font-size: 18px; color: #1a73e8;"></i> Bitácora de Movimientos</h1>
+            </div>
+            <a href="{{ route('inventario.movimientos.create') }}" class="btn-sheets-primary">
+                <i class="bi bi-plus-lg"></i> Crear Nuevo Movimiento
             </a>
         </div>
 
-        <div class="table-card">
-            <table class="t-min">
+        {{-- Dashboard Widgets --}}
+        <div class="dashboard-grid">
+            <div class="summary-column">
+                <div class="summary-card">
+                    <h3>Total Movimientos (Filtrados)</h3>
+                    <p class="value">{{ $totalRegistros ?? 0 }}</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Actas Resguardadas (S3)</h3>
+                    <p class="value" style="color: #0d652d;">{{ $totalFirmadas ?? 0 }}</p>
+                </div>
+            </div>
+            <div class="chart-card">
+                <canvas id="movimientosChart"></canvas>
+            </div>
+        </div>
+
+        {{-- Formulario Dashboard / Filtros --}}
+        <form method="GET" action="{{ route('inventario.movimientos.index') }}" class="filter-dashboard">
+            <div class="filter-group">
+                <label>Buscar Código o Responsable</label>
+                <input type="text" name="search" class="filter-input" placeholder="Ej. ACT-001..." value="{{ request('search') }}">
+            </div>
+            
+            <div class="filter-group">
+                <label>Tipo de Registro</label>
+                <input type="text" name="tipo" class="filter-input" placeholder="Ej. Entrada, Salida..." value="{{ request('tipo') }}">
+            </div>
+
+            <div class="filter-group">
+                <label>Fecha Desde</label>
+                <input type="date" name="fecha_inicio" class="filter-input" value="{{ request('fecha_inicio') }}">
+            </div>
+
+            <div class="filter-group">
+                <label>Fecha Hasta</label>
+                <input type="date" name="fecha_fin" class="filter-input" value="{{ request('fecha_fin') }}">
+            </div>
+
+            <div style="display: flex; gap: 8px; margin-left: auto;">
+                <a href="{{ route('inventario.movimientos.index') }}" class="btn-filter" title="Limpiar Filtros">
+                    <i class="bi bi-eraser"></i>
+                </a>
+                <button type="submit" class="btn-filter" style="background-color: #1a73e8; color: white; border: none;">
+                    <i class="bi bi-funnel"></i> Filtrar
+                </button>
+            </div>
+        </form>
+
+        <div class="sheets-table-container">
+            <table class="sheets-table">
                 <thead>
                     <tr>
-                        <th>Código Acta</th>
-                        <th>Detalles Generales</th>
-                        <th>Fecha y Autor</th>
-                        <th>Auditoría (Firma)</th>
-                        <th>Gestión de Documentos</th>
+                        <th style="width: 130px;">CÓDIGO ACTA</th>
+                        <th style="width: 180px;">TIPO REGISTRO</th>
+                        <th style="width: 200px;">RESPONSABLE</th>
+                        <th style="width: 120px;">FECHA</th>
+                        <th style="width: 150px;">ESTADO FIRMA</th>
+                        <th style="width: 150px;">CREADO POR</th>
+                        <th style="width: 100px;" class="text-right">ACCIONES</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($movimientos as $mov)
                     <tr>
-                        {{-- 1. Código del Acta --}}
-                        <td style="font-family: monospace; font-weight: 800; font-size: 1rem; color: #1e293b;">
-                            {{ $mov->codigo_acta }}
-                        </td>
+                        <td class="font-mono" style="color: #1a73e8;">{{ $mov->codigo_acta }}</td>
+                        <td>{{ $mov->tipoRegistro->nombre ?? 'N/A' }}</td>
+                        <td>{{ $mov->responsable->name ?? 'N/A' }}</td>
+                        <td>{{ $mov->created_at->format('d/m/Y H:i') }}</td>
                         
-                        {{-- 2. Detalles (Tipo y Responsable) --}}
-                        <td>
-                            <span style="font-weight: 700; color: #334155; display: block;">
-                                {{ $mov->tipoRegistro->nombre ?? 'N/A' }}
-                            </span>
-                            <span style="font-size: 0.8rem; color: #64748b;">
-                                Responsable: <b>{{ $mov->responsable->name ?? 'N/A' }}</b>
-                            </span>
-                        </td>
-                        
-                        {{-- 3. Fechas y Autor --}}
-                        <td>
-                            <div style="color: #0f172a; font-weight: 600;">{{ $mov->created_at->format('d/m/Y H:i') }}</div>
-                            <div style="font-size: 0.75rem; color: #64748b; margin-top: 3px;">
-                                Por: {{ $mov->creador->name ?? 'Sistema' }}
-                            </div>
-                        </td>
-
-                        {{-- 4. Indicador de Auditoría (Badge visual) --}}
+                        {{-- Indicador de Auditoría (Badge visual) --}}
                         <td>
                             @if($mov->acta_archivo)
-                                <span class="badge badge-success" title="Documento legal resguardado en S3">
-                                    <i class="bi bi-shield-check"></i> Firmada y Segura
-                                </span>
+                                <span class="cell-success" title="Documento legal resguardado en S3"><i class="bi bi-shield-check"></i> Segura</span>
                             @else
-                                <span class="badge badge-pending" title="Falta subir el documento con las firmas físicas">
-                                    <i class="bi bi-hourglass-split"></i> Pendiente de Firma
-                                </span>
+                                <span class="cell-warning" title="Falta subir el documento con firmas físicas"><i class="bi bi-hourglass-split"></i> Pendiente</span>
                             @endif
                         </td>
                         
-                        {{-- 5. Botones de Acción Interactivos --}}
+                        <td class="text-muted">{{ $mov->creador->name ?? 'Sistema' }}</td>
+                        
                         <td>
-                            <div class="btn-group">
-                                {{-- Botón: Descargar Original siempre disponible --}}
-                                <a href="{{ route('inventario.movimientos.pdf', $mov->id) }}" class="btn-icon btn-download" title="Imprimir acta original del sistema">
+                            <div class="sheets-actions">
+                                {{-- Descargar Original siempre disponible --}}
+                                <a href="{{ route('inventario.movimientos.pdf', $mov->id) }}" class="action-icon" title="Imprimir acta original">
                                     <i class="bi bi-printer"></i>
                                 </a>
 
                                 {{-- Lógica Condicional para el Archivo Firmado --}}
                                 @if($mov->acta_archivo)
-                                    {{-- Si ya hay archivo: Botón para Verlo en AWS S3 --}}
-                                    <a href="{{$mov->getFile($mov->acta_archivo)}}" target="_blank" class="btn-icon btn-view" title="Ver documento digitalizado">
-                                        <i class="bi bi-file-earmark-pdf"></i> Ver PDF Firmado
+                                    {{-- Ver PDF en S3 --}}
+                                    <a href="{{$mov->getFile($mov->acta_archivo)}}" target="_blank" class="action-icon icon-view" title="Ver documento digitalizado">
+                                        <i class="bi bi-file-earmark-pdf-fill"></i>
                                     </a>
                                 @else
-                                    {{-- Si NO hay archivo: Botón Mágico para Subirlo --}}
-                                    <form action="{{ route('inventario.movimientos.upload', $mov->id) }}" method="POST" enctype="multipart/form-data" style="margin: 0;">
+                                    {{-- Subir PDF (Formulario oculto activado por un input file) --}}
+                                    <form action="{{ route('inventario.movimientos.upload', $mov->id) }}" method="POST" enctype="multipart/form-data" style="margin: 0; display: inline;">
                                         @csrf
                                         @method('POST')
-                                        <label class="btn-icon btn-upload" title="Subir el acta escaneada">
-                                            <i class="bi bi-cloud-arrow-up"></i> Subir Escáner
+                                        <label class="action-icon icon-upload" title="Subir el acta escaneada" style="cursor: pointer;">
+                                            <i class="bi bi-cloud-arrow-up-fill"></i>
                                             <input type="file" name="acta_pdf" accept="application/pdf" style="display: none;" onchange="this.form.submit()">
                                         </label>
                                     </form>
@@ -132,21 +207,75 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="5" style="text-align: center; padding: 50px; color: #94a3b8;">
-                            <i class="bi bi-inbox" style="font-size: 2rem; display: block; margin-bottom: 10px;"></i>
-                            Aún no se ha registrado ningún movimiento de inventario.
+                        <td colspan="7" style="text-align: center; padding: 20px; color: #5f6368;">
+                            No se encontraron movimientos registrados.
                         </td>
                     </tr>
                     @endforelse
                 </tbody>
             </table>
-            
-            {{-- Paginación --}}
-            @if($movimientos->hasPages())
-                <div style="padding: 20px; border-top: 1px solid #e2e8f0; background: #f8fafc;">
-                    {{ $movimientos->links() }}
-                </div>
-            @endif
         </div>
+        
+        @if($movimientos->hasPages())
+            <div style="margin-top: 10px; font-size: 13px;">
+                {{ $movimientos->appends(request()->query())->links() }}
+            </div>
+        @endif
     </div>
+
+    {{-- Script del Gráfico Chart.js --}}
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const labelsFechas = @json($chartLabels ?? []);
+            const dataTotales = @json($chartData ?? []);
+
+            const ctx = document.getElementById('movimientosChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labelsFechas,
+                    datasets: [{
+                        label: 'Movimientos',
+                        data: dataTotales,
+                        // UX Update: Color pastel con borde definido
+                        backgroundColor: 'rgba(26, 115, 232, 0.4)', // Azul claro/pastel
+                        borderColor: 'rgba(26, 115, 232, 1)',       // Borde azul sólido
+                        borderWidth: 1,
+                        borderRadius: 3,
+                        // Color al pasar el mouse por encima (hover)
+                        hoverBackgroundColor: 'rgba(26, 115, 232, 0.6)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(32, 33, 36, 0.9)',
+                            padding: 10,
+                            titleFont: { family: 'Arial', size: 12 },
+                            bodyFont: { family: 'Arial', size: 12 },
+                            displayColors: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1, font: { size: 10, family: 'Arial' }, color: '#5f6368' },
+                            grid: { color: '#f1f3f4', drawBorder: false }
+                        },
+                        x: {
+                            grid: { display: false, drawBorder: false },
+                            ticks: { font: { size: 10, family: 'Arial' }, color: '#5f6368' }
+                        }
+                    },
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                }
+            });
+        });
+    </script>
 </x-base-layout>

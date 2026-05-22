@@ -22,13 +22,69 @@ class CompraController extends Controller
     /**
      * Listado de compras
      */
-    public function index()
+    public function index(Request $request)
     {
-        $compras = InvCompra::with(['metodo', 'usuarioRegistro', 'proveedor'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
+        // 1. Iniciamos la consulta base
+        $query = InvCompra::with(['metodo', 'usuarioRegistro', 'proveedor']);
 
-        return view('inventario.compras.index', compact('compras'));
+        // --- APLICAR FILTROS A LA CONSULTA ---
+        $query->when($request->search, function ($q) use ($request) {
+            $search = $request->search;
+            $q->where(function ($subQuery) use ($search) {
+                $subQuery->where('numero_factura', 'like', "%{$search}%")
+                        ->orWhere('num_doc_interno', 'like', "%{$search}%")
+                        ->orWhereHas('proveedor', function ($provQuery) use ($search) {
+                            $provQuery->where('nom_ter', 'like', "%{$search}%")
+                                    ->orWhere('cod_ter_proveedor', 'like', "%{$search}%");
+                        });
+            });
+        });
+
+        $query->when($request->fecha_inicio, function ($q) use ($request) {
+            $q->whereDate('fecha_factura', '>=', $request->fecha_inicio);
+        });
+
+        $query->when($request->fecha_fin, function ($q) use ($request) {
+            $q->whereDate('fecha_factura', '<=', $request->fecha_fin);
+        });
+
+        $query->when($request->metodo_pago, function ($q) use ($request) {
+            $metodo = $request->metodo_pago;
+            $q->whereHas('metodo', function ($metQuery) use ($metodo) {
+                $metQuery->where('nombre', 'like', "%{$metodo}%");
+            });
+        });
+
+        // 2. Clonar la consulta filtrada PARA EL DASHBOARD (antes de paginar)
+        $queryDashboard = clone $query;
+
+        // Calcular totales para las tarjetas usando el clon
+        $totalMontoFiltrado = $queryDashboard->sum('total_pago');
+        $totalRegistrosFiltrados = $queryDashboard->count();
+
+        // Calcular datos para la gráfica (Agrupados por fecha)
+        // Extraemos solo la fecha (sin hora) y sumamos el total_pago de ese día
+        $datosGrafica = $queryDashboard
+            ->select(DB::raw('DATE(fecha_factura) as fecha'), DB::raw('SUM(total_pago) as total'))
+            ->groupBy('fecha')
+            ->orderBy('fecha', 'asc')
+            ->take(15) // Limitamos a 15 puntos para que el gráfico no colapse visualmente
+            ->get();
+
+        // Separar en labels (eje X) y data (eje Y) para Chart.js
+        $chartLabels = $datosGrafica->pluck('fecha')->toArray();
+        $chartData = $datosGrafica->pluck('total')->toArray();
+
+        // 3. Ejecutamos la consulta para la TABLA y paginamos
+        $compras = $query->orderBy('created_at', 'desc')->paginate(10);
+
+        return view('inventario.compras.index', compact(
+            'compras', 
+            'totalMontoFiltrado', 
+            'totalRegistrosFiltrados', 
+            'chartLabels', 
+            'chartData'
+        ));
     }
 
     /**
