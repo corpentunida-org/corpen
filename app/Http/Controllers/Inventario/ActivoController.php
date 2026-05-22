@@ -16,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use Carbon\Carbon;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
@@ -356,20 +357,54 @@ class ActivoController extends Controller
     /**
      * Muestra el panel de alertas (ej. Garantías por vencer)
      */
-    public function alertas()
+    public function alertas(Request $request)
     {
-        // 1. Equipos cuya garantía vence en los próximos 30 días
-        $porVencer = InvActivo::whereNotNull('fecha_fin_garantia')
-            ->whereDate('fecha_fin_garantia', '>=', now())
-            ->whereDate('fecha_fin_garantia', '<=', now()->addDays(30))
-            ->get();
+        // 1. Consulta base: Activos con garantía que ya venció o vence en <= 30 días
+        $query = InvActivo::whereNotNull('fecha_fin_garantia')
+            ->whereDate('fecha_fin_garantia', '<=', now()->addDays(30));
 
-        // 2. Equipos cuya garantía ya se venció
-        $vencidos = InvActivo::whereNotNull('fecha_fin_garantia')
-            ->whereDate('fecha_fin_garantia', '<', now())
-            ->get();
+        // --- FILTROS ---
+        $query->when($request->search, function ($q) use ($request) {
+            $q->where(function ($sub) use ($request) {
+                $sub->where('nombre', 'like', "%{$request->search}%")
+                    ->orWhere('codigo_activo', 'like', "%{$request->search}%");
+            });
+        });
 
-        // Retornamos la vista pasándole estas dos listas
-        return view('inventario.activos.alertas', compact('porVencer', 'vencidos'));
+        $query->when($request->estado_garantia, function ($q) use ($request) {
+            if ($request->estado_garantia == 'vencido') {
+                $q->whereDate('fecha_fin_garantia', '<', now());
+            } elseif ($request->estado_garantia == 'por_vencer') {
+                $q->whereDate('fecha_fin_garantia', '>=', now());
+            }
+        });
+
+        // 2. Clonamos la consulta para el Dashboard
+        $queryDashboard = clone $query;
+        $todasAlertas = $queryDashboard->get();
+
+        // Calculamos los totales usando colecciones de Carbon
+        $totalVencidos = $todasAlertas->filter(function($item) {
+            return Carbon::parse($item->fecha_fin_garantia)->isPast();
+        })->count();
+
+        $totalPorVencer = $todasAlertas->filter(function($item) {
+            return !Carbon::parse($item->fecha_fin_garantia)->isPast();
+        })->count();
+
+        // Datos para el gráfico de Chart.js
+        $chartLabels = ['Garantías Vencidas', 'Por Vencer (< 30 días)'];
+        $chartData = [$totalVencidos, $totalPorVencer];
+
+        // 3. Paginamos los resultados (Ordenados por los más urgentes/vencidos primero)
+        $alertas = $query->orderBy('fecha_fin_garantia', 'asc')->paginate(15);
+
+        return view('inventario.activos.alertas', compact(
+            'alertas', 
+            'totalVencidos', 
+            'totalPorVencer', 
+            'chartLabels', 
+            'chartData'
+        ));
     }
 }

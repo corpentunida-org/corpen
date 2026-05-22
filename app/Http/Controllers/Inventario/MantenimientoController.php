@@ -14,14 +14,66 @@ use Illuminate\Support\Facades\DB;
 
 class MantenimientoController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // Traemos los mantenimientos más recientes primero
-        $mantenimientos = InvMantenimiento::with(['activo', 'creador'])->latest()->paginate(10);
-        return view('inventario.mantenimientos.index', compact('mantenimientos'));
+        // 1. Iniciamos la consulta base con sus relaciones
+        $query = InvMantenimiento::with(['activo', 'creador']);
+
+        // --- APLICAR FILTROS A LA CONSULTA ---
+        
+        // Filtro por Búsqueda (Nombre/Código del Activo o Detalle)
+        $query->when($request->search, function ($q) use ($request) {
+            $search = $request->search;
+            $q->where(function ($subQuery) use ($search) {
+                $subQuery->where('detalle', 'like', "%{$search}%")
+                        ->orWhereHas('activo', function ($actQuery) use ($search) {
+                            $actQuery->where('nombre', 'like', "%{$search}%")
+                                    ->orWhere('codigo_activo', 'like', "%{$search}%");
+                        });
+            });
+        });
+
+        // Filtro por Rango de Fechas
+        $query->when($request->fecha_inicio, function ($q) use ($request) {
+            $q->whereDate('created_at', '>=', $request->fecha_inicio);
+        });
+
+        $query->when($request->fecha_fin, function ($q) use ($request) {
+            $q->whereDate('created_at', '<=', $request->fecha_fin);
+        });
+
+        // 2. Clonar la consulta filtrada PARA EL DASHBOARD
+        $queryDashboard = clone $query;
+
+        // Calcular totales para las tarjetas
+        $totalRegistros = $queryDashboard->count();
+        $totalCosto = $queryDashboard->sum('costo_mantenimiento');
+
+        // Calcular datos para la gráfica (Costo agrupado por fecha)
+        $datosGrafica = (clone $queryDashboard)
+            ->select(DB::raw('DATE(created_at) as fecha'), DB::raw('SUM(costo_mantenimiento) as total_costo'))
+            ->groupBy('fecha')
+            ->orderBy('fecha', 'asc')
+            ->take(15) // Limitamos a 15 días en la gráfica
+            ->get();
+
+        // Separar en labels (eje X) y data (eje Y) para Chart.js
+        $chartLabels = $datosGrafica->pluck('fecha')->toArray();
+        $chartData = $datosGrafica->pluck('total_costo')->toArray();
+
+        // 3. Ejecutamos la consulta para la TABLA y paginamos
+        $mantenimientos = $query->orderBy('created_at', 'desc')->paginate(10);
+
+        return view('inventario.mantenimientos.index', compact(
+            'mantenimientos', 
+            'totalRegistros', 
+            'totalCosto', 
+            'chartLabels', 
+            'chartData'
+        ));
     }
 
-public function create()
+    public function create()
     {
         // Solo activos que NO estén dados de baja
         $activos = InvActivo::where('id_Estado', '!=', 3)->get(); 
