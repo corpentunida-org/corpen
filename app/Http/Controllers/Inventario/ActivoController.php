@@ -43,9 +43,69 @@ class ActivoController extends Controller
             $estados = InvEstado::where('id_bodega', $request->bodega_id)
                                 ->orderBy('nombre')
                                 ->get();
+        } else {
+            $estados = InvEstado::orderBy('nombre')->get(); 
         }
 
-        return view('inventario.activos.index', compact('activos', 'estados', 'marcas', 'subgrupos', 'bodegas'));
+        // =================================================================
+        // 📊 ESTADÍSTICAS PARA EL DASHBOARD (CHART.JS)
+        // =================================================================
+        
+        // 1. Estadísticas de Estados Físicos (Relación directa)
+        $statsEstados = InvActivo::select('id_Estado', DB::raw('count(*) as total'))
+            ->groupBy('id_Estado')
+            ->get()
+            ->map(function($item) {
+                $estado = InvEstado::find($item->id_Estado);
+                $colores = [1 => '#188038', 2 => '#1a73e8', 3 => '#d93025', 4 => '#f9ab00'];
+                return [
+                    'id' => $item->id_Estado,
+                    'label' => $estado ? $estado->nombre : 'N/D',
+                    'count' => $item->total,
+                    'color' => $colores[$item->id_Estado] ?? '#5f6368'
+                ];
+            });
+
+        // 2. Estadísticas de Categorías (Subgrupos vía Referencia)
+        $statsCategorias = [];
+        $coloresCat = ['#059669', '#2563eb', '#d97706', '#dc2626', '#8b5cf6'];
+        
+        foreach ($subgrupos as $index => $subgrupo) {
+            // Contamos los activos que pertenezcan a esta categoría a través de la referencia
+            $count = InvActivo::whereHas('referencia', function($q) use ($subgrupo) {
+                $q->where('id_InvSubGrupos', $subgrupo->id);
+            })->count();
+
+            if ($count > 0) {
+                $statsCategorias[] = [
+                    'id' => $subgrupo->id,
+                    'label' => $subgrupo->nombre,
+                    'count' => $count,
+                    'color' => $coloresCat[$index % count($coloresCat)]
+                ];
+            }
+        }
+
+        // 3. Estadísticas de Bodegas (vía Referencia)
+        $statsBodegas = [];
+        foreach ($bodegas as $bodega) {
+            $count = InvActivo::whereHas('referencia', function($q) use ($bodega) {
+                $q->where('id_InvBodegas', $bodega->id); // Usamos la FK correcta según tu modelo
+            })->count();
+
+            if ($count > 0) {
+                $statsBodegas[] = [
+                    'id' => $bodega->id,
+                    'label' => $bodega->nombre,
+                    'count' => $count
+                ];
+            }
+        }
+
+        return view('inventario.activos.index', compact(
+            'activos', 'estados', 'marcas', 'subgrupos', 'bodegas',
+            'statsEstados', 'statsCategorias', 'statsBodegas'
+        ));
     }
 
     /**
