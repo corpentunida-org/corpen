@@ -4,12 +4,7 @@ namespace App\Http\Controllers\Soportes;
 
 use App\Http\Controllers\Controller;
 use App\Models\Soportes\ScpSoporte;
-use App\Models\Soportes\ScpEstado;
-use App\Models\Soportes\ScpObservacion;
-use App\Models\Soportes\ScpTipo;
 use App\Models\Soportes\ScpPrioridad;
-use App\Models\Soportes\ScpUsuario;
-use App\Models\Maestras\MaeTerceros;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Carbon\Carbon;
@@ -24,9 +19,9 @@ class ScpEstadisticaController extends Controller
     const ESTADO_REVISION = 3;
     const ESTADO_CERRADO = 4;
 
-    // Constantes de Tipos de Observación (Ajusta estos IDs según tu DB real)
-    const TIPO_OBS_RESPUESTA = 2; // ID típico para "Respuesta"
-    const TIPO_OBS_SOLUCION = 4; // ID típico para "Solución"
+    // Constantes de Tipos de Observación
+    const TIPO_OBS_RESPUESTA = 2;
+    const TIPO_OBS_SOLUCION = 4;
 
     public function index(Request $request)
     {
@@ -34,29 +29,15 @@ class ScpEstadisticaController extends Controller
         set_time_limit(300);
 
         $data = $this->calculateStats($request);
+        
         $labelsPrioridad = ScpPrioridad::pluck('nombre');
 
         return view(
             'soportes.estadisticas.index',
             array_merge($data, [
-                'labelsPrioridad' => $labelsPrioridad,
-                // Inicialización vacía para charts pesados
-                'labelsEstado' => [],
-                'dataEstado' => [],
-                'labelsTipo' => [],
-                'dataTipo' => [],
-                'dataPrioridad' => [],
-                'labelsArea' => [],
-                'dataArea' => [],
-                'labelsAgente' => [],
-                'dataAgente' => [],
-                'labelsTiempoPrioridad' => [],
-                'dataTiempoPrioridad' => [],
-                'labelsSlaPrioridad' => [],
-                'dataSlaPrioridad' => [],
-                'labelsDiaSemana' => [],
-                'dataDiaSemana' => [],
-            ]),
+                'labelsPrioridadSelect' => $labelsPrioridad, 
+                'labelsPrioridad'       => $labelsPrioridad,
+            ])
         );
     }
 
@@ -66,13 +47,13 @@ class ScpEstadisticaController extends Controller
         set_time_limit(300);
 
         try {
-            $data = $this->calculateStats($request, true);
+            $data = $this->calculateStats($request);
 
-            // Formato fechas
-            $data['startDate'] = $data['startDate']->format('d/m/Y');
-            $data['endDate'] = $data['endDate']->format('d/m/Y');
+            // Formato fechas para el AJAX
+            $data['startDate'] = $data['startDate']->format('Y-m-d');
+            $data['endDate'] = $data['endDate']->format('Y-m-d');
 
-            // Formateo de tabla para JS
+            // Formateo de tabla de Soportes para JS
             $data['actividadReciente'] = $data['actividadReciente']->map(function ($soporte) {
                 $nombreAsignado = 'Sin asignar';
                 $inicialAsignado = '?';
@@ -103,15 +84,18 @@ class ScpEstadisticaController extends Controller
                     'file' => $e->getFile(),
                     'line' => $e->getLine(),
                 ],
-                500,
+                500
             );
         }
     }
 
-    private function calculateStats(Request $request, $includeHeavyCharts = false)
+    private function calculateStats(Request $request)
     {
-        $startDate = Carbon::parse($request->get('start_date', now()->subMonths(6)->startOfDay()));
-        $endDate = Carbon::parse($request->get('end_date', now()->endOfDay()));
+        $defaultStart = now()->startOfMonth();
+        $defaultEnd = now()->endOfDay();
+
+        $startDate = Carbon::parse($request->get('start_date', $defaultStart))->startOfDay();
+        $endDate = Carbon::parse($request->get('end_date', $defaultEnd))->endOfDay();
 
         $priority = $request->get('priority');
         $status = $request->get('status');
@@ -131,6 +115,7 @@ class ScpEstadisticaController extends Controller
         $inProgressTickets = (clone $baseQuery)->where('scp_soportes.estado', self::ESTADO_PROCESO)->count();
         $revisionTickets = (clone $baseQuery)->where('scp_soportes.estado', self::ESTADO_REVISION)->count();
         $closedTickets = (clone $baseQuery)->where('scp_soportes.estado', self::ESTADO_CERRADO)->count();
+        
         $escalatedTickets = (clone $baseQuery)->whereNotNull('scp_soportes.usuario_escalado')->count();
         $escalationRate = $totalTickets > 0 ? round(($escalatedTickets / $totalTickets) * 100, 1) : 0;
 
@@ -146,10 +131,6 @@ class ScpEstadisticaController extends Controller
         $slaCompliance = $this->calculateSlaCompliance($baseQuery);
         $avgFirstResponse = $this->calculateAvgFirstResponse($baseQuery);
 
-        // Datos para gráficos adicionales (Doughnuts)
-        $ticketsByType = $this->getTicketsByType($baseQuery);
-        $ticketsByPriority = $this->getTicketsByPriority($baseQuery);
-
         // Gráfico Mensual (Evolución)
         $labelsMes = [];
         $dataMes = [];
@@ -159,13 +140,49 @@ class ScpEstadisticaController extends Controller
             $dataMes[] = (clone $baseQuery)->whereMonth('scp_soportes.created_at', $date->month)->whereYear('scp_soportes.created_at', $date->year)->count();
         }
 
-        // Tabla Completa
+        // --- GRÁFICOS RESTANTES ---
+        
+        $ticketsByType = $this->getTicketsByType($baseQuery);
+        $ticketsByPriority = $this->getTicketsByPriority($baseQuery);
+
+        $estadosData = (clone $baseQuery)->join('scp_estados', 'scp_soportes.estado', '=', 'scp_estados.id')
+            ->selectRaw('scp_estados.nombre as label, COUNT(scp_soportes.id) as data')
+            ->groupBy('scp_estados.id', 'scp_estados.nombre')->get();
+        $labelsEstado = $estadosData->pluck('label');
+        $dataEstado = $estadosData->pluck('data');
+
+        $areasData = (clone $baseQuery)->join('gdo_cargo', 'scp_soportes.id_gdo_cargo', '=', 'gdo_cargo.id')
+            ->join('gdo_area', 'gdo_cargo.GDO_area_id', '=', 'gdo_area.id')
+            ->selectRaw('gdo_area.nombre as label, COUNT(scp_soportes.id) as data')
+            ->groupBy('gdo_area.id', 'gdo_area.nombre')->orderByDesc('data')->limit(10)->get();
+        $labelsArea = $areasData->pluck('label');
+        $dataArea = $areasData->pluck('data');
+
+        // Top Agentes Gráfica Radar (Datos crudos) - LÓGICA A PRUEBA DE BALAS CON LEFT JOIN
+        $agentesData = (clone $baseQuery)
+            ->leftJoin('scp_usuarios', 'scp_soportes.usuario_escalado', '=', 'scp_usuarios.id')
+            ->leftJoin('MaeTerceros', 'MaeTerceros.cod_ter', '=', 'scp_usuarios.cod_ter')
+            ->leftJoin('users as u_escalado', 'scp_soportes.usuario_escalado', '=', 'u_escalado.id')
+            ->leftJoin('users as u_creador', 'scp_soportes.id_users', '=', 'u_creador.id')
+            ->where('scp_soportes.estado', self::ESTADO_CERRADO)
+            ->selectRaw('COALESCE(MaeTerceros.nom_ter, u_escalado.name, u_creador.name, "Agente Local") as label, COUNT(scp_soportes.id) as data')
+            ->groupBy('label')
+            ->orderByDesc('data')
+            ->limit(10)
+            ->get();
+        $labelsAgente = $agentesData->pluck('label');
+        $dataAgente = $agentesData->pluck('data');
+
+        // Top Agentes de Resolución (Para la tabla) - LÓGICA A PRUEBA DE BALAS
+        $topAgentes = $this->getTopAgentesQuery($baseQuery);
+
+        // Tabla Completa Registros
         $actividadReciente = (clone $baseQuery)
             ->with(['estadoSoporte', 'usuario', 'maeTercero', 'prioridad', 'scpUsuarioAsignado'])
             ->orderBy('created_at', 'desc')
-            ->get(); // Sin límite
+            ->get();
 
-        $result = [
+        return [
             'totalTickets' => $totalTickets,
             'openTickets' => $openTickets,
             'inProgressTickets' => $inProgressTickets,
@@ -180,70 +197,66 @@ class ScpEstadisticaController extends Controller
             'reopenRate' => $reopenRate,
             'firstResponseRate' => $firstResponseRate,
             'avgFirstResponseTime' => $avgFirstResponseTime,
-            'ticketsByType' => $ticketsByType,
-            'ticketsByPriority' => $ticketsByPriority,
+            
             'startDate' => $startDate,
             'endDate' => $endDate,
+            
             'labelsMes' => $labelsMes,
             'dataMes' => $dataMes,
+            
+            'ticketsByType' => $ticketsByType,
+            'ticketsByPriority' => $ticketsByPriority,
+            
+            'labelsEstado' => $labelsEstado,
+            'dataEstado' => $dataEstado,
+            
+            'labelsArea' => $labelsArea,
+            'dataArea' => $dataArea,
+            
+            'labelsAgente' => $labelsAgente,
+            'dataAgente' => $dataAgente,
+            
+            'topAgentes' => $topAgentes,
             'actividadReciente' => $actividadReciente,
         ];
-
-        $result['topAgentes'] = $this->getTopAgentesQuery($startDate, $endDate);
-
-        if ($includeHeavyCharts) {
-            // Datos para gráficos
-            $estadosData = (clone $baseQuery)->join('scp_estados', 'scp_soportes.estado', '=', 'scp_estados.id')->selectRaw('scp_estados.nombre as label, COUNT(scp_soportes.id) as data')->groupBy('scp_estados.id', 'scp_estados.nombre')->get();
-            $result['labelsEstado'] = $estadosData->pluck('label');
-            $result['dataEstado'] = $estadosData->pluck('data');
-
-            $tiposData = (clone $baseQuery)->join('scp_tipos', 'scp_soportes.id_scp_tipo', '=', 'scp_tipos.id')->selectRaw('scp_tipos.nombre as label, COUNT(scp_soportes.id) as data')->groupBy('scp_tipos.id', 'scp_tipos.nombre')->orderByDesc('data')->limit(10)->get();
-            $result['labelsTipo'] = $tiposData->pluck('label');
-            $result['dataTipo'] = $tiposData->pluck('data');
-
-            $prioridadData = (clone $baseQuery)->join('scp_prioridads', 'scp_soportes.id_scp_prioridad', '=', 'scp_prioridads.id')->selectRaw('scp_prioridads.nombre as label, COUNT(scp_soportes.id) as data')->groupBy('scp_prioridads.id', 'scp_prioridads.nombre')->get();
-            $result['labelsPrioridad'] = $prioridadData->pluck('label');
-            $result['dataPrioridad'] = $prioridadData->pluck('data');
-
-            $areasData = (clone $baseQuery)->join('gdo_cargo', 'scp_soportes.id_gdo_cargo', '=', 'gdo_cargo.id')->join('gdo_area', 'gdo_cargo.GDO_area_id', '=', 'gdo_area.id')->selectRaw('gdo_area.nombre as label, COUNT(scp_soportes.id) as data')->groupBy('gdo_area.id', 'gdo_area.nombre')->orderByDesc('data')->limit(10)->get();
-            $result['labelsArea'] = $areasData->pluck('label');
-            $result['dataArea'] = $areasData->pluck('data');
-
-            $agentesData = (clone $baseQuery)->join('scp_usuarios', 'scp_soportes.usuario_escalado', '=', 'scp_usuarios.id')->join('MaeTerceros', 'MaeTerceros.cod_ter', '=', 'scp_usuarios.cod_ter')->where('scp_soportes.estado', self::ESTADO_CERRADO)->selectRaw('MaeTerceros.nom_ter as label, COUNT(scp_soportes.id) as data')->groupBy('scp_usuarios.id', 'MaeTerceros.nom_ter')->orderByDesc('data')->limit(10)->get();
-            $result['labelsAgente'] = $agentesData->pluck('label');
-            $result['dataAgente'] = $agentesData->pluck('data');
-        }
-
-        return $result;
     }
-
-    // --- FUNCIONES CORREGIDAS ---
 
     private function calculateSlaCompliance($baseQuery)
     {
-        $totalDentroSLA = ScpSoporte::from('scp_soportes as s')
-            ->joinSub(DB::table('scp_observaciones')->select('id_scp_soporte', DB::raw('MIN(timestam) as fecha_cierre'))->where('id_scp_estados', 4)->groupBy('id_scp_soporte'), 'o', 'o.id_scp_soporte', '=', 's.id')
+        $totalDentroSLA = (clone $baseQuery)
+            ->joinSub(
+                DB::table('scp_observaciones')
+                    ->select('id_scp_soporte', DB::raw('MIN(timestam) as fecha_cierre'))
+                    ->where('id_scp_estados', 4)
+                    ->groupBy('id_scp_soporte'), 
+                'o', 
+                'o.id_scp_soporte', 
+                '=', 
+                'scp_soportes.id'
+            )
             ->whereRaw(
                 "
-                        TIMESTAMPDIFF(DAY, s.timestam, o.fecha_cierre) <=
-                        CASE s.id_scp_prioridad
-                            WHEN 3 THEN 15
-                            WHEN 2 THEN 10
-                            WHEN 1 THEN 5
-                            ELSE 0
-                        END
-                    ",
+                    TIMESTAMPDIFF(DAY, scp_soportes.timestam, o.fecha_cierre) <=
+                    CASE scp_soportes.id_scp_prioridad
+                        WHEN 3 THEN 15
+                        WHEN 2 THEN 10
+                        WHEN 1 THEN 5
+                        ELSE 0
+                    END
+                "
             )
             ->count();
-        return ($totalDentroSLA / ScpSoporte::count()) * 100;
+
+        $totalQuery = (clone $baseQuery)->count();
+        if ($totalQuery == 0) return 0;
+
+        return ($totalDentroSLA / $totalQuery) * 100;
     }
 
     private function calculateAvgFirstResponse($baseQuery)
     {
-        // CORREGIDO: Usamos el ID del tipo de observación, no el nombre en string
         $avgTime = (clone $baseQuery)
             ->join('scp_observaciones', 'scp_soportes.id', '=', 'scp_observaciones.id_scp_soporte')
-            // ->where('scp_observaciones.id_tipo_observacion', self::TIPO_OBS_RESPUESTA) // Descomenta si usas ID especifico
             ->selectRaw('AVG(TIMESTAMPDIFF(HOUR, scp_soportes.created_at, scp_observaciones.created_at)) as avg_time')
             ->value('avg_time');
 
@@ -252,7 +265,7 @@ class ScpEstadisticaController extends Controller
 
     private function calculateCsatScore($baseQuery)
     {
-        return 4.8; // Simulado para evitar error de tabla inexistente
+        return 4.8; // Simulado
     }
 
     private function calculateReopenRate($baseQuery)
@@ -261,21 +274,19 @@ class ScpEstadisticaController extends Controller
         if ($total === 0) {
             return 0;
         }
-        // Lógica proxy: Tickets escalados
         $escalados = (clone $baseQuery)->whereNotNull('usuario_escalado')->count();
         return round(($escalados / $total) * 100, 1);
     }
 
     private function calculateFirstResponseRate($baseQuery)
     {
-        // CORREGIDO: Verifica solo existencia de observaciones, sin filtrar por columna fantasma
         $totalTickets = (clone $baseQuery)->count();
         if ($totalTickets === 0) {
             return 0;
         }
 
         $ticketsWithFirstResponse = (clone $baseQuery)
-            ->whereHas('observaciones') // Simplemente verifica que tenga observaciones
+            ->whereHas('observaciones')
             ->count();
 
         return round(($ticketsWithFirstResponse / $totalTickets) * 100, 1);
@@ -283,7 +294,6 @@ class ScpEstadisticaController extends Controller
 
     private function calculateAvgFirstResponseTime($baseQuery)
     {
-        // CORREGIDO: Join directo sin where colapsante
         $avgTime = (clone $baseQuery)->join('scp_observaciones', 'scp_soportes.id', '=', 'scp_observaciones.id_scp_soporte')->selectRaw('AVG(TIMESTAMPDIFF(HOUR, scp_soportes.created_at, scp_observaciones.created_at)) as avg_time')->value('avg_time');
 
         return $avgTime ? round($avgTime, 1) . ' hrs' : '0 hrs';
@@ -299,14 +309,21 @@ class ScpEstadisticaController extends Controller
         return (clone $baseQuery)->join('scp_prioridads', 'scp_soportes.id_scp_prioridad', '=', 'scp_prioridads.id')->selectRaw('scp_prioridads.nombre as label, COUNT(scp_soportes.id) as data')->groupBy('scp_prioridads.id', 'scp_prioridads.nombre')->get();
     }
 
-    private function getTopAgentesQuery($startDate, $endDate)
+    private function getTopAgentesQuery($baseQuery)
     {
-        return ScpUsuario::join('scp_soportes', 'scp_usuarios.id', '=', 'scp_soportes.usuario_escalado')
-            ->join('MaeTerceros', 'MaeTerceros.cod_ter', '=', 'scp_usuarios.cod_ter')
+        return (clone $baseQuery)
+            ->leftJoin('scp_usuarios', 'scp_soportes.usuario_escalado', '=', 'scp_usuarios.id')
+            ->leftJoin('MaeTerceros', 'MaeTerceros.cod_ter', '=', 'scp_usuarios.cod_ter')
+            ->leftJoin('users as u_escalado', 'scp_soportes.usuario_escalado', '=', 'u_escalado.id')
+            ->leftJoin('users as u_creador', 'scp_soportes.id_users', '=', 'u_creador.id')
             ->where('scp_soportes.estado', self::ESTADO_CERRADO)
-            ->whereBetween('scp_soportes.created_at', [$startDate, $endDate])
-            ->selectRaw('scp_usuarios.id, MaeTerceros.nom_ter, COUNT(scp_soportes.id) as total_cerrados, 0 as tiempo_promedio')
-            ->groupBy('scp_usuarios.id', 'MaeTerceros.nom_ter')
+            ->selectRaw('
+                COALESCE(scp_soportes.usuario_escalado, scp_soportes.id_users, 0) as agente_id, 
+                COALESCE(MaeTerceros.nom_ter, u_escalado.name, u_creador.name, "Agente Local") as name, 
+                COUNT(scp_soportes.id) as total_cerrados, 
+                0 as tiempo_promedio
+            ')
+            ->groupBy('agente_id', 'name')
             ->orderByDesc('total_cerrados')
             ->limit(10)
             ->get();
