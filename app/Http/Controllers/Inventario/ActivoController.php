@@ -15,6 +15,10 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+use Carbon\Carbon;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class ActivoController extends Controller
 {
@@ -40,9 +44,69 @@ class ActivoController extends Controller
             $estados = InvEstado::where('id_bodega', $request->bodega_id)
                                 ->orderBy('nombre')
                                 ->get();
+        } else {
+            $estados = InvEstado::orderBy('nombre')->get(); 
         }
 
-        return view('inventario.activos.index', compact('activos', 'estados', 'marcas', 'subgrupos', 'bodegas'));
+        // =================================================================
+        // 📊 ESTADÍSTICAS PARA EL DASHBOARD (CHART.JS)
+        // =================================================================
+        
+        // 1. Estadísticas de Estados Físicos (Relación directa)
+        $statsEstados = InvActivo::select('id_Estado', DB::raw('count(*) as total'))
+            ->groupBy('id_Estado')
+            ->get()
+            ->map(function($item) {
+                $estado = InvEstado::find($item->id_Estado);
+                $colores = [1 => '#188038', 2 => '#1a73e8', 3 => '#d93025', 4 => '#f9ab00'];
+                return [
+                    'id' => $item->id_Estado,
+                    'label' => $estado ? $estado->nombre : 'N/D',
+                    'count' => $item->total,
+                    'color' => $colores[$item->id_Estado] ?? '#5f6368'
+                ];
+            });
+
+        // 2. Estadísticas de Categorías (Subgrupos vía Referencia)
+        $statsCategorias = [];
+        $coloresCat = ['#059669', '#2563eb', '#d97706', '#dc2626', '#8b5cf6'];
+        
+        foreach ($subgrupos as $index => $subgrupo) {
+            // Contamos los activos que pertenezcan a esta categoría a través de la referencia
+            $count = InvActivo::whereHas('referencia', function($q) use ($subgrupo) {
+                $q->where('id_InvSubGrupos', $subgrupo->id);
+            })->count();
+
+            if ($count > 0) {
+                $statsCategorias[] = [
+                    'id' => $subgrupo->id,
+                    'label' => $subgrupo->nombre,
+                    'count' => $count,
+                    'color' => $coloresCat[$index % count($coloresCat)]
+                ];
+            }
+        }
+
+        // 3. Estadísticas de Bodegas (vía Referencia)
+        $statsBodegas = [];
+        foreach ($bodegas as $bodega) {
+            $count = InvActivo::whereHas('referencia', function($q) use ($bodega) {
+                $q->where('id_InvBodegas', $bodega->id); // Usamos la FK correcta según tu modelo
+            })->count();
+
+            if ($count > 0) {
+                $statsBodegas[] = [
+                    'id' => $bodega->id,
+                    'label' => $bodega->nombre,
+                    'count' => $count
+                ];
+            }
+        }
+
+        return view('inventario.activos.index', compact(
+            'activos', 'estados', 'marcas', 'subgrupos', 'bodegas',
+            'statsEstados', 'statsCategorias', 'statsBodegas'
+        ));
     }
 
     /**
@@ -71,7 +135,68 @@ class ActivoController extends Controller
 
         return $pdf->download('Reporte_Inventario_'.now()->format('Ymd').'.pdf');
     }
+    /**
+     * Generar Reporte Excel (CSV nativo compatible con MS Excel) 
+     * MANTIENE LOS MISMOS FILTROS
+     */
+    public function generarReporteExcel(Request $request)
+    {
+        // 1. Aplicamos tu motor de filtros unificado para que la data sea exacta
+        $query = $this->aplicarFiltros($request);
+        $activos = $query->latest()->get();
 
+        // 2. Crear una nueva instancia de Spreadsheet
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Inventario Activos');
+
+        // 3. Definir los nombres de las columnas
+        $columnas = [
+            'Descripción', 'Marca', 'Categoría', 'Código/Placa', 'Serial', 
+            'Bodega', 'Municipio', 'Estado', 'Fin Garantía', 'Responsable'
+        ];
+
+        // Escribir los encabezados en la Fila 1
+        foreach ($columnas as $key => $columna) {
+            $sheet->setCellValueByColumnAndRow($key + 1, 1, $columna);
+        }
+
+        // Estilo minimalista para la fila de encabezados (Negrita y Autoajuste)
+        $sheet->getStyle('A1:J1')->getFont()->setBold(true);
+
+        // 4. Llenar el archivo con la información de los activos
+        $fila = 2;
+        foreach ($activos as $activo) {
+            $sheet->setCellValueByColumnAndRow(1, $fila, $activo->nombre);
+            $sheet->setCellValueByColumnAndRow(2, $fila, $activo->marca->nombre ?? 'N/A');
+            $sheet->setCellValueByColumnAndRow(3, $fila, $activo->subgrupo->nombre ?? 'N/A');
+            $sheet->setCellValueByColumnAndRow(4, $fila, $activo->codigo_activo);
+            $sheet->setCellValueByColumnAndRow(5, $fila, $activo->serial ?? 'S/R');
+            $sheet->setCellValueByColumnAndRow(6, $fila, $activo->referencia->bodega->nombre ?? 'Sin Bodega');
+            $sheet->setCellValueByColumnAndRow(7, $fila, $activo->municipio->nombre ?? 'Local');
+            $sheet->setCellValueByColumnAndRow(8, $fila, $activo->estado->nombre ?? 'N/D');
+            $sheet->setCellValueByColumnAndRow(9, $fila, $activo->fecha_fin_garantia ? \Carbon\Carbon::parse($activo->fecha_fin_garantia)->format('d/m/Y') : 'N/A');
+            $sheet->setCellValueByColumnAndRow(10, $fila, $activo->usuarioAsignado->name ?? 'DISPONIBLE');
+            $fila++;
+        }
+
+        // 5. Autoajustar el ancho de todas las columnas dinámicamente para que no se corte el texto
+        foreach (range(1, 10) as $col) {
+            $sheet->getColumnDimensionByColumn($col)->setAutoSize(true);
+        }
+
+        // 6. Preparar el nombre del archivo final
+        $fileName = 'Reporte_Inventario_' . now()->format('Ymd_Hi') . '.xlsx';
+
+        // 7. Retornar la descarga en streaming con las cabeceras correctas para .xlsx
+        return response()->streamDownload(function() use ($spreadsheet) {
+            $writer = new Xlsx($spreadsheet);
+            $writer->save('php://output');
+        }, $fileName, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Cache-Control' => 'max-age=0',
+        ]);
+    }
     /**
      * MOTOR DE FILTROS UNIFICADO (MEJORA AGREGADA)
      * Esta función centraliza la lógica para que el INDEX y el PDF funcionen igual
@@ -232,20 +357,54 @@ class ActivoController extends Controller
     /**
      * Muestra el panel de alertas (ej. Garantías por vencer)
      */
-    public function alertas()
+    public function alertas(Request $request)
     {
-        // 1. Equipos cuya garantía vence en los próximos 30 días
-        $porVencer = InvActivo::whereNotNull('fecha_fin_garantia')
-            ->whereDate('fecha_fin_garantia', '>=', now())
-            ->whereDate('fecha_fin_garantia', '<=', now()->addDays(30))
-            ->get();
+        // 1. Consulta base: Activos con garantía que ya venció o vence en <= 30 días
+        $query = InvActivo::whereNotNull('fecha_fin_garantia')
+            ->whereDate('fecha_fin_garantia', '<=', now()->addDays(30));
 
-        // 2. Equipos cuya garantía ya se venció
-        $vencidos = InvActivo::whereNotNull('fecha_fin_garantia')
-            ->whereDate('fecha_fin_garantia', '<', now())
-            ->get();
+        // --- FILTROS ---
+        $query->when($request->search, function ($q) use ($request) {
+            $q->where(function ($sub) use ($request) {
+                $sub->where('nombre', 'like', "%{$request->search}%")
+                    ->orWhere('codigo_activo', 'like', "%{$request->search}%");
+            });
+        });
 
-        // Retornamos la vista pasándole estas dos listas
-        return view('inventario.activos.alertas', compact('porVencer', 'vencidos'));
+        $query->when($request->estado_garantia, function ($q) use ($request) {
+            if ($request->estado_garantia == 'vencido') {
+                $q->whereDate('fecha_fin_garantia', '<', now());
+            } elseif ($request->estado_garantia == 'por_vencer') {
+                $q->whereDate('fecha_fin_garantia', '>=', now());
+            }
+        });
+
+        // 2. Clonamos la consulta para el Dashboard
+        $queryDashboard = clone $query;
+        $todasAlertas = $queryDashboard->get();
+
+        // Calculamos los totales usando colecciones de Carbon
+        $totalVencidos = $todasAlertas->filter(function($item) {
+            return Carbon::parse($item->fecha_fin_garantia)->isPast();
+        })->count();
+
+        $totalPorVencer = $todasAlertas->filter(function($item) {
+            return !Carbon::parse($item->fecha_fin_garantia)->isPast();
+        })->count();
+
+        // Datos para el gráfico de Chart.js
+        $chartLabels = ['Garantías Vencidas', 'Por Vencer (< 30 días)'];
+        $chartData = [$totalVencidos, $totalPorVencer];
+
+        // 3. Paginamos los resultados (Ordenados por los más urgentes/vencidos primero)
+        $alertas = $query->orderBy('fecha_fin_garantia', 'asc')->paginate(15);
+
+        return view('inventario.activos.alertas', compact(
+            'alertas', 
+            'totalVencidos', 
+            'totalPorVencer', 
+            'chartLabels', 
+            'chartData'
+        ));
     }
 }

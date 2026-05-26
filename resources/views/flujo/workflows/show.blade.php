@@ -14,28 +14,28 @@
         $globalItemsDone = 0;
 
         if (isset($workflow->tasks) && $workflow->tasks->count() > 0) {
-            foreach ($workflow->tasks as $t) {
+            foreach($workflow->tasks as $t) {
                 $rawDesc = trim($t->descripcion ?? '');
                 $isJson = str_starts_with($rawDesc, '[');
                 $hasChecklist = false; // Bandera para saber si la tarea tiene subtareas/checklist
-
+                
                 // Procesar si es formato JSON
                 if ($isJson) {
                     $sheetData = json_decode($rawDesc, true) ?? [];
                     if (is_array($sheetData) && count($sheetData) > 0) {
                         $hasChecklist = true;
                         $globalTotalItems += count($sheetData);
-                        foreach ($sheetData as $row) {
+                        foreach($sheetData as $row) {
                             if (isset($row['checked']) && $row['checked']) {
                                 $globalItemsDone++;
                             }
                         }
                     }
-                }
+                } 
                 // Procesar si es formato Markdown [ ] o [x]
                 else {
                     $descLines = $rawDesc ? explode("\n", $rawDesc) : [];
-                    foreach ($descLines as $line) {
+                    foreach($descLines as $line) {
                         if (preg_match('/^\[([xX\s])\]\s*-?\s*(.*)$/', trim($line), $matches)) {
                             $hasChecklist = true;
                             $globalTotalItems++;
@@ -60,10 +60,9 @@
         $progress = $globalTotalItems > 0 ? round(($globalItemsDone / $globalTotalItems) * 100) : 0;
 
         // 4. Color del widget circular
-        $progressColor =
-            $progress == 100
-                ? 'linear-gradient(135deg, #34d399 0%, #059669 100%)'
-                : 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)';
+        $progressColor = $progress == 100
+            ? 'linear-gradient(135deg, #34d399 0%, #059669 100%)'
+            : 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)';
     @endphp
 
     <style>

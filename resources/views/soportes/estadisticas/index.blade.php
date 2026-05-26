@@ -308,7 +308,7 @@
                     <i class="feather-activity text-success"></i>
                     <span>Datos actualizados en tiempo real</span>
                     <span class="mx-1">•</span>
-                    <span id="dateRangeLabel">Periodo Actual</span>
+                    <span id="dateRangeLabel">{{ $startDate->format('Y-m-d') }} a {{ $endDate->format('Y-m-d') }}</span>
                 </div>
             </div>
             <div class="d-flex gap-2">
@@ -453,7 +453,7 @@
                 <div class="col-lg-2 col-6">
                     <div class="card-box p-3 text-center">
                         <div class="text-muted small fw-bold mb-1">SLA CUMPLIDO</div>
-                        <div class="fs-4 fw-bold text-success"><span id="slaComplianceMetric">{{ number_format($slaCompliance,1) ?? 0 }}</span>%</div>
+                        <div class="fs-4 fw-bold text-success"><span id="slaComplianceMetric">{{ number_format($slaCompliance ?? 0, 1) }}</span>%</div>
                     </div>
                 </div>
                 <div class="col-lg-2 col-6">
@@ -614,10 +614,10 @@
                                         <th class="pe-4">Rendimiento Relativo</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody id="table-body-agentes">
                                     @foreach($topAgentes as $agente)
                                     <tr>
-                                        <td class="ps-4 fw-medium">{{ $agente->name ?? $agente->nom_ter }}</td>
+                                        <td class="ps-4 fw-medium">{{ $agente->name ?? $agente->nom_ter ?? 'Desconocido' }}</td>
                                         <td class="text-center fw-bold">{{ $agente->total_cerrados }}</td>
                                         <td class="pe-4">
                                             <div class="progress" style="height: 6px;">
@@ -684,34 +684,38 @@
                 [chartMes, chartEstado, chartTipo, chartPrioridad, chartArea, chartKPI, chartRadarArea].forEach(c => c && c.destroy());
 
                 // 1. Line Chart
-                chartMes = new Chart(document.getElementById('ticketsPorMesChart'), {
-                    type: 'line',
-                    data: { 
-                        labels: data.labelsMes, 
-                        datasets: [{ 
-                            label: 'Tickets Nuevos', 
-                            data: data.dataMes, 
-                            borderColor: colors.primary, 
-                            backgroundColor: 'rgba(37, 99, 235, 0.05)', 
-                            fill: true, tension: 0.4, borderWidth: 2, pointRadius: 3
-                        }] 
-                    },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true }, x: { grid: { display: false } } } }
-                });
+                if (document.getElementById('ticketsPorMesChart') && data.labelsMes) {
+                    chartMes = new Chart(document.getElementById('ticketsPorMesChart'), {
+                        type: 'line',
+                        data: { 
+                            labels: data.labelsMes, 
+                            datasets: [{ 
+                                label: 'Tickets Nuevos', 
+                                data: data.dataMes, 
+                                borderColor: colors.primary, 
+                                backgroundColor: 'rgba(37, 99, 235, 0.05)', 
+                                fill: true, tension: 0.4, borderWidth: 2, pointRadius: 3
+                            }] 
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true }, x: { grid: { display: false } } } }
+                    });
+                }
 
                 // 2. Doughnut Chart (Estados)
-                chartEstado = new Chart(document.getElementById('ticketsPorEstadoChart'), {
-                    type: 'doughnut',
-                    data: { 
-                        labels: data.labelsEstado, 
-                        datasets: [{ 
-                            data: data.dataEstado, 
-                            backgroundColor: [colors.warning, colors.info, colors.purple, colors.success], 
-                            borderWidth: 0, hoverOffset: 4
-                        }] 
-                    },
-                    options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'right', labels: { usePointStyle: true, boxWidth: 8, padding: 20 } } } }
-                });
+                if (document.getElementById('ticketsPorEstadoChart') && data.labelsEstado) {
+                    chartEstado = new Chart(document.getElementById('ticketsPorEstadoChart'), {
+                        type: 'doughnut',
+                        data: { 
+                            labels: data.labelsEstado, 
+                            datasets: [{ 
+                                data: data.dataEstado, 
+                                backgroundColor: [colors.warning, colors.info, colors.purple, colors.success], 
+                                borderWidth: 0, hoverOffset: 4
+                            }] 
+                        },
+                        options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'right', labels: { usePointStyle: true, boxWidth: 8, padding: 20 } } } }
+                    });
+                }
 
                 // 3. Tipo
                 if(document.getElementById('ticketsPorTipoChart') && data.ticketsByType) {
@@ -756,22 +760,30 @@
                 if(document.getElementById('rendimientoAreaChart') && data.labelsArea) {
                     chartRadarArea = new Chart(document.getElementById('rendimientoAreaChart'), {
                         type: 'radar',
-                        data: { labels: data.labelsArea, datasets: [{ label: 'Resueltos', data: data.dataArea, backgroundColor: 'rgba(16, 185, 129, 0.2)', borderColor: colors.success }] },
+                        data: { labels: data.labelsArea, datasets: [{ label: 'Total Soportes', data: data.dataArea, backgroundColor: 'rgba(16, 185, 129, 0.2)', borderColor: colors.success }] },
                         options: { responsive: true, maintainAspectRatio: false, scales: { r: { grid: { color: '#e5e7eb' }, ticks: { display: false } } } }
                     });
                 }
             }
 
-            // Datos Iniciales
+            // Datos Iniciales Asegurados desde el Controlador
             const initialData = {
-                labelsMes: {!! json_encode($labelsMes) !!}, dataMes: {!! json_encode($dataMes) !!},
-                labelsEstado: {!! json_encode($labelsEstado) !!}, dataEstado: {!! json_encode($dataEstado) !!},
-                labelsArea: {!! json_encode($labelsArea) !!}, dataArea: {!! json_encode($dataArea) !!},
+                labelsMes: {!! json_encode($labelsMes ?? []) !!}, 
+                dataMes: {!! json_encode($dataMes ?? []) !!},
+                labelsEstado: {!! json_encode($labelsEstado ?? []) !!}, 
+                dataEstado: {!! json_encode($dataEstado ?? []) !!},
+                labelsArea: {!! json_encode($labelsArea ?? []) !!}, 
+                dataArea: {!! json_encode($dataArea ?? []) !!},
                 ticketsByType: {!! json_encode($ticketsByType ?? []) !!},
                 ticketsByPriority: {!! json_encode($ticketsByPriority ?? []) !!},
-                slaCompliance: {{ $slaCompliance ?? 0 }}, csatScore: {{ $csatScore ?? 0 }}, firstResponseRate: {{ $firstResponseRate ?? 0 }},
-                reopenRate: {{ $reopenRate ?? 0 }}, escalationRate: {{ $escalationRate ?? 0 }}
+                slaCompliance: {{ $slaCompliance ?? 0 }}, 
+                csatScore: {{ $csatScore ?? 0 }}, 
+                firstResponseRate: {{ $firstResponseRate ?? 0 }},
+                reopenRate: {{ $reopenRate ?? 0 }}, 
+                escalationRate: {{ $escalationRate ?? 0 }}
             };
+            
+            // Renderizamos la gráfica con toda la info inicial
             renderCharts(initialData);
 
             // --- Lógica de Interfaz ---
@@ -795,7 +807,7 @@
                 setTimeout(()=>{ const el=document.getElementById(id); if(el) { el.style.opacity='0'; setTimeout(()=>el.remove(),300); } }, 4000);
             }
 
-            // --- Lógica de Datos ---
+            // --- Lógica de Datos (AJAX) ---
             const loader = document.getElementById('loadingOverlay');
             
             updateDashboard = function() {
@@ -805,6 +817,7 @@
 
                 document.getElementById('loaderText').innerText = "Procesando datos...";
                 loader.style.display = 'flex';
+                
                 const params = new URLSearchParams({
                     start_date: start, end_date: end,
                     priority: document.getElementById('priorityFilter').value,
@@ -814,6 +827,10 @@
                 fetch("{{ route('soportes.estadisticas.data') }}?" + params.toString())
                     .then(res => res.json())
                     .then(data => {
+                        // 1. Actualizar Label de Fecha
+                        document.getElementById('dateRangeLabel').innerText = `${start} a ${end}`;
+
+                        // 2. Actualizar Métricas (KPIs Básicos)
                         const kpiMap = {
                             'totalTicketsMetric': data.totalTickets, 'openTicketsMetric': data.openTickets,
                             'inProgressTicketsMetric': data.inProgressTickets, 'revisionTicketsMetric': data.revisionTickets,
@@ -826,20 +843,47 @@
                             const el = document.getElementById(id); if(el) el.innerText = val !== undefined ? val : 0;
                         }
 
-                        const tbody = document.getElementById('table-body-soportes');
-                        tbody.innerHTML = '';
+                        // 3. Actualizar Tabla de Registros Detallados
+                        const tbodySoportes = document.getElementById('table-body-soportes');
+                        tbodySoportes.innerHTML = '';
                         if(data.actividadReciente && data.actividadReciente.length) {
                             data.actividadReciente.forEach(item => {
                                 const initial = item.asignado_nombre ? item.asignado_nombre.charAt(0) : 'U';
                                 const row = `<tr><td class="ps-4 fw-bold font-monospace text-primary">#${item.id}</td><td><div class="fw-bold text-dark mb-1">${(item.detalles_soporte||'').substring(0,50)}...</div></td><td><span class="badge-status badge-gray">${item.estado_nombre}</span></td><td><span class="badge-status badge-gray">${item.prioridad_nombre}</span></td><td><div class="d-flex align-items-center gap-2"><div class="avatar-circle" style="background-color: var(--primary);">${initial}</div><span class="small fw-medium">${item.asignado_nombre || 'Sin asignar'}</span></div></td><td class="text-muted small">${item.created_at_formatted}</td><td class="text-end pe-4"><a href="/soportes/soportes/${item.id}" class="btn-icon-only"><i class="feather-arrow-right"></i></a></td></tr>`;
-                                tbody.insertAdjacentHTML('beforeend', row);
+                                tbodySoportes.insertAdjacentHTML('beforeend', row);
                             });
                             document.getElementById('table-footer-info').innerText = `Registros mostrados: ${data.actividadReciente.length}`;
                         } else {
-                            tbody.innerHTML = `<tr><td colspan="7" class="text-center py-5 text-muted">No se encontraron datos en este periodo</td></tr>`;
+                            tbodySoportes.innerHTML = `<tr><td colspan="7" class="text-center py-5 text-muted">No se encontraron datos en este periodo</td></tr>`;
                             document.getElementById('table-footer-info').innerText = `Registros mostrados: 0`;
                         }
 
+                        // 4. Actualizar Tabla de Top Agentes
+                        const tbodyAgentes = document.getElementById('table-body-agentes');
+                        if (tbodyAgentes) {
+                            tbodyAgentes.innerHTML = '';
+                            if (data.topAgentes && data.topAgentes.length) {
+                                data.topAgentes.forEach(agente => {
+                                    const name = agente.name || agente.nom_ter || 'Desconocido';
+                                    const total = agente.total_cerrados || 0;
+                                    const width = Math.min(100, total * 2);
+                                    const row = `<tr>
+                                        <td class="ps-4 fw-medium">${name}</td>
+                                        <td class="text-center fw-bold">${total}</td>
+                                        <td class="pe-4">
+                                            <div class="progress" style="height: 6px;">
+                                                <div class="progress-bar bg-primary" role="progressbar" style="width: ${width}%;"></div>
+                                            </div>
+                                        </td>
+                                    </tr>`;
+                                    tbodyAgentes.insertAdjacentHTML('beforeend', row);
+                                });
+                            } else {
+                                tbodyAgentes.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-muted">No hay agentes en este periodo</td></tr>`;
+                            }
+                        }
+
+                        // 5. Renderizar TODAS las Gráficas
                         renderCharts(data);
                         showToast('Dashboard actualizado correctamente');
                     })
@@ -903,36 +947,29 @@
             // 🖨️ LÓGICA DE EXPORTACIÓN A PDF (HTML2PDF)
             // -------------------------------------------------------------
             document.getElementById('exportDashboard').addEventListener('click', function() {
-                const element = document.body; // Tomamos todo el body para simplificar la estructura
+                const element = document.body;
                 const loader = document.getElementById('loadingOverlay');
                 const loaderText = document.getElementById('loaderText');
                 
-                // 1. Mostrar Loader
                 loaderText.innerText = "Generando PDF Profesional...";
                 loader.style.display = 'flex';
-
-                // 2. Activar "Modo Reporte" (CSS se encarga de mostrar todo y ocultar filtros)
                 element.classList.add('printing-mode');
 
-                // Pequeña pausa para que Chart.js o el DOM se estabilicen antes de la foto
                 setTimeout(() => {
                     const opt = {
-                        margin:       [5, 5], // Márgenes pequeños (mm)
+                        margin:       [5, 5],
                         filename:     'Reporte_Gestion_Soportes.pdf',
-                        image:        { type: 'jpeg', quality: 0.98 }, // Alta calidad
-                        html2canvas:  { scale: 2, useCORS: true, scrollY: 0 }, // Escala x2 para nitidez
-                        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' }, // Landscape para que quepan las tablas
+                        image:        { type: 'jpeg', quality: 0.98 },
+                        html2canvas:  { scale: 2, useCORS: true, scrollY: 0 },
+                        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'landscape' },
                         pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
                     };
 
-                    // 3. Generar PDF
                     html2pdf().set(opt).from(document.getElementById('dashboard-container')).save().then(() => {
-                        // 4. Restaurar vista normal
                         element.classList.remove('printing-mode');
                         loader.style.display = 'none';
                         showToast('Reporte PDF descargado con éxito');
                         
-                        // Truco para redibujar la vista correcta de pestañas
                         const activeTab = document.querySelector('.tab-btn.active');
                         if(activeTab) activeTab.click(); 
                     });
