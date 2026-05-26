@@ -61,7 +61,7 @@ class QuizController extends Controller
 
         $datacharts = [
             'usuariosmaspuntaje' => IndUsuarios::whereRaw("CAST(SUBSTRING_INDEX(puntaje, '/', 1) AS UNSIGNED) > 3")->count(),
-            'totalempleados' => GdoEmpleado::count(),
+            'totalempleados' => GdoEmpleado::where('id', '>', 11)->count(),
             'puntajesQuiz' => $puntajesQuiz,
             'ticcorpen' => $ticcorpen,
             'ticsoft' => $ticsoft,

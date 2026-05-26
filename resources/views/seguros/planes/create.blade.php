@@ -1,5 +1,6 @@
 <x-base-layout>
     @section('titlepage', 'Crear Plan')
+    <x-success />
     <x-error />
     <div class="col-xxl-12 col-xl-12">
         <div class="card border-top-0">
@@ -15,6 +16,12 @@
                             Cobertura</a>
                     </li>
                     @endcandirect
+
+                    <li class="nav-item flex-fill border-top" role="presentation">
+                        <a class="nav-link" data-bs-toggle="tab" data-bs-target="#projectTab"
+                            aria-selected="false">Crear Condición</a>
+                    </li>
+
                 </ul>
             </div>
             <div class="tab-content">
@@ -100,7 +107,8 @@
                                         <div class="col-lg-3">
                                             <label class="form-label">Valor Asegurado<span
                                                     class="text-danger">*</span></label>
-                                            <input type="number" class="form-control" name="valorAsegurado[]" required>
+                                            <input type="number" class="form-control" name="valorAsegurado[]"
+                                                required>
                                         </div>
                                         <div class="col-lg-2">
                                             <label class="form-label">Valor Cobertura<span
@@ -189,6 +197,50 @@
 
                         </form>
 
+                    </div>
+                </div>
+                <div class="tab-pane fade p-4" id="projectTab" role="tabpanel">
+                    <div class="col-lg-12 p-4">
+                        <div class="mb-4 d-flex align-items-center justify-content-between">
+                            <h5 class="fw-bold mb-0">Lista de condiciones:</h5>{{-- <a href="#" class="btn btn-sm btn-light-brand">Updates</a> --}}
+                        </div>
+                        @foreach ($condiciones as $condicion)
+                            <ul class="list-unstyled activity-feed">
+                                <li class="feed-item feed-item-primary">
+                                    <div class="d-flex align-items-center gap-2 lh-sm">
+                                        <span class="fw-semibold mb-0">
+                                            #{{ $condicion->id }}
+                                        </span>
+
+                                        <span class="mb-0">
+                                            {{ $condicion->descripcion }}
+                                        </span>
+                                    </div>
+                                    {{-- <div class="d-flex align-items-center gap-1">
+                                        <span class="text">#{{ $condicion->id }}</span>
+                                        <span>{{ $condicion->descripcion }}</span>
+                                    </div> --}}
+                                </li>
+                            </ul>
+                        @endforeach
+                        <form method="POST" action="{{ route('seguros.condiciones.store') }}"
+                            id="formAddCondicion"novalidate>
+                            @csrf
+                            @method('POST')
+                            <div class="mb-4">
+                                <label class="form-label">Nombre Condición<span class="text-danger">*</span></label>
+                                <input type="text" class="form-control"
+                                    placeholder="Ingrese el nombre de la condición" name="condicion_descripcion"
+                                    required>
+                            </div>
+                            <div class="d-flex flex-row-reverse gap-2 mt-2">
+                                <button class="btn btn-success mt-4" data-bs-toggle="tooltip" title="Timesheets"
+                                    type="submit">
+                                    <i class="feather-plus me-2"></i>
+                                    <span>Agregar Condición</span>
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>

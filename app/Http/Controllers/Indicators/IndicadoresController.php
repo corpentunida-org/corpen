@@ -83,7 +83,7 @@ class IndicadoresController extends Controller
                 return $tiempoPromedioAlta;
             },
             9 => function () {
-                $proyectosDigitalizados = Workflow::whereIn('estado', ['activo', 'completado'])->count();
+                $proyectosDigitalizados = Workflow::whereIn('estado', ['activo', 'completado'])->count();                
                 return ($proyectosDigitalizados / Workflow::count()) * 100;
             },
             10 => function () {
