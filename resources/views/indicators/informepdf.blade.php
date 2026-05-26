@@ -43,6 +43,11 @@
             border-left: 4px solid #0d6efd;
             padding-left: 12px;
         }
+        
+        .header-table td {
+            border: none;
+            padding: 0;
+        }
 
         .header-title {
             font-size: 22px;
