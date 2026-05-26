@@ -9,6 +9,11 @@ class SegCondicion extends Model
 {
     use HasFactory;
     protected $table = 'seg_condiciones';
+
+    protected $fillable = [
+        'descripcion',
+    ];
+
     public function plan()
     {
         return $this->hasMany(SegPlan::class, 'condicion_id', 'id');

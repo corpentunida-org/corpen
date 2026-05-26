@@ -153,7 +153,7 @@ class SegPlanController extends Controller
         return redirect()->back()->with('success', 'Plan eliminado correctamente.');
     }
 
-    public function getCondicion($edad)
+    /*public function getCondicion($edad)
     {
         if ($edad >= 0 && $edad <= 65) {
             return 8;
@@ -168,6 +168,39 @@ class SegPlanController extends Controller
         } else {
             return null;
         }
+    }*/
+
+    public function getCondicion($edad)
+    {
+        $condiciones = SegCondicion::whereHas('plan', function ($query) {
+            $query->where('vigente', 1);
+        })->where('descripcion', 'not like', "%Junta%")->get();
+        foreach ($condiciones as $condicion) {
+            preg_match_all('/\d+/', $condicion->descripcion, $matches);
+
+            $numeros = $matches[0];
+
+            // Caso: "desde 66 hasta 70"
+            if (count($numeros) >= 2) {
+                $min = (int) $numeros[0];
+                $max = (int) $numeros[1];
+
+                if ($edad >= $min && $edad <= $max) {
+                    return $condicion->id;
+                }
+            }
+
+            // Caso: "desde 90 años"
+            elseif (count($numeros) == 1) {
+                $min = (int) $numeros[0];
+
+                if ($edad >= $min) {
+                    return $condicion->id;
+                }
+            }
+        }
+
+        return null;
     }
 
     public function getPlanes($edad)

@@ -66,7 +66,9 @@
                 <div class="row">
                     <div class="col-lg-2 mb-4">
                         <label class="form-label">Tipo</label>
-                        <input class="form-control" name="tipo"
+                        <div class="form-control d-flex align-items-center bg-soft-{{ $novedad->tipo == '1' ? 'warning' : 'success' }} text-{{ $novedad->tipo == '1' ? 'warning' : 'success' }} fw-bold">
+                         {{ $novedad->tipo == '1' ? 'MODIFICACIÓN' : 'INGRESO' }}</div>
+                        <input type="hidden" name="tipo"
                             value="{{ $novedad->tipo == '1' ? 'MODIFICACIÓN' : 'INGRESO' }}" readonly>
                     </div>
                     @php
@@ -178,14 +180,12 @@
                                     </thead>
                                     <tbody>
                                         @foreach ($actividadnov as $actividad)
-                                            @php
-                                                $color = $estados[$actividad->estado]['color'] ?? 'secondary';
+                                            @php                                            
+                                                $color = $estados[(int) $actividad->estado]['color'] ?? 'secondary';
                                             @endphp
                                             <tr>
                                                 <td>{{ $actividad->fechaInicio }}</td>
-                                                <td><span
-                                                        class="badge bg-soft-{{ $color }} text-{{ $color }}">{{ $actividad->estadosname->nombre ?? ' ' }}</span>
-                                                </td>
+                                                <td><span class="badge bg-soft-{{ $color }} text-{{ $color }}">{{ $actividad->estadosname->nombre ?? ' ' }}</span></td>
                                                 <td>{{ strtoupper($actividad->observaciones) }}</td>
                                             </tr>
                                         @endforeach

@@ -34,6 +34,7 @@ use App\Http\Controllers\Seguros\SegConvenioController;
 use App\Http\Controllers\Seguros\SegReclamacionesController;
 use App\Http\Controllers\Seguros\SegNovedadesController;
 use App\Http\Controllers\Seguros\SegBeneficiosController;
+use App\Http\Controllers\Seguros\SegCondicionesController;
 
 use App\Http\Controllers\Cinco\TercerosController;
 use App\Http\Controllers\Cinco\MoviContCincoController;
@@ -183,27 +184,20 @@ Route::prefix('exequiales')->group(function () {
 //RUTAS SEGUROS
 Route::prefix('seguros')->group(function () {
     Route::get('/poliza/formato', [SegPolizaController::class, 'exportarFormato'])->name('seguros.poliza.formato');
-    Route::resource('poliza', SegPolizaController::class)
-        ->names('seguros.poliza')
-        ->middleware(['auth', 'candirect:seguros.poliza.index']);
+    Route::resource('poliza', SegPolizaController::class)->names('seguros.poliza')->middleware(['auth', 'candirect:seguros.poliza.index']);
     Route::get('/polizaname/{name}', [SegPolizaController::class, 'namesearch'])->name('poliza.search');
     Route::resource('plan', SegPlanController::class)->names('seguros.planes')->middleware('auth');
     Route::resource('cobertura', SegCoberturaController::class)->names('seguros.cobertura')->middleware('auth');
     Route::resource('beneficiario', SegBeneficiarioController::class)->names('seguros.beneficiario')->middleware('auth');
-    Route::resource('convenio', SegConvenioController::class)
-        ->names('seguros.convenio')
-        ->middleware(['auth', 'candirect:seguros.convenio.index']);
-    Route::resource('reclamacion', SegReclamacionesController::class)
-        ->names('seguros.reclamacion')
-        ->middleware(['auth', 'candirect:seguros.reclamacion.index']);
-    Route::resource('novedades', SegNovedadesController::class)
-        ->names('seguros.novedades')
-        ->middleware(['auth']);
+    Route::resource('convenio', SegConvenioController::class)->names('seguros.convenio')->middleware(['auth', 'candirect:seguros.convenio.index']);
+    Route::resource('reclamacion', SegReclamacionesController::class)->names('seguros.reclamacion')->middleware(['auth', 'candirect:seguros.reclamacion.index']);
+    Route::resource('novedades', SegNovedadesController::class)->names('seguros.novedades')->middleware(['auth']);
     Route::post('/reclamacion/generarpdf', [SegReclamacionesController::class, 'generarpdf'])->middleware('auth')->name('seguros.reclamacion.generarpdf');
     Route::get('/reclamacion/informe/excel', [SegReclamacionesController::class, 'exportexcel'])->middleware('auth')->name('seguros.reclamacion.download');
     Route::post('poliza/upload', [SegPolizaController::class, 'upload'])->name('seguros.poliza.upload');
     Route::post('planes/duplicar-grupo',[SegPlanController::class,'duplicarGrupoCondicion'])->name('seguros.planes.duplicarGrupo');
     Route::post('/planes/{plan}/duplicar', [SegPlanController::class, 'duplicarPlan'])->name('seguros.planes.duplicar');
+    Route::post('/seguros/condiciones/store', [SegCondicionesController::class, 'store'])->name('seguros.condiciones.store');
     Route::post('poliza/create/upload', [SegPolizaController::class, 'uploadCreate'])->name('seguros.poliza.createupload');
     Route::get('/poliza/create/upload', function () {return view('seguros.polizas.upload');})->name('seguros.poliza.viewupload');
     Route::post('poliza/nuevo-convenio/upload', [SegPolizaController::class, 'masivamentenuevoconvenio'])->name('seguros.poliza.nuevo-convenio');
@@ -214,12 +208,8 @@ Route::prefix('seguros')->group(function () {
     Route::resource('beneficios', SegBeneficiosController::class)->names('seguros.beneficios')->middleware(['auth', 'candirect:seguros.beneficios.index']);
     Route::post('beneficios/list', [SegBeneficiosController::class, 'listFilter'])->name('seguros.beneficios.list');
     Route::post('/seguros/filtopolizas', [SegBeneficiosController::class, 'exportFiltroPdf'])->name('seguros.poliza.filtros');
-    Route::post('/seguros/filtopolizas/excel', [SegBeneficiosController::class, 'exportexcel'])
-        ->middleware('auth')
-        ->name('seguros.poliza.filtroexcel');
-    Route::prefix('seguros')
-        ->get('/reclamacion/informe-completo', [SegReclamacionesController::class, 'exportarInformeCompleto'])
-        ->name('seguros.reclamacion.exportarInformeCompleto');
+    Route::post('/seguros/filtopolizas/excel', [SegBeneficiosController::class, 'exportexcel'])->middleware('auth')->name('seguros.poliza.filtroexcel');
+    Route::prefix('seguros')->get('/reclamacion/informe-completo', [SegReclamacionesController::class, 'exportarInformeCompleto'])->name('seguros.reclamacion.exportarInformeCompleto');
     Route::get('/novedades/{id}/formulario', [SegNovedadesController::class, 'verArchivo'])->name('seguros.novedades.formulario');
     Route::get('/seguros/novedades/download', [SegNovedadesController::class, 'descargarexcel'])->name('seguros.novedades.download');
 });
@@ -431,6 +421,7 @@ Route::get('validar/asociado', function () {
 })->name('validar.asociado.form');
 Route::post('validar/asociado', [UserController::class, 'validarAsociado'])->name('validar.asociado');
 
+//RESERVAS
 Route::prefix('reservas')->name('reserva.')->group(function () {
         Route::get('dashboard', [ResDashboardController::class, 'index'])
             ->name('dashboard');
@@ -438,9 +429,7 @@ Route::prefix('reservas')->name('reserva.')->group(function () {
             ->name('dashboard.exportar');
         Route::get('dashboard/pdf', [ResDashboardController::class, 'generarPdf'])->name('dashboard.pdf');
         Route::resource('reserva', ResReservaController::class)->names('reserva');
-        Route::get('reservaI/{id}/create', [ResReservaController::class, 'createReserva'])
-            ->name('inmueble.create')
-            ->middleware('auth');
+        Route::get('reservaI/{id}/create', [ResReservaController::class, 'createReserva'])->name('inmueble.create')->middleware('auth');
         Route::post('reservaI/store', [ResReservaController::class, 'storeReserva'])
             ->name('inmueble.store')
             ->middleware('auth');

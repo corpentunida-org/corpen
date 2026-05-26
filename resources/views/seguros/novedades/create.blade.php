@@ -102,8 +102,7 @@
                                         <input type="hidden" name="asegurado" value="{{ $asegurado->cedula }}">
                                         <input type="hidden" name="tipoNovedad" value="1">
                                         <label class="form-label">Asignar Plan
-                                            {{ $planes->first()->convenio->nombre ?? '' }}<span
-                                                class="text-danger">*</span></label>
+                                            {{ $planes->first()->convenio->nombre ?? '' }}<span class="text-danger">*</span></label>
                                         <select class="form-control" name="planid" id="selectPlan">
                                             @foreach ($planes as $plan)
                                                 <option value="{{ $plan->id }}" data-valor="{{ $plan->valor }}"

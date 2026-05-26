@@ -197,7 +197,7 @@ class ResReservaController extends Controller implements HasMiddleware
     public function createSoporte($id)
     {
         $reserva = Res_reserva::findOrFail($id);
-        if (!auth()->user()->hasPermission('reservas.soportes.todos') && $reserva->user_id != auth()->id()) {
+        if (!auth()->user()->hasPermission('reservas.comprobantespago.vertodos') && $reserva->user_id != auth()->id()) {
             abort(403);
         }
         return view('reserva.asociado.createSoporte', compact('reserva'));
