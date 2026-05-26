@@ -71,7 +71,6 @@ class SegNovedadesController extends Controller
             ->first();
         $edad = date_diff(date_create($asegurado->tercero_preferido->fec_nac), date_create('today'))->y;
         $idcondicion = app(SegPlanController::class)->getCondicion($edad);
-
         $planes = SegPlan::where('condicion_corpen', $idcondicion)
             ->where('vigente', true)
             ->with(['convenio'])
