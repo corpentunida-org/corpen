@@ -20,14 +20,73 @@ class MovimientoController extends Controller
     /**
      * Muestra el historial de movimientos realizados.
      */
-    public function index()
+    public function index(Request $request)
     {
-        // Cargamos relaciones para evitar el problema N+1 y mejorar el rendimiento
-        $movimientos = InvMovimiento::with(['responsable', 'tipoRegistro'])
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
+        // 1. Iniciamos la consulta base (agregamos 'creador' para optimizar)
+        $query = InvMovimiento::with(['responsable', 'tipoRegistro', 'creador']);
 
-        return view('inventario.movimientos.index', compact('movimientos'));
+        // --- APLICAR FILTROS A LA CONSULTA ---
+        
+        // Filtro por Búsqueda (Código de Acta o Nombre del Responsable)
+        $query->when($request->search, function ($q) use ($request) {
+            $search = $request->search;
+            $q->where(function ($subQuery) use ($search) {
+                $subQuery->where('codigo_acta', 'like', "%{$search}%")
+                        ->orWhereHas('responsable', function ($resQuery) use ($search) {
+                            $resQuery->where('name', 'like', "%{$search}%");
+                        });
+            });
+        });
+
+        // Filtro por Rango de Fechas (usamos created_at)
+        $query->when($request->fecha_inicio, function ($q) use ($request) {
+            $q->whereDate('created_at', '>=', $request->fecha_inicio);
+        });
+
+        $query->when($request->fecha_fin, function ($q) use ($request) {
+            $q->whereDate('created_at', '<=', $request->fecha_fin);
+        });
+
+        // Filtro por Tipo de Registro
+        $query->when($request->tipo, function ($q) use ($request) {
+            $tipo = $request->tipo;
+            $q->whereHas('tipoRegistro', function ($tipoQuery) use ($tipo) {
+                $tipoQuery->where('nombre', 'like', "%{$tipo}%");
+            });
+        });
+
+        // 2. Clonar la consulta filtrada PARA EL DASHBOARD
+        $queryDashboard = clone $query;
+
+        // Calcular totales para las tarjetas
+        $totalRegistros = $queryDashboard->count();
+        
+        // Calcular cuántas actas ya tienen archivo adjunto (están firmadas)
+        $queryFirmadas = clone $queryDashboard;
+        $totalFirmadas = $queryFirmadas->whereNotNull('acta_archivo')->count();
+
+        // Calcular datos para la gráfica (Cantidad de movimientos agrupados por fecha)
+        $datosGrafica = (clone $queryDashboard)
+            ->select(DB::raw('DATE(created_at) as fecha'), DB::raw('COUNT(*) as total'))
+            ->groupBy('fecha')
+            ->orderBy('fecha', 'asc')
+            ->take(15) // Limitamos a 15 días en la gráfica
+            ->get();
+
+        // Separar en labels (eje X) y data (eje Y) para Chart.js
+        $chartLabels = $datosGrafica->pluck('fecha')->toArray();
+        $chartData = $datosGrafica->pluck('total')->toArray();
+
+        // 3. Ejecutamos la consulta para la TABLA y paginamos
+        $movimientos = $query->orderBy('created_at', 'desc')->paginate(50);
+
+        return view('inventario.movimientos.index', compact(
+            'movimientos', 
+            'totalRegistros', 
+            'totalFirmadas', 
+            'chartLabels', 
+            'chartData'
+        ));
     }
 
     /**
