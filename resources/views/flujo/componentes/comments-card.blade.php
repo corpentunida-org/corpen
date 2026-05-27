@@ -3,7 +3,6 @@
     .corporate-comments-card {
         background: #fff;
         padding: 20px;
-        font-family: 'Inter', sans-serif;
         border-radius: 16px;
     }
 
@@ -104,7 +103,6 @@
     }
 
     .ref-tag {
-        font-family: 'Outfit';
         font-size: 0.7rem;
         color: #64748b;
         background: #f8fafc;

@@ -1,12 +1,10 @@
 {{-- resources/views/flujo/componentes/histories-card.blade.php --}}
 <div class="corporate-history-card">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;800&display=swap');
 
         .corporate-history-card { 
             background: #fff; 
             padding: 20px; 
-            font-family: 'Inter', sans-serif; 
             border-radius: 16px;
         }
         
@@ -29,7 +27,6 @@
         .transition-flow { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.7rem; }
         .state-tag { 
             padding: 3px 10px; border-radius: 6px; background: #f1f5f9; color: #475569; 
-            font-family: 'Outfit', sans-serif; text-transform: uppercase; border: 1px solid transparent;
         }
         .state-new { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
         
@@ -43,7 +40,7 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         .timestamp-log { font-size: 0.75rem; color: #64748b; white-space: nowrap; text-align: right; }
-        .ref-log { font-family: 'Outfit'; font-size: 0.7rem; color: #94a3b8; font-weight: 600; opacity: 0.6; }
+        .ref-log { font-size: 0.7rem; color: #94a3b8; font-weight: 600; opacity: 0.6; }
 
         /* --- MÓVIL (Activity Feed Style) --- */
         .mobile-audit-feed { display: none; flex-direction: column; gap: 16px; }

@@ -8,11 +8,13 @@
                     <h1 class="main-title">Consola de Gestión Operativa</h1>
                     <p class="main-subtitle">Supervisión integral de procesos, cumplimiento de hitos y trazabilidad técnica.</p>
                 </div>
+                @candirect('flujot.proyecto.crear')
                 <div class="welcome-actions">
                     <a href="{{ route('flujo.workflows.create') }}" class="btn-minimal-black">
                         <i class="fas fa-plus"></i> <span>Iniciar Nuevo Proyecto</span>
                     </a>
                 </div>
+                @endcandirect
             </div>
 
             {{-- KPIs CORPORATIVOS (Responsive Grid) --}}
@@ -52,20 +54,13 @@
                             <div class="icon-box icon-indigo"><i class="fas fa-project-diagram"></i></div>
                             <div>
                                 <span class="title-main">Estructura de Procesos</span>
-                                <span class="title-sub d-none-mobile">Gestión de workflows y flujos de valor</span>
+                                <span class="title-sub d-none-mobile">Gestión de workflows (proyectos) y flujos de trabajo</span>
                             </div>
                         </div>
                         <i class="fas fa-chevron-down arrow-indicator"></i>
                     </button>
                     <div class="stack-body">
-                        <div class="stack-inner" id="moduloWorkflows">                            
-                            {{-- Buscador Interno Compacto (Alineado a la derecha, no pierde espacio) --}}
-                            {{-- <div class="module-search-header">
-                                <div class="compact-search">
-                                    <i class="fas fa-search"></i>
-                                    <input type="text" onkeyup="filtrarContenido(this, 'moduloWorkflows')" placeholder="Filtrar en tiempo real..." autocomplete="off">
-                                </div>
-                            </div> --}}
+                        <div class="stack-inner" id="moduloWorkflows">                           
                             {{-- Contenido del Componente --}}
                             <div class="module-content">
                                 @include('flujo.componentes.workflows-card')
@@ -81,21 +76,13 @@
                             <div class="icon-box icon-emerald"><i class="fas fa-tasks"></i></div>
                             <div>
                                 <span class="title-main">Control de Actividades</span>
-                                <span class="title-sub d-none-mobile">Seguimiento operativo y cumplimiento</span>
+                                <span class="title-sub d-none-mobile">Seguimiento operativo y cumplimiento de tareas</span>
                             </div>
                         </div>
                         <i class="fas fa-chevron-down arrow-indicator"></i>
                     </button>
                     <div class="stack-body">
-                        <div class="stack-inner" id="moduloTareas">                            
-                            {{-- Buscador para Tareas --}}
-                            <div class="module-search-header">
-                                <div class="compact-search">
-                                    <i class="fas fa-search"></i>
-                                    <input type="text" onkeyup="filtrarContenido(this, 'moduloTareas')" placeholder="Filtrar tareas..." autocomplete="off">
-                                </div>
-                            </div>
-                            
+                        <div class="stack-inner" id="moduloTareas">
                             <div class="module-content">
                                 @include('flujo.componentes.tasks-card')
                             </div>
