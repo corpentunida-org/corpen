@@ -8,13 +8,15 @@
                 <p class="main-subtitle">Gestión centralizada de asignaciones, plazos y estados operativos.</p>
             </div>
             
-            <div class="header-actions">
-                <a href="{{ route('flujo.tablero') }}" class="btn-ghost-corporate">
-                    <i class="fas fa-th-large"></i> <span class="d-none-mobile">Tablero</span>
+            <div class="header-actions d-flex align-items-center gap-2">
+                <a href="{{ route('flujo.tablero') }}" class="btn-primary-neo">
+                    <i class="fas fa-th-large"></i> <span class="d-none-mobile">Tablero Principal</span>
                 </a>
+                @candirect('flujot.tarea.crear')
                 <a href="{{ route('flujo.tasks.create') }}" class="btn-corporate-black">
                     <i class="fas fa-plus"></i> <span class="d-none-mobile">Nueva Tarea</span>
                 </a>
+                @endcandirect
             </div>
         </header>
 
@@ -225,7 +227,8 @@
 
         body { background-color: var(--bg-page); color: var(--text-main); }
         .task-index-wrapper { max-width: 1450px; margin: 30px auto; padding: 0 20px; font-family: 'Inter', sans-serif; }
-
+        .btn-primary-neo { background: #4f46e5; color: white; padding: 10px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s; box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2); }
+        .btn-primary-neo:hover { color: white;transform: translateY(-1px); }
         /* Estilos de Workflow Link en Tabla */
         .workflow-link-cell { 
             display: inline-flex; 

@@ -20,7 +20,7 @@ class TableroController extends Controller
                 }
             ])
             ->paginate(15);
-        $tasks     = Task::with('user', 'workflow')->paginate(3);
+        $tasks     = Task::with('user', 'workflow')->latest()->paginate(3);
         $histories = TaskHistory::with('task', 'user')->latest()->paginate(4);
         $comments  = TaskComment::with('task','user')->latest()->paginate(4);
 
