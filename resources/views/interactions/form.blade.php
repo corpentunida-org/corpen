@@ -537,15 +537,15 @@
                                 </div>
                                 <div class="col-md-7 ps-md-4 mt-3 mt-md-0">
                                     <div class="row g-2">
-                                        <div class="col-sm-6">
+                                        <div class="col-sm-4">
                                             <label class="small text-muted d-block mb-0">Email</label>
                                             <span class="text-dark small" id="info-email">...</span>
                                         </div>
-                                        <div class="col-sm-6">
+                                        <div class="col-sm-4">
                                             <label class="small text-muted d-block mb-0">Teléfono</label>
                                             <span class="text-dark small" id="info-telefono">...</span>
                                         </div>
-                                        <div class="col-12">
+                                        <div class="col-4">
                                             <label class="small text-muted d-block mb-0">Dirección</label>
                                             <span class="text-dark small" id="info-direccion">...</span>
                                         </div>
@@ -997,13 +997,11 @@
                     @csrf
                     <input type="hidden" name="id_interaccion" value="{{ $interaction->id ?? 0 }}">
                     <input type="hidden" name="temp_token" value="{{ $miTokenSesion ?? '' }}">
-
                     <div class="row g-5">
                         <!-- Columna Izquierda -->
                         <div class="col-md-6">
                             <div class="fv-row mb-4">
-                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Código Tercero
-                                    *</label>
+                                <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Código Tercero*</label>
                                 <div class="input-group input-group-solid border border-gray-300 rounded shadow-sm">
                                     <span class="input-group-text bg-transparent border-0"><i
                                             class="fas fa-id-card text-muted"></i></span>
@@ -1132,7 +1130,7 @@
                                     </label>
                                 </div>
                             </div>
-                            <div id="preview_container" class="col-12 d-none">
+                            <div id="preview_container" class="col-12 d-none mt-1">
                             <div
                                 class="bg-light rounded p-1 d-flex align-items-center border border-dashed border-gray-400">
                                 <div class="symbol symbol-50px me-4">
@@ -1183,12 +1181,10 @@
                             <div class="fv-row">
                                 <label class="form-label fw-bold text-gray-700 fs-7 text-uppercase">Observación</label>
                                 <textarea name="observacion" id="observacion"
-                                    class="form-control form-control-solid border border-gray-300 shadow-sm" rows="2"
+                                    class="form-control form-control-solid border border-gray-300 shadow-sm" rows="1"
                                     placeholder="Agrega un comentario u observación opcional..." maxlength="255"></textarea>
                             </div>
-                        </div>
-
-                        
+                        </div>                        
 
                         <div class="col-12">
                             <div
@@ -2522,9 +2518,8 @@
                             confirmButtonText: 'Sí, otro',
                             cancelButtonText: 'Terminar',
                             confirmButtonColor: '#198754'
-                        }).then((result) => {
-                            console.log(result);
-                            if (result.isConfirmed) {
+                        }).then((result) => {                            
+                            if (result.value) {
                                 const clieID = modalCodTercero.value;
                                 formComprobante.reset();
                                 if (typeof window.resetFile === 'function') {
