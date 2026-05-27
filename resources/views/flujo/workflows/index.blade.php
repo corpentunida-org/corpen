@@ -17,7 +17,7 @@
         $baseMetrics = App\Models\Flujo\Workflow::query();
         $cumplimiento = [
             'a_tiempo' => (clone $baseMetrics)->where('fecha_fin', '>=', now())->where('estado', '!=', 'completado')->count(),
-            'atrasado' => (clone $baseMetrics)->where('fecha_fin', '<', now())->where('estado', '!=', 'completado')->count(),
+            'atrasado' => (clone $baseMetrics)->where('fecha_fin', '<', now())->where('estado', '=', 'activo')->count(),
             'completado' => (clone $baseMetrics)->where('estado', 'completado')->count(),
         ];
 
@@ -84,11 +84,13 @@
                 <h1 class="page-title">Centro de Control de Flujos</h1>
                 <p class="page-subtitle">Visión estratégica y gestión operativa de proyectos.</p>
             </div>
-            <div class="header-actions">
+            @candirect('flujot.proyecto.crear')
+            <div>
                 <a href="{{ route('flujo.workflows.create') }}" class="btn-primary-neo">
                     <i class="fas fa-plus"></i> <span>Nuevo Proyecto</span>
                 </a>
             </div>
+            @endcandirect
         </header>
 
         {{-- MENÚ HORIZONTAL (TABS) --}}
@@ -455,7 +457,7 @@
         .page-subtitle { margin: 5px 0 0; color: var(--text-gray); font-size: 14px; }
         
         .btn-primary-neo { background: var(--brand); color: white; padding: 10px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s; box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2); }
-        .btn-primary-neo:hover { background: #4338ca; transform: translateY(-1px); }
+        .btn-primary-neo:hover { color: white;transform: translateY(-1px); }
 
         /* TABS */
         .tabs-container { border-bottom: 1px solid var(--border); margin-bottom: 30px; }
