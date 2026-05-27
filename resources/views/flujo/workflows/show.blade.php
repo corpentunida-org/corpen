@@ -14,28 +14,28 @@
         $globalItemsDone = 0;
 
         if (isset($workflow->tasks) && $workflow->tasks->count() > 0) {
-            foreach($workflow->tasks as $t) {
+            foreach ($workflow->tasks as $t) {
                 $rawDesc = trim($t->descripcion ?? '');
                 $isJson = str_starts_with($rawDesc, '[');
                 $hasChecklist = false; // Bandera para saber si la tarea tiene subtareas/checklist
-                
+
                 // Procesar si es formato JSON
                 if ($isJson) {
                     $sheetData = json_decode($rawDesc, true) ?? [];
                     if (is_array($sheetData) && count($sheetData) > 0) {
                         $hasChecklist = true;
                         $globalTotalItems += count($sheetData);
-                        foreach($sheetData as $row) {
+                        foreach ($sheetData as $row) {
                             if (isset($row['checked']) && $row['checked']) {
                                 $globalItemsDone++;
                             }
                         }
                     }
-                } 
+                }
                 // Procesar si es formato Markdown [ ] o [x]
                 else {
                     $descLines = $rawDesc ? explode("\n", $rawDesc) : [];
-                    foreach($descLines as $line) {
+                    foreach ($descLines as $line) {
                         if (preg_match('/^\[([xX\s])\]\s*-?\s*(.*)$/', trim($line), $matches)) {
                             $hasChecklist = true;
                             $globalTotalItems++;
@@ -60,9 +60,10 @@
         $progress = $globalTotalItems > 0 ? round(($globalItemsDone / $globalTotalItems) * 100) : 0;
 
         // 4. Color del widget circular
-        $progressColor = $progress == 100
-            ? 'linear-gradient(135deg, #34d399 0%, #059669 100%)'
-            : 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)';
+        $progressColor =
+            $progress == 100
+                ? 'linear-gradient(135deg, #34d399 0%, #059669 100%)'
+                : 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)';
     @endphp
 
     <style>
@@ -245,7 +246,7 @@
             flex-shrink: 0;
         }
 
-        .custom-tabs {
+        /*.custom-tabs {
             display: flex;
             gap: 1rem;
             margin-bottom: 1.5rem;
@@ -271,6 +272,39 @@
             background: white;
             color: var(--primary);
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }*/
+        .custom-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            background: #eef2ff;
+            padding: 6px;
+            border-radius: 18px;
+            width: fit-content;
+            border: 1px solid #e2e8f0;
+        }
+
+        .tab-btn {
+            padding: 10px 26px;
+            border-radius: 14px;
+            border: none;
+            background: transparent;
+            color: #64748b;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            font-family: var(--font-display);
+        }
+
+        .tab-btn:hover {
+            background: rgba(99, 102, 241, 0.08);
+            color: var(--primary);
+        }
+
+        .tab-btn.active {
+            background: #6366f1;
+            color: white;
+            /*box-shadow: 0 6px 18px rgba(99, 102, 241, 0.25);*/
         }
 
         .task-item {
@@ -482,9 +516,11 @@
                             target="_blank">
                             <i class="fas fa-file-pdf"></i> Informe PDF
                         </a>
+                        @candirect('flujot.workflow.editar')
                         <a href="{{ route('flujo.workflows.edit', $workflow) }}" class="btn-soft btn-secondary">
                             <i class="fas fa-sliders"></i> Ajustes
                         </a>
+                        @endcandirect
                     </div>
                 </div>
             </div>
@@ -670,7 +706,7 @@
                                             onmouseout="this.style.color='#94a3b8'; this.style.background='transparent';">
                                             <i class="fas fa-eye"></i>
                                         </a>
-
+                                        @candirect('flujot.tarea.editar')
                                         {{-- BOTÓN GESTIONAR / EDITAR --}}
                                         <a href="{{ route('flujo.tasks.edit', $task->id) }}" title="Gestionar Tarea"
                                             style="color: #94a3b8; padding: 8px; border-radius: 8px; transition: 0.2s;"
@@ -678,6 +714,7 @@
                                             onmouseout="this.style.color='#94a3b8'; this.style.background='transparent';">
                                             <i class="fas fa-edit"></i>
                                         </a>
+                                        @endcandirect
                                     </div>
                                 </div>
                             @empty
