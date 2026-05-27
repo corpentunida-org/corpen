@@ -5,16 +5,11 @@
             <h2 class="card-title"><i class="fas fa-project-diagram"></i> Proyectos</h2>
             <p class="subtitle">{{ $workflows->total() }} flujos en sistema</p>
         </div>
-        <div class="header-actions">
-            <a href="{{ route('flujo.workflows.create') }}" class="btn-new-minimal">
-                <i class="fas fa-plus"></i> Nuevo Proyecto
-            </a>
-        </div>
     </header>
     <div class="card-toolbar-soft">
         <form id="search-form" class="search-box-soft">
             <i class="fas fa-search"></i>
-            <input type="text" name="search" id="search-input" placeholder="Búsqueda rápida..."
+            <input type="text" name="search" id="search-input" placeholder="Buscar..."
                 value="{{ request('search') }}">
         </form>
         <div class="filter-dropdown">
@@ -147,10 +142,12 @@
                                 <a
                                     href="{{ route('flujo.workflows.show', $workflow->id) }}">{{ $workflow->nombre }}</a>
                             </h3>
+                            @candirect('flujot.proyecto.editar')
                             <div class="p-actions-hidden">
                                 <a href="{{ route('flujo.workflows.edit', $workflow->id) }}" class="edit-link"><i
                                         class="far fa-edit"></i></a>
                             </div>
+                            @endcandirect
                         </div>
 
                         <p class="p-description">
