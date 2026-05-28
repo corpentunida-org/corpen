@@ -21,9 +21,6 @@
             --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
         }
 
-        /* CONFIGURACIÓN GLOBAL */
-        body { background-color: #f4f7fa; font-family: 'Inter', sans-serif; color: var(--slate-900); -webkit-font-smoothing: antialiased; }
-        
         /* 1. AJUSTE DE ANCHO PRO (Aprovechamiento de espacio) */
         .task-show-wrapper { max-width: 1600px; margin: 30px auto; padding: 0 30px; }
 
@@ -197,10 +194,12 @@
                     </a>
                     
                     {{-- MEJORA UX: Salto rápido a la vista de edición --}}
+                    @candirect('flujot.tarea.editar')
                     <a href="{{ route('flujo.tasks.edit', $task->id) }}" 
-                        class="btn btn-sm btn-light text-primary rounded-pill fw-semibold px-3 border border-primary-subtle" title="Editar esta tarea">
+                        class="btn btn-sm btn-light text-primary rounded-pill fw-semibold px-3 border border-primary-subtle" title="Editar Tarea">
                         <i class="fas fa-pen me-1"></i> Editar
                     </a>
+                    @endcandirect
                 </div>
                 
                 <div class="d-flex align-items-center gap-2">
