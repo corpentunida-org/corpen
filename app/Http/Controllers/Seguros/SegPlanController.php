@@ -216,7 +216,7 @@ class SegPlanController extends Controller
         foreach ($planes as $plan) {
             $nuevoPlan = $plan->replicate();
             $nuevoPlan->condicion_id = $request->condicion_id_nuevo;
-            $nuevoPlan->condicion_id = $request->condicion_corpen;
+            $nuevoPlan->condicion_corpen = $request->condicion_id_nuevo;
             $nuevoPlan->save();
         }
         return back()->with('success', 'Planes duplicados correctamente');
