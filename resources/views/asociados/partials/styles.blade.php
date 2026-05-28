@@ -1,0 +1,467 @@
+<style>
+    /* =========================================================
+       0. VARIABLES GLOBALES (Añadido para facilitar el mantenimiento)
+       ========================================================= */
+    :root {
+        /* Colores Base */
+        --bg-main: #f8f9fa;
+        --bg-white: #ffffff;
+        --text-dark: #212529;
+        --text-muted: #6c757d;
+        --text-light-muted: #adb5bd;
+        
+        /* Bordes y Sombras */
+        --border-color: #e9ecef;
+        --border-input: #ced4da;
+        --shadow-sm: 0 4px 12px rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 8px 15px rgba(0, 0, 0, 0.08);
+        
+        /* Utilidades */
+        --radius-md: 6px;
+        --radius-lg: 8px;
+        --transition-base: all 0.2s ease-in-out;
+        --font-family-base: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    /* =========================================================
+       1. ENVOLTURA PRINCIPAL
+       ========================================================= */
+    .task-index-wrapper {
+        padding: 2rem;
+        background-color: var(--bg-main);
+        min-height: calc(100vh - 60px);
+        font-family: var(--font-family-base);
+    }
+
+    /* =========================================================
+       2. HEADER DEL MÓDULO
+       ========================================================= */
+    .index-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end; /* Alinea los elementos al fondo */
+        margin-bottom: 2rem;
+        border-bottom: 2px solid var(--border-color);
+        padding-bottom: 1rem;
+    }
+
+    .system-tag {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: var(--text-muted);
+        font-weight: 700;
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+
+    .main-title {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: var(--text-dark);
+        margin: 0 0 0.25rem 0;
+        line-height: 1.2;
+    }
+
+    .main-subtitle {
+        font-size: 0.95rem;
+        color: var(--text-muted);
+        margin: 0;
+    }
+
+    .header-actions {
+        display: flex;
+        gap: 0.75rem;
+    }
+
+    /* Mejora Responsiva para el Header */
+    @media (max-width: 768px) {
+        .index-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+        .header-actions {
+            width: 100%;
+            justify-content: flex-start;
+            flex-wrap: wrap; /* Permite que los botones bajen si no caben */
+        }
+    }
+
+    /* =========================================================
+       3. BOTONES CORPORATIVOS
+       ========================================================= */
+    /* Estilo base compartido para botones (NUEVO - Código DRY) */
+    .btn-base {
+        padding: 0.5rem 1rem;
+        border-radius: var(--radius-md);
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: var(--transition-base);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        cursor: pointer;
+    }
+
+    /* Botón Transparente (Ghost) */
+    .btn-ghost-corporate {
+        border: 1px solid var(--border-input);
+        background: transparent;
+        color: #495057;
+    }
+
+    .btn-ghost-corporate:hover,
+    .btn-ghost-corporate:focus {
+        background: var(--border-color);
+        color: var(--text-dark);
+        outline: none; /* Se reemplaza por el cambio de fondo por accesibilidad */
+    }
+
+    /* Botón Principal (Negro) */
+    .btn-corporate-black {
+        padding: 0.5rem 1.2rem; /* Ligeramente más padding horizontal */
+        border: 1px solid var(--text-dark);
+        background: var(--text-dark);
+        color: var(--bg-white);
+    }
+
+    .btn-corporate-black:hover,
+    .btn-corporate-black:focus {
+        background: #343a40; /* Gris muy oscuro */
+        border-color: #343a40;
+        color: var(--bg-white);
+        outline: none;
+        box-shadow: 0 0 0 0.2rem rgba(33, 37, 41, 0.25); /* Foco accesible */
+    }
+
+    /* =========================================================
+       4. TARJETAS DE VISUALIZACIÓN (SHOW CARDS)
+       ========================================================= */
+    .show-card-corp {
+        background: var(--bg-white);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border-color);
+        overflow: hidden;
+    }
+
+    .show-header {
+        padding: 1.5rem 2rem;
+        border-bottom: 1px solid var(--border-color);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background-color: #fcfcfc;
+    }
+
+    .show-header h2 {
+        margin: 0;
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--text-dark);
+    }
+
+    .show-body {
+        padding: 2rem;
+    }
+
+    /* =========================================================
+       5. BADGES DE ESTADO
+       ========================================================= */
+    .status-badge-large {
+        padding: 0.5rem 1.2rem;
+        border-radius: 50px; /* Forma de píldora */
+        font-weight: 700;
+        font-size: 0.85rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .status-badge-large i {
+        font-size: 0.6rem;
+    }
+
+    /* Variantes de estado */
+    .st-completed { background-color: #d1e7dd; color: #0f5132; border: 1px solid #badbcc; }
+    .st-pending   { background-color: #fff3cd; color: #664d03; border: 1px solid #ffecb5; }
+    .st-danger    { background-color: #f8d7da; color: #842029; border: 1px solid #f5c2c7; }
+
+    /* =========================================================
+       6. GRILLAS Y BLOQUES DE INFORMACIÓN
+       ========================================================= */
+    .grid-3 {
+        display: grid;
+        /* Responsive automático: Mínimo 280px por columna, se expande a 1fr */
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .info-block {
+        margin-bottom: 0.5rem;
+    }
+
+    .info-block h4 {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        color: var(--text-light-muted);
+        margin-bottom: 0.3rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+
+    .info-block p {
+        font-size: 1.05rem;
+        color: var(--text-dark);
+        margin: 0;
+        font-weight: 500;
+    }
+
+    /* =========================================================
+       7. ITEMS DETALLADOS (CON ICONOS)
+       ========================================================= */
+    .detail-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        background-color: var(--bg-main);
+        padding: 1.2rem;
+        border-radius: var(--radius-lg);
+        border: 1px solid var(--border-color);
+        transition: background-color 0.2s;
+    }
+
+    .detail-item:hover {
+        background-color: #f1f3f5;
+    }
+
+    .detail-item .icon-muted {
+        font-size: 1.8rem;
+        color: var(--border-input);
+    }
+
+    .detail-item .label {
+        display: block;
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        margin-bottom: 0.1rem;
+        font-weight: 600;
+    }
+
+    .detail-item strong {
+        display: block;
+        font-size: 1.1rem;
+        color: var(--text-dark);
+    }
+
+    /* =========================================================
+       8. INPUTS DEL FORMULARIO
+       ========================================================= */
+    .corporate-input {
+        border: 1px solid var(--border-input);
+        border-radius: var(--radius-md);
+        padding: 0.6rem 0.75rem;
+        font-size: 0.95rem;
+        background-color: var(--bg-white);
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        width: 100%; /* Asegura que el input tome el ancho de su contenedor */
+    }
+
+    .corporate-input:focus {
+        border-color: var(--text-dark);
+        box-shadow: 0 0 0 0.2rem rgba(33, 37, 41, 0.1); /* Efecto glow sutil */
+        outline: none;
+    }
+
+    /* =========================================================
+       9. WIDGETS DASHBOARD SUPERIOR
+       ========================================================= */
+    .dash-widget {
+        background: var(--bg-white);
+        border-radius: var(--radius-lg);
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border-color);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .dash-widget:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .widget-icon {
+        width: 55px;
+        height: 55px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-right: 1.2rem;
+        flex-shrink: 0; /* Previene que el ícono se encoja en pantallas pequeñas */
+    }
+
+    .widget-details {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .widget-number {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--text-dark);
+        margin: 0;
+        line-height: 1.1;
+    }
+
+    .widget-title {
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        letter-spacing: 0.5px;
+        margin-top: 0.3rem;
+    }
+
+    /* Utilidades de Color para Dashboard */
+    .border-bottom-primary { border-bottom: 4px solid #0d6efd; }
+    .bg-primary-light      { background-color: rgba(13, 110, 253, 0.1); }
+    .text-primary          { color: #0d6efd !important; }
+
+    .border-bottom-success { border-bottom: 4px solid #198754; }
+    .bg-success-light      { background-color: rgba(25, 135, 84, 0.1); }
+    .text-success          { color: #198754 !important; }
+
+    .border-bottom-info    { border-bottom: 4px solid #0dcaf0; }
+    .bg-info-light         { background-color: rgba(13, 202, 240, 0.1); }
+    .text-info             { color: #0dcaf0 !important; }
+
+    .border-bottom-warning { border-bottom: 4px solid #ffc107; }
+    .bg-warning-light      { background-color: rgba(255, 193, 7, 0.1); }
+    .text-warning          { color: #ffc107 !important; }
+
+    .border-bottom-danger  { border-bottom: 4px solid #dc3545; }
+    .bg-danger-light       { background-color: rgba(220, 53, 69, 0.1); }
+    .text-danger           { color: #dc3545 !important; }
+
+    /* =========================================================
+       10. TARJETA FLOTANTE DE ARCHIVO (PREVIEW MODAL)
+       ========================================================= */
+    .archive-preview-card {
+        position: absolute;
+        z-index: 1060; /* Por encima de cualquier tabla y elemento estándar */
+        width: 320px;
+        background: var(--bg-white);
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1);
+        border: 1px solid #dcdcdc;
+        pointer-events: none; /* Crucial: Permite que el ratón pase a través sin bucles infinitos de eventos */
+        transition: opacity 0.15s ease-in-out;
+        font-family: var(--font-family-base);
+        overflow: hidden;
+    }
+
+    .preview-header {
+        background-color: #1a1e22; /* Color oscuro corporativo premium */
+        color: #ffffff;
+        padding: 1rem 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .text-primary-corporate {
+        color: #0dcaf0; /* Color cyan/azul destacado para el icono */
+        font-size: 1.4rem;
+    }
+
+    .preview-tag {
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #adb5bd;
+        display: block;
+        font-weight: 700;
+    }
+
+    .preview-title {
+        margin: 0;
+        font-size: 0.95rem;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 230px;
+    }
+
+    .preview-body {
+        padding: 1.25rem;
+        background-color: var(--bg-white);
+    }
+
+    .preview-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+
+    .p-item {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .p-label {
+        font-size: 0.7rem;
+        color: #8c96a0;
+        text-transform: uppercase;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+        margin-bottom: 0.15rem;
+    }
+
+    .p-item strong {
+        font-size: 0.9rem;
+        color: var(--text-dark);
+        font-weight: 600;
+    }
+
+    .preview-divider {
+        height: 1px;
+        background-color: var(--border-color);
+        margin: 0.8rem 0;
+    }
+
+    .preview-notes {
+        background-color: var(--bg-main);
+        border-left: 3px solid var(--text-muted);
+        padding: 0.5rem 0.75rem;
+        margin-top: 0.75rem;
+        border-radius: 0 4px 4px 0;
+    }
+
+    .preview-notes p {
+        margin: 0;
+        font-size: 0.75rem;
+        color: #495057;
+        line-height: 1.3;
+        font-style: italic;
+    }
+
+    /* Efecto suave para las filas de la tabla cuando están activas en Hover */
+    .row-hover-archive {
+        transition: background-color 0.15s ease-in-out;
+        cursor: help; /* Cambia el cursor indicando que hay información de ayuda */
+    }
+    
+    .row-hover-archive:hover {
+        background-color: rgba(13, 110, 253, 0.04) !important; /* Resalta sutilmente la fila activa */
+    }
+</style>

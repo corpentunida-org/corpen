@@ -497,7 +497,12 @@
                     <span style="font-size: 0.9rem; color: #64748b;">ID: #{{ $workflow->id }}</span>
                 </div>
 
-                <h1 class="fs-4 fw-bold text-dark">{{ $workflow->nombre }}</h1>
+                <h1 class="fs-4 fw-bold text-dark d-flex align-items-center gap-2 mb-0">
+                    {{ $workflow->nombre }}
+                    <a href="{{ route('flujo.workflows.edit', $workflow) }}" class="text-muted text-decoration-none fs-5" title="Ajustes">
+                        <i class="fas fa-sliders hover-primary"></i>
+                    </a>
+                </h1>
 
                 {{-- Acciones --}}
                 <div class="hero-actions-group"
