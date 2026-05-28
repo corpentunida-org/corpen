@@ -132,6 +132,9 @@ use App\Http\Controllers\Correspondencia\CorrespondenciaProcesoController;
 use App\Http\Controllers\Correspondencia\CorrEstadoController;
 use App\Http\Controllers\Correspondencia\MedioRecepcionController;
 
+//ASOCIADO
+use App\Http\Controllers\Asociado\MaeAsociadoController;
+
 Route::middleware(['auth'])->group(function () {
     Route::get('/', [IndexController::class, 'index'])->name('dashboard');
 });
@@ -1160,3 +1163,22 @@ Route::prefix('indicators')->group(function () {
         ->name('indicators.indicadores.descargar')
         ->middleware('auth');
 });
+
+// ==========================================
+//   MÓDULO DE ASOCIADOS (PASTORES)
+// ==========================================
+Route::middleware(['auth'])
+    ->prefix('asociados')
+    ->name('asociados.')
+    ->group(function () {
+
+        // ---------------------------------------------------
+        // 1. GESTIÓN DEL MAESTRO DE ASOCIADOS
+        // ---------------------------------------------------
+        Route::resource('maestro', MaeAsociadoController::class)
+            ->parameters(['maestro' => 'maeAsociado']);
+
+        Route::get('buscar-cedula/{cedula}', [MaeAsociadoController::class, 'buscarCedula'])
+            ->name('buscar-cedula');
+    });
+// FIN MÓDULO ASOCIADOS
