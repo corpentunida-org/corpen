@@ -66,7 +66,7 @@
                                                 class="text-danger">*</span></label>
                                         <div class="input-group">
                                             <span class="input-group-text">$</span>
-                                            <input type="number" class="form-control" name="primabase" id="prima"
+                                            <input type="number" class="form-control" name="primabasepas" id="prima"
                                                 value="{{ $segPlan->prima_aseguradora }}" required>
                                         </div>
                                         <div class="invalid-feedback">
