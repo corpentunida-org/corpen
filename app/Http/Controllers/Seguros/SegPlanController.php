@@ -113,6 +113,7 @@ class SegPlanController extends Controller
             'name' => strtoupper($request->input('name')),
             'valor' => $request->input('valorPlanAsegurado'),
             'prima_aseguradora' => $request->input('primabase'),
+            'prima_aseguradoraAF' => $request->input('primabasepas'),
             'prima_pastor' => $request->input('primapastor'),
             'prima_asegurado' => $request->input('primaasegurado'),
         ]);

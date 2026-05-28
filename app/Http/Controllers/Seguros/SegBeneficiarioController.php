@@ -72,11 +72,12 @@ class SegBeneficiarioController extends Controller
                    . " - PARENTESCO: " . $request->nameparentesco 
                    . " - PORCENTAJE: " . $request->porcentaje . "%",
             'fechaIncio' => Carbon::now()->toDateString(),
+            'user_created' => auth()->user()->id
         ]);
 
         $url = route('seguros.poliza.show', ['poliza' => 'ID']) . '?id=' . $request->asegurado;
         if ($beneficiariocreate) {
-            $accion = "add beneficiario  " . $request->cedula;
+            $accion = "add beneficiario  " . $request->cedula . " novedad id " . $novedad->id;
             $this->auditoria($accion);
             return redirect()->to($url)->with('success', 'Debe aprobar el ingreso del beneficiario en el módulo de novedades.');
         }else{
