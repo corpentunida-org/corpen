@@ -44,7 +44,7 @@
                             action="{{ route('seguros.planes.duplicarGrupo') }}">
                             @csrf
                             <input type="hidden" name="condicion_id" class="condicion_id"
-                                value="{{ $planesGrupo->first()->condicion_id }}">
+                                value="{{ $planesGrupo->first()->condicion_id ?? $planesGrupo->first()->condicion_corpen }}">
                             <input type="hidden" name="convenio_id" value="{{ $convenio->idConvenio }}">
                             <button type="submit" class="btn btn-light-brand btnDuplicarGrupo"
                                 data-condicion="{{ $condicionId }}" data-planes='@json($planesGrupo->pluck('condicion_id'))'>

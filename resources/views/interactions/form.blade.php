@@ -4,9 +4,7 @@
 @endphp
 
 <style>
-    /* =================================================================
-       0. ANIMACIONES Y ESTILOS BASE
-       ================================================================= */
+    /* 0. ANIMACIONES Y ESTILOS BASE */
     @keyframes fadeIn {
         from {
             opacity: 0;
@@ -739,7 +737,6 @@
                 <div class="mb-4 pb-2 border-bottom">
                     <h5 class="fw-bold text-dark mb-0">Documentación de Soporte (Opcional)</h5>
                 </div>
-
                 <div class="row g-4">
                     <div class="col-lg-6">
                         <label class="form-label text-muted d-block">Archivo Físico</label>
