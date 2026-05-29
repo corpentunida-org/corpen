@@ -520,7 +520,7 @@ class SegPolizaController extends Controller
 
     public function sincronizarValorAcomuladoTitular()
     {
-        $totales = SegPoliza::selectRaw('SEG_asegurados.titular, SUM(primapagar) as total')->join('SEG_asegurados', 'SEG_asegurados.cedula', '=', 'SEG_polizas.seg_asegurado_id')->groupBy('SEG_asegurados.titular')->pluck('total', 'SEG_asegurados.titular');
+        $totales = DB::table('SEG_asegurados')->join('SEG_polizas', 'SEG_polizas.seg_asegurado_id', '=', 'SEG_asegurados.cedula')->selectRaw('SEG_asegurados.titular, SUM(SEG_polizas.primapagar) as total')->groupBy('SEG_asegurados.titular')->pluck('total', 'SEG_asegurados.titular');
         dd($totales);
         return view('seguros.polizas.upload');
     }
