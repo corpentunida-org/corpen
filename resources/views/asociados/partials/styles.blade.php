@@ -464,4 +464,90 @@
     .row-hover-archive:hover {
         background-color: rgba(13, 110, 253, 0.04) !important; /* Resalta sutilmente la fila activa */
     }
+    /* =========================================================
+       COMPONENTES UX - MÓDULO ECM
+       ========================================================= */
+       
+    /* Tabla Avanzada */
+    .ecm-table td {
+        padding: 1rem 0.5rem;
+        vertical-align: middle;
+    }
+
+    /* Avatares Dinámicos */
+    .avatar-circle {
+        width: 40px;
+        height: 40px;
+        background-color: #212529; /* Negro corporativo */
+        color: #ffffff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.9rem;
+        letter-spacing: 1px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    /* Icono de Radicado */
+    .radicado-icon {
+        width: 35px;
+        height: 35px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+    }
+    
+    .bg-light-primary { background-color: rgba(13, 110, 253, 0.1); }
+    .bg-light-danger { background-color: rgba(220, 53, 69, 0.1); }
+
+    /* Caja de Ubicación Topográfica */
+    .location-box {
+        background-color: #f8f9fa;
+        border: 1px dashed #ced4da;
+        padding: 0.4rem 0.8rem;
+        border-radius: 6px;
+        font-size: 0.85rem;
+    }
+
+    /* Modificaciones al Menú Dropdown (Acciones) */
+    .dropdown-menu {
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1) !important;
+        border-radius: 8px;
+        padding: 0.5rem 0;
+    }
+    
+    .dropdown-item {
+        transition: background-color 0.2s ease, padding-left 0.2s ease;
+    }
+    
+    .dropdown-item:hover {
+        background-color: #f8f9fa;
+        padding-left: 1.5rem; /* Efecto hover elegante */
+        color: #212529;
+        font-weight: 500;
+    }
+
+    .dropdown-header {
+        text-transform: uppercase;
+        font-size: 0.7rem;
+        letter-spacing: 1px;
+        font-weight: 700;
+        color: #adb5bd;
+    }
+
+    /* Barras de progreso suaves */
+    .progress {
+        background-color: #e9ecef;
+        border-radius: 50px;
+        overflow: hidden;
+    }
+    
+    .progress-bar {
+        transition: width 1s ease-in-out;
+        border-radius: 50px;
+    }
 </style>

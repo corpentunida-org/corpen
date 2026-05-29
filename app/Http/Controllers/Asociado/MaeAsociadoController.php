@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Asociado;
 
 use App\Http\Controllers\Controller;
 use App\Models\Asociado\MaeAsociado;
+use App\Http\Requests\StoreMaeAsociadoRequest;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 
 class MaeAsociadoController extends Controller
@@ -80,26 +82,42 @@ class MaeAsociadoController extends Controller
         return view('asociados.create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function store(StoreMaeAsociadoRequest $request)
     {
-        // Validación centralizada
-        $validated = $request->validate($this->getValidationRules());
+        try {
+            // Los datos ya vienen validados
+            $validated = $request->validated();
 
-        // Manejo nativo y seguro de campos booleanos en Laravel
-        $validated['escaneado']        = $request->boolean('escaneado');
-        $validated['cargado_ecm']      = $request->boolean('cargado_ecm');
-        $validated['validado_archivo'] = $request->boolean('validado_archivo');
+            // Manejo nativo y seguro de campos booleanos en Laravel
+            $validated['escaneado']        = $request->boolean('escaneado');
+            $validated['cargado_ecm']      = $request->boolean('cargado_ecm');
+            $validated['validado_archivo'] = $request->boolean('validado_archivo');
 
-        // Asignación de estado por defecto si no viene en el request
-        $validated['estado'] = $request->input('estado', 'Activo');
+            // Asignación de estado por defecto si no viene en el request
+            $validated['estado'] = $request->input('estado', 'Activo');
 
-        MaeAsociado::create($validated);
+            // Instanciamos el modelo en lugar de usar create() para poder inyectar propiedades
+            $asociado = new MaeAsociado($validated);
 
-        return redirect()->route('asociados.maestro.index')
-            ->with('success', 'Expediente del asociado creado correctamente.');
+            // VERIFICACIÓN DEL MODAL:
+            // Si el frontend envía 'sincronizar_tercero' como falso o no lo envía, omitimos sincronización
+            if (!$request->boolean('sincronizar_tercero')) {
+                $asociado->skipTerceroSync = true;
+            }
+
+            $asociado->save();
+
+            return redirect()->route('asociados.maestro.index')
+                ->with('success', 'Expediente del asociado creado correctamente.');
+
+        } catch (\Exception $e) {
+            // Registro del error para debugging sin mostrárselo al usuario
+            Log::error('Error creando asociado: ' . $e->getMessage());
+
+            // Redirección con los datos ingresados para que el usuario no pierda su trabajo
+            return back()->withInput()
+                ->with('error', 'Ocurrió un error interno al intentar guardar el expediente. Contacte a soporte si el problema persiste.');
+        }
     }
 
     /**
@@ -131,7 +149,16 @@ class MaeAsociadoController extends Controller
         $validated['cargado_ecm']      = $request->boolean('cargado_ecm');
         $validated['validado_archivo'] = $request->boolean('validado_archivo');
 
-        $maeAsociado->update($validated);
+        // Llenamos el modelo con los nuevos datos validados
+        $maeAsociado->fill($validated);
+
+        // VERIFICACIÓN DEL MODAL:
+        // Si el frontend envía 'sincronizar_tercero' como falso, omitimos sincronización
+        if (!$request->boolean('sincronizar_tercero')) {
+            $maeAsociado->skipTerceroSync = true;
+        }
+
+        $maeAsociado->save();
 
         return redirect()->route('asociados.maestro.index')
             ->with('success', 'Expediente del asociado actualizado correctamente.');
@@ -238,5 +265,84 @@ class MaeAsociadoController extends Controller
             'observaciones_generales'   => 'nullable|string',
             'estado'                    => 'nullable|string|max:20',
         ];
+    }
+    
+    /**
+     * Display a listing of the resource specifically for ECM and Physical Archive.
+     */
+    public function ecmIndex()
+    {
+        $digitalizadosEcm = MaeAsociado::where('cargado_ecm', true)->count();
+        $pendientesArchivo = MaeAsociado::whereNull('radicado')->orWhere('radicado', '')->count();
+        $validados = MaeAsociado::where('validado_archivo', true)->count();
+
+        // Se listan los asociados ordenados por los más recientes
+        $asociados = MaeAsociado::latest()->paginate(15);
+        
+        return view('asociados.ecm', compact('asociados', 'digitalizadosEcm', 'pendientesArchivo', 'validados'));
+    }
+    
+    /**
+     * Display the analytics dashboard.
+     */
+    public function dashboard()
+    {
+        // 1. Población General
+        $total = MaeAsociado::count();
+        
+        // 2. Estado Ministerial (estado_pastor) para Tarta 1
+        $estadosPastor = MaeAsociado::selectRaw('estado_pastor, count(*) as cantidad')
+            ->whereNotNull('estado_pastor')
+            ->groupBy('estado_pastor')
+            ->pluck('cantidad', 'estado_pastor')
+            ->toArray();
+
+        // 3. Demografía (estado_civil) para Tarta 2
+        $estadosCiviles = MaeAsociado::selectRaw('estado_civil, count(*) as cantidad')
+            ->whereNotNull('estado_civil')
+            ->where('estado_civil', '!=', '')
+            ->groupBy('estado_civil')
+            ->pluck('cantidad', 'estado_civil')
+            ->toArray();
+
+        // 4. Embudo de Digitalización (ECM Booleanos)
+        $ecmPipeline = [
+            'total'      => $total,
+            'escaneados' => MaeAsociado::where('escaneado', true)->count(),
+            'cargados'   => MaeAsociado::where('cargado_ecm', true)->count(),
+            'validados'  => MaeAsociado::where('validado_archivo', true)->count(),
+        ];
+
+        // 5. Archivo Físico (Basado en el campo 'radicado')
+        $pendientesRadicado = MaeAsociado::whereNull('radicado')->orWhere('radicado', '')->count();
+
+        // 6. Últimos Registros
+        $ultimosIngresos = MaeAsociado::latest()->take(5)->get();
+
+        return view('asociados.dashboard', compact(
+            'total',
+            'estadosPastor',
+            'estadosCiviles',
+            'ecmPipeline',
+            'pendientesRadicado',
+            'ultimosIngresos'
+        ));
+    }
+    /**
+     * Busca en la tabla global MaeTerceros para el autollenado del formulario
+     */
+    public function buscarTerceroMaestro($cedula)
+    {
+        // Asegúrate de tener el use App\Models\Maestras\MaeTerceros; arriba en el controlador
+        $tercero = \App\Models\Maestras\MaeTerceros::where('cod_ter', $cedula)->first();
+
+        if ($tercero) {
+            return response()->json([
+                'status' => 'success',
+                'data'   => $tercero
+            ]);
+        }
+
+        return response()->json(['status' => 'error', 'message' => 'Tercero no encontrado.'], 404);
     }
 }
