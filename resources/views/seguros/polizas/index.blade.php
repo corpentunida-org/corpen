@@ -66,31 +66,38 @@
                     <div class="d-flex align-items-center justify-content-between">
                         <div class="d-flex align-items-center justify-content-center">
                             @candirect('seguros.poliza.update')
-                                <a href="{{ route('seguros.poliza.edit', ['poliza' => 'excel']) }}"
-                                    class="d-flex me-1 btn btn-light-brand">
-                                    <i class="feather feather-edit-3 me-2"></i>
-                                    <span>Actualizar Valor a Pagar</span>
-                                </a>
+                            <a href="{{ route('seguros.poliza.edit', ['poliza' => 'excel']) }}"
+                                class="d-flex me-1 btn btn-light-brand">
+                                <i class="feather feather-edit-3 me-2"></i>
+                                <span>Actualizar Valor a Pagar</span>
+                            </a>
                             @endcandirect
                             <a href="{{ route('seguros.poliza.download') }}"
                                 class="d-flex me-1 px-3 bg-soft-indigo text-indigo border border-soft-indigo"
                                 style="padding: 12px 0 12px 0;">
                                 <i class="feather-folder-plus me-2"></i>
-                                <span class="text-uppercase cursor-pointer" style="font-size: 10px;">Descargar CxC</span>
+                                <span class="text-uppercase cursor-pointer" style="font-size: 10px;">Descargar
+                                    CxC</span>
                             </a>
                         </div>
                         <div class="d-flex align-items-center justify-content-center">
                             @candirect('seguros.poliza.store')
-                                {{-- <a href="{{route('seguros.poliza.create')}}" class="d-flex me-1 btn btn-primary">
+                            {{-- <a href="{{route('seguros.poliza.create')}}" class="d-flex me-1 btn btn-primary">
                                     <i class="feather-plus me-2"></i>
                                     <span>Crear Póliza Individual</span>
-                                </a> --}}                         
+                                </a> --}}
                                 <a href="{{ route('seguros.poliza.viewupload') }}"
                                     class="d-flex me-1 btn btn-light-brand ml-1">
                                     <i class="feather-upload me-2"></i>
                                     <span>Subir Excel Crear/Actualizar Póliza</span>
                                 </a>
                             @endcandirect
+                            <a href="{{route('seguros.poliza.sincronizar-valor-acumulado-titular')}}"
+                                class="d-flex me-1 px-3 bg-soft-indigo text-indigo border border-soft-indigo"
+                                style="padding: 12px 0 12px 0;" data-bs-toggle="tooltip" data-bs-placement="top" title="Actualizar valor a pagar de los titulares">
+                                <i class="bi bi-gear-fill me-2"></i>
+                                <span class="text-uppercase cursor-pointer" style="font-size: 10px;">Sincronizar</span>
+                            </a>
                         </div>
                     </div>
                 </div>

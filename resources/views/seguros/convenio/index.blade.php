@@ -6,11 +6,12 @@
     <div class="col-lg-12">
         <div class="card stretch stretch-full">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="fw-bold mb-0">Convenios:</h5>
-
-                <a href="{{ route('seguros.convenio.create') }}" class="btn btn-sm btn-light-brand">
-                    <i class="feather feather-plus"></i> Nuevo Convenio
+                <h5 class="fw-bold mb-0">Convenios:</h5>                
+                @candirect('seguros.planes.store')
+                <a href="{{ route('seguros.planes.create') }}" class="btn btn-sm btn-light-brand">
+                    <i class="bi bi-gear-fill me-2"></i> Crear plan / cobertura / condición 
                 </a>
+                @endcandirect
             </div>
             <div class="card-body table-responsive">
                 <table id="tablaConvenios" class="table table-hover">

@@ -33,20 +33,20 @@ class SegNovedadesController extends Controller
         $estado = $request->query('estado', 'nuevas');
         $colecciones = [
             'nuevas' => SegNovedades::where('estado', 1)
-                ->with(['tercero', 'cambiosEstado', 'beneficiario'])
+                ->with(['tercero', 'cambiosEstado.userrelation:id,name', 'beneficiario'])
                 ->get(),
             'radicado' => SegNovedades::where('estado', 2)
-                ->with(['tercero', 'cambiosEstado'])
+                ->with(['tercero', 'cambiosEstado.userrelation:id,name'])
                 ->get(),
             'complementos' => SegNovedades::where('estado', 5)
-                ->with(['tercero', 'cambiosEstado'])
+                ->with(['tercero', 'cambiosEstado.userrelation:id,name'])
                 ->get(),
             'aprobado' => SegNovedades::where('estado', 3)
-                ->with(['tercero', 'cambiosEstado'])
+                ->with(['tercero', 'cambiosEstado.userrelation:id,name'])
                 ->latest('created_at')
                 ->get(),
             'rechazado' => SegNovedades::where('estado', 4)
-                ->with(['tercero', 'cambiosEstado'])
+                ->with(['tercero', 'cambiosEstado.userrelation:id,name'])
                 ->get(),
         ];
 
@@ -115,9 +115,10 @@ class SegNovedadesController extends Controller
             'estado' => $request->estado,
             'observaciones' => strtoupper($request->observaciones),
             'fechaInicio' => Carbon::now()->toDateString(),
+            'user_created' => auth()->user()->id
         ]);
         if ($request->tipoNovedad === '1') {
-            $accion = 'modificacion en poliza  ' . $request->id_poliza . ' Asegurado ' . $request->asegurado;
+            $accion = 'modificacion en poliza  ' . $request->id_poliza . ' Asegurado ' . $request->asegurado . ' novedad ID ' . $novedad->id;
         } elseif ($request->tipoNovedad === '2') {
             /*$controllerapi = new ComaeTerController();
             $terapi = $controllerapi->show($request->asegurado);
@@ -154,9 +155,9 @@ class SegNovedadesController extends Controller
                     ]);
                 }
             }
-            $this->auditoria('TERCERO CREAD0 ID ' . $terceroontable->cod_ter);
-            $this->auditoria('ASEGURADO CREADO ID ' . ($aseguradontable ? $aseguradontable->cedula : $asegurado->cedula));
+            $accion = 'TERCERO CREAD0 ID ' . $terceroontable->cod_ter . ' para la novedad ID ' . $novedad->id;
         }
+        $this->auditoria($accion);
         return redirect()->route('seguros.novedades.index')->with('success', 'Novedad registrada correctamente');
     }
 
@@ -200,13 +201,14 @@ class SegNovedadesController extends Controller
                 'id_plan' => $request->id_plan,
                 'valorAsegurado' => $request->valAsegurado,
             ]);
-            SegCambioEstadoNovedad::create([
+            $segcambionov = SegCambioEstadoNovedad::create([
                 'novedad' => $id,
                 'estado' => $request->estado,
                 'observaciones' => $request->observaciones,
                 'fechaInicio' => Carbon::now()->toDateTimeString(),
+                'user_created' => auth()->user()->id
             ]);
-            $this->auditoria('SE EDITO UNA NOVEDAD, ID: ' . $id);
+            $this->auditoria('SE EDITO UNA NOVEDAD, ID: ' . $id, ' CAMBIO NOVEDAD ID: ' . $segcambionov->id);
             return redirect()->route('seguros.novedades.index')->with('success', 'Se actualizó correctamente la novedad.');
         } else {
             foreach ($request->ids as $id) {
@@ -264,6 +266,7 @@ class SegNovedadesController extends Controller
                     'observaciones' => strtoupper($request->observaciones),
                     'fechaInicio' => Carbon::now()->toDateTimeString(),
                     'fechaCierre' => Carbon::now()->toDateTimeString(),
+                    'user_created' => auth()->user()->id
                 ]);
                 $this->auditoria('SE ACTUALIZO EL ESTADO NOVEDAD, ID: ' . $novedad->id);
             }
@@ -295,6 +298,7 @@ class SegNovedadesController extends Controller
             'estado' => $request->estado,
             'observaciones' => strtoupper($request->observacionretiro),
             'fechaIncio' => Carbon::now()->toDateTimeString(),
+            'user_created' => auth()->user()->id
         ]);
 
         return redirect()->route('seguros.novedades.index')->with('success', 'Novedad registrada correctamente');
