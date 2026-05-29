@@ -209,6 +209,7 @@ Route::prefix('seguros')->group(function () {
     Route::post('beneficios/list', [SegBeneficiosController::class, 'listFilter'])->name('seguros.beneficios.list');
     Route::post('/seguros/filtopolizas', [SegBeneficiosController::class, 'exportFiltroPdf'])->name('seguros.poliza.filtros');
     Route::post('/seguros/filtopolizas/excel', [SegBeneficiosController::class, 'exportexcel'])->middleware('auth')->name('seguros.poliza.filtroexcel');
+    Route::get('/polizas-sincronizar', [SegPolizaController::class, 'sincronizarValorAcomuladoTitular'])->name('seguros.poliza.sincronizar-valor-acumulado-titular');
     Route::prefix('seguros')->get('/reclamacion/informe-completo', [SegReclamacionesController::class, 'exportarInformeCompleto'])->name('seguros.reclamacion.exportarInformeCompleto');
     Route::get('/novedades/{id}/formulario', [SegNovedadesController::class, 'verArchivo'])->name('seguros.novedades.formulario');
     Route::get('/seguros/novedades/download', [SegNovedadesController::class, 'descargarexcel'])->name('seguros.novedades.download');
