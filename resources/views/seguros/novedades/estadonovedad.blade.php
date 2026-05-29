@@ -80,8 +80,7 @@
             </div>
             <div class="action-list-items">
                 @if ($estado != 'aprobado' && $estado != 'rechazado')
-                    <form id="novedadesForm" action="{{ route('seguros.novedades.update', 1) }}" method="POST"
-                        class="d-flex align-items-center gap-2 me-3">
+                    <form id="novedadesForm" action="{{ route('seguros.novedades.update', 1) }}" method="POST" class="d-flex align-items-center gap-2 me-3">
                         @csrf
                         @method('PUT')
                         <select name="estado" class="form-select form-select-sm me-2" required>
@@ -151,9 +150,9 @@
     </div>
     <div class="content-area-body p-0">
         @foreach ($data as $index => $reg)
-            <div class="single-items" style="pointer-events: none;">
+            <div class="single-items">
                 <!--! [item-meta] !-->
-                <div class="d-flex wd-80 gap-4 ms-1 item-meta" style="pointer-events: auto;">
+                <div class="d-flex wd-80 gap-4 ms-1 item-meta">
                     <div class="item-checkbox">
                         <div class="custom-control custom-checkbox">
                             <input type="checkbox" class="custom-control-input checkbox" id="{{ $index + 1 }}bcb"
@@ -165,8 +164,7 @@
                 </div>
                 <!--! [item-info] !-->
                 <div class="d-flex align-items-start gap-4 w-100 item-info">
-                    <a href="{{ route('seguros.poliza.show', ['poliza' => 'ID']) . '?id=' . $reg->id_asegurado }}"
-                        class="hstack gap-3" style="width: 30%;">
+                    <a href="{{ route('seguros.poliza.show', ['poliza' => 'ID']) . '?id=' . $reg->id_asegurado }}" class="hstack gap-3 d-flex text-decoration-none" style="width: 30%;">
                         <i class="bi bi-person-circle"></i>
                         <div>
                             <span class="text-truncate-1-line">{{ $reg->id_asegurado }}</span>
@@ -189,18 +187,20 @@
                             </div>
                         @endif
                     </div>
-                    <a class="d-none d-md-block" style="width: 45%;">
+                    <div class="d-none d-md-block" style="width: 45%;">
                         <div class="w-100 text-truncate-1-line item-desc">
                             <span class="ms-3"> {{ $reg->cambiosEstado->last()->observaciones ?? '' }}</span>
                         </div>
-                    </a>
+                    </div>
                 </div>
                 <!--! [item-date] !-->
                 <div class="d-flex align-items-center justify-content-end wd-150 gap-3 item-data">
                     <div class="fs-11 fw-medium text-muted text-uppercase d-none d-sm-block item-time">
+                        <span>
                         {{ optional($reg->cambiosEstado->last())->fechaCierre
                             ? optional($reg->cambiosEstado->last()->fechaCierre)->translatedFormat('d M Y')
-                            : $reg->created_at->translatedFormat('d M Y') }}
+                            : $reg->created_at->translatedFormat('d M Y') }}</span>
+                    <span class="fw-semibold text-dark">{{ $reg->cambiosEstado->first()->userrelation->name ?? ' ' }}</span>
                     </div>
                     <div class="item-action" style="pointer-events: auto;">
                         <div class="dropdown">
@@ -253,9 +253,9 @@
             }
             this.submit();
         });
-        $(document).on('click', '.item-info', function(event) {
+        /*$(document).on('click', '.item-info', function(event) {
             event.preventDefault();
             event.stopPropagation();
-        });
+        });*/
     </script>
 </div>
