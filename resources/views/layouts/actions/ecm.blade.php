@@ -7,15 +7,13 @@
     </a>
 
     <ul class="nxl-submenu">
-        
         {{-- 1. INDICADORES --}}
         <li class="nxl-item">
-            <a class="nxl-link" href="#">
+            <a class="nxl-link" href="{{ route('asociados.dashboard') }}">
                 <i class="bi bi-speedometer2 me-2"></i> Tablero de Asociados
             </a>
         </li>
 
-        {{-- SEPARADOR --}}
         <li class="nxl-item-separator" style="height: 1px; background: rgba(0,0,0,0.04); margin: 5px 20px;"></li>
         
         {{-- 2. ACCIONES OPERATIVAS --}}
@@ -25,7 +23,6 @@
             </a>
         </li>
 
-        {{-- SEPARADOR --}}
         <li class="nxl-item-separator" style="height: 1px; background: rgba(0,0,0,0.04); margin: 10px 20px;"></li>
 
         {{-- 3. CONTROL Y SEGUIMIENTO --}}
@@ -35,14 +32,13 @@
             </a>
         </li>
 
-        {{-- 4. GESTIÓN DOCUMENTAL --}}
+        {{-- 4. GESTIÓN DOCUMENTAL (RUTA CORREGIDA) --}}
         <li class="nxl-item">
-            <a class="nxl-link" href="{{ route('asociados.maestro.index') }}">
+            <a class="nxl-link" href="{{ route('asociados.ecm.index') }}">
                 <i class="bi bi-folder2-open me-2"></i> Expedientes y ECM
             </a>
         </li>
 
-        {{-- ZONA DE TRAMPA SCROLL PARA UI --}}
         <li class="nxl-item" style="height: 40px; pointer-events: none; list-style: none;"></li>
         <li class="nxl-item" style="height: 40px; pointer-events: none; list-style: none;"></li>
     </ul>
