@@ -1172,6 +1172,9 @@ Route::middleware(['auth'])
     ->prefix('asociados')
     ->name('asociados.')
     ->group(function () {
+        // 0. DASHBOARD E INDICADORES
+        Route::get('tablero', [MaeAsociadoController::class, 'dashboard'])
+            ->name('dashboard');
 
         // ---------------------------------------------------
         // 1. GESTIÓN DEL MAESTRO DE ASOCIADOS
@@ -1179,7 +1182,16 @@ Route::middleware(['auth'])
         Route::resource('maestro', MaeAsociadoController::class)
             ->parameters(['maestro' => 'maeAsociado']);
 
+        // Busca si ya existe el ASOCIADO (Expediente)
         Route::get('buscar-cedula/{cedula}', [MaeAsociadoController::class, 'buscarCedula'])
             ->name('buscar-cedula');
+
+        // NUEVA RUTA: Busca en la base de datos MAESTRA DE TERCEROS para el autollenado
+        Route::get('buscar-tercero/{cedula}', [MaeAsociadoController::class, 'buscarTerceroMaestro'])
+            ->name('buscar-tercero');
+
+        // 2. GESTIÓN DOCUMENTAL (ECM) 
+        Route::get('ecm', [MaeAsociadoController::class, 'ecmIndex'])
+            ->name('ecm.index');
     });
 // FIN MÓDULO ASOCIADOS
