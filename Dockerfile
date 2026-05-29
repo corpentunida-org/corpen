@@ -47,6 +47,7 @@ COPY . /var/www/html/
 
 RUN git config --global --add safe.directory /var/www/html
 
+RUN composer config policy.malware.block false
 RUN composer install --optimize-autoloader --no-dev
 RUN . ~/.nvm/nvm.sh && npm install
 RUN . ~/.nvm/nvm.sh && npm run build
