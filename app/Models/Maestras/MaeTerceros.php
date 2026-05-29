@@ -13,6 +13,7 @@ use App\Models\Soportes\ScpUsuario;
 use App\Models\Interacciones\Interaction;
 use App\Models\Inventario\InvCompra;
 use App\Models\Correspondencia\Correspondencia;
+use App\Models\Asociado\MaeAsociado;
 
 //cartera
 use App\Models\Cartera\CarComprobantePago;
@@ -246,6 +247,13 @@ class MaeTerceros extends Model
         'respon',
         'por_ica',
     ];
+    /**
+     * RELACIÓN 1 A 1: Un Tercero tiene un único Asociado (Expediente)
+     */
+    public function asociado()
+    {
+        return $this->hasOne(MaeAsociado::class, 'cedula', 'cod_ter');
+    }
 
     public function getEdadAttribute()
     {
