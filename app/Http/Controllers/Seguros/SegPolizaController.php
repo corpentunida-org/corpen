@@ -314,7 +314,7 @@ class SegPolizaController extends Controller
             ->with('success', "Se actualizaron exitosamente {$updatedCount} registros")
             ->with('failedRows', $failedRows);
     }
-    
+
     public function listarPolizas()
     {
         $noActualizados = DB::table('seg_polizas_temp_no_match')->get();
@@ -330,7 +330,6 @@ class SegPolizaController extends Controller
         ]);
 
         try {
-
             DB::beginTransaction();
 
             $file = $request->file('archivo_csv');
@@ -359,7 +358,6 @@ class SegPolizaController extends Controller
             fgetcsv($handle);
 
             while (($data = fgetcsv($handle, 1000, ',')) !== false) {
-
                 DB::table('seg_polizas_temp_no_match')->insertOrIgnore([
                     'seg_asegurado_id' => $data[0] ?? null,
                     'fecha_novedad' => !empty($data[1]) ? $data[1] : null,
@@ -407,9 +405,7 @@ class SegPolizaController extends Controller
             return redirect()
                 ->route('seguros.poliza.listar-no-actualizadas')
                 ->with('success', "Se actualizaron {$updated} pólizas");
-
         } catch (\Exception $e) {
-
             DB::rollBack();
 
             return redirect()
@@ -520,5 +516,12 @@ class SegPolizaController extends Controller
             ];
         });
         return Excel::download(new ExcelExport($datosFormateados, $headings), 'DATOS_SEGUROS_VIDA_' . now()->format('Y-m-d') . '.xlsx');
+    }
+
+    public function sincronizarValorAcomuladoTitular()
+    {
+        $totales = SegPoliza::selectRaw('SEG_asegurados.titular, SUM(primapagar) as total')->join('SEG_asegurados', 'SEG_asegurados.cedula', '=', 'SEG_polizas.seg_asegurado_id')->groupBy('SEG_asegurados.titular')->pluck('total', 'SEG_asegurados.titular');
+        dd($totales);
+        return view('seguros.polizas.upload');
     }
 }

@@ -67,7 +67,7 @@
                                         <div class="input-group">
                                             <span class="input-group-text">$</span>
                                             <input type="number" class="form-control" name="primabasepas" id="prima"
-                                                value="{{ $segPlan->prima_aseguradora }}" required>
+                                                value="{{ $segPlan->prima_aseguradoraAF }}" required>
                                         </div>
                                         <div class="invalid-feedback">
                                             La suma de las coberturas debe dar el valor total de la prima.
