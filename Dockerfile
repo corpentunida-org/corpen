@@ -29,7 +29,7 @@ RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | b
   && nvm alias default $NODE_VERSION \
   && nvm use default
 
-RUN docker-php-ext-install pdo
+
 RUN docker-php-ext-install pdo_mysql
 RUN docker-php-ext-install gd
 RUN docker-php-ext-install zip
