@@ -4,11 +4,15 @@ namespace App\Models\Asociado;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Maestras\MaeTerceros; // Importación obligatoria para la sincronización
+use App\Models\Maestras\MaeTerceros;
+use App\Models\Demografia\Ciudad;
+use App\Models\Maestras\MaeDistritos;
 
 class MaeAsociado extends Model
 {
     use HasFactory;
+    
+    public $skipTerceroSync = false;
 
     /**
      * El nombre de la tabla asociada al modelo en la base de datos.
@@ -136,6 +140,11 @@ class MaeAsociado extends Model
      * Aquí le decimos a Laravel que escuche el evento 'saved' (que ocurre
      * tanto al CREAR como al ACTUALIZAR un registro).
      */
+    /**
+     * ====================================================================
+     * EVENTOS DEL MODELO (Sincronización con MaeTerceros)
+     * ====================================================================
+     */
     protected static function booted()
     {
         static::saved(function ($asociado) {
@@ -151,38 +160,38 @@ class MaeAsociado extends Model
             // ---------------------------------------------------------
             $tercero->cod_ter      = $asociado->cedula;
             $tercero->nom1         = $asociado->nombre1;
-            $tercero->nom2         = $asociado->nombre2;
+            $tercero->nom2         = $asociado->nombre2 ?? '';
             $tercero->apl1         = $asociado->apellido1;
-            $tercero->apl2         = $asociado->apellido2;
+            $tercero->apl2         = $asociado->apellido2 ?? '';
             $tercero->nom_ter      = trim("{$asociado->nombre1} {$asociado->nombre2} {$asociado->apellido1} {$asociado->apellido2}");
-            $tercero->fec_nac      = $asociado->fecha_nacimiento;
-            $tercero->fec_expcc    = $asociado->fecha_expedicion;
-            $tercero->lugar_expcc  = $asociado->lugar_expedicion_cedula;
-            $tercero->est_civil    = $asociado->estado_civil;
+            $tercero->fec_nac      = $asociado->fecha_nacimiento; // Asume que BD acepta null en campos tipo Date
+            $tercero->fec_expcc    = $asociado->fecha_expedicion; // Asume que BD acepta null en campos tipo Date
+            $tercero->lugar_expcc  = $asociado->lugar_expedicion_cedula ?? '';
+            $tercero->est_civil    = $asociado->estado_civil ?? '';
             $tercero->pais         = $asociado->pais ?? 'Colombia';
 
             // ---------------------------------------------------------
             // DATOS DE CONTACTO
             // ---------------------------------------------------------
-            $tercero->email        = $asociado->correo_pastor;
-            $tercero->tel          = $asociado->celular_pastor; // Mapeado a 'tel'
-            $tercero->cel          = $asociado->whatsapp;       // Mapeado a 'cel'
+            $tercero->email        = $asociado->correo_pastor ?? '';
+            $tercero->tel          = $asociado->celular_pastor ?? ''; // Mapeado a 'tel'
+            $tercero->cel          = $asociado->whatsapp ?? '';       // Mapeado a 'cel'
 
             // ---------------------------------------------------------
             // INFORMACIÓN MINISTERIAL Y CORPORATIVA
             // ---------------------------------------------------------
             // Nota: En tu modelo MaeTerceros el campo de fecha de ingreso ministerial se llama fec_minis
             $tercero->fec_minis    = $asociado->fecha_afiliacion; 
-            $tercero->cod_dist     = $asociado->distrito_actual;  // Mapeado a 'cod_dist'
-            $tercero->congrega     = $asociado->iglesia_actual;   // Mapeado a 'congrega'
+            $tercero->cod_dist     = $asociado->distrito_actual ?? '';  // Mapeado a 'cod_dist'
+            $tercero->congrega     = $asociado->iglesia_actual ?? '';   // Mapeado a 'congrega'
 
             // ---------------------------------------------------------
             // INFORMACIÓN FAMILIAR (CÓNYUGE)
             // ---------------------------------------------------------
-            $tercero->id_conyuge   = $asociado->cedula_esposa;
-            $tercero->nom_conyug   = $asociado->nombre_esposa;
-            $tercero->mail_conyu   = $asociado->correo_esposa;
-            $tercero->tel1         = $asociado->celular_esposa;   // Mapeado a 'tel1'
+            $tercero->id_conyuge   = $asociado->cedula_esposa ?? '';
+            $tercero->nom_conyug   = $asociado->nombre_esposa ?? '';
+            $tercero->mail_conyu   = $asociado->correo_esposa ?? '';
+            $tercero->tel1         = $asociado->celular_esposa ?? '';   // Mapeado a 'tel1'
 
             // Valores por defecto si se está creando un tercero nuevo
             if (!$tercero->exists) {
@@ -226,5 +235,25 @@ class MaeAsociado extends Model
     {
         // trim() asegura que si no hay segundo nombre o apellido, no queden espacios dobles molestos
         return trim("{$this->nombre1} {$this->nombre2} {$this->apellido1} {$this->apellido2}");
+    }
+
+    /**
+     * Relación: Un asociado pertenece a una ciudad.
+     * * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function ciudad()
+    {
+        // belongsTo(Modelo_Relacionado, 'llave_foranea_local', 'llave_primaria_del_otro_modelo')
+        return $this->belongsTo(Ciudad::class, 'ciudad_distrito', 'id_ciudad');
+    }
+
+    /**
+     * Relación: Un asociado pertenece a un distrito.
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function distrito()
+    {
+        // belongsTo(Modelo_Relacionado, 'llave_foranea_local', 'llave_primaria_del_otro_modelo')
+        return $this->belongsTo(MaeDistritos::class, 'distrito_actual', 'COD_DIST');
     }
 }

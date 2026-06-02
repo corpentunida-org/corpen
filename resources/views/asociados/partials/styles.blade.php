@@ -91,7 +91,7 @@
     /* =========================================================
        3. BOTONES CORPORATIVOS
        ========================================================= */
-    /* Estilo base compartido para botones (NUEVO - Código DRY) */
+    /* Estilo base compartido para botones */
     .btn-base {
         padding: 0.5rem 1rem;
         border-radius: var(--radius-md);
@@ -117,12 +117,12 @@
     .btn-ghost-corporate:focus {
         background: var(--border-color);
         color: var(--text-dark);
-        outline: none; /* Se reemplaza por el cambio de fondo por accesibilidad */
+        outline: none;
     }
 
     /* Botón Principal (Negro) */
     .btn-corporate-black {
-        padding: 0.5rem 1.2rem; /* Ligeramente más padding horizontal */
+        padding: 0.5rem 1.2rem;
         border: 1px solid var(--text-dark);
         background: var(--text-dark);
         color: var(--bg-white);
@@ -130,11 +130,11 @@
 
     .btn-corporate-black:hover,
     .btn-corporate-black:focus {
-        background: #343a40; /* Gris muy oscuro */
+        background: #343a40;
         border-color: #343a40;
         color: var(--bg-white);
         outline: none;
-        box-shadow: 0 0 0 0.2rem rgba(33, 37, 41, 0.25); /* Foco accesible */
+        box-shadow: 0 0 0 0.2rem rgba(33, 37, 41, 0.25);
     }
 
     /* =========================================================
@@ -173,7 +173,7 @@
        ========================================================= */
     .status-badge-large {
         padding: 0.5rem 1.2rem;
-        border-radius: 50px; /* Forma de píldora */
+        border-radius: 50px;
         font-weight: 700;
         font-size: 0.85rem;
         display: inline-flex;
@@ -197,7 +197,6 @@
        ========================================================= */
     .grid-3 {
         display: grid;
-        /* Responsive automático: Mínimo 280px por columna, se expande a 1fr */
         grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
         gap: 1.5rem;
     }
@@ -269,12 +268,12 @@
         font-size: 0.95rem;
         background-color: var(--bg-white);
         transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-        width: 100%; /* Asegura que el input tome el ancho de su contenedor */
+        width: 100%;
     }
 
     .corporate-input:focus {
         border-color: var(--text-dark);
-        box-shadow: 0 0 0 0.2rem rgba(33, 37, 41, 0.1); /* Efecto glow sutil */
+        box-shadow: 0 0 0 0.2rem rgba(33, 37, 41, 0.1);
         outline: none;
     }
 
@@ -306,7 +305,7 @@
         justify-content: center;
         font-size: 1.5rem;
         margin-right: 1.2rem;
-        flex-shrink: 0; /* Previene que el ícono se encoja en pantallas pequeñas */
+        flex-shrink: 0;
     }
 
     .widget-details {
@@ -357,20 +356,20 @@
        ========================================================= */
     .archive-preview-card {
         position: absolute;
-        z-index: 1060; /* Por encima de cualquier tabla y elemento estándar */
+        z-index: 1060;
         width: 320px;
         background: var(--bg-white);
         border-radius: 12px;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1);
         border: 1px solid #dcdcdc;
-        pointer-events: none; /* Crucial: Permite que el ratón pase a través sin bucles infinitos de eventos */
+        pointer-events: none;
         transition: opacity 0.15s ease-in-out;
         font-family: var(--font-family-base);
         overflow: hidden;
     }
 
     .preview-header {
-        background-color: #1a1e22; /* Color oscuro corporativo premium */
+        background-color: #1a1e22;
         color: #ffffff;
         padding: 1rem 1.25rem;
         display: flex;
@@ -379,7 +378,7 @@
     }
 
     .text-primary-corporate {
-        color: #0dcaf0; /* Color cyan/azul destacado para el icono */
+        color: #0dcaf0;
         font-size: 1.4rem;
     }
 
@@ -455,19 +454,18 @@
         font-style: italic;
     }
 
-    /* Efecto suave para las filas de la tabla cuando están activas en Hover */
     .row-hover-archive {
         transition: background-color 0.15s ease-in-out;
-        cursor: help; /* Cambia el cursor indicando que hay información de ayuda */
+        cursor: help;
     }
     
     .row-hover-archive:hover {
-        background-color: rgba(13, 110, 253, 0.04) !important; /* Resalta sutilmente la fila activa */
+        background-color: rgba(13, 110, 253, 0.04) !important;
     }
+
     /* =========================================================
-       COMPONENTES UX - MÓDULO ECM
+       11. COMPONENTES UX - MÓDULO ECM
        ========================================================= */
-       
     /* Tabla Avanzada */
     .ecm-table td {
         padding: 1rem 0.5rem;
@@ -478,7 +476,7 @@
     .avatar-circle {
         width: 40px;
         height: 40px;
-        background-color: #212529; /* Negro corporativo */
+        background-color: #212529;
         color: #ffffff;
         border-radius: 50%;
         display: flex;
@@ -526,7 +524,7 @@
     
     .dropdown-item:hover {
         background-color: #f8f9fa;
-        padding-left: 1.5rem; /* Efecto hover elegante */
+        padding-left: 1.5rem;
         color: #212529;
         font-weight: 500;
     }
@@ -549,5 +547,56 @@
     .progress-bar {
         transition: width 1s ease-in-out;
         border-radius: 50px;
+    }
+
+    /* =========================================================
+       12. INTEGRACIÓN SELECT2 + BOOTSTRAP INPUT-GROUP-SM
+       ========================================================= */
+    /* 1. Forzar la altura exacta para que coincida con los inputs pequeños (SM) */
+    .select2-premium-wrapper .select2-container--default .select2-selection--single {
+        height: calc(1.5em + 0.5rem + 2px) !important;
+        min-height: calc(1.5em + 0.5rem + 2px) !important;
+        padding: 0.25rem 0.5rem !important;
+        font-size: 0.875rem !important;
+        border: 1px solid #dee2e6 !important;
+        border-left: 0 !important;
+        border-top-left-radius: 0 !important;
+        border-bottom-left-radius: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        background-color: #fff;
+    }
+
+    /* 2. Evitar que el texto interior empuje la caja hacia abajo */
+    .select2-premium-wrapper .select2-selection__rendered {
+        line-height: normal !important;
+        padding-left: 0 !important;
+        color: #495057 !important;
+    }
+
+    /* 3. Centrar la flecha desplegable de la derecha */
+    .select2-premium-wrapper .select2-selection__arrow {
+        height: 100% !important;
+        top: 0 !important;
+        right: 5px !important;
+        display: flex !important;
+        align-items: center !important;
+    }
+
+    /* 4. Igualar el tamaño de la caja del ícono de la izquierda */
+    .select2-premium-wrapper .input-group-text {
+        border: 1px solid #dee2e6 !important;
+        border-right: 0 !important;
+        padding: 0.25rem 0.6rem !important;
+        font-size: 0.875rem !important;
+        height: calc(1.5em + 0.5rem + 2px) !important;
+    }
+
+    /* 5. Quitar el borde al hacer clic */
+    .select2-container--default .select2-selection--single:focus,
+    .select2-premium-wrapper .select2-container--open .select2-selection--single {
+        outline: none !important;
+        box-shadow: none !important;
+        border-color: #86b7fe !important;
     }
 </style>

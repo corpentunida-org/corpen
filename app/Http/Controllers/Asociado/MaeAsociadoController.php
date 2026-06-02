@@ -4,8 +4,17 @@ namespace App\Http\Controllers\Asociado;
 
 use App\Http\Controllers\Controller;
 use App\Models\Asociado\MaeAsociado;
+use App\Models\Maestras\MaeTerceros;
+use App\Models\Maestras\MaeDistritos;
+use App\Models\Maestras\MaeCongregacion;
+use App\Models\Demografia\Ciudad;
 use App\Http\Requests\StoreMaeAsociadoRequest;
+use App\Exports\Asociado\AsociadosExport;
+use App\Imports\Asociado\AsociadosImport;
+use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 
 class MaeAsociadoController extends Controller
@@ -26,17 +35,25 @@ class MaeAsociadoController extends Controller
             $q->whereNull('radicado')->orWhere('radicado', '');
         })->count();
 
-        // 2. Consulta base para la tabla
-        $query = MaeAsociado::query();
+        // 2. Consulta base para la tabla (Eager Loading optimizado para las relaciones de ciudad y distrito)
+        $query = MaeAsociado::with(['ciudad', 'distrito']);
 
         // 3. Filtro por Buscador Global (Search)
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function($q) use ($search) {
                 $q->where('cedula', 'LIKE', "%{$search}%")
-                  ->orWhere('nombre_completo', 'LIKE', "%{$search}%")
+                  ->orWhere('nombre1', 'LIKE', "%{$search}%")
+                  ->orWhere('apellido1', 'LIKE', "%{$search}%")
                   ->orWhere('distrito_actual', 'LIKE', "%{$search}%")
-                  ->orWhere('ciudad_distrito', 'LIKE', "%{$search}%");
+                  // Búsqueda en la relación de ciudad por el nombre
+                  ->orWhereHas('ciudad', function($qCiudad) use ($search) {
+                      $qCiudad->where('nombre', 'LIKE', "%{$search}%");
+                  })
+                  // Búsqueda en la relación de distrito por el nombre oficial
+                  ->orWhereHas('distrito', function($qDistrito) use ($search) {
+                      $qDistrito->where('NOM_DIST', 'LIKE', "%{$search}%");
+                  });
             });
         }
 
@@ -79,9 +96,17 @@ class MaeAsociadoController extends Controller
      */
     public function create()
     {
-        return view('asociados.create');
+        // Traer ciudades y distritos organizados para los selects de la vista
+        $ciudades = Ciudad::with('subregion:id_subregion,nombre')->get();
+        $distritos = MaeDistritos::orderBy('NOM_DIST', 'asc')->get();
+        $congregaciones = MaeCongregacion::orderBy('nombre', 'asc')->get();
+        
+        return view('asociados.create', compact('ciudades', 'distritos', 'congregaciones'));
     }
 
+    /**
+     * Store a newly created resource in storage.
+     */
     public function store(StoreMaeAsociadoRequest $request)
     {
         try {
@@ -99,7 +124,7 @@ class MaeAsociadoController extends Controller
             // Instanciamos el modelo en lugar de usar create() para poder inyectar propiedades
             $asociado = new MaeAsociado($validated);
 
-            // VERIFICACIÓN DEL MODAL:
+            // VERIFICACIÓN DEL MODAL / FORMULARIO:
             // Si el frontend envía 'sincronizar_tercero' como falso o no lo envía, omitimos sincronización
             if (!$request->boolean('sincronizar_tercero')) {
                 $asociado->skipTerceroSync = true;
@@ -125,6 +150,8 @@ class MaeAsociadoController extends Controller
      */
     public function show(MaeAsociado $maeAsociado)
     {
+        // Cargar relaciones para mostrar los nombres de la ciudad y el distrito en la vista
+        $maeAsociado->load(['ciudad', 'distrito']);
         return view('asociados.show', compact('maeAsociado'));
     }
 
@@ -133,7 +160,12 @@ class MaeAsociadoController extends Controller
      */
     public function edit(MaeAsociado $maeAsociado)
     {
-        return view('asociados.edit', compact('maeAsociado'));
+        // Traer ciudades y distritos ordenados para los selects de edición
+        $ciudades = Ciudad::orderBy('nombre', 'asc')->get();
+        $distritos = MaeDistritos::orderBy('NOM_DIST', 'asc')->get();
+        $congregaciones = MaeCongregacion::orderBy('nombre', 'asc')->get();
+        
+        return view('asociados.edit', compact('maeAsociado', 'ciudades', 'distritos', 'congregaciones'));
     }
 
     /**
@@ -182,7 +214,8 @@ class MaeAsociadoController extends Controller
      */
     public function buscarCedula($cedula)
     {
-        $asociado = MaeAsociado::where('cedula', $cedula)->first();
+        // Cargamos las relaciones para tener la ciudad y el distrito disponibles en el JSON
+        $asociado = MaeAsociado::with(['ciudad', 'distrito'])->where('cedula', $cedula)->first();
 
         if (!$asociado) {
             return response()->json(['status' => 'error', 'message' => 'No se encontró el asociado en el directorio.'], 404);
@@ -194,79 +227,14 @@ class MaeAsociadoController extends Controller
                 'id'              => $asociado->id,
                 'nombre_completo' => $asociado->nombre_completo,
                 'celular'         => $asociado->celular_pastor,
-                'distrito'        => $asociado->distrito_actual,
+                'distrito_cod'    => $asociado->distrito_actual,
+                'distrito_nombre' => $asociado->distrito ? $asociado->distrito->NOM_DIST : null,
+                'ciudad'          => $asociado->ciudad ? $asociado->ciudad->nombre : null,
                 'estado'          => $asociado->estado
             ]
         ]);
     }
 
-    /**
-     * Método privado para centralizar las reglas de validación de los 48 campos.
-     * @param int|null $id ID del registro a excluir en reglas unique.
-     * @return array
-     */
-    private function getValidationRules($id = null)
-    {
-        return [
-            // Identidad y Demografía
-            'cedula'                    => 'required|string|max:15|unique:mae_asociados,cedula,' . $id,
-            'nombre1'                   => 'required|string|max:100',
-            'nombre2'                   => 'nullable|string|max:100',
-            'apellido1'                 => 'required|string|max:100',
-            'apellido2'                 => 'nullable|string|max:100',
-            'fecha_nacimiento'          => 'nullable|date',
-            'lugar_expedicion_cedula'   => 'nullable|string|max:50',
-            'fecha_expedicion'          => 'nullable|date',
-            'estado_civil'              => 'nullable|string|max:20',
-
-            // Contacto
-            'correo_pastor'             => 'nullable|email|max:100',
-            'celular_pastor'            => 'nullable|string|max:15',
-            'whatsapp'                  => 'nullable|string|max:15',
-
-            // Información Ministerial
-            'fecha_afiliacion'          => 'nullable|date',
-            'distrito_actual'           => 'nullable|string|max:50',
-            'ciudad_distrito'           => 'nullable|string|max:50',
-            'direccion_distrito'        => 'nullable|string|max:100',
-            'estado_pastor'             => 'nullable|string|max:20',
-            'especificacion'            => 'nullable|string|max:50',
-            'licencia'                  => 'nullable|string|max:30',
-            'pais'                      => 'nullable|string|max:30',
-            'iglesia_actual'            => 'nullable|string|max:100',
-
-            // Familia (Cónyuge)
-            'cedula_esposa'             => 'nullable|string|max:15',
-            'nombre_esposa'             => 'nullable|string|max:100',
-            'correo_esposa'             => 'nullable|email|max:100',
-            'celular_esposa'            => 'nullable|string|max:15',
-
-            // Soportes Documentales
-            'doc_formulario_afiliacion' => 'nullable|string|max:20',
-            'doc_autorizacion_datos'    => 'nullable|string|max:20',
-            'doc_cedula_pastor'         => 'nullable|string|max:20',
-            'doc_cedula_esposa'         => 'nullable|string|max:20',
-            'doc_licencia_pastoral'     => 'nullable|string|max:20',
-            'doc_registro_matrimonio'   => 'nullable|string|max:20',
-            'doc_id_hijos'              => 'nullable|string|max:20',
-
-            // Gestión de Archivo ECM y Físico
-            'ubicacion_ecm_link'        => 'nullable|url|max:255',
-            'radicado'                  => 'nullable|string|max:20',
-            'ubicacion_carpeta'         => 'nullable|string|max:30',
-            'numero_caja'               => 'nullable|string|max:20',
-            'cantidad_folios'           => 'nullable|integer|min:0',
-            'fecha_ingreso_archivo'     => 'nullable|date',
-            'estado_conservacion'       => 'nullable|string|max:30',
-            'custodia_actual'           => 'nullable|string|max:50',
-            'observaciones_archivo'     => 'nullable|string',
-
-            // Metadatos Adicionales
-            'observaciones_generales'   => 'nullable|string',
-            'estado'                    => 'nullable|string|max:20',
-        ];
-    }
-    
     /**
      * Display a listing of the resource specifically for ECM and Physical Archive.
      */
@@ -276,8 +244,8 @@ class MaeAsociadoController extends Controller
         $pendientesArchivo = MaeAsociado::whereNull('radicado')->orWhere('radicado', '')->count();
         $validados = MaeAsociado::where('validado_archivo', true)->count();
 
-        // Se listan los asociados ordenados por los más recientes
-        $asociados = MaeAsociado::latest()->paginate(15);
+        // Se listan los asociados ordenados por los más recientes, cargando ciudad y distrito
+        $asociados = MaeAsociado::with(['ciudad', 'distrito'])->latest()->paginate(15);
         
         return view('asociados.ecm', compact('asociados', 'digitalizadosEcm', 'pendientesArchivo', 'validados'));
     }
@@ -316,8 +284,8 @@ class MaeAsociadoController extends Controller
         // 5. Archivo Físico (Basado en el campo 'radicado')
         $pendientesRadicado = MaeAsociado::whereNull('radicado')->orWhere('radicado', '')->count();
 
-        // 6. Últimos Registros
-        $ultimosIngresos = MaeAsociado::latest()->take(5)->get();
+        // 6. Últimos Registros con sus relaciones cargadas
+        $ultimosIngresos = MaeAsociado::with(['ciudad', 'distrito'])->latest()->take(5)->get();
 
         return view('asociados.dashboard', compact(
             'total',
@@ -328,13 +296,13 @@ class MaeAsociadoController extends Controller
             'ultimosIngresos'
         ));
     }
+
     /**
      * Busca en la tabla global MaeTerceros para el autollenado del formulario
      */
     public function buscarTerceroMaestro($cedula)
     {
-        // Asegúrate de tener el use App\Models\Maestras\MaeTerceros; arriba en el controlador
-        $tercero = \App\Models\Maestras\MaeTerceros::where('cod_ter', $cedula)->first();
+        $tercero = MaeTerceros::where('cod_ter', $cedula)->first();
 
         if ($tercero) {
             return response()->json([
@@ -344,5 +312,260 @@ class MaeAsociadoController extends Controller
         }
 
         return response()->json(['status' => 'error', 'message' => 'Tercero no encontrado.'], 404);
+    }
+
+    // =========================================================================
+    //   NUEVAS INTERFACES DE EXCEL (PROCESAMIENTO MASIVO E INTEGRACIÓN ECM)
+    // =========================================================================
+
+    /**
+     * Panel de Control Principal de Sincronización Excel.
+     */
+    public function excelIndex()
+    {
+        return view('asociados.excel-sync');
+    }
+
+    /**
+     * Acción: Descarga la base completa estructurada actual a un archivo .xlsx
+     */
+    public function descargarExcel()
+    {
+        return Excel::download(new AsociadosExport, 'maestro_asociados_' . now()->format('Y_m_d_His') . '.xlsx');
+    }
+
+    /**
+     * Acción (Paso 1): Sube el archivo Excel, valida las columnas y lo guarda en Sesión.
+     * Genera la vista de validación con contadores antes de impactar la BD.
+     */
+    public function subirExcel(Request $request)
+    {
+        $request->validate([
+            'excel_file' => 'required|mimes:xlsx,xls,csv|max:10240',
+        ]);
+
+        try {
+            $import = new AsociadosImport();
+            Excel::import($import, $request->file('excel_file'));
+            $filasRaw = $import->getRows();
+
+            if (empty($filasRaw)) {
+                return back()->with('error', 'El archivo Excel seleccionado se encuentra vacío.');
+            }
+
+            $filasProcesadas = [];
+            $errores = [];
+            $contadorNuevos = 0;
+            $contadorActualizaciones = 0;
+
+            foreach ($filasRaw as $index => $fila) {
+                // Limpiar espacios y omitir si la columna clave (cédula) viene en blanco
+                if (!isset($fila['cedula']) || empty(trim($fila['cedula']))) {
+                    continue;
+                }
+
+                $numeroLinea = $index + 2; // +2 considerando el encabezado en el Excel
+
+                // Validación interna por fila en memoria
+                $validator = Validator::make($fila, [
+                    'cedula'             => 'required|max:15',
+                    'nombre1'            => 'required|string|max:100',
+                    'apellido1'          => 'required|string|max:100',
+                    'correo_pastor'      => 'nullable|email',
+                    'cantidad_folios'    => 'nullable|integer',
+                    'ubicacion_ecm_link' => 'nullable|url'
+                ]);
+
+                if ($validator->fails()) {
+                    $errores[] = "Línea {$numeroLinea}: " . implode(', ', $validator->errors()->all());
+                    continue;
+                }
+
+                // Determinar el tipo de operación dinámicamente mediante Upsert lógico
+                $existe = MaeAsociado::where('cedula', $fila['cedula'])->exists();
+                $fila['accion'] = $existe ? 'UPDATE' : 'CREATE';
+                $fila['linea']  = $numeroLinea;
+
+                if ($existe) {
+                    $contadorActualizaciones++;
+                } else {
+                    $contadorNuevos++;
+                }
+
+                $filasProcesadas[] = $fila;
+            }
+
+            // Si hay fallas estructurales o correos mal escritos, se retorna sin guardar nada
+            if (count($errores) > 0) {
+                return back()->withErrors($errores)->with('error', 'El archivo contiene errores de validación estructural en filas.');
+            }
+
+            // Persistencia temporal en Sesión segura
+            session(['import_asociados_datos' => $filasProcesadas]);
+
+            return view('asociados.excel-preview', compact('filasProcesadas', 'contadorNuevos', 'contadorActualizaciones'));
+
+        } catch (\Exception $e) {
+            Log::error('Error procesando importación masiva de asociados: ' . $e->getMessage());
+            return back()->with('error', 'Ocurrió un problema crítico leyendo el archivo. Verifique que los encabezados correspondan al formato.');
+        }
+    }
+
+    /**
+     * Acción (Paso 2): Confirma, realiza transacciones atómicas y ejecuta el volcado masivo.
+     */
+    public function confirmarSincronizacion(Request $request)
+    {
+        $datos = session('import_asociados_datos');
+
+        if (!$datos || count($datos) === 0) {
+            return redirect()->route('asociados.sincronizar.index')
+                ->with('error', 'La sesión ha expirado o no se encontraron registros listos para confirmación.');
+        }
+
+        // Permite decidir desde el frontend si ejecutar o suspender el observer de MaeTerceros por lote
+        $sincronizarTerceros = $request->boolean('sincronizar_terceros_global', true);
+
+        DB::beginTransaction();
+        try {
+            foreach ($datos as $item) {
+                $asociado = MaeAsociado::where('cedula', $item['cedula'])->first() ?? new MaeAsociado();
+
+                if (!$sincronizarTerceros) {
+                    $asociado->skipTerceroSync = true;
+                }
+
+                // Mapeo masivo inyectando valores por defecto sanitizados
+                $asociado->fill([
+                    'cedula'                    => $item['cedula'],
+                    'nombre1'                   => $item['nombre1'],
+                    'nombre2'                   => $item['nombre2'] ?? null,
+                    'apellido1'                 => $item['apellido1'],
+                    'apellido2'                 => $item['apellido2'] ?? null,
+                    'fecha_nacimiento'          => $item['fecha_nacimiento'] ?? null,
+                    'lugar_expedicion_cedula'   => $item['lugar_expedicion_cedula'] ?? null,
+                    'fecha_expedicion'          => $item['fecha_expedicion'] ?? null,
+                    'estado_civil'              => $item['estado_civil'] ?? null,
+                    'correo_pastor'             => $item['correo_pastor'] ?? null,
+                    'celular_pastor'            => $item['celular_pastor'] ?? null,
+                    'whatsapp'                  => $item['whatsapp'] ?? null,
+                    'fecha_afiliacion'          => $item['fecha_afiliacion'] ?? null,
+                    'distrito_actual'           => $item['distrito_actual'] ?? null,
+                    'ciudad_distrito'           => $item['ciudad_distrito'] ?? null, 
+                    'direccion_distrito'        => $item['direccion_distrito'] ?? null,
+                    'estado_pastor'             => $item['estado_pastor'] ?? null,
+                    'especificacion'            => $item['especificacion'] ?? null,
+                    'licencia'                  => $item['licencia'] ?? null,
+                    'pais'                      => $item['pais'] ?? 'Colombia',
+                    'iglesia_actual'            => $item['iglesia_actual'] ?? null,
+                    'cedula_esposa'             => $item['cedula_esposa'] ?? null,
+                    'nombre_esposa'             => $item['nombre_esposa'] ?? null,
+                    'correo_esposa'             => $item['correo_esposa'] ?? null,
+                    'celular_esposa'            => $item['celular_esposa'] ?? null,
+                    'radicado'                  => $item['radicado'] ?? null,
+                    'ubicacion_carpeta'         => $item['ubicacion_carpeta'] ?? null,
+                    'numero_caja'               => $item['numero_caja'] ?? null,
+                    'cantidad_folios'           => $item['cantidad_folios'] ?? 0,
+                    'fecha_ingreso_archivo'     => $item['fecha_ingreso_archivo'] ?? null,
+                    'estado_conservacion'       => $item['estado_conservacion'] ?? null,
+                    'custodia_actual'           => $item['custodia_actual'] ?? null,
+                    'observaciones_archivo'     => $item['observaciones_archivo'] ?? null,
+                    'observaciones_generales'   => $item['observaciones_generales'] ?? null,
+                    'estado'                    => $item['estado'] ?? 'Activo',
+                    
+                    // Columnas de Gestión Documental Inteligente (ECM)
+                    'ubicacion_ecm_link'        => $item['ubicacion_ecm_link'] ?? null,
+                    'escaneado'                 => !empty($item['radicado']),
+                    'cargado_ecm'               => !empty($item['ubicacion_ecm_link']),
+                    'validado_archivo'          => false,
+                ]);
+
+                $asociado->save();
+            }
+
+            DB::commit();
+            session()->forget('import_asociados_datos'); // Limpieza de búfer
+
+            return redirect()->route('asociados.maestro.index')
+                ->with('success', 'Sincronización masiva finalizada. Se procesaron con éxito ' . count($datos) . ' expedientes.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::critical('Error en confirmación por lotes de Asociados: ' . $e->getMessage());
+            return redirect()->route('asociados.sincronizar.index')
+                ->with('error', 'Fallo de integridad transaccional en la base de datos. Ningún registro sufrió modificaciones.');
+        }
+    }
+
+    /**
+     * Método privado para centralizar las reglas de validación de los 48 campos.
+     * @param int|null $id ID del registro a excluir en reglas unique.
+     * @return array
+     */
+    private function getValidationRules($id = null)
+    {
+        return [
+            // Identidad y Demografía
+            'cedula'                    => 'required|string|max:15|unique:mae_asociados,cedula,' . $id,
+            'nombre1'                   => 'required|string|max:100',
+            'nombre2'                   => 'nullable|string|max:100',
+            'apellido1'                 => 'required|string|max:100',
+            'apellido2'                 => 'nullable|string|max:100',
+            'fecha_nacimiento'          => 'nullable|date',
+            'lugar_expedicion_cedula'   => 'nullable|string|max:50',
+            'fecha_expedicion'          => 'nullable|date',
+            'estado_civil'              => 'nullable|string|max:20',
+
+            // Contacto
+            'correo_pastor'             => 'nullable|email|max:100',
+            'celular_pastor'            => 'nullable|string|max:15',
+            'whatsapp'                  => 'nullable|string|max:15',
+
+            // Información Ministerial
+            'fecha_afiliacion'          => 'nullable|date',
+            
+            // Verificación relacional de Distrito (Asegura existencia en MaeDistritos)
+            'distrito_actual'           => 'nullable|string|max:50|exists:MaeDistritos,COD_DIST',
+            
+            // Verificación relacional de Ciudad (Asegura existencia en geo_ciudades)
+            'ciudad_distrito'           => 'nullable|string|max:50|exists:geo_ciudades,id_ciudad',
+            
+            'direccion_distrito'        => 'nullable|string|max:100',
+            'estado_pastor'             => 'nullable|string|max:20',
+            'especificacion'            => 'nullable|string|max:50',
+            'licencia'                  => 'nullable|string|max:30',
+            'pais'                      => 'nullable|string|max:30',
+            'iglesia_actual'            => 'nullable|string|max:100',
+
+            // Familia (Cónyuge)
+            'cedula_esposa'             => 'nullable|string|max:15',
+            'nombre_esposa'             => 'nullable|string|max:100',
+            'correo_esposa'             => 'nullable|email|max:100',
+            'celular_esposa'            => 'nullable|string|max:15',
+
+            // Soportes Documentales
+            'doc_formulario_afiliacion' => 'nullable|string|max:20',
+            'doc_autorizacion_datos'    => 'nullable|string|max:20',
+            'doc_cedula_pastor'         => 'nullable|string|max:20',
+            'doc_cedula_esposa'         => 'nullable|string|max:20',
+            'doc_licencia_pastoral'     => 'nullable|string|max:20',
+            'doc_registro_matrimonio'   => 'nullable|string|max:20',
+            'doc_id_hijos'              => 'nullable|string|max:20',
+
+            // Gestión de Archivo ECM y Físico
+            'ubicacion_ecm_link'        => 'nullable|url|max:255',
+            'radicado'                  => 'nullable|string|max:20',
+            'ubicacion_carpeta'         => 'nullable|string|max:30',
+            'numero_caja'               => 'nullable|string|max:20',
+            'cantidad_folios'           => 'nullable|integer|min:0',
+            'fecha_ingreso_archivo'     => 'nullable|date',
+            'estado_conservacion'       => 'nullable|string|max:30',
+            'custodia_actual'           => 'nullable|string|max:50',
+            'observaciones_archivo'     => 'nullable|string',
+
+            // Metadatos Adicionales
+            'observaciones_generales'   => 'nullable|string',
+            'estado'                    => 'nullable|string|max:20',
+        ];
     }
 }

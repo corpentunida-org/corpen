@@ -60,6 +60,8 @@ use App\Http\Controllers\Maestras\MaeTercerosController;
 use App\Http\Controllers\Maestras\MaeTiposController;
 use App\Http\Controllers\Maestras\MaeMunicipiosController;
 
+use App\Http\Controllers\Demografia\DemografiaController;
+
 //CREDITOS
 use App\Http\Controllers\Creditos\CreditoController;
 
@@ -1172,26 +1174,89 @@ Route::middleware(['auth'])
     ->prefix('asociados')
     ->name('asociados.')
     ->group(function () {
+        
         // 0. DASHBOARD E INDICADORES
         Route::get('tablero', [MaeAsociadoController::class, 'dashboard'])
             ->name('dashboard');
 
         // ---------------------------------------------------
-        // 1. GESTIÓN DEL MAESTRO DE ASOCIADOS
+        // 1. FLUJO DE SINCRONIZACIÓN MASIVA EXCEL (NUEVO)
+        // ---------------------------------------------------
+        // Vista principal del panel de carga y descarga de plantillas
+        Route::get('sincronizar', [MaeAsociadoController::class, 'excelIndex'])
+            ->name('sincronizar.index');
+
+        // Acción: Descarga la base de datos completa actual en formato .xlsx
+        Route::get('descargar-excel', [MaeAsociadoController::class, 'descargarExcel'])
+            ->name('sincronizar.descargar');
+
+        // Paso 1: Procesa el archivo Excel, valida la estructura y lo aloja en Sesión
+        Route::post('subir-excel', [MaeAsociadoController::class, 'subirExcel'])
+            ->name('sincronizar.subir');
+            
+        // Paso 2: Ejecuta el Upsert masivo transaccional en la BD desde la mesa de validación
+        Route::post('confirmar-sincronizacion', [MaeAsociadoController::class, 'confirmarSincronizacion'])
+            ->name('sincronizar.confirmar');
+
+        // ---------------------------------------------------
+        // 2. GESTIÓN DEL MAESTRO DE ASOCIADOS (CRUD)
         // ---------------------------------------------------
         Route::resource('maestro', MaeAsociadoController::class)
             ->parameters(['maestro' => 'maeAsociado']);
 
-        // Busca si ya existe el ASOCIADO (Expediente)
+        // API/AJAX: Busca si ya existe el expediente de un ASOCIADO por cédula
         Route::get('buscar-cedula/{cedula}', [MaeAsociadoController::class, 'buscarCedula'])
             ->name('buscar-cedula');
 
-        // NUEVA RUTA: Busca en la base de datos MAESTRA DE TERCEROS para el autollenado
+        // API/AJAX: Busca en la base de datos MAESTRA DE TERCEROS para el autollenado
         Route::get('buscar-tercero/{cedula}', [MaeAsociadoController::class, 'buscarTerceroMaestro'])
             ->name('buscar-tercero');
 
-        // 2. GESTIÓN DOCUMENTAL (ECM) 
+        // ---------------------------------------------------
+        // 3. GESTIÓN DOCUMENTAL (ECM Y ARCHIVO FÍSICO)
+        // ---------------------------------------------------
         Route::get('ecm', [MaeAsociadoController::class, 'ecmIndex'])
             ->name('ecm.index');
+            
     });
 // FIN MÓDULO ASOCIADOS
+// ==========================================
+//   MÓDULO DE DEMOGRAFÍA (GEOGRAFÍA)
+// ==========================================
+Route::middleware(['auth'])
+    ->prefix('demograficos')
+    ->name('demograficos.')
+    ->group(function () {
+        
+        // 0. DASHBOARD E INDICADORES
+        Route::get('tablero', [DemografiaController::class, 'dashboard'])
+            ->name('dashboard');
+
+        // ---------------------------------------------------
+        // 1. FLUJO DE SINCRONIZACIÓN MASIVA EXCEL (NUEVO)
+        // ---------------------------------------------------
+        // Vista principal del panel de carga y descarga de plantillas
+        Route::get('sincronizar', [DemografiaController::class, 'excelIndex'])
+            ->name('sincronizar.index');
+
+        // Acción: Descarga la base de datos completa actual en formato .xlsx
+        Route::get('descargar-excel', [DemografiaController::class, 'descargarExcel'])
+            ->name('sincronizar.descargar');
+
+        // Paso 1: Procesa el archivo Excel, valida la estructura y lo aloja temporalmente
+        Route::post('subir-excel', [DemografiaController::class, 'subirExcel'])
+            ->name('sincronizar.subir');
+            
+        // Paso 2: Ejecuta el Upsert masivo transaccional en la BD (Múltiples hojas)
+        Route::post('confirmar-sincronizacion', [DemografiaController::class, 'confirmarSincronizacion'])
+            ->name('sincronizar.confirmar');
+
+        // ---------------------------------------------------
+        // 2. GESTIÓN DEL MAESTRO DEMOGRÁFICO (CRUD)
+        // ---------------------------------------------------
+        // Rutas resource para listar, crear, editar y eliminar registros manualmente
+        Route::resource('maestro', DemografiaController::class)
+            ->parameters(['maestro' => 'demografia']);
+
+    });
+// FIN MÓDULO DEMOGRAFÍA

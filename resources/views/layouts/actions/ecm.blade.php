@@ -32,14 +32,20 @@
             </a>
         </li>
 
-        {{-- 4. GESTIÓN DOCUMENTAL (RUTA CORREGIDA) --}}
+        {{-- 4. GESTIÓN DOCUMENTAL --}}
         <li class="nxl-item">
             <a class="nxl-link" href="{{ route('asociados.ecm.index') }}">
                 <i class="bi bi-folder2-open me-2"></i> Expedientes y ECM
             </a>
         </li>
 
-        <li class="nxl-item" style="height: 40px; pointer-events: none; list-style: none;"></li>
+        {{-- 5. SINCRONIZACIÓN EXCEL (NUEVO) --}}
+        <li class="nxl-item">
+            <a class="nxl-link" href="{{ route('asociados.sincronizar.index') }}">
+                <i class="bi bi-file-earmark-spreadsheet me-2 text-success"></i> Sincronización Masiva
+            </a>
+        </li>
+
         <li class="nxl-item" style="height: 40px; pointer-events: none; list-style: none;"></li>
     </ul>
 </li>
