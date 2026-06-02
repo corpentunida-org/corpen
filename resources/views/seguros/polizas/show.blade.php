@@ -41,6 +41,7 @@
                         <div class="fs-12 text-muted">{{ $poliza->seg_asegurado_id }}</div>
                     </div>
                 </div>
+              
                 @if (!$poliza->active || $poliza->esreclamacion->contains('idCobertura', 1))
                     <a href="#flush-collapseOne" class="btn bg-soft-danger text-danger">
                         <i class="feather-x-circle me-2"></i>
