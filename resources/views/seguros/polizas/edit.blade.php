@@ -1,11 +1,11 @@
 <x-base-layout>
-    @if(isset($success))
+    @if (isset($success))
         <div class="alert alert-dismissible p-4 mt-3 alert-soft-success-message" role="alert">
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        <p class="mb-0">
-            {{ $success }}
-        </p>
-    </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            <p class="mb-0">
+                {{ $success }}
+            </p>
+        </div>
     @endif
     <div class="col-lg-12">
         <div class="card stretch stretch-full">
@@ -13,7 +13,8 @@
                 <div class="mb-3 d-flex align-items-center justify-content-between">
                     <h5 class="fw-bold mb-0 me-4">
                         <span class="d-block mb-2">Cargar Archivo</span>
-                        <span class="fs-12 fw-normal text-muted text-truncate-1-line">Debe subir un documento en formato Excel.</span>
+                        <span class="fs-12 fw-normal text-muted text-truncate-1-line">Debe subir un documento en formato
+                            Excel.</span>
                     </h5>
                 </div>
                 <ul class="list-unstyled text-muted mb-0">
@@ -21,22 +22,26 @@
                         <span class="text-danger">
                             <i class="feather-check fs-10"></i>
                         </span>
-                        <span class="fs-12 fw-normal text-truncate-1-line">"COD_TER": Cédula del asegurado de la póliza.</span>
+                        <span class="fs-12 fw-normal text-truncate-1-line">"COD_TER": Cédula del asegurado de la
+                            póliza.</span>
                     </li>
                     <li class="d-flex align-items-start mb-1">
                         <span class="text-danger">
                             <i class="feather-check fs-10"></i>
                         </span>
-                        <span class="fs-12 fw-normal text-truncate-1-line">"DEB_MOV": Valor a pagar del asegurado por el plan.</span>
+                        <span class="fs-12 fw-normal text-truncate-1-line">"DEB_MOV": Valor a pagar del asegurado por el
+                            plan.</span>
                     </li>
                     <li class="d-flex align-items-start mb-1">
                         <span class="text-danger">
                             <i class="feather-check fs-10"></i>
                         </span>
-                        <span class="fs-12 fw-normal text-truncate-1-line">"PAGAR_ACO": Valor acumulado a pagar por el titular y su grupo familiar.</span>
+                        <span class="fs-12 fw-normal text-truncate-1-line">"PAGAR_ACO": Valor acumulado a pagar por el
+                            titular y su grupo familiar.</span>
                     </li>
                 </ul>
-                <form class="row mt-4" action="{{ route('seguros.poliza.upload') }}" method="POST" enctype="multipart/form-data" novalidate>
+                <form class="row mt-4" action="{{ route('seguros.poliza.upload') }}" method="POST"
+                    enctype="multipart/form-data" novalidate>
                     @csrf
                     <div class="mb-3">
                         <input type="file" class="form-control" name="file" required>
@@ -45,7 +50,7 @@
                                 Solo se permiten archivos de tipo: .xls, .xlsx
                             </div>
                         @endif
-                    </div>                    
+                    </div>
                     <div class="d-flex justify-content-end gap-2">
                         <button type="submit" class="btn btn-primary">Agregar</button>
                     </div>
@@ -61,11 +66,13 @@
                     <div class="card-header-action">
                         <div class="card-header-btn">
                             <div data-bs-toggle="tooltip" title="Delete">
-                                <a href="javascript:void(0);" class="avatar-text avatar-xs bg-danger" data-bs-toggle="remove">
+                                <a href="javascript:void(0);" class="avatar-text avatar-xs bg-danger"
+                                    data-bs-toggle="remove">
                                 </a>
                             </div>
                             <div data-bs-toggle="tooltip" title="Refresh">
-                                <a href="javascript:void(0);" class="avatar-text avatar-xs bg-warning" data-bs-toggle="refresh">
+                                <a href="javascript:void(0);" class="avatar-text avatar-xs bg-warning"
+                                    data-bs-toggle="refresh">
                                 </a>
                             </div>
                             <div data-bs-toggle="tooltip" title="Maximize/Minimize">
@@ -87,15 +94,17 @@
                         <table class="table table-hover">
                             <thead>
                                 <tr>
+                                    <th>N° Fila</th>
                                     <th>Titular</th>
-                                    <th>Valor a Pagar</th>
+                                    <th>Error</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach ($failedRows as $reg)
                                     <tr>
-                                        <td>{{ $reg['cod_ter'] }}</td>
-                                        <td class="text-primary">$ {{ number_format($reg['deb_mov']) }}</td>
+                                        <td>{{ $reg['fila'] }}</td>
+                                        <td>{{ $reg['cedula'] }}</td>
+                                        <td>{{ $reg['error'] }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>

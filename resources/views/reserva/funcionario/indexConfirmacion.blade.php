@@ -7,6 +7,7 @@
             padding: 10px;
             position: static;
         }
+
         @media (max-width: 768px) {
             #calendar {
                 margin: 0 !important;
@@ -162,6 +163,10 @@
                 },
 
                 initialView: 'dayGridMonth',
+                initialDate: new Date(),
+                validRange: {
+                    start: new Date().toISOString().split('T')[0] // bloquea fechas anteriores
+                },
 
                 events: [
                     @foreach ($reservas as $r)
@@ -179,18 +184,22 @@
                                 usuario: '{{ $r->nid }} - {{ $r->user->name }}',
                                 telefono: '{{ $r->celular }} - {{ $r->celular_respaldo }}',
                             }
-                        },                    
+                        },
                     @endforeach
                 ],
                 eventClick: function(info) {
                     let inicio = new Date(info.event.extendedProps.fecha_inicio);
                     let fin = new Date(info.event.extendedProps.fecha_fin);
 
-                    let opciones = {day: 'numeric',month: 'long',year: 'numeric'};
+                    let opciones = {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                    };
 
                     let fechaInicio = inicio.toLocaleDateString('es-ES', opciones);
                     let fechaFin = fin.toLocaleDateString('es-ES', opciones);
-                    
+
                     Swal.fire({
                         title: 'Detalle de Reserva',
                         icon: 'info',
@@ -207,6 +216,6 @@
                 }
             });
             calendar.render();
-        } 
+        }
     </script>
 </x-base-layout>

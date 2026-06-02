@@ -112,7 +112,7 @@ class SegNovedadesController extends Controller
         }
         SegCambioEstadoNovedad::create([
             'novedad' => $novedad->id,
-            'estado' => $request->estado,
+            'estado' => $request->estado ?? 1,
             'observaciones' => strtoupper($request->observaciones),
             'fechaInicio' => Carbon::now()->toDateString(),
             'user_created' => auth()->user()->id
