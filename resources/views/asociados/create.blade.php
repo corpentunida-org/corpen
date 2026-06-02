@@ -23,75 +23,124 @@
         {{-- Alerta de validación general --}}
         @if ($errors->any())
             <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
-                <strong><i class="fas fa-exclamation-circle me-2"></i> Por favor corrija los errores marcados en el formulario.</strong>
+                <strong><i class="fas fa-exclamation-circle me-2"></i> Por favor corrija los errores marcados en el
+                    formulario.</strong>
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         @endif
 
         <form action="{{ route('asociados.maestro.store') }}" method="POST" id="form-expediente">
             @csrf
-            
+
             {{-- Input oculto para definir si se sincroniza con MaeTerceros --}}
             <input type="hidden" name="sincronizar_tercero" id="input_sincronizar_tercero" value="1">
 
+            {{-- DATALIST GLOBAL PARA CIUDADES (Visibilidad: Municipio, Región) --}}
+            <datalist id="ciudades_list">
+                @foreach($ciudades as $ciudad)
+                    <option data-id="{{ $ciudad->id_ciudad }}" 
+                            data-nombre="{{ $ciudad->nombre }}" 
+                            value="{{ $ciudad->nombre }}, {{ $ciudad->subregion->nombre ?? 'Sin región' }}">
+                    </option>
+                @endforeach
+            </datalist>
+
+            {{-- DATALIST GLOBAL PARA DISTRITOS --}}
+            <datalist id="distritos_list">
+                @foreach($distritos as $distrito)
+                    <option data-id="{{ $distrito->COD_DIST }}" 
+                            data-nombre="{{ $distrito->NOM_DIST }}" 
+                            value="{{ $distrito->COD_DIST }}">
+                        {{ $distrito->NOM_DIST }}
+                    </option>
+                @endforeach
+            </datalist>
+
+            {{-- DATALIST PARA CONGREGACIONES --}}
+            <datalist id="congregaciones_list">
+                @foreach($congregaciones as $congre)
+                    <option value="{{ $congre->codigo }}">{{ $congre->nombre }}</option>
+                @endforeach
+            </datalist>
+
             {{-- =========================================================================
-                SECCIÓN 1: IDENTIDAD Y DEMOGRÁFICOS (EDICIÓN PREMIUM CORP)
-                ========================================================================= --}}
+            SECCIÓN 1: IDENTIDAD Y DEMOGRÁFICOS (EDICIÓN PREMIUM CORP)
+            ========================================================================= --}}
             <div class="card shadow-sm border-0 mb-4 rounded-3">
                 <div class="card-header bg-white border-bottom-0 pt-4 pb-2">
                     <div class="d-flex align-items-center">
-                        <div class="p-2 bg-light-primary text-primary rounded me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                        <div class="p-2 bg-light-primary text-primary rounded me-3 d-flex align-items-center justify-content-center"
+                            style="width: 40px; height: 40px;">
                             <i class="fas fa-id-card fs-5"></i>
                         </div>
                         <div>
                             <h5 class="text-dark fw-bold mb-0">1. Identidad y Demográficos</h5>
-                            <small class="text-muted">Información personal básica, documento de identidad y estado civil.</small>
+                            <small class="text-muted">Información personal básica, documento de identidad y estado
+                                civil.</small>
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="card-body pt-3">
                     <div class="row g-3">
                         {{-- Fila 1: Documento y Estado Civil --}}
                         <div class="col-md-3">
-                            <label class="form-label fw-semibold text-secondary small mb-1">Cédula <span class="text-danger">*</span></label>
+                            <label class="form-label fw-semibold text-secondary small mb-1">Cédula <span
+                                    class="text-danger">*</span></label>
                             <div class="input-group input-group-sm shadow-sm rounded has-validation">
-                                <span class="input-group-text bg-light text-muted border-end-0"><i class="far fa-id-badge"></i></span>
-                                <input type="text" name="cedula" id="cedula" class="form-control border-start-0 @error('cedula') is-invalid @enderror" value="{{ old('cedula') }}" required placeholder="No. de documento">
-                                <button class="btn btn-primary px-3" type="button" id="btn-buscar-cedula" style="z-index: 0;">
+                                <span class="input-group-text bg-light text-muted border-end-0"><i
+                                        class="far fa-id-badge"></i></span>
+                                <input type="text" name="cedula" id="cedula"
+                                    class="form-control border-start-0 @error('cedula') is-invalid @enderror"
+                                    value="{{ old('cedula') }}" required placeholder="No. de documento">
+                                <button class="btn btn-primary px-3" type="button" id="btn-buscar-cedula"
+                                    style="z-index: 0;">
                                     <i class="fas fa-search" id="icon-buscar"></i>
                                     <i class="fas fa-spinner fa-spin d-none" id="spinner-buscar"></i>
                                 </button>
                                 @error('cedula') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
                         </div>
-                        
+
                         <div class="col-md-3">
                             <label class="form-label fw-semibold text-secondary small mb-1">Lugar de Expedición</label>
                             <div class="input-group input-group-sm shadow-sm rounded">
-                                <span class="input-group-text bg-light text-muted border-end-0"><i class="fas fa-map-marker-alt"></i></span>
-                                <input type="text" name="lugar_expedicion_cedula" id="lugar_expedicion_cedula" class="form-control border-start-0 @error('lugar_expedicion_cedula') is-invalid @enderror" value="{{ old('lugar_expedicion_cedula') }}" placeholder="Ciudad/Municipio">
+                                <span class="input-group-text bg-light text-primary border-end-0"><i class="fas fa-map-marker-alt"></i></span>
+                                <input type="text" list="ciudades_list" name="lugar_expedicion_cedula" id="lugar_expedicion_cedula"
+                                    class="form-control border-start-0 @error('lugar_expedicion_cedula') is-invalid @enderror"
+                                    value="{{ old('lugar_expedicion_cedula') }}" placeholder="Escriba para buscar...">
+                                @error('lugar_expedicion_cedula') 
+                                    <div class="invalid-feedback d-block">{{ $message }}</div> 
+                                @enderror
                             </div>
                         </div>
-                        
+
                         <div class="col-md-3">
                             <label class="form-label fw-semibold text-secondary small mb-1">Fecha de Expedición</label>
                             <div class="input-group input-group-sm shadow-sm rounded">
-                                <span class="input-group-text bg-light text-muted border-end-0"><i class="far fa-calendar-check"></i></span>
-                                <input type="date" name="fecha_expedicion" id="fecha_expedicion" class="form-control border-start-0 @error('fecha_expedicion') is-invalid @enderror" value="{{ old('fecha_expedicion') }}">
+                                <span class="input-group-text bg-light text-muted border-end-0"><i
+                                        class="far fa-calendar-check"></i></span>
+                                <input type="date" name="fecha_expedicion" id="fecha_expedicion"
+                                    class="form-control border-start-0 @error('fecha_expedicion') is-invalid @enderror"
+                                    value="{{ old('fecha_expedicion') }}">
                                 @error('fecha_expedicion') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
                         </div>
-                        
+
                         <div class="col-md-3">
                             <label class="form-label fw-semibold text-secondary small mb-1">Estado Civil</label>
                             <div class="input-group input-group-sm shadow-sm rounded">
-                                <span class="input-group-text bg-light text-muted border-end-0"><i class="fas fa-ring"></i></span>
-                                <select name="estado_civil" id="estado_civil" class="form-select border-start-0 @error('estado_civil') is-invalid @enderror">
+                                <span class="input-group-text bg-light text-muted border-end-0"><i
+                                        class="fas fa-ring"></i></span>
+                                <select name="estado_civil" id="estado_civil"
+                                    class="form-select border-start-0 @error('estado_civil') is-invalid @enderror">
                                     <option value="">Seleccione...</option>
-                                    <option value="Soltero" {{ old('estado_civil') == 'Soltero' ? 'selected' : '' }}>Soltero(a)</option>
-                                    <option value="Casado" {{ old('estado_civil') == 'Casado' ? 'selected' : '' }}>Casado(a)</option>
-                                    <option value="Viudo" {{ old('estado_civil') == 'Viudo' ? 'selected' : '' }}>Viudo(a)</option>
+                                    <option value="Soltero" {{ old('estado_civil') == 'Soltero' ? 'selected' : '' }}>
+                                        Soltero(a)</option>
+                                    <option value="Casado" {{ old('estado_civil') == 'Casado' ? 'selected' : '' }}>
+                                        Casado(a)</option>
+                                    <option value="Viudo" {{ old('estado_civil') == 'Viudo' ? 'selected' : '' }}>Viudo(a)
+                                    </option>
                                 </select>
                                 @error('estado_civil') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
@@ -99,36 +148,48 @@
 
                         {{-- Fila 2: Nombres y Apellidos --}}
                         <div class="col-md-3 mt-4">
-                            <label class="form-label fw-semibold text-secondary small mb-1">Primer Nombre <span class="text-danger">*</span></label>
+                            <label class="form-label fw-semibold text-secondary small mb-1">Primer Nombre <span
+                                    class="text-danger">*</span></label>
                             <div class="input-group input-group-sm shadow-sm rounded">
-                                <span class="input-group-text bg-light text-muted border-end-0"><i class="fas fa-user"></i></span>
-                                <input type="text" name="nombre1" id="nombre1" class="form-control border-start-0 @error('nombre1') is-invalid @enderror" value="{{ old('nombre1') }}" required placeholder="Primer nombre">
+                                <span class="input-group-text bg-light text-muted border-end-0"><i
+                                        class="fas fa-user"></i></span>
+                                <input type="text" name="nombre1" id="nombre1"
+                                    class="form-control border-start-0 @error('nombre1') is-invalid @enderror"
+                                    value="{{ old('nombre1') }}" required placeholder="Primer nombre">
                                 @error('nombre1') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
                         </div>
-                        
+
                         <div class="col-md-3 mt-4">
                             <label class="form-label fw-semibold text-secondary small mb-1">Segundo Nombre</label>
                             <div class="input-group input-group-sm shadow-sm rounded">
-                                <span class="input-group-text bg-light text-muted border-end-0"><i class="far fa-user"></i></span>
-                                <input type="text" name="nombre2" id="nombre2" class="form-control border-start-0" value="{{ old('nombre2') }}" placeholder="Segundo nombre (Opcional)">
+                                <span class="input-group-text bg-light text-muted border-end-0"><i
+                                        class="far fa-user"></i></span>
+                                <input type="text" name="nombre2" id="nombre2" class="form-control border-start-0"
+                                    value="{{ old('nombre2') }}" placeholder="Segundo nombre (Opcional)">
                             </div>
                         </div>
-                        
+
                         <div class="col-md-3 mt-4">
-                            <label class="form-label fw-semibold text-secondary small mb-1">Primer Apellido <span class="text-danger">*</span></label>
+                            <label class="form-label fw-semibold text-secondary small mb-1">Primer Apellido <span
+                                    class="text-danger">*</span></label>
                             <div class="input-group input-group-sm shadow-sm rounded">
-                                <span class="input-group-text bg-light text-muted border-end-0"><i class="fas fa-user-tag"></i></span>
-                                <input type="text" name="apellido1" id="apellido1" class="form-control border-start-0 @error('apellido1') is-invalid @enderror" value="{{ old('apellido1') }}" required placeholder="Primer apellido">
+                                <span class="input-group-text bg-light text-muted border-end-0"><i
+                                        class="fas fa-user-tag"></i></span>
+                                <input type="text" name="apellido1" id="apellido1"
+                                    class="form-control border-start-0 @error('apellido1') is-invalid @enderror"
+                                    value="{{ old('apellido1') }}" required placeholder="Primer apellido">
                                 @error('apellido1') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
                         </div>
-                        
+
                         <div class="col-md-3 mt-4">
                             <label class="form-label fw-semibold text-secondary small mb-1">Segundo Apellido</label>
                             <div class="input-group input-group-sm shadow-sm rounded">
-                                <span class="input-group-text bg-light text-muted border-end-0"><i class="fas fa-user-tag" style="opacity: 0.6;"></i></span>
-                                <input type="text" name="apellido2" id="apellido2" class="form-control border-start-0" value="{{ old('apellido2') }}" placeholder="Segundo apellido">
+                                <span class="input-group-text bg-light text-muted border-end-0"><i
+                                        class="fas fa-user-tag" style="opacity: 0.6;"></i></span>
+                                <input type="text" name="apellido2" id="apellido2" class="form-control border-start-0"
+                                    value="{{ old('apellido2') }}" placeholder="Segundo apellido">
                             </div>
                         </div>
 
@@ -136,8 +197,11 @@
                         <div class="col-md-3 mt-4 mb-2">
                             <label class="form-label fw-semibold text-secondary small mb-1">Fecha de Nacimiento</label>
                             <div class="input-group input-group-sm shadow-sm rounded">
-                                <span class="input-group-text bg-light text-muted border-end-0"><i class="fas fa-birthday-cake"></i></span>
-                                <input type="date" name="fecha_nacimiento" id="fecha_nacimiento" class="form-control border-start-0 @error('fecha_nacimiento') is-invalid @enderror" value="{{ old('fecha_nacimiento') }}">
+                                <span class="input-group-text bg-light text-muted border-end-0"><i
+                                        class="fas fa-birthday-cake"></i></span>
+                                <input type="date" name="fecha_nacimiento" id="fecha_nacimiento"
+                                    class="form-control border-start-0 @error('fecha_nacimiento') is-invalid @enderror"
+                                    value="{{ old('fecha_nacimiento') }}">
                                 @error('fecha_nacimiento') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
                         </div>
@@ -146,21 +210,23 @@
             </div>
 
             {{-- =========================================================================
-                SECCIÓN 2: CONTACTO Y NÚCLEO FAMILIAR (EDICIÓN PREMIUM CORP)
-                ========================================================================= --}}
+            SECCIÓN 2: CONTACTO Y NÚCLEO FAMILIAR (EDICIÓN PREMIUM CORP)
+            ========================================================================= --}}
             <div class="card shadow-sm border-0 mb-4 rounded-3">
                 <div class="card-header bg-white border-bottom-0 pt-4 pb-2">
                     <div class="d-flex align-items-center">
-                        <div class="p-2 bg-light-primary text-primary rounded me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                        <div class="p-2 bg-light-primary text-primary rounded me-3 d-flex align-items-center justify-content-center"
+                            style="width: 40px; height: 40px;">
                             <i class="fas fa-users fs-5"></i>
                         </div>
                         <div>
                             <h5 class="text-dark fw-bold mb-0">2. Contacto y Núcleo Familiar</h5>
-                            <small class="text-muted">Parámetros de localización, canales corporativos e información familiar.</small>
+                            <small class="text-muted">Parámetros de localización, canales corporativos e información
+                                familiar.</small>
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="card-body pt-3">
                     {{-- Subsección: Datos del Pastor --}}
                     <div class="border-bottom pb-2 mb-3">
@@ -168,30 +234,38 @@
                             <i class="fas fa-user-tie me-2 text-muted"></i>Datos de Contacto del Pastor
                         </h6>
                     </div>
-                    
+
                     <div class="row g-3 mb-4">
                         <div class="col-md-4">
                             <label class="form-label fw-semibold text-secondary small mb-1">Correo Electrónico</label>
                             <div class="input-group input-group-sm shadow-sm rounded">
-                                <span class="input-group-text bg-light text-muted border-end-0"><i class="fas fa-envelope"></i></span>
-                                <input type="email" name="correo_pastor" id="correo_pastor" class="form-control border-start-0 @error('correo_pastor') is-invalid @enderror" value="{{ old('correo_pastor') }}" placeholder="ejemplo@dominio.com">
+                                <span class="input-group-text bg-light text-muted border-end-0"><i
+                                        class="fas fa-envelope"></i></span>
+                                <input type="email" name="correo_pastor" id="correo_pastor"
+                                    class="form-control border-start-0 @error('correo_pastor') is-invalid @enderror"
+                                    value="{{ old('correo_pastor') }}" placeholder="ejemplo@dominio.com">
                                 @error('correo_pastor') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
                         </div>
-                        
+
                         <div class="col-md-4">
                             <label class="form-label fw-semibold text-secondary small mb-1">Celular Principal</label>
                             <div class="input-group input-group-sm shadow-sm rounded">
-                                <span class="input-group-text bg-light text-muted border-end-0"><i class="fas fa-mobile-alt"></i></span>
-                                <input type="text" name="celular_pastor" id="celular_pastor" class="form-control border-start-0" value="{{ old('celular_pastor') }}" placeholder="300 000 0000">
+                                <span class="input-group-text bg-light text-muted border-end-0"><i
+                                        class="fas fa-mobile-alt"></i></span>
+                                <input type="text" name="celular_pastor" id="celular_pastor"
+                                    class="form-control border-start-0" value="{{ old('celular_pastor') }}"
+                                    placeholder="300 000 0000">
                             </div>
                         </div>
-                        
+
                         <div class="col-md-4">
                             <label class="form-label fw-semibold text-secondary small mb-1">WhatsApp</label>
                             <div class="input-group input-group-sm shadow-sm rounded">
-                                <span class="input-group-text bg-light text-muted border-end-0"><i class="fab fa-whatsapp fw-bold text-success"></i></span>
-                                <input type="text" name="whatsapp" id="whatsapp" class="form-control border-start-0" value="{{ old('whatsapp') }}" placeholder="300 000 0000">
+                                <span class="input-group-text bg-light text-muted border-end-0"><i
+                                        class="fab fa-whatsapp fw-bold text-success"></i></span>
+                                <input type="text" name="whatsapp" id="whatsapp" class="form-control border-start-0"
+                                    value="{{ old('whatsapp') }}" placeholder="300 000 0000">
                             </div>
                         </div>
                     </div>
@@ -199,40 +273,53 @@
                     {{-- Subsección: Datos de la Esposa --}}
                     <div class="border-bottom pb-2 mb-3 mt-4">
                         <h6 class="text-secondary fw-bold mb-0" style="font-size: 0.9rem; letter-spacing: 0.3px;">
-                            <i class="fas fa-female me-2 text-muted"></i>Datos de la Esposa <span class="fw-normal text-muted small">(Si aplica)</span>
+                            <i class="fas fa-female me-2 text-muted"></i>Datos de la Esposa <span
+                                class="fw-normal text-muted small">(Si aplica)</span>
                         </h6>
                     </div>
-                    
+
                     <div class="row g-3">
                         <div class="col-md-3">
                             <label class="form-label fw-semibold text-secondary small mb-1">Cédula Esposa</label>
                             <div class="input-group input-group-sm shadow-sm rounded">
-                                <span class="input-group-text bg-light text-muted border-end-0"><i class="far fa-id-card"></i></span>
-                                <input type="text" name="cedula_esposa" id="cedula_esposa" class="form-control border-start-0" value="{{ old('cedula_esposa') }}" placeholder="Número de documento">
+                                <span class="input-group-text bg-light text-muted border-end-0"><i
+                                        class="far fa-id-card"></i></span>
+                                <input type="text" name="cedula_esposa" id="cedula_esposa"
+                                    class="form-control border-start-0" value="{{ old('cedula_esposa') }}"
+                                    placeholder="Número de documento">
                             </div>
                         </div>
-                        
+
                         <div class="col-md-3">
                             <label class="form-label fw-semibold text-secondary small mb-1">Nombre Completo</label>
                             <div class="input-group input-group-sm shadow-sm rounded">
-                                <span class="input-group-text bg-light text-muted border-end-0"><i class="fas fa-user"></i></span>
-                                <input type="text" name="nombre_esposa" id="nombre_esposa" class="form-control border-start-0" value="{{ old('nombre_esposa') }}" placeholder="Nombres y apellidos">
+                                <span class="input-group-text bg-light text-muted border-end-0"><i
+                                        class="fas fa-user"></i></span>
+                                <input type="text" name="nombre_esposa" id="nombre_esposa"
+                                    class="form-control border-start-0" value="{{ old('nombre_esposa') }}"
+                                    placeholder="Nombres y apellidos">
                             </div>
                         </div>
-                        
+
                         <div class="col-md-3">
                             <label class="form-label fw-semibold text-secondary small mb-1">Celular Esposa</label>
                             <div class="input-group input-group-sm shadow-sm rounded">
-                                <span class="input-group-text bg-light text-muted border-end-0"><i class="fas fa-phone"></i></span>
-                                <input type="text" name="celular_esposa" id="celular_esposa" class="form-control border-start-0" value="{{ old('celular_esposa') }}" placeholder="Número telefónico">
+                                <span class="input-group-text bg-light text-muted border-end-0"><i
+                                        class="fas fa-phone"></i></span>
+                                <input type="text" name="celular_esposa" id="celular_esposa"
+                                    class="form-control border-start-0" value="{{ old('celular_esposa') }}"
+                                    placeholder="Número telefónico">
                             </div>
                         </div>
-                        
+
                         <div class="col-md-3">
                             <label class="form-label fw-semibold text-secondary small mb-1">Correo Esposa</label>
                             <div class="input-group input-group-sm shadow-sm rounded">
-                                <span class="input-group-text bg-light text-muted border-end-0"><i class="fas fa-at"></i></span>
-                                <input type="email" name="correo_esposa" id="correo_esposa" class="form-control border-start-0 @error('correo_esposa') is-invalid @enderror" value="{{ old('correo_esposa') }}" placeholder="esposa@dominio.com">
+                                <span class="input-group-text bg-light text-muted border-end-0"><i
+                                        class="fas fa-at"></i></span>
+                                <input type="email" name="correo_esposa" id="correo_esposa"
+                                    class="form-control border-start-0 @error('correo_esposa') is-invalid @enderror"
+                                    value="{{ old('correo_esposa') }}" placeholder="esposa@dominio.com">
                                 @error('correo_esposa') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
                         </div>
@@ -241,29 +328,34 @@
             </div>
 
             {{-- =========================================================================
-                SECCIÓN 3: INFORMACIÓN MINISTERIAL Y CORPORATIVA
-                ========================================================================= --}}
+            SECCIÓN 3: INFORMACIÓN MINISTERIAL Y CORPORATIVA
+            ========================================================================= --}}
             <div class="card shadow-sm border-0 mb-4 rounded-3">
                 <div class="card-header bg-white border-bottom-0 pt-4 pb-2">
                     <div class="d-flex align-items-center">
-                        <div class="p-2 bg-light-primary text-primary rounded me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                        <div class="p-2 bg-light-primary text-primary rounded me-3 d-flex align-items-center justify-content-center"
+                            style="width: 40px; height: 40px;">
                             <i class="fas fa-church fs-5"></i>
                         </div>
                         <div>
                             <h5 class="text-dark fw-bold mb-0">3. Información Corpentunida</h5>
-                            <small class="text-muted">Datos de afiliación, distrito eclesiástico y estatus pastoral actual.</small>
+                            <small class="text-muted">Datos de afiliación, distrito eclesiástico y estatus pastoral
+                                actual.</small>
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="card-body pt-3">
                     <div class="row g-3">
                         {{-- Fila 1: Datos Ministeriales --}}
                         <div class="col-md-3">
                             <label class="form-label fw-semibold text-secondary small mb-1">Fecha de Afiliación</label>
                             <div class="input-group input-group-sm shadow-sm rounded">
-                                <span class="input-group-text bg-light text-muted border-end-0"><i class="far fa-calendar-alt"></i></span>
-                                <input type="date" name="fecha_afiliacion" id="fecha_afiliacion" class="form-control border-start-0 @error('fecha_afiliacion') is-invalid @enderror" value="{{ old('fecha_afiliacion') }}">
+                                <span class="input-group-text bg-light text-muted border-end-0"><i
+                                        class="far fa-calendar-alt"></i></span>
+                                <input type="date" name="fecha_afiliacion" id="fecha_afiliacion"
+                                    class="form-control border-start-0 @error('fecha_afiliacion') is-invalid @enderror"
+                                    value="{{ old('fecha_afiliacion') }}">
                                 @error('fecha_afiliacion') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
                         </div>
@@ -271,12 +363,17 @@
                         <div class="col-md-3">
                             <label class="form-label fw-semibold text-secondary small mb-1">Estado Asociado</label>
                             <div class="input-group input-group-sm shadow-sm rounded">
-                                <span class="input-group-text bg-light text-muted border-end-0"><i class="fas fa-user-check"></i></span>
-                                <select name="estado_pastor" id="estado_pastor" class="form-select border-start-0 @error('estado_pastor') is-invalid @enderror">
+                                <span class="input-group-text bg-light text-muted border-end-0"><i
+                                        class="fas fa-user-check"></i></span>
+                                <select name="estado_pastor" id="estado_pastor"
+                                    class="form-select border-start-0 @error('estado_pastor') is-invalid @enderror">
                                     <option value="">Seleccione...</option>
-                                    <option value="Activo" {{ old('estado_pastor') == 'Activo' ? 'selected' : '' }}>Activo</option>
-                                    <option value="Inactivo" {{ old('estado_pastor') == 'Inactivo' ? 'selected' : '' }}>Inactivo</option>
-                                    <option value="Retirado" {{ old('estado_pastor') == 'Retirado' ? 'selected' : '' }}>Retirado</option>
+                                    <option value="Activo" {{ old('estado_pastor') == 'Activo' ? 'selected' : '' }}>Activo
+                                    </option>
+                                    <option value="Inactivo" {{ old('estado_pastor') == 'Inactivo' ? 'selected' : '' }}>
+                                        Inactivo</option>
+                                    <option value="Retirado" {{ old('estado_pastor') == 'Retirado' ? 'selected' : '' }}>
+                                        Retirado</option>
                                 </select>
                                 @error('estado_pastor') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
@@ -285,16 +382,21 @@
                         <div class="col-md-3">
                             <label class="form-label fw-semibold text-secondary small mb-1">Licencia Pastoral</label>
                             <div class="input-group input-group-sm shadow-sm rounded">
-                                <span class="input-group-text bg-light text-muted border-end-0"><i class="fas fa-certificate"></i></span>
-                                <input type="text" name="licencia" id="licencia" class="form-control border-start-0" value="{{ old('licencia') }}" placeholder="Ej: Ordenado, Licenciado...">
+                                <span class="input-group-text bg-light text-muted border-end-0"><i
+                                        class="fas fa-certificate"></i></span>
+                                <input type="text" name="licencia" id="licencia" class="form-control border-start-0"
+                                    value="{{ old('licencia') }}" placeholder="Ej: Ordenado, Licenciado...">
                             </div>
                         </div>
 
                         <div class="col-md-3">
                             <label class="form-label fw-semibold text-secondary small mb-1">Especificación</label>
                             <div class="input-group input-group-sm shadow-sm rounded">
-                                <span class="input-group-text bg-light text-muted border-end-0"><i class="fas fa-tag"></i></span>
-                                <input type="text" name="especificacion" id="especificacion" class="form-control border-start-0" value="{{ old('especificacion') }}" placeholder="Cargo o rol específico">
+                                <span class="input-group-text bg-light text-muted border-end-0"><i
+                                        class="fas fa-tag"></i></span>
+                                <input type="text" name="especificacion" id="especificacion"
+                                    class="form-control border-start-0" value="{{ old('especificacion') }}"
+                                    placeholder="Cargo o rol específico">
                             </div>
                         </div>
 
@@ -302,40 +404,63 @@
                         <div class="col-md-3 mt-4">
                             <label class="form-label fw-semibold text-secondary small mb-1">País</label>
                             <div class="input-group input-group-sm shadow-sm rounded">
-                                <span class="input-group-text bg-light text-muted border-end-0"><i class="fas fa-globe-americas"></i></span>
-                                <input type="text" name="pais" id="pais" class="form-control border-start-0" value="{{ old('pais', 'Colombia') }}">
+                                <span class="input-group-text bg-light text-muted border-end-0"><i
+                                        class="fas fa-globe-americas"></i></span>
+                                <input type="text" name="pais" id="pais" class="form-control border-start-0"
+                                    value="{{ old('pais', 'Colombia') }}">
                             </div>
                         </div>
 
                         <div class="col-md-3 mt-4">
                             <label class="form-label fw-semibold text-secondary small mb-1">Distrito Actual</label>
                             <div class="input-group input-group-sm shadow-sm rounded">
-                                <span class="input-group-text bg-light text-muted border-end-0"><i class="fas fa-map-marked-alt"></i></span>
-                                <input type="text" name="distrito_actual" id="distrito_actual" class="form-control border-start-0" value="{{ old('distrito_actual') }}" placeholder="Nombre del distrito">
+                                <span class="input-group-text bg-light text-muted border-end-0"><i
+                                        class="fas fa-map-marked-alt"></i></span>
+                                <input type="text" list="distritos_list" name="distrito_actual" id="distrito_actual"
+                                    class="form-control border-start-0 @error('distrito_actual') is-invalid @enderror" 
+                                    value="{{ old('distrito_actual') }}"
+                                    placeholder="Escriba para buscar...">
+                                @error('distrito_actual')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
                             </div>
                         </div>
 
                         <div class="col-md-3 mt-4">
                             <label class="form-label fw-semibold text-secondary small mb-1">Ciudad del Distrito</label>
                             <div class="input-group input-group-sm shadow-sm rounded">
-                                <span class="input-group-text bg-light text-muted border-end-0"><i class="fas fa-city"></i></span>
-                                <input type="text" name="ciudad_distrito" id="ciudad_distrito" class="form-control border-start-0" value="{{ old('ciudad_distrito') }}">
+                                <span class="input-group-text bg-light text-success border-end-0"><i class="fas fa-city"></i></span>
+                                <input type="text" list="ciudades_list" name="ciudad_distrito" id="ciudad_distrito"
+                                    class="form-control border-start-0 @error('ciudad_distrito') is-invalid @enderror"
+                                    value="{{ old('ciudad_distrito') }}" placeholder="Escriba para buscar...">
+                                @error('ciudad_distrito')
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
+                                @enderror
                             </div>
                         </div>
 
                         <div class="col-md-3 mt-4">
                             <label class="form-label fw-semibold text-secondary small mb-1">Iglesia / Congregación</label>
                             <div class="input-group input-group-sm shadow-sm rounded">
-                                <span class="input-group-text bg-light text-muted border-end-0"><i class="fas fa-place-of-worship"></i></span>
-                                <input type="text" name="iglesia_actual" id="iglesia_actual" class="form-control border-start-0" value="{{ old('iglesia_actual') }}" placeholder="Nombre de la congregación">
+                                <span class="input-group-text bg-light text-muted border-end-0">
+                                    <i class="fas fa-place-of-worship"></i>
+                                </span>
+                                {{-- Aquí agregas el atributo list --}}
+                                <input type="text" list="congregaciones_list" name="iglesia_actual" id="iglesia_actual"
+                                    class="form-control border-start-0" value="{{ old('iglesia_actual') }}"
+                                    placeholder="Escriba para buscar...">
                             </div>
                         </div>
 
                         <div class="col-md-12 mt-4">
-                            <label class="form-label fw-semibold text-secondary small mb-1">Dirección Eclesiástica / Distrito</label>
+                            <label class="form-label fw-semibold text-secondary small mb-1">Dirección Eclesiástica /
+                                Distrito</label>
                             <div class="input-group input-group-sm shadow-sm rounded">
-                                <span class="input-group-text bg-light text-muted border-end-0"><i class="fas fa-map-marker-alt"></i></span>
-                                <input type="text" name="direccion_distrito" id="direccion_distrito" class="form-control border-start-0" value="{{ old('direccion_distrito') }}" placeholder="Dirección completa">
+                                <span class="input-group-text bg-light text-muted border-end-0"><i
+                                        class="fas fa-map-marker-alt"></i></span>
+                                <input type="text" name="direccion_distrito" id="direccion_distrito"
+                                    class="form-control border-start-0" value="{{ old('direccion_distrito') }}"
+                                    placeholder="Dirección completa">
                             </div>
                         </div>
                     </div>
@@ -343,57 +468,64 @@
             </div>
 
             {{-- =========================================================================
-                SECCIÓN 4: GESTIÓN DE ARCHIVO FÍSICO Y DIGITAL (EDICIÓN PREMIUM CORP)
-                ========================================================================= --}}
+            SECCIÓN 4: GESTIÓN DE ARCHIVO FÍSICO Y DIGITAL (EDICIÓN PREMIUM CORP)
+            ========================================================================= --}}
             <div class="card shadow-sm border-0 mb-4 rounded-3 border-start border-info border-4 bg-light">
                 <div class="card-header border-bottom-0 pt-4 pb-2 bg-transparent">
                     <div class="d-flex align-items-center">
-                        <div class="p-2 bg-white text-info shadow-sm rounded me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                        <div class="p-2 bg-white text-info shadow-sm rounded me-3 d-flex align-items-center justify-content-center"
+                            style="width: 40px; height: 40px;">
                             <i class="fas fa-file-archive fs-5"></i>
                         </div>
                         <div>
                             <h5 class="text-dark fw-bold mb-0">4. Control de Archivo y ECM</h5>
-                            <small class="text-muted">Trazabilidad topográfica del expediente, anexos y estatus de digitalización.</small>
+                            <small class="text-muted">Trazabilidad topográfica del expediente, anexos y estatus de
+                                digitalización.</small>
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="card-body pt-3">
-                    
+
                     {{-- Subsección: Soportes Documentales --}}
                     <div class="border-bottom border-secondary border-opacity-25 pb-2 mb-3">
                         <h6 class="text-secondary fw-bold mb-0" style="font-size: 0.9rem; letter-spacing: 0.3px;">
                             <i class="fas fa-folder-plus me-2 text-muted"></i>Soportes Documentales Entregados
                         </h6>
                     </div>
-                    
+
                     <div class="row g-2 mb-4 bg-white p-3 rounded shadow-sm">
                         @php
                             $documentos = [
                                 'doc_formulario_afiliacion' => ['label' => 'Form. Afiliación', 'icon' => 'fa-file-signature'],
-                                'doc_autorizacion_datos'    => ['label' => 'Habeas Data', 'icon' => 'fa-user-shield'],
-                                'doc_cedula_pastor'         => ['label' => 'CC Pastor', 'icon' => 'fa-id-card'],
-                                'doc_cedula_esposa'         => ['label' => 'CC Esposa', 'icon' => 'fa-id-card'],
-                                'doc_licencia_pastoral'     => ['label' => 'Licencia Pastoral', 'icon' => 'fa-certificate'],
-                                'doc_registro_matrimonio'   => ['label' => 'Reg. Matrimonio', 'icon' => 'fa-ring'],
-                                'doc_id_hijos'              => ['label' => 'Docs Hijos', 'icon' => 'fa-child']
+                                'doc_autorizacion_datos' => ['label' => 'Habeas Data', 'icon' => 'fa-user-shield'],
+                                'doc_cedula_pastor' => ['label' => 'CC Pastor', 'icon' => 'fa-id-card'],
+                                'doc_cedula_esposa' => ['label' => 'CC Esposa', 'icon' => 'fa-id-card'],
+                                'doc_licencia_pastoral' => ['label' => 'Licencia Pastoral', 'icon' => 'fa-certificate'],
+                                'doc_registro_matrimonio' => ['label' => 'Reg. Matrimonio', 'icon' => 'fa-ring'],
+                                'doc_id_hijos' => ['label' => 'Docs Hijos', 'icon' => 'fa-child']
                             ];
                         @endphp
-                        
+
                         @foreach($documentos as $campo => $data)
-                        <div class="col-md-3">
-                            <label class="form-label fw-semibold text-secondary mb-1" style="font-size:0.8rem;">
-                                <i class="fas {{ $data['icon'] }} text-muted me-1"></i>{{ $data['label'] }}
-                            </label>
-                            <div class="input-group input-group-sm">
-                                <span class="input-group-text bg-light text-muted border-end-0"><i class="fas fa-tasks"></i></span>
-                                <select name="{{ $campo }}" class="form-select border-start-0 text-dark" style="font-size: 0.85rem;">
-                                    <option value="Pendiente" {{ old($campo) == 'Pendiente' ? 'selected' : '' }}>Pendiente</option>
-                                    <option value="Entregado" {{ old($campo) == 'Entregado' ? 'selected' : '' }}>Entregado</option>
-                                    <option value="No Aplica" {{ old($campo) == 'No Aplica' ? 'selected' : '' }}>No Aplica</option>
-                                </select>
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold text-secondary mb-1" style="font-size:0.8rem;">
+                                    <i class="fas {{ $data['icon'] }} text-muted me-1"></i>{{ $data['label'] }}
+                                </label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-light text-muted border-end-0"><i
+                                            class="fas fa-tasks"></i></span>
+                                    <select name="{{ $campo }}" class="form-select border-start-0 text-dark"
+                                        style="font-size: 0.85rem;">
+                                        <option value="Pendiente" {{ old($campo) == 'Pendiente' ? 'selected' : '' }}>Pendiente
+                                        </option>
+                                        <option value="Entregado" {{ old($campo) == 'Entregado' ? 'selected' : '' }}>Entregado
+                                        </option>
+                                        <option value="No Aplica" {{ old($campo) == 'No Aplica' ? 'selected' : '' }}>No Aplica
+                                        </option>
+                                    </select>
+                                </div>
                             </div>
-                        </div>
                         @endforeach
                     </div>
 
@@ -403,74 +535,96 @@
                             <i class="fas fa-boxes me-2 text-muted"></i>Localización de Archivo Físico
                         </h6>
                     </div>
-                    
+
                     <div class="row g-3 mb-4 bg-white p-3 rounded shadow-sm">
                         <div class="col-md-3">
                             <label class="form-label fw-semibold text-secondary small mb-1">Nº Radicado</label>
                             <div class="input-group input-group-sm rounded">
-                                <span class="input-group-text bg-light text-muted border-end-0"><i class="fas fa-barcode"></i></span>
-                                <input type="text" name="radicado" class="form-control border-start-0 font-monospace fw-bold text-primary" value="{{ old('radicado') }}" placeholder="EXP-000">
+                                <span class="input-group-text bg-light text-muted border-end-0"><i
+                                        class="fas fa-barcode"></i></span>
+                                <input type="text" name="radicado"
+                                    class="form-control border-start-0 font-monospace fw-bold text-primary"
+                                    value="{{ old('radicado') }}" placeholder="EXP-000">
                             </div>
                         </div>
-                        
+
                         <div class="col-md-3">
                             <label class="form-label fw-semibold text-secondary small mb-1">Ubicación Carpeta</label>
                             <div class="input-group input-group-sm rounded">
-                                <span class="input-group-text bg-light text-muted border-end-0"><i class="fas fa-folder-open"></i></span>
-                                <input type="text" name="ubicacion_carpeta" class="form-control border-start-0" value="{{ old('ubicacion_carpeta') }}" placeholder="Ej. Estante A, Fila 2">
+                                <span class="input-group-text bg-light text-muted border-end-0"><i
+                                        class="fas fa-folder-open"></i></span>
+                                <input type="text" name="ubicacion_carpeta" class="form-control border-start-0"
+                                    value="{{ old('ubicacion_carpeta') }}" placeholder="Ej. Estante A, Fila 2">
                             </div>
                         </div>
-                        
+
                         <div class="col-md-2">
                             <label class="form-label fw-semibold text-secondary small mb-1">Número de Caja</label>
                             <div class="input-group input-group-sm rounded">
-                                <span class="input-group-text bg-light text-muted border-end-0"><i class="fas fa-box"></i></span>
-                                <input type="text" name="numero_caja" class="form-control border-start-0" value="{{ old('numero_caja') }}" placeholder="Caja No.">
+                                <span class="input-group-text bg-light text-muted border-end-0"><i
+                                        class="fas fa-box"></i></span>
+                                <input type="text" name="numero_caja" class="form-control border-start-0"
+                                    value="{{ old('numero_caja') }}" placeholder="Caja No.">
                             </div>
                         </div>
-                        
+
                         <div class="col-md-2">
                             <label class="form-label fw-semibold text-secondary small mb-1">Cant. Folios</label>
                             <div class="input-group input-group-sm rounded">
-                                <span class="input-group-text bg-light text-muted border-end-0"><i class="fas fa-layer-group"></i></span>
-                                <input type="number" name="cantidad_folios" class="form-control border-start-0 @error('cantidad_folios') is-invalid @enderror" value="{{ old('cantidad_folios', 0) }}" min="0">
+                                <span class="input-group-text bg-light text-muted border-end-0"><i
+                                        class="fas fa-layer-group"></i></span>
+                                <input type="number" name="cantidad_folios"
+                                    class="form-control border-start-0 @error('cantidad_folios') is-invalid @enderror"
+                                    value="{{ old('cantidad_folios', 0) }}" min="0">
                                 @error('cantidad_folios') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
                         </div>
-                        
+
                         <div class="col-md-2">
                             <label class="form-label fw-semibold text-secondary small mb-1">Estado Papel</label>
                             <div class="input-group input-group-sm rounded">
-                                <span class="input-group-text bg-light text-muted border-end-0"><i class="fas fa-file-alt"></i></span>
+                                <span class="input-group-text bg-light text-muted border-end-0"><i
+                                        class="fas fa-file-alt"></i></span>
                                 <select name="estado_conservacion" class="form-select border-start-0">
-                                    <option value="Bueno" {{ old('estado_conservacion') == 'Bueno' ? 'selected' : '' }}>Bueno</option>
+                                    <option value="Bueno" {{ old('estado_conservacion') == 'Bueno' ? 'selected' : '' }}>
+                                        Bueno</option>
                                     <option value="Regular" {{ old('estado_conservacion') == 'Regular' ? 'selected' : '' }}>Regular</option>
-                                    <option value="Malo" {{ old('estado_conservacion') == 'Malo' ? 'selected' : '' }}>Malo</option>
+                                    <option value="Malo" {{ old('estado_conservacion') == 'Malo' ? 'selected' : '' }}>Malo
+                                    </option>
                                 </select>
                             </div>
                         </div>
-                        
+
                         <div class="col-md-3 mt-3">
-                            <label class="form-label fw-semibold text-secondary small mb-1">Fecha Ingreso Archivo</label>
+                            <label class="form-label fw-semibold text-secondary small mb-1">Fecha Ingreso
+                                Archivo</label>
                             <div class="input-group input-group-sm rounded">
-                                <span class="input-group-text bg-light text-muted border-end-0"><i class="far fa-calendar-plus"></i></span>
-                                <input type="date" name="fecha_ingreso_archivo" class="form-control border-start-0" value="{{ old('fecha_ingreso_archivo') }}">
+                                <span class="input-group-text bg-light text-muted border-end-0"><i
+                                        class="far fa-calendar-plus"></i></span>
+                                <input type="date" name="fecha_ingreso_archivo" class="form-control border-start-0"
+                                    value="{{ old('fecha_ingreso_archivo') }}">
                             </div>
                         </div>
-                        
+
                         <div class="col-md-3 mt-3">
                             <label class="form-label fw-semibold text-secondary small mb-1">Custodia Actual</label>
                             <div class="input-group input-group-sm rounded">
-                                <span class="input-group-text bg-light text-muted border-end-0"><i class="fas fa-building"></i></span>
-                                <input type="text" name="custodia_actual" class="form-control border-start-0" value="{{ old('custodia_actual', 'Archivo Central') }}">
+                                <span class="input-group-text bg-light text-muted border-end-0"><i
+                                        class="fas fa-building"></i></span>
+                                <input type="text" name="custodia_actual" class="form-control border-start-0"
+                                    value="{{ old('custodia_actual', 'Archivo Central') }}">
                             </div>
                         </div>
-                        
+
                         <div class="col-md-6 mt-3">
-                            <label class="form-label fw-semibold text-secondary small mb-1">Observaciones Archivo Físico</label>
+                            <label class="form-label fw-semibold text-secondary small mb-1">Observaciones Archivo
+                                Físico</label>
                             <div class="input-group input-group-sm rounded">
-                                <span class="input-group-text bg-light text-muted border-end-0"><i class="fas fa-comment"></i></span>
-                                <input type="text" name="observaciones_archivo" class="form-control border-start-0" value="{{ old('observaciones_archivo') }}" placeholder="Notas sobre el estado físico de la carpeta...">
+                                <span class="input-group-text bg-light text-muted border-end-0"><i
+                                        class="fas fa-comment"></i></span>
+                                <input type="text" name="observaciones_archivo" class="form-control border-start-0"
+                                    value="{{ old('observaciones_archivo') }}"
+                                    placeholder="Notas sobre el estado físico de la carpeta...">
                             </div>
                         </div>
                     </div>
@@ -481,31 +635,43 @@
                             <i class="fas fa-cloud me-2 text-muted"></i>Integración ECM (Digital)
                         </h6>
                     </div>
-                    
+
                     <div class="row g-3 bg-white p-3 rounded shadow-sm">
                         <div class="col-md-12 mb-3">
                             <div class="d-flex flex-wrap gap-4 bg-light p-3 rounded border">
                                 <div class="form-check form-switch">
-                                    <input class="form-check-input shadow-sm" type="checkbox" role="switch" name="escaneado" id="es1" value="1" {{ old('escaneado') ? 'checked' : '' }}>
-                                    <label class="form-check-label text-secondary fw-bold small" for="es1"><i class="fas fa-print me-1"></i> Escaneado</label>
+                                    <input class="form-check-input shadow-sm" type="checkbox" role="switch"
+                                        name="escaneado" id="es1" value="1" {{ old('escaneado') ? 'checked' : '' }}>
+                                    <label class="form-check-label text-secondary fw-bold small" for="es1"><i
+                                            class="fas fa-print me-1"></i> Escaneado</label>
                                 </div>
                                 <div class="form-check form-switch">
-                                    <input class="form-check-input shadow-sm" type="checkbox" role="switch" name="cargado_ecm" id="ec1" value="1" {{ old('cargado_ecm') ? 'checked' : '' }}>
-                                    <label class="form-check-label text-primary fw-bold small" for="ec1"><i class="fas fa-cloud-upload-alt me-1"></i> Cargado en Plataforma ECM</label>
+                                    <input class="form-check-input shadow-sm" type="checkbox" role="switch"
+                                        name="cargado_ecm" id="ec1" value="1" {{ old('cargado_ecm') ? 'checked' : '' }}>
+                                    <label class="form-check-label text-primary fw-bold small" for="ec1"><i
+                                            class="fas fa-cloud-upload-alt me-1"></i> Cargado en Plataforma ECM</label>
                                 </div>
                                 <div class="form-check form-switch">
-                                    <input class="form-check-input shadow-sm" type="checkbox" role="switch" name="validado_archivo" id="va1" value="1" {{ old('validado_archivo') ? 'checked' : '' }}>
-                                    <label class="form-check-label text-success fw-bold small" for="va1"><i class="fas fa-check-double me-1"></i> Expediente Validado</label>
+                                    <input class="form-check-input shadow-sm" type="checkbox" role="switch"
+                                        name="validado_archivo" id="va1" value="1" {{ old('validado_archivo') ? 'checked' : '' }}>
+                                    <label class="form-check-label text-success fw-bold small" for="va1"><i
+                                            class="fas fa-check-double me-1"></i> Expediente Validado</label>
                                 </div>
                             </div>
                         </div>
-                        
+
                         <div class="col-md-12">
-                            <label class="form-label fw-semibold text-secondary small mb-1">Enlace / URL de Plataforma ECM</label>
+                            <label class="form-label fw-semibold text-secondary small mb-1">Enlace / URL de Plataforma
+                                ECM</label>
                             <div class="input-group input-group-sm rounded shadow-sm">
-                                <span class="input-group-text bg-light text-info border-end-0"><i class="fas fa-link"></i></span>
-                                <input type="url" name="ubicacion_ecm_link" class="form-control border-start-0 text-info @error('ubicacion_ecm_link') is-invalid @enderror" value="{{ old('ubicacion_ecm_link') }}" placeholder="https://ruta-del-servidor.com/expediente-digital">
-                                @error('ubicacion_ecm_link') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                <span class="input-group-text bg-light text-info border-end-0"><i
+                                        class="fas fa-link"></i></span>
+                                <input type="url" name="ubicacion_ecm_link"
+                                    class="form-control border-start-0 text-info @error('ubicacion_ecm_link') is-invalid @enderror"
+                                    value="{{ old('ubicacion_ecm_link') }}"
+                                    placeholder="https://ruta-del-servidor.com/expediente-digital">
+                                @error('ubicacion_ecm_link') <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                             </div>
                         </div>
                     </div>
@@ -513,39 +679,48 @@
             </div>
 
             {{-- =========================================================================
-                SECCIÓN 5: RESULTADOS Y CIERRE (ESTADO DEL EXPEDIENTE Y OBSERVACIONES FINALES)
-                ========================================================================= --}}
+            SECCIÓN 5: RESULTADOS Y CIERRE (ESTADO DEL EXPEDIENTE Y OBSERVACIONES FINALES)
+            ========================================================================= --}}
             <div class="card shadow-sm border-0 mb-5 rounded-3 border-start border-secondary border-4">
                 <div class="card-header bg-white border-bottom-0 pt-4 pb-2">
                     <div class="d-flex align-items-center">
-                        <div class="p-2 bg-light text-secondary border rounded me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                        <div class="p-2 bg-light text-secondary border rounded me-3 d-flex align-items-center justify-content-center"
+                            style="width: 40px; height: 40px;">
                             <i class="fas fa-tags fs-5"></i>
                         </div>
                         <div>
                             <h5 class="text-dark fw-bold mb-0">5. Resultados y Cierre</h5>
-                            <small class="text-muted">Estado del expediente e información adicional de observación.</small>
+                            <small class="text-muted">Estado del expediente e información adicional de
+                                observación.</small>
                         </div>
                     </div>
                 </div>
-                
+
                 <div class="card-body pt-3">
                     <div class="row g-3">
                         <div class="col-md-3">
-                            <label class="form-label fw-semibold text-secondary small mb-1">Estado del Expediente</label>
+                            <label class="form-label fw-semibold text-secondary small mb-1">Estado del
+                                Expediente</label>
                             <div class="input-group input-group-sm shadow-sm rounded">
-                                <span class="input-group-text bg-light text-muted border-end-0"><i class="fas fa-toggle-on"></i></span>
+                                <span class="input-group-text bg-light text-muted border-end-0"><i
+                                        class="fas fa-toggle-on"></i></span>
                                 <select name="estado" class="form-select border-start-0 fw-bold text-dark">
-                                    <option value="Activo" {{ old('estado') == 'Activo' ? 'selected' : '' }}>ACTIVO</option>
-                                    <option value="Inactivo" {{ old('estado') == 'Inactivo' ? 'selected' : '' }}>INACTIVO</option>
+                                    <option value="Activo" {{ old('estado') == 'Activo' ? 'selected' : '' }}>ACTIVO
+                                    </option>
+                                    <option value="Inactivo" {{ old('estado') == 'Inactivo' ? 'selected' : '' }}>INACTIVO
+                                    </option>
                                 </select>
                             </div>
                         </div>
-                        
+
                         <div class="col-md-9">
-                            <label class="form-label fw-semibold text-secondary small mb-1">Observaciones Generales</label>
+                            <label class="form-label fw-semibold text-secondary small mb-1">Observaciones
+                                Generales</label>
                             <div class="input-group input-group-sm shadow-sm rounded">
-                                <span class="input-group-text bg-light text-muted border-end-0"><i class="fas fa-comment-dots"></i></span>
-                                <textarea name="observaciones_generales" class="form-control border-start-0" rows="2" placeholder="Cualquier nota adicional sobre la apertura o estado de este expediente...">{{ old('observaciones_generales') }}</textarea>
+                                <span class="input-group-text bg-light text-muted border-end-0"><i
+                                        class="fas fa-comment-dots"></i></span>
+                                <textarea name="observaciones_generales" class="form-control border-start-0" rows="2"
+                                    placeholder="Cualquier nota adicional sobre la apertura o estado de este expediente...">{{ old('observaciones_generales') }}</textarea>
                             </div>
                         </div>
                     </div>
@@ -553,22 +728,28 @@
             </div>
 
             {{-- =========================================================================
-                BOTÓN DE ENVÍO (STICKY BOTTOM)
-                ========================================================================= --}}
-            <div class="sticky-bottom bg-white px-4 py-3 border-top shadow-lg d-flex justify-content-between align-items-center" style="bottom: 0; z-index: 1000; margin-left: -1rem; margin-right: -1rem;">
+            BOTÓN DE ENVÍO (STICKY BOTTOM)
+            ========================================================================= --}}
+            <div class="sticky-bottom bg-white px-4 py-3 border-top shadow-lg d-flex justify-content-between align-items-center"
+                style="bottom: 0; z-index: 1000; margin-left: -1rem; margin-right: -1rem;">
                 <div class="d-none d-md-block">
                     <span class="text-muted small fw-semibold">
-                        <i class="fas fa-shield-alt text-success me-1"></i> Verifique que los campos obligatorios (*) estén completos.
+                        <i class="fas fa-shield-alt text-success me-1"></i> Verifique que los campos obligatorios (*)
+                        estén completos.
                     </span>
                 </div>
-                
+
                 <div class="d-flex gap-2">
-                    <a href="{{ route('asociados.maestro.index') }}" class="btn btn-light border px-4 py-2 fw-semibold text-secondary">
+                    <a href="{{ route('asociados.maestro.index') }}"
+                        class="btn btn-light border px-4 py-2 fw-semibold text-secondary">
                         Cancelar
                     </a>
-                    <button type="submit" id="btn-submit" class="btn btn-dark px-5 py-2 fw-bold shadow-sm d-flex align-items-center justify-content-center" style="min-width: 250px; border-radius: 6px;">
+                    <button type="submit" id="btn-submit"
+                        class="btn btn-dark px-5 py-2 fw-bold shadow-sm d-flex align-items-center justify-content-center"
+                        style="min-width: 250px; border-radius: 6px;">
                         <span id="btn-text"><i class="fas fa-save me-2 text-info"></i> Consolidar Expediente</span>
-                        <span id="btn-spinner" class="d-none"><i class="fas fa-circle-notch fa-spin me-2 text-info"></i> Procesando...</span>
+                        <span id="btn-spinner" class="d-none"><i class="fas fa-circle-notch fa-spin me-2 text-info"></i>
+                            Procesando...</span>
                     </button>
                 </div>
             </div>
@@ -576,18 +757,23 @@
     </div>
 
     {{-- ==========================================
-         MODAL DE CONFIRMACIÓN DE SINCRONIZACIÓN
-         ========================================== --}}
-    <div class="modal fade" id="syncModal" tabindex="-1" aria-labelledby="syncModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    MODAL DE CONFIRMACIÓN DE SINCRONIZACIÓN
+    ========================================== --}}
+    <div class="modal fade" id="syncModal" tabindex="-1" aria-labelledby="syncModalLabel" aria-hidden="true"
+        data-bs-backdrop="static">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title" id="syncModalLabel"><i class="fas fa-sync-alt me-2"></i> Sincronización de Datos</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title" id="syncModalLabel"><i class="fas fa-sync-alt me-2"></i> Sincronización de
+                        Datos</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p>¿Desea actualizar/sincronizar la información de este asociado con la <strong>Base de Datos Maestra de Terceros (MaeTerceros)</strong>?</p>
-                    <p class="text-muted small"><i class="fas fa-info-circle"></i> Si selecciona "Sí", los datos personales y de contacto sobrescribirán el registro actual en el directorio global.</p>
+                    <p>¿Desea actualizar/sincronizar la información de este asociado con la <strong>Base de Datos
+                            Maestra de Terceros (MaeTerceros)</strong>?</p>
+                    <p class="text-muted small"><i class="fas fa-info-circle"></i> Si selecciona "Sí", los datos
+                        personales y de contacto sobrescribirán el registro actual en el directorio global.</p>
                 </div>
                 <div class="modal-footer bg-light">
                     <button type="button" class="btn btn-outline-secondary" id="btn-deny-sync">
@@ -602,163 +788,169 @@
     </div>
 
     @push('scripts')
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            
-            // 1. LÓGICA DE BÚSQUEDA DE CÉDULA VIA AJAX
-            const btnBuscar = document.getElementById('btn-buscar-cedula');
-            const inputCedula = document.getElementById('cedula');
+        <script>
+            // =====================================================================
+            // LÓGICA DE NEGOCIO (Vainilla JS)
+            // =====================================================================
+            document.addEventListener('DOMContentLoaded', function () {
+                
+                // 1. LÓGICA DE BÚSQUEDA DE CÉDULA VIA AJAX
+                const btnBuscar = document.getElementById('btn-buscar-cedula');
+                const inputCedula = document.getElementById('cedula');
 
-            // Función centralizada para limpiar los campos
-            function limpiarCamposFormulario() {
-                const camposALimpiar = [
-                    'nombre1', 'nombre2', 'apellido1', 'apellido2',
-                    'fecha_nacimiento', 'fecha_expedicion', 'lugar_expedicion_cedula',
-                    'estado_civil', 'correo_pastor', 'celular_pastor', 'whatsapp',
-                    'distrito_actual', 'iglesia_actual', 'fecha_afiliacion',
-                    'cedula_esposa', 'nombre_esposa', 'correo_esposa', 'celular_esposa'
-                ];
+                // Función centralizada para limpiar los campos
+                function limpiarCamposFormulario() {
+                    const camposALimpiar = [
+                        'nombre1', 'nombre2', 'apellido1', 'apellido2',
+                        'fecha_nacimiento', 'fecha_expedicion', 'lugar_expedicion_cedula',
+                        'estado_civil', 'correo_pastor', 'celular_pastor', 'whatsapp',
+                        'distrito_actual', 'ciudad_distrito', 'iglesia_actual', 'fecha_afiliacion',
+                        'cedula_esposa', 'nombre_esposa', 'correo_esposa', 'celular_esposa'
+                    ];
 
-                // Iterar y vaciar todos los campos
-                camposALimpiar.forEach(id => {
-                    const elemento = document.getElementById(id);
-                    if (elemento) {
-                        elemento.value = '';
+                    // Iterar y vaciar todos los campos normales
+                    camposALimpiar.forEach(id => {
+                        const elemento = document.getElementById(id);
+                        if (elemento) {
+                            elemento.value = '';
+                        }
+                    });
+
+                    // Restaurar valores por defecto específicos
+                    const pais = document.getElementById('pais');
+                    if (pais) pais.value = 'Colombia';
+
+                    // Remover feedback visual de éxito si lo tenía
+                    inputCedula.classList.remove('is-valid');
+                }
+
+                // Evento: Limpiar en tiempo real si el usuario borra todo con la tecla "Retroceso"
+                inputCedula.addEventListener('input', function () {
+                    if (this.value.trim() === '') {
+                        limpiarCamposFormulario();
                     }
                 });
 
-                // Restaurar valores por defecto específicos
-                const pais = document.getElementById('pais');
-                if(pais) pais.value = 'Colombia';
+                btnBuscar.addEventListener('click', async function () {
+                    const cedula = inputCedula.value.trim();
 
-                // Remover feedback visual de éxito si lo tenía
-                inputCedula.classList.remove('is-valid');
-            }
-
-            // Evento opcional pero muy recomendado: Limpiar en tiempo real si el usuario borra todo con la tecla "Retroceso"
-            inputCedula.addEventListener('input', function() {
-                if (this.value.trim() === '') {
+                    // 1. Limpiar todos los campos SIEMPRE antes de hacer cualquier cosa
                     limpiarCamposFormulario();
-                }
-            });
 
-            btnBuscar.addEventListener('click', async function() {
-                const cedula = inputCedula.value.trim();
-                
-                // 1. Limpiar todos los campos SIEMPRE, sí o sí, antes de hacer cualquier cosa
-                limpiarCamposFormulario();
+                    if (!cedula) {
+                        alert('Por favor ingrese una cédula antes de buscar.');
+                        return;
+                    }
 
-                if(!cedula) {
-                    alert('Por favor ingrese una cédula antes de buscar.');
-                    return;
-                }
+                    // UI: Mostrar spinner en el botón de búsqueda
+                    document.getElementById('icon-buscar').classList.add('d-none');
+                    document.getElementById('spinner-buscar').classList.remove('d-none');
+                    btnBuscar.disabled = true;
 
-                // UI: Mostrar spinner en el botón de búsqueda
-                document.getElementById('icon-buscar').classList.add('d-none');
-                document.getElementById('spinner-buscar').classList.remove('d-none');
-                btnBuscar.disabled = true;
+                    try {
+                        const response = await fetch(`/asociados/buscar-tercero/${cedula}`);
 
-                try {
-                    const response = await fetch(`/asociados/buscar-tercero/${cedula}`);
-                    
-                    if(response.ok) {
-                        const res = await response.json();
-                        if(res.status === 'success' && res.data) {
-                            const data = res.data;
-                            
-                            // Mapeo automático
-                            document.getElementById('nombre1').value = data.nom1 || '';
-                            document.getElementById('nombre2').value = data.nom2 || '';
-                            document.getElementById('apellido1').value = data.apl1 || '';
-                            document.getElementById('apellido2').value = data.apl2 || '';
-                            
-                            if(data.fec_nac) document.getElementById('fecha_nacimiento').value = data.fec_nac.split('T')[0];
-                            if(data.fec_expcc) document.getElementById('fecha_expedicion').value = data.fec_expcc.split('T')[0];
-                            
-                            document.getElementById('lugar_expedicion_cedula').value = data.lugar_expcc || '';
-                            document.getElementById('estado_civil').value = data.est_civil || '';
-                            
-                            document.getElementById('correo_pastor').value = data.email || '';
-                            document.getElementById('celular_pastor').value = data.tel || '';
-                            document.getElementById('whatsapp').value = data.cel || '';
-                            
-                            document.getElementById('distrito_actual').value = data.cod_dist || '';
-                            document.getElementById('iglesia_actual').value = data.congrega || '';
-                            document.getElementById('pais').value = data.pais || 'Colombia';
-                            if(data.fec_minis) document.getElementById('fecha_afiliacion').value = data.fec_minis.split('T')[0];
+                        if (response.ok) {
+                            const res = await response.json();
+                            if (res.status === 'success' && res.data) {
+                                const data = res.data;
 
-                            document.getElementById('cedula_esposa').value = data.id_conyuge || '';
-                            document.getElementById('nombre_esposa').value = data.nom_conyug || '';
-                            document.getElementById('correo_esposa').value = data.mail_conyu || '';
-                            document.getElementById('celular_esposa').value = data.tel1 || '';
+                                // Mapeo automático de campos de texto
+                                document.getElementById('nombre1').value = data.nom1 || '';
+                                document.getElementById('nombre2').value = data.nom2 || '';
+                                document.getElementById('apellido1').value = data.apl1 || '';
+                                document.getElementById('apellido2').value = data.apl2 || '';
 
-                            // Feedback visual
-                            inputCedula.classList.add('is-valid');
+                                if (data.fec_nac) document.getElementById('fecha_nacimiento').value = data.fec_nac.split('T')[0];
+                                if (data.fec_expcc) document.getElementById('fecha_expedicion').value = data.fec_expcc.split('T')[0];
+                                
+                                document.getElementById('estado_civil').value = data.est_civil || '';
+                                document.getElementById('correo_pastor').value = data.email || '';
+                                document.getElementById('celular_pastor').value = data.tel || '';
+                                document.getElementById('whatsapp').value = data.cel || '';
+
+                                document.getElementById('distrito_actual').value = data.cod_dist || '';
+                                document.getElementById('iglesia_actual').value = data.congrega || '';
+                                document.getElementById('pais').value = data.pais || 'Colombia';
+                                if (data.fec_minis) document.getElementById('fecha_afiliacion').value = data.fec_minis.split('T')[0];
+
+                                document.getElementById('cedula_esposa').value = data.id_conyuge || '';
+                                document.getElementById('nombre_esposa').value = data.nom_conyug || '';
+                                document.getElementById('correo_esposa').value = data.mail_conyu || '';
+                                document.getElementById('celular_esposa').value = data.tel1 || '';
+
+                                // Mapeo de campos de ciudad
+                                document.getElementById('lugar_expedicion_cedula').value = data.lugar_expcc || '';
+                                // Si en el futuro necesitas mapear 'ciudad_distrito' desde la DB, puedes hacerlo aquí
+
+                                // Feedback visual
+                                inputCedula.classList.add('is-valid');
+                            } else {
+                                alert('No se encontró información en la base de datos maestra para esta cédula. Puede continuar digitando los datos manualmente.');
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error buscando cédula:', error);
+                        alert('Ocurrió un error al intentar consultar la base de datos.');
+                    } finally {
+                        // Restaurar botón de búsqueda
+                        document.getElementById('icon-buscar').classList.remove('d-none');
+                        document.getElementById('spinner-buscar').classList.add('d-none');
+                        btnBuscar.disabled = false;
+                    }
+                });
+
+                // 2. LÓGICA DEL FORMULARIO Y MODAL DE SINCRONIZACIÓN
+                const form = document.getElementById('form-expediente');
+                const syncModal = new bootstrap.Modal(document.getElementById('syncModal'));
+                let isSyncHandled = false; // Bandera para saber si ya pasamos por el modal
+
+                form.addEventListener('submit', function (e) {
+                    // Si aún no hemos manejado la validación del modal, detenemos el envío
+                    if (!isSyncHandled) {
+                        e.preventDefault();
+
+                        // Validar primero si el formulario nativo está correcto
+                        if (this.checkValidity()) {
+                            syncModal.show(); // Mostramos el modal de confirmación
                         } else {
-                            alert('No se encontró información en la base de datos maestra para esta cédula. Puede continuar digitando los datos manualmente.');
+                            this.reportValidity(); // Muestra las alertas nativas de HTML5
                         }
                     }
-                } catch (error) {
-                    console.error('Error buscando cédula:', error);
-                    alert('Ocurrió un error al intentar consultar la base de datos.');
-                } finally {
-                    // Restaurar botón de búsqueda
-                    document.getElementById('icon-buscar').classList.remove('d-none');
-                    document.getElementById('spinner-buscar').classList.add('d-none');
-                    btnBuscar.disabled = false;
+                });
+
+                // Función para disparar el envío real una vez decidido
+                function triggerFinalSubmit() {
+                    isSyncHandled = true; // Evita el loop infinito
+
+                    // UX: Prevenir doble clic y dar feedback visual al usuario
+                    const btn = document.getElementById('btn-submit');
+                    const text = document.getElementById('btn-text');
+                    const spinner = document.getElementById('btn-spinner');
+
+                    btn.classList.add('disabled');
+                    btn.style.pointerEvents = 'none';
+                    text.classList.add('d-none');
+                    spinner.classList.remove('d-none');
+
+                    form.submit(); // Enviar el formulario
                 }
+
+                // Click en "No, guardar solo aquí"
+                document.getElementById('btn-deny-sync').addEventListener('click', function () {
+                    document.getElementById('input_sincronizar_tercero').value = "0"; // Falso
+                    syncModal.hide();
+                    triggerFinalSubmit();
+                });
+
+                // Click en "Sí, sincronizar"
+                document.getElementById('btn-confirm-sync').addEventListener('click', function () {
+                    document.getElementById('input_sincronizar_tercero').value = "1"; // Verdadero
+                    syncModal.hide();
+                    triggerFinalSubmit();
+                });
             });
-            // 2. LÓGICA DEL FORMULARIO Y MODAL DE SINCRONIZACIÓN
-            const form = document.getElementById('form-expediente');
-            const syncModal = new bootstrap.Modal(document.getElementById('syncModal'));
-            let isSyncHandled = false; // Bandera para saber si ya pasamos por el modal
-
-            form.addEventListener('submit', function(e) {
-                // Si aún no hemos manejado la validación del modal, detenemos el envío
-                if (!isSyncHandled) {
-                    e.preventDefault();
-
-                    // Validar primero si el formulario nativo está correcto
-                    if(this.checkValidity()) {
-                        syncModal.show(); // Mostramos el modal de confirmación
-                    } else {
-                        this.reportValidity(); // Muestra las alertas nativas de HTML5 de "campo requerido"
-                    }
-                }
-            });
-
-            // Función para disparar el envío real una vez decidido
-            function triggerFinalSubmit() {
-                isSyncHandled = true; // Evita el loop infinito
-                
-                // UX: Prevenir doble clic y dar feedback visual al usuario
-                const btn = document.getElementById('btn-submit');
-                const text = document.getElementById('btn-text');
-                const spinner = document.getElementById('btn-spinner');
-                
-                btn.classList.add('disabled');
-                btn.style.pointerEvents = 'none';
-                text.classList.add('d-none');
-                spinner.classList.remove('d-none');
-                
-                form.submit(); // Enviar el formulario
-            }
-
-            // Click en "No, guardar solo aquí"
-            document.getElementById('btn-deny-sync').addEventListener('click', function() {
-                document.getElementById('input_sincronizar_tercero').value = "0"; // Falso
-                syncModal.hide();
-                triggerFinalSubmit();
-            });
-
-            // Click en "Sí, sincronizar"
-            document.getElementById('btn-confirm-sync').addEventListener('click', function() {
-                document.getElementById('input_sincronizar_tercero').value = "1"; // Verdadero
-                syncModal.hide();
-                triggerFinalSubmit();
-            });
-        });
-    </script>
+        </script>
     @endpush
 
     @include('asociados.partials.styles')

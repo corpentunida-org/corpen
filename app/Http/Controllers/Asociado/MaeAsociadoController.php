@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Asociado;
 use App\Http\Controllers\Controller;
 use App\Models\Asociado\MaeAsociado;
 use App\Models\Maestras\MaeTerceros;
+use App\Models\Maestras\MaeDistritos;
+use App\Models\Maestras\MaeCongregacion;
+use App\Models\Demografia\Ciudad;
 use App\Http\Requests\StoreMaeAsociadoRequest;
 use App\Exports\Asociado\AsociadosExport;
 use App\Imports\Asociado\AsociadosImport;
@@ -32,8 +35,8 @@ class MaeAsociadoController extends Controller
             $q->whereNull('radicado')->orWhere('radicado', '');
         })->count();
 
-        // 2. Consulta base para la tabla
-        $query = MaeAsociado::query();
+        // 2. Consulta base para la tabla (Eager Loading optimizado para las relaciones de ciudad y distrito)
+        $query = MaeAsociado::with(['ciudad', 'distrito']);
 
         // 3. Filtro por Buscador Global (Search)
         if ($request->filled('search')) {
@@ -43,7 +46,14 @@ class MaeAsociadoController extends Controller
                   ->orWhere('nombre1', 'LIKE', "%{$search}%")
                   ->orWhere('apellido1', 'LIKE', "%{$search}%")
                   ->orWhere('distrito_actual', 'LIKE', "%{$search}%")
-                  ->orWhere('ciudad_distrito', 'LIKE', "%{$search}%");
+                  // Búsqueda en la relación de ciudad por el nombre
+                  ->orWhereHas('ciudad', function($qCiudad) use ($search) {
+                      $qCiudad->where('nombre', 'LIKE', "%{$search}%");
+                  })
+                  // Búsqueda en la relación de distrito por el nombre oficial
+                  ->orWhereHas('distrito', function($qDistrito) use ($search) {
+                      $qDistrito->where('NOM_DIST', 'LIKE', "%{$search}%");
+                  });
             });
         }
 
@@ -86,7 +96,12 @@ class MaeAsociadoController extends Controller
      */
     public function create()
     {
-        return view('asociados.create');
+        // Traer ciudades y distritos organizados para los selects de la vista
+        $ciudades = Ciudad::with('subregion:id_subregion,nombre')->get();
+        $distritos = MaeDistritos::orderBy('NOM_DIST', 'asc')->get();
+        $congregaciones = MaeCongregacion::orderBy('nombre', 'asc')->get();
+        
+        return view('asociados.create', compact('ciudades', 'distritos', 'congregaciones'));
     }
 
     /**
@@ -135,6 +150,8 @@ class MaeAsociadoController extends Controller
      */
     public function show(MaeAsociado $maeAsociado)
     {
+        // Cargar relaciones para mostrar los nombres de la ciudad y el distrito en la vista
+        $maeAsociado->load(['ciudad', 'distrito']);
         return view('asociados.show', compact('maeAsociado'));
     }
 
@@ -143,7 +160,12 @@ class MaeAsociadoController extends Controller
      */
     public function edit(MaeAsociado $maeAsociado)
     {
-        return view('asociados.edit', compact('maeAsociado'));
+        // Traer ciudades y distritos ordenados para los selects de edición
+        $ciudades = Ciudad::orderBy('nombre', 'asc')->get();
+        $distritos = MaeDistritos::orderBy('NOM_DIST', 'asc')->get();
+        $congregaciones = MaeCongregacion::orderBy('nombre', 'asc')->get();
+        
+        return view('asociados.edit', compact('maeAsociado', 'ciudades', 'distritos', 'congregaciones'));
     }
 
     /**
@@ -192,7 +214,8 @@ class MaeAsociadoController extends Controller
      */
     public function buscarCedula($cedula)
     {
-        $asociado = MaeAsociado::where('cedula', $cedula)->first();
+        // Cargamos las relaciones para tener la ciudad y el distrito disponibles en el JSON
+        $asociado = MaeAsociado::with(['ciudad', 'distrito'])->where('cedula', $cedula)->first();
 
         if (!$asociado) {
             return response()->json(['status' => 'error', 'message' => 'No se encontró el asociado en el directorio.'], 404);
@@ -204,7 +227,9 @@ class MaeAsociadoController extends Controller
                 'id'              => $asociado->id,
                 'nombre_completo' => $asociado->nombre_completo,
                 'celular'         => $asociado->celular_pastor,
-                'distrito'        => $asociado->distrito_actual,
+                'distrito_cod'    => $asociado->distrito_actual,
+                'distrito_nombre' => $asociado->distrito ? $asociado->distrito->NOM_DIST : null,
+                'ciudad'          => $asociado->ciudad ? $asociado->ciudad->nombre : null,
                 'estado'          => $asociado->estado
             ]
         ]);
@@ -219,8 +244,8 @@ class MaeAsociadoController extends Controller
         $pendientesArchivo = MaeAsociado::whereNull('radicado')->orWhere('radicado', '')->count();
         $validados = MaeAsociado::where('validado_archivo', true)->count();
 
-        // Se listan los asociados ordenados por los más recientes
-        $asociados = MaeAsociado::latest()->paginate(15);
+        // Se listan los asociados ordenados por los más recientes, cargando ciudad y distrito
+        $asociados = MaeAsociado::with(['ciudad', 'distrito'])->latest()->paginate(15);
         
         return view('asociados.ecm', compact('asociados', 'digitalizadosEcm', 'pendientesArchivo', 'validados'));
     }
@@ -259,8 +284,8 @@ class MaeAsociadoController extends Controller
         // 5. Archivo Físico (Basado en el campo 'radicado')
         $pendientesRadicado = MaeAsociado::whereNull('radicado')->orWhere('radicado', '')->count();
 
-        // 6. Últimos Registros
-        $ultimosIngresos = MaeAsociado::latest()->take(5)->get();
+        // 6. Últimos Registros con sus relaciones cargadas
+        $ultimosIngresos = MaeAsociado::with(['ciudad', 'distrito'])->latest()->take(5)->get();
 
         return view('asociados.dashboard', compact(
             'total',
@@ -343,11 +368,11 @@ class MaeAsociadoController extends Controller
 
                 // Validación interna por fila en memoria
                 $validator = Validator::make($fila, [
-                    'cedula'          => 'required|max:15',
-                    'nombre1'         => 'required|string|max:100',
-                    'apellido1'       => 'required|string|max:100',
-                    'correo_pastor'   => 'nullable|email',
-                    'cantidad_folios' => 'nullable|integer',
+                    'cedula'             => 'required|max:15',
+                    'nombre1'            => 'required|string|max:100',
+                    'apellido1'          => 'required|string|max:100',
+                    'correo_pastor'      => 'nullable|email',
+                    'cantidad_folios'    => 'nullable|integer',
                     'ubicacion_ecm_link' => 'nullable|url'
                 ]);
 
@@ -426,7 +451,7 @@ class MaeAsociadoController extends Controller
                     'whatsapp'                  => $item['whatsapp'] ?? null,
                     'fecha_afiliacion'          => $item['fecha_afiliacion'] ?? null,
                     'distrito_actual'           => $item['distrito_actual'] ?? null,
-                    'ciudad_distrito'           => $item['ciudad_distrito'] ?? null,
+                    'ciudad_distrito'           => $item['ciudad_distrito'] ?? null, 
                     'direccion_distrito'        => $item['direccion_distrito'] ?? null,
                     'estado_pastor'             => $item['estado_pastor'] ?? null,
                     'especificacion'            => $item['especificacion'] ?? null,
@@ -498,8 +523,13 @@ class MaeAsociadoController extends Controller
 
             // Información Ministerial
             'fecha_afiliacion'          => 'nullable|date',
-            'distrito_actual'           => 'nullable|string|max:50',
-            'ciudad_distrito'           => 'nullable|string|max:50',
+            
+            // Verificación relacional de Distrito (Asegura existencia en MaeDistritos)
+            'distrito_actual'           => 'nullable|string|max:50|exists:MaeDistritos,COD_DIST',
+            
+            // Verificación relacional de Ciudad (Asegura existencia en geo_ciudades)
+            'ciudad_distrito'           => 'nullable|string|max:50|exists:geo_ciudades,id_ciudad',
+            
             'direccion_distrito'        => 'nullable|string|max:100',
             'estado_pastor'             => 'nullable|string|max:20',
             'especificacion'            => 'nullable|string|max:50',

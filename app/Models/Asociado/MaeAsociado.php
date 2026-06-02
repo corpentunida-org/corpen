@@ -4,7 +4,9 @@ namespace App\Models\Asociado;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Maestras\MaeTerceros; // Importación obligatoria para la sincronización
+use App\Models\Maestras\MaeTerceros;
+use App\Models\Demografia\Ciudad;
+use App\Models\Maestras\MaeDistritos;
 
 class MaeAsociado extends Model
 {
@@ -233,5 +235,25 @@ class MaeAsociado extends Model
     {
         // trim() asegura que si no hay segundo nombre o apellido, no queden espacios dobles molestos
         return trim("{$this->nombre1} {$this->nombre2} {$this->apellido1} {$this->apellido2}");
+    }
+
+    /**
+     * Relación: Un asociado pertenece a una ciudad.
+     * * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function ciudad()
+    {
+        // belongsTo(Modelo_Relacionado, 'llave_foranea_local', 'llave_primaria_del_otro_modelo')
+        return $this->belongsTo(Ciudad::class, 'ciudad_distrito', 'id_ciudad');
+    }
+
+    /**
+     * Relación: Un asociado pertenece a un distrito.
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function distrito()
+    {
+        // belongsTo(Modelo_Relacionado, 'llave_foranea_local', 'llave_primaria_del_otro_modelo')
+        return $this->belongsTo(MaeDistritos::class, 'distrito_actual', 'COD_DIST');
     }
 }

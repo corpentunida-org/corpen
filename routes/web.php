@@ -60,6 +60,8 @@ use App\Http\Controllers\Maestras\MaeTercerosController;
 use App\Http\Controllers\Maestras\MaeTiposController;
 use App\Http\Controllers\Maestras\MaeMunicipiosController;
 
+use App\Http\Controllers\Demografia\DemografiaController;
+
 //CREDITOS
 use App\Http\Controllers\Creditos\CreditoController;
 
@@ -1218,3 +1220,43 @@ Route::middleware(['auth'])
             
     });
 // FIN MÓDULO ASOCIADOS
+// ==========================================
+//   MÓDULO DE DEMOGRAFÍA (GEOGRAFÍA)
+// ==========================================
+Route::middleware(['auth'])
+    ->prefix('demograficos')
+    ->name('demograficos.')
+    ->group(function () {
+        
+        // 0. DASHBOARD E INDICADORES
+        Route::get('tablero', [DemografiaController::class, 'dashboard'])
+            ->name('dashboard');
+
+        // ---------------------------------------------------
+        // 1. FLUJO DE SINCRONIZACIÓN MASIVA EXCEL (NUEVO)
+        // ---------------------------------------------------
+        // Vista principal del panel de carga y descarga de plantillas
+        Route::get('sincronizar', [DemografiaController::class, 'excelIndex'])
+            ->name('sincronizar.index');
+
+        // Acción: Descarga la base de datos completa actual en formato .xlsx
+        Route::get('descargar-excel', [DemografiaController::class, 'descargarExcel'])
+            ->name('sincronizar.descargar');
+
+        // Paso 1: Procesa el archivo Excel, valida la estructura y lo aloja temporalmente
+        Route::post('subir-excel', [DemografiaController::class, 'subirExcel'])
+            ->name('sincronizar.subir');
+            
+        // Paso 2: Ejecuta el Upsert masivo transaccional en la BD (Múltiples hojas)
+        Route::post('confirmar-sincronizacion', [DemografiaController::class, 'confirmarSincronizacion'])
+            ->name('sincronizar.confirmar');
+
+        // ---------------------------------------------------
+        // 2. GESTIÓN DEL MAESTRO DEMOGRÁFICO (CRUD)
+        // ---------------------------------------------------
+        // Rutas resource para listar, crear, editar y eliminar registros manualmente
+        Route::resource('maestro', DemografiaController::class)
+            ->parameters(['maestro' => 'demografia']);
+
+    });
+// FIN MÓDULO DEMOGRAFÍA
