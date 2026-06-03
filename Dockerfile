@@ -1,4 +1,4 @@
-FROM php:8.2-apache
+FROM php:8.4-apache
 
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
@@ -17,7 +17,7 @@ RUN apt-get update -y && apt-get install -y \
 # Instalar extensiones de PHP
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
   && docker-php-ext-install gd zip pdo pdo_mysql
-
+RUN docker-php-ext-install bcmath
 RUN a2enmod rewrite
 
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
@@ -46,7 +46,7 @@ WORKDIR /var/www/html
 COPY . /var/www/html/
 
 RUN git config --global --add safe.directory /var/www/html
-RUN composer config policy.malware.block false
+
 RUN composer install --optimize-autoloader --no-dev
 RUN . ~/.nvm/nvm.sh && npm install
 RUN . ~/.nvm/nvm.sh && npm run build

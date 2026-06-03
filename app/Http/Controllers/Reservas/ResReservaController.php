@@ -225,24 +225,19 @@ class ResReservaController extends Controller implements HasMiddleware
 
     public function indexConfirmacion()
     {
+        $inmueblesPermitidos = auth()->user()->permissions->pluck('name')->filter(fn($permiso) => str_starts_with($permiso, 'reservas.inmuebles.'))->map(fn($permiso) => (int) str_replace('reservas.inmuebles.', '', $permiso))->values()->all();
         $reservas = Res_reserva::select('id', 'res_inmueble_id', 'res_status_id', 'user_id', 'nid', 'celular', 'celular_respaldo', 'fecha_inicio', 'fecha_fin')
-            ->where('res_status_id', 2)
+            ->whereIn('res_status_id', [2, 5])
             ->with(['tercero', 'user'])
-            ->orderByRaw('CASE WHEN fecha_inicio >= CURDATE() THEN 0 ELSE 1 END')
+            ->when(empty($inmueblesPermitidos), fn($q) => $q->whereRaw('1 = 0'), fn($q) => $q->whereIn('res_inmueble_id', $inmueblesPermitidos))
+            ->orderByRaw(
+                "CASE
+                        WHEN CURDATE() BETWEEN fecha_inicio AND fecha_fin THEN 0
+                        WHEN fecha_inicio > CURDATE() THEN 1
+                        ELSE 2
+                    END",
+            )
             ->orderBy('fecha_inicio', 'asc')
-            ->where(function ($query) {
-                $tienePermiso = false;
-                for ($i = 1; $i <= 10; $i++) {
-                    if (auth()->user()->hasPermission("reservas.inmuebles.$i")
-                    ) {
-                        $query->orWhere('res_inmueble_id', $i);
-                        $tienePermiso = true;
-                    }
-                }
-                if (!$tienePermiso) {
-                    $query->whereRaw('1 = 0');
-                }
-            })
             ->get();
         return view('reserva.funcionario.indexConfirmacion', compact('reservas'));
     }
