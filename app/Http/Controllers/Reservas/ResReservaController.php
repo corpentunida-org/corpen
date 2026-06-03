@@ -302,6 +302,7 @@ class ResReservaController extends Controller implements HasMiddleware
         if ($request->boolean('notificar')) {
             Mail::to($reserva->user->email)->send(new ReservaInmueble($reserva->user->name, $texto, $titulomail, $condicionesmail, $reserva->res_inmueble));
         }
+        return view('reserva.funcionario.showConfirmacion', compact('reserva'));
         return redirect()->route('reserva.inmueble.confirmacion')->with('success', 'Comentario registrado con éxito.');
     }
 

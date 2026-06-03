@@ -39,12 +39,12 @@
     <div class="col-lg-12 card" id="detalle">
         <div class="card-header d-md-flex align-items-center justify-content-between">
             <h5 class="fw-bold">Detalle de la Reserva #{{ $reserva->id }}</h5>
-            @if($reserva->res_status_id != 3)
-            <button type="button" class="btn {{ !$btnFin ? 'btn-success' : 'btn-danger' }}" data-bs-toggle="modal"
-                data-bs-target="#confirmarReservaModal">
-                <i class="fas fa-comment me-2"></i> {{ !$btnFin ? 'Nuevo Comentario' : 'Finalizar Reserva' }}
-            </button>
-            @endif             
+            @if ($reserva->res_status_id != 3)
+                <button type="button" class="btn {{ !$btnFin ? 'btn-success' : 'btn-danger' }}" data-bs-toggle="modal"
+                    data-bs-target="#confirmarReservaModal">
+                    <i class="fas fa-comment me-2"></i> {{ !$btnFin ? 'Nuevo Comentario' : 'Finalizar Reserva' }}
+                </button>
+            @endif
         </div>
         <div class="card-body ">
             <div class="table-responsive m-0">
@@ -54,7 +54,7 @@
                             <td class="fw-medium text-dark text-start ps-4">Asociado:</td>
                             <td class="text-start">
                                 @if ($reserva->endosada)
-                                    <span class="badge bg-warning">Endosado</span> - {{ $reserva->name_reserva }}
+                                    <span class="badge bg-warning"> Endosado </span> - {{ $reserva->name_reserva }}
                                 @else
                                     <span class="text-muted">{{ $reserva->nid }} - {{ $reserva->user->name }}</span>
                                 @endif
@@ -141,19 +141,19 @@
         </div>
     </div>
 
-    @if($reserva->res_status_id != 3)
-    <!-- Modal para Confirmar Reserva -->
+    @if ($reserva->res_status_id != 3)
+        <!-- Modal para Confirmar Reserva -->
         <div class="modal fade" id="confirmarReservaModal" tabindex="-1" aria-labelledby="confirmarReservaModalLabel"
             aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
                     <!-- Encabezado del Modal -->
                     <div class="modal-header">
-                        <h5 class="modal-title" id="confirmarReservaModalLabel">{{ !$btnFin ? 'Confirmar' : 'Finalizar' }}
-                            Reserva</h5>
+                        <h5 class="modal-title" id="confirmarReservaModalLabel">
+                            {{ !$btnFin ? 'Confirmar' : 'Finalizar' }}Reserva</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <form action="{{ route('reserva.inmueble.confirmar') }}" method="POST">
+                    <form action="{{ route('reserva.inmueble.confirmar') }}" method="POST" id="formConfirmarComentario">
                         @csrf
                         <!-- Cuerpo del Modal -->
                         <div class="modal-body">
@@ -166,8 +166,10 @@
                                     placeholder="Escribe algún comentario o recomendacion para el asociado" required></textarea>
                             </div>
                             <div class="form-check mb-3">
-                                <input class="form-check-input" type="checkbox" id="notificar" name="notificar" value="1" checked>
-                                <label class="form-check-label fw-semibold" for="notificar">Notificar al asociado</label>
+                                <input class="form-check-input" type="checkbox" id="notificar" name="notificar"
+                                    value="1" checked>
+                                <label class="form-check-label fw-semibold" for="notificar">Notificar al
+                                    asociado</label>
                             </div>
                             @if ($btnFin)
                                 <div class="rating-section text-center">
@@ -190,8 +192,9 @@
 
                         <!-- Pie del Modal -->
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn btn-success">Confirmar</button>
+                            <button type="button" class="btn btn-secondary"
+                                data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-success"  id="btnConfirmar">Confirmar</button>
                         </div>
                     </form>
                 </div>
@@ -232,7 +235,6 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-
             function paintStars(section, value) {
                 const items = section.querySelectorAll('.rating-item');
 
@@ -278,6 +280,15 @@
             if (ratingSection) {
                 initRatings(ratingSection);
             }
+
+            document.getElementById('formConfirmarComentario').addEventListener('submit', function() {
+                const btn = document.getElementById('btnConfirmar');
+                btn.disabled = true;
+                btn.innerHTML = `
+                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                    Guardando...
+                `;
+            });
 
         });
     </script>
