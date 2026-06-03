@@ -102,8 +102,8 @@
                                     <td>
                                         {{ $reserva->fecha_fin }}
                                     </td>
-                                    <td>
-                                        <div class="btn btn-sm bg-soft-teal text-teal d-inline-block">
+                                    <td>                                        
+                                        <div class="btn btn-sm {{ $reserva->res_status_id == 5 ? 'bg-soft-warning text-warning' : 'bg-soft-teal text-teal' }} d-inline-block">
                                             {{ $reserva->res_status->name }}</div>
                                     </td>
                                     <td>
@@ -171,11 +171,11 @@
                 events: [
                     @foreach ($reservas as $r)
                         {
-                            title: 'Reservado',
+                            title: '{{ $r->res_status_id == 5 ? 'Reserva verificación pago' : 'Reservado' }}',
                             start: '{{ \Carbon\Carbon::parse($r->fecha_inicio)->format('Y-m-d') }}',
                             end: '{{ \Carbon\Carbon::parse($r->fecha_fin)->addDay()->format('Y-m-d') }}',
-                            color: '#c8b6ff',
-                            textColor: '#2b1a55',
+                            color: '{{ $r->res_status_id == 5 ? '#FFEBD0' : '#c8b6ff' }}',
+                            textColor: '{{ $r->res_status_id == 5 ? '#ce7d1a' : '#2b1a55' }}',
                             extendedProps: {
                                 id: '{{ $r->id }}',
                                 apto: '{{ $r->res_inmueble->name }}',
