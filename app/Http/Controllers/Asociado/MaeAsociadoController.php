@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class MaeAsociadoController extends Controller
 {
@@ -160,14 +161,27 @@ class MaeAsociadoController extends Controller
      */
     public function edit(MaeAsociado $maeAsociado)
     {
-        // Traer ciudades y distritos ordenados para los selects de edición
-        $ciudades = Ciudad::orderBy('nombre', 'asc')->get();
-        $distritos = MaeDistritos::orderBy('NOM_DIST', 'asc')->get();
-        $congregaciones = MaeCongregacion::orderBy('nombre', 'asc')->get();
-        
+        // Traemos las ciudades con su subregión y las guardamos en caché por 7 días
+        $ciudades = Cache::remember('ciudades_list_cache', now()->addDays(7), function () {
+            return Ciudad::with('subregion')->orderBy('nombre', 'asc')->get();
+        });
+
+        // Distritos optimizados
+        $distritos = Cache::remember('distritos_list_cache', now()->addDays(7), function () {
+            return MaeDistritos::select('COD_DIST', 'NOM_DIST')
+                ->orderBy('NOM_DIST', 'asc')
+                ->get();
+        });
+
+        // Congregaciones optimizadas
+        $congregaciones = Cache::remember('congregaciones_list_cache', now()->addDays(7), function () {
+            return MaeCongregacion::select('codigo', 'nombre')
+                ->orderBy('nombre', 'asc')
+                ->get();
+        });
+
         return view('asociados.edit', compact('maeAsociado', 'ciudades', 'distritos', 'congregaciones'));
     }
-
     /**
      * Update the specified resource in storage.
      */
@@ -258,14 +272,22 @@ class MaeAsociadoController extends Controller
         // 1. Población General
         $total = MaeAsociado::count();
         
-        // 2. Estado Ministerial (estado_pastor) para Tarta 1
-        $estadosPastor = MaeAsociado::selectRaw('estado_pastor, count(*) as cantidad')
-            ->whereNotNull('estado_pastor')
+        // 2. Definimos qué estados son ACTIVOS y cuáles son INACTIVOS
+        // Ajusta estos arrays si en tu BD los estados se llaman diferente (ej: 'Vigente', 'Fallecido')
+        $estadosActivos = ['Activo', 'Vigente']; 
+        $estadosInactivos = ['Inactivo', 'Retirado', 'Suspendido'];
+
+        // 3. Calculamos los totales usando whereIn
+        $activosCount = MaeAsociado::whereIn('estado', $estadosActivos)->count();
+        $inactivosCount = MaeAsociado::whereIn('estado', $estadosInactivos)->count();
+
+        // 4. Estado Ministerial (Para el gráfico de dona)
+        $estadosPastor = MaeAsociado::selectRaw('COALESCE(estado_pastor, "Sin Definir") as estado_display, count(*) as cantidad')
             ->groupBy('estado_pastor')
-            ->pluck('cantidad', 'estado_pastor')
+            ->pluck('cantidad', 'estado_display')
             ->toArray();
 
-        // 3. Demografía (estado_civil) para Tarta 2
+        // 5. Demografía
         $estadosCiviles = MaeAsociado::selectRaw('estado_civil, count(*) as cantidad')
             ->whereNotNull('estado_civil')
             ->where('estado_civil', '!=', '')
@@ -273,7 +295,7 @@ class MaeAsociadoController extends Controller
             ->pluck('cantidad', 'estado_civil')
             ->toArray();
 
-        // 4. Embudo de Digitalización (ECM Booleanos)
+        // 6. Embudo ECM
         $ecmPipeline = [
             'total'      => $total,
             'escaneados' => MaeAsociado::where('escaneado', true)->count(),
@@ -281,14 +303,13 @@ class MaeAsociadoController extends Controller
             'validados'  => MaeAsociado::where('validado_archivo', true)->count(),
         ];
 
-        // 5. Archivo Físico (Basado en el campo 'radicado')
         $pendientesRadicado = MaeAsociado::whereNull('radicado')->orWhere('radicado', '')->count();
-
-        // 6. Últimos Registros con sus relaciones cargadas
         $ultimosIngresos = MaeAsociado::with(['ciudad', 'distrito'])->latest()->take(5)->get();
 
         return view('asociados.dashboard', compact(
             'total',
+            'activosCount',     // Pasamos este nuevo valor
+            'inactivosCount',   // Pasamos este nuevo valor
             'estadosPastor',
             'estadosCiviles',
             'ecmPipeline',
@@ -528,7 +549,7 @@ class MaeAsociadoController extends Controller
             'distrito_actual'           => 'nullable|string|max:50|exists:MaeDistritos,COD_DIST',
             
             // Verificación relacional de Ciudad (Asegura existencia en geo_ciudades)
-            'ciudad_distrito'           => 'nullable|string|max:50|exists:geo_ciudades,id_ciudad',
+            'ciudad_distrito'           => 'nullable|string|max:100|exists:geo_ciudades,id_ciudad',
             
             'direccion_distrito'        => 'nullable|string|max:100',
             'estado_pastor'             => 'nullable|string|max:20',

@@ -42,21 +42,22 @@
                     <div class="dash-widget border-bottom-success h-100 shadow-sm">
                         <div class="widget-icon bg-success-light text-success"><i class="fas fa-user-check"></i></div>
                         <div class="widget-details">
-                            <h3 class="widget-number text-dark">{{ $estadosPastor['Activo'] ?? 0 }}</h3>
+                            <h3 class="widget-number text-dark">{{ $activosCount }}</h3>
                             <span class="widget-title text-muted">Pastores Activos</span>
                         </div>
                     </div>
                 </a>
             </div>
 
-            <!-- Suspendidos/Retirados -->
+                        <!-- Inactivos / Suspendidos / Retirados -->
+                        <!-- Widget Inactivos -->
             <div class="col">
                 <a href="{{ route('asociados.maestro.index', ['filter' => 'inactivos']) }}" class="text-decoration-none d-block h-100">
                     <div class="dash-widget border-bottom-danger h-100 shadow-sm">
                         <div class="widget-icon bg-danger-light text-danger"><i class="fas fa-user-times"></i></div>
                         <div class="widget-details">
-                            <h3 class="widget-number text-dark">{{ ($estadosPastor['Retirado'] ?? 0) + ($estadosPastor['Suspendido'] ?? 0) }}</h3>
-                            <span class="widget-title text-muted">Inactivos/Retirados</span>
+                            <h3 class="widget-number text-dark">{{ $inactivosCount }}</h3>
+                            <span class="widget-title text-muted">Inactivos / Retirados</span>
                         </div>
                     </div>
                 </a>
@@ -195,9 +196,8 @@
                         </thead>
                         <tbody>
                             @forelse($ultimosIngresos as $asociado)
-                                <!-- FILA CON DATA-ATTRIBUTES PARA EL HOVER CARD -->
-                                <tr class="row-hover-archive" style="cursor: pointer;"
-                                    data-ubicacion="{{ $asociado->ubicacion_carpeta ?? 'No asignada' }}"
+                                <!-- Atributos guardados en la fila (TR) pero sin evento general de Hover -->
+                                <tr data-ubicacion="{{ $asociado->ubicacion_carpeta ?? 'No asignada' }}"
                                     data-caja="{{ $asociado->numero_caja ?? 'N/A' }}"
                                     data-folios="{{ $asociado->cantidad_folios ?? '0' }}"
                                     data-fecha="{{ $asociado->fecha_ingreso_archivo ? \Carbon\Carbon::parse($asociado->fecha_ingreso_archivo)->format('d/m/Y') : 'No registrada' }}"
@@ -207,17 +207,27 @@
                                     data-nombre="{{ $asociado->nombre_completo }}">
                                     
                                     <td class="ps-4 fw-bold text-primary">{{ $asociado->cedula }}</td>
-                                    <td class="fw-bold text-dark">{{ $asociado->nombre_completo }}</td>
-                                    <td>
-                                        {{ $asociado->distrito_actual ?? 'N/A' }} <br>
-                                        <small class="text-muted">{{ $asociado->ciudad_distrito ?? '' }}</small>
+                                    
+                                    <!-- ESTA COLUMNA ES LA QUE DISPARA EL MODAL (nombre-trigger) -->
+                                    <td class="fw-bold text-dark nombre-trigger" style="cursor: pointer; position: relative;">
+                                        <span title="Ver detalles del archivo físico">{{ $asociado->nombre_completo }}</span>
+                                        <i class="fas fa-info-circle text-primary opacity-50 ms-1 small"></i>
                                     </td>
+
+                                    <!-- DISTRITO Y CIUDAD: Renderizado con las Relaciones de Eloquent -->
+                                    <td>
+                                        <div class="d-flex flex-column">
+                                            <span class="text-dark fw-semibold">{{ $asociado->distrito?->NOM_DIST ?? $asociado->distrito_actual ?? 'N/A' }}</span>
+                                            <small class="text-muted"><i class="fas fa-map-marker-alt me-1 opacity-50"></i>{{ $asociado->ciudad?->nombre ?? $asociado->ciudad_distrito ?? 'Sin ciudad' }}</small>
+                                        </div>
+                                    </td>
+
                                     <td>
                                         <span class="badge bg-light text-dark border">{{ $asociado->estado_pastor ?? 'No definido' }}</span>
                                     </td>
                                     <td>
                                         <span class="status-badge-large {{ $asociado->estado == 'Activo' ? 'st-completed' : 'st-danger' }}" style="padding: 0.3rem 0.8rem; font-size: 0.75rem;">
-                                            <i class="fas fa-circle"></i> {{ $asociado->estado ?? 'Activo' }}
+                                            <i class="fas fa-circle" style="font-size: 0.5rem; vertical-align: middle; margin-right: 3px;"></i> {{ $asociado->estado ?? 'Activo' }}
                                         </span>
                                     </td>
                                     <td class="text-center pe-4">
@@ -354,21 +364,25 @@
 
             // 2. LÓGICA DE LA TARJETA PREVIEW (HOVER UX)
             const previewCard = document.getElementById('archive-preview-card');
-            const tableRows = document.querySelectorAll('.row-hover-archive');
+            
+            // Seleccionamos específicamente la celda del nombre (no toda la fila)
+            const nombreTriggers = document.querySelectorAll('.nombre-trigger');
 
-            tableRows.forEach(row => {
-                row.addEventListener('mouseenter', function (e) {
-                    // Cargar los datos dinámicamente desde los data attributes
-                    document.getElementById('p-nombre').textContent = this.getAttribute('data-nombre');
-                    document.getElementById('p-ubicacion').textContent = this.getAttribute('data-ubicacion');
-                    document.getElementById('p-caja').textContent = this.getAttribute('data-caja');
-                    document.getElementById('p-folios').textContent = this.getAttribute('data-folios');
-                    document.getElementById('p-fecha').textContent = this.getAttribute('data-fecha');
-                    document.getElementById('p-custodia').textContent = this.getAttribute('data-custodia');
-                    document.getElementById('p-observaciones').textContent = this.getAttribute('data-observaciones');
+            nombreTriggers.forEach(trigger => {
+                trigger.addEventListener('mouseenter', function (e) {
+                    // Para leer los datos, subimos al elemento 'tr' que contiene los atributos
+                    const row = this.closest('tr');
+                    
+                    document.getElementById('p-nombre').textContent = row.getAttribute('data-nombre');
+                    document.getElementById('p-ubicacion').textContent = row.getAttribute('data-ubicacion');
+                    document.getElementById('p-caja').textContent = row.getAttribute('data-caja');
+                    document.getElementById('p-folios').textContent = row.getAttribute('data-folios');
+                    document.getElementById('p-fecha').textContent = row.getAttribute('data-fecha');
+                    document.getElementById('p-custodia').textContent = row.getAttribute('data-custodia');
+                    document.getElementById('p-observaciones').textContent = row.getAttribute('data-observaciones');
 
                     // Estilo dinámico para el estado de conservación
-                    const conservacion = this.getAttribute('data-conservacion');
+                    const conservacion = row.getAttribute('data-conservacion');
                     const pConservacion = document.getElementById('p-conservacion');
                     pConservacion.textContent = conservacion.toUpperCase();
                     
@@ -386,12 +400,10 @@
                     previewCard.style.opacity = '1';
                 });
 
-                row.addEventListener('mousemove', function (e) {
-                    // Posicionamiento dinámico al lado del cursor para un look nativo
+                trigger.addEventListener('mousemove', function (e) {
                     const cardWidth = previewCard.offsetWidth;
                     const cardHeight = previewCard.offsetHeight;
                     
-                    // Lógica para no desbordar pantalla
                     let leftPos = e.clientX + 20;
                     if (leftPos + cardWidth > window.innerWidth) leftPos = e.clientX - cardWidth - 20;
 
@@ -402,7 +414,7 @@
                     previewCard.style.top = topPos + 'px';
                 });
 
-                row.addEventListener('mouseleave', function () {
+                trigger.addEventListener('mouseleave', function () {
                     previewCard.style.opacity = '0';
                     setTimeout(() => { if (previewCard.style.opacity === '0') previewCard.style.display = 'none'; }, 150);
                 });
