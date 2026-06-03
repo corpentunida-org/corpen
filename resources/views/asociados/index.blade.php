@@ -144,18 +144,21 @@
                                         @endif
                                     </td>
                                     
-                                    {{-- NOMBRE COMPLETO: Trigger limpio (sin línea discontinua) --}}
+                                    {{-- NOMBRE COMPLETO --}}
                                     <td class="fw-bold text-dark nombre-trigger" style="cursor: pointer; position: relative;">
                                         <span title="Ver detalles del archivo físico">{{ $asociado->nombre_completo }}</span>
                                         <i class="fas fa-info-circle text-primary opacity-50 ms-1 small"></i>
                                     </td>
                                     
+                                    {{-- DISTRITO Y CIUDAD (Llamando a la relación) --}}
                                     <td>
                                         <div class="d-flex flex-column">
-                                            <span class="text-dark">{{ $asociado->distrito_actual ?? 'N/A' }}</span>
-                                            <small class="text-muted"><i class="fas fa-map-marker-alt me-1 opacity-50"></i>{{ $asociado->ciudad_distrito ?? 'Sin ciudad' }}</small>
+                                            {{-- Se asume que en el modelo MaeAsociado tienes métodos distrito() y ciudad() --}}
+                                            <span class="text-dark fw-semibold">{{ $asociado->distrito?->NOM_DIST ?? $asociado->distrito_actual ?? 'N/A' }}</span>
+                                            <small class="text-muted"><i class="fas fa-map-marker-alt me-1 opacity-50"></i>{{ $asociado->ciudad?->nombre ?? $asociado->ciudad_distrito ?? 'Sin ciudad' }}</small>
                                         </div>
                                     </td>
+
                                     <td>
                                         <span class="badge bg-light text-dark border">{{ $asociado->estado_pastor ?? 'No definido' }}</span>
                                     </td>
