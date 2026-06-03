@@ -35,31 +35,25 @@
             {{-- Input oculto para definir si se sincroniza con MaeTerceros --}}
             <input type="hidden" name="sincronizar_tercero" id="input_sincronizar_tercero" value="1">
 
-            {{-- DATALIST GLOBAL PARA CIUDADES (Visibilidad: Municipio, Región) --}}
+            {{-- DATALIST GLOBAL PARA CIUDADES --}}
             <datalist id="ciudades_list">
                 @foreach($ciudades as $ciudad)
-                    <option data-id="{{ $ciudad->id_ciudad }}" 
-                            data-nombre="{{ $ciudad->nombre }}" 
-                            value="{{ $ciudad->nombre }}, {{ $ciudad->subregion->nombre ?? 'Sin región' }}">
-                    </option>
+                    {{-- El value es el texto visible, el data-id es lo que guardaremos --}}
+                    <option data-id="{{ $ciudad->id_ciudad }}" value="{{ $ciudad->nombre }}, {{ $ciudad->subregion->nombre ?? 'Sin región' }}"></option>
                 @endforeach
             </datalist>
 
             {{-- DATALIST GLOBAL PARA DISTRITOS --}}
             <datalist id="distritos_list">
                 @foreach($distritos as $distrito)
-                    <option data-id="{{ $distrito->COD_DIST }}" 
-                            data-nombre="{{ $distrito->NOM_DIST }}" 
-                            value="{{ $distrito->COD_DIST }}">
-                        {{ $distrito->NOM_DIST }}
-                    </option>
+                    <option data-id="{{ $distrito->COD_DIST }}" value="{{ $distrito->NOM_DIST }}"></option>
                 @endforeach
             </datalist>
 
             {{-- DATALIST PARA CONGREGACIONES --}}
             <datalist id="congregaciones_list">
                 @foreach($congregaciones as $congre)
-                    <option value="{{ $congre->codigo }}">{{ $congre->nombre }}</option>
+                    <option data-id="{{ $congre->codigo }}" value="{{ $congre->nombre }}"></option>
                 @endforeach
             </datalist>
 
@@ -102,13 +96,20 @@
                             </div>
                         </div>
 
+                        {{-- LUGAR DE EXPEDICIÓN --}}
                         <div class="col-md-3">
                             <label class="form-label fw-semibold text-secondary small mb-1">Lugar de Expedición</label>
                             <div class="input-group input-group-sm shadow-sm rounded">
                                 <span class="input-group-text bg-light text-primary border-end-0"><i class="fas fa-map-marker-alt"></i></span>
-                                <input type="text" list="ciudades_list" name="lugar_expedicion_cedula" id="lugar_expedicion_cedula"
+                                
+                                {{-- Campo oculto para el ID real (viaja en el request) --}}
+                                <input type="hidden" name="lugar_expedicion_cedula" id="hidden_lugar_expedicion" value="{{ old('lugar_expedicion_cedula') }}">
+                                
+                                {{-- Input visible (No viaja en el request, solo muestra nombres) --}}
+                                <input type="text" list="ciudades_list" id="input_lugar_expedicion"
                                     class="form-control border-start-0 @error('lugar_expedicion_cedula') is-invalid @enderror"
-                                    value="{{ old('lugar_expedicion_cedula') }}" placeholder="Escriba para buscar...">
+                                    placeholder="Escriba para buscar...">
+                                
                                 @error('lugar_expedicion_cedula') 
                                     <div class="invalid-feedback d-block">{{ $message }}</div> 
                                 @enderror
@@ -411,44 +412,50 @@
                             </div>
                         </div>
 
+                        {{-- DISTRITO ACTUAL --}}
                         <div class="col-md-3 mt-4">
                             <label class="form-label fw-semibold text-secondary small mb-1">Distrito Actual</label>
                             <div class="input-group input-group-sm shadow-sm rounded">
                                 <span class="input-group-text bg-light text-muted border-end-0"><i
                                         class="fas fa-map-marked-alt"></i></span>
-                                <input type="text" list="distritos_list" name="distrito_actual" id="distrito_actual"
+                                
+                                <input type="hidden" name="distrito_actual" id="hidden_distrito_actual" value="{{ old('distrito_actual') }}">
+                                <input type="text" list="distritos_list" id="input_distrito_actual"
                                     class="form-control border-start-0 @error('distrito_actual') is-invalid @enderror" 
-                                    value="{{ old('distrito_actual') }}"
                                     placeholder="Escriba para buscar...">
+                                
                                 @error('distrito_actual')
                                     <div class="invalid-feedback d-block">{{ $message }}</div>
                                 @enderror
                             </div>
                         </div>
 
+                        {{-- CIUDAD DEL DISTRITO --}}
                         <div class="col-md-3 mt-4">
                             <label class="form-label fw-semibold text-secondary small mb-1">Ciudad del Distrito</label>
                             <div class="input-group input-group-sm shadow-sm rounded">
                                 <span class="input-group-text bg-light text-success border-end-0"><i class="fas fa-city"></i></span>
-                                <input type="text" list="ciudades_list" name="ciudad_distrito" id="ciudad_distrito"
+                                
+                                <input type="hidden" name="ciudad_distrito" id="hidden_ciudad_distrito" value="{{ old('ciudad_distrito') }}">
+                                <input type="text" list="ciudades_list" id="input_ciudad_distrito"
                                     class="form-control border-start-0 @error('ciudad_distrito') is-invalid @enderror"
-                                    value="{{ old('ciudad_distrito') }}" placeholder="Escriba para buscar...">
+                                    placeholder="Escriba para buscar...">
+                                    
                                 @error('ciudad_distrito')
                                     <div class="invalid-feedback d-block">{{ $message }}</div>
                                 @enderror
                             </div>
                         </div>
 
+                        {{-- IGLESIA / CONGREGACIÓN --}}
                         <div class="col-md-3 mt-4">
                             <label class="form-label fw-semibold text-secondary small mb-1">Iglesia / Congregación</label>
                             <div class="input-group input-group-sm shadow-sm rounded">
-                                <span class="input-group-text bg-light text-muted border-end-0">
-                                    <i class="fas fa-place-of-worship"></i>
-                                </span>
-                                {{-- Aquí agregas el atributo list --}}
-                                <input type="text" list="congregaciones_list" name="iglesia_actual" id="iglesia_actual"
-                                    class="form-control border-start-0" value="{{ old('iglesia_actual') }}"
-                                    placeholder="Escriba para buscar...">
+                                <span class="input-group-text bg-light text-muted border-end-0"><i class="fas fa-place-of-worship"></i></span>
+                                
+                                <input type="hidden" name="iglesia_actual" id="hidden_iglesia_actual" value="{{ old('iglesia_actual') }}">
+                                <input type="text" list="congregaciones_list" id="input_iglesia_actual"
+                                    class="form-control border-start-0" placeholder="Escriba para buscar...">
                             </div>
                         </div>
 
@@ -793,7 +800,54 @@
             // LÓGICA DE NEGOCIO (Vainilla JS)
             // =====================================================================
             document.addEventListener('DOMContentLoaded', function () {
-                
+                const inputs = [
+                    { vis: 'input_lugar_expedicion', hid: 'hidden_lugar_expedicion', list: 'ciudades_list' },
+                    { vis: 'input_distrito_actual', hid: 'hidden_distrito_actual', list: 'distritos_list' },
+                    { vis: 'input_ciudad_distrito', hid: 'hidden_ciudad_distrito', list: 'ciudades_list' },
+                    { vis: 'input_iglesia_actual', hid: 'hidden_iglesia_actual', list: 'congregaciones_list' }
+                ];
+
+                // Función auxiliar para auto-completar inputs visuales cuando el hidden tiene un ID (ej: after validation fail / AJAX)
+                function setDatalistValue(hiddenId, visibleId, listId, valueToSet) {
+                    const hiddenEl = document.getElementById(hiddenId);
+                    const visibleEl = document.getElementById(visibleId);
+                    const dataList = document.getElementById(listId);
+
+                    hiddenEl.value = valueToSet;
+                    
+                    if (valueToSet && dataList) {
+                        // Buscar la opción cuyo data-id sea el valor enviado
+                        const option = Array.from(dataList.options).find(opt => opt.getAttribute('data-id') == valueToSet);
+                        visibleEl.value = option ? option.value : valueToSet; // Si existe muestra el nombre, sino muestra lo que hay
+                    } else {
+                        visibleEl.value = '';
+                    }
+                }
+
+                inputs.forEach(item => {
+                    const inputVisible = document.getElementById(item.vis);
+                    const inputHidden = document.getElementById(item.hid);
+                    const dataList = document.getElementById(item.list);
+
+                    // 1. Carga inicial (Por si viene con "old()" tras un error de validación)
+                    if (inputHidden.value) {
+                        setDatalistValue(item.hid, item.vis, item.list, inputHidden.value);
+                    }
+
+                    // 2. Evento para cuando el usuario escribe en el campo visual
+                    inputVisible.addEventListener('input', function() {
+                        const val = this.value;
+                        // Busca la opción que tenga como VALUE exactamente el texto ingresado
+                        const option = Array.from(dataList.options).find(opt => opt.value === val);
+                        
+                        if (option) {
+                            inputHidden.value = option.getAttribute('data-id'); // Guarda el ID real
+                        } else {
+                            inputHidden.value = ''; // Limpia si no coincide
+                        }
+                    });
+                });
+
                 // 1. LÓGICA DE BÚSQUEDA DE CÉDULA VIA AJAX
                 const btnBuscar = document.getElementById('btn-buscar-cedula');
                 const inputCedula = document.getElementById('cedula');
@@ -802,29 +856,27 @@
                 function limpiarCamposFormulario() {
                     const camposALimpiar = [
                         'nombre1', 'nombre2', 'apellido1', 'apellido2',
-                        'fecha_nacimiento', 'fecha_expedicion', 'lugar_expedicion_cedula',
+                        'fecha_nacimiento', 'fecha_expedicion', 'hidden_lugar_expedicion', 'input_lugar_expedicion',
                         'estado_civil', 'correo_pastor', 'celular_pastor', 'whatsapp',
-                        'distrito_actual', 'ciudad_distrito', 'iglesia_actual', 'fecha_afiliacion',
+                        'hidden_distrito_actual', 'input_distrito_actual', 'hidden_ciudad_distrito', 'input_ciudad_distrito', 
+                        'hidden_iglesia_actual', 'input_iglesia_actual', 'fecha_afiliacion',
                         'cedula_esposa', 'nombre_esposa', 'correo_esposa', 'celular_esposa'
                     ];
 
-                    // Iterar y vaciar todos los campos normales
                     camposALimpiar.forEach(id => {
                         const elemento = document.getElementById(id);
-                        if (elemento) {
-                            elemento.value = '';
-                        }
+                        if (elemento) elemento.value = '';
                     });
 
                     // Restaurar valores por defecto específicos
                     const pais = document.getElementById('pais');
                     if (pais) pais.value = 'Colombia';
 
-                    // Remover feedback visual de éxito si lo tenía
+                    // Remover feedback visual
                     inputCedula.classList.remove('is-valid');
                 }
 
-                // Evento: Limpiar en tiempo real si el usuario borra todo con la tecla "Retroceso"
+                // Evento: Limpiar en tiempo real si el usuario borra todo
                 inputCedula.addEventListener('input', function () {
                     if (this.value.trim() === '') {
                         limpiarCamposFormulario();
@@ -834,7 +886,7 @@
                 btnBuscar.addEventListener('click', async function () {
                     const cedula = inputCedula.value.trim();
 
-                    // 1. Limpiar todos los campos SIEMPRE antes de hacer cualquier cosa
+                    // 1. Limpiar todos los campos antes de hacer consulta
                     limpiarCamposFormulario();
 
                     if (!cedula) {
@@ -842,7 +894,7 @@
                         return;
                     }
 
-                    // UI: Mostrar spinner en el botón de búsqueda
+                    // UI: Mostrar spinner
                     document.getElementById('icon-buscar').classList.add('d-none');
                     document.getElementById('spinner-buscar').classList.remove('d-none');
                     btnBuscar.disabled = true;
@@ -855,7 +907,7 @@
                             if (res.status === 'success' && res.data) {
                                 const data = res.data;
 
-                                // Mapeo automático de campos de texto
+                                // Mapeo de campos de texto estándar
                                 document.getElementById('nombre1').value = data.nom1 || '';
                                 document.getElementById('nombre2').value = data.nom2 || '';
                                 document.getElementById('apellido1').value = data.apl1 || '';
@@ -869,8 +921,6 @@
                                 document.getElementById('celular_pastor').value = data.tel || '';
                                 document.getElementById('whatsapp').value = data.cel || '';
 
-                                document.getElementById('distrito_actual').value = data.cod_dist || '';
-                                document.getElementById('iglesia_actual').value = data.congrega || '';
                                 document.getElementById('pais').value = data.pais || 'Colombia';
                                 if (data.fec_minis) document.getElementById('fecha_afiliacion').value = data.fec_minis.split('T')[0];
 
@@ -879,11 +929,12 @@
                                 document.getElementById('correo_esposa').value = data.mail_conyu || '';
                                 document.getElementById('celular_esposa').value = data.tel1 || '';
 
-                                // Mapeo de campos de ciudad
-                                document.getElementById('lugar_expedicion_cedula').value = data.lugar_expcc || '';
-                                // Si en el futuro necesitas mapear 'ciudad_distrito' desde la DB, puedes hacerlo aquí
+                                // Mapeo de campos Datalist con IDs (Se asigna el ID oculto y se visualiza el Nombre)
+                                setDatalistValue('hidden_distrito_actual', 'input_distrito_actual', 'distritos_list', data.cod_dist || '');
+                                setDatalistValue('hidden_iglesia_actual', 'input_iglesia_actual', 'congregaciones_list', data.congrega || '');
+                                setDatalistValue('hidden_lugar_expedicion', 'input_lugar_expedicion', 'ciudades_list', data.lugar_expcc || '');
 
-                                // Feedback visual
+                                // Feedback visual de éxito
                                 inputCedula.classList.add('is-valid');
                             } else {
                                 alert('No se encontró información en la base de datos maestra para esta cédula. Puede continuar digitando los datos manualmente.');
@@ -893,7 +944,7 @@
                         console.error('Error buscando cédula:', error);
                         alert('Ocurrió un error al intentar consultar la base de datos.');
                     } finally {
-                        // Restaurar botón de búsqueda
+                        // Restaurar botón
                         document.getElementById('icon-buscar').classList.remove('d-none');
                         document.getElementById('spinner-buscar').classList.add('d-none');
                         btnBuscar.disabled = false;
@@ -903,27 +954,22 @@
                 // 2. LÓGICA DEL FORMULARIO Y MODAL DE SINCRONIZACIÓN
                 const form = document.getElementById('form-expediente');
                 const syncModal = new bootstrap.Modal(document.getElementById('syncModal'));
-                let isSyncHandled = false; // Bandera para saber si ya pasamos por el modal
+                let isSyncHandled = false;
 
                 form.addEventListener('submit', function (e) {
-                    // Si aún no hemos manejado la validación del modal, detenemos el envío
                     if (!isSyncHandled) {
                         e.preventDefault();
-
-                        // Validar primero si el formulario nativo está correcto
                         if (this.checkValidity()) {
-                            syncModal.show(); // Mostramos el modal de confirmación
+                            syncModal.show();
                         } else {
-                            this.reportValidity(); // Muestra las alertas nativas de HTML5
+                            this.reportValidity();
                         }
                     }
                 });
 
-                // Función para disparar el envío real una vez decidido
                 function triggerFinalSubmit() {
-                    isSyncHandled = true; // Evita el loop infinito
-
-                    // UX: Prevenir doble clic y dar feedback visual al usuario
+                    isSyncHandled = true;
+                    
                     const btn = document.getElementById('btn-submit');
                     const text = document.getElementById('btn-text');
                     const spinner = document.getElementById('btn-spinner');
@@ -933,19 +979,17 @@
                     text.classList.add('d-none');
                     spinner.classList.remove('d-none');
 
-                    form.submit(); // Enviar el formulario
+                    form.submit();
                 }
 
-                // Click en "No, guardar solo aquí"
                 document.getElementById('btn-deny-sync').addEventListener('click', function () {
-                    document.getElementById('input_sincronizar_tercero').value = "0"; // Falso
+                    document.getElementById('input_sincronizar_tercero').value = "0";
                     syncModal.hide();
                     triggerFinalSubmit();
                 });
 
-                // Click en "Sí, sincronizar"
                 document.getElementById('btn-confirm-sync').addEventListener('click', function () {
-                    document.getElementById('input_sincronizar_tercero').value = "1"; // Verdadero
+                    document.getElementById('input_sincronizar_tercero').value = "1";
                     syncModal.hide();
                     triggerFinalSubmit();
                 });
