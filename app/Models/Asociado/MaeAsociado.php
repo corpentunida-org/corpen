@@ -180,15 +180,18 @@ class MaeAsociado extends Model
             // ---------------------------------------------------------
             // INFORMACIÓN MINISTERIAL Y CORPORATIVA
             // ---------------------------------------------------------
-            // Nota: En tu modelo MaeTerceros el campo de fecha de ingreso ministerial se llama fec_minis
             $tercero->fec_minis    = $asociado->fecha_afiliacion; 
             $tercero->cod_dist     = $asociado->distrito_actual ?? '';  // Mapeado a 'cod_dist'
-            $tercero->congrega     = $asociado->iglesia_actual ?? '';   // Mapeado a 'congrega'
+            
+            // SOLUCIÓN AL ERROR SQL: Cortamos el texto de la iglesia a un máximo de 30 caracteres
+            // para que encaje perfectamente en la tabla MaeTerceros sin causar colapsos.
+            $tercero->congrega     = substr($asociado->iglesia_actual ?? '', 0, 10);   
 
             // ---------------------------------------------------------
             // INFORMACIÓN FAMILIAR (CÓNYUGE)
             // ---------------------------------------------------------
-            $tercero->id_conyuge   = $asociado->cedula_esposa ?? '';
+            // Si cedula_esposa está vacío, enviamos 'null' (ausencia de valor) en vez de '' (texto vacío)
+            $tercero->id_conyuge   = !empty($asociado->cedula_esposa) ? $asociado->cedula_esposa : null;
             $tercero->nom_conyug   = $asociado->nombre_esposa ?? '';
             $tercero->mail_conyu   = $asociado->correo_esposa ?? '';
             $tercero->tel1         = $asociado->celular_esposa ?? '';   // Mapeado a 'tel1'
