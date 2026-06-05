@@ -100,7 +100,7 @@
 
     <main>
         <div class="header-content">
-            <br>
+            <br><br><br>
             <div class="fecha">
                 Bogotá D.C., {{ \Carbon\Carbon::parse($comunicacionSalida->fecha_generacion)->translatedFormat('d \d\e F \d\e Y') }}
             </div>
@@ -115,24 +115,26 @@
                 @endphp
                 Asociado<br>
             </div>
-
+            <br>
             <div class="asunto">
                 Asunto: {{ $comunicacionSalida->correspondencia->asunto ?? 'SOLICITUD' }}
             </div>
         </div>
 
         <div class="cuerpo-carta">
-            <p>Cordial saludo. Deseando que la bendición de Dios le acompañe en todos sus asuntos.</p>
+            <p>El Señor Jesucristo le bendiga abundantemente.</p>
             
             <div style="margin-top: 15px;">
                 {!! nl2br(e($comunicacionSalida->cuerpo_carta)) !!}
             </div>
+            <br>
+            <p>Deseamos que las bendiciones del Señor le acompañe y direccionen en todos sus asuntos.</p>
             <p style="margin-bottom: 5px;">Con amor en Cristo, siempre su servidor,</p>
         </div>
 
         <div class="contenedor-firma">
             
-            <br><br>
+            
             <div class="espacio-rubrica">
                 @if(isset($firmaImg) && $firmaImg)
                     <img src="{{ $firmaImg }}" class="img-firma">
