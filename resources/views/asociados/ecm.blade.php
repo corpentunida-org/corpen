@@ -55,24 +55,40 @@
             </div>
         </div>
 
-        <div class="card shadow-sm border-0 mb-4 rounded-3">
-            <div class="card-body p-3 bg-white d-flex justify-content-between align-items-center">
-                <div class="d-flex gap-3 align-items-center w-50">
-                    <div class="input-group input-group-sm">
+        {{-- FORMULARIO DE BÚSQUEDA Y FILTROS FUNCIONAL --}}
+        <form action="{{ url()->current() }}" method="GET" class="card shadow-sm border-0 mb-4 rounded-3 border-start border-primary border-4">
+            <div class="card-body p-3 bg-white d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div class="d-flex gap-3 align-items-center flex-grow-1">
+                    
+                    {{-- CAMPO INDIVIDUAL PARA RADICADO --}}
+                    <div class="input-group input-group-sm shadow-sm" style="max-width: 280px;">
+                        <span class="input-group-text bg-light border-primary text-primary fw-bold"><i class="fas fa-barcode me-2"></i> Radicado</span>
+                        <input type="text" name="radicado" class="form-control border-primary" placeholder="Ej: 4263" value="{{ request('radicado') }}">
+                    </div>
+
+                    {{-- BÚSQUEDA GENERAL --}}
+                    <div class="input-group input-group-sm shadow-sm" style="max-width: 300px;">
                         <span class="input-group-text bg-light border-end-0"><i class="fas fa-search text-muted"></i></span>
-                        <input type="text" class="form-control border-start-0" placeholder="Buscar por Radicado, Cédula o Nombre..." aria-label="Buscar">
+                        <input type="text" name="search" class="form-control border-start-0" placeholder="Buscar Cédula o Nombre..." value="{{ request('search') }}">
                     </div>
                 </div>
+                
                 <div class="d-flex gap-2">
-                    <select class="form-select form-select-sm text-muted" style="width: 180px;">
+                    <select name="estado_digitalizacion" class="form-select form-select-sm text-muted shadow-sm" style="width: 180px;">
                         <option value="">Estado Digitalización</option>
-                        <option value="1">Completados</option>
-                        <option value="0">En Proceso</option>
+                        <option value="1" {{ request('estado_digitalizacion') == '1' ? 'selected' : '' }}>Completados</option>
+                        <option value="0" {{ request('estado_digitalizacion') == '0' ? 'selected' : '' }}>En Proceso</option>
                     </select>
-                    <button class="btn btn-sm btn-light border"><i class="fas fa-filter"></i> Filtrar</button>
+                    
+                    <button type="submit" class="btn btn-sm btn-primary shadow-sm"><i class="fas fa-filter"></i> Filtrar</button>
+                    
+                    {{-- Botón para limpiar si hay filtros aplicados --}}
+                    @if(request()->anyFilled(['radicado', 'search', 'estado_digitalizacion']))
+                        <a href="{{ url()->current() }}" class="btn btn-sm btn-light border shadow-sm text-danger"><i class="fas fa-times"></i> Limpiar</a>
+                    @endif
                 </div>
             </div>
-        </div>
+        </form>
 
         <div class="show-card-corp shadow-sm">
             <div class="show-body p-0">
@@ -80,7 +96,7 @@
                     <table class="table table-hover align-middle m-0 ecm-table">
                         <thead class="table-light text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">
                             <tr>
-                                <th class="ps-4" style="width: 15%;">Radicado / ID</th>
+                                <th class="ps-4" style="width: 15%;">Radicado / Link ECM</th>
                                 <th style="width: 25%;">Titular del Expediente</th>
                                 <th style="width: 20%;">Ubicación Topográfica</th>
                                 <th style="width: 20%;">Progreso Digital (ECM)</th>
@@ -106,10 +122,17 @@
                                     <td class="ps-4">
                                         <div class="d-flex align-items-center">
                                             <div class="radicado-icon me-2 {{ $asociado->radicado ? 'bg-light-primary text-primary' : 'bg-light-danger text-danger' }}">
-                                                <i class="fas fa-barcode"></i>
+                                                <i class="fas {{ $asociado->ubicacion_ecm_link ? 'fa-link' : 'fa-barcode' }}"></i>
                                             </div>
                                             <div>
-                                                <span class="fw-bold text-dark d-block">{{ $asociado->radicado ?? 'SIN ASIGNAR' }}</span>
+                                                {{-- LÓGICA DE RADICADO + ENLACE ECM --}}
+                                                @if($asociado->ubicacion_ecm_link)
+                                                    <a href="{{ $asociado->ubicacion_ecm_link }}" target="_blank" class="fw-bold text-primary text-decoration-none d-block" data-bs-toggle="tooltip" title="Abrir en Plataforma ECM">
+                                                        {{ $asociado->radicado ?? 'VER DOCUMENTO' }} <i class="fas fa-external-link-alt ms-1" style="font-size: 0.7rem;"></i>
+                                                    </a>
+                                                @else
+                                                    <span class="fw-bold text-dark d-block">{{ $asociado->radicado ?? 'SIN ASIGNAR' }}</span>
+                                                @endif
                                                 <small class="text-muted" style="font-size: 0.7rem;">Cód: #{{ str_pad($asociado->id, 5, '0', STR_PAD_LEFT) }}</small>
                                             </div>
                                         </div>
@@ -117,7 +140,7 @@
                                     
                                     <td>
                                         <div class="d-flex align-items-center">
-                                            <div class="avatar-circle me-3">{{ $iniciales }}</div>
+                                            <div class="avatar-circle me-3 shadow-sm">{{ $iniciales }}</div>
                                             <div>
                                                 <span class="fw-bold text-dark d-block">{{ $asociado->nombre_completo }}</span>
                                                 <small class="text-muted"><i class="far fa-id-card me-1"></i> {{ $asociado->cedula }}</small>
@@ -186,9 +209,12 @@
                                 <tr>
                                     <td colspan="6" class="text-center py-5">
                                         <div class="py-4">
-                                            <i class="fas fa-folder-open text-muted mb-3" style="font-size: 3rem; opacity: 0.5;"></i>
-                                            <h5 class="text-dark fw-bold">Repositorio Vacío</h5>
-                                            <p class="text-muted">No existen expedientes para gestionar en la bandeja actual.</p>
+                                            <i class="fas fa-search text-muted mb-3" style="font-size: 3rem; opacity: 0.5;"></i>
+                                            <h5 class="text-dark fw-bold">Sin Resultados</h5>
+                                            <p class="text-muted">No existen expedientes que coincidan con tu búsqueda.</p>
+                                            @if(request()->anyFilled(['radicado', 'search', 'estado_digitalizacion']))
+                                                <a href="{{ url()->current() }}" class="btn btn-outline-secondary mt-2">Limpiar Filtros</a>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>

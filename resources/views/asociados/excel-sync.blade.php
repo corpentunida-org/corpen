@@ -22,7 +22,7 @@
 
         @if($errors->any())
             <div class="alert alert-warning shadow-sm border-0 border-start border-warning border-4 mb-4">
-                <h6 class="fw-bold mb-2"><i class="fas fa-times-circle me-2"></i>Errores estructurales detectados en el archivo:</h6>
+                <h6 class="fw-bold mb-2"><i class="fas fa-times-circle me-2"></i>Errores detectados en el archivo:</h6>
                 <ul class="mb-0 small" style="max-height: 120px; overflow-y: auto;">
                     @foreach($errors->all() as $error)
                         <li>{{ $error }}</li>
@@ -41,7 +41,7 @@
                         </div>
                         <h4 class="fw-bold text-dark mb-2">Paso 1: Exportar Plantilla</h4>
                         <p class="text-muted small mb-4 px-3">
-                            Descarga la estructura oficial con todos los registros actuales. Utiliza este archivo base para modificar datos masivamente o agregar nuevos expedientes sin alterar las columnas.
+                            Descarga la estructura oficial con todos los registros actuales.
                         </p>
                         <div class="mt-auto">
                             <a href="{{ route('asociados.sincronizar.descargar') }}" class="btn-corporate-black w-100 justify-content-center">
@@ -61,7 +61,7 @@
                         </div>
                         <h4 class="fw-bold text-dark mb-2">Paso 2: Subir y Previsualizar</h4>
                         <p class="text-muted small mb-4 px-3">
-                            Carga el archivo modificado. El sistema procesará el lote y te mostrará una mesa de validación inteligente para que confirmes los cambios antes de impactar la base de datos.
+                            Carga el archivo modificado. El sistema procesará el lote y te mostrará una mesa de validación inteligente.
                         </p>
                         
                         <form action="{{ route('asociados.sincronizar.subir') }}" method="POST" enctype="multipart/form-data" class="mt-auto text-start">
@@ -78,16 +78,6 @@
                 </div>
             </div>
         </div>
-
-        <div class="card shadow-sm border-0 rounded-3 border-start border-info border-4">
-            <div class="card-body p-3 bg-white">
-                <span class="text-muted small">
-                    <i class="fas fa-info-circle text-info me-1"></i> 
-                    <strong>Nota Técnica:</strong> El algoritmo Upsert identifica a los asociados mediante su <code>cédula</code>. Si la cédula ya existe, actualizará el registro. Si es nueva, creará uno automáticamente.
-                </span>
-            </div>
-        </div>
-
     </div>
     @include('asociados.partials.styles')
 </x-base-layout>
