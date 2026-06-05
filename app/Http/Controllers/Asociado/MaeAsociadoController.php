@@ -14,7 +14,7 @@ use App\Imports\Asociado\AsociadosImport;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
+//use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
@@ -229,8 +229,9 @@ class MaeAsociadoController extends Controller
         $query = MaeAsociado::with(['ciudad', 'distrito']);
 
         // 1. Búsqueda individual y exacta por Radicado
+        // Al poner '=', le decimos a la base de datos que el radicado debe ser EXACTAMENTE igual a lo que escribiste.
         if ($request->filled('radicado')) {
-            $query->where('radicado', 'LIKE', '%' . trim($request->radicado) . '%');
+            $query->where('radicado', '=', trim($request->radicado));
         }
 
         // 2. Búsqueda general por Nombre o Cédula
