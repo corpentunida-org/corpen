@@ -8,10 +8,6 @@ use Maatwebsite\Excel\Concerns\WithHeadings;
 
 class AsociadosExport implements FromCollection, WithHeadings
 {
-    /**
-     * Retorna la colección completa de asociados con los campos exactos.
-     * @return \Illuminate\Support\Collection
-     */
     public function collection()
     {
         return MaeAsociado::select([
@@ -21,16 +17,14 @@ class AsociadosExport implements FromCollection, WithHeadings
             'fecha_afiliacion', 'distrito_actual', 'ciudad_distrito', 'direccion_distrito',
             'estado_pastor', 'especificacion', 'licencia', 'pais', 'iglesia_actual',
             'cedula_esposa', 'nombre_esposa', 'correo_esposa', 'celular_esposa',
-            'radicado', 'ubicacion_carpeta', 'numero_caja', 'cantidad_folios',
-            'fecha_ingreso_archivo', 'estado_conservacion', 'custodia_actual',
-            'observaciones_archivo', 'observaciones_generales', 'estado'
+            'doc_formulario_afiliacion', 'doc_autorizacion_datos', 'doc_cedula_pastor', 
+            'doc_cedula_esposa', 'doc_licencia_pastoral', 'doc_registro_matrimonio', 'doc_id_hijos',
+            'radicado', 'escaneado', 'cargado_ecm', 'ubicacion_ecm_link', 'validado_archivo', 
+            'ubicacion_carpeta', 'numero_caja', 'cantidad_folios', 'fecha_ingreso_archivo', 
+            'estado_conservacion', 'custodia_actual', 'observaciones_archivo', 'observaciones_generales', 'estado'
         ])->get();
     }
 
-    /**
-     * Encabezados idénticos a las columnas de la DB para evitar confusiones de mapeo.
-     * @return array
-     */
     public function headings(): array
     {
         return [
@@ -40,9 +34,11 @@ class AsociadosExport implements FromCollection, WithHeadings
             'fecha_afiliacion', 'distrito_actual', 'ciudad_distrito', 'direccion_distrito',
             'estado_pastor', 'especificacion', 'licencia', 'pais', 'iglesia_actual',
             'cedula_esposa', 'nombre_esposa', 'correo_esposa', 'celular_esposa',
-            'radicado', 'ubicacion_carpeta', 'numero_caja', 'cantidad_folios',
-            'fecha_ingreso_archivo', 'estado_conservacion', 'custodia_actual',
-            'observaciones_archivo', 'observaciones_generales', 'estado'
+            'doc_formulario_afiliacion', 'doc_autorizacion_datos', 'doc_cedula_pastor', 
+            'doc_cedula_esposa', 'doc_licencia_pastoral', 'doc_registro_matrimonio', 'doc_id_hijos',
+            'radicado', 'escaneado', 'cargado_ecm', 'ubicacion_ecm_link', 'validado_archivo', 
+            'ubicacion_carpeta', 'numero_caja', 'cantidad_folios', 'fecha_ingreso_archivo', 
+            'estado_conservacion', 'custodia_actual', 'observaciones_archivo', 'observaciones_generales', 'estado'
         ];
     }
 }
