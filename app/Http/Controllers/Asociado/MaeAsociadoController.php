@@ -441,8 +441,13 @@ class MaeAsociadoController extends Controller
      */
     public function confirmarSincronizacion(Request $request)
     {
+        // 1. OPTIMIZACIÓN EXTREMA: Evitar timeouts de PHP y desbordamientos de memoria RAM
+        set_time_limit(0); 
+        DB::disableQueryLog(); 
+
         $cacheKey = session('import_asociados_key');
         $datos = Cache::get($cacheKey);
+        
         // APLICAR CORRECCIONES MANUALES DE LA VISTA
         $correcciones = $request->input('correcciones', []);
         
@@ -458,6 +463,7 @@ class MaeAsociadoController extends Controller
             // Retiramos las filas que aún después de corregir (o si las dejaron vacías) sigan sin cédula
             $datos = array_filter($datos, fn($d) => !empty($d['cedula']));
         }
+        
         if (!$datos || count($datos) === 0) {
             return redirect()->route('asociados.sincronizar.index')
                 ->with('error', 'La sesión ha expirado o no se encontraron registros listos para confirmación.');
@@ -466,12 +472,16 @@ class MaeAsociadoController extends Controller
         $sincronizarTerceros = $request->boolean('sincronizar_terceros_global', true);
 
         try {
-            // Bajamos el tamaño del bloque a 250 para evitar que MySQL agote su memoria (Error 2006)
-            $chunks = array_chunk($datos, 250);
+            // 2. OPTIMIZACIÓN EXTREMA: Bajamos el tamaño del bloque a 100 
+            // porque el modelo dispara eventos hacia MaeTerceros multiplicando las consultas.
+            $chunks = array_chunk($datos, 100);
 
             foreach ($chunks as $chunk) {
                 
-                // MÁS IMPORTANTE: La transacción ahora se abre y se cierra ADENTRO del bloque
+                // 3. OPTIMIZACIÓN EXTREMA: Obligamos a MySQL a reconectar para evitar el Error 2006
+                DB::reconnect();
+                
+                // MÁS IMPORTANTE: La transacción se abre y se cierra ADENTRO del bloque
                 DB::beginTransaction();
 
                 foreach ($chunk as $item) {
@@ -536,7 +546,7 @@ class MaeAsociadoController extends Controller
                     $asociado->save();
                 }
 
-                // Confirmamos a la base de datos SOLO los 250 registros de esta vuelta
+                // Confirmamos a la base de datos SOLO los 100 registros de esta vuelta
                 DB::commit();
             }
 
@@ -548,7 +558,7 @@ class MaeAsociadoController extends Controller
                 ->with('success', 'Sincronización masiva finalizada. Se procesaron con éxito los expedientes.');
 
         } catch (\Exception $e) {
-            // Si hay un error, revertimos el bloque actual (MySQL recupera la conexión)
+            // Si hay un error, revertimos el bloque actual
             DB::rollBack();
             Log::critical('Error en confirmación por lotes de Asociados: ' . $e->getMessage());
             return redirect()->route('asociados.sincronizar.index')
