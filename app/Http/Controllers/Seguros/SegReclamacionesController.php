@@ -16,6 +16,7 @@ use App\Exports\ExportSegInformeReclamacion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Exports\ReporteSiniestrosExport;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\ExcelExport;
 use Carbon\Carbon;
@@ -30,6 +31,7 @@ class SegReclamacionesController extends Controller
         $auditoriaController = app(AuditoriaController::class);
         $auditoriaController->create($accion, 'SEGUROS');
     }
+
     public function index()
     {
         Carbon::setLocale('es');
@@ -267,7 +269,7 @@ class SegReclamacionesController extends Controller
         //return view('seguros.reclamaciones.pdf', ['registros' => $registros, 'image_path' => public_path('assets/images/CORPENTUNIDA_LOGO PRINCIPAL  (2).png')]);
     }
 
-    public function exportexcel()
+    /*public function exportexcel()
     {
         $datos = SegReclamaciones::with(['asegurado.terceroAF', 'asegurado.tercero', 'cobertura', 'diagnostico'])->get();
         $headings = ['N°', 'ASEGURADO CÉDULA', 'ASEGURADO', 'EDAD', 'TITULAR CEDULA', 'TITULAR', 'PARENTESCO', 'COBERTURA', 'VALOR ASEGURADO', 'DIAGNOSTICO', 'FECHA ACTUALIZACIÓN', 'ESTADO'];
@@ -289,6 +291,60 @@ class SegReclamacionesController extends Controller
             ];
         });
         return Excel::download(new ExcelExport($datosFormateados, $headings), date('Y-m-d') . ' Reporte.xlsx');
+    }*/
+
+    public function exportexcel()
+    {
+        $datos = SegReclamaciones::with(['asegurado.terceroAF', 'asegurado.tercero', 'cobertura', 'diagnostico'])->get();
+
+        $datosFormateados = $datos->map(function ($item) {
+            $fechaRadicado = $item->radicado->fecha_actualizacion ?? null;
+            $fechaDesembolso = $item->desembolsado->fecha_actualizacion ?? null;
+            $diasHabiles = null;
+
+            if ($fechaRadicado && $fechaDesembolso) {
+                $diasHabiles = Carbon::parse($fechaRadicado)->diffInWeekdays(Carbon::parse($fechaDesembolso));
+            }
+
+            $valorCobertura = (float) ($item->valor_asegurado ?? 0);
+            $bonoCanasta = 0;
+
+            return [
+                'CEDULA' => $item->cedulaAsegurado,
+                'NOMBRE' => $item->nombre_tercero,
+                'DTO' => $item->asegurado?->terceroAF?->cod_dist ?? '',
+                'AMPARO' => $item->cobertura->nombre ?? '',
+                'VALOR COBERTURA' => $valorCobertura,
+                'BONO CANASTA' => $bonoCanasta,
+                'TOTAL DESEMBOLSADO' => $valorCobertura + $bonoCanasta,
+                'FECHA RADICADO' => $fechaRadicado,
+                'FECHA DESEMBOLSO' => $fechaDesembolso,
+                'DIAS HABILES' => $diasHabiles, // siempre número o null
+            ];
+        });
+
+        // Calcular totales ANTES de agregar la fila resumen
+        $totalCobertura = $datosFormateados->sum('VALOR COBERTURA');
+        $totalBono = $datosFormateados->sum('BONO CANASTA');
+        $totalDesembolsado = $datosFormateados->sum('TOTAL DESEMBOLSADO');
+        $totalDias = $datosFormateados->sum('DIAS HABILES');
+        $promedioDias = $datosFormateados->avg('DIAS HABILES');
+
+        // Agregar fila resumen (texto en DIAS HABILES)
+        $datosFormateados->push([
+            'CEDULA' => '',
+            'NOMBRE' => '',
+            'DTO' => '',
+            'AMPARO' => 'TOTALES',
+            'VALOR COBERTURA' => $totalCobertura,
+            'BONO CANASTA' => $totalBono,
+            'TOTAL DESEMBOLSADO' => $totalDesembolsado,
+            'FECHA RADICADO' => '',
+            'FECHA DESEMBOLSO' => '',
+            'DIAS HABILES' => "Suma: $totalDias | Promedio: " . round($promedioDias, 2),
+        ]);
+
+        return Excel::download(new ReporteSiniestrosExport($datosFormateados), date('Y-m-d') . ' Reporte.xlsx');
     }
 
     public function dashboard()

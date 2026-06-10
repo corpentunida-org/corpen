@@ -516,18 +516,6 @@ Route::resource('creditos', CreditoController::class)
     ->names('creditos.credito')
     ->middleware(['auth']);
 
-Route::prefix('creditos')
-    ->middleware('auth')
-    ->group(function () {
-        /**
-         * Define todas las rutas estándar (index, create, store, show, edit, update, destroy)
-         * para el CreditoController, siguiendo la convención de nombres y parámetros
-         * que te gusta.
-         */
-        Route::resource('credito', CreditoController::class)
-            ->names('creditos.credito')
-            ->parameters(['credito' => 'credito']);
-    });
 
 // =========================================================================
 // MÓDULO DE GESTIÓN DOCUMENTAL (AWS S3 OPTIMIZED)
@@ -1174,8 +1162,6 @@ Route::prefix('indicators')->group(function () {
         ->name('indicators.indicadores.descargar')
         ->middleware('auth');
 });
-
-Route::resource('indicators', IndicadoresController::class)->names('indicators.indicadores')->middleware(['auth', 'candirect:indicators.indicadores.index']);
 
 
 // ==========================================
