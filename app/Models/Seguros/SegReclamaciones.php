@@ -27,15 +27,15 @@ class SegReclamaciones extends Model
     }
     public function getNombreTerceroAttribute()
     {
-        if ($this->tercero) {
+        if (!is_null($this->tercero) && !empty($this->tercero->nom_ter)) {
             return $this->tercero->nom_ter;
         }
 
-        if ($this->terceroAlt) {
+        if (!is_null($this->terceroAlt) && !empty($this->terceroAlt->nombre)) {
             return $this->terceroAlt->nombre;
         }
 
-        return ' ';
+        return '';
     }
 
     public function cobertura()
@@ -56,5 +56,17 @@ class SegReclamaciones extends Model
     public function cambiosEstado()
     {
         return $this->hasMany(SegCambioEstadoReclamacion::class, 'reclamacion_id', 'id');
+    }
+
+    public function radicado()
+    {
+        return $this->hasOne(SegCambioEstadoReclamacion::class, 'reclamacion_id')
+            ->where('estado_id', 1);
+    }
+
+    public function desembolsado()
+    {
+        return $this->hasOne(SegCambioEstadoReclamacion::class, 'reclamacion_id')
+            ->where('estado_id', 4);
     }
 }

@@ -31,7 +31,7 @@ class IndicadoresController extends Controller
         $lastReport = IndRegistroInformes::latest()->first();
         $totalIndicadores = IndRegistroInformes::count() - 3;
         $indicadoresAlcanzados = 0;
-        foreach ($indicators as $grupo) {
+        /*foreach ($indicators as $grupo) {
             foreach ($grupo as $ind) {
                 if ($ind->indicador_calculado !== null) {
                     $totalIndicadores++;
@@ -41,7 +41,7 @@ class IndicadoresController extends Controller
                     }
                 }
             }
-        }
+        }*/
         $promedioAlcanzados = $totalIndicadores > 0 ? ($indicadoresAlcanzados / $totalIndicadores) * 100 : 0;
         $promedioAlcanzados = round($promedioAlcanzados, 2);
         return view('indicators.index', compact('indicators', 'lastReport', 'promedioAlcanzados'));
