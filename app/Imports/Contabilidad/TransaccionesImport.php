@@ -1,15 +1,16 @@
 <?php
 
-namespace App\Imports;
+namespace App\Imports\Contabilidad;
 
 use App\Models\Contabilidad\ConExtractoTransaccion;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
+use Maatwebsite\Excel\Concerns\WithChunkReading;
+use Maatwebsite\Excel\Concerns\WithBatchInserts;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 
-class TransaccionesImport implements ToCollection, WithHeadingRow
+class TransaccionesImport implements ToCollection, WithHeadingRow, WithChunkReading, WithBatchInserts
 {
     public function collection(Collection $rows)
     {
@@ -41,26 +42,32 @@ class TransaccionesImport implements ToCollection, WithHeadingRow
         }
 
         if (!empty($datosParaUpsert)) {
-            // MEJORA: Dividimos el array gigante en trozos de 1,000 filas
-            $lotes = array_chunk($datosParaUpsert, 1000);
-
-            DB::transaction(function () use ($lotes) {
-                foreach ($lotes as $lote) {
-                    ConExtractoTransaccion::upsert(
-                        $lote,
-                        ['id_transaccion'], // Único por ID
-                        [
-                            'fecha_movimiento', 
-                            'referencia_cedula', 
-                            'valor_ingreso', 
-                            'referencia_oficina', 
-                            'id_con_cuentas_bancaria', 
-                            'estado_conciliacion', 
-                            'hash_transaccion'
-                        ]
-                    );
-                }
-            });
+            // El lote ya viene de 1,000 en 1,000 gracias a chunkSize()
+            ConExtractoTransaccion::upsert(
+                $datosParaUpsert,
+                ['id_transaccion'], 
+                [
+                    'fecha_movimiento', 
+                    'referencia_cedula', 
+                    'valor_ingreso', 
+                    'referencia_oficina', 
+                    'id_con_cuentas_bancaria', 
+                    'estado_conciliacion', 
+                    'hash_transaccion'
+                ]
+            );
         }
+    }
+
+    // Parte el archivo en pedazos de 1,000 para no ahogar la RAM
+    public function chunkSize(): int
+    {
+        return 1000;
+    }
+
+    // Inserción en base de datos de 1,000 en 1,000
+    public function batchSize(): int
+    {
+        return 1000;
     }
 }
