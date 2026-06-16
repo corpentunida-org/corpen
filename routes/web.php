@@ -326,7 +326,12 @@ Route::middleware(['auth', 'check.mantenimiento'])
         // Acción de subir y previsualizar la base de datos (PASO 1)
         Route::post('subir-excel', [ExcelSyncController::class, 'subirExcel'])
             ->name('sincronizar.subir');
-            
+        // RUTA DE ESCAPE: Si recargan la página (F5) o expira el flujo, redirige al index con un mensaje amable
+        Route::get('subir-excel', function() {
+            return redirect()->route('contabilidad.sincronizar.index')
+                ->withErrors('La página de previsualización expiró o fue recargada. Por favor, selecciona y sube el archivo de nuevo.');
+        }); 
+           
         // Acción: Confirmar y guardar masivamente el Upsert (PASO 2)
         Route::post('confirmar-sincronizacion', [ExcelSyncController::class, 'confirmarSincronizacion'])
             ->name('sincronizar.confirmar');
