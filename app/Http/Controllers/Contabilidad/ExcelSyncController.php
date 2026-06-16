@@ -24,18 +24,22 @@ class ExcelSyncController extends Controller
     }
 
     /**
-     * PASO 1: Lee el Excel gigante y lo manda a previsualizar.
+     * PASO 1: Lee el Excel masivo y lo envía a la vista para previsualización interactiva.
      */
     public function subirExcel(Request $request) 
     {
+        // Forzamos al servidor a otorgar recursos máximos para procesar los 100k visuales
+        ini_set('memory_limit', '2048M');
+        set_time_limit(600); // 10 minutos de procesamiento máximo
+
         $request->validate([
-            'archivo_excel' => 'required|mimes:xlsx,xls|max:51200' // Hasta 50MB
+            'archivo_excel' => 'required|mimes:xlsx,xls|max:61440' // Hasta 60MB
         ]);
 
         $archivo = $request->file('archivo_excel');
         $registrosPrevia = [];
         
-        // Para validación rápida: traemos todos los hashes
+        // Optimización O(1): Traemos los hashes existentes indexados por clave para máxima velocidad
         $hashesExistentes = ConExtractoTransaccion::pluck('hash_transaccion')->toArray();
         $hashesLookup = array_flip($hashesExistentes);
         $hashesVistosEnArchivo = [];
@@ -45,10 +49,15 @@ class ExcelSyncController extends Controller
             $isHeader = true;
 
             foreach ($data as $row) {
-                if ($isHeader) { $isHeader = false; continue; }
-                if (empty($row[0])) continue; // Salta filas sin ID
+                if ($isHeader) { 
+                    $isHeader = false; 
+                    continue; 
+                }
+                
+                if (empty($row[0])) {
+                    continue; // Salta filas vacías o sin ID de transacción
+                }
 
-                // Orden basado en tu Export/Import original
                 $idTransaccion = $row[0];
                 $fechaRaw      = $row[1];
                 $cedula        = $row[2] ?? '';
@@ -57,7 +66,7 @@ class ExcelSyncController extends Controller
                 $idCuenta      = $row[5] ?? null;
                 $estado        = $row[6] ?? 'Pendiente';
 
-                // Conversión de Fecha
+                // Conversión de Fecha Segura
                 if (is_numeric($fechaRaw)) {
                     $dt = \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($fechaRaw);
                 } else {
@@ -67,9 +76,10 @@ class ExcelSyncController extends Controller
                 $fechaFormateada = $dt->format('YmdHis');
                 $fechaVista      = $dt->format('Y-m-d\TH:i:s');
 
-                // Recalculamos el hash por si fue editado
+                // Recalculamos el hash de control único
                 $hashCalculado = "{$idCuenta}-{$fechaFormateada}-{$monto}-{$cedula}";
                 
+                // Validación rápida de duplicados contra BD y contra el propio archivo
                 $esDuplicado = isset($hashesLookup[$hashCalculado]) || isset($hashesVistosEnArchivo[$hashCalculado]);
 
                 $registrosPrevia[] = [
@@ -86,27 +96,39 @@ class ExcelSyncController extends Controller
 
                 $hashesVistosEnArchivo[$hashCalculado] = true;
             }
+
+            // Liberar memoria intermedia antes de renderizar la vista
+            unset($data);
+            unset($hashesVistosEnArchivo);
+
         } catch (\Exception $e) {
-            Log::error("Error leyendo Excel Sync: " . $e->getMessage());
-            return back()->withErrors('Error al leer el archivo: ' . $e->getMessage());
+            Log::error("Error leyendo Excel Sync Masivo: " . $e->getMessage());
+            return redirect()->route('contabilidad.sincronizar.index')
+                ->withErrors('Error al leer el archivo Excel: ' . $e->getMessage());
         }
 
         return view('contabilidad.extractos.sincronizar', compact('registrosPrevia', 'hashesExistentes'));
     }
 
     /**
-     * PASO 2: Guarda la información previsualizada en BD (Upsert Masivo)
+     * PASO 2: Toma la colección JSON modificada desde la vista y ejecuta el Upsert en BD.
      */
     public function confirmarSincronizacion(Request $request)
     {
+        // Ampliamos límites para procesar el gigantesco string JSON enviado desde el cliente
+        ini_set('memory_limit', '2048M');
+        set_time_limit(600);
+
         $datos = json_decode($request->registros_json, true);
         
         if (empty($datos)) {
-            return redirect()->route('contabilidad.sincronizar.index')->withErrors('No se recibieron datos para sincronizar.');
+            return redirect()->route('contabilidad.sincronizar.index')
+                ->withErrors('No se recibieron datos en el lote de sincronización.');
         }
 
-        // Lotes de 1000 para no reventar MySQL
+        // Lotes de 1000 para no agotar los buffers de enlace de MySQL/AWS
         $lotes = array_chunk($datos, 1000);
+        unset($datos); // Liberamos la variable base inmediatamente de la memoria
 
         try {
             DB::transaction(function () use ($lotes) {
@@ -121,7 +143,8 @@ class ExcelSyncController extends Controller
                             'id_con_cuentas_bancaria' => $item['id_con_cuentas_bancaria'],
                             'estado_conciliacion'     => $item['estado_conciliacion'],
                             'hash_transaccion'        => $item['hash_transaccion'],
-                            'updated_at'              => now() // Forzar fecha actualización
+                            'updated_at'              => now(),
+                            'created_at'              => now()
                         ];
                     }, $lote);
 
@@ -132,10 +155,14 @@ class ExcelSyncController extends Controller
                     ]);
                 }
             });
-            return redirect()->route('contabilidad.sincronizar.index')->with('success', count($datos) . ' registros procesados correctamente.');
+
+            return redirect()->route('contabilidad.sincronizar.index')
+                ->with('success', 'La sincronización de la base de datos se ha completado correctamente.');
+
         } catch (\Exception $e) {
-            Log::error("Error UPSERT Sync: " . $e->getMessage());
-            return back()->withErrors('Fallo en Base de Datos: ' . $e->getMessage());
+            Log::error("Error crítico en el UPSERT de Sincronización: " . $e->getMessage());
+            return redirect()->route('contabilidad.sincronizar.index')
+                ->withErrors('Fallo en la base de datos al guardar los cambios: ' . $e->getMessage());
         }
     }
 }
