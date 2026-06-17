@@ -1053,6 +1053,10 @@ Route::middleware(['auth'])
         Route::get('tablero', [CorrespondenciaController::class, 'tablero'])
             ->name('tablero')
             ->middleware('candirect:correspondencia.usuario.admin');
+            
+        Route::get('tablero/pdf', [CorrespondenciaController::class, 'generarReportePdf'])
+            ->name('tablero.pdf')
+            ->middleware('candirect:correspondencia.usuario.admin');
 
         // ---------------------------------------------------
         // 2. GESTIÓN DE CORRESPONDENCIA (CRUD)
