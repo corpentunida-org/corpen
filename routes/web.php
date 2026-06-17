@@ -333,8 +333,7 @@ Route::middleware(['auth', 'check.mantenimiento'])
         }); 
            
         // Acción: Confirmar y guardar masivamente el Upsert (PASO 2)
-        Route::post('confirmar-sincronizacion', [ExcelSyncController::class, 'confirmarSincronizacion'])
-            ->name('sincronizar.confirmar');
+        Route::post('confirmar-sincronizacion', [ExcelSyncController::class, 'confirmarSincronizacion'])->name('sincronizar.confirmar');
 
         /* MODAL */
         Route::get('extractos-buscar-modal', [ConExtractoTransaccionController::class, 'buscarModalApi'])
@@ -1175,6 +1174,9 @@ Route::prefix('indicators')->group(function () {
         ->name('indicators.indicadores.descargar')
         ->middleware('auth');
 });
+
+Route::resource('indicators', IndicadoresController::class)->names('indicators.indicadores')->middleware(['auth', 'candirect:indicators.indicadores.index']);
+
 
 // ==========================================
 //   MÓDULO DE ASOCIADOS (PASTORES)

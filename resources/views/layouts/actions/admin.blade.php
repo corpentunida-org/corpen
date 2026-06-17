@@ -26,6 +26,9 @@
                 <li class="nxl-item">
                     <a class="nxl-link" href="{{route('indicators.quizes.index')}}">Capacitaciones</a>
                 </li>
+                <li class="nxl-item">
+                    <a class="nxl-link" href="{{ route('indicators.indicadores.create') }}">Parametros Indicadores</a>
+                </li>
             </ul>
         </li>
     </ul>

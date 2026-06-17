@@ -11,6 +11,7 @@ use App\Models\Archivo\GdoEmpleado;
 use App\Models\Inventario\InvMovimientoDetalle;
 use App\Models\Inventario\InvActivo;
 use App\Models\User;
+use App\Models\Archivo\GdoArea;
 use App\Models\Indicators\IndRegistroInformes;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
@@ -22,16 +23,22 @@ class IndicadoresController extends Controller
 {
     public function index()
     {
-        $indicators = $this->dataIndicadores();
+        try {
+            $indicators = $this->dataIndicadores();
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', $e->getMessage());
+        }
         $lastReport = IndRegistroInformes::latest()->first();
         $totalIndicadores = IndRegistroInformes::count() - 3;
         $indicadoresAlcanzados = 0;
-        foreach ($indicators as $ind) {
-            if ($ind->indicador_calculado !== null) {
-                $totalIndicadores++;
-                $meta = $this->parseMeta($ind->meta);
-                if ($ind->indicador_calculado >= $meta['valor']) {
-                    $indicadoresAlcanzados++;
+        foreach ($indicators as $grupo) {
+            foreach ($grupo as $ind) {
+                if ($ind->indicador_calculado !== null) {
+                    $totalIndicadores++;
+                    $meta = $this->parseMeta($ind->meta);
+                    if ($ind->indicador_calculado >= $meta['valor']) {
+                        $indicadoresAlcanzados++;
+                    }
                 }
             }
         }
@@ -42,7 +49,12 @@ class IndicadoresController extends Controller
 
     public function dataIndicadores()
     {
-        $indicators = IndIndicadores::all();
+        $indicators = IndIndicadores::with('arearel')
+            ->get()
+            ->groupBy(function ($item) {
+                return $item->arearel->nombre ?? ' ';
+            });
+        //dd($indicators);
         $calculos = [
             1 => function () {
                 $usuarios = IndUsuarios::whereRaw("CAST(SUBSTRING_INDEX(puntaje, '/', 1) AS UNSIGNED) > 3")->count();
@@ -83,7 +95,7 @@ class IndicadoresController extends Controller
                 return $tiempoPromedioAlta;
             },
             9 => function () {
-                $proyectosDigitalizados = Workflow::whereIn('estado', ['activo', 'completado'])->count();                
+                $proyectosDigitalizados = Workflow::whereIn('estado', ['activo', 'completado'])->count();
                 return ($proyectosDigitalizados / Workflow::count()) * 100;
             },
             10 => function () {
@@ -96,8 +108,20 @@ class IndicadoresController extends Controller
             },
         ];
 
-        foreach ($indicators as $ind) {
-            $ind->indicador_calculado = isset($calculos[$ind->id]) ? $calculos[$ind->id]($ind) : null;
+        foreach ($indicators as $grupo) {
+            foreach ($grupo as $ind) {
+                if (isset($calculos[$ind->id])) {
+                    $ind->indicador_calculado = $calculos[$ind->id]($ind);
+                } elseif (!empty($ind->consulta_bd)) {
+                    $ind->indicador_calculado = isset($calculos[$ind->id]) ? $calculos[$ind->id]($ind) : null;
+                    try {
+                        $resultado = collect(DB::select($ind->consulta_bd))->first();
+                        $ind->indicador_calculado = $resultado ? array_values((array) $resultado)[0] ?? null : null;
+                    } catch (\Exception $e) {
+                        throw new \Exception('Error en el indicador "' . $ind->nombre . '" - ' . $e->getMessage());
+                    }
+                }
+            }
         }
 
         return $indicators;
@@ -150,5 +174,63 @@ class IndicadoresController extends Controller
         }
 
         return [];
+    }
+
+    public function create()
+    {
+        $areas = GdoArea::select('id', 'nombre')->get();
+        $responsables = GdoEmpleado::selectRaw(
+            "id,
+                CONCAT(
+                    nombre1, ' ',
+                    IFNULL(nombre2, ''), ' ',
+                    apellido1, ' ',
+                    IFNULL(apellido2, '')
+                ) as nombre
+            ",
+        )
+            ->where('id', '>=', 11)
+            ->get();
+        return view('indicators.create', compact('areas', 'responsables'));
+    }
+
+    public function store(Request $request)
+    {
+        IndIndicadores::create([
+            'nombre' => $request->name,
+            'calculo' => $request->calculation,
+            'meta' => $request->goal,
+            'frecuencia' => $request->frecuencia,
+            'responsable' => $request->responsible,
+            'area' => $request->area,
+            'consulta_bd' => $request->consultasql,
+        ]);
+
+        return redirect()->route('indicators.indicadores.index')->with('success', 'Indicador creado exitosamente.');
+    }
+
+    public function edit($id)
+    {
+        $indicador = IndIndicadores::findOrFail($id);
+        $areas = GdoArea::select('id', 'nombre')->get();
+        $responsables = GdoEmpleado::selectRaw("id,CONCAT(nombre1, ' ',IFNULL(nombre2, ''), ' ',apellido1, ' ',IFNULL(apellido2, '')) as nombre")->where('id', '>=', 11)->get();
+
+        return view('indicators.edit', compact('indicador', 'areas', 'responsables'));
+    }
+
+    public function update(Request $request, $id)
+    {
+        $indicador = IndIndicadores::findOrFail($id);
+        $indicador->update([
+            'nombre' => $request->name,
+            'calculo' => $request->calculation,
+            'meta' => $request->goal,
+            'frecuencia' => $request->frecuencia,
+            'responsable' => $request->responsible,
+            'area' => $request->area,
+            'consulta_bd' => $request->consultasql,
+        ]);
+
+        return redirect()->route('indicators.indicadores.index')->with('success', 'Indicador actualizado exitosamente.');
     }
 }

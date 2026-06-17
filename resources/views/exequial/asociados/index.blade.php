@@ -1,5 +1,6 @@
 <x-base-layout>
     @section('titlepage', 'Beneficiarios')
+    <x-success />
     <x-warning />
     <style>
         #circle svg {
