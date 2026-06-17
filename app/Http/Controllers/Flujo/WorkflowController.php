@@ -94,15 +94,10 @@ class WorkflowController extends Controller
         $users = User::orderBy('name')->get();
 
         // Definición centralizada de etiquetas
-        $estadoLabels = [
-            'borrador',
-            'activo',
-            'pausado',
-            'completado',
-            'archivado'
-        ];
+        $estadoLabels = $this->getEstadosOptions();
         $rawCounts = Workflow::selectRaw('estado, count(*) as total')->groupBy('estado')->pluck('total', 'estado');
         $totalrawCounts = $rawCounts->sum();
+        
 
         return view(
             'flujo.workflows.index',
@@ -345,17 +340,16 @@ class WorkflowController extends Controller
     private function getEstadosOptions()
     {
         return [
-            'borrador' => 'Inicialización',
-            'activo' => 'Ejecución',
-            'pausado' => 'En Cola',
-            'completado' => 'Terminado',
-            'archivado' => 'Rechazado',
+            'Activo' => 'Activo - En desarollo',
+            'Archivado' => 'Archivado - Cancelado',
+            'Pausado' => 'Pausado - En espera',
+            'Completo' => 'Completo - Terminado',
         ];
     }
 
     private function getPrioridadesOptions()
     {
-        return ['baja' => 'Baja', 'media' => 'Media', 'alta' => 'Alta', 'crítica' => 'Crítica'];
+        return ['baja' => 'Baja', 'media' => 'Media', 'alta' => 'Alta'];
     }
 
     public function generatePdf($id)

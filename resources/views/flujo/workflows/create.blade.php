@@ -3,8 +3,6 @@
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;800&family=Fira+Code&display=swap');
-
         :root {
             --primary: #4f46e5;
             --primary-soft: #eef2ff;
@@ -22,7 +20,6 @@
             --radius-md: 12px;
         }
 
-        body { background-color: var(--bg-body); color: var(--text-main); font-family: 'Inter', sans-serif; }
 
         .app-container { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
 
@@ -329,7 +326,6 @@
 
             <form action="{{ route('flujo.workflows.store') }}" method="POST" id="workflow-create-form" class="needs-validation" novalidate>
                 @csrf
-
                 <div class="form-grid">
                     {{-- Columna Izquierda --}}
                     <div class="form-column">
@@ -350,7 +346,6 @@
                                 <button type="button" class="mode-btn active" id="btn-easy" onclick="toggleConfigMode('easy')">Asistido</button>
                                 <button type="button" class="mode-btn" id="btn-expert" onclick="toggleConfigMode('expert')">Experto</button>
                             </div>
-
                             <div id="panel-easy">
                                 <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px;">Pre-configuraciones:</p>
                                 <div class="template-grid">
@@ -359,7 +354,6 @@
                                     <button type="button" class="template-btn" onclick="applyTemplate('empty')"><i class="fas fa-eraser"></i> Limpiar</button>
                                 </div>
                             </div>
-
                             <div id="panel-expert" style="display: none;">
                                 <div class="json-editor-container">
                                     <textarea id="configuracion" name="configuracion" rows="10" class="json-editor" placeholder='{ "setting": true }'>{{ old('configuracion') }}</textarea>
@@ -374,7 +368,6 @@
 
                     {{-- Columna Derecha --}}
                     <div class="form-column">
-                        
                         {{-- SECCIÓN DE SELECTORES CON BÚSQUEDA --}}
                         <div class="form-group">
                             <label for="creado_por" class="required-label">Dueño del Proyecto</label>
@@ -388,7 +381,6 @@
                                 @endforeach
                             </select>
                         </div>
-
                         <div class="form-group">
                             <label for="asignado_a">Asignado Principal (Ejecutor)</label>
                             {{-- Se añade el placeholder para el buscador --}}
@@ -402,7 +394,6 @@
                             </select>
                         </div>
                         {{-- FIN SECCIÓN SELECTORES --}}
-
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;" class="grid-2-mobile">
                             <div class="form-group">
                                 <label class="required-label">Estado</label>
