@@ -54,66 +54,9 @@ class IndicadoresController extends Controller
             ->groupBy(function ($item) {
                 return $item->arearel->nombre ?? ' ';
             });
-        //dd($indicators);
-        $calculos = [
-            1 => function () {
-                $usuarios = IndUsuarios::whereRaw("CAST(SUBSTRING_INDEX(puntaje, '/', 1) AS UNSIGNED) > 3")->count();
-                return ($usuarios / GdoEmpleado::where('id', '>', 11)->count()) * 100;
-            },
-            2 => function () {
-                $satisfaccion = IndUsuarios::whereRaw('JSON_VALID(respuestas)')->selectRaw("SUM(CAST(JSON_UNQUOTE(JSON_EXTRACT(respuestas, '$[5]')) AS UNSIGNED)) as total")->value('total');
-                return $satisfaccion / IndUsuarios::count();
-            },
-            3 => function () {
-                $satisnuevastic = IndUsuarios::whereRaw("JSON_UNQUOTE(JSON_EXTRACT(respuestas, '$[6]')) != 'n/a'")->selectRaw("SUM(CAST(JSON_UNQUOTE(JSON_EXTRACT(respuestas, '$[6]')) AS UNSIGNED)) / COUNT(*) as promedio")->value('promedio');
-                return $satisnuevastic;
-            },
-            4 => function () {
-                $totalActivos = InvActivo::count();
-                $activosAsignados = InvMovimientoDetalle::where('id_estado', 9)->count();
-                return ($activosAsignados / $totalActivos) * 100;
-            },
-            5 => function () {
-                /* $totalDentroSLA = ScpSoporte::from('scp_soportes as s')
-                    ->joinSub(DB::table('scp_observaciones')->select('id_scp_soporte', DB::raw('MIN(timestam) as fecha_cierre'))->where('id_scp_estados', 4)->groupBy('id_scp_soporte'), 'o', 'o.id_scp_soporte', '=', 's.id')
-                    ->whereRaw("TIMESTAMPDIFF(DAY, s.timestam, o.fecha_cierre) <= CASE s.id_scp_prioridad WHEN 3 THEN 30 WHEN 2 THEN 20 WHEN 1 THEN 10 ELSE 0 END",)->count(); */
-                $totalDentroSLA = ScpSoporte::from('scp_soportes as s')
-                    ->joinSub(DB::table('scp_observaciones')->select('id_scp_soporte', DB::raw('MIN(timestam) as fecha_cierre'))->where('id_scp_estados', 4)->groupBy('id_scp_soporte'), 'o', 'o.id_scp_soporte', '=', 's.id')
-                    ->count();
-                return ($totalDentroSLA / ScpSoporte::where('estado', 4)->count()) * 100;
-            },
-            6 => function () {
-                $tiempoPromedioAlta = DB::table('scp_soportes as s')->join('scp_observaciones as o', 'o.id_scp_soporte', '=', 's.id')->where('s.id_scp_prioridad', 1)->selectRaw('AVG(TIMESTAMPDIFF(MINUTE,s.created_at,o.created_at)) as promedio')->groupBy('s.id')->value('promedio');
-                return $tiempoPromedioAlta;
-            },
-            7 => function () {
-                $tiempoPromedioAlta = DB::table('scp_soportes as s')->join('scp_observaciones as o', 'o.id_scp_soporte', '=', 's.id')->where('s.id_scp_prioridad', 2)->selectRaw('AVG(TIMESTAMPDIFF(MINUTE,s.created_at,o.created_at)) as promedio')->groupBy('s.id')->value('promedio');
-                return $tiempoPromedioAlta;
-            },
-            8 => function () {
-                $tiempoPromedioAlta = DB::table('scp_soportes as s')->join('scp_observaciones as o', 'o.id_scp_soporte', '=', 's.id')->where('s.id_scp_prioridad', 3)->selectRaw('AVG(TIMESTAMPDIFF(MINUTE,s.created_at,o.created_at)) as promedio')->groupBy('s.id')->value('promedio');
-                return $tiempoPromedioAlta;
-            },
-            9 => function () {
-                $proyectosDigitalizados = Workflow::whereIn('estado', ['activo', 'completado'])->count();
-                return ($proyectosDigitalizados / Workflow::count()) * 100;
-            },
-            10 => function () {
-                $users = User::where('type', null)->count();
-                return ($users / GdoEmpleado::count()) * 100;
-            },
-            11 => function () {
-                $globalCounts = Workflow::where('estado', '!=', 'borrador')->where('estado', '!=', 'archivado')->selectRaw('estado, count(*) as total')->groupBy('estado')->pluck('total', 'estado');
-                return (($globalCounts['completado'] ?? 0) / $globalCounts->sum()) * 100;
-            },
-        ];
-
         foreach ($indicators as $grupo) {
             foreach ($grupo as $ind) {
-                if (isset($calculos[$ind->id])) {
-                    $ind->indicador_calculado = $calculos[$ind->id]($ind);
-                } elseif (!empty($ind->consulta_bd)) {
-                    $ind->indicador_calculado = isset($calculos[$ind->id]) ? $calculos[$ind->id]($ind) : null;
+                if (!empty($ind->consulta_bd)) {
                     try {
                         $resultado = collect(DB::select($ind->consulta_bd))->first();
                         $ind->indicador_calculado = $resultado ? array_values((array) $resultado)[0] ?? null : null;
@@ -123,7 +66,6 @@ class IndicadoresController extends Controller
                 }
             }
         }
-
         return $indicators;
     }
 
