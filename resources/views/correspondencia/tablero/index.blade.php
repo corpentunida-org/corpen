@@ -14,9 +14,11 @@
                 <p class="text-muted mb-0 small">Supervisa, filtra y gestiona los radicados del sistema.</p>
             </div>
             <div class="d-flex gap-2">
-                <button class="btn btn-white border shadow-sm btn-ux d-flex align-items-center" onclick="window.print()">
-                    <i class="fas fa-download me-2 text-slate-500"></i> Reporte
-                </button>
+                <a href="{{ route('correspondencia.tablero.pdf', request()->all()) }}" 
+                    target="_blank" 
+                    class="btn btn-white border shadow-sm btn-ux d-flex align-items-center">
+                    <i class="fas fa-file-pdf me-2 text-danger"></i> Exportar PDF
+                </a>
                 <a href="{{ route('correspondencia.correspondencias.create') }}" class="btn btn-primary shadow-primary btn-ux d-flex align-items-center">
                     <i class="fas fa-plus-circle me-2"></i> Nuevo Radicado
                 </a>
@@ -119,6 +121,30 @@
 
                             <hr class="text-slate-200 my-4">
 
+                            {{-- NUEVO: Filtro de Fechas --}}
+                            <div class="mb-4">
+                                <h6 class="fw-bold mb-3 text-slate-800 text-uppercase tracking-wider small">Rango de Solicitud</h6>
+                                <div class="d-flex flex-column gap-2">
+                                    <div>
+                                        <label class="text-muted mb-1 small" style="font-size: 11px;">Fecha Inicial:</label>
+                                        <input type="date" name="fecha_ini" class="form-control px-3 py-2 border rounded-3 shadow-none small" 
+                                               value="{{ request('fecha_ini') }}" onchange="this.form.submit()">
+                                    </div>
+                                    <div>
+                                        <label class="text-muted mb-1 small" style="font-size: 11px;">Fecha Final:</label>
+                                        <input type="date" name="fecha_fin" class="form-control px-3 py-2 border rounded-3 shadow-none small" 
+                                               value="{{ request('fecha_fin') }}" onchange="this.form.submit()">
+                                    </div>
+                                    @if(request('fecha_ini') || request('fecha_fin'))
+                                        <button type="button" class="btn btn-sm btn-link text-danger text-start px-0 mt-1 fw-bold text-decoration-none" onclick="clearDateFilters()">
+                                            <i class="fas fa-eraser me-1"></i> Borrar Fechas
+                                        </button>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <hr class="text-slate-200 my-4">
+
                             {{-- Responsable --}}
                             <div class="mb-4">
                                 <h6 class="fw-bold mb-3 text-slate-800 text-uppercase tracking-wider small">Responsable</h6>
@@ -169,11 +195,11 @@
                     <span class="text-slate-500 small fw-semibold">
                         Mostrando <strong class="text-slate-900">{{ $correspondencias->count() }}</strong> de <strong class="text-slate-900">{{ $correspondencias->total() }}</strong> radicados filtrados
                         
-                        {{-- Indicador visual de filtros activos desde gráficos --}}
-                        @if(request('estado_kpi') || request('mes_filtro'))
+                        {{-- Indicador visual de filtros activos desde gráficos o fechas --}}
+                        @if(request('estado_kpi') || request('mes_filtro') || request('fecha_ini') || request('fecha_fin'))
                             <span class="mx-2 text-slate-300">|</span>
                             <a href="{{ route('correspondencia.tablero') }}" class="text-danger small fw-bold text-decoration-none">
-                                <i class="fas fa-times-circle"></i> Limpiar gráficos
+                                <i class="fas fa-times-circle"></i> Limpiar filtros aplicados
                             </a>
                         @endif
                     </span>
@@ -328,6 +354,7 @@
         /* Input y Búsqueda */
         .focus-ring-wrapper:focus-within { border-color: var(--primary) !important; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
         .form-control:focus { background-color: transparent; }
+        .form-control[type="date"] { color: var(--slate-700); font-family: 'Inter', sans-serif; }
 
         /* TomSelect Personalizado */
         .ux-select-container { max-width: 100%; position: relative; }
@@ -372,6 +399,13 @@
             // Si el valor ya está activo, lo quitamos (toggle)
             const currentVal = document.getElementById('hidden-' + inputName).value;
             document.getElementById('hidden-' + inputName).value = (currentVal === value) ? '' : value;
+            document.getElementById('filter-form').submit();
+        }
+
+        // Función para limpiar los campos de fechas sin afectar los demás
+        function clearDateFilters() {
+            document.getElementsByName('fecha_ini')[0].value = '';
+            document.getElementsByName('fecha_fin')[0].value = '';
             document.getElementById('filter-form').submit();
         }
 
@@ -495,9 +529,9 @@
                                     }
                                 }
                             }
-                        },
-                        expandOnClick: true
-                    }
+                        }
+                    },
+                    expandOnClick: true
                 },
                 dataLabels: { enabled: false },
                 stroke: { width: 2, colors: ['#fff'] },

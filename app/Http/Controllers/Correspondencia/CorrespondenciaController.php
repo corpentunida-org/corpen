@@ -20,6 +20,8 @@ use Carbon\Carbon;
 use Carbon\CarbonInterval;
 use App\Http\Controllers\AuditoriaController;
 
+use Barryvdh\DomPDF\Facade\Pdf; 
+
 class CorrespondenciaController extends Controller
 {
     /**
@@ -265,18 +267,18 @@ class CorrespondenciaController extends Controller
     }
 
     /**
-     * Genera el tablero de control (Dashboard) con KPIs y gráficas.
-     * Corregido para soportar la gestión rápida desde el tablero.
+     * Genera el tablero de control (Dashboard) con KPIs y gráficas filtradas por fechas.
      */
     public function tablero(Request $request)
     {
         // Carga base con relaciones necesarias
         $query = Correspondencia::with(['trd', 'estado', 'usuario', 'flujo.procesos.usuariosAsignados']);
 
-        // FILTROS BASE (Sidebar)
+        // FILTROS BASE (Sidebar + Fechas)
         if ($request->filled('search')) {
             $query->where(function ($q) use ($request) {
-                $q->where('id_radicado', 'LIKE', "%{$request->search}%")->orWhere('asunto', 'LIKE', "%{$request->search}%");
+                $q->where('id_radicado', 'LIKE', "%{$request->search}%")
+                  ->orWhere('asunto', 'LIKE', "%{$request->search}%");
             });
         }
         if ($request->filled('flujo_id')) {
@@ -286,16 +288,24 @@ class CorrespondenciaController extends Controller
             $query->where('usuario_id', $request->usuario_id);
         }
 
-        // CÁLCULO DE KPIs (Independiente del estado_kpi y mes_filtro para que no se alteren a sí mismos al filtrar)
+        // NUEVO: FILTROS DE RANGO DE FECHAS (Afectan a todo el Tablero)
+        if ($request->filled('fecha_ini')) {
+            $query->whereDate('fecha_solicitud', '>=', Carbon::parse($request->fecha_ini));
+        }
+        if ($request->filled('fecha_fin')) {
+            $query->whereDate('fecha_solicitud', '<=', Carbon::parse($request->fecha_fin));
+        }
+
+        // CÁLCULO DE KPIs (Dependientes de los rangos de fechas y filtros base)
         $kpiQuery = clone $query;
         $kpis = [
-            'total' => (clone $kpiQuery)->count(),
-            'vencidos' => (clone $kpiQuery)->where('finalizado', false)->whereHas('trd', fn($q) => $q->whereRaw('DATE_ADD(corr_correspondencia.fecha_solicitud, INTERVAL corr_trd.tiempo_gestion DAY) < NOW()'))->count(),
-            'pendientes' => (clone $kpiQuery)->where('finalizado', false)->count(),
+            'total'       => (clone $kpiQuery)->count(),
+            'vencidos'    => (clone $kpiQuery)->where('finalizado', false)->whereHas('trd', fn($q) => $q->whereRaw('DATE_ADD(corr_correspondencia.fecha_solicitud, INTERVAL corr_trd.tiempo_gestion DAY) < NOW()'))->count(),
+            'pendientes'  => (clone $kpiQuery)->where('finalizado', false)->count(),
             'finalizados' => (clone $kpiQuery)->where('finalizado', true)->count(),
         ];
 
-        // NUEVO: FILTRO DESDE KPIs Y GRÁFICO DE DONA (estado_kpi)
+        // FILTRO DESDE KPIs Y GRÁFICO DE DONA (estado_kpi)
         if ($request->filled('estado_kpi')) {
             switch ($request->estado_kpi) {
                 case 'vencidos':
@@ -307,27 +317,24 @@ class CorrespondenciaController extends Controller
                 case 'finalizados':
                     $query->where('finalizado', true);
                     break;
-                // 'total' no hace nada, trae todo.
             }
         }
 
-        // NUEVO: FILTRO DESDE GRÁFICO DE ÁREA (mes_filtro)
+        // FILTRO DESDE GRÁFICO DE ÁREA (mes_filtro)
         if ($request->filled('mes_filtro')) {
-            // Mapeo simple de texto a número de mes
             $mesesMap = ['Ene' => 1, 'Feb' => 2, 'Mar' => 3, 'Abr' => 4, 'May' => 5, 'Jun' => 6, 'Jul' => 7, 'Ago' => 8, 'Sep' => 9, 'Oct' => 10, 'Nov' => 11, 'Dic' => 12];
             $mesNumero = $mesesMap[$request->mes_filtro] ?? null;
             
             if ($mesNumero) {
-                // Filtramos por el mes de la fecha de solicitud del año actual
                 $query->whereMonth('fecha_solicitud', $mesNumero)
                       ->whereYear('fecha_solicitud', date('Y'));
             }
         }
 
-        // Generamos la lista final paginada, adjuntando TODOS los parámetros de la URL para que no se pierdan al cambiar de página
+        // Paginación adjuntando todos los parámetros activos de la URL
         $correspondencias = $query->orderBy('fecha_solicitud', 'desc')->paginate(15)->appends($request->all());
 
-        // Data para filtros y gráficas
+        // Listas para los selectores estructurales
         $flujos = FlujoDeTrabajo::withCount('correspondencias')->get();
         $usuarios = User::orderBy('name')->get();
         $estados = Estado::withCount('correspondencias')->get();
@@ -335,6 +342,81 @@ class CorrespondenciaController extends Controller
         return view('correspondencia.tablero.index', compact('correspondencias', 'kpis', 'flujos', 'usuarios', 'estados'));
     }
 
+    /**
+     * Genera el reporte PDF tomando exactamente los mismos filtros del request.
+     */
+    public function generarReportePdf(Request $request)
+    {
+        $query = Correspondencia::with(['trd', 'estado', 'usuario', 'flujo']);
+
+        // Replicación estricta de filtros para correspondencia de datos
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function ($q) use ($search) {
+                $q->where('id_radicado', 'LIKE', "%{$search}%")
+                  ->orWhere('asunto', 'LIKE', "%{$search}%");
+            });
+        }
+        if ($request->filled('flujo_id')) { 
+            $query->where('flujo_id', '=', $request->input('flujo_id')); 
+        }
+        if ($request->filled('usuario_id')) { 
+            $query->where('usuario_id', '=', $request->input('usuario_id')); 
+        }
+        
+        // NUEVO: Replicar rango de fechas en el PDF
+        if ($request->filled('fecha_ini')) {
+            $query->whereDate('fecha_solicitud', '>=', Carbon::parse($request->fecha_ini));
+        }
+        if ($request->filled('fecha_fin')) {
+            $query->whereDate('fecha_solicitud', '<=', Carbon::parse($request->fecha_fin));
+        }
+
+        // Filtro de estado interno
+        if ($request->filled('estado_kpi')) {
+            switch ($request->estado_kpi) {
+                case 'vencidos':
+                    $query->where('finalizado', false)->whereHas('trd', fn($q) => $q->whereRaw('DATE_ADD(corr_correspondencia.fecha_solicitud, INTERVAL corr_trd.tiempo_gestion DAY) < NOW()'));
+                    break;
+                case 'pendientes':
+                    $query->where('finalizado', false);
+                    break;
+                case 'finalizados':
+                    $query->where('finalizado', true);
+                    break;
+            }
+        }
+
+        // Mismo filtro mensual si aplica
+        if ($request->filled('mes_filtro')) {
+            $mesesMap = ['Ene' => 1, 'Feb' => 2, 'Mar' => 3, 'Abr' => 4, 'May' => 5, 'Jun' => 6, 'Jul' => 7, 'Ago' => 8, 'Sep' => 9, 'Oct' => 10, 'Nov' => 11, 'Dic' => 12];
+            $mesNumero = $mesesMap[$request->mes_filtro] ?? null;
+            if ($mesNumero) {
+                $query->whereMonth('fecha_solicitud', $mesNumero)->whereYear('fecha_solicitud', date('Y'));
+            }
+        }
+
+        $correspondencias = $query->orderBy('fecha_solicitud', 'desc')->get();
+
+        // Recálculo exacto de KPIs condicionado a los rangos del PDF
+        $kpiQuery = clone $query;
+        $resumenKpis = [
+            'Total'       => $kpiQuery->count(),
+            'Vencidos'    => (clone $kpiQuery)->where('finalizado', false)->whereHas('trd', fn($q) => $q->whereRaw('DATE_ADD(corr_correspondencia.fecha_solicitud, INTERVAL corr_trd.tiempo_gestion DAY) < NOW()'))->count(),
+            'En Proceso'  => (clone $kpiQuery)->where('finalizado', false)->count(),
+            'Completados' => (clone $kpiQuery)->where('finalizado', true)->count(),
+        ];
+
+        // Guardamos los filtros en formato de texto para mostrarlos en el PDF
+        $filtrosActivos = [
+            'desde' => $request->filled('fecha_ini') ? Carbon::parse($request->fecha_ini)->format('d/m/Y') : 'Inicio del sistema',
+            'hasta' => $request->filled('fecha_fin') ? Carbon::parse($request->fecha_fin)->format('d/m/Y') : 'Actualidad'
+        ];
+
+        $pdf = Pdf::loadView('correspondencia.tablero.pdf', compact('correspondencias', 'resumenKpis', 'filtrosActivos'));
+        
+        return $pdf->setPaper('a4', 'landscape')->stream('Informe_Gestion_' . now()->format('Ymd') . '.pdf');
+    }
     /**
      * API: Obtiene las TRD vinculadas a un flujo específico (para carga dinámica en vistas).
      */
