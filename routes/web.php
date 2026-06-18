@@ -151,8 +151,8 @@ Route::get('/base', function () {
 
 //ADMIN
 Route::resource('users', UserController::class)
-    ->names('admin.users')
-    ->middleware(['auth', 'can:admin.users.index']);
+    ->names('admin.users')->middleware(['auth', 'candirect:admin.users.index']);
+    
 Route::resource('admin', AuditoriaController::class)
     ->names('admin.auditoria')
     ->middleware(['auth', 'candirect:admin.auditoria.index']);
