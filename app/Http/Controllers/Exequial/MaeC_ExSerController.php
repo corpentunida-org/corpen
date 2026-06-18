@@ -256,7 +256,6 @@ class MaeC_ExSerController extends Controller
             'valores' => $resultado->pluck('total')->toArray(),
         ];
         $totalservicios = ExMonitoria::count();
-
         $datamunicipios = DB::table('EXE_MAEC_EXSER as s')->join('MaeMunicipios as m', 'm.id', '=', 's.municipio')->select('m.nombre as municipio', DB::raw('COUNT(*) as total'))->groupBy('m.id', 'm.nombre')->orderByDesc('total')->limit(15)->get();
         $arraydatamunicipios = [
             'labels' => $datamunicipios->pluck('municipio')->toArray(),
@@ -298,4 +297,6 @@ class MaeC_ExSerController extends Controller
 
         return view('exequial.prestarServicio.dashboard', compact('arraydata', 'totalservicios', 'arraydatamunicipios', 'kpis', 'numtotalbeneficiarios', 'numtotaltitulares'));
     }
+
+    
 }

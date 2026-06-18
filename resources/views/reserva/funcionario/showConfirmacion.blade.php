@@ -123,15 +123,20 @@
             <div class="card-body p-0 collapse show mt-0" id="rescomments_collapse_0">
                 <div class="recent-activity p-4 pb-0">
                     <ul class="list-unstyled activity-feed">
-                        @foreach ($reserva->comments as $comment)
-                            <li class="d-flex justify-content-between feed-item feed-item-primary">
+                        @foreach ($reserva->comments as $comment)                            
+                            <li class="d-flex flex-column flex-md-row justify-content-md-between feed-item feed-item-primary">
                                 <div>
-                                    <span
-                                        class="text-truncate-1-line text lead_date">{{ $comment->created_at->format('d M, Y H:i') }}</span>
-                                    <span class="lead_date">{{ $comment->description }}</span>
+                                    <span class="d-block text-truncate-1-line lead_date">
+                                        {{ $comment->created_at->format('d M, Y H:i') }}
+                                    </span>
+                                    <span class="d-block lead_date">
+                                        {{ $comment->description }}
+                                    </span>
                                 </div>
-                                <div class="ms-3 d-flex gap-2 align-items-center">
-                                    <span class="badge bg-soft-primary text-primary">{{ $comment->user->name }}</span>
+                                <div class="mt-2 mt-md-0 ms-md-3 d-flex align-items-center">
+                                    <span class="badge bg-soft-primary text-primary">
+                                        {{ $comment->user->name }}
+                                    </span>
                                 </div>
                             </li>
                         @endforeach
@@ -153,7 +158,8 @@
                             {{ !$btnFin ? 'Confirmar' : 'Finalizar' }}Reserva</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <form action="{{ route('reserva.inmueble.confirmar') }}" method="POST" id="formConfirmarComentario">
+                    <form action="{{ route('reserva.inmueble.confirmar') }}" method="POST"
+                        id="formConfirmarComentario">
                         @csrf
                         <!-- Cuerpo del Modal -->
                         <div class="modal-body">
@@ -194,7 +200,7 @@
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary"
                                 data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn btn-success"  id="btnConfirmar">Confirmar</button>
+                            <button type="submit" class="btn btn-success" id="btnConfirmar">Confirmar</button>
                         </div>
                     </form>
                 </div>

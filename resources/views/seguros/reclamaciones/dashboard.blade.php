@@ -45,6 +45,12 @@
                             <i class="feather-folder-plus me-2"></i>
                             <span>Descargar Excel</span>
                         </a>
+                        <a href=""
+                                class="d-flex me-1 px-3 bg-soft-indigo text-indigo border border-soft-indigo"
+                                style="padding: 12px 0 12px 0;">
+                                <i class="bi bi-arrow-down-circle me-2"></i>
+                                <span class="text-uppercase cursor-pointer" style="font-size: 10px;">Informe indicador</span>
+                        </a>
                     </div>
                 </form>
             </div>
