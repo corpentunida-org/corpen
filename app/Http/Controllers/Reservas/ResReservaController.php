@@ -182,7 +182,7 @@ class ResReservaController extends Controller implements HasMiddleware
             Mail::to($reserva->user->email)->send(new ReservaInmueble($reserva->user->name, $texto, 'Actualización de estado de reserva', false, $reserva->res_inmueble));
         }
 
-        $this->auditoria('Update estado de reserva a confirmado soporte de pago ID: ', $reserva->id);
+        $this->auditoria('Update estado de reserva a confirmado soporte de pago ID: ' . $reserva->id);
         return redirect()->back()->with('success', 'Cambio de estado realizado correctamente.');
     }
 

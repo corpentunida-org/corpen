@@ -151,8 +151,8 @@ Route::get('/base', function () {
 
 //ADMIN
 Route::resource('users', UserController::class)
-    ->names('admin.users')
-    ->middleware(['auth', 'can:admin.users.index']);
+    ->names('admin.users')->middleware(['auth', 'candirect:admin.users.index']);
+    
 Route::resource('admin', AuditoriaController::class)
     ->names('admin.auditoria')
     ->middleware(['auth', 'candirect:admin.auditoria.index']);
@@ -333,8 +333,7 @@ Route::middleware(['auth', 'check.mantenimiento'])
         }); 
            
         // Acción: Confirmar y guardar masivamente el Upsert (PASO 2)
-        Route::post('confirmar-sincronizacion', [ExcelSyncController::class, 'confirmarSincronizacion'])
-            ->name('sincronizar.confirmar');
+        Route::post('confirmar-sincronizacion', [ExcelSyncController::class, 'confirmarSincronizacion'])->name('sincronizar.confirmar');
 
         /* MODAL */
         Route::get('extractos-buscar-modal', [ConExtractoTransaccionController::class, 'buscarModalApi'])
@@ -517,18 +516,6 @@ Route::resource('creditos', CreditoController::class)
     ->names('creditos.credito')
     ->middleware(['auth']);
 
-Route::prefix('creditos')
-    ->middleware('auth')
-    ->group(function () {
-        /**
-         * Define todas las rutas estándar (index, create, store, show, edit, update, destroy)
-         * para el CreditoController, siguiendo la convención de nombres y parámetros
-         * que te gusta.
-         */
-        Route::resource('credito', CreditoController::class)
-            ->names('creditos.credito')
-            ->parameters(['credito' => 'credito']);
-    });
 
 // =========================================================================
 // MÓDULO DE GESTIÓN DOCUMENTAL (AWS S3 OPTIMIZED)
@@ -1175,6 +1162,7 @@ Route::prefix('indicators')->group(function () {
         ->name('indicators.indicadores.descargar')
         ->middleware('auth');
 });
+
 
 // ==========================================
 //   MÓDULO DE ASOCIADOS (PASTORES)

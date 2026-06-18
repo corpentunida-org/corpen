@@ -1,7 +1,7 @@
 {{-- resources/views/flujo/componentes/workflows-card.blade.php --}}
 <div class="projects-card-container" id="workflows-container">
     <header class="card-header-minimal">
-        <div class="header-info">
+        <div>
             <h2 class="card-title"><i class="fas fa-project-diagram"></i> Proyectos</h2>
             <p class="subtitle">{{ $workflows->total() }} flujos en sistema</p>
         </div>
@@ -195,7 +195,7 @@
         </div>
     </div>
 
-    <div class="pagination-minimal" id="pagination-container">
+    <div class="pagination-minimal pt-3" id="pagination-container">
         {{ $workflows->links() }}
     </div>
 </div>
@@ -209,7 +209,7 @@
         --p-border: #f1f5f9;
         background: #fff;
         border-radius: 16px;
-        padding: 24px;
+        padding: 0 24px 24px 24px;
         font-family: 'Inter', sans-serif;
         position: relative;
     }
