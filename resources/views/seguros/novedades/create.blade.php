@@ -158,7 +158,7 @@
                                             value="{{ $asegurado->polizas->first()->primapagar ?? 0 }}"
                                             id="valorapagarcorpen">
                                     </div>
-                                    @if ($asegurado->parentesco == 'AF' || $asegurado->viuda)
+                                    @if ($asegurado->parentesco == 'AF')
                                         <div class="col-lg-2 mb-4">
                                             <label class="form-label">Total a Pagar Titular<span
                                                     class="text-danger">*</span></label>
