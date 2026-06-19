@@ -34,7 +34,8 @@
                     <div class="btn btn-sm btn-light-brand p-3 bg-soft-primary">{{ $poliza->asegurado->parentesco }}
                     </div>
                     <div>
-                        <h5 class="fw-bold mb-0">{{ $poliza->nombre_tercero }} @if ($poliza->asegurado->viuda)
+                        <h5 class="fw-bold mb-0">{{ $poliza->nombre_tercero }} 
+                            @if ($poliza->asegurado->parentesco === 'VDA')
                                 <span class="badge bg-danger text-white ms-2">VIUDA</span>
                             @endif
                         </h5>
@@ -298,7 +299,7 @@
         @endcandirect
 
         @candirect('seguros.poliza.valorpagar')
-        @if (($poliza->asegurado->parentesco === 'AF' || $poliza->asegurado->viuda) && $poliza->active)
+        @if (($poliza->asegurado->parentesco === 'AF') && $poliza->active)
             <div class="p-4 d-xxl-flex d-xl-block d-md-flex align-items-center justify-content-end gap-4">
                 <div class="d-flex gap-4 align-items-center justify-content-sm-end justify-content-between">
                     <div href="" class="text-bold">Valor Aseguradora</div>

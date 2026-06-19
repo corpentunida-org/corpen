@@ -11,7 +11,7 @@ class SegAsegurado extends Model
 {
     use HasFactory;
     protected $table = 'SEG_asegurados';
-    protected $fillable = ['cedula', 'parentesco', 'titular', 'valorpAseguradora', 'viuda'];
+    protected $fillable = ['cedula', 'parentesco', 'titular',];
 
     public function tercero()
     {
