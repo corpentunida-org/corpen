@@ -47,16 +47,11 @@ class SegBeneficiosController extends Controller
         });
 
         $tipoAsegurado = $request->tipo;
-        if ($tipoAsegurado === 'VIUDA') {
-            $query->whereHas('asegurado', function ($q) {
-                $q->where('viuda', true);
-            });
-        } else if ($tipoAsegurado != 'TODOS') {
+        if ($tipoAsegurado != 'TODOS') {
             $query->whereHas('asegurado', function ($q) use ($tipoAsegurado) {
                 $q->where('parentesco', $tipoAsegurado);
             });
         }
-
         if ($request->has('planes')) {
             $valoresPlanes = array_map('intval', $request->planes);
             $query->whereIn('valor_asegurado', $valoresPlanes)->get();
@@ -98,15 +93,10 @@ class SegBeneficiosController extends Controller
                         'primapagar' => floatval($poliza->primapagar) - floatval($request->desval),
                     ]);
                     $asegurado = SegAsegurado::where('cedula', $item['cedula'])->first();
-                    if (filter_var($asegurado->viuda)) {
-                        SegPoliza::where('seg_asegurado_id', $item['cedula'])->update([
-                            'valorpagaraseguradora' => floatval($poliza->valorpagaraseguradora) - floatval($request->desval),
-                        ]);
-                    } else {
-                        SegPoliza::where('seg_asegurado_id', $asegurado->titular)->update([
-                            'valorpagaraseguradora' => floatval($poliza->valorpagaraseguradora) - floatval($request->desval),
-                        ]);
-                    }
+                    SegPoliza::where('seg_asegurado_id', $asegurado->titular)->update([
+                        'valorpagaraseguradora' => floatval($poliza->valorpagaraseguradora) - floatval($request->desval),
+                    ]);
+                    
                 }
             } else {
                 foreach ($request->beneficio as $item) {

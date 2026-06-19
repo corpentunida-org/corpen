@@ -142,7 +142,7 @@ class SegReclamacionesController extends Controller
         if ($request->boolean('confirmviuda')) {
             $asegurado = SegAsegurado::where('titular', $request->asegurado)->where('parentesco', 'CO')->first();
             if ($asegurado) {
-                $asegurado->update(['viuda' => true]);
+                $asegurado->update(['parentesco' => 'VDA']);
             }
         }
         $cambioEstado = SegCambioEstadoReclamacion::create([
