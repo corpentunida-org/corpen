@@ -34,7 +34,7 @@
                                 <option value="CO">CONYUGUE</option>
                                 <option value="HI">HIJO</option>
                                 <option value="HE">HERMANO</option>
-                                <option value="VIUDA">VIUDA</option>
+                                <option value="VDA">VIUDA</option>
                                 <option value="TODOS">TODOS</option>
                             </select>
                         </div>

@@ -145,7 +145,6 @@ class SegNovedadesController extends Controller
                         'cedula' => $terceroontable->cod_ter,
                         'parentesco' => 'AF',
                         'titular' => $terceroontable->cod_ter,
-                        'valorpAseguradora' => $request->valorpagaraseguradora,
                     ]);
                 } else {
                     $asegurado = SegAsegurado::create([
