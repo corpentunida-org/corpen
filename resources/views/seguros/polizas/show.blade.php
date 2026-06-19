@@ -311,7 +311,7 @@
                     <div class="text-bold">Subsidio</div>
                     <div class="btn bg-soft-warning collapsed" data-bs-toggle="collapse"
                         data-bs-target="#collapseOne" aria-expanded="false" style="font-size:20px;">$
-                        @if (!$poliza->asegurado->valorpAseguradora || $totalPrima == 0)
+                        @if ($totalPrima == 0)
                             0
                             @php
                                 $subsidio = 0;
