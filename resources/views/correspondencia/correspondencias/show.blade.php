@@ -64,18 +64,31 @@
                             {{-- ================================================================= --}}
                             <div class="col-12">
                                 <label class="text-muted small d-block mb-2 text-uppercase fw-bold"><i class="bi bi-paperclip me-1"></i>Solicitud Digital</label>
-                                @if($correspondencia->documento_arc)
-                                    <div class="d-flex align-items-center p-3 rounded-4 border border-primary-subtle bg-primary-subtle bg-opacity-10 transition-all hover-lift">
-                                        <div class="me-3 bg-white p-2 rounded-circle text-primary shadow-sm d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
-                                            <i class="bi bi-file-earmark-pdf-fill fs-4"></i>
-                                        </div>
-                                        <div>
-                                            <h6 class="mb-0 fw-bold text-primary">Documento Adjunto Disponible</h6>
-                                            <small class="text-muted">Clic en el botón para visualizar el archivo original</small>
-                                        </div>
-                                        <a href="{{ $correspondencia->getFile($correspondencia->documento_arc) }}" target="_blank" class="btn btn-primary rounded-pill ms-auto px-4 fw-bold shadow-sm">
-                                            <i class="bi bi-eye me-2"></i>Ver Documento
-                                        </a>
+                                
+                                @if(count($correspondencia->documento_arc) > 0)
+                                    <div class="d-flex flex-column gap-3">
+                                        @foreach($correspondencia->documento_arc as $index => $doc)
+                                            @if(!empty($doc))
+                                                @php
+                                                    // Identificar la extensión para poner el icono correcto
+                                                    $ext = strtolower(pathinfo($doc, PATHINFO_EXTENSION));
+                                                    $iconClass = $ext === 'pdf' ? 'bi-file-earmark-pdf-fill text-danger' : 
+                                                            (in_array($ext, ['jpg','jpeg','png']) ? 'bi-file-earmark-image-fill text-success' : 'bi-file-earmark-word-fill text-primary');
+                                                @endphp
+                                                <div class="d-flex align-items-center p-3 rounded-4 border border-primary-subtle bg-primary-subtle bg-opacity-10 transition-all hover-lift">
+                                                    <div class="me-3 bg-white p-2 rounded-circle shadow-sm d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+                                                        <i class="bi {{ $iconClass }} fs-4"></i>
+                                                    </div>
+                                                    <div>
+                                                        <h6 class="mb-0 fw-bold text-primary">Documento Adjunto #{{ $index + 1 }}</h6>
+                                                        <small class="text-muted">Soporte original de la solicitud</small>
+                                                    </div>
+                                                    <a href="{{ $correspondencia->getFile($doc) }}" target="_blank" class="btn btn-primary rounded-pill ms-auto px-4 fw-bold shadow-sm">
+                                                        <i class="bi bi-eye me-2"></i>Ver Documento
+                                                    </a>
+                                                </div>
+                                            @endif
+                                        @endforeach
                                     </div>
                                 @else
                                     <div class="p-3 rounded-4 border border-dashed bg-light text-muted d-flex align-items-center">
@@ -466,7 +479,7 @@
                                 <div class="form-check form-switch mb-3">
                                     <input class="form-check-input" type="checkbox" id="toggleEstructurado">
                                     <label class="form-check-label fw-bold small text-dark mt-1" for="toggleEstructurado" style="cursor: pointer;">
-                                        ¿Hace parte de la junta directiva?
+                                        Usar formato estructurado (Aprobado / Valor / Detalle)
                                     </label>
                                 </div>
 

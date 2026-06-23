@@ -4,6 +4,7 @@ namespace App\Models\Correspondencia;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute; // Importante para el Accesor/Mutator inteligente
 use App\Models\User;
 use App\Models\Correspondencia\Trd;
 use App\Models\Correspondencia\Estado;
@@ -23,7 +24,22 @@ class Correspondencia extends Model
 
     public $incrementing = false;
 
-    protected $fillable = ['id_radicado', 'fecha_solicitud', 'asunto', 'es_confidencial', 'medio_recibido', 'remitente_id', 'trd_id', 'flujo_id', 'estado_id', 'usuario_id', 'observacion_previa', 'finalizado', 'final_descripcion', 'documento_arc'];
+    protected $fillable = [
+        'id_radicado', 
+        'fecha_solicitud', 
+        'asunto', 
+        'es_confidencial', 
+        'medio_recibido', 
+        'remitente_id', 
+        'trd_id', 
+        'flujo_id', 
+        'estado_id', 
+        'usuario_id', 
+        'observacion_previa', 
+        'finalizado', 
+        'final_descripcion', 
+        'documento_arc'
+    ];
 
     protected $casts = [
         'fecha_solicitud' => 'datetime',
@@ -31,6 +47,41 @@ class Correspondencia extends Model
         'finalizado' => 'boolean',
     ];
 
+    /**
+     * Accesor y Mutator inteligente para documento_arc.
+     * Garantiza retrocompatibilidad: convierte texto plano antiguo o JSON nuevo 
+     * siempre a un array indexado al consultar, y lo guarda como JSON en la BD.
+     */
+    protected function documentoArc(): Attribute
+    {
+        return Attribute::make(
+            get: function ($value) {
+                if (empty($value)) {
+                    return [];
+                }
+
+                // Intentar decodificar el valor por si es una estructura JSON (Nuevos registros)
+                $decoded = json_decode($value, true);
+
+                // Si es un JSON válido y da como resultado un array, lo retornamos directo
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    return $decoded;
+                }
+
+                // Si no es un JSON válido, significa que es texto plano (Registros antiguos)
+                // Lo envolvemos en un array para mantener la consistencia en vistas y controladores
+                return [$value];
+            },
+            set: function ($value) {
+                // Al persistir en la base de datos, si es un array lo convertimos a texto JSON
+                return is_array($value) ? json_encode($value) : $value;
+            }
+        );
+    }
+
+    /**
+     * Obtiene la URL temporal firmada desde el disco S3 de AWS.
+     */
     public function getFile($nameFile)
     {
         $url = '#';
@@ -73,25 +124,29 @@ class Correspondencia extends Model
     {
         return $this->belongsTo(User::class, 'usuario_id');
     }
+
+    /**
+     * Relación: Tercero Remitente
+     */
     public function remitente()
     {
         return $this->belongsTo(MaeTerceros::class, 'remitente_id', 'cod_ter');
     }
+
     /**
      * Relación: Historial de procesos/gestiones
      */
     public function procesos()
     {
-        // Añadimos orderBy para que el último proceso aparezca primero en el resumen
-        return $this->hasMany(CorrespondenciaProceso::class, 'id_correspondencia', 'id_radicado')->orderBy('created_at', 'desc');
+        return $this->hasMany(CorrespondenciaProceso::class, 'id_correspondencia', 'id_radicado')
+                    ->orderBy('created_at', 'desc');
     }
+
     /**
      * Relación: Medio de Recepción
-     * Relaciona 'medio_recibido' de esta tabla con el 'id' de corr_medio_recepcion
      */
     public function medioRecepcion()
     {
-        // belongsTo(ModeloDestino, llave_foranea_local, llave_primaria_destino)
         return $this->belongsTo(MedioRecepcion::class, 'medio_recibido', 'id');
     }
 
@@ -100,8 +155,6 @@ class Correspondencia extends Model
      */
     public function comunicacionSalida()
     {
-        // id_correspondencia es la FK en corr_comunicaciones_salida
-        // id_radicado es la PK en corr_correspondencia
         return $this->hasOne(ComunicacionSalida::class, 'id_correspondencia', 'id_radicado');
     }
 }
