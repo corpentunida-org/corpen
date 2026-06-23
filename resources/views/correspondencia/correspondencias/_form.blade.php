@@ -274,42 +274,55 @@
                         @endif
                     </div>
                     <div class="mb-2">
-                        <label class="field-label">Documento Digital</label>
+                        <label class="field-label">Documentos / Imágenes Adjuntos</label>
 
-
-                        @if ($esEdicion && $correspondencia->documento_arc)
-                            <div class="d-flex align-items-center">
-                                <i class="bi bi-file-earmark-pdf text-danger fs-4 me-2"></i>
-                                <div class="text-truncate small me-auto">Ver adjunto</div>
-                                <a href="{{ $correspondencia->getFile($correspondencia->documento_arc) }}"
-                                    target="_blank" class="btn btn-sm btn-outline-dark">
-                                    <i class="bi bi-eye"></i>
-                                </a>
-                            </div>
-                        @else
-                            <div id="dropzone" class="drop-zone">
-                                <input type="file" name="documento_arc" id="file-input" class="drop-zone-input"
-                                    accept=".pdf,.doc,.docx">
-
-                                <div id="dropzone-prompt">
-                                    <i class="bi bi-cloud-arrow-up fs-2 text-primary"></i>
-                                    <p class="mb-0 small fw-bold">Arrastra o haz clic aquí</p>
-                                </div>
-
-                                <div id="file-preview" class="preview-container">
-                                    <div class="d-flex align-items-center">
-                                        <i id="preview-icon" class="bi bi-file-earmark-text fs-4 me-2"></i>
-                                        <div class="text-truncate small me-auto text-start">
-                                            <span id="file-name" class="d-block fw-bold text-dark"></span>
+                        @if ($esEdicion && count($correspondencia->documento_arc) > 0)
+                            <div class="mb-3">
+                                @foreach ($correspondencia->documento_arc as $index => $doc)
+                                    @if(!empty($doc))
+                                        <div class="d-flex align-items-center mb-2 p-2 border rounded bg-light">
+                                            @php
+                                                $ext = strtolower(pathinfo($doc, PATHINFO_EXTENSION));
+                                                $icon = $ext === 'pdf' ? 'bi-file-earmark-pdf text-danger' : 
+                                                       (in_array($ext, ['jpg','jpeg','png']) ? 'bi-file-earmark-image text-success' : 'bi-file-earmark-word text-primary');
+                                            @endphp
+                                            
+                                            <i class="bi {{ $icon }} fs-4 me-2"></i>
+                                            <div class="text-truncate small me-auto fw-bold text-dark">
+                                                Archivo adjunto #{{ $index + 1 }}
+                                            </div>
+                                            <a href="{{ $correspondencia->getFile($doc) }}" target="_blank" class="btn btn-sm btn-outline-dark">
+                                                <i class="bi bi-eye"></i> Ver
+                                            </a>
                                         </div>
-                                        <button type="button" id="remove-file" class="btn btn-sm text-danger"
-                                            style="z-index: 30;">
-                                            <i class="bi bi-x-circle-fill fs-5"></i>
-                                        </button>
-                                    </div>
-                                </div>
+                                    @endif
+                                @endforeach
                             </div>
                         @endif
+
+                        <div id="dropzone" class="drop-zone {{ ($esEdicion && count($correspondencia->documento_arc) > 0) ? 'mt-3' : '' }}">
+                            <input type="file" name="documento_arc" id="file-input" class="drop-zone-input"
+                                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+
+                            <div id="dropzone-prompt">
+                                <i class="bi bi-cloud-arrow-up fs-2 text-primary"></i>
+                                <p class="mb-0 small fw-bold">
+                                    {{ ($esEdicion && count($correspondencia->documento_arc) > 0) ? 'Arrastra o haz clic aquí para AGREGAR un archivo más' : 'Arrastra o haz clic aquí' }}
+                                </p>
+                            </div>
+
+                            <div id="file-preview" class="preview-container">
+                                <div class="d-flex align-items-center">
+                                    <i id="preview-icon" class="bi bi-file-earmark-text fs-4 me-2"></i>
+                                    <div class="text-truncate small me-auto text-start">
+                                        <span id="file-name" class="d-block fw-bold text-dark"></span>
+                                    </div>
+                                    <button type="button" id="remove-file" class="btn btn-sm text-danger" style="z-index: 30;">
+                                        <i class="bi bi-x-circle-fill fs-5"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -392,20 +405,27 @@
 
                     <div class="mb-4">
                         <label class="field-label">Flujo / TRD <span class="text-danger">*</span></label>
-                        @if ($esEdicion)
-                            <div class="static-value small">{{ $correspondencia->flujo->nombre }} /
-                                {{ $correspondencia->trd->serie_documental }}</div>
-                        @else
-                            <select name="flujo_id" id="flujo_id" class="form-select mb-2" required>
-                                <option value="">Seleccione flujo...</option>
-                                @foreach ($flujos as $f)
-                                    <option value="{{ $f->id }}">{{ $f->nombre }}</option>
-                                @endforeach
-                            </select>
-                            <select name="trd_id" id="trd_id" class="form-select" required disabled>
+                        
+                        {{-- SELECT DE FLUJO --}}
+                        <select name="flujo_id" id="flujo_id" class="form-select mb-2" required>
+                            <option value="">Seleccione flujo...</option>
+                            @foreach ($flujos as $f)
+                                <option value="{{ $f->id }}" 
+                                    {{ old('flujo_id', $esEdicion ? $correspondencia->flujo_id : '') == $f->id ? 'selected' : '' }}>
+                                    {{ $f->nombre }}
+                                </option>
+                            @endforeach
+                        </select>
+
+                        {{-- SELECT DE TRD --}}
+                        <select name="trd_id" id="trd_id" class="form-select" required>
+                            @if ($esEdicion)
+                                {{-- Si es edición, cargamos la TRD actual del flujo seleccionado --}}
+                                <option value="{{ $correspondencia->trd_id }}">{{ $correspondencia->trd->serie_documental }}</option>
+                            @else
                                 <option value="">-- Seleccione flujo primero --</option>
-                            </select>
-                        @endif
+                            @endif
+                        </select>
                     </div>
 
                     {{-- CONFIDENCIALIDAD --}}
@@ -458,23 +478,40 @@
         }
 
 
-        // 3. AJAX TRD
-        @if (!$esEdicion)
-            $('#flujo_id').on('change', function() {
-                let id = $(this).val();
-                let trd = $('#trd_id');
-                trd.empty().append('<option>Cargando...</option>').prop('disabled', true);
-                if (id) {
-                    $.getJSON('/correspondencia/ajax/trds-por-flujo/' + id, function(data) {
-                        trd.empty().append('<option value="">Seleccione serie...</option>');
-                        data.forEach(i => trd.append(
-                            `<option value="${i.id_trd}">${i.serie_documental}</option>`
-                        ));
-                        trd.prop('disabled', false);
-                    });
-                }
+        // 3. AJAX TRD: Funciona tanto para Crear como para Editar
+        function cargarTrds(flujoId, trdSeleccionada = null) {
+            let trdSelect = $('#trd_id');
+            
+            if (!flujoId) {
+                trdSelect.empty().append('<option value="">-- Seleccione flujo primero --</option>');
+                return;
+            }
+
+            trdSelect.empty().append('<option>Cargando...</option>').prop('disabled', true);
+
+            $.getJSON('/correspondencia/ajax/trds-por-flujo/' + flujoId, function(data) {
+                trdSelect.empty().append('<option value="">Seleccione serie...</option>');
+                
+                data.forEach(i => {
+                    // Si el ID coincide con la serie guardada en edición, lo marcamos como seleccionado
+                    let selected = (i.id_trd == trdSeleccionada) ? 'selected' : '';
+                    trdSelect.append(`<option value="${i.id_trd}" ${selected}>${i.serie_documental}</option>`);
+                });
+                
+                trdSelect.prop('disabled', false);
             });
-        @endif
+        }
+
+        // Evento que se dispara al cambiar el flujo en el select
+        $('#flujo_id').on('change', function() {
+            cargarTrds($(this).val());
+        });
+
+        // Si estamos en modo EDICIÓN, cargamos la TRD correspondiente automáticamente al abrir la página
+        @if($esEdicion)
+            cargarTrds("{{ $correspondencia->flujo_id }}", "{{ $correspondencia->trd_id }}");
+
+        @endif 
 
         // 4. LÓGICA DRAG & DROP + CLICK
         const fileInput = $('#file-input');
@@ -491,8 +528,14 @@
                 }
 
                 let ext = file.name.split('.').pop().toLowerCase();
-                let iconClass = ext === 'pdf' ? 'bi-file-earmark-pdf text-danger' :
-                    'bi-file-earmark-word text-primary';
+                
+                // Lógica de iconos actualizada (PDF, Word, Imágenes)
+                let iconClass = 'bi-file-earmark-word text-primary'; // Por defecto (Word)
+                if (ext === 'pdf') {
+                    iconClass = 'bi-file-earmark-pdf text-danger';
+                } else if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) {
+                    iconClass = 'bi-file-earmark-image text-success';
+                }
 
                 $('#preview-icon').attr('class', `bi ${iconClass} fs-4 me-2`);
                 $('#file-name').text(file.name);
