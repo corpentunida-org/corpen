@@ -161,21 +161,21 @@ class ComunicacionSalidaController extends Controller
     }
 
     /**
-     * Generar PDF con Fondo local y Firma de AWS (ambos en Base64).
+     * Muestra la vista de impresión interactiva con soporte de edición local.
      */
     public function descargarPdf($id)
     {
-        // Cargamos la relación usuario para que el PDF sepa quién firma
+        // 1. Cargamos la comunicación con sus relaciones para evitar problemas de N+1
         $comunicacion = ComunicacionSalida::with(['usuario', 'correspondencia.remitente'])->findOrFail($id);
 
-        // 1. Procesar Fondo JPG local a Base64
+        // 2. Procesar Fondo JPG local a Base64
         $pathFondo = resource_path('views/correspondencia/comunicaciones_salida/fondo_de_pdf.jpg');
         $fondoBase64 = null;
         if (file_exists($pathFondo)) {
             $fondoBase64 = 'data:image/jpeg;base64,' . base64_encode(file_get_contents($pathFondo));
         }
 
-        // 2. Procesar Firma desde AWS S3 a Base64 para DomPDF
+        // 3. Procesar Firma desde AWS S3 a Base64 para que el navegador la renderice directo
         $firmaBase64 = null;
         if ($comunicacion->ruta_pdf) {
             try {
@@ -185,17 +185,15 @@ class ComunicacionSalidaController extends Controller
                     $firmaBase64 = 'data:image/' . $extension . ';base64,' . base64_encode($fileContent);
                 }
             } catch (\Exception $e) {
-                // Si falla la conexión a S3, el PDF se generará sin firma para evitar error 500
+                // Si falla la conexión a S3, la vista cargará sin firma para evitar error 500
             }
         }
 
-        // 3. Generar PDF
-        $pdf = Pdf::loadView('correspondencia.comunicaciones_salida.pdf', [
+        // 4. Retornamos la vista web interactiva pasando los datos y las imágenes procesadas
+        return view('correspondencia.comunicaciones_salida.preview_web', [
             'comunicacionSalida' => $comunicacion,
-            'fondoImg' => $fondoBase64,
-            'firmaImg' => $firmaBase64
+            'fondoImg'           => $fondoBase64,
+            'firmaImg'           => $firmaBase64
         ]);
-
-        return $pdf->download('oficio_' . $comunicacion->nro_oficio_salida . '.pdf');
     }
 }

@@ -127,7 +127,7 @@
             <div style="margin-top: 15px;">
                 {!! nl2br(e($comunicacionSalida->cuerpo_carta)) !!}
             </div>
-            <br>
+            {{-- <br> --}}
             <p>Deseamos que las bendiciones del Señor le acompañe y direccionen en todos sus asuntos.</p>
             <p style="margin-bottom: 5px;">Con amor en Cristo, siempre su servidor,</p>
         </div>
