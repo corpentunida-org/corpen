@@ -1049,6 +1049,7 @@ Route::middleware(['auth'])
         // 2. GESTIÓN DE CORRESPONDENCIA (CRUD)
         // ---------------------------------------------------
         Route::resource('correspondencias', CorrespondenciaController::class)->parameters(['correspondencias' => 'correspondencia']);
+        Route::get('correspondencias/{id}/historial-pdf', [CorrespondenciaController::class, 'descargarHistorialPdf'])->name('correspondencias.historialPdf');
 
         // AJAX: Consultas dinámicas para la UI
         Route::get('ajax/correspondencias-por-estado/{estado_id}', [CorrespondenciaController::class, 'getByEstado'])->name('ajax.correspondencias.estado');
