@@ -164,10 +164,9 @@
                             <td class="text-end pe-5">
                                 <div class="d-flex justify-content-end gap-2">
                                     <a href="{{ route('correspondencia.comunicaciones-salida.descargarPdf', $com->id_respuesta) }}" 
-                                       target="_blank" 
-                                       class="btn btn-icon btn-light-danger btn-sm rounded-circle shadow-sm" 
-                                       title="Descargar PDF Oficial">
-                                        <i class="fas fa-file-pdf"></i>
+                                        target="_blank" 
+                                        class="btn btn-icon btn-light-danger btn-sm rounded-circle shadow-sm" 
+                                        title="Ver PDF Oficial"> <i class="fas fa-file-pdf"></i>
                                     </a>
                                     <a href="{{ route('correspondencia.comunicaciones-salida.show', $com) }}" 
                                        class="btn btn-icon btn-light-primary btn-sm rounded-circle shadow-sm" 

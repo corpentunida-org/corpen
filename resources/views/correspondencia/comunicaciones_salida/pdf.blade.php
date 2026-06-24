@@ -1,3 +1,4 @@
+{{-- Esta vista por ahora se desavilito en base a que no se esta usando, pero se dejo por si en algun momento se quiere usar para generar un pdf de la carta de salida. --}}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -127,7 +128,7 @@
             <div style="margin-top: 15px;">
                 {!! nl2br(e($comunicacionSalida->cuerpo_carta)) !!}
             </div>
-            <br>
+            {{-- <br> --}}
             <p>Deseamos que las bendiciones del Señor le acompañe y direccionen en todos sus asuntos.</p>
             <p style="margin-bottom: 5px;">Con amor en Cristo, siempre su servidor,</p>
         </div>

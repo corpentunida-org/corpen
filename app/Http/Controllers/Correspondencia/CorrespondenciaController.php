@@ -461,4 +461,21 @@ class CorrespondenciaController extends Controller
         }
         return response()->json($tercero);
     }
+    public function descargarHistorialPdf($id)
+    {
+        // Eager loading de los procesos, el usuario que gestionó y el medio de recepción
+        $correspondencia = Correspondencia::with([
+            'remitente', 
+            'medioRecepcion', 
+            'flujo', 
+            'estado',
+            'procesos.usuario' // Asegura que cargue el historial y el usuario que comentó
+        ])->findOrFail($id);
+
+        $pdf = Pdf::loadView('correspondencia.correspondencias.historial_pdf', [
+            'correspondencia' => $correspondencia
+        ]);
+
+        return $pdf->download('Historial_Radicado_' . $correspondencia->id_radicado . '.pdf');
+    }
 }
