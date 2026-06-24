@@ -1,3 +1,4 @@
+{{-- Esta vista por ahora se desavilito en base a que no se esta usando, pero se dejo por si en algun momento se quiere usar para generar un pdf de la carta de salida. --}}
 <!DOCTYPE html>
 <html lang="es">
 <head>

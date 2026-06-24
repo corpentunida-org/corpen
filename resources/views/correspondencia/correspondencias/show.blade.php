@@ -68,7 +68,8 @@
                                 @if(count($correspondencia->documento_arc) > 0)
                                     <div class="d-flex flex-column gap-3">
                                         @foreach($correspondencia->documento_arc as $index => $doc)
-                                            @if(!empty($doc))
+                                        @if(!empty($doc))
+                                        
                                                 @php
                                                     // Identificar la extensión para poner el icono correcto
                                                     $ext = strtolower(pathinfo($doc, PATHINFO_EXTENSION));
@@ -291,8 +292,17 @@
 
                 {{-- RUTA DEL PROCESO (PARTICIPANTES) --}}
                 <div class="card border-0 shadow-sm mb-4" style="border-radius: 20px;">
-                    <div class="card-header bg-transparent border-0 pt-4 px-4">
+                    {{-- CABECERA MODIFICADA CON EL BOTÓN PDF --}}
+                    <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
                         <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-people me-2 text-primary"></i>Ruta y Participantes</h6>
+                        
+                        {{-- BOTÓN DESCARGAR HISTORIAL --}}
+                        <a href="{{ route('correspondencia.correspondencias.historialPdf', $correspondencia->id_radicado) }}" 
+                        target="_blank" 
+                        class="btn btn-sm btn-outline-danger rounded-pill shadow-sm px-3 fw-bold" 
+                        title="Descargar historial completo del radicado">
+                            <i class="bi bi-file-earmark-pdf-fill me-1"></i> Historial PDF
+                        </a>
                     </div>
                     <div class="card-body">
                         <div class="timeline-steps">
