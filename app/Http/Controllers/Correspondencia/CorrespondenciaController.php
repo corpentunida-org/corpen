@@ -476,6 +476,9 @@ class CorrespondenciaController extends Controller
             'correspondencia' => $correspondencia
         ]);
 
-        return $pdf->download('Historial_Radicado_' . $correspondencia->id_radicado . '.pdf');
+        /* CAMBIO CRÍTICO: Se cambia ->download() por ->stream() 
+        para que el navegador lo abra como una vista previa.
+        */
+        return $pdf->stream('Historial_Radicado_' . $correspondencia->id_radicado . '.pdf');
     }
 }

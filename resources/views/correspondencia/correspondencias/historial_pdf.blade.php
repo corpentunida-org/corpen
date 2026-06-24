@@ -5,72 +5,110 @@
     <title>Historial Radicado #{{ $correspondencia->id_radicado }}</title>
     <style>
         @page {
-            margin: 2.5cm 2cm 2.5cm 2cm;
+            margin: 2.0cm 1.5cm 2.0cm 1.5cm;
             @bottom-right {
                 content: "Página " counter(page) " de " counter(pages);
                 font-family: 'Helvetica', Arial, sans-serif;
-                font-size: 10px;
-                color: #777777;
+                font-size: 9px;
+                color: #64748b;
             }
         }
 
         body {
             font-family: 'Helvetica', Arial, sans-serif;
-            color: #2c3e50;
-            line-height: 1.4;
-            font-size: 12px;
+            color: #1e293b;
+            line-height: 1.5;
+            font-size: 11px;
             margin: 0;
             padding: 0;
         }
 
-        /* --- ENCABEZADO --- */
+        /* --- ENCABEZADO PRINCIPAL --- */
         .header-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 25px;
-            border-bottom: 2px solid #4a90e2;
-            padding-bottom: 10px;
+            margin-bottom: 15px;
         }
 
         .header-logo-title {
             text-align: left;
+            vertical-align: middle;
         }
 
         .header-logo-title h2 {
             margin: 0;
-            font-size: 18px;
-            color: #2c3e50;
+            font-size: 20px;
+            color: #0f172a;
             letter-spacing: -0.5px;
+            font-weight: bold;
         }
 
         .header-logo-title p {
-            margin: 2px 0 0 0;
-            font-size: 10px;
-            color: #7f8c8d;
+            margin: 4px 0 0 0;
+            font-size: 9px;
+            color: #64748b;
             text-transform: uppercase;
-            font-weight: bold;
+            letter-spacing: 0.5px;
         }
 
         .header-report-info {
             text-align: right;
-            font-size: 11px;
-            color: #34495e;
+            font-size: 10px;
+            color: #334155;
+            line-height: 1.4;
+            vertical-align: middle;
+        }
+
+        /* --- SECCIÓN HERO: RADICADO Y ASUNTO --- */
+        .hero-radicado-box {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            background-color: #f1f5f9;
+            border-left: 5px solid #1e40af;
+        }
+
+        .hero-radicado-box td {
+            padding: 15px 20px;
+        }
+
+        .hero-title {
+            font-size: 24px;
+            color: #1e40af;
+            margin: 0;
+            font-weight: bold;
+        }
+
+        .hero-asunto-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            color: #64748b;
+            margin-top: 8px;
+            font-weight: bold;
+        }
+
+        .hero-asunto-text {
+            font-size: 15px;
+            color: #334155;
+            margin: 2px 0 0 0;
+            font-weight: normal;
+            line-height: 1.3;
         }
 
         /* --- SECCIONES / TITULOS --- */
         .section-title {
-            background-color: #f8f9fa;
-            color: #1a252f;
+            color: #0f172a;
             font-size: 12px;
             font-weight: bold;
             text-transform: uppercase;
-            padding: 6px 10px;
+            letter-spacing: 0.5px;
             margin-top: 20px;
-            margin-bottom: 12px;
-            border-left: 4px solid #4a90e2;
+            margin-bottom: 10px;
+            border-bottom: 2px solid #cbd5e1;
+            padding-bottom: 4px;
         }
 
-        /* --- TABLAS DE DATOS --- */
+        /* --- TABLAS DE DATOS GENERALES --- */
         .table-datos {
             width: 100%;
             border-collapse: collapse;
@@ -79,72 +117,119 @@
 
         .table-datos th, .table-datos td {
             border: 1px solid #e2e8f0;
-            padding: 8px 10px;
+            padding: 7px 10px;
             text-align: left;
             vertical-align: top;
         }
 
         .table-datos th {
-            background-color: #f1f5f9;
+            background-color: #f8fafc;
             color: #475569;
             font-weight: bold;
-            width: 25%;
+            width: 20%;
         }
 
-        /* --- TABLA TRAZABILIDAD / HISTÓRICO --- */
+        .table-datos td {
+            width: 30%;
+        }
+
+        /* --- TABLA RUTA UNIFICADA COMPACTA --- */
         .table-timeline {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
 
         .table-timeline th {
-            background-color: #2c3e50;
+            background-color: #1e293b;
             color: #ffffff;
             font-weight: bold;
-            font-size: 11px;
+            font-size: 10px;
             text-transform: uppercase;
             padding: 8px 10px;
-            border: 1px solid #2c3e50;
+            border: 1px solid #1e293b;
+            text-align: left;
         }
 
         .table-timeline td {
             border: 1px solid #e2e8f0;
-            padding: 8px 10px;
-            font-size: 11.5px;
+            padding: 10px;
+            vertical-align: top;
         }
 
         .table-timeline tr:nth-child(even) {
             background-color: #f8fafc;
         }
 
-        /* --- COMPONENTES AUXILIARES --- */
+        /* --- COMPONENTES INTERNOS DE LA LÍNEA DE TIEMPO --- */
+        .log-meta {
+            font-size: 10px;
+            color: #64748b;
+            line-height: 1.3;
+        }
+        
+        .log-user {
+            font-weight: bold;
+            color: #334155;
+            font-size: 11px;
+        }
+
+        .log-stage {
+            font-weight: bold;
+            color: #1e40af;
+            font-size: 11px;
+            margin-bottom: 5px;
+        }
+
+        .nota-comentario {
+            color: #334155;
+            font-size: 11px;
+            word-wrap: break-word;
+        }
+
+        /* --- BADGES (INSIGNIAS MEJORADAS PARA ESTADOS) --- */
         .badge {
             display: inline-block;
-            padding: 3px 8px;
-            font-size: 10px;
+            padding: 3px 7px;
+            font-size: 9px;
             font-weight: bold;
             border-radius: 4px;
             text-transform: uppercase;
+            margin-bottom: 3px;
         }
-        .badge-success { background-color: #d1fae5; color: #065f46; }
-        .badge-info { background-color: #e0f2fe; color: #0369a1; }
-        .badge-warning { background-color: #fef3c7; color: #92400e; }
+        .badge-success { background-color: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+        .badge-info { background-color: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; font-size: 11px; padding: 5px 10px;}
+        .badge-warning { background-color: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
         
-        .text-muted { color: #64748b; font-size: 11px; }
-        .nota-comentario { font-style: italic; color: #334155; }
-        
-        .file-item {
+        /* --- ADJUNTOS / EVIDENCIAS --- */
+        .attachments-box {
+            margin-top: 8px;
+            padding: 6px 10px;
+            background-color: #f8fafc;
+            border: 1px dashed #cbd5e1;
+            border-radius: 4px;
+        }
+
+        .attachments-title {
+            font-size: 9px;
+            color: #475569;
+            text-transform: uppercase;
+            font-weight: bold;
             margin-bottom: 4px;
-            color: #0369a1;
-            text-decoration: none;
+        }
+
+        .file-link {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 10px;
+            color: #2563eb;
+            text-decoration: underline;
         }
     </style>
 </head>
 <body>
 
     @php
-        // Array global para recolectar TODAS las imágenes (del radicado inicial y de los comentarios)
+        // Array global para recolectar imágenes para el anexo final
         $todasLasImagenes = [];
     @endphp
 
@@ -156,196 +241,164 @@
             </td>
             <td class="header-report-info">
                 <strong>Reporte de Trazabilidad Histórica</strong><br>
-                Fecha de Impresión: {{ now()->format('d/m/Y h:i A') }}<br>
-                Generado por: {{ auth()->user()->name }}
+                Fecha Impresión: {{ now()->format('d/m/Y h:i A') }}<br>
+                Operador: {{ auth()->user()->name }}
             </td>
         </tr>
     </table>
 
-    <div class="section-title">Información General del Radicado</div>
+    <table class="hero-radicado-box">
+        <tr>
+            <td>
+                <div class="hero-title">Radicado #{{ $correspondencia->id_radicado }}</div>
+                <div class="hero-asunto-label">Asunto Documental</div>
+                <div class="hero-asunto-text"><strong>{{ $correspondencia->asunto }}</strong></div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="section-title">Información General de Radicación</div>
     <table class="table-datos">
         <tr>
-            <th>ID Radicado:</th>
-            <td><strong>#{{ $correspondencia->id_radicado }}</strong></td>
-            <th>Fecha Radicación:</th>
+            <th>Fecha Solicitud:</th>
             <td>{{ $correspondencia->fecha_solicitud ? $correspondencia->fecha_solicitud->format('d/m/Y h:i A') : 'N/A' }}</td>
-        </tr>
-        <tr>
-            <th>Remitente / Tercero:</th>
-            <td>{{ $correspondencia->remitente->cod_ter ?? '' }} - {{ $correspondencia->remitente->nom_ter ?? 'N/A' }}</td>
             <th>Medio de Recepción:</th>
             <td>{{ $correspondencia->medioRecepcion->nombre ?? 'N/A' }}</td>
         </tr>
         <tr>
-            <th>Asunto:</th>
-            <td colspan="3"><strong>{{ $correspondencia->asunto }}</strong></td>
-        </tr>
-        <tr>
+            <th>Remitente / Tercero:</th>
+            <td>{{ $correspondencia->remitente->cod_ter ?? '' }} - {{ $correspondencia->remitente->nom_ter ?? 'N/A' }}</td>
             <th>Flujo / Serie TRD:</th>
             <td>{{ $correspondencia->flujo->nombre ?? 'N/A' }}</td>
+        </tr>
+        <tr>
             <th>Estado Actual:</th>
-            <td>
+            <td colspan="3">
                 <span class="badge badge-info">
-                    {{ $correspondencia->estado->nombre ?? 'Sin Estado' }}
+                    ESTADO: {{ $correspondencia->estado->nombre ?? 'Sin Estado' }}
                 </span>
             </td>
         </tr>
-        <tr>
-            <th>Observación Inicial:</th>
-            <td colspan="3" class="text-muted">
-                {{ $correspondencia->observacion_previa ?? 'Sin observaciones iniciales registradas.' }}
-            </td>
-        </tr>
     </table>
 
-    <div class="section-title">Historial de Ruta y Gestión de Pasos</div>
+    <div class="section-title">Ruta del Documento y Trazabilidad de Gestión</div>
     <table class="table-timeline">
         <thead>
             <tr>
-                <th style="width: 25%;">Etapa / Paso</th>
-                <th style="width: 25%;">Gestionado Por</th>
-                <th style="width: 20%;">Fecha Ejecución</th>
-                <th style="width: 30%;">Detalle / Estado final del Paso</th>
+                <th style="width: 20%;">Fecha y Gestor</th>
+                <th style="width: 30%;">Etapa y Estado del Paso</th>
+                <th style="width: 50%;">Detalles, Notas y Evidencias</th>
             </tr>
         </thead>
         <tbody>
-            @forelse($correspondencia->procesos as $log)
-                <tr>
-                    <td>
-                        <strong>{{ $log->proceso->nombre ?? 'Etapa No Definida' }}</strong>
-                    </td>
-                    <td>
-                        {{ $log->usuario->name ?? $log->user_id ?? 'Sistema' }}
-                    </td>
-                    <td>
-                        {{ $log->created_at ? $log->created_at->format('d/m/Y h:i A') : 'N/A' }}
-                    </td>
-                    <td>
-                        <span class="badge badge-success">Completado</span>
-                        @if($log->estado_paso)
-                            <br><span class="text-muted">Estado: {{ $log->estado_paso }}</span>
-                        @endif
-                    </td>
-                </tr>
-            @empty
-                <tr>
-                    <td colspan="4" style="text-align: center;" class="text-muted">No se registran movimientos ni gestiones en la ruta de este radicado aún.</td>
-                </tr>
-            @endforelse
-        </tbody>
-    </table>
-
-    <div class="section-title">Comentarios, Notas y Adjuntos de Gestión</div>
-    <table class="table-timeline">
-        <thead>
-            <tr>
-                <th style="width: 25%;">Fecha y Gestor</th>
-                <th style="width: 75%;">Comentario / Nota Registrada</th>
-            </tr>
-        </thead>
-        <tbody>
-            @php $tieneComentarios = false; @endphp
-
-            {{-- 1. Incorporar la observación de apertura si existe --}}
+            
+            {{-- 1. Fila de Apertura Inicial si existe observación previa --}}
             @if(!empty($correspondencia->observacion_previa))
-                @php $tieneComentarios = true; @endphp
                 <tr>
                     <td>
-                        <strong>Apertura del Radicado</strong><br>
-                        <span class="text-muted" style="font-size: 10px;">
-                            {{ $correspondencia->fecha_solicitud ? $correspondencia->fecha_solicitud->format('d/m/Y h:i A') : '' }}
-                        </span>
+                        <span class="log-user">Sistema / Radicación</span><br>
+                        <span class="log-meta">{{ $correspondencia->fecha_solicitud ? $correspondencia->fecha_solicitud->format('d/m/Y h:i A') : 'N/A' }}</span>
+                    </td>
+                    <td>
+                        <div class="log-stage">Apertura del Radicado</div>
+                        <span class="badge badge-success">Iniciado</span>
                     </td>
                     <td class="nota-comentario">
+                        <strong>Nota de ingreso:</strong><br>
                         {!! nl2br(e($correspondencia->observacion_previa)) !!}
                     </td>
                 </tr>
             @endif
 
-            {{-- 2. Recorrer los comentarios de cada paso de la ruta y sus adjuntos --}}
-            @foreach($correspondencia->procesos as $log)
+            {{-- 2. Recorrido Unificado de los Procesos (Historial) --}}
+            @forelse($correspondencia->procesos as $log)
                 @php
                     $comentarioTexto = $log->descripcion ?? $log->observaciones ?? $log->comentario ?? $log->detalle ?? $log->observacion ?? null;
                     $urlsArchivos = $log->getArchivosUrls() ?? [];
-                    $tieneArchivosEnPaso = count($urlsArchivos) > 0;
+                    $tieneArchivos = count($urlsArchivos) > 0;
                 @endphp
-
-                {{-- Si tiene comentario O si tiene archivos, mostramos la fila --}}
-                @if(!empty($comentarioTexto) || $tieneArchivosEnPaso)
-                    @php $tieneComentarios = true; @endphp
-                    <tr>
-                        <td>
-                            <strong>{{ $log->usuario->name ?? 'Gestor' }}</strong><br>
-                            <span class="text-muted" style="font-size: 10px;">
-                                {{ $log->created_at ? $log->created_at->format('d/m/Y h:i A') : '' }}
+                <tr>
+                    <td>
+                        <span class="log-user">{{ $log->usuario->name ?? $log->user_id ?? 'Gestor Asignado' }}</span><br>
+                        <span class="log-meta">{{ $log->created_at ? $log->created_at->format('d/m/Y h:i A') : 'N/A' }}</span>
+                    </td>
+                    <td>
+                        <div class="log-stage">{{ $log->proceso->nombre ?? 'Etapa de Ruta' }}</div>
+                        <span class="badge badge-success">Completado</span>
+                        
+                        @if($log->estado_paso)
+                            <br>
+                            <span class="badge badge-warning" style="margin-top: 4px;">
+                                Estado: {{ $log->estado_paso }}
                             </span>
-                        </td>
-                        <td class="nota-comentario">
-                            <strong>[{{ $log->proceso->nombre ?? 'Paso de Ruta' }}]:</strong><br>
-                            
-                            @if(!empty($comentarioTexto))
-                                {!! nl2br(e($comentarioTexto)) !!}
-                            @else
-                                <span class="text-muted" style="font-size: 10.5px;">(Solo se anexaron archivos)</span>
-                            @endif
+                        @endif
+                    </td>
+                    <td class="nota-comentario">
+                        @if(!empty($comentarioTexto))
+                            {!! nl2br(e($comentarioTexto)) !!}
+                        @else
+                            <span class="log-meta" style="font-style: italic;">Transición de etapa sin observaciones manuscritas.</span>
+                        @endif
 
-                            {{-- Imprimir Archivos Adjuntos del Comentario --}}
-                            @if($tieneArchivosEnPaso)
-                                <div style="margin-top: 8px; padding-top: 6px; border-top: 1px dashed #cbd5e1;">
-                                    <strong style="font-size: 10px; color: #475569; text-transform: uppercase;">Evidencias de esta gestión:</strong><br>
-                                    @foreach($urlsArchivos as $archivoComentario)
-                                        @php
-                                            // Recolectar para los Anexos Visuales si es imagen
-                                            $extC = strtolower(pathinfo($archivoComentario['nombre'], PATHINFO_EXTENSION));
-                                            if (in_array($extC, ['jpg', 'jpeg', 'png'])) {
-                                                $todasLasImagenes[] = [
-                                                    'nombre' => 'Gestión: ' . $archivoComentario['nombre'],
-                                                    'url' => $archivoComentario['url']
-                                                ];
-                                            }
-                                        @endphp
-                                        <div style="margin-bottom: 2px; font-size: 11px;">
-                                            <span style="color: #e11d48;">&bull;</span> 
-                                            <a href="{{ $archivoComentario['url'] }}" target="_blank" style="color: #0369a1; font-family: monospace; text-decoration: underline;">
-                                                {{ $archivoComentario['nombre'] }}
-                                            </a>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            @endif
+                        {{-- Adjuntos incorporados directamente en la celda de la ruta --}}
+                        @if($tieneArchivos)
+                            <div class="attachments-box">
+                                <div class="attachments-title">Evidencias Anexas:</div>
+                                @foreach($urlsArchivos as $archivoComentario)
+                                    @php
+                                        $extC = strtolower(pathinfo($archivoComentario['nombre'], PATHINFO_EXTENSION));
+                                        if (in_array($extC, ['jpg', 'jpeg', 'png'])) {
+                                            $todasLasImagenes[] = [
+                                                'nombre' => 'Gestión (' . ($log->proceso->nombre ?? 'Paso') . '): ' . $archivoComentario['nombre'],
+                                                'url' => $archivoComentario['url']
+                                            ];
+                                        }
+                                    @endphp
+                                    <div style="margin-bottom: 2px;">
+                                        <span style="color: #3b82f6;">&#128194;</span>
+                                        <a href="{{ $archivoComentario['url'] }}" target="_blank" class="file-link">
+                                            {{ $archivoComentario['nombre'] }}
+                                        </a>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+                    </td>
+                </tr>
+            @empty
+                @if(empty($correspondencia->observacion_previa))
+                    <tr>
+                        <td colspan="3" style="text-align: center; color: #64748b; padding: 15px;">
+                            No se registran movimientos ni acciones de gestión sobre este radicado.
                         </td>
                     </tr>
                 @endif
-            @endforeach
+            @endforelse
 
-            {{-- 3. Incorporar observaciones de cierre final --}}
+            {{-- 3. Fila de Cierre Final si existe --}}
             @if(!empty($correspondencia->final_descripcion))
-                @php $tieneComentarios = true; @endphp
                 <tr>
                     <td>
-                        <strong>Cierre de Radicado</strong><br>
-                        <span class="text-muted" style="font-size: 10px;">
-                            {{ $correspondencia->updated_at ? $correspondencia->updated_at->format('d/m/Y h:i A') : '' }}
-                        </span>
+                        <span class="log-user">Sistema Documental</span><br>
+                        <span class="log-meta">{{ $correspondencia->updated_at ? $correspondencia->updated_at->format('d/m/Y h:i A') : '' }}</span>
                     </td>
-                    <td class="nota-comentario" style="color: #065f46; background-color: #f0fdf4;">
+                    <td>
+                        <div class="log-stage">Cierre del Radicado</div>
+                        <span class="badge badge-success">Finalizado</span>
+                    </td>
+                    <td class="nota-comentario" style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 4px; padding: 6px;">
+                        <strong>Conclusión de cierre:</strong><br>
                         {!! nl2br(e($correspondencia->final_descripcion)) !!}
                     </td>
-                </tr>
-            @endif
-
-            @if(!$tieneComentarios)
-                <tr>
-                    <td colspan="2" style="text-align: center;" class="text-muted">No se han anexado comentarios ni archivos en el desarrollo de la ruta.</td>
                 </tr>
             @endif
         </tbody>
     </table>
 
-    <div class="section-title">Documentos y Archivos Custodiados (Radicación Inicial)</div>
-    <table class="table-datos">
+    <div class="section-title">Documentos Custodiados en Radicación Inicial</div>
+    <table class="table-datos" style="margin-top: 10px;">
         <tr>
-            <th>Listado de Evidencias / Archivos:</th>
+            <th style="width: 25%;">Archivos Originales:</th>
             <td>
                 @php
                     $archivosRaw = $correspondencia->documento_arc;
@@ -360,27 +413,23 @@
                 @if(count($archivosArr) > 0)
                     @foreach($archivosArr as $index => $archivo)
                         @php
-                            // Recolectar para los Anexos Visuales si es imagen
                             $ext = strtolower(pathinfo($archivo, PATHINFO_EXTENSION));
                             if (in_array($ext, ['jpg', 'jpeg', 'png'])) {
                                 $todasLasImagenes[] = [
-                                    'nombre' => 'Apertura: ' . basename($archivo),
+                                    'nombre' => 'Apertura Radicado: ' . basename($archivo),
                                     'url' => $correspondencia->getFile($archivo)
                                 ];
                             }
                         @endphp
-
-                        <div class="file-item" style="margin-bottom: 6px; font-size: 11.5px;">
-                            <span style="color: #e11d48;">&bull;</span> 
-                            <strong>Archivo Adjunto #{{ $index + 1 }}:</strong> 
-                            
-                            <a href="{{ $correspondencia->getFile($archivo) }}" target="_blank" style="color: #0369a1; font-family: monospace; text-decoration: underline;">
+                        <div style="margin-bottom: 5px; font-size: 11px;">
+                            <span style="color: #64748b;">Anexo #{{ $index + 1 }}:</span>
+                            <a href="{{ $correspondencia->getFile($archivo) }}" target="_blank" class="file-link" style="color: #1e40af;">
                                 {{ basename($archivo) }}
                             </a>
                         </div>
                     @endforeach
                 @else
-                    <span class="text-muted">No se cargaron archivos digitales adjuntos en la apertura de este radicado.</span>
+                    <span style="color: #64748b; font-style: italic;">No se indexaron archivos digitales adicionales en el registro inicial.</span>
                 @endif
             </td>
         </tr>
@@ -391,7 +440,7 @@
             <div style="page-break-before: always;">
                 <div class="section-title">Anexo Visual #{{ $index + 1 }}: {{ $imgData['nombre'] }}</div>
                 <div style="text-align: center; margin-top: 20px;">
-                    <img src="{{ $imgData['url'] }}" style="max-width: 100%; max-height: 850px; border: 1px solid #cbd5e1; padding: 5px;">
+                    <img src="{{ $imgData['url'] }}" style="max-width: 100%; max-height: 780px; border: 1px solid #cbd5e1; padding: 4px; background: #ffffff;">
                 </div>
             </div>
         @endforeach
