@@ -298,9 +298,9 @@
                         
                         {{-- BOTÓN DESCARGAR HISTORIAL --}}
                         <a href="{{ route('correspondencia.correspondencias.historialPdf', $correspondencia->id_radicado) }}" 
-                        target="_blank" 
-                        class="btn btn-sm btn-outline-danger rounded-pill shadow-sm px-3 fw-bold" 
-                        title="Descargar historial completo del radicado">
+                            target="_blank" 
+                            class="btn btn-sm btn-outline-danger rounded-pill shadow-sm px-3 fw-bold" 
+                            title="Descargar historial completo del radicado">
                             <i class="bi bi-file-earmark-pdf-fill me-1"></i> Historial PDF
                         </a>
                     </div>
@@ -485,16 +485,28 @@
 
                             {{-- FILA 3: Observaciones Dinámicas --}}
                             <div class="col-12 mb-3">
-                                {{-- Switch para activar el modo estructurado --}}
-                                <div class="form-check form-switch mb-3">
-                                    <input class="form-check-input" type="checkbox" id="toggleEstructurado">
-                                    <label class="form-check-label fw-bold small text-dark mt-1" for="toggleEstructurado" style="cursor: pointer;">
-                                        Usar formato estructurado (Aprobado / Valor / Detalle)
-                                    </label>
+                                
+                                {{-- Opciones de Formatos Estructurados (Switches) --}}
+                                <div class="d-flex flex-wrap gap-4 mb-3 p-2 bg-light rounded-3 border border-light">
+                                    {{-- Switch 1: Aprobado / Valor --}}
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="toggleEstructurado">
+                                        <label class="form-check-label fw-bold small text-dark mt-1" for="toggleEstructurado" style="cursor: pointer;">
+                                            Formato Valor (Aprobado/Valor/Detalle)
+                                        </label>
+                                    </div>
+
+                                    {{-- Switch 2: Datos Bancarios --}}
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="toggleBancario">
+                                        <label class="form-check-label fw-bold small text-dark mt-1" for="toggleBancario" style="cursor: pointer;">
+                                            Formato Bancario (Banco/Cuenta)
+                                        </label>
+                                    </div>
                                 </div>
 
-                                {{-- Contenedor de los 3 campos (Oculto por defecto) --}}
-                                <div id="contenedor_estructurado" style="display: none;" class="p-3 bg-white rounded-4 border shadow-sm mb-3">
+                                {{-- CONTENEDOR 1: Estructurado Original (Oculto por defecto) --}}
+                                <div id="contenedor_estructurado" style="display: none;" class="p-3 bg-white rounded-4 border shadow-sm mb-3 transition-all">
                                     <div class="row g-3">
                                         <div class="col-md-3">
                                             <label class="form-label fw-bold small text-dark">¿Aprobado?</label>
@@ -514,6 +526,36 @@
                                         <div class="col-md-5">
                                             <label class="form-label fw-bold small text-dark">Detalle adicional</label>
                                             <textarea id="str_texto" class="form-control border-light bg-light str-input" rows="1" placeholder="Motivo o detalle..." style="resize: none;"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {{-- CONTENEDOR 2: Datos Bancarios (Oculto por defecto) --}}
+                                <div id="contenedor_bancario" style="display: none;" class="p-3 bg-white rounded-4 border shadow-sm mb-3 transition-all">
+                                    
+                                    {{-- Mensaje de Alerta para el Certificado --}}
+                                    <div class="alert alert-info py-2 px-3 small d-flex align-items-center mb-3 border-0 bg-info-subtle text-info-emphasis rounded-3">
+                                        <i class="bi bi-info-circle-fill fs-5 me-2"></i>
+                                        <span><strong>¡Importante!</strong> Por favor adjunta el certificado bancario en la sección de "Soporte Documental" más abajo.</span>
+                                    </div>
+
+                                    <div class="row g-3">
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-bold small text-dark">Nombre del Banco</label>
+                                            <input type="text" id="bank_nombre" class="form-control border-light bg-light bank-input" placeholder="Ej: Bancolombia, Davivienda...">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-bold small text-dark">Tipo de Cuenta</label>
+                                            <select id="bank_tipo" class="form-select border-light bg-light bank-input">
+                                                <option value="">Seleccione...</option>
+                                                <option value="Ahorro">Ahorro</option>
+                                                <option value="Corriente">Corriente</option>
+                                                <option value="Billetera Digital">Billetera Digital (Nequi, Daviplata...)</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-bold small text-dark">Número de Cuenta</label>
+                                            <input type="text" id="bank_numero" class="form-control border-light bg-light bank-input" placeholder="Ej: 1234567890">
                                         </div>
                                     </div>
                                 </div>
@@ -1101,7 +1143,6 @@
                 labelBadge.textContent = numArchivos + " Archivo(s) Obligatorio(s)";
                 
                 for(let i = 1; i <= numArchivos; i++) {
-                    // Si el proceso tiene nombre definido lo usa, si no, usa un nombre genérico
                     let nombreDelDocumento = nombresArchivos[i-1] ? nombresArchivos[i-1] : `Documento Requerido #${i}`;
 
                     containerArchivos.innerHTML += `
@@ -1160,6 +1201,72 @@
                     });
                 });
             }
+
+            // =================================================================
+            // LÓGICA PARA FORMATOS DINÁMICOS (ESTRUCTURADO Y BANCARIO) - ¡NUEVO!
+            // =================================================================
+            const toggleEstructurado = document.getElementById('toggleEstructurado');
+            const toggleBancario = document.getElementById('toggleBancario');
+            const contEstructurado = document.getElementById('contenedor_estructurado');
+            const contBancario = document.getElementById('contenedor_bancario');
+            const obsPrincipal = document.getElementById('observacion_principal');
+
+            // Función para actualizar el textarea con el formato Estructurado (Aprobación/Valor)
+            function updateEstructurado() {
+                if (!toggleEstructurado.checked) return;
+                const ap = document.getElementById('str_aprobado').value;
+                const val = document.getElementById('str_valor').value;
+                const txt = document.getElementById('str_texto').value;
+                obsPrincipal.value = `[FORMATO DE APROBACIÓN]\nAprobado: ${ap}\nValor: $${val} COP\nDetalle: ${txt}`;
+            }
+
+            // Función para actualizar el textarea con el formato Bancario
+            function updateBancario() {
+                if (!toggleBancario.checked) return;
+                const banco = document.getElementById('bank_nombre').value;
+                const tipo = document.getElementById('bank_tipo').value;
+                const num = document.getElementById('bank_numero').value;
+                obsPrincipal.value = `[DATOS BANCARIOS REGISTRADOS]\nBanco: ${banco}\nTipo de Cuenta: ${tipo}\nNúmero de Cuenta: ${num}\n*Certificado bancario adjunto en soportes.*`;
+            }
+
+            // Lógica del Switch Estructurado
+            if(toggleEstructurado) {
+                toggleEstructurado.addEventListener('change', function() {
+                    if (this.checked) {
+                        if(toggleBancario) toggleBancario.checked = false; // Apagar el otro
+                        if(contBancario) contBancario.style.display = 'none';
+                        contEstructurado.style.display = 'block';
+                        obsPrincipal.setAttribute('readonly', true);
+                        updateEstructurado();
+                    } else {
+                        contEstructurado.style.display = 'none';
+                        obsPrincipal.removeAttribute('readonly');
+                        obsPrincipal.value = '';
+                    }
+                });
+            }
+
+            // Lógica del Switch Bancario
+            if(toggleBancario) {
+                toggleBancario.addEventListener('change', function() {
+                    if (this.checked) {
+                        if(toggleEstructurado) toggleEstructurado.checked = false; // Apagar el otro
+                        if(contEstructurado) contEstructurado.style.display = 'none';
+                        contBancario.style.display = 'block';
+                        obsPrincipal.setAttribute('readonly', true);
+                        updateBancario();
+                    } else {
+                        contBancario.style.display = 'none';
+                        obsPrincipal.removeAttribute('readonly');
+                        obsPrincipal.value = '';
+                    }
+                });
+            }
+
+            // Escuchar cambios en los inputs para ir llenando el textarea en tiempo real
+            document.querySelectorAll('.str-input').forEach(input => input.addEventListener('input', updateEstructurado));
+            document.querySelectorAll('.bank-input').forEach(input => input.addEventListener('input', updateBancario));
+
 
             // =================================================================
             // LÓGICA PARA CARGA TRADICIONAL (HACIENDO CLIC Y SELECCIONANDO ARCHIVO)
