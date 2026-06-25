@@ -488,7 +488,6 @@
                                 
                                 {{-- Opciones de Formatos Estructurados (Switches) --}}
                                 <div class="d-flex flex-wrap gap-4 mb-3 p-2 bg-light rounded-3 border border-light">
-                                    {{-- Switch 1: Aprobado / Valor --}}
                                     <div class="form-check form-switch">
                                         <input class="form-check-input" type="checkbox" id="toggleEstructurado">
                                         <label class="form-check-label fw-bold small text-dark mt-1" for="toggleEstructurado" style="cursor: pointer;">
@@ -496,7 +495,6 @@
                                         </label>
                                     </div>
 
-                                    {{-- Switch 2: Datos Bancarios --}}
                                     <div class="form-check form-switch">
                                         <input class="form-check-input" type="checkbox" id="toggleBancario">
                                         <label class="form-check-label fw-bold small text-dark mt-1" for="toggleBancario" style="cursor: pointer;">
@@ -505,7 +503,7 @@
                                     </div>
                                 </div>
 
-                                {{-- CONTENEDOR 1: Estructurado Original (Oculto por defecto) --}}
+                                {{-- CONTENEDOR 1: Estructurado (Aprobación y Valor) --}}
                                 <div id="contenedor_estructurado" style="display: none;" class="p-3 bg-white rounded-4 border shadow-sm mb-3 transition-all">
                                     <div class="row g-3">
                                         <div class="col-md-3">
@@ -530,16 +528,21 @@
                                     </div>
                                 </div>
 
-                                {{-- CONTENEDOR 2: Datos Bancarios (Oculto por defecto) --}}
+                                {{-- CONTENEDOR 2: Datos Bancarios (Propios / Terceros) --}}
                                 <div id="contenedor_bancario" style="display: none;" class="p-3 bg-white rounded-4 border shadow-sm mb-3 transition-all">
-                                    
-                                    {{-- Mensaje de Alerta para el Certificado --}}
                                     <div class="alert alert-info py-2 px-3 small d-flex align-items-center mb-3 border-0 bg-info-subtle text-info-emphasis rounded-3">
                                         <i class="bi bi-info-circle-fill fs-5 me-2"></i>
                                         <span><strong>¡Importante!</strong> Por favor adjunta el certificado bancario en la sección de "Soporte Documental" más abajo.</span>
                                     </div>
 
                                     <div class="row g-3">
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-bold small text-dark">Propiedad de Cuenta</label>
+                                            <select id="bank_propiedad" class="form-select border-light bg-light bank-input">
+                                                <option value="Cuenta Propia">Cuenta Propia</option>
+                                                <option value="Tercero">Tercero (Asociado/Apoderado)</option>
+                                            </select>
+                                        </div>
                                         <div class="col-md-4">
                                             <label class="form-label fw-bold small text-dark">Nombre del Banco</label>
                                             <input type="text" id="bank_nombre" class="form-control border-light bg-light bank-input" placeholder="Ej: Bancolombia, Davivienda...">
@@ -557,12 +560,26 @@
                                             <label class="form-label fw-bold small text-dark">Número de Cuenta</label>
                                             <input type="text" id="bank_numero" class="form-control border-light bg-light bank-input" placeholder="Ej: 1234567890">
                                         </div>
+
+                                        {{-- Subcontenedor para datos exclusivos de Terceros --}}
+                                        <div class="col-12" id="sub_datos_tercero" style="display: none;">
+                                            <div class="p-3 rounded-4 bg-light bg-opacity-50 border border-light row g-3">
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-bold small text-dark">Cédula del Titular <span class="text-danger">*</span></label>
+                                                    <input type="text" id="bank_titular_cedula" class="form-control bg-white bank-input" placeholder="Número de documento">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-bold small text-dark">Nombre Completo del Titular <span class="text-danger">*</span></label>
+                                                    <input type="text" id="bank_titular_nombre" class="form-control bg-white bank-input" placeholder="Nombre completo del dueño de la cuenta">
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
-                                {{-- Textarea Original (El que realmente se envía al backend) --}}
+                                {{-- Textarea Principal (Sufre cambios visuales al activarse los formatos) --}}
                                 <label id="label_observacion" class="form-label fw-bold small text-dark">Detalle de la Observación <span class="text-danger">*</span></label>
-                                <textarea name="observacion" id="observacion_principal" class="form-control border-light bg-light rounded-4 p-3 shadow-sm" rows="3" placeholder="Escriba aquí los detalles importantes de esta gestión..." style="resize: none;" required></textarea>
+                                <textarea name="observacion" id="observacion_principal" class="form-control border-light bg-light rounded-4 p-3 shadow-sm transition-all" rows="3" placeholder="Escriba aquí los detalles importantes de esta gestión..." style="resize: none;" required></textarea>
                             </div>
 
                             {{-- FILA 4: CARGA DE ARCHIVOS DINÁMICA (Array) --}}
@@ -858,64 +875,104 @@
             }
         });
 
-        // --- LÓGICA DE OBSERVACIÓN DINÁMICA ---
-        const toggle = $('#toggleEstructurado');
+        // =================================================================
+        // LÓGICA DE OBSERVACIÓN DINÁMICA MEJORADA (VALOR Y BANCARIO)
+        // =================================================================
+        const toggleEst = $('#toggleEstructurado');
+        const toggleBan = $('#toggleBancario');
         const contEst = $('#contenedor_estructurado');
+        const contBan = $('#contenedor_bancario');
         const obsPrincipal = $('#observacion_principal');
         const labelObs = $('#label_observacion');
+        const subTercero = $('#sub_datos_tercero');
 
-        // 1. Formatear el input de Valor a Pesos Colombianos (COP) en tiempo real
+        // 1. Formatear la casilla de dinero a pesos colombianos (COP)
         $('#str_valor').on('input', function() {
-            // Quitar todo lo que no sea número
             let value = $(this).val().replace(/\D/g, "");
-            
-            // Formatear con separador de miles
             if(value !== "") {
                 value = new Intl.NumberFormat('es-CO').format(value);
             }
-            
             $(this).val(value);
             construirObservacion();
         });
 
-        // 2. Escuchar cambios en cualquiera de los 3 campos estructurados
-        $('.str-input').on('input change', function() {
+        // 2. Detectar si la cuenta cambia entre Propia o Tercero
+        $('#bank_propiedad').on('change', function() {
+            if ($(this).val() === 'Tercero') {
+                subTercero.slideDown();
+                $('#bank_titular_cedula, #bank_titular_nombre').prop('required', true);
+            } else {
+                subTercero.slideUp();
+                $('#bank_titular_cedula, #bank_titular_nombre').prop('required', false).val('');
+            }
             construirObservacion();
         });
 
-        // 3. Función para armar el texto y pegarlo en el textarea original
+        // 3. Escuchar entradas en cualquiera de los formularios de formatos
+        $('.str-input').on('input change', function() { construirObservacion(); });
+        $('.bank-input').on('input change', function() { construirObservacion(); });
+
+        // 4. Función central constructora de la cadena de texto final
         function construirObservacion() {
-            if(toggle.is(':checked')) {
+            if(toggleEst.is(':checked')) {
                 let aprobado = $('#str_aprobado').val();
                 let texto = $('#str_texto').val();
                 let valor = $('#str_valor').val() ? $('#str_valor').val() : '0';
+                obsPrincipal.val(`[FORMATO DE APROBACIÓN]\nAprobado: ${aprobado}\nValor: $ ${valor} COP\nObservación: ${texto}`);
+            } 
+            else if(toggleBan.is(':checked')) {
+                let propiedad = $('#bank_propiedad').val();
+                let banco = $('#bank_nombre').val();
+                let tipo = $('#bank_tipo').val();
+                let numero = $('#bank_numero').val();
                 
-                // Plantilla del mensaje final
-                let resultado = `Aprobado: ${aprobado}\nValor: $ ${valor} COP\nObservación: ${texto}`;
+                let resultado = `[DATOS BANCARIOS REGISTRADOS]\nPropiedad: ${propiedad}\nBanco: ${banco}\nTipo de Cuenta: ${tipo}\nNúmero de Cuenta: ${numero}`;
                 
+                if(propiedad === 'Tercero') {
+                    let cedula = $('#bank_titular_cedula').val();
+                    let nombre = $('#bank_titular_nombre').val();
+                    resultado += `\nCédula Titular: ${cedula}\nNombre Titular: ${nombre}`;
+                }
+                resultado += `\n*Certificado bancario adjunto en soportes.*`;
                 obsPrincipal.val(resultado);
             }
         }
 
-        // 4. Lógica de encendido/apagado del switch
-        toggle.on('change', function() {
+        // 5. Comportamiento Switch de Valor (Aprobaciones)
+        toggleEst.on('change', function() {
             if($(this).is(':checked')) {
-                // Mostrar contenedor estructurado
+                toggleBan.prop('checked', false);
+                contBan.slideUp();
+                subTercero.slideUp();
                 contEst.slideDown();
                 
-                // Cambiar el textarea original a modo "Vista Previa"
-                obsPrincipal.prop('readonly', true).addClass('bg-white text-muted');
-                labelObs.html('Vista Previa de la Observación <span class="text-danger">*</span>');
-                
-                // Disparar la construcción por si ya hay datos
+                // Bloqueo estricto visual (Grisáceo de lectura) y funcional
+                obsPrincipal.prop('readonly', true).addClass('bg-secondary-subtle text-muted opacity-75');
+                labelObs.html('Vista Previa de la Observación (Generada Automáticamente) <span class="text-danger">*</span>');
                 construirObservacion();
             } else {
-                // Ocultar contenedor estructurado
                 contEst.slideUp();
+                obsPrincipal.prop('readonly', false).removeClass('bg-secondary-subtle text-muted opacity-75').val('');
+                labelObs.html('Detalle de la Observación <span class="text-danger">*</span>');
+            }
+        });
+
+        // 6. Comportamiento Switch de Datos Bancarios
+        toggleBan.on('change', function() {
+            if($(this).is(':checked')) {
+                toggleEst.prop('checked', false);
+                contEst.slideUp();
+                contBan.slideDown();
+                $('#bank_propiedad').trigger('change');
                 
-                // Devolver el textarea original a la normalidad
-                obsPrincipal.prop('readonly', false).removeClass('bg-white text-muted');
-                obsPrincipal.val(''); // Limpiar el textarea
+                // Bloqueo estricto visual (Grisáceo de lectura) y funcional
+                obsPrincipal.prop('readonly', true).addClass('bg-secondary-subtle text-muted opacity-75');
+                labelObs.html('Vista Previa de los Datos Bancarios (Generada Automáticamente) <span class="text-danger">*</span>');
+                construirObservacion();
+            } else {
+                contBan.slideUp();
+                subTercero.slideUp();
+                obsPrincipal.prop('readonly', false).removeClass('bg-secondary-subtle text-muted opacity-75').val('');
                 labelObs.html('Detalle de la Observación <span class="text-danger">*</span>');
             }
         });
@@ -1201,72 +1258,6 @@
                     });
                 });
             }
-
-            // =================================================================
-            // LÓGICA PARA FORMATOS DINÁMICOS (ESTRUCTURADO Y BANCARIO) - ¡NUEVO!
-            // =================================================================
-            const toggleEstructurado = document.getElementById('toggleEstructurado');
-            const toggleBancario = document.getElementById('toggleBancario');
-            const contEstructurado = document.getElementById('contenedor_estructurado');
-            const contBancario = document.getElementById('contenedor_bancario');
-            const obsPrincipal = document.getElementById('observacion_principal');
-
-            // Función para actualizar el textarea con el formato Estructurado (Aprobación/Valor)
-            function updateEstructurado() {
-                if (!toggleEstructurado.checked) return;
-                const ap = document.getElementById('str_aprobado').value;
-                const val = document.getElementById('str_valor').value;
-                const txt = document.getElementById('str_texto').value;
-                obsPrincipal.value = `[FORMATO DE APROBACIÓN]\nAprobado: ${ap}\nValor: $${val} COP\nDetalle: ${txt}`;
-            }
-
-            // Función para actualizar el textarea con el formato Bancario
-            function updateBancario() {
-                if (!toggleBancario.checked) return;
-                const banco = document.getElementById('bank_nombre').value;
-                const tipo = document.getElementById('bank_tipo').value;
-                const num = document.getElementById('bank_numero').value;
-                obsPrincipal.value = `[DATOS BANCARIOS REGISTRADOS]\nBanco: ${banco}\nTipo de Cuenta: ${tipo}\nNúmero de Cuenta: ${num}\n*Certificado bancario adjunto en soportes.*`;
-            }
-
-            // Lógica del Switch Estructurado
-            if(toggleEstructurado) {
-                toggleEstructurado.addEventListener('change', function() {
-                    if (this.checked) {
-                        if(toggleBancario) toggleBancario.checked = false; // Apagar el otro
-                        if(contBancario) contBancario.style.display = 'none';
-                        contEstructurado.style.display = 'block';
-                        obsPrincipal.setAttribute('readonly', true);
-                        updateEstructurado();
-                    } else {
-                        contEstructurado.style.display = 'none';
-                        obsPrincipal.removeAttribute('readonly');
-                        obsPrincipal.value = '';
-                    }
-                });
-            }
-
-            // Lógica del Switch Bancario
-            if(toggleBancario) {
-                toggleBancario.addEventListener('change', function() {
-                    if (this.checked) {
-                        if(toggleEstructurado) toggleEstructurado.checked = false; // Apagar el otro
-                        if(contEstructurado) contEstructurado.style.display = 'none';
-                        contBancario.style.display = 'block';
-                        obsPrincipal.setAttribute('readonly', true);
-                        updateBancario();
-                    } else {
-                        contBancario.style.display = 'none';
-                        obsPrincipal.removeAttribute('readonly');
-                        obsPrincipal.value = '';
-                    }
-                });
-            }
-
-            // Escuchar cambios en los inputs para ir llenando el textarea en tiempo real
-            document.querySelectorAll('.str-input').forEach(input => input.addEventListener('input', updateEstructurado));
-            document.querySelectorAll('.bank-input').forEach(input => input.addEventListener('input', updateBancario));
-
 
             // =================================================================
             // LÓGICA PARA CARGA TRADICIONAL (HACIENDO CLIC Y SELECCIONANDO ARCHIVO)

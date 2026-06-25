@@ -4,6 +4,7 @@ namespace App\Models\Correspondencia;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\Archivo\GdoArea;
 
 class Estado extends Model
 {
@@ -14,9 +15,13 @@ class Estado extends Model
     protected $fillable = [
         'nombre', 
         'descripcion',
+        'id_area',
         'activo', // Recomendado añadirlo si quieres desactivar estados sin borrarlos
     ];
-
+    public function area()
+    {
+        return $this->belongsTo(GdoArea::class, 'id_area');
+    }
     /**
      * Relación con las correspondencias que actualmente están en este estado.
      */
