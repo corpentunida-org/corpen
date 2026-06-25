@@ -237,17 +237,19 @@
                     </div>
                 </div>
 
-                {{-- ESTADOS PERMITIDOS --}}
-                <div class="card border-0 shadow-sm" style="border-radius: 20px;">
+                {{-- ========================================== --}}
+                {{--        ESTADOS PERMITIDOS ACTIVOS          --}}
+                {{-- ========================================== --}}
+                <div class="card border-0 shadow-sm mb-4" style="border-radius: 20px;">
                     <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
-                        <h5 class="fw-bold m-0 small text-uppercase text-muted">Estados Permitidos</h5>
+                        <h5 class="fw-bold m-0 small text-uppercase text-muted">Estados Permitidos Activos</h5>
                         <button type="button" class="btn btn-indigo btn-sm rounded-pill px-3 shadow-sm text-white" data-bs-toggle="modal" data-bs-target="#modalEstado">
-                            <i class="fas fa-cog me-1"></i> Añadir
+                            <i class="fas fa-plus me-1"></i> Añadir
                         </button>
                     </div>
                     <div class="card-body p-4 pt-2">
                         <div class="list-group list-group-flush">
-                            @forelse($proceso->estadosProcesos as $ep)
+                            @forelse($proceso->estadosProcesos->where('activo', 1) as $ep)
                             <div class="list-group-item px-0 py-3 d-flex justify-content-between align-items-center bg-transparent border-bottom">
                                 <div class="d-flex align-items-center">
                                     <div class="icon-sm bg-soft-primary text-indigo rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 35px; height: 35px;">
@@ -261,13 +263,51 @@
                                 <form action="{{ route('correspondencia.procesos.eliminarEstado', $ep->id) }}" method="POST" id="form-estado-{{ $ep->id }}">
                                     @csrf @method('DELETE')
                                     <button type="button" class="btn btn-link text-danger p-0 border-0" 
-                                            onclick="confirmarAccion('{{ $ep->estado->nombre }}', 'form-estado-{{ $ep->id }}', '¿Eliminar configuración?')">
-                                        <i class="fas fa-trash-alt"></i>
+                                            onclick="confirmarAccion('{{ $ep->estado->nombre }}', 'form-estado-{{ $ep->id }}', '¿Desactivar estado?')">
+                                        <i class="fas fa-minus-circle"></i>
                                     </button>
                                 </form>
                             </div>
                             @empty
-                            <div class="text-center py-4"><p class="text-muted m-0 small">No hay estados configurados.</p></div>
+                            <div class="text-center py-4"><p class="text-muted m-0 small">No hay estados activos configurados.</p></div>
+                            @endforelse
+                        </div>
+                    </div>
+                </div>
+
+                {{-- ========================================== --}}
+                {{--    ESTADOS PERMITIDOS INACTIVOS (HISTORIAL)--}}
+                {{-- ========================================== --}}
+                <div class="card border-0 shadow-sm" style="border-radius: 20px; background-color: #fcfcfc;">
+                    <div class="card-header bg-transparent border-0 pt-4 px-4">
+                        <h5 class="fw-bold m-0 small text-uppercase text-muted">Estados Inactivos (Historial)</h5>
+                    </div>
+                    <div class="card-body p-4 pt-2">
+                        <div class="list-group list-group-flush">
+                            @forelse($proceso->estadosProcesos->where('activo', 0) as $ep)
+                            <div class="list-group-item px-0 py-2 d-flex justify-content-between align-items-center bg-transparent border-bottom opacity-75">
+                                <div class="d-flex align-items-center">
+                                    <div class="icon-sm bg-light text-secondary border rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 32px; height: 32px;">
+                                        <i class="fas fa-tag" style="font-size: 0.7rem;"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-muted small fw-bold">{{ $ep->estado->nombre }}</div>
+                                        <span class="text-muted" style="font-size: 0.65rem;">Desactivado el: {{ $ep->updated_at->format('d/m/Y') }}</span>
+                                    </div>
+                                </div>
+                                {{-- Formulario para reactivar enviando al mismo método guardarEstado --}}
+                                <form action="{{ route('correspondencia.procesos.guardarEstado', $proceso) }}" method="POST" id="form-reactivar-estado-{{ $ep->id }}">
+                                    @csrf
+                                    <input type="hidden" name="id_estado" value="{{ $ep->id_estado }}">
+                                    <input type="hidden" name="detalle" value="{{ $ep->detalle }}">
+                                    <button type="button" class="btn btn-link text-success p-0 border-0" 
+                                            onclick="confirmarReactivacion('el estado {{ $ep->estado->nombre }}', 'form-reactivar-estado-{{ $ep->id }}')">
+                                        <i class="fas fa-plus-circle"></i>
+                                    </button>
+                                </form>
+                            </div>
+                            @empty
+                            <div class="text-center py-2"><p class="text-muted m-0" style="font-size: 0.7rem;">No hay estados inactivos.</p></div>
                             @endforelse
                         </div>
                     </div>
