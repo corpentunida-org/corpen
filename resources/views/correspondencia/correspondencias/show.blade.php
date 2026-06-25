@@ -484,103 +484,103 @@
                             </div>
 
                             {{-- FILA 3: Observaciones Dinámicas --}}
-<div class="col-12 mb-3">
-    
-    {{-- Opciones de Formatos Estructurados (Switches) --}}
-    <div class="d-flex flex-wrap gap-4 mb-3 p-2 bg-light rounded-3 border border-light">
-        <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" id="toggleEstructurado">
-            <label class="form-check-label fw-bold small text-dark mt-1" for="toggleEstructurado" style="cursor: pointer;">
-                Formato Valor (Aprobado/Valor/Detalle)
-            </label>
-        </div>
+                            <div class="col-12 mb-3">
+                                
+                                {{-- Opciones de Formatos Estructurados (Switches) --}}
+                                <div class="d-flex flex-wrap gap-4 mb-3 p-2 bg-light rounded-3 border border-light">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="toggleEstructurado">
+                                        <label class="form-check-label fw-bold small text-dark mt-1" for="toggleEstructurado" style="cursor: pointer;">
+                                            Formato Valor (Aprobado/Valor/Detalle)
+                                        </label>
+                                    </div>
 
-        <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" id="toggleBancario">
-            <label class="form-check-label fw-bold small text-dark mt-1" for="toggleBancario" style="cursor: pointer;">
-                Formato Bancario (Banco/Cuenta)
-            </label>
-        </div>
-    </div>
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input" type="checkbox" id="toggleBancario">
+                                        <label class="form-check-label fw-bold small text-dark mt-1" for="toggleBancario" style="cursor: pointer;">
+                                            Formato Bancario (Banco/Cuenta)
+                                        </label>
+                                    </div>
+                                </div>
 
-    {{-- CONTENEDOR 1: Estructurado (Aprobación y Valor) --}}
-    <div id="contenedor_estructurado" style="display: none;" class="p-3 bg-white rounded-4 border shadow-sm mb-3 transition-all">
-        <div class="row g-3">
-            <div class="col-md-3">
-                <label class="form-label fw-bold small text-dark">¿Aprobado?</label>
-                <select id="str_aprobado" class="form-select border-light bg-light str-input">
-                    <option value="Sí">Sí</option>
-                    <option value="No">No</option>
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label fw-bold small text-dark">Valor (COP)</label>
-                <div class="input-group">
-                    <span class="input-group-text border-light bg-light">$</span>
-                    <input type="text" id="str_valor" class="form-control border-light bg-light str-input" placeholder="Ej: 1.500.000">
-                    <span class="input-group-text border-light bg-light">COP</span>
-                </div>
-            </div>
-            <div class="col-md-5">
-                <label class="form-label fw-bold small text-dark">Detalle adicional</label>
-                <textarea id="str_texto" class="form-control border-light bg-light str-input" rows="1" placeholder="Motivo o detalle..." style="resize: none;"></textarea>
-            </div>
-        </div>
-    </div>
+                                {{-- CONTENEDOR 1: Estructurado (Aprobación y Valor) --}}
+                                <div id="contenedor_estructurado" style="display: none;" class="p-3 bg-white rounded-4 border shadow-sm mb-3 transition-all">
+                                    <div class="row g-3">
+                                        <div class="col-md-3">
+                                            <label class="form-label fw-bold small text-dark">¿Aprobado?</label>
+                                            <select id="str_aprobado" class="form-select border-light bg-light str-input">
+                                                <option value="Sí">Sí</option>
+                                                <option value="No">No</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-bold small text-dark">Valor (COP)</label>
+                                            <div class="input-group">
+                                                <span class="input-group-text border-light bg-light">$</span>
+                                                <input type="text" id="str_valor" class="form-control border-light bg-light str-input" placeholder="Ej: 1.500.000">
+                                                <span class="input-group-text border-light bg-light">COP</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-5">
+                                            <label class="form-label fw-bold small text-dark">Detalle adicional</label>
+                                            <textarea id="str_texto" class="form-control border-light bg-light str-input" rows="1" placeholder="Motivo o detalle..." style="resize: none;"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
 
-    {{-- CONTENEDOR 2: Datos Bancarios (Propios / Terceros) --}}
-    <div id="contenedor_bancario" style="display: none;" class="p-3 bg-white rounded-4 border shadow-sm mb-3 transition-all">
-        <div class="alert alert-info py-2 px-3 small d-flex align-items-center mb-3 border-0 bg-info-subtle text-info-emphasis rounded-3">
-            <i class="bi bi-info-circle-fill fs-5 me-2"></i>
-            <span><strong>¡Importante!</strong> Por favor adjunta el certificado bancario en la sección de "Soporte Documental" más abajo.</span>
-        </div>
+                                {{-- CONTENEDOR 2: Datos Bancarios (Propios / Terceros) --}}
+                                <div id="contenedor_bancario" style="display: none;" class="p-3 bg-white rounded-4 border shadow-sm mb-3 transition-all">
+                                    <div class="alert alert-info py-2 px-3 small d-flex align-items-center mb-3 border-0 bg-info-subtle text-info-emphasis rounded-3">
+                                        <i class="bi bi-info-circle-fill fs-5 me-2"></i>
+                                        <span><strong>¡Importante!</strong> Por favor adjunta el certificado bancario en la sección de "Soporte Documental" más abajo.</span>
+                                    </div>
 
-        <div class="row g-3">
-            <div class="col-md-4">
-                <label class="form-label fw-bold small text-dark">Propiedad de Cuenta</label>
-                <select id="bank_propiedad" class="form-select border-light bg-light bank-input">
-                    <option value="Cuenta Propia">Cuenta Propia</option>
-                    <option value="Tercero">Tercero (Asociado/Apoderado)</option>
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label fw-bold small text-dark">Nombre del Banco</label>
-                <input type="text" id="bank_nombre" class="form-control border-light bg-light bank-input" placeholder="Ej: Bancolombia, Davivienda...">
-            </div>
-            <div class="col-md-4">
-                <label class="form-label fw-bold small text-dark">Tipo de Cuenta</label>
-                <select id="bank_tipo" class="form-select border-light bg-light bank-input">
-                    <option value="">Seleccione...</option>
-                    <option value="Ahorro">Ahorro</option>
-                    <option value="Corriente">Corriente</option>
-                    <option value="Billetera Digital">Billetera Digital (Nequi, Daviplata...)</option>
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label fw-bold small text-dark">Número de Cuenta</label>
-                <input type="text" id="bank_numero" class="form-control border-light bg-light bank-input" placeholder="Ej: 1234567890">
-            </div>
+                                    <div class="row g-3">
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-bold small text-dark">Propiedad de Cuenta</label>
+                                            <select id="bank_propiedad" class="form-select border-light bg-light bank-input">
+                                                <option value="Cuenta Propia">Cuenta Propia</option>
+                                                <option value="Tercero">Tercero (Asociado/Apoderado)</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-bold small text-dark">Nombre del Banco</label>
+                                            <input type="text" id="bank_nombre" class="form-control border-light bg-light bank-input" placeholder="Ej: Bancolombia, Davivienda...">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-bold small text-dark">Tipo de Cuenta</label>
+                                            <select id="bank_tipo" class="form-select border-light bg-light bank-input">
+                                                <option value="">Seleccione...</option>
+                                                <option value="Ahorro">Ahorro</option>
+                                                <option value="Corriente">Corriente</option>
+                                                <option value="Billetera Digital">Billetera Digital (Nequi, Daviplata...)</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label fw-bold small text-dark">Número de Cuenta</label>
+                                            <input type="text" id="bank_numero" class="form-control border-light bg-light bank-input" placeholder="Ej: 1234567890">
+                                        </div>
 
-            {{-- Subcontenedor para datos exclusivos de Terceros --}}
-            <div class="col-12" id="sub_datos_tercero" style="display: none;">
-                <div class="p-3 rounded-4 bg-light bg-opacity-50 border border-light row g-3">
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold small text-dark">Cédula del Titular <span class="text-danger">*</span></label>
-                        <input type="text" id="bank_titular_cedula" class="form-control bg-white bank-input" placeholder="Número de documento">
-                    </div>
-                    <div class="col-md-6">
-                        <label class="form-label fw-bold small text-dark">Nombre Completo del Titular <span class="text-danger">*</span></label>
-                        <input type="text" id="bank_titular_nombre" class="form-control bg-white bank-input" placeholder="Nombre completo del dueño de la cuenta">
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+                                        {{-- Subcontenedor para datos exclusivos de Terceros --}}
+                                        <div class="col-12" id="sub_datos_tercero" style="display: none;">
+                                            <div class="p-3 rounded-4 bg-light bg-opacity-50 border border-light row g-3">
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-bold small text-dark">Cédula del Titular <span class="text-danger">*</span></label>
+                                                    <input type="text" id="bank_titular_cedula" class="form-control bg-white bank-input" placeholder="Número de documento">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-bold small text-dark">Nombre Completo del Titular <span class="text-danger">*</span></label>
+                                                    <input type="text" id="bank_titular_nombre" class="form-control bg-white bank-input" placeholder="Nombre completo del dueño de la cuenta">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
 
-    {{-- Textarea Principal (Sufre cambios visuales al activarse los formatos) --}}
-    <label id="label_observacion" class="form-label fw-bold small text-dark">Detalle de la Observación <span class="text-danger">*</span></label>
-    <textarea name="observacion" id="observacion_principal" class="form-control border-light bg-light rounded-4 p-3 shadow-sm transition-all" rows="3" placeholder="Escriba aquí los detalles importantes de esta gestión..." style="resize: none;" required></textarea>
-</div>
+                                {{-- Textarea Principal (Sufre cambios visuales al activarse los formatos) --}}
+                                <label id="label_observacion" class="form-label fw-bold small text-dark">Detalle de la Observación <span class="text-danger">*</span></label>
+                                <textarea name="observacion" id="observacion_principal" class="form-control border-light bg-light rounded-4 p-3 shadow-sm transition-all" rows="3" placeholder="Escriba aquí los detalles importantes de esta gestión..." style="resize: none;" required></textarea>
+                            </div>
 
                             {{-- FILA 4: CARGA DE ARCHIVOS DINÁMICA (Array) --}}
                             <div class="col-12">
