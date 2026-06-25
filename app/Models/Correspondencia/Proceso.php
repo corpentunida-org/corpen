@@ -12,24 +12,28 @@ class Proceso extends Model
 
     protected $table = 'corr_procesos';
 
+    /**
+     * Campos habilitados para asignación masiva.
+     * Se removieron 'id', 'created_at' y 'updated_at' ya que Eloquent los administra automáticamente.
+     */
     protected $fillable = [
-        'id',
         'flujo_id',
-        'nombre', // Asegúrate de que 'nombre' esté aquí si lo usas en la vista
+        'nombre',
         'detalle',
         'activo',
-        'numero_archivos', // <-- AGREGADO
-        'tipos_archivos',  // <-- AGREGADO
+        'numero_archivos',
+        'tipos_archivos',
+        'tiempo_respuesta_dias',
         'usuario_creador_id',
-        'created_at',
-        'updated_at',
     ];
 
     /**
      * Casteo de atributos.
      */
     protected $casts = [
-        'tipos_archivos' => 'array',
+        'activo'                => 'boolean', // <-- AGREGADO: Convierte el tinyint a true/false automáticamente
+        'tipos_archivos'        => 'array',
+        'tiempo_respuesta_dias' => 'integer', // <-- AGREGADO: Garantiza que se trate como entero
     ];
 
     /**
@@ -54,13 +58,12 @@ class Proceso extends Model
     public function usuarios()
     {
         return $this->belongsToMany(User::class, 'corr_procesos_users', 'proceso_id', 'user_id')
-                    ->withPivot('detalle')
+                    ->withPivot('detalle', 'activo') // <-- AGREGADO 'activo' para que coincida con la lógica de tu vista
                     ->withTimestamps();
     }
     
     /**
      * Relación One-to-Many: Acceso a la tabla intermedia como modelo
-     * CORRECCIÓN: Se cambió 'id_proceso' por 'proceso_id'
      */
     public function usuariosAsignados()
     {
@@ -72,8 +75,6 @@ class Proceso extends Model
      */
     public function estadosProcesos()
     {
-        // Asegúrate de que los nombres de las columnas coincidan con tu base de datos
-        // foreign_key: id_proceso
         return $this->hasMany(EstadoProceso::class, 'id_proceso');
     }
 }

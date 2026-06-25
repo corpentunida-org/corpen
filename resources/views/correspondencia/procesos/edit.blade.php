@@ -28,16 +28,16 @@
                     <div class="row g-4">
                         {{-- Nombre del Proceso --}}
                         <div class="col-md-12">
-                            <label class="form-label fw-bold text-dark">Título / Nombre del Proceso</label>
-                            <input type="text" name="nombre" class="form-control @error('nombre') is-invalid @enderror" 
+                            <label class="form-label fw-bold text-dark">Título / Nombre del Proceso <span class="text-danger">*</span></label>
+                            <input type="text" name="nombre" class="form-control shadow-sm @error('nombre') is-invalid @enderror" 
                                    value="{{ old('nombre', $proceso->nombre) }}" required style="border-radius: 10px;">
                             @error('nombre') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
 
-                        {{-- Selección de Flujo --}}
-                        <div class="col-md-12">
-                            <label class="form-label fw-bold text-dark">Flujo de Trabajo</label>
-                            <select name="flujo_id" class="form-select @error('flujo_id') is-invalid @enderror" style="border-radius: 10px;">
+                        {{-- Fila con 2 columnas: Flujo y Tiempo de Respuesta --}}
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark">Flujo de Trabajo <span class="text-danger">*</span></label>
+                            <select name="flujo_id" class="form-select shadow-sm @error('flujo_id') is-invalid @enderror" style="border-radius: 10px;">
                                 @foreach($flujos as $f)
                                     <option value="{{ $f->id }}" {{ (old('flujo_id', $proceso->flujo_id) == $f->id) ? 'selected' : '' }}>
                                         {{ $f->nombre }}
@@ -45,6 +45,16 @@
                                 @endforeach
                             </select>
                             @error('flujo_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark">Tiempo de Respuesta (Días)</label>
+                            <div class="input-group shadow-sm" style="border-radius: 10px; overflow: hidden;">
+                                <span class="input-group-text bg-white border-end-0"><i class="fas fa-clock text-primary"></i></span>
+                                <input type="number" name="tiempo_respuesta_dias" class="form-control border-start-0 @error('tiempo_respuesta_dias') is-invalid @enderror" 
+                                       value="{{ old('tiempo_respuesta_dias', $proceso->tiempo_respuesta_dias) }}" min="0" placeholder="Ej: 3">
+                            </div>
+                            @error('tiempo_respuesta_dias') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                         </div>
 
                         {{-- SECCIÓN: Archivos Requeridos --}}
@@ -68,7 +78,7 @@
 
                                 {{-- Contenedor donde aparecerán los inputs dinámicos --}}
                                 <div id="contenedor_archivos_edit" class="row g-3">
-                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -87,7 +97,7 @@
                                 </div>
                                 <div class="form-check form-switch m-0">
                                     <input type="hidden" name="activo" value="0">
-                                    <input class="form-check-input" type="checkbox" name="activo" value="1" id="activo" 
+                                    <input class="form-check-input shadow-sm" type="checkbox" name="activo" value="1" id="activo" 
                                            style="width: 3em; height: 1.5em; cursor: pointer;" 
                                            {{ old('activo', $proceso->activo) ? 'checked' : '' }}>
                                 </div>
@@ -97,18 +107,18 @@
                         {{-- Detalle --}}
                         <div class="col-md-12">
                             <label class="form-label fw-bold text-dark">Detalle o Notas</label>
-                            <textarea name="detalle" class="form-control" rows="4" style="border-radius: 12px; resize: none;" 
+                            <textarea name="detalle" class="form-control shadow-sm" rows="4" style="border-radius: 12px; resize: none;" 
                                       placeholder="Agregue información adicional sobre este proceso...">{{ old('detalle', $proceso->detalle) }}</textarea>
                         </div>
 
                         {{-- Botonera --}}
                         <div class="col-md-12 pt-4 border-top">
                             <div class="d-flex justify-content-between align-items-center">
-                                <a href="{{ route('correspondencia.procesos.show', $proceso) }}" class="btn btn-light px-4 border" style="border-radius: 10px;">
+                                <a href="{{ route('correspondencia.procesos.show', $proceso) }}" class="btn btn-light px-4 border shadow-sm" style="border-radius: 10px;">
                                     Cancelar
                                 </a>
                                 <div class="d-flex gap-2">
-                                    <a href="{{ route('correspondencia.procesos.show', $proceso) }}" class="btn btn-outline-primary px-4" style="border-radius: 10px;">
+                                    <a href="{{ route('correspondencia.procesos.show', $proceso) }}" class="btn btn-outline-primary px-4 shadow-sm" style="border-radius: 10px;">
                                         <i class="fas fa-users me-2"></i> Equipo
                                     </a>
                                     <button type="submit" class="btn btn-primary px-5 fw-bold" style="border-radius: 10px; background: #4f46e5; border: none; box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.4);">

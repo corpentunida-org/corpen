@@ -7,8 +7,8 @@ use Illuminate\Http\Request;
 use App\Models\Correspondencia\Proceso;
 use App\Models\Correspondencia\FlujoDeTrabajo;
 use App\Models\Correspondencia\ProcesoUsuario;
-use App\Models\Correspondencia\Estado; // <--- AGREGADO
-use App\Models\Correspondencia\EstadoProceso; // <--- AGREGADO
+use App\Models\Correspondencia\Estado;
+use App\Models\Correspondencia\EstadoProceso;
 use App\Http\Controllers\AuditoriaController;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -46,12 +46,13 @@ class ProcesoController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'flujo_id'        => 'required|exists:corr_flujo_de_trabajo,id',
-            'nombre'          => 'required|string|max:255',
-            'detalle'         => 'nullable|string',
-            'activo'          => 'nullable|boolean',
-            'numero_archivos' => 'nullable|string|max:255', // <-- AGREGADO
-            'tipos_archivos'  => 'nullable',                // <-- AGREGADO
+            'flujo_id'              => 'required|exists:corr_flujo_de_trabajo,id',
+            'nombre'                => 'required|string|max:255',
+            'detalle'               => 'nullable|string',
+            'activo'                => 'nullable|boolean',
+            'numero_archivos'       => 'nullable|string|max:255',
+            'tipos_archivos'        => 'nullable',
+            'tiempo_respuesta_dias' => 'nullable|integer|min:0', // <-- AGREGADO
         ]);
 
         $data['activo'] = $request->has('activo') ? $request->activo : 1;
@@ -104,12 +105,13 @@ class ProcesoController extends Controller
     public function update(Request $request, Proceso $proceso)
     {
         $data = $request->validate([
-            'flujo_id'        => 'required|exists:corr_flujo_de_trabajo,id',
-            'nombre'          => 'required|string|max:255',
-            'detalle'         => 'nullable|string',
-            'activo'          => 'required|boolean',
-            'numero_archivos' => 'nullable|string|max:255', // <-- AGREGADO
-            'tipos_archivos'  => 'nullable',                // <-- AGREGADO
+            'flujo_id'              => 'required|exists:corr_flujo_de_trabajo,id',
+            'nombre'                => 'required|string|max:255',
+            'detalle'               => 'nullable|string',
+            'activo'                => 'required|boolean',
+            'numero_archivos'       => 'nullable|string|max:255',
+            'tipos_archivos'        => 'nullable',
+            'tiempo_respuesta_dias' => 'nullable|integer|min:0', // <-- AGREGADO
         ]);
 
         $proceso->update($data);
