@@ -10,7 +10,7 @@ class EstadoProceso extends Model
 {
     use HasFactory;
 
-    // Nombre exacto de la tabla según la imagen proporcionada
+    // Nombre exacto de la tabla
     protected $table = 'corr_estados_procesos';
 
     // Campos habilitados para asignación masiva
@@ -18,6 +18,15 @@ class EstadoProceso extends Model
         'id_estado',
         'id_proceso',
         'detalle',
+        'activo',
+    ];
+
+    /**
+     * Casting de tipos de datos.
+     * Convierte el tinyint(1) de la base de datos a un booleano nativo en PHP.
+     */
+    protected $casts = [
+        'activo' => 'boolean',
     ];
 
     /**
@@ -32,7 +41,7 @@ class EstadoProceso extends Model
     /**
      * Relación con el Estado
      * Si el modelo Estado está en App\Models (fuera de Correspondencia), 
-     * asegúrate de añadir: use App\Models\Estado; al inicio del archivo.
+     * asegúrate de importarlo en la cabecera (use App\Models\Estado;).
      */
     public function estado(): BelongsTo
     {
