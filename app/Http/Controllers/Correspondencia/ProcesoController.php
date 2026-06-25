@@ -12,6 +12,8 @@ use App\Models\Correspondencia\EstadoProceso;
 use App\Http\Controllers\AuditoriaController;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
+use Carbon\Carbon;
 
 class ProcesoController extends Controller
 {
@@ -21,13 +23,74 @@ class ProcesoController extends Controller
         $auditoriaController->create($accion, 'CORRESPONDENCIA');
     }
 
-    public function index()
+    // En ProcesoController.php
+
+    public function index(Request $request)
     {
-        $procesos = Proceso::with(['flujo', 'creador', 'usuariosAsignados.usuario'])
-            ->latest()
-            ->paginate(15);
-            
-        return view('correspondencia.procesos.index', compact('procesos'));
+        // Caché de Estadísticas
+        $stats = Cache::remember('procesos_stats', 600, function () {
+            return [
+                'total' => Proceso::count(),
+                'activos' => Proceso::where('activo', true)->count(),
+                'inactivos' => Proceso::where('activo', false)->count(),
+                'completados_hoy' => Proceso::whereDate('updated_at', Carbon::today())->count(),
+            ];
+        });
+
+        // Eager Loading 
+        $query = Proceso::query()
+            ->select(['id', 'nombre', 'activo', 'flujo_id', 'created_at'])
+            ->with([
+                'flujo.area', // <-- TRUCO: Así traemos el flujo y su área al mismo tiempo
+                'usuariosAsignados.usuario:id,name'
+            ]);
+
+        // Filtros
+        $query->when($request->search, fn($q, $search) => 
+            $q->where('nombre', 'like', "%{$search}%")->orWhere('id', $search)
+        );
+
+        $query->when($request->filled('estado'), fn($q) => 
+            $q->where('activo', $request->estado === 'activo' ? 1 : 0)
+        );
+
+        $query->when($request->filled('fecha_desde'), fn($q) => 
+            $q->whereDate('created_at', '>=', $request->fecha_desde)
+        );
+
+        // Paginación
+        $procesos = $query->latest('id')->paginate(15)->withQueryString();
+
+        if ($request->ajax()) {
+            return response()->json([
+                'table' => view('correspondencia.procesos._table', compact('procesos'))->render(),
+                'pagination' => (string) $procesos->links()
+            ]);
+        }
+
+        return view('correspondencia.procesos.index', compact('procesos', 'stats'));
+    }
+
+    // Controlador para Acciones Masivas (Sin opción de eliminar)
+    public function bulkAction(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            // Validamos que solo existan acciones de activar o desactivar
+            'action' => 'required|in:activate,deactivate'
+        ]);
+
+        switch ($request->action) {
+            case 'activate':
+                Proceso::whereIn('id', $request->ids)->update(['activo' => true]);
+                break;
+            case 'deactivate':
+                Proceso::whereIn('id', $request->ids)->update(['activo' => false]);
+                break;
+        }
+
+        Cache::forget('procesos_stats');
+        return back()->with('success', 'Estados actualizados correctamente.');
     }
 
     /**
