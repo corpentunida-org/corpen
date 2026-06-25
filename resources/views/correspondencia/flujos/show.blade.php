@@ -163,70 +163,139 @@
                     </div>
                 </div>
 
-                {{-- Secuencia de Pasos Original --}}
+                {{-- Secuencia de Pasos Mejorada (Diseño Pro) --}}
                 <div class="card border-0 shadow-sm rounded-4 mb-4">
                     <div class="card-body p-4">
-                        <div class="d-flex justify-content-between align-items-center mb-4">
-                            <h6 class="text-uppercase fw-bold text-dark mb-0">
-                                <i class="bi bi-list-check me-2"></i>Secuencia de Pasos
+                        <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+                            <h6 class="text-uppercase fw-bold text-dark mb-0 d-flex align-items-center">
+                                <i class="bi bi-list-check me-2 text-indigo fs-5"></i>Ruta del Proceso
                             </h6>
-                            <span class="badge bg-light text-indigo border px-3 py-2 rounded-pill">{{ $flujo->procesos->count() }} Etapas</span>
+                            <span class="badge bg-soft-indigo text-indigo border border-indigo-subtle px-3 py-2 rounded-pill fw-bold">
+                                {{ $flujo->procesos->count() }} Etapas Configuradas
+                            </span>
                         </div>
 
                         @forelse($flujo->procesos as $proceso)
-                            <div class="d-flex mb-4 position-relative">
+                            <div class="d-flex mb-4 position-relative step-item {{ !$proceso->activo ? 'opacity-75' : '' }}">
+                                {{-- Línea conectora de la línea de tiempo --}}
                                 @if(!$loop->last)
-                                    <div class="position-absolute h-100 border-start border-2 border-light" style="left: 15px; top: 35px; z-index: 1;"></div>
+                                    <div class="position-absolute h-100 border-start border-2" style="left: 17px; top: 38px; z-index: 1; border-color: #e5e7eb !important;"></div>
                                 @endif
                                 
-                                <div class="flex-shrink-0 me-3">
-                                    <div class="bg-indigo text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm" 
-                                         style="width: 32px; height: 32px; z-index: 2; position: relative; font-size: 13px; font-weight: bold; {{ !$proceso->activo ? 'background-color: #adb5bd !important;' : '' }}">
+                                {{-- Círculo con el número del paso --}}
+                                <div class="flex-shrink-0 me-3 mt-1">
+                                    <div class="{{ $proceso->activo ? 'bg-indigo text-white shadow' : 'bg-secondary text-white shadow-sm' }} rounded-circle d-flex align-items-center justify-content-center" 
+                                         style="width: 36px; height: 36px; z-index: 2; position: relative; font-size: 14px; font-weight: 800; border: 3px solid #fff;">
                                         {{ $loop->iteration }}
                                     </div>
                                 </div>
-                                <div class="flex-grow-1 p-3 border rounded-3 bg-white shadow-sm hover-up">
-                                    <div class="d-flex justify-content-between align-items-start">
+
+                                {{-- Tarjeta del contenido del paso --}}
+                                <div class="flex-grow-1 p-0 border rounded-4 bg-white shadow-sm hover-up overflow-hidden transition-all">
+                                    {{-- Cabecera de la tarjeta --}}
+                                    <div class="p-3 {{ $proceso->activo ? 'bg-light' : 'bg-light-subtle' }} border-bottom d-flex justify-content-between align-items-center">
                                         <div>
-                                            <h6 class="fw-bold mb-1 text-dark">
+                                            <h6 class="fw-bold mb-0 text-dark d-flex align-items-center">
                                                 {{ $proceso->nombre }}
                                                 @if(!$proceso->activo)
-                                                    <span class="badge bg-light text-muted border ms-2 fw-normal" style="font-size: 10px;">Inactivo</span>
+                                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle ms-2 fw-bold" style="font-size: 0.65rem;">
+                                                        <i class="bi bi-pause-circle me-1"></i>Pausado
+                                                    </span>
                                                 @endif
                                             </h6>
                                         </div>
-                                        <div class="btn-group">
-                                            <a href="{{ route('correspondencia.procesos.show', $proceso) }}" class="btn btn-sm btn-light text-primary border" title="Asignar Participantes y Estados">
+                                        <div class="btn-group shadow-sm rounded-pill">
+                                            <a href="{{ route('correspondencia.procesos.show', $proceso) }}" class="btn btn-sm btn-white text-indigo border" title="Configurar Equipo y Estados" style="background: white;">
                                                 <i class="bi bi-gear-fill"></i>
                                             </a>
-                                            <a href="{{ route('correspondencia.procesos.edit', $proceso) }}" class="btn btn-sm btn-light text-warning border">
+                                            <a href="{{ route('correspondencia.procesos.edit', $proceso) }}" class="btn btn-sm btn-white text-warning border border-start-0" title="Editar Información" style="background: white;">
                                                 <i class="bi bi-pencil-square"></i>
                                             </a>
                                         </div>
                                     </div>
-                                    <p class="small text-muted mb-2">{{ $proceso->detalle }}</p>
-                                    
-                                    <div class="d-flex align-items-center flex-wrap gap-1 mt-2">
-                                        @foreach($proceso->usuarios as $user)
-                                            <span class="badge border text-dark bg-light shadow-none" style="font-size: 10px; font-weight: 500;">
-                                                <i class="bi bi-person me-1"></i>{{ $user->name }}
-                                            </span>
-                                        @endforeach
 
-                                        @if($proceso->usuarios->isEmpty())
-                                            <span class="text-danger small fw-medium" style="font-size: 10px;">
-                                                <i class="bi bi-exclamation-triangle me-1"></i>Requiere responsables activos
-                                            </span>
+                                    {{-- Cuerpo de la tarjeta --}}
+                                    <div class="p-3">
+                                        @if($proceso->detalle)
+                                            <p class="small text-muted mb-3" style="line-height: 1.5;">{{ $proceso->detalle }}</p>
                                         @endif
+                                        
+                                        {{-- NUEVO: Panel de Requisitos y Métricas --}}
+                                        <div class="bg-light rounded-3 p-2 d-flex flex-wrap align-items-center gap-3 mb-3 border border-dashed">
+                                            {{-- Tiempo de Respuesta --}}
+                                            <div class="d-flex align-items-center">
+                                                <div class="icon-sm bg-white border rounded d-flex align-items-center justify-content-center text-warning me-2 shadow-sm" style="width: 28px; height: 28px;">
+                                                    <i class="bi bi-clock-history" style="font-size: 0.85rem;"></i>
+                                                </div>
+                                                <div>
+                                                    <span class="d-block text-uppercase text-muted fw-bold" style="font-size: 0.55rem; line-height: 1;">SLA Respuesta</span>
+                                                    <span class="small fw-bold text-dark">{{ $proceso->tiempo_respuesta_dias ?: 'Sin límite' }} {{ $proceso->tiempo_respuesta_dias ? 'Días' : '' }}</span>
+                                                </div>
+                                            </div>
+
+                                            <div class="vr bg-secondary opacity-25 d-none d-md-block" style="width: 2px;"></div>
+
+                                            {{-- Archivos Requeridos --}}
+                                            <div class="d-flex align-items-center flex-grow-1">
+                                                <div class="icon-sm bg-white border rounded d-flex align-items-center justify-content-center text-info me-2 shadow-sm" style="width: 28px; height: 28px;">
+                                                    <i class="bi bi-file-earmark-check" style="font-size: 0.85rem;"></i>
+                                                </div>
+                                                <div>
+                                                    <span class="d-block text-uppercase text-muted fw-bold" style="font-size: 0.55rem; line-height: 1;">Archivos Obligatorios</span>
+                                                    @if($proceso->numero_archivos > 0)
+                                                        <div class="d-flex flex-wrap gap-1 mt-1">
+                                                            <span class="badge bg-info-subtle text-info border border-info-subtle fw-bold" style="font-size: 0.65rem;">
+                                                                {{ $proceso->numero_archivos }} Total
+                                                            </span>
+                                                            {{-- Mostrar nombres de los archivos si existen --}}
+                                                            @if(!empty($proceso->tipos_archivos) && is_array($proceso->tipos_archivos))
+                                                                @foreach($proceso->tipos_archivos as $archivo)
+                                                                    @if(!empty($archivo))
+                                                                        <span class="badge bg-white text-secondary border border-secondary-subtle fw-normal" style="font-size: 0.65rem;">
+                                                                            {{ Str::limit($archivo, 15) }}
+                                                                        </span>
+                                                                    @endif
+                                                                @endforeach
+                                                            @endif
+                                                        </div>
+                                                    @else
+                                                        <span class="small fw-bold text-dark">No requiere</span>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        {{-- Responsables --}}
+                                        <div>
+                                            <span class="text-uppercase text-muted fw-bold d-block mb-2" style="font-size: 0.65rem;">Equipo Responsable</span>
+                                            <div class="d-flex align-items-center flex-wrap gap-2">
+                                                @forelse($proceso->usuarios as $user)
+                                                    <span class="badge bg-white border border-secondary-subtle text-dark shadow-sm d-flex align-items-center py-1 px-2" style="font-weight: 500;">
+                                                        <div class="rounded-circle text-white d-flex align-items-center justify-content-center me-1" 
+                                                             style="width: 16px; height: 16px; font-size: 8px; background: linear-gradient(135deg, #6366f1, #4f46e5);">
+                                                            {{ strtoupper(substr($user->name, 0, 1)) }}
+                                                        </div>
+                                                        {{ $user->name }}
+                                                    </span>
+                                                @empty
+                                                    <span class="text-danger bg-danger-subtle px-2 py-1 rounded small fw-medium" style="font-size: 11px;">
+                                                        <i class="bi bi-exclamation-triangle-fill me-1"></i>Sin responsables asignados
+                                                    </span>
+                                                @endforelse
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         @empty
                             <div class="text-center py-5 border border-dashed rounded-4 bg-light-subtle">
-                                <i class="bi bi-stack text-muted opacity-50 display-4"></i>
-                                <p class="text-muted mt-2">No hay pasos definidos.</p>
-                                <button class="btn btn-sm btn-outline-indigo mt-2" data-bs-toggle="modal" data-bs-target="#modalCrearProceso">
-                                    <i class="bi bi-plus-circle me-1"></i>Agregar el primer paso
+                                <div class="bg-white shadow-sm rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 70px; height: 70px;">
+                                    <i class="bi bi-diagram-3 text-indigo fs-2 opacity-75"></i>
+                                </div>
+                                <h6 class="fw-bold text-dark mb-1">El flujo está vacío</h6>
+                                <p class="text-muted small mb-3">Aún no has configurado la secuencia lógica de pasos.</p>
+                                <button class="btn btn-indigo btn-sm rounded-pill px-4 shadow-sm" data-bs-toggle="modal" data-bs-target="#modalCrearProceso">
+                                    <i class="bi bi-plus-circle me-1"></i>Añadir Primer Paso
                                 </button>
                             </div>
                         @endforelse
@@ -252,8 +321,8 @@
                         <input type="hidden" name="flujo_id" value="{{ $flujo->id }}">
                         
                         <div class="mb-3">
-                            <label class="form-label fw-bold small text-muted text-uppercase">Nombre de la etapa</label>
-                            <div class="input-group">
+                            <label class="form-label fw-bold small text-muted text-uppercase">Nombre de la etapa <span class="text-danger">*</span></label>
+                            <div class="input-group shadow-sm" style="border-radius: 8px; overflow: hidden;">
                                 <span class="input-group-text bg-light border-end-0"><i class="bi bi-tag text-indigo"></i></span>
                                 <input type="text" name="nombre" class="form-control border-start-0 ps-0" placeholder="Ej: Revisión Jurídica" required>
                             </div>
@@ -261,16 +330,37 @@
 
                         <div class="mb-3">
                             <label class="form-label fw-bold small text-muted text-uppercase">Instrucciones</label>
-                            <textarea name="detalle" class="form-control" rows="3" placeholder="¿Qué debe hacer el responsable en este paso?"></textarea>
+                            <textarea name="detalle" class="form-control shadow-sm" rows="2" placeholder="¿Qué debe hacer el responsable en este paso?"></textarea>
                         </div>
+
+                        {{-- NUEVOS CAMPOS: Tiempo de respuesta y N° de Archivos --}}
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-muted text-uppercase">Días de Respuesta</label>
+                                <div class="input-group shadow-sm" style="border-radius: 8px; overflow: hidden;">
+                                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-clock-history text-indigo"></i></span>
+                                    <input type="number" name="tiempo_respuesta_dias" class="form-control border-start-0 ps-0" min="0" placeholder="Ej: 3">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold small text-muted text-uppercase">Archivos Requeridos</label>
+                                <div class="input-group shadow-sm" style="border-radius: 8px; overflow: hidden;">
+                                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-file-earmark-plus text-indigo"></i></span>
+                                    <input type="number" id="modal_cantidad_archivos" name="numero_archivos" class="form-control border-start-0 ps-0" min="0" value="0">
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Contenedor de archivos dinámicos (Se llena con JavaScript) --}}
+                        <div id="modal_contenedor_archivos" class="row g-2 mb-3"></div>
 
                         <div class="bg-light p-3 rounded-3 border d-flex justify-content-between align-items-center">
                             <div>
                                 <label class="form-label fw-bold small text-muted text-uppercase mb-0 d-block">¿Paso Activo?</label>
-                                <small class="text-muted">Si se desactiva, se saltará en el flujo.</small>
+                                <small class="text-muted" style="font-size: 0.75rem;">Si se desactiva, se saltará en el flujo.</small>
                             </div>
                             <div class="form-check form-switch">
-                                <input class="form-check-input ms-0" type="checkbox" name="activo" value="1" id="switchActivo" checked style="width: 2.4em; height: 1.2em;">
+                                <input class="form-check-input ms-0" type="checkbox" name="activo" value="1" id="switchActivo" checked style="width: 2.4em; height: 1.2em; cursor: pointer;">
                             </div>
                         </div>
                     </div>
@@ -379,7 +469,10 @@
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Lógica para renderizar la Gráfica de Cuellos de Botella
+            
+            // ===================================================================
+            // 1. Lógica para renderizar la Gráfica de Cuellos de Botella
+            // ===================================================================
             const chartData = {!! json_encode($datosGrafica ?? []) !!};
             const chartLabels = {!! json_encode($labelsGrafica ?? []) !!};
             
@@ -428,7 +521,40 @@
                 });
             }
 
-            // Lógica para guardar TRD vía AJAX (Mantenida igual)
+            // ===================================================================
+            // 2. Lógica dinámica para N° de Archivos en el Modal de Crear Paso
+            // ===================================================================
+            const modalInputCantidad = document.getElementById('modal_cantidad_archivos');
+            const modalContenedorArchivos = document.getElementById('modal_contenedor_archivos');
+
+            if (modalInputCantidad && modalContenedorArchivos) {
+                modalInputCantidad.addEventListener('input', function() {
+                    let cant = parseInt(this.value) || 0;
+                    
+                    // Prevenir valores negativos
+                    if (cant < 0) { 
+                        cant = 0; 
+                        this.value = 0; 
+                    }
+                    
+                    modalContenedorArchivos.innerHTML = ''; // Limpiar contenedor
+                    
+                    // Generar los inputs dinámicamente
+                    for (let i = 0; i < cant; i++) {
+                        let col = document.createElement('div');
+                        col.className = 'col-md-6 mb-2';
+                        col.innerHTML = `
+                            <label class="form-label fw-bold small text-muted text-uppercase mb-1" style="font-size: 0.65rem;">Nombre Archivo ${i+1}</label>
+                            <input type="text" name="tipos_archivos[]" class="form-control form-control-sm border shadow-sm" placeholder="Ej: Cédula, Contrato..." required>
+                        `;
+                        modalContenedorArchivos.appendChild(col);
+                    }
+                });
+            }
+
+            // ===================================================================
+            // 3. Lógica para guardar TRD vía AJAX
+            // ===================================================================
             const trdForm = document.getElementById('form-trd');
             if(trdForm) {
                 trdForm.addEventListener('submit', async function(e) {

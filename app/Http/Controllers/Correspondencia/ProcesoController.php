@@ -7,8 +7,8 @@ use Illuminate\Http\Request;
 use App\Models\Correspondencia\Proceso;
 use App\Models\Correspondencia\FlujoDeTrabajo;
 use App\Models\Correspondencia\ProcesoUsuario;
-use App\Models\Correspondencia\Estado; // <--- AGREGADO
-use App\Models\Correspondencia\EstadoProceso; // <--- AGREGADO
+use App\Models\Correspondencia\Estado;
+use App\Models\Correspondencia\EstadoProceso;
 use App\Http\Controllers\AuditoriaController;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
@@ -46,12 +46,13 @@ class ProcesoController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'flujo_id'        => 'required|exists:corr_flujo_de_trabajo,id',
-            'nombre'          => 'required|string|max:255',
-            'detalle'         => 'nullable|string',
-            'activo'          => 'nullable|boolean',
-            'numero_archivos' => 'nullable|string|max:255', // <-- AGREGADO
-            'tipos_archivos'  => 'nullable',                // <-- AGREGADO
+            'flujo_id'              => 'required|exists:corr_flujo_de_trabajo,id',
+            'nombre'                => 'required|string|max:255',
+            'detalle'               => 'nullable|string',
+            'activo'                => 'nullable|boolean',
+            'numero_archivos'       => 'nullable|string|max:255',
+            'tipos_archivos'        => 'nullable',
+            'tiempo_respuesta_dias' => 'nullable|integer|min:0', // <-- AGREGADO
         ]);
 
         $data['activo'] = $request->has('activo') ? $request->activo : 1;
@@ -104,12 +105,13 @@ class ProcesoController extends Controller
     public function update(Request $request, Proceso $proceso)
     {
         $data = $request->validate([
-            'flujo_id'        => 'required|exists:corr_flujo_de_trabajo,id',
-            'nombre'          => 'required|string|max:255',
-            'detalle'         => 'nullable|string',
-            'activo'          => 'required|boolean',
-            'numero_archivos' => 'nullable|string|max:255', // <-- AGREGADO
-            'tipos_archivos'  => 'nullable',                // <-- AGREGADO
+            'flujo_id'              => 'required|exists:corr_flujo_de_trabajo,id',
+            'nombre'                => 'required|string|max:255',
+            'detalle'               => 'nullable|string',
+            'activo'                => 'required|boolean',
+            'numero_archivos'       => 'nullable|string|max:255',
+            'tipos_archivos'        => 'nullable',
+            'tiempo_respuesta_dias' => 'nullable|integer|min:0', // <-- AGREGADO
         ]);
 
         $proceso->update($data);
@@ -184,7 +186,7 @@ class ProcesoController extends Controller
     // =========================================================================
 
     /**
-     * Registra una acción o estado permitido para este paso del proceso.
+     * Registra un estado permitido para este paso o reactiva uno inactivo.
      */
     public function guardarEstado(Request $request, Proceso $proceso)
     {
@@ -193,29 +195,43 @@ class ProcesoController extends Controller
             'detalle'   => 'nullable|string|max:255'
         ]);
 
-        EstadoProceso::create([
-            'id_proceso' => $proceso->id,
-            'id_estado'  => $request->id_estado,
-            'detalle'    => $request->detalle
-        ]);
+        /**
+         * updateOrCreate:
+         * Busca si ya existe este estado vinculado a este proceso.
+         * Si no existe, lo crea. Si existe (incluso si estaba inactivo), 
+         * le actualiza el detalle y lo vuelve a poner activo = 1.
+         */
+        EstadoProceso::updateOrCreate(
+            [
+                'id_proceso' => $proceso->id,
+                'id_estado'  => $request->id_estado,
+            ],
+            [
+                'detalle' => $request->detalle,
+                'activo'  => 1 // Siempre que se guarda o re-asigna, se activa
+            ]
+        );
 
-        $this->auditoria('ADD ESTADO ID ' . $request->id_estado . ' A PROCESO ' . $proceso->id);
+        $this->auditoria('ADD/ACTIVAR ESTADO ID ' . $request->id_estado . ' A PROCESO ' . $proceso->id);
 
-        return back()->with('success', 'Configuración de estado guardada.');
+        return back()->with('success', 'Configuración de estado guardada y activada.');
     }
 
     /**
-     * Elimina una configuración de estado específica.
+     * Desactiva una configuración de estado específica (Pasa al historial)
      */
     public function eliminarEstado($id)
     {
         $estado = EstadoProceso::findOrFail($id);
-        $proceso_id = $estado->id_proceso;
-        $estado->delete();
+        
+        // En lugar de $estado->delete(), lo desactivamos
+        $estado->update([
+            'activo' => 0
+        ]);
 
-        $this->auditoria('DELETE ESTADO-PROCESO ID ' . $id);
+        $this->auditoria('DESACTIVAR ESTADO-PROCESO ID ' . $id);
 
-        return back()->with('success', 'Estado/Permiso removido del proceso.');
+        return back()->with('success', 'Estado removido y pasado al historial.');
     }
 
     // =========================================================================
