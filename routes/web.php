@@ -1063,7 +1063,14 @@ Route::middleware(['auth'])
         // ---------------------------------------------------
         Route::resource('flujos', FlujoDeTrabajoController::class)->parameters(['flujos' => 'flujo']);
 
+        // --- RUTA NUEVA PARA ACCIONES MASIVAS ---
+        Route::post('procesos/bulk', [ProcesoController::class, 'bulkAction'])->name('procesos.bulk');
+
+        // CRUD de procesos
         Route::resource('procesos', ProcesoController::class)->parameters(['procesos' => 'proceso']);
+
+        // Gestión de Usuarios en Procesos
+        Route::post('procesos/{proceso}/asignar-usuario', [ProcesoController::class, 'asignarUsuario'])->name('procesos.asignarUsuario');
 
         // Gestión de Usuarios en Procesos
         Route::post('procesos/{proceso}/asignar-usuario', [ProcesoController::class, 'asignarUsuario'])->name('procesos.asignarUsuario');
