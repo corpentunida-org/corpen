@@ -36,7 +36,8 @@
             opacity: 0.4;
         }
     </style>
-    <div class="col-lg-12 card" id="detalle">
+    <div class="col-lg-12" id="detalle">
+    <div class="card stretch stretch-full">
         <div class="card-header d-md-flex align-items-center justify-content-between">
             <h5 class="fw-bold">Detalle de la Reserva #{{ $reserva->id }}</h5>
             @if ($reserva->res_status_id != 3)
@@ -110,6 +111,7 @@
                         </tr>
                 </table>
             </div>
+        </div>
         </div>
     </div>
 

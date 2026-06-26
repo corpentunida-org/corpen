@@ -1,480 +1,348 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
-    <title>Informe de Auditoría - Corpentunida</title>
+    <title>Reporte de Flujos de Trabajo</title>
     <style>
-        /* --- CONFIGURACIÓN DE PÁGINA (Estilo APA/Formal) --- */
-        @page {
-            margin: 2.54cm 2.54cm;
-            font-family: 'Times New Roman', serif;
-        }
-
         body {
-            color: #111827;
-            line-height: 1.4;
-            font-size: 10pt;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            font-size: 12px;
         }
 
-        /* --- UTILIDADES --- */
-        .page-break { page-break-after: always; }
-        .text-center { text-align: center; }
-        .text-right { text-align: right; }
-        .bold { font-weight: bold; }
-        .uppercase { text-transform: uppercase; }
-        .justify { text-align: justify; }
-        
-        /* --- HEADER Y FOOTER --- */
-        header {
-            position: fixed;
-            top: -1.5cm;
-            left: 0;
-            right: 0;
-            height: 1cm;
-            color: #6b7280;
-            font-size: 8pt;
-            border-bottom: 1px solid #e5e7eb;
-            text-align: right;
-            line-height: 0.8cm;
+        /* Encabezado Dashboard */
+        .dashboard-header {
+            background-color: #0f172a;
+            color: #ffffff;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
         }
 
-        footer {
-            position: fixed;
-            bottom: -1.5cm;
-            left: 0;
-            right: 0;
-            height: 1cm;
-            color: #9ca3af;
-            font-size: 8pt;
-            text-align: center;
-            border-top: 1px solid #e5e7eb;
-            padding-top: 5px;
-        }
-
-        /* --- ESTILOS DE PORTADA --- */
-        .cover-container {
-            top: 15%;
-            position: relative;
-            text-align: center;
-        }
-        .company-name {
-            font-size: 22pt;
+        .dashboard-title {
+            font-size: 16px;
             font-weight: bold;
-            letter-spacing: 2px;
-            color: #1e3a8a; /* Azul Corporativo */
-            margin-bottom: 5px;
-        }
-        .system-name {
-            font-size: 9pt;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            margin-bottom: 60px;
-            color: #4b5563;
-        }
-        .report-title {
-            font-size: 16pt;
-            font-weight: bold;
-            margin-bottom: 40px;
-            color: #111827;
-            border-top: 2px solid #111827;
-            border-bottom: 2px solid #111827;
-            padding: 20px 0;
-            display: inline-block;
-            width: 80%;
-        }
-        .report-meta {
-            margin-top: 80px;
-            font-size: 11pt;
-            line-height: 1.8;
-        }
-        .confidential-box {
-            margin-top: 120px;
-            border: 1px solid #dc2626;
-            color: #dc2626;
-            padding: 8px 20px;
-            font-size: 9pt;
-            display: inline-block;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            margin: 0;
         }
 
-        /* --- TÍTULOS DE SECCIÓN --- */
-        h1 {
-            font-size: 14pt;
-            color: #1e3a8a;
-            border-bottom: 1px solid #1e3a8a;
-            padding-bottom: 5px;
-            margin-top: 0;
+        /* Tarjetas de Contenedor (Cards) */
+        .card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            page-break-inside: avoid;
+        }
+
+        .card-header {
+            padding: 10px 15px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+            font-weight: bold;
+            font-size: 13px;
+            color: #1e293b;
+        }
+
+        .card-body {
+            padding: 15px;
+        }
+
+        /* Recuadros de Tareas Internas */
+        .recuadro-tarea {
+            background: #fdfdfd;
+            border: 1px dashed #cbd5e1;
+            border-radius: 6px;
+            padding: 12px;
             margin-bottom: 15px;
-            text-transform: uppercase;
-        }
-        h2 {
-            font-size: 12pt;
-            color: #374151;
-            margin-top: 20px;
-            margin-bottom: 10px;
-            background-color: #f3f4f6;
-            padding: 5px 10px;
-            border-left: 4px solid #1e3a8a;
         }
 
-        /* --- TABLAS --- */
+        .recuadro-tarea:last-child {
+            margin-bottom: 0;
+        }
+
+        .tarea-titulo {
+            font-size: 12px;
+            font-weight: bold;
+            color: #0f172a;
+            margin-bottom: 8px;
+            border-left: 3px solid #3b82f6;
+            padding-left: 6px;
+        }
+
+        /* Badges de Estados */
+        .badge {
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 9px;
+            font-weight: bold;
+            display: inline-block;
+            text-transform: uppercase;
+            text-align: center;
+        }
+
+        .bg-success {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        /* Verde - Completado */
+        .bg-warning {
+            background-color: #ffedd5;
+            color: #ea580c;
+        }
+
+        /* Naranja - En Proceso */
+        .bg-danger {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+
+        /* Rojo - Pendiente */
+        .bg-dark {
+            background-color: #e2e8f0;
+            color: #334155;
+        }
+
+        /* Tablas */
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 20px;
-            font-size: 9pt;
-            font-family: sans-serif;
+            margin-bottom: 10px;
         }
-        th {
-            background-color: #1e3a8a;
+
+        .table-dashboard th {
+            background: #334155;
             color: white;
-            padding: 6px 8px;
+            font-size: 11px;
+            padding: 8px;
             text-align: left;
+        }
+
+        .table-dashboard td {
+            padding: 8px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .table-subtasks th {
+            background: #f1f5f9;
+            color: #475569;
+            font-size: 10px;
+            padding: 5px;
+            border-bottom: 1px solid #cbd5e1;
+            text-align: left;
+        }
+
+        .table-subtasks td {
+            padding: 6px 5px;
+            font-size: 11px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .seccion-titulo {
+            font-size: 14px;
             font-weight: bold;
-            border: 1px solid #1e3a8a;
-            font-size: 8pt;
+            color: #0f172a;
+            margin: 20px 0 10px 0;
+            padding-bottom: 4px;
+            border-bottom: 2px solid #cbd5e1;
+        }
+
+        .eventos-titulo {
+            font-size: 11px;
+            font-weight: bold;
+            color: #475569;
+            margin: 10px 0 5px 0;
             text-transform: uppercase;
         }
-        td {
-            border: 1px solid #d1d5db;
-            padding: 6px 8px;
-            vertical-align: top;
-        }
-        tr:nth-child(even) { background-color: #f9fafb; }
 
-        /* Estilos Matriz Heatmap */
-        .matrix-table th { text-align: center; font-size: 7pt; }
-        .matrix-table td { text-align: center; font-size: 8pt; color: #6b7280; }
-        .matrix-user { text-align: left !important; font-weight: bold; color: #111827 !important; }
-        .col-total { background-color: #e0e7ff; font-weight: bold; color: #1e3a8a !important; }
-        .has-data { font-weight: bold; color: #ffffff !important; background-color: #3b82f6; }
-
-        /* Estilos Matriz TIC (KPIs) */
-        .kpi-table th { background-color: #374151; border-color: #374151; }
-        .kpi-table .kpi-meta { text-align: center; font-size: 8pt; color: #4b5563; }
-        .kpi-val-ok { color: #047857; font-weight: bold; }
-        .kpi-val-warn { color: #b45309; font-weight: bold; }
-        .kpi-val-bad { color: #b91c1c; font-weight: bold; }
-
-        /* Badges y Detalles */
-        .badge {
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 6pt;
-            font-weight: bold;
-            text-transform: uppercase;
-            display: inline-block;
-        }
-        .b-comment { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
-        .b-history { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
-        .change-arrow { font-family: sans-serif; color: #9ca3af; padding: 0 4px; }
-        
-        /* Caja de Anexos */
-        .annex-box {
-            border: 1px dashed #9ca3af;
-            padding: 20px;
-            background-color: #f9fafb;
-            color: #4b5563;
-            margin-top: 20px;
-            font-size: 10pt;
+        .evento-item {
+            font-size: 11px;
+            color: #555;
+            padding: 3px 0;
+            border-bottom: 1px dashed #f1f5f9;
         }
     </style>
 </head>
+
 <body>
 
-    {{-- HEADER FIJO --}}
-    <header>
-        Auditoría de Cumplimiento & Governance | Ref: AUD-{{ now()->format('Ymd') }}-{{ rand(1000,9999) }}
-    </header>
-
-    {{-- FOOTER FIJO --}}
-    <footer>
-        <table style="width: 100%; border: none; margin: 0;">
-            <tr style="background: transparent;">
-                <td style="border: none; text-align: left; width: 33%;">Generado por: {{ $user }}</td>
-                <td style="border: none; text-align: center; width: 33%;">Confidencial - Uso Interno</td>
-                <td style="border: none; text-align: right; width: 33%;">
-                    <script type="text/php">
-                        if (isset($pdf)) {
-                            $font = $fontMetrics->getFont("Helvetica", "normal");
-                            $pdf->page_text(520, 820, "Pág {PAGE_NUM} de {PAGE_COUNT}", $font, 8, array(0.5, 0.5, 0.5));
-                        }
-                    </script>
+    <div class="dashboard-header">
+        <table style="width: 100%; margin: 0;">
+            <tr>
+                <td>
+                    <div class="dashboard-title">Dashboard de Control de Proyectos y Auditoría</div>
+                </td>
+                <td style="text-align: right; font-size: 11px; color: #94a3b8;">Fecha de Reporte: {{ $date }}
                 </td>
             </tr>
         </table>
-    </footer>
-
-    {{-- PÁGINA 1: PORTADA --}}
-    <div class="cover-container">
-        <div class="company-name">CORPENTUNIDA</div>
-        <div class="system-name">Sistema Central de Workflows</div>
-
-        <div class="report-title">
-            INFORME DE AUDITORÍA Y<br>TRAZABILIDAD DE PROCESOS
-        </div>
-
-        <div class="report-meta">
-            <table style="width: 70%; margin: 0 auto; border: none; font-size: 11pt;">
-                <tr style="background: transparent;">
-                    <td style="border: none; text-align: right; width: 45%; padding-right: 15px; font-weight: bold;">Periodo Auditado:</td>
-                    <td style="border: none; text-align: left; width: 55%;">Año Fiscal {{ $year }}</td>
-                </tr>
-                <tr style="background: transparent;">
-                    <td style="border: none; text-align: right; padding-right: 15px; font-weight: bold;">Fecha de Emisión:</td>
-                    <td style="border: none; text-align: left;">{{ $date }}</td>
-                </tr>
-                <tr style="background: transparent;">
-                    <td style="border: none; text-align: right; padding-right: 15px; font-weight: bold;">Generado Por:</td>
-                    <td style="border: none; text-align: left;">{{ $user }}</td>
-                </tr>
-                <tr style="background: transparent;">
-                    <td style="border: none; text-align: right; padding-right: 15px; font-weight: bold;">Origen de Datos:</td>
-                    <td style="border: none; text-align: left;">Base de Datos Central (SQL)</td>
-                </tr>
-            </table>
-
-            @if(count($filters) > 0)
-                <div style="margin-top: 30px; font-size: 10pt; color: #4b5563;">
-                    <strong>Filtros de Segmentación Aplicados:</strong><br>
-                    @foreach($filters as $f)
-                        <span style="background: #e5e7eb; padding: 2px 6px; border-radius: 4px; font-size: 9pt;">{{ $f }}</span>
-                    @endforeach
-                </div>
-            @endif
-        </div>
-
-        <div class="confidential-box">
-            Documento Estrictamente Confidencial
-        </div>
     </div>
 
-    <div class="page-break"></div>
+    <div class="seccion-titulo">📋 Listado General de Control (Todos los Proyectos)</div>
+    <table class="table-dashboard">
+        <thead>
+            <tr>
+                <th style="width: 15%;">ID Proyecto</th>
+                <th>Nombre del Workflow</th>
+                <th style="width: 25%; text-align: center;">Estado General</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach ($todosLosWorkflows as $proyecto)
+                <tr>
+                    <td><strong>#{{ $proyecto->id }}</strong></td>
+                    <td>{{ $proyecto->nombre }}</td>
+                    <td style="text-align: center;">
+                        @if (strtolower($proyecto->estado) === 'completado')
+                            <span class="badge bg-success">Completado</span>
+                        @elseif(strtolower($proyecto->estado) === 'activo' || strtolower($proyecto->estado) === 'en proceso')
+                            <span class="badge bg-warning">En Proceso</span>
+                        @else
+                            <span class="badge bg-danger">{{ $proyecto->estado ?? 'Pendiente' }}</span>
+                        @endif
+                    </td>
+                </tr>
+            @endforeach
+        </tbody>
+    </table>
 
-    {{-- PÁGINA 2: RESUMEN EJECUTIVO --}}
-    <h1>1. Resumen Ejecutivo</h1>
-    <p class="justify" style="margin-bottom: 20px;">
-        El presente documento certifica la integridad y trazabilidad de las operaciones registradas en el 
-        Sistema Central de Operaciones de Corpentunida.
-    </p>
+    <div style="page-break-after: always;"></div>
 
-    <h2>1.1 Matriz de Densidad Operativa (Mapa de Calor)</h2>
-    @if(count($monthlyStats) > 0)
-        <table class="matrix-table">
+    <div class="seccion-titulo">✅ Detalle de Proyectos Completados</div>
+    @if ($workflowsCompletos->isEmpty())
+        <p style="color: #64748b; font-style: italic;">No se registran flujos finalizados en este periodo.</p>
+    @else
+        <table class="table-dashboard">
             <thead>
                 <tr>
-                    <th class="matrix-user" width="22%">Usuario</th>
-                    <th>Ene</th><th>Feb</th><th>Mar</th><th>Abr</th><th>May</th><th>Jun</th>
-                    <th>Jul</th><th>Ago</th><th>Sep</th><th>Oct</th><th>Nov</th><th>Dic</th>
-                    <th class="col-total">TOT</th>
+                    <th style="width: 15%;">ID</th>
+                    <th>Nombre del Workflow</th>
+                    <th style="width: 25%; text-align: center;">Indicador</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach($monthlyStats as $stat)
+                @foreach ($workflowsCompletos as $wf)
                     <tr>
-                        <td class="matrix-user">{{ Str::limit($stat['name'], 18) }}</td>
-                        @foreach($stat['months'] as $count)
-                            <td class="{{ $count > 0 ? 'has-data' : '' }}">
-                                {{ $count > 0 ? $count : '.' }}
-                            </td>
-                        @endforeach
-                        <td class="col-total">{{ $stat['total'] }}</td>
+                        <td><strong>#{{ $wf->id }}</strong></td>
+                        <td>{{ $wf->nombre }}</td>
+                        <td style="text-align: center;"><span class="badge bg-success">Finalizado con Éxito</span></td>
                     </tr>
                 @endforeach
             </tbody>
         </table>
-    @else
-        <div class="annex-box text-center">
-            No existen registros suficientes en el periodo seleccionado.
-        </div>
     @endif
 
-    {{-- NUEVA SECCIÓN: TABLERO DE CONTROL (KPIs) --}}
-    <h2>1.2 Tablero de Control - Indicadores TIC</h2>
-    <table class="kpi-table">
-        <thead>
-            <tr>
-                <th width="35%">Indicador de Gestión</th>
-                <th width="15%" style="text-align: center;">Meta</th>
-                <th width="15%" style="text-align: center;">Frecuencia</th>
-                <th width="35%" style="text-align: center;">Estado Actual (Snapshot)</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td><strong>Tasa de Incidentes Resueltos</strong><br><span style="font-size: 7pt; color:#6b7280;">(Resueltos / Total Tareas)</span></td>
-                <td class="kpi-meta">≥ 90%</td>
-                <td class="kpi-meta">Mensual</td>
-                <td style="text-align: center;" class="{{ $kpiResolucion >= 90 ? 'kpi-val-ok' : 'kpi-val-warn' }}">
-                    {{ $kpiResolucion }}%
-                </td>
-            </tr>
-            <tr>
-                <td><strong>Tiempo Respuesta (Alta)</strong><br><span style="font-size: 7pt; color:#6b7280;">Promedio Horas Resolución</span></td>
-                <td class="kpi-meta">≤ 6h</td>
-                <td class="kpi-meta">Mensual</td>
-                <td style="text-align: center;" class="{{ $kpiTiempoAlta <= 6 ? 'kpi-val-ok' : 'kpi-val-bad' }}">
-                    {{ $kpiTiempoAlta }} horas
-                </td>
-            </tr>
-            <tr>
-                <td><strong>Digitalización de Procesos</strong><br><span style="font-size: 7pt; color:#6b7280;">(Proyectos Digitales / Totales)</span></td>
-                <td class="kpi-meta">≥ 75%</td>
-                <td class="kpi-meta">Anual</td>
-                <td style="text-align: center;" class="{{ $kpiDigitalizacion >= 75 ? 'kpi-val-ok' : 'kpi-val-warn' }}">
-                    {{ $kpiDigitalizacion }}%
-                </td>
-            </tr>
-            <tr>
-                <td><strong>Cumplimiento Estratégico</strong><br><span style="font-size: 7pt; color:#6b7280;">(Ejecutados / Planificados)</span></td>
-                <td class="kpi-meta">≥ 85%</td>
-                <td class="kpi-meta">Anual</td>
-                <td style="text-align: center;" class="{{ $kpiCumplimiento >= 85 ? 'kpi-val-ok' : 'kpi-val-warn' }}">
-                    {{ $kpiCumplimiento }}%
-                </td>
-            </tr>
-            <tr>
-                <td><strong>Colaboración Digital</strong><br><span style="font-size: 7pt; color:#6b7280;">(Usuarios Activos / Total)</span></td>
-                <td class="kpi-meta">≥ 80%</td>
-                <td class="kpi-meta">Mensual</td>
-                <td style="text-align: center;" class="{{ $kpiColaboracion >= 80 ? 'kpi-val-ok' : 'kpi-val-warn' }}">
-                    {{ $kpiColaboracion }}%
-                </td>
-            </tr>
-        </tbody>
-    </table>
+    <div style="page-break-after: always;"></div>
 
-    <h2>1.3 Estadísticas Globales del Informe</h2>
-    <table style="width: 100%;">
-        <tr>
-            <th width="70%">Métrica General</th>
-            <th width="30%" style="text-align: right;">Resultado</th>
-        </tr>
-        <tr>
-            <td>Total de Eventos Registrados (Logs)</td>
-            <td style="text-align: right; font-weight: bold;">{{ number_format(count($events)) }}</td>
-        </tr>
-        <tr>
-            <td>Usuarios Activos Intervinientes</td>
-            <td style="text-align: right;">{{ count($monthlyStats) }}</td>
-        </tr>
-        <tr>
-            <td>Integridad de Datos</td>
-            <td style="text-align: right; color: green;">Verificada (100%)</td>
-        </tr>
-    </table>
+    <div class="seccion-titulo">❌ Detalle de Pendientes en Proyectos Incompletos</div>
 
-    <div class="page-break"></div>
+    @if ($workflowsIncompletos->isEmpty())
+        <p style="color: #64748b; font-style: italic;">¡Excelente! Todos los flujos de trabajo se encuentran
+            completados.</p>
+    @else
+        @foreach ($workflowsIncompletos as $wf)
+            <div class="card">
+                <div class="card-header">
+                    <table style="width: 100%; margin: 0;">
+                        <tr>
+                            <td>Workflow #{{ $wf->id }}: <span
+                                    style="font-weight: 500;">{{ $wf->nombre }}</span></td>
+                            <td style="text-align: right;"><span class="badge bg-danger">Incompleto</span></td>
+                        </tr>
+                    </table>
+                </div>
 
-    {{-- PÁGINA 3: DETALLE --}}
-    <h1>2. Bitácora Detallada de Operaciones</h1>
-    <p class="justify" style="margin-bottom: 15px; font-size: 9pt; color: #4b5563;">
-        A continuación se listan cronológicamente los eventos capturados por el sistema de auditoría.
-    </p>
+                <div class="card-body">
+                    @if ($wf->tasks->isEmpty())
+                        <p style="margin: 0; color: #94a3b8; font-style: italic;">Este proyecto no tiene tareas con
+                            arrays de subtareas válidos en su descripción.</p>
+                    @else
+                        @foreach ($wf->tasks as $task)
+                            <div class="recuadro-tarea">
+                                <div class="tarea-titulo">
+                                    Tarea: {{ $task->titulo }} <span
+                                        style="font-weight: normal; color: #64748b; font-size: 10px;">(ID:
+                                        #{{ $task->id }})</span>
+                                </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th width="15%">Fecha / Hora</th>
-                <th width="20%">Responsable</th>
-                <th width="10%">Tipo</th>
-                <th width="55%">Detalle de la Operación y Trazabilidad</th>
-            </tr>
-        </thead>
-        <tbody>
-            @forelse($events as $event)
-                <tr>
-                    <td>
-                        {{ $event->created_at->format('Y-m-d') }}<br>
-                        <span style="color: #6b7280; font-size: 8pt;">{{ $event->created_at->format('H:i:s') }}</span>
-                    </td>
-                    <td>
-                        <strong>{{ $event->user->name ?? 'Sistema Automático' }}</strong>
-                        <br>
-                        <span style="font-size: 7pt; color: #6b7280;">ID: {{ $event->user->id ?? 'SYS' }}</span>
-                    </td>
-                    <td style="text-align: center;">
-                        @if($event->tipo_evento === 'comentario')
-                            <span class="badge b-comment">Feedback</span>
-                        @else
-                            <span class="badge b-history">Estado</span>
-                        @endif
-                    </td>
-                    <td>
-                        <div style="font-size: 8pt; color: #4b5563; text-transform: uppercase; margin-bottom: 2px;">
-                            <strong>Proyecto:</strong> {{ Str::limit($event->task->workflow->nombre ?? 'N/A', 45) }}
-                        </div>
-                        <div style="font-weight: bold; margin-bottom: 4px; font-size: 9pt;">
-                            Tarea: {{ Str::limit($event->task->titulo ?? 'Elemento eliminado', 60) }}
-                        </div>
+                                <table class="table-subtasks">
+                                    <thead>
+                                        <tr>
+                                            <th>Descripción de Subtarea</th>
+                                            <th style="width: 20%;">Responsable</th>
+                                            <th style="width: 15%;">Tiempo</th>
+                                            <th style="width: 18%; text-align: center;">Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($task->subtareas_estructuradas as $subtarea)
+                                            @php
+                                                $status = strtolower($subtarea['status'] ?? 'pendiente');
+                                                if (
+                                                    $status === 'completa' ||
+                                                    $status === 'completado' ||
+                                                    $status === 'completo'
+                                                ) {
+                                                    $badgeColor = 'bg-success';
+                                                    $textoStatus = 'Completado';
+                                                } elseif (
+                                                    $status === 'en proceso' ||
+                                                    $status === 'proceso' ||
+                                                    $status === 'progreso'
+                                                ) {
+                                                    $badgeColor = 'bg-warning';
+                                                    $textoStatus = 'En Proceso';
+                                                } else {
+                                                    $badgeColor = 'bg-danger';
+                                                    $textoStatus = 'Pendiente';
+                                                }
+                                            @endphp
+                                            <tr>
+                                                <td><strong>{{ $subtarea['descripcion'] ?? 'Sin descripción' }}</strong>
+                                                </td>
+                                                <td>{{ !empty($subtarea['responsable']) ? $subtarea['responsable'] : 'No asignado' }}
+                                                </td>
+                                                <td>{{ !empty($subtarea['tiempo']) ? $subtarea['tiempo'] : 'N/D' }}
+                                                </td>
+                                                <td style="text-align: center;">
+                                                    <span class="badge {{ $badgeColor }}" style="min-width: 65px;">
+                                                        {{ $textoStatus }}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
 
-                        @if($event->tipo_evento === 'comentario')
-                            <div style="font-style: italic; background: #f9fafb; padding: 4px; border-radius: 4px; border-left: 2px solid #3b82f6;">
-                                "{{ $event->comentario }}"
+                                <div class="eventos-titulo">⏱️ Historial de Eventos sobre esta Tarea</div>
+
+                                @if (empty($task->events) || count($task->events) === 0)
+                                    <div
+                                        style="font-size: 11px; color: #94a3b8; font-style: italic; padding-left: 5px;">
+                                        No se han registrado eventos o acciones recientes sobre esta tarea.
+                                    </div>
+                                @else
+                                    @foreach ($task->events as $event)
+                                        <div class="evento-item">
+                                            •
+                                            <strong>[{{ \Carbon\Carbon::parse($event->created_at)->format('d/m/Y H:i') }}]</strong>
+                                            {{ $event->descripcion ?? ($event->accion ?? 'Acción ejecutada') }}
+                                            @if (!empty($event->user))
+                                                (Por: <em>{{ $event->user->name }}</em>)
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                @endif
                             </div>
-                        @else
-                            <div style="font-size: 8pt; background: #fffbeb; padding: 2px 5px; border-radius: 4px; display: inline-block;">
-                                {{ str_replace('_', ' ', $event->estado_anterior) }}
-                                <span class="change-arrow">➜</span>
-                                <strong>{{ str_replace('_', ' ', $event->estado_nuevo) }}</strong>
-                            </div>
-                        @endif
-                    </td>
-                </tr>
-            @empty
-                <tr>
-                    <td colspan="4" style="text-align: center; padding: 30px; color: #9ca3af;">
-                        No se encontraron registros.
-                    </td>
-                </tr>
-            @endforelse
-        </tbody>
-    </table>
-
-    <div class="page-break"></div>
-
-    {{-- PÁGINA 4: ANEXOS Y CONTINUIDAD --}}
-    <h1>3. Anexos y Continuidad</h1>
-    
-    <p class="justify">
-        Este informe constituye una extracción oficial de la base de datos. Para garantizar la completitud de la auditoría, 
-        se reserva este espacio para la inclusión de evidencias físicas, soportes digitales impresos o notas aclaratorias 
-        posteriores a la generación del reporte.
-    </p>
-
-    <h2>3.1 Control de Soportes Adjuntos</h2>
-    <p style="font-size: 9pt; color: #4b5563;">
-        Utilice la siguiente tabla para relacionar documentos externos entregados junto con este reporte (facturas, actas firmadas, contratos, etc.).
-    </p>
-
-    <table style="margin-top: 20px;">
-        <thead>
-            <tr>
-                <th width="10%">Ref #</th>
-                <th width="50%">Descripción del Documento / Soporte</th>
-                <th width="20%">Formato</th>
-                <th width="20%">Folios / Páginas</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr><td style="height: 30px;">1</td><td></td><td></td><td></td></tr>
-            <tr><td style="height: 30px;">2</td><td></td><td></td><td></td></tr>
-            <tr><td style="height: 30px;">3</td><td></td><td></td><td></td></tr>
-            <tr><td style="height: 30px;">4</td><td></td><td></td><td></td></tr>
-            <tr><td style="height: 30px;">5</td><td></td><td></td><td></td></tr>
-        </tbody>
-    </table>
-
-    <h2>3.2 Notas del Auditor / Observaciones Finales</h2>
-    <div class="annex-box" style="height: 150px; border: 1px solid #d1d5db; background: white;">
-    </div>
-
-    <div style="margin-top: 50px; text-align: center; font-size: 8pt; color: #6b7280;">
-        <p>*** INFORME ***</p>
-        <p>Generado por el usuario <strong>{{ $user }}</strong> el {{ $date }} a través de la plataforma Corpentunida.</p>
-    </div>
-
+                        @endforeach
+                    @endif
+                </div>
+            </div>
+        @endforeach
+    @endif
 </body>
+
 </html>
