@@ -344,13 +344,14 @@ class ResReservaController extends Controller implements HasMiddleware
 
     public function cancelarReservasSinSoportePago()
     {
-        $fechaInicio = '2026-04-08';
+        $fechaInicio = '2026-04-08'; // desde el 8 de abril
         $reservas = Res_reserva::where('res_status_id', 1)
             ->whereDate('fecha_solicitud', '>=', $fechaInicio)
             ->whereRaw('DATE_ADD(fecha_solicitud, INTERVAL 5 DAY) <= CURDATE()')
             ->with(['user', 'res_inmueble'])
             ->get();
-        $canceladas = 0;
+        $canceladas = 0;        
+        
         foreach ($reservas as $reserva) {
             $reserva->update([
                 'res_status_id' => 4,
@@ -358,7 +359,7 @@ class ResReservaController extends Controller implements HasMiddleware
             ]);
             $texto = 'Lamentamos informarle que su reserva ha sido cancelada automáticamente debido a que no se recibió el soporte de pago en la aplicación dentro del plazo establecido. Si desea realizar una nueva reserva, por favor siga el proceso habitual en nuestra plataforma. ¡Dios le bendiga!';
             Mail::to($reserva->user->email)
-                ->cc('elpastorc@gmail.com')
+                
                 ->send(new ReservaInmueble($reserva->user->name, $texto, 'Su reserva ha sido cancelada', false, $reserva->res_inmueble));
             $canceladas++;
         }

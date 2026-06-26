@@ -44,10 +44,12 @@
                             <div id="contenedorExtraAsociado" style="display:none;">
                                 <div class="mb-3">
                                     <label class="form-label">Asociado para asignar la reserva</label>
-                                    <select type="text" class="form-control" name="asociado_id" id="asociado_select" required>
+                                    <select type="text" class="form-control" name="asociado_id" id="asociado_select"
+                                        required>
                                         <option value="">Seleccione un asociado...</option>
                                         @foreach ($users as $user)
-                                            <option value="{{ $user->id }}">{{ $user->nid }} - {{ $user->name }}</option>
+                                            <option value="{{ $user->id }}">{{ $user->nid }} -
+                                                {{ $user->name }}</option>
                                         @endforeach
                                     </select>
                                 </div>
@@ -493,6 +495,18 @@
                 /* =========================
                    VALIDACIÓN FORM
                 ========================= */
+
+                const checkbox = document.getElementById('mostrarlistaAsociado');
+                const asociadoSelect = document.getElementById('asociado_select');
+
+                function actualizarRequired() {
+                    asociadoSelect.required = checkbox.checked;
+                }
+
+                checkbox.addEventListener('change', actualizarRequired);
+
+                // Ejecutar al cargar la página
+                actualizarRequired();
 
                 document.getElementById('btnConfirmar').addEventListener('click', function() {
                     const form = document.getElementById('reservaForm');

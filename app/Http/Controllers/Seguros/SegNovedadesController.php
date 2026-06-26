@@ -56,6 +56,7 @@ class SegNovedadesController extends Controller
 
     public function create()
     {
+        dd('hola');
         return view('seguros.novedades.create');
     }
 
