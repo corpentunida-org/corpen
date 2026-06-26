@@ -25,19 +25,19 @@ class AuditoriaProyectosController extends Controller
         $historyQuery = TaskHistory::with(['user', 'task.workflow']);
 
         // --- 1. Filtros ---
-        
+
         // A) Búsqueda General
         if ($request->filled('search')) {
             $search = $request->search;
-            $commentsQuery->where(function($q) use ($search) {
+            $commentsQuery->where(function ($q) use ($search) {
                 $q->where('comentario', 'like', "%{$search}%")
-                  ->orWhereHas('user', fn($u) => $u->where('name', 'like', "%{$search}%"))
-                  ->orWhereHas('task', fn($t) => $t->where('titulo', 'like', "%{$search}%"));
+                    ->orWhereHas('user', fn($u) => $u->where('name', 'like', "%{$search}%"))
+                    ->orWhereHas('task', fn($t) => $t->where('titulo', 'like', "%{$search}%"));
             });
-            $historyQuery->where(function($q) use ($search) {
+            $historyQuery->where(function ($q) use ($search) {
                 $q->where('estado_nuevo', 'like', "%{$search}%")
-                  ->orWhereHas('user', fn($u) => $u->where('name', 'like', "%{$search}%"))
-                  ->orWhereHas('task', fn($t) => $t->where('titulo', 'like', "%{$search}%"));
+                    ->orWhereHas('user', fn($u) => $u->where('name', 'like', "%{$search}%"))
+                    ->orWhereHas('task', fn($t) => $t->where('titulo', 'like', "%{$search}%"));
             });
         }
 
@@ -59,17 +59,25 @@ class AuditoriaProyectosController extends Controller
         $history = collect([]);
 
         if (!$filterType || $filterType === 'comentario') {
-            $comments = (clone $commentsQuery)->latest()->limit($limit)->get()->map(function ($item) {
-                $item->tipo_evento = 'comentario';
-                return $item;
-            });
+            $comments = (clone $commentsQuery)
+                ->latest()
+                ->limit($limit)
+                ->get()
+                ->map(function ($item) {
+                    $item->tipo_evento = 'comentario';
+                    return $item;
+                });
         }
 
         if (!$filterType || $filterType === 'historial') {
-            $history = (clone $historyQuery)->latest()->limit($limit)->get()->map(function ($item) {
-                $item->tipo_evento = 'historial';
-                return $item;
-            });
+            $history = (clone $historyQuery)
+                ->latest()
+                ->limit($limit)
+                ->get()
+                ->map(function ($item) {
+                    $item->tipo_evento = 'historial';
+                    return $item;
+                });
         }
 
         return $comments->concat($history)->sortByDesc('created_at');
@@ -83,42 +91,37 @@ class AuditoriaProyectosController extends Controller
         // Paginación Manual
         $page = $request->get('page', 1);
         $perPage = 15;
-        $paginatedItems = new LengthAwarePaginator(
-            $merged->forPage($page, $perPage),
-            $merged->count(),
-            $perPage,
-            $page,
-            ['path' => $request->url(), 'query' => $request->query()]
-        );
+        $paginatedItems = new LengthAwarePaginator($merged->forPage($page, $perPage), $merged->count(), $perPage, $page, ['path' => $request->url(), 'query' => $request->query()]);
 
         // --- 2. ESTADÍSTICAS PARA GRÁFICAS DE AUDITORÍA (Tu lógica original) ---
         $commentsQuery = TaskComment::query();
         $historyQuery = TaskHistory::query();
-        
+
         $totalComments = $commentsQuery->count();
         $totalHistory = $historyQuery->count();
         $totalEvents = $totalComments + $totalHistory;
 
         // Top Usuarios
-        $usersC = $commentsQuery->select('user_id', DB::raw('count(*) as total'))
-            ->groupBy('user_id')->get();
-            
-        $usersH = $historyQuery->select('cambiado_por as user_id', DB::raw('count(*) as total'))
-            ->whereNotNull('cambiado_por')
-            ->groupBy('cambiado_por')->get();
-        
+        $usersC = $commentsQuery->select('user_id', DB::raw('count(*) as total'))->groupBy('user_id')->get();
+
+        $usersH = $historyQuery->select('cambiado_por as user_id', DB::raw('count(*) as total'))->whereNotNull('cambiado_por')->groupBy('cambiado_por')->get();
+
         $userStats = [];
-        foreach($usersC as $u) $userStats[$u->user_id] = ($userStats[$u->user_id] ?? 0) + $u->total;
-        foreach($usersH as $u) $userStats[$u->user_id] = ($userStats[$u->user_id] ?? 0) + $u->total;
-        
+        foreach ($usersC as $u) {
+            $userStats[$u->user_id] = ($userStats[$u->user_id] ?? 0) + $u->total;
+        }
+        foreach ($usersH as $u) {
+            $userStats[$u->user_id] = ($userStats[$u->user_id] ?? 0) + $u->total;
+        }
+
         arsort($userStats);
         $topUsersIds = array_slice(array_keys($userStats), 0, 5);
-        
+
         $chartUserData = ['labels' => [], 'data' => [], 'ids' => []];
         if (!empty($topUsersIds)) {
             $chartUsers = User::whereIn('id', $topUsersIds)->get()->keyBy('id');
-            foreach($topUsersIds as $uid) {
-                if(isset($chartUsers[$uid])) {
+            foreach ($topUsersIds as $uid) {
+                if (isset($chartUsers[$uid])) {
                     $chartUserData['labels'][] = explode(' ', $chartUsers[$uid]->name)[0];
                     $chartUserData['data'][] = $userStats[$uid];
                     $chartUserData['ids'][] = $uid;
@@ -127,14 +130,14 @@ class AuditoriaProyectosController extends Controller
         }
 
         // --- 3. CÁLCULO DE INDICADORES MATRIZ TIC (AGREGADO) ---
-        
+
         // A. Uso de herramientas colaborativas (Usuarios activos últimos 30 días)
         $totalUsuarios = User::count();
         $usuariosActivos = TaskHistory::where('created_at', '>=', now()->subDays(30))
             ->whereNotNull('cambiado_por') // Corrección aplicada: cambiado_por en lugar de user_id
             ->distinct('cambiado_por')
             ->count('cambiado_por');
-        
+
         $kpiColaboracion = $totalUsuarios > 0 ? round(($usuariosActivos / $totalUsuarios) * 100, 1) : 0;
 
         // B. Cumplimiento del plan estratégico
@@ -152,14 +155,11 @@ class AuditoriaProyectosController extends Controller
         $kpiResolucion = $totalTareas > 0 ? round(($tareasResueltas / $totalTareas) * 100, 1) : 0;
 
         // E. Tiempos promedio de respuesta
-        $tiempos = Task::select('prioridad', DB::raw('AVG(TIMESTAMPDIFF(HOUR, created_at, updated_at)) as horas_promedio'))
-            ->where('estado', 'completado')
-            ->groupBy('prioridad')
-            ->pluck('horas_promedio', 'prioridad');
+        $tiempos = Task::select('prioridad', DB::raw('AVG(TIMESTAMPDIFF(HOUR, created_at, updated_at)) as horas_promedio'))->where('estado', 'completado')->groupBy('prioridad')->pluck('horas_promedio', 'prioridad');
 
-        $kpiTiempoAlta  = round($tiempos['alta'] ?? 0, 1);
+        $kpiTiempoAlta = round($tiempos['alta'] ?? 0, 1);
         $kpiTiempoMedia = round($tiempos['media'] ?? 0, 1);
-        $kpiTiempoBaja  = round($tiempos['baja'] ?? 0, 1);
+        $kpiTiempoBaja = round($tiempos['baja'] ?? 0, 1);
 
         // Datos para selects
         $users = User::orderBy('name')->get();
@@ -174,7 +174,7 @@ class AuditoriaProyectosController extends Controller
                 'total' => $totalEvents,
                 'comments' => $totalComments,
                 'history' => $totalHistory,
-                'usersData' => $chartUserData
+                'usersData' => $chartUserData,
             ],
             // Datos de Matriz TIC (Nuevos)
             'kpiColaboracion' => $kpiColaboracion,
@@ -183,7 +183,7 @@ class AuditoriaProyectosController extends Controller
             'kpiResolucion' => $kpiResolucion,
             'kpiTiempoAlta' => $kpiTiempoAlta,
             'kpiTiempoMedia' => $kpiTiempoMedia,
-            'kpiTiempoBaja' => $kpiTiempoBaja
+            'kpiTiempoBaja' => $kpiTiempoBaja,
         ]);
     }
 
@@ -192,103 +192,42 @@ class AuditoriaProyectosController extends Controller
      */
     public function exportPdf(Request $request)
     {
-        // 1. Obtener eventos (Aumentamos el límite para el reporte)
-        $events = $this->getMergedEvents($request, 1000);
+        $date = now()->format('d/m/Y H:i');
+        // 1. Obtener TODOS los workflows para el listado general inicial
+        $todosLosWorkflows = Workflow::select('id', 'nombre', 'estado')->get();
+        // 2. Filtrar los Workflows Completos
+        $workflowsCompletos = Workflow::where('estado', 'completado')->get();
+        // 3. Filtrar los Workflows Incompletos incluyendo sus Tareas y los Eventos de esas tareas
+        $workflowsIncompletos = Workflow::where('estado', '!=', 'completado')
+            ->with(['tasks.histories.user']) // Trae las tareas, sus eventos y el usuario del evento
+            ->get()
+            ->map(function($workflow) {
+                $workflow->setRelation('tasks', $workflow->tasks->filter(function($task) {
+                    // Decodificar el JSON de la descripción
+                    $subtareasArray = json_decode($task->descripcion, true) ?? [];
+                    
+                    // Si no es un array válido o está vacío, omitimos esta tarea de la descripción de subtareas
+                    if (!is_array($subtareasArray) || empty($subtareasArray)) {
+                        return false; 
+                    }
 
-        // ---------------------------------------------------------
-        // CORRECCIÓN: CALCULAR ESTADÍSTICAS BASADAS EN LOS EVENTOS REALES
-        // (Esto asegura que si hay 41 eventos, la suma de usuarios sea 41)
-        // ---------------------------------------------------------
-        
-        $monthlyStats = [];
-        $currentYear = now()->year;
+                    // Conservamos la tarea y le asignamos el array decodificado
+                    $task->subtareas_estructuradas = $subtareasArray;
+                    return true;
+                }));
 
-        foreach ($events as $event) {
-            // Validar que el evento tenga usuario y fecha
-            if (!$event->user || !$event->created_at) continue;
+                return $workflow;
+            });
 
-            // Solo graficamos en la matriz el año actual (o puedes quitar este if si quieres todo)
-            if ($event->created_at->year != $currentYear) continue;
-
-            $uid = $event->user->id;
-            $month = $event->created_at->month; // 1 al 12
-
-            // Inicializar usuario si no existe en el array
-            if (!isset($monthlyStats[$uid])) {
-                $monthlyStats[$uid] = [
-                    'name'   => $event->user->name,
-                    'months' => array_fill(1, 12, 0), // Inicializa meses en 0
-                    'total'  => 0
-                ];
-            }
-
-            // Sumar al mes correspondiente y al total
-            $monthlyStats[$uid]['months'][$month]++;
-            $monthlyStats[$uid]['total']++;
-        }
-
-        // Ordenar usuarios por actividad (Mayor a menor)
-        uasort($monthlyStats, fn($a, $b) => $b['total'] <=> $a['total']);
-        
-        // ---------------------------------------------------------
-        // FIN CORRECCIÓN
-        // ---------------------------------------------------------
-
-        // --- CÁLCULO DE KPIS PARA EL PDF ---
-        $totalUsuarios = User::count();
-        // Corrección KPI Colaboración: Usar la colección de usuarios encontrados en los eventos
-        $usuariosEnReporte = count($monthlyStats);
-        $kpiColaboracion = $totalUsuarios > 0 ? round(($usuariosEnReporte / $totalUsuarios) * 100, 1) : 0;
-
-        $totalProyectos = Workflow::count();
-        $proyectosEjecutados = Workflow::where('estado', 'completado')->count();
-        $kpiCumplimiento = $totalProyectos > 0 ? round(($proyectosEjecutados / $totalProyectos) * 100, 1) : 0;
-
-        $proyectosDigitalizados = Workflow::whereIn('estado', ['activo', 'completado'])->count();
-        $kpiDigitalizacion = $totalProyectos > 0 ? round(($proyectosDigitalizados / $totalProyectos) * 100, 1) : 0;
-
-        $totalTareas = Task::count();
-        $tareasResueltas = Task::where('estado', 'completado')->count();
-        $kpiResolucion = $totalTareas > 0 ? round(($tareasResueltas / $totalTareas) * 100, 1) : 0;
-
-        $tiempos = Task::select('prioridad', DB::raw('AVG(TIMESTAMPDIFF(HOUR, created_at, updated_at)) as horas_promedio'))
-            ->where('estado', 'completado')->groupBy('prioridad')->pluck('horas_promedio', 'prioridad');
-        
-        $kpiTiempoAlta  = round($tiempos['alta'] ?? 0, 1);
-        $kpiTiempoMedia = round($tiempos['media'] ?? 0, 1);
-        $kpiTiempoBaja  = round($tiempos['baja'] ?? 0, 1);
-
-        // Preparar filtros visuales
-        $filtersApplied = [];
-        if($request->filled('search')) $filtersApplied[] = "Búsqueda: " . $request->search;
-        if($request->filled('tipo_evento')) $filtersApplied[] = "Tipo: " . ucfirst($request->tipo_evento);
-        if($request->filled('user_id')) {
-            $u = User::find($request->user_id); if($u) $filtersApplied[] = "Usuario: " . $u->name;
-        }
-        if($request->filled('workflow_id')) {
-            $w = Workflow::find($request->workflow_id); if($w) $filtersApplied[] = "Proyecto: " . $w->nombre;
-        }
-
-        // Generar PDF
+        // 4. Generar el PDF enviando ÚNICAMENTE los datos requeridos
         $pdf = Pdf::loadView('flujo.auditoria.pdf', [
-            'events' => $events,
-            'filters' => $filtersApplied,
-            'date' => now()->format('d/m/Y H:i'),
-            'user' => auth()->user()->name,
-            'monthlyStats' => $monthlyStats, // Ahora sí lleva datos reales
-            'year' => $currentYear,
-            
-            // KPIs
-            'kpiColaboracion' => $kpiColaboracion,
-            'kpiCumplimiento' => $kpiCumplimiento,
-            'kpiDigitalizacion' => $kpiDigitalizacion,
-            'kpiResolucion' => $kpiResolucion,
-            'kpiTiempoAlta' => $kpiTiempoAlta,
-            'kpiTiempoMedia' => $kpiTiempoMedia,
-            'kpiTiempoBaja' => $kpiTiempoBaja
+            'date'                 => $date,
+            'todosLosWorkflows'    => $todosLosWorkflows,
+            'workflowsCompletos'   => $workflowsCompletos,
+            'workflowsIncompletos' => $workflowsIncompletos,
         ]);
 
         $pdf->setPaper('A4', 'portrait');
-        return $pdf->download('Reporte_Auditoria_Global.pdf');
+        return $pdf->download('Reporte_Estructura_Workflows.pdf');
     }
 }

@@ -131,11 +131,10 @@
                             <li class="nxl-item nxl-caption">
                                 <label>Menu</label>
                             </li>
-                            {{-- @foreach (auth()->user()->actions as $action)
+                            @foreach (auth()->user()->actions as $action)
                                 @include('layouts.actions.' . $action->role->name)
-                            @endforeach --}}
-                            @include('layouts.actions.Asociado')
-                            {{-- @include('layouts.actions.reservas') --}}
+                            @endforeach
+                            
                         </ul>
                     </div>
                 </div>
