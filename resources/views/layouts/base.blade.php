@@ -134,6 +134,7 @@
                             @foreach (auth()->user()->actions as $action)
                                 @include('layouts.actions.' . $action->role->name)
                             @endforeach
+                            
                         </ul>
                     </div>
                 </div>

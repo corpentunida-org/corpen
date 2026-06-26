@@ -31,7 +31,7 @@ class SegBeneficiosController extends Controller
     public function index()
     {
         $beneficios = SegBeneficios::with(['tercero', 'polizarel'])->where('active', true)->get();
-        $planes = SegPlan::where('vigente', true)->where('condicion_id', 2)->get();
+        $planes = SegPlan::where('vigente', true)->where('condicion_id', 8)->get();
         return view('seguros.beneficios.index', compact('planes', 'beneficios'));
     }
 
@@ -58,7 +58,7 @@ class SegBeneficiosController extends Controller
         }
         $listadata = $query->get();
         $planes = SegPlan::where('vigente', true)
-            ->where('condicion_id', 2)
+            ->where('condicion_id', 8)
             ->get();
 
         return view('seguros.beneficios.index', compact('listadata', 'planes'));
