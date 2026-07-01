@@ -84,7 +84,7 @@
                     <div class="row">
                         <div class="col-lg-7 mb-4">
                             <label class="form-label">Diagnóstico <span class="text-danger">*</span></label>
-                            <select name="diagnostico_id" class="form-control">
+                            <select name="diagnostico_id" class="form-control select2">
                                 @foreach ($diagnosticos as $d)
                                     <option value="{{ $d->id }}"
                                         @if ($d->id == $reclamacion->idDiagnostico) selected @endif>{{ $d->diagnostico }}
@@ -101,8 +101,13 @@
                     <div class="row">
                         <div class="col-lg-9 mb-4">
                             <label class="form-label">Beneficiario<span class="text-danger">*</span></label>
-                            <select name="beneficiario_id" class="form-control">
-                                <option value=""></option>
+                            <select name="beneficiario_id" class="form-control select2">                            
+                                @foreach ($beneficiarios as $beneficiario)
+                                    <option value="{{ $beneficiario->id }}"
+                                        @if ($beneficiario->id == $reclamacion->idBeneficiario) selected @endif>
+                                        {{ $beneficiario->nombre }} - {{ $beneficiario->parentescos?->name ?? '' }}
+                                    </option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="col-lg-3 mb-4">
@@ -163,8 +168,10 @@
                         </div>
                         <div class="col-lg-12 mb-4">
                             <div class="custom-control custom-checkbox">
-                                <input id="finreclamacion" type="checkbox" class="custom-control-input" name="finreclamacion">
-                                <label for="finreclamacion" class="custom-control-label c-pointer">Marcar como cierre de la reclamación</label>
+                                <input id="finreclamacion" type="checkbox" class="custom-control-input"
+                                    name="finreclamacion">
+                                <label for="finreclamacion" class="custom-control-label c-pointer">Marcar como cierre
+                                    de la reclamación</label>
                             </div>
                         </div>
                         <div class="col-lg-12 mb-4">
@@ -191,6 +198,14 @@
         </div>
     </div>
     <script>
+        $(document).ready(function() {
+            $('.select2').select2({
+                theme: 'bootstrap-5',
+                width: '100%',
+                placeholder: 'Seleccione una opción'
+            });
+        });
+
         $('#formUpdateReclamacion').submit(function(event) {
             var form = this;
             if (!form.checkValidity()) {
