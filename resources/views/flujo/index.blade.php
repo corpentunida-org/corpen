@@ -144,20 +144,14 @@
             --radius-lg: 16px;
         }
 
-        body { 
-            background-color: #fbfcfd; 
-            font-family: 'Inter', sans-serif; 
-            color: var(--executive-text);
-            -webkit-font-smoothing: antialiased;
-            margin: 0;
-        }
+       
 
         .content-body { max-width: 1100px; margin: 40px auto; padding: 0 24px; }
 
         /* HEADER */
         .welcome-bar { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 40px; gap: 20px; }
-        .system-tag { font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--executive-accent); letter-spacing: 0.1em; margin-bottom: 8px; display: block; }
-        .main-title { font-family: 'Outfit'; font-size: 2.2rem; font-weight: 800; letter-spacing: -0.03em; margin: 0; line-height: 1.1; }
+        .system-tag { font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--executive-accent); margin-bottom: 8px; display: block; }
+        .main-title { font-size: 2.2rem; font-weight: 800; letter-spacing: -0.03em; margin: 0; line-height: 1.1; }
         .main-subtitle { color: var(--executive-muted); font-size: 1rem; margin-top: 8px; max-width: 600px; }
 
         .btn-minimal-black {
@@ -175,7 +169,7 @@
         }
         .stat-group { display: flex; flex-direction: column; gap: 6px; }
         .stat-label { font-size: 11px; font-weight: 700; color: var(--executive-muted); text-transform: uppercase; letter-spacing: 0.05em; }
-        .stat-number { font-family: 'Outfit'; font-size: 2rem; font-weight: 800; color: var(--executive-text); line-height: 1; }
+        .stat-number { font-size: 2rem; font-weight: 800; color: var(--executive-text); line-height: 1; }
 
         /* STACK CARDS */
         .modern-stack { display: flex; flex-direction: column; gap: 16px; }
