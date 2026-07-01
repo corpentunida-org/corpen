@@ -228,6 +228,7 @@
                                     fecha_inicio: '{{ $r->fecha_inicio }}',
                                     fecha_fin: '{{ $r->fecha_fin }}',
                                     usuario: '{{ $r->nid }} - {{ $r->user->name ?? '' }}',
+                                    estado: '{{ $r->res_status->name }}',
                                     telefono: '{{ $r->celular }} - {{ $r->celular_respaldo }}',
                                     celular: '{{ $r->celular }}',
                                     celular_respaldo: '{{ $r->celular_respaldo }}'
@@ -253,7 +254,8 @@
                             html: `
                             <p><b>ID Reserva:</b> ${info.event.extendedProps.id}</p>
                             <p><b>Apartamento:</b> ${info.event.extendedProps.apto}</p>
-                            <p><b>Usuario:</b> ${info.event.extendedProps.usuario}</p>
+                            <p><b>Estado Reserva:</b> ${info.event.extendedProps.estado}</p>
+                            <p><b>Usuario:</b> ${info.event.extendedProps.usuario}</p>                            
                             <p><b>Teléfonos:</b> ${telefono}</p>
                             <p><b>Fecha Inicio:</b> ${fechaInicio} </p>
                             <p><b>Fecha Fin:</b> ${fechaFin}</p>

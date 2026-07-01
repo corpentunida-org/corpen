@@ -22,6 +22,7 @@ class Proceso extends Model
         'detalle',
         'activo',
         'numero_archivos',
+        'secuencia',
         'tipos_archivos',
         'tiempo_respuesta_dias',
         'usuario_creador_id',
