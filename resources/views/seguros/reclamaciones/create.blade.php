@@ -220,7 +220,10 @@
                     <div class="col-lg-12 mb-4">
                         <label class="form-label">Beneficiario <span class="text-danger">*</span></label>
                         <select name="beneficiario_id" class="form-control">
-                            <option value=""></option>
+                            <option value="">Seleccione un beneficiario</option>
+                            @foreach($beneficiarios as $beneficiario)
+                                <option value="{{ $beneficiario->id }}"> {{ $beneficiario->nombre }} - {{ $beneficiario->parentescos?->name ?? '' }}</option>
+                            @endforeach
                         </select>
                     </div>
                     <div class="col-lg-12 mb-4">
