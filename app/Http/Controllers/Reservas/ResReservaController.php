@@ -227,7 +227,7 @@ class ResReservaController extends Controller implements HasMiddleware
     {
         $inmueblesPermitidos = auth()->user()->permissions->pluck('name')->filter(fn($permiso) => str_starts_with($permiso, 'reservas.inmuebles.'))->map(fn($permiso) => (int) str_replace('reservas.inmuebles.', '', $permiso))->values()->all();
         $reservas = Res_reserva::select('id', 'res_inmueble_id', 'res_status_id', 'user_id', 'nid', 'celular', 'celular_respaldo', 'fecha_inicio', 'fecha_fin')
-            ->whereIn('res_status_id', [2, 5])
+            ->whereIn('res_status_id', [1, 2, 5])
             ->with(['tercero', 'user'])
             ->when(empty($inmueblesPermitidos), fn($q) => $q->whereRaw('1 = 0'), fn($q) => $q->whereIn('res_inmueble_id', $inmueblesPermitidos))
             ->orderByRaw(

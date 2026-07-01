@@ -12,6 +12,8 @@ use App\Models\User;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use App\Mail\FlujoNotificacion;
+use Illuminate\Support\Facades\Mail;
 
 class CorrespondenciaProcesoController extends Controller
 {
@@ -58,87 +60,100 @@ class CorrespondenciaProcesoController extends Controller
     {
         $request->validate([
             'id_correspondencia' => 'required|exists:corr_correspondencia,id_radicado',
-            'id_proceso'         => 'required|integer|exists:corr_procesos,id',
-            'observacion'        => 'required|string',
-            'estado_id'          => 'required|integer|exists:corr_estados,id',
-            'fecha_gestion'      => 'required|date',
-            'finalizado'         => 'nullable|boolean',
+            'id_proceso' => 'required|integer|exists:corr_procesos,id',
+            'observacion' => 'required|string',
+            'estado_id' => 'required|integer|exists:corr_estados,id',
+            'fecha_gestion' => 'required|date',
+            'finalizado' => 'nullable|boolean',
         ]);
 
         $proceso = Proceso::findOrFail($request->id_proceso);
+
         $numRequeridos = (int) $proceso->numero_archivos;
 
         if ($numRequeridos > 0) {
-            $request->validate([
-                'documento_arc'   => 'required|array|size:' . $numRequeridos,
-                'documento_arc.*' => 'required|file|mimes:pdf,doc,docx,jpg,png|max:10240',
-            ], [
-                'documento_arc.required' => "Este proceso exige subir $numRequeridos archivo(s) obligatorio(s).",
-                'documento_arc.size'     => "Debe subir exactamente $numRequeridos archivo(s) como lo exige el proceso.",
-                'documento_arc.*.mimes'  => 'Solo se permiten archivos: PDF, DOC, DOCX, JPG o PNG.',
-            ]);
+            $request->validate(
+                [
+                    'documento_arc' => 'required|array|size:' . $numRequeridos,
+                    'documento_arc.*' => 'required|file|mimes:pdf,doc,docx,jpg,png|max:10240',
+                ],
+                [
+                    'documento_arc.required' => "Este proceso exige subir $numRequeridos archivo(s) obligatorio(s).",
+                    'documento_arc.size' => "Debe subir exactamente $numRequeridos archivo(s) como lo exige el proceso.",
+                    'documento_arc.*.mimes' => 'Solo se permiten archivos: PDF, DOC, DOCX, JPG o PNG.',
+                ],
+            );
         } else {
             $request->validate([
-                'documento_arc'   => 'nullable|array',
+                'documento_arc' => 'nullable|array',
                 'documento_arc.*' => 'file|mimes:pdf,doc,docx,jpg,png|max:10240',
             ]);
         }
 
         try {
             $idRadicado = $request->id_correspondencia;
-            
-            DB::transaction(function () use ($request, $idRadicado, $proceso) { 
+
+            DB::transaction(function () use ($request, $idRadicado, $proceso) {
                 $estadoMaestro = Estado::findOrFail($request->estado_id);
-                $rutasArchivos = [];              
-                
+                $rutasArchivos = [];
+
                 if ($request->hasFile('documento_arc')) {
-                    
                     // Aseguramos de tener el array de nombres de archivos requeridos
                     $nombresRequeridos = is_array($proceso->tipos_archivos) ? $proceso->tipos_archivos : json_decode($proceso->tipos_archivos, true) ?? [];
 
                     // Agregamos el $index al foreach para saber qué archivo estamos procesando
                     foreach ($request->file('documento_arc') as $index => $file) {
-                        
                         // Determinamos el nombre base. Si no existe un nombre requerido (ej. archivo opcional), usamos 'doc-adjunto'
                         $nombreBaseFormateado = isset($nombresRequeridos[$index]) ? Str::slug($nombresRequeridos[$index]) : 'doc-adjunto';
 
                         // 1. Generamos el nombre del archivo integrando el nombre requerido
                         $nombreArchivo = 'seg_' . $idRadicado . '_' . $nombreBaseFormateado . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-                        
+
                         // 2. Usamos storeAs a S3 sin forzar visibilidad pública
                         $path = $file->storeAs('corpentunida/correspondencia', $nombreArchivo, 's3');
-                        
+
                         // 3. Verificamos estrictamente que la subida haya sido exitosa
                         if ($path === false) {
                             throw new \Exception("Error al subir el archivo $nombreArchivo a Amazon S3. El bucket rechazó la solicitud.");
                         }
-                        
+
                         $rutasArchivos[] = $path;
                     }
-                }    
+                }
 
                 CorrespondenciaProceso::create([
                     'id_correspondencia' => $idRadicado,
-                    'observacion'        => $request->observacion,
-                    'estado'             => $estadoMaestro->id,
-                    'id_proceso'         => $proceso->id,
-                    'notificado_email'   => $request->boolean('notificado_email'),
-                    'fecha_gestion'      => $request->fecha_gestion,
-                    'documento_arc'      => $rutasArchivos, 
-                    'finalizado'         => $request->boolean('finalizado'),
-                    'fk_usuario'         => auth()->id(),
+                    'observacion' => $request->observacion,
+                    'estado' => $estadoMaestro->id,
+                    'id_proceso' => $proceso->id,
+                    'notificado_email' => $request->boolean('notificado_email'),
+                    'fecha_gestion' => $request->fecha_gestion,
+                    'documento_arc' => $rutasArchivos,
+                    'finalizado' => $request->boolean('finalizado'),
+                    'fk_usuario' => auth()->id(),
                 ]);
-                
+
                 Correspondencia::where('id_radicado', $idRadicado)->update([
-                    'estado_id' => $estadoMaestro->id
+                    'estado_id' => $estadoMaestro->id,
                 ]);
             });
+            if ($request->boolean('finalizado')) {
+                $siguienteProceso = Proceso::where('flujo_id', $proceso->flujo_id)
+                    ->where('secuencia', $proceso->secuencia + 1)
+                    ->first();
 
-            return redirect()->route('correspondencia.correspondencias.show', $idRadicado)
-                ->with('success', 'Seguimiento registrado y archivos guardados correctamente.');
+                if ($siguienteProceso) {
+                    $correos = $siguienteProceso->usuarios()->wherePivot('activo', 1)->pluck('email')->toArray();
+                    Mail::to($correos)->send(new FlujoNotificacion($request->id_correspondencia, $siguienteProceso->nombre));
+                }
+            }
 
+            return redirect()->route('correspondencia.correspondencias.show', $idRadicado)->with('success', 'Seguimiento registrado y archivos guardados correctamente.');
         } catch (\Exception $e) {
-            return redirect()->back()->withInput()->with('error', 'Error en la operación: ' . $e->getMessage());
+            return redirect()
+                ->back()
+                ->withInput()
+                ->with('error', 'Error en la operación: ' . $e->getMessage());
         }
     }
 
@@ -158,25 +173,24 @@ class CorrespondenciaProcesoController extends Controller
     public function update(Request $request, CorrespondenciaProceso $correspondenciaProceso)
     {
         $validData = $request->validate([
-            'observacion'     => 'required|string',
-            'estado'          => 'required|string|max:255',
-            'fecha_gestion'   => 'required|date',
-            'documento_arc'   => 'nullable|array',
+            'observacion' => 'required|string',
+            'estado' => 'required|string|max:255',
+            'fecha_gestion' => 'required|date',
+            'documento_arc' => 'nullable|array',
             'documento_arc.*' => 'file|mimes:pdf,doc,docx,jpg,png|max:10240',
-            'finalizado'      => 'nullable|boolean',
+            'finalizado' => 'nullable|boolean',
         ]);
 
         try {
             $updateData = [
-                'observacion'      => $validData['observacion'],
-                'estado'           => $validData['estado'],
-                'fecha_gestion'    => $validData['fecha_gestion'],
+                'observacion' => $validData['observacion'],
+                'estado' => $validData['estado'],
+                'fecha_gestion' => $validData['fecha_gestion'],
                 'notificado_email' => $request->boolean('notificado_email'),
-                'finalizado'       => $request->boolean('finalizado'),
+                'finalizado' => $request->boolean('finalizado'),
             ];
 
             if ($request->hasFile('documento_arc')) {
-                
                 // Borrar archivos viejos de S3 asegurando que no intentemos borrar un "false"
                 if (is_array($correspondenciaProceso->documento_arc)) {
                     foreach ($correspondenciaProceso->documento_arc as $oldFile) {
@@ -193,23 +207,22 @@ class CorrespondenciaProcesoController extends Controller
                 $nombresRequeridos = is_array($proceso->tipos_archivos) ? $proceso->tipos_archivos : json_decode($proceso->tipos_archivos, true) ?? [];
 
                 foreach ($request->file('documento_arc') as $index => $file) {
-                    
                     // Determinamos el nombre base formateado igual que en el método store
                     $nombreBaseFormateado = isset($nombresRequeridos[$index]) ? Str::slug($nombresRequeridos[$index]) : 'doc-adjunto';
 
                     $nombreArchivo = 'upd_seg_' . $correspondenciaProceso->id_correspondencia . '_' . $nombreBaseFormateado . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
-                    
+
                     // Subida a S3 sin forzar permisos públicos
                     $path = $file->storeAs('corpentunida/correspondencia', $nombreArchivo, 's3');
-                    
+
                     // Validación contra fallos silenciosos
                     if ($path === false) {
                         throw new \Exception("Error al actualizar en S3. El archivo $nombreArchivo fue rechazado.");
                     }
-                    
+
                     $rutasNuevas[] = $path;
                 }
-                
+
                 $updateData['documento_arc'] = $rutasNuevas;
             }
 
@@ -217,7 +230,9 @@ class CorrespondenciaProcesoController extends Controller
 
             return redirect()->route('correspondencia.correspondencias.show', $correspondenciaProceso->id_correspondencia)->with('success', 'Gestión actualizada correctamente.');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Error al actualizar: ' . $e->getMessage());
+            return redirect()
+                ->back()
+                ->with('error', 'Error al actualizar: ' . $e->getMessage());
         }
     }
 
