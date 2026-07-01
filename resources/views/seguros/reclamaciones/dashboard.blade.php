@@ -45,11 +45,11 @@
                             <i class="feather-folder-plus me-2"></i>
                             <span>Descargar Excel</span>
                         </a>
-                        <a href=""
-                                class="d-flex me-1 px-3 bg-soft-indigo text-indigo border border-soft-indigo"
-                                style="padding: 12px 0 12px 0;">
-                                <i class="bi bi-arrow-down-circle me-2"></i>
-                                <span class="text-uppercase cursor-pointer" style="font-size: 10px;">Informe indicador</span>
+                        <a href="" class="d-flex me-1 px-3 bg-soft-indigo text-indigo border border-soft-indigo"
+                            style="padding: 12px 0 12px 0;">
+                            <i class="bi bi-arrow-down-circle me-2"></i>
+                            <span class="text-uppercase cursor-pointer" style="font-size: 10px;">Informe
+                                indicador</span>
                         </a>
                     </div>
                 </form>
@@ -58,24 +58,48 @@
     </div>
 
     <div class="col-md-3">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Reclamaciones por Estado:</h5>
+        <div class="card border-top-0">
+            <div class="card-header p-0">
+                <ul class="nav nav-tabs flex-wrap w-100 text-center customers-nav-tabs" id="myTabtwo" role="tablist">
+                    <li class="nav-item flex-fill border-top" role="presentation">
+                        <a href="javascript:void(0);" class="nav-link active" data-bs-toggle="tab"
+                            data-bs-target="#tabEstado" role="tab" aria-selected="true">
+                            Por Estado
+                        </a>
+                    </li>
+                    <li class="nav-item flex-fill border-top" role="presentation">
+                        <a href="javascript:void(0);" class="nav-link" data-bs-toggle="tab"
+                            data-bs-target="#tabCobertura" role="tab" aria-selected="false">
+                            Por Cobertura
+                        </a>
+                    </li>
+                </ul>
             </div>
+
             <div class="card-body">
-                <canvas id="pieChart" height="100"></canvas>
-            </div>
-            <div class="card-footer hstack justify-content-around">
-                <div class="text-center">
-                    <a href="javascript:void(0);" class="fs-16 fw-bold">{{ $totalreclamaciones }}</a>
-                    <div class="fs-11 text-muted">Numero Total</div>
+                <div class="tab-content">
+                    <div class="tab-pane fade show active" id="tabEstado" role="tabpanel">
+                        <canvas id="pieChart" height="100"></canvas>
+                    </div>
+                    <div class="tab-pane fade" id="tabCobertura" role="tabpanel">
+                        <canvas id="pieChartCobertura" height="100"></canvas>
+                    </div>
                 </div>
-                <span class="vr"></span>
-                <div class="text-center">
-                    <a href="{{ route('seguros.reclamacion.exportarInformeCompleto') }}" class="btn btn-light-brand">
-                        <i class="feather-folder-plus me-2"></i>
-                        <span>Descargar Excel</span>
-                    </a>
+                <div class="pt-2 hstack justify-content-around">
+                    <div class="text-center">
+                        <a href="javascript:void(0);" class="fs-16 fw-bold">{{ $totalreclamaciones }}</a>
+                        <div class="fs-11 text-muted">Numero Total Reclamaciones</div>
+                    </div>
+
+                    <span class="vr"></span>
+
+                    <div class="text-center">
+                        <a href="{{ route('seguros.reclamacion.exportarInformeCompleto') }}"
+                            class="btn btn-light-brand">
+                            <i class="feather-folder-plus me-2"></i>
+                            <span>Descargar Excel</span>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -99,8 +123,9 @@
             </div>
             <div class="tab-content">
                 @foreach ($registrosPorEstado as $estado => $registros)
-                @php $paneId = 'estado-' . Str::slug($estado); @endphp
-                    <div class="tab-pane fade {{ $loop->first ? 'active show' : '' }}" id="{{ $paneId }}" role="tabpanel">
+                    @php $paneId = 'estado-' . Str::slug($estado); @endphp
+                    <div class="tab-pane fade {{ $loop->first ? 'active show' : '' }}" id="{{ $paneId }}"
+                        role="tabpanel">
                         <div class="table-responsive mt-3">
                             <table class="table table-hover tablasporestado">
                                 <thead class="mb-4">
@@ -117,7 +142,8 @@
                                                 <div class="d-flex align-items-center gap-3">
                                                     <a>
                                                         <span class="d-block">{{ $registro->cedulaAsegurado }}</span>
-                                                        <span class="fs-12 d-block fw-normal text-muted">{{ $registro->tercero->nom_ter ?? ' ' }}</span>
+                                                        <span
+                                                            class="fs-12 d-block fw-normal text-muted">{{ $registro->tercero->nom_ter ?? ' ' }}</span>
                                                     </a>
                                                 </div>
                                             </td>
@@ -125,7 +151,8 @@
                                                 {{ empty($registro->valor_asegurado) ? '' : '$' . number_format($registro->valor_asegurado, 0, ',', '.') }}
                                             </td>
                                             <td>
-                                                <span class="badge bg-gray-200 text-dark">{{ $registro->cobertura->nombre }}</span>
+                                                <span
+                                                    class="badge bg-gray-200 text-dark">{{ $registro->cobertura->nombre }}</span>
                                             </td>
                                         </tr>
                                     @endforeach
@@ -243,8 +270,45 @@
                 }
             });
         });
+
+        const labelsCobertura = @json($labelsCobertura);
+        const dataCobertura = @json($dataCobertura);
+
+        console.log(labelsCobertura);
+        console.log(dataCobertura);
+
+        new Chart(document.getElementById('pieChartCobertura'), {
+            type: 'pie',
+            data: {
+                labels: labelsCobertura,
+                datasets: [{
+                    data: dataCobertura,
+                    backgroundColor: [
+                        '#39C666',
+                        '#3454D1',
+                        '#FFA21D',
+                        '#E94D4D',
+                        '#8E44AD',
+                        '#17A2B8',
+                        '#6C757D'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        labels: {
+                            usePointStyle: true,
+                            pointStyle: 'rect',
+                            padding: 15,
+                            boxWidth: 30,
+                            boxHeight: 30
+                        }
+                    }
+                }
+            }
+        });
     </script>
-
-
 
 </x-base-layout>

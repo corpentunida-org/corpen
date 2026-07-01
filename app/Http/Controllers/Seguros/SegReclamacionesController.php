@@ -20,6 +20,7 @@ use App\Exports\ReporteSiniestrosExport;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Imports\ExcelExport;
 use Carbon\Carbon;
+use App\Models\Seguros\SegBeneficiario;
 
 class SegReclamacionesController extends Controller
 {
@@ -90,7 +91,8 @@ class SegReclamacionesController extends Controller
         $reclamaciones = SegReclamaciones::where('cedulaAsegurado', $asegurado->cedula)
             ->with(['cobertura', 'diagnostico'])
             ->get();
-        return view('seguros.reclamaciones.create', compact('asegurado', 'poliza', 'estados', 'parentescos', 'diagnosticos', 'reclamaciones'));
+        $beneficiarios = SegBeneficiario::where('id_asegurado', $id)->where('activo', 1)->with('parentescos')->get();
+        return view('seguros.reclamaciones.create', compact('asegurado', 'poliza', 'estados', 'parentescos', 'diagnosticos', 'reclamaciones', 'beneficiarios'));
     }
 
     /**
@@ -114,6 +116,7 @@ class SegReclamacionesController extends Controller
             'valor_asegurado' => $request->valorAsegurado,
             'porreclamar' => $request->porValorAsegurado,
             'fecha_desembolso' => $request->fechadesembolso,
+            'idBeneficiario' => $request->beneficiario_id,
         ];
         if (is_null($request->diagnostico_id)) {
             if ($request->boolean('adddiagnostico')) {
@@ -184,8 +187,8 @@ class SegReclamacionesController extends Controller
             ->with(['estado'])
             ->get();
         $diagnosticos = SegDiagnosticos::orderBy('diagnostico', 'asc')->get();
-
-        return view('seguros.reclamaciones.edit', compact('reclamacion', 'asegurado', 'poliza', 'estados', 'hisreclamacion', 'diagnosticos'));
+        $beneficiarios = SegBeneficiario::where('id_asegurado', $reclamacion->cedulaAsegurado)->where('activo', 1)->with('parentescos')->get();
+        return view('seguros.reclamaciones.edit', compact('reclamacion', 'asegurado', 'poliza', 'estados', 'hisreclamacion', 'diagnosticos', 'beneficiarios'));
     }
 
     /**
@@ -358,7 +361,14 @@ class SegReclamacionesController extends Controller
         $registrosPorEstado = SegReclamaciones::with('cobertura', 'tercero')->select('SEG_reclamaciones.*', 'er.nombre as estado_nombre')->join('SEG_estadoReclamacion as er', 'er.id', '=', 'SEG_reclamaciones.estado')->orderBy('er.nombre')->get()->groupBy('estado_nombre');
 
         $registrosporcobertura = SegReclamaciones::select('c.nombre as cobertura_nombre', DB::raw("SUM(CASE WHEN t.sexo = 'V' THEN 1 ELSE 0 END) as hombres"), DB::raw("SUM(CASE WHEN t.sexo = 'H' THEN 1 ELSE 0 END) as mujeres"), DB::raw('SUM(CASE WHEN t.sexo IS NULL THEN 1 ELSE 0 END) as sin_genero'))->join('seg_coberturas as c', 'c.id', '=', 'SEG_reclamaciones.idCobertura')->leftJoin('MaeTerceros as t', 't.cod_ter', '=', 'SEG_reclamaciones.cedulaAsegurado')->groupBy('c.nombre')->get();
-        return view('seguros.reclamaciones.dashboard', compact('arraydata', 'totalreclamaciones', 'registrosPorEstado', 'registrosporcobertura'));
+
+        $coberturas = SegReclamaciones::selectRaw('idCobertura, COUNT(*) as total')->with('cobertura')->groupBy('idCobertura')->get();
+        $labelsCobertura = $coberturas->map(function ($item) {
+            return optional($item->cobertura)->nombre ?? 'Sin cobertura';
+        });
+        $dataCobertura = $coberturas->pluck('total');
+
+        return view('seguros.reclamaciones.dashboard', compact('arraydata', 'totalreclamaciones', 'registrosPorEstado', 'registrosporcobertura', 'labelsCobertura', 'dataCobertura','coberturas'));
     }
 
     public function exportarInformeCompleto()
