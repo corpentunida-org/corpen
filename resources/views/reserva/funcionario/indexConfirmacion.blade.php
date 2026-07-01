@@ -102,8 +102,9 @@
                                     <td>
                                         {{ $reserva->fecha_fin }}
                                     </td>
-                                    <td>                                        
-                                        <div class="btn btn-sm {{ $reserva->res_status_id == 5 ? 'bg-soft-warning text-warning' : 'bg-soft-teal text-teal' }} d-inline-block">
+                                    <td>
+                                        <div
+                                            class="btn btn-sm {{ $reserva->res_status_id == 5 ? 'bg-soft-warning text-warning' : 'bg-soft-teal text-teal' }} d-inline-block">
                                             {{ $reserva->res_status->name }}</div>
                                     </td>
                                     <td>
@@ -145,7 +146,6 @@
             </div>
         </div>
     </div>
-
     </div>
     <script>
         const calendarEl = document.getElementById('calendar');
@@ -170,18 +170,38 @@
 
                 events: [
                     @foreach ($reservas as $r)
-                        {
-                            title: '{{ $r->res_status_id == 5 ? 'Reserva verificación pago' : 'Reservado' }}',
+                        @php
+                            switch ($r->res_status_id) {
+                                case 5:
+                                    $title = 'Reserva verificación pago';
+                                    $color = '#FFEBD0';
+                                    $textColor = '#ce7d1a';
+                                    break;
+
+                                case 2:
+                                    $title = 'Reserva confirmada';
+                                    $color = '#BDE0FE';
+                                    $textColor = '#1D4E89';
+                                    break;
+
+                                default:
+                                    $title = 'Reserva sin pago';
+                                    $color = '#c8b6ff';
+                                    $textColor = '#2b1a55';
+                            }
+                        @endphp {
+                            title: '{{ $title }}',
                             start: '{{ \Carbon\Carbon::parse($r->fecha_inicio)->format('Y-m-d') }}',
                             end: '{{ \Carbon\Carbon::parse($r->fecha_fin)->addDay()->format('Y-m-d') }}',
-                            color: '{{ $r->res_status_id == 5 ? '#FFEBD0' : '#c8b6ff' }}',
-                            textColor: '{{ $r->res_status_id == 5 ? '#ce7d1a' : '#2b1a55' }}',
+                            color: '{{ $color }}',
+                            textColor: '{{ $textColor }}',
                             extendedProps: {
                                 id: '{{ $r->id }}',
                                 apto: '{{ $r->res_inmueble->name }}',
                                 fecha_inicio: '{{ $r->fecha_inicio }}',
                                 fecha_fin: '{{ $r->fecha_fin }}',
                                 usuario: '{{ $r->nid }} - {{ $r->user->name }}',
+                                estado: '{{ $r->res_status->name }}',
                                 telefono: '{{ $r->celular }} - {{ $r->celular_respaldo }}',
                             }
                         },
@@ -207,6 +227,7 @@
                             <p><b>ID Reserva:</b> ${info.event.extendedProps.id}</p>
                             <p><b>Apartamento:</b> ${info.event.extendedProps.apto}</p>
                             <p><b>Usuario:</b> ${info.event.extendedProps.usuario}</p>
+                            <p><b>Estado Reserva:</b> ${info.event.extendedProps.estado}</p>
                             <p><b>Teléfonos:</b> ${info.event.extendedProps.telefono}</p>                            
                             <p><b>Fecha Inicio:</b> ${fechaInicio} </p>
                             <p><b>Fecha Fin:</b> ${fechaFin}</p>
