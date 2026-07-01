@@ -88,7 +88,7 @@
                 <div class="pt-2 hstack justify-content-around">
                     <div class="text-center">
                         <a href="javascript:void(0);" class="fs-16 fw-bold">{{ $totalreclamaciones }}</a>
-                        <div class="fs-11 text-muted">Numero Total Reclamaciones</div>
+                        <div class="fs-11 text-muted">Número Total Reclamaciones</div>
                     </div>
 
                     <span class="vr"></span>
