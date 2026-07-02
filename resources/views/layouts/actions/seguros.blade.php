@@ -19,5 +19,6 @@
         @candirect('seguros.convenio.index')
             <li class="nxl-item"><a class="nxl-link" href="{{ route('seguros.convenio.index') }}">Convenio</a></li>
         @endcandirect
+
     </ul>
 </li>

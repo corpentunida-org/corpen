@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Archivo\GdoEmpleado;
 use App\Models\Archivo\GdoArea;
+use App\Models\Role;
 
 class IndIndicadores extends Model
 {
@@ -17,6 +18,6 @@ class IndIndicadores extends Model
 
     public function arearel()
     {
-        return $this->belongsTo(GdoArea::class,'area','id');
+        return $this->belongsTo(Role::class,'area','id');
     }
 }
