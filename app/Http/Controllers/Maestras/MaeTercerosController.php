@@ -44,7 +44,7 @@ class MaeTercerosController extends Controller
     public function create()
     {
         $tipos = MaeTipo::all();
-        $congregacio = MaeCongregacion::all();
+        $congregacion = MaeCongregacion::all();
         $distritos = MaeDistritos::all();
         $tercero = new MaeTerceros(); // objeto vacío para el formulario
         return view('maestras.terceros.create', compact('tercero', 'tipos', 'congregacion', 'distritos'));
