@@ -22,7 +22,7 @@
     <div class="row">
         <div class="col-xxl-3 col-md-6">
             <div class="card card-body">
-                <div class="d-flex justify-content-between align-items-center">
+                <a href="{{ route('seguros.reclamaciones.dashboard') }}" class="d-flex justify-content-between align-items-center">
                     <div class="me-3">
                         <h5 class="fs-4">{{ $reclamaciones->count() }}</h5>
                         <span class="text-muted">TOTAL RECLAMACIONES</span>
@@ -30,12 +30,12 @@
                     <div class="avatar-text avatar-lg bg-success text-white rounded">
                         <i class="feather-pie-chart"></i>
                     </div>
-                </div>
+                </a>
             </div>
         </div>
         <div class="col-xxl-3 col-md-6">
             <div class="card card-body">
-                <div class="d-flex justify-content-between align-items-center">
+                <a href="{{ route('seguros.reclamaciones.dashboard') }}" class="d-flex justify-content-between align-items-center">
                     <div class="me-3">
                         <h5 class="fs-4">{{ $coberturas->reclamaciones_count }}</h5>
                         <span class="text-muted">COBERTURA</span>
@@ -44,12 +44,12 @@
                     <div class="avatar-text avatar-lg bg-primary text-white rounded">
                         <i class="feather-activity"></i>
                     </div>
-                </div>
+                </a>
             </div>
         </div>
         <div class="col-xxl-3 col-md-6">
             <div class="card card-body">
-                <div class="d-flex justify-content-between align-items-center">
+                <a href="{{ route('seguros.reclamaciones.dashboard') }}" class="d-flex justify-content-between align-items-center">
                     <div class="me-3">
                         <h5 class="fs-4">{{ $hombres }}</h5>
                         <span class="text-muted">HOMBRES</span>
@@ -57,12 +57,12 @@
                     <div class="avatar-text avatar-lg bg-info text-white rounded">
                         <i class="bi bi-person-standing"></i>
                     </div>
-                </div>
+                </a>
             </div>
         </div>
         <div class="col-xxl-3 col-md-6">
             <div class="card card-body">
-                <div class="d-flex justify-content-between align-items-center">
+                <a href="{{ route('seguros.reclamaciones.dashboard') }}" class="d-flex justify-content-between align-items-center">
                     <div class="me-3">
                         <h5 class="fs-4">{{ $mujeres }}</h5>
                         <span class="text-muted">MUJERES</span>
@@ -70,7 +70,7 @@
                     <div class="avatar-text avatar-lg bg-warning text-white rounded">
                         <i class="feather-bi bi-person-standing-dress"></i>
                     </div>
-                </div>
+                </a>
             </div>
         </div>
     </div>
@@ -113,7 +113,7 @@
                                     </td>
                                     <td>
                                         <div class="d-flex align-items-center gap-3">
-                                            <a href="javascript:void(0);">
+                                            <a href="{{ route('seguros.reclamacion.edit', ['reclamacion' => $r->id]) }}">
                                                 <span class="d-block">{{ $r->cedulaAsegurado ?? '' }}</span>
                                                 <span
                                                     class="fs-12 d-block fw-normal text-muted text-wrap">{{ $r->tercero->nom_ter ?? '' }}</span>
