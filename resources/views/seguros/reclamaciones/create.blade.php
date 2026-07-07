@@ -138,7 +138,7 @@
                         </div>
                         <div class="col-lg-2">
                             <label class="form-label">Porcentaje <span class="text-danger">*</span></label>
-                            <input type="number" maxlength="100" class="form-control" name="porValorAsegurado"
+                            <input type="number" maxlength="100"  min="0" max="100" step="0.01" class="form-control" name="porValorAsegurado"
                                 value="100" required>
                         </div>
                         <div class="col-lg-3">

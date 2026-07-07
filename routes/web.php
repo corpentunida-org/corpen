@@ -1175,7 +1175,7 @@ Route::prefix('indicators')->group(function () {
 // ==========================================
 //   MÓDULO DE ASOCIADOS (PASTORES)
 // ==========================================
-Route::middleware(['auth'])
+Route::middleware(['auth','candirect:ecm.sincronizacionmasiva.index'])
     ->prefix('asociados')
     ->name('asociados.')
     ->group(function () {
@@ -1240,21 +1240,25 @@ Route::middleware(['auth'])
         // ---------------------------------------------------
         // 1. FLUJO DE SINCRONIZACIÓN MASIVA EXCEL (NUEVO)
         // ---------------------------------------------------
-        // Vista principal del panel de carga y descarga de plantillas
-        Route::get('sincronizar', [DemografiaController::class, 'excelIndex'])
-            ->name('sincronizar.index');
+        Route::middleware(['candirect:ecm.sincronizacionmasiva.index'])
+            ->group(function () {
 
-        // Acción: Descarga la base de datos completa actual en formato .xlsx
-        Route::get('descargar-excel', [DemografiaController::class, 'descargarExcel'])
-            ->name('sincronizar.descargar');
+            // Vista principal del panel de carga y descarga de plantillas
+            Route::get('sincronizar', [DemografiaController::class, 'excelIndex'])
+                ->name('sincronizar.index');
 
-        // Paso 1: Procesa el archivo Excel, valida la estructura y lo aloja temporalmente
-        Route::post('subir-excel', [DemografiaController::class, 'subirExcel'])
-            ->name('sincronizar.subir');
-            
-        // Paso 2: Ejecuta el Upsert masivo transaccional en la BD (Múltiples hojas)
-        Route::post('confirmar-sincronizacion', [DemografiaController::class, 'confirmarSincronizacion'])
-            ->name('sincronizar.confirmar');
+            // Acción: Descarga la base de datos completa actual en formato .xlsx
+            Route::get('descargar-excel', [DemografiaController::class, 'descargarExcel'])
+                ->name('sincronizar.descargar');
+
+            // Paso 1: Procesa el archivo Excel, valida la estructura y lo aloja temporalmente
+            Route::post('subir-excel', [DemografiaController::class, 'subirExcel'])
+                ->name('sincronizar.subir');
+                
+            // Paso 2: Ejecuta el Upsert masivo transaccional en la BD (Múltiples hojas)
+            Route::post('confirmar-sincronizacion', [DemografiaController::class, 'confirmarSincronizacion'])
+                ->name('sincronizar.confirmar');
+        });
 
         // ---------------------------------------------------
         // 2. GESTIÓN DEL MAESTRO DEMOGRÁFICO (CRUD)
@@ -1264,4 +1268,5 @@ Route::middleware(['auth'])
             ->parameters(['maestro' => 'demografia']);
 
     });
+    
 // FIN MÓDULO DEMOGRAFÍA
