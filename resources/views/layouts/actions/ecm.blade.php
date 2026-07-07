@@ -2,7 +2,7 @@
     {{-- MÓDULO MAESTRO: GESTIÓN DE ASOCIADOS --}}
     <a href="javascript:void(0);" class="nxl-link">
         <span class="nxl-micon"><i class="bi bi-person-vcard"></i></span>
-        <span class="nxl-mtext">Asociados</span>
+        <span class="nxl-mtext">ECM</span>
         <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
     </a>
 
@@ -40,11 +40,14 @@
         </li>
 
         {{-- 5. SINCRONIZACIÓN EXCEL (NUEVO) --}}
+
+        @candirect('ecm.sincronizacionmasiva.index')
         <li class="nxl-item">
             <a class="nxl-link" href="{{ route('asociados.sincronizar.index') }}">
                 <i class="bi bi-file-earmark-spreadsheet me-2 text-success"></i> Sincronización Masiva
             </a>
         </li>
+        @endcandirect
 
         <li class="nxl-item" style="height: 40px; pointer-events: none; list-style: none;"></li>
     </ul>
