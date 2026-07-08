@@ -1,6 +1,7 @@
 FROM php:8.2-apache
 ENV CACHE_BUSTER=2026-07-08-fix
 
+
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
 RUN apt-get update -y && apt-get install -y \
