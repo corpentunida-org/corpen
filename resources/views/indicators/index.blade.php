@@ -49,7 +49,7 @@
         <div class="card stretch stretch-full function-table mb-4">
             <div class="card-header">
                 <h4 class="mb-0">
-                    {{ strtoupper($area) }}
+                    {{ $area }}
                 </h4>
             </div>
 
