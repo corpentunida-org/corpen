@@ -1,4 +1,4 @@
-FROM php:8.4-apache
+FROM php:8.2-apache
 
 ENV COMPOSER_ALLOW_SUPERUSER=1
 
@@ -16,24 +16,18 @@ RUN apt-get update -y && apt-get install -y \
 
 # Instalar extensiones de PHP
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-  && docker-php-ext-install gd zip pdo pdo_mysql
-RUN docker-php-ext-install bcmath
+  && docker-php-ext-install gd zip pdo pdo_mysql bcmath
+
 RUN a2enmod rewrite
 
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-ENV NODE_VERSION 18
+ENV NODE_VERSION=18
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash \
   && . ~/.nvm/nvm.sh \
   && nvm install $NODE_VERSION \
   && nvm alias default $NODE_VERSION \
   && nvm use default
-
-
-RUN docker-php-ext-install pdo_mysql
-RUN docker-php-ext-install gd
-RUN docker-php-ext-install zip
-
 
 RUN echo "file_uploads = On\n" \
   "memory_limit = 500M\n" \
@@ -51,16 +45,15 @@ RUN composer install --optimize-autoloader --no-dev
 RUN . ~/.nvm/nvm.sh && npm install
 RUN . ~/.nvm/nvm.sh && npm run build
 
-RUN php artisan view:cache
+# Ejecutar cachés de Laravel antes de cambiar permisos y antes del CMD
+RUN php artisan config:cache && php artisan route:cache && php artisan view:cache
 
 RUN chown -R www-data:www-data /var/www/html
 RUN chmod 755 /var/www/html
-RUN chmod -R 755 /var/www/html/storage
+RUN chmod -R 775 /var/www/html/storage
+RUN chmod -R 775 /var/www/html/bootstrap/cache
 
 COPY docker/default.conf /etc/apache2/sites-enabled/000-default.conf
 
+# El CMD siempre debe ir al final
 CMD ["/usr/sbin/apache2ctl", "-D", "FOREGROUND"]
-
-
-# Esto limpia y cachea la configuración de una vez
-RUN php artisan config:cache && php artisan view:cache
