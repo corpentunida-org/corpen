@@ -9,14 +9,17 @@ class IndPreguntas extends Model
 {
     use HasFactory;
 
-    protected $table = 'Ind_preguntas'; 
+    protected $table = 'Ind_preguntas';
 
-    protected $fillable = [
-        'text',
-    ];
-
-    public function respuestas() {
-        return $this->hasMany(IndRespuesta::class);
+    protected $fillable = ['text', 'ref_quiz'];
+    
+    public function quiz()
+    {
+        return $this->belongsTo(IndQuiz::class, 'ref_quiz');
     }
 
+    public function respuestas()
+    {
+        return $this->hasMany(IndRespuesta::class);
+    }
 }
