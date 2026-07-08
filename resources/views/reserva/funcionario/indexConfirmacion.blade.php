@@ -82,7 +82,7 @@
                                     <td>
                                         <div class="fw-semibold mb-1"></div>
                                         <div class="d-flex gap-3">
-                                            <a href="javascript:void(0);"
+                                            <a href=""
                                                 class="hstack gap-1 fs-11 fw-normal text-primary">
                                                 <span>{{ $reserva->res_inmueble->name }}</span>
                                             </a>
