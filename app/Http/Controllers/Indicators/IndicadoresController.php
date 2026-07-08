@@ -18,7 +18,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Storage;
-use App\Models\Action;
 
 class IndicadoresController extends Controller
 {
@@ -50,13 +49,10 @@ class IndicadoresController extends Controller
 
     public function dataIndicadores()
     {
-        $roles = Action::where('user_id', Auth::id())->pluck('role_id');
-
         $indicators = IndIndicadores::with('arearel')
-            ->whereIn('area', $roles)
             ->get()
             ->groupBy(function ($item) {
-                return $item->arearel->name ?? ' ';
+                return $item->arearel->nombre ?? ' ';
             });
         foreach ($indicators as $grupo) {
             foreach ($grupo as $ind) {
