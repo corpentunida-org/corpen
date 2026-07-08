@@ -45,6 +45,26 @@
                                         {{ $res->soporte_pago ? 'Soporte de pago' : 'No hay soporte' }} </a>
                                     <div class="d-md-inline-block d-none me-3 txt-solicitud">
                                         {{ $res->fecha_solicitud->format('d M, Y') }} </div>
+                                    <div class="filter-dropdown dropdown">
+                                        <div class="avatar-text avatar-sm" data-bs-toggle="dropdown"
+                                            aria-expanded="false" role="button">
+                                            <i class="bi bi-three-dots-vertical"></i>
+                                        </div>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <li>
+                                                <a class="dropdown-item" href="#">
+                                                    <i class="bi bi-eye me-2"></i>
+                                                    Ver reserva
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" href="{{ route('reserva.inmueble.soporte.create', $res->id) }}">
+                                                    <i class="bi bi-cloud-arrow-up me-2"></i>
+                                                    Adjuntar soporte
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
                                 </div>
                             </div>
                         </li>

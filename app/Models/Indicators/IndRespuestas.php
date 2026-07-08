@@ -9,11 +9,12 @@ class IndRespuestas extends Model
 {
     use HasFactory;
 
-    protected $table = 'Ind_respuestas'; 
+    protected $table = 'Ind_respuestas';
 
-    protected $fillable = [
-        'pregunta_id',
-        'text',
-    ];
+    protected $fillable = ['pregunta_id', 'text', 'correcta'];
 
+    public function pregunta()
+    {
+        return $this->belongsTo(IndPreguntas::class, 'pregunta_id');
+    }
 }

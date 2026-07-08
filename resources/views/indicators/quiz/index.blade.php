@@ -1,11 +1,65 @@
 <x-base-layout>
     @section('titlepage', 'Quizes')
+    <x-success />
+    <div class="col-xxl-12">
+        <div class="card stretch stretch-full">
+            <div class="card-header">
+                <h5 class="card-title">Lista de quizes</h5>
+                <a href="{{ route('indicators.quizes.create') }}" class="btn btn-light-brand"> 
+                <i class="bi bi-plus-circle me-2"></i> Crear una encuesta</a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Preguntas</th>
+                                <th>Estado</th>
+                                <th>Fecha de creación</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($lista_quizes as $quiz)
+                                <tr>
+                                    <td>{{ $quiz->nombre }}</td>
+                                    <td>{{ $quiz->total_preguntas }}</td>
+                                    <td>
+                                        @if ($quiz->estado)
+                                            <span class="badge bg-success">Activo</span>
+                                        @else
+                                            <span class="badge bg-danger">Inactivo</span>
+                                        @endif
+                                    </td>
+                                    <td>{{ $quiz->created_at }}</td>
+                                    <td>
+                                        <div class="d-flex gap-2">
+                                            <a href="#" class="avatar-text avatar-md">
+                                                <i class="bi bi-pencil-square fs-6"></i>
+                                            </a>
+                                            <a href="#" class="avatar-text avatar-md">
+                                                <i class="bi bi-eye-fill"></i>
+                                            </a>
+                                            <a href="#" class="avatar-text avatar-md">
+                                                <i class="bi bi-box-arrow-right"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="col-xxl-8">
         <div class="card stretch stretch-full">
             <div class="card-header">
-                <h5 class="card-title">Participantes del Quiz</h5>
-                <div class="card-header-action">
+                <h5 class="card-title">Participantes del Quiz</h5>                
+                {{-- <div class="card-header-action">
                     <div class="card-header-btn">
                         <div data-bs-toggle="tooltip" title="Delete">
                             <a href="javascript:void(0);" class="avatar-text avatar-xs bg-danger" data-bs-toggle="remove">
@@ -20,7 +74,7 @@
                                 data-bs-toggle="expand"> </a>
                         </div>
                     </div>
-                </div>
+                </div> --}}
             </div>
             <div class="table-responsive">
                 <table class="table table-hover" id="projectList">
