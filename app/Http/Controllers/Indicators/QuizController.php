@@ -23,6 +23,8 @@ class QuizController extends Controller
     */
     public function index()
     {
+        $lista_quizes = IndQuiz::all();
+
         $pruebausuarios = IndUsuarios::all();
         $respuestas = IndUsuarios::pluck('respuestas');
         $puntajesQuiz = [1 => 0, 2 => 0, 3 => 0, 4 => 0, 5 => 0];
@@ -66,7 +68,8 @@ class QuizController extends Controller
             'ticcorpen' => $ticcorpen,
             'ticsoft' => $ticsoft,
         ];
-        return view('indicators.quiz.index', compact('pruebausuarios', 'datacharts'));
+
+        return view('indicators.quiz.index', compact('pruebausuarios', 'datacharts', 'lista_quizes'));
     }
 
     public function generarpreguntas(int $pruebaid)
@@ -166,5 +169,42 @@ class QuizController extends Controller
             'existe' => $existe,
             'respondido' => $respondido,
         ]);
+    }
+
+    public function create()
+    {
+        return view('indicators.quiz.create');
+    }
+
+    public function store(Request $request)
+    {
+        dd($request->all());
+
+        DB::transaction(function () use ($request) {
+            $quiz = IndQuiz::create([
+                'nombre' => $request->titulo,
+                'total_preguntas' => count($request->preguntas),
+                'estado' => 1,
+                'usuario_creador' => auth()->id(),
+                'area' => null, // REVISAAAAR
+            ]);
+
+            foreach ($request->preguntas as $pregunta) {
+                $preguntaModel = IndPreguntas::create([
+                    'texto' => $pregunta['pregunta'],
+                    'ref_quiz' => $quiz->id,
+                ]);
+
+                foreach ($pregunta['respuestas'] as $indice => $respuesta) {
+                    IndRespuestas::create([
+                        'pregunta_id' => $preguntaModel->id,
+                        'texto' => $respuesta,
+                        'correcta' => $indice == $pregunta['correcta'],
+                    ]);
+                }
+            }
+        });
+
+        return redirect()->route('indicators.quizes.index')->with('success', 'Quiz creado exitosamente.');
     }
 }
