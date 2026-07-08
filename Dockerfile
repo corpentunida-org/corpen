@@ -60,3 +60,7 @@ RUN chmod -R 755 /var/www/html/storage
 COPY docker/default.conf /etc/apache2/sites-enabled/000-default.conf
 
 CMD ["/usr/sbin/apache2ctl", "-D", "FOREGROUND"]
+
+
+# Esto limpia y cachea la configuración de una vez
+RUN php artisan config:cache && php artisan view:cache
