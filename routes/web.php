@@ -1175,7 +1175,7 @@ Route::prefix('indicators')->group(function () {
 // ==========================================
 //   MÓDULO DE ASOCIADOS (PASTORES)
 // ==========================================
-Route::middleware(['auth','candirect:ecm.sincronizacionmasiva.index'])
+Route::middleware(['auth'])
     ->prefix('asociados')
     ->name('asociados.')
     ->group(function () {
