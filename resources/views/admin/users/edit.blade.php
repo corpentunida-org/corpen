@@ -1,190 +1,463 @@
 <x-base-layout>
-    @section('titlepage', 'Perfil Usuario')
+    @section('titlepage', 'Perfil de Usuario')
+    
     <x-success />
     <x-error />
-    <div class="col-12">
-        <div class="card stretch stretch-full">
-            <div class="card-body">
-                <div class="mb-4 text-center">
-                    <div class="wd-150 ht-150 mx-auto mb-3 position-relative">
-                        <div class="avatar-image wd-150 ht-150 border border-5 border-gray-3">
-                            <img src="assets/images/avatar/1.png" alt="" class="img-fluid">
-                        </div>
-                        <div class="wd-10 ht-10 text-success rounded-circle position-absolute translate-middle"
-                            style="top: 76%; right: 10px">
-                            <i class="bi bi-patch-check-fill"></i>
+
+    <style>
+        /* Tipografía y Contenedores */
+        .ui-card {
+            background: #ffffff;
+            border: 1px solid #eaedf1;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(17, 24, 39, 0.04);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        /* Banner superior del perfil con gradiente pastel */
+        .ui-profile-banner {
+            background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+            height: 120px;
+            width: 100%;
+            position: relative;
+        }
+        
+        /* Avatar superpuesto */
+        .ui-avatar-wrapper {
+            margin-top: -60px;
+            position: relative;
+            display: inline-flex;
+            justify-content: center;
+        }
+        .ui-avatar-image {
+            width: 130px; 
+            height: 130px;
+            border: 5px solid #ffffff;
+            border-radius: 50%;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.08);
+            object-fit: cover;
+            background-color: #fff;
+        }
+        .ui-verified-badge {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            background: #ffffff;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        /* Cajas de estadísticas (Stats) */
+        .ui-stat-box {
+            background: #f8fafc;
+            border: 1px solid #f1f5f9;
+            border-radius: 12px;
+            padding: 1.25rem;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+        .ui-stat-box:hover {
+            background: #ffffff;
+            border-color: #e2e8f0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            transform: translateY(-2px);
+        }
+        .ui-icon-box {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+        
+        /* Paleta Pastel para Iconos */
+        .ui-pastel-blue { background: #e0f2fe; color: #0284c7; }
+        .ui-pastel-purple { background: #f3e8ff; color: #9333ea; }
+        .ui-pastel-amber { background: #fef3c7; color: #d97706; }
+
+        /* Formularios Modernos (Inputs) */
+        .ui-form-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .ui-input {
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 0.85rem 1.25rem;
+            background: #f8fafc;
+            font-size: 0.95rem;
+            color: #1e293b;
+            transition: all 0.2s;
+            width: 100%;
+        }
+        .ui-input:focus {
+            background: #ffffff;
+            border-color: #8ec5fc;
+            box-shadow: 0 0 0 4px rgba(142, 197, 252, 0.2);
+            outline: none;
+        }
+        
+        /* Acordeón de Permisos (Premium Look) */
+        .ui-accordion .accordion-item {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px !important;
+            margin-bottom: 1rem;
+            overflow: hidden;
+            background: #ffffff;
+        }
+        .ui-accordion .accordion-button {
+            background: #ffffff;
+            font-weight: 600;
+            color: #1e293b;
+            padding: 1.25rem 1.5rem;
+            box-shadow: none !important;
+        }
+        .ui-accordion .accordion-button:not(.collapsed) {
+            background: #f8fafc;
+            color: #6366f1;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .ui-accordion .accordion-button::after {
+            filter: contrast(0.5);
+        }
+        
+        /* Switches (Toggles estilo iOS/Mac) */
+        .ui-switch .form-check-input {
+            height: 1.5rem;
+            width: 2.75rem;
+            border-radius: 2rem;
+            cursor: pointer;
+            border-color: #cbd5e1;
+            background-color: #e2e8f0;
+        }
+        .ui-switch .form-check-input:checked {
+            background-color: #6366f1;
+            border-color: #6366f1;
+        }
+        .ui-switch .form-check-label {
+            padding-top: 0.2rem;
+            padding-left: 0.5rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #334155;
+            cursor: pointer;
+        }
+
+        /* Danger Zone (GitHub Style) */
+        .ui-danger-zone {
+            border: 1px solid #fecaca;
+            background: #fff5f5;
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+        .ui-btn-danger {
+            background: #ef4444;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .ui-btn-danger:hover { background: #dc2626; transform: translateY(-1px); }
+        
+        .ui-btn-primary {
+            background: #4f46e5;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 0.85rem 2rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+        }
+        .ui-btn-primary:hover { background: #4338ca; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(79, 70, 229, 0.3); }
+    </style>
+
+    <div class="row g-4 mb-5">
+        
+        <div class="col-xl-4 col-lg-5">
+            <div class="ui-card h-100">
+                <div class="ui-profile-banner"></div>
+                
+                <div class="card-body px-4 pb-5 text-center">
+                    
+                    <div class="ui-avatar-wrapper w-100">
+                        <div class="position-relative d-inline-block">
+                            
+                            @if (isset($user->ubicacion_foto) && $user->ubicacion_foto)
+                                <img src="{{ route('archivo.empleado.verFoto', $user->id) }}" alt="Avatar" class="ui-avatar-image">
+                            @else
+                                @php
+                                    $nombres = explode(' ', trim($user->name));
+                                    $iniciales = strtoupper(substr($nombres[0] ?? 'U', 0, 1) . substr($nombres[1] ?? '', 0, 1));
+                                @endphp
+                                <div class="ui-avatar-image d-flex align-items-center justify-content-center fw-bold text-primary" style="background-color: #e0f2fe; font-size: 3rem;">
+                                    {{ $iniciales }}
+                                </div>
+                            @endif
+
+                            <div class="ui-verified-badge text-primary">
+                                <i class="bi bi-patch-check-fill fs-5"></i>
+                            </div>
                         </div>
                     </div>
-                    <div class="mb-4">
-                        <a class="fs-14 fw-bold d-block"> {{ $user->name }}</a>
-                        <a class="fs-12 fw-normal text-muted d-block">{{ $user->email }}</a>
+                    
+                    <div class="mt-4 mb-5">
+                        <h4 class="fw-bold text-dark mb-1">{{ $user->name }}</h4>
+                        <span class="badge bg-light text-secondary border border-light-subtle px-3 py-2 rounded-pill fs-14">
+                            <i class="bi bi-envelope me-2"></i>{{ $user->email }}
+                        </span>
                     </div>
-                    <div class="fs-12 fw-normal text-muted text-center d-flex flex-wrap gap-3 mb-4">
-                        <div class="flex-fill py-3 px-4 rounded-1 d-none d-sm-block border border-dashed border-gray-5">
-                            <h6 class="fs-15 fw-bolder">{{ $acciones }}</h6>
-                            <p class="fs-12 text-muted mb-0">Actividades en la app</p>
+
+                    <div class="d-flex flex-column gap-3 text-start">
+                        
+                        <div class="ui-stat-box">
+                            <div class="ui-icon-box ui-pastel-blue">
+                                <i class="bi bi-activity"></i>
+                            </div>
+                            <div>
+                                <p class="fs-12 text-muted text-uppercase fw-bold mb-1 tracking-wide">Actividad en Plataforma</p>
+                                <h5 class="fw-bolder mb-0 text-dark">{{ $acciones }} <span class="fs-14 fw-normal text-muted">registros</span></h5>
+                            </div>
                         </div>
-                        <div class="flex-fill py-3 px-4 rounded-1 d-none d-sm-block border border-dashed border-gray-5">
-                            <h6 class="fs-15 fw-bolder">{{ strtoupper($user->actions->first()->role->name) }}</h6>
-                            <p class="fs-12 text-muted mb-0">Rol asignado</p>
+
+                        <div class="ui-stat-box">
+                            <div class="ui-icon-box ui-pastel-purple">
+                                <i class="bi bi-shield-lock"></i>
+                            </div>
+                            <div>
+                                <p class="fs-12 text-muted text-uppercase fw-bold mb-1 tracking-wide">Rol Principal Asignado</p>
+                                <h5 class="fw-bolder mb-0 text-dark">
+                                    {{ strtoupper($user->actions->first()?->role?->name ?? 'SIN ROL') }}
+                                </h5>
+                            </div>
                         </div>
-                        <div class="flex-fill py-3 px-4 rounded-1 d-none d-sm-block border border-dashed border-gray-5">
-                            <h6 class="fs-15 fw-bolder">{{ $fecha->fechaRegistro ?? ' ' }}</h6>
-                            <p class="fs-12 text-muted mb-0">Ultima actividad</p>
+
+                        <div class="ui-stat-box">
+                            <div class="ui-icon-box ui-pastel-amber">
+                                <i class="bi bi-clock-history"></i>
+                            </div>
+                            <div>
+                                <p class="fs-12 text-muted text-uppercase fw-bold mb-1 tracking-wide">Último Ingreso / Acción</p>
+                                <h6 class="fw-bolder mb-0 text-dark mt-1">{{ $fecha->fechaRegistro ?? 'No registrada' }}</h6>
+                            </div>
+                        </div>
+
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-8 col-lg-7">
+            
+            <form method="POST" action="{{ route('admin.users.update', $user) }}" id="formUpdateUser" novalidate>
+                @csrf
+                @method('PUT')
+                
+                <div class="ui-card mb-4">
+                    <div class="card-header bg-white border-bottom border-light-subtle p-4">
+                        <h5 class="fw-bold text-dark mb-1"><i class="bi bi-person-lines-fill me-2 text-primary"></i>Datos Personales</h5>
+                        <p class="text-muted fs-14 mb-0">Gestione la información de contacto y credenciales de acceso del usuario.</p>
+                    </div>
+                    
+                    <div class="card-body p-4 p-md-5">
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <label class="ui-form-label">Nombre Completo <span class="text-danger">*</span></label>
+                                <div class="position-relative">
+                                    <input type="text" class="ui-input" value="{{ $user->name }}" name="name" required placeholder="Ej. Carlos Mendoza">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label class="ui-form-label">Correo Electrónico <span class="text-danger">*</span></label>
+                                <input type="email" class="ui-input" value="{{ $user->email }}" name="email" required placeholder="correo@empresa.com">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="ui-form-label">Teléfono de Contacto</label>
+                                <input type="text" class="ui-input" value="+01 (375) 2589 645" placeholder="+00 (000) 0000 000">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="ui-form-label">Actualizar Contraseña</label>
+                                <input type="password" class="ui-input" name="pass" placeholder="Dejar en blanco para mantener actual">
+                            </div>
                         </div>
                     </div>
                 </div>
-                <form method="POST" action="{{ route('admin.users.update', $user) }}" id="formUpdateUser" novalidate>
-                    @csrf
-                    @method('PUT')
-                    <ul class="list-unstyled mb-4">
-                        <div class="row mb-4 align-items-center">
-                            <div class="col-lg-2">
-                                <span class="text-muted fw-medium hstack gap-3 mr-3"><i
-                                        class="feather-phone"></i>Telefono</span>
+
+                <div class="ui-card mb-4">
+                    <div class="card-body p-4 p-md-5">
+                        <div class="d-flex align-items-center mb-4">
+                            <div class="ui-icon-box ui-pastel-blue me-3" style="width: 40px; height: 40px; font-size: 1.1rem;">
+                                <i class="bi bi-plus-lg"></i>
                             </div>
-                            <div class="col-lg-10">
-                                <div class="input-group">
-                                    <input class="form-control" value="+01 (375) 2589 645">
-                                </div>
+                            <div>
+                                <h6 class="fw-bold text-dark mb-0 fs-16">Asignar Rol Adicional</h6>
+                                <p class="text-muted fs-13 mb-0 mt-1">Expande los privilegios de este usuario añadiendo un nuevo rol.</p>
                             </div>
                         </div>
-                        <div class="row mb-4 align-items-center">
-                            <div class="col-lg-2">
-                                <span class="text-muted fw-medium hstack gap-3 mr-3"><i
-                                        class="feather-mail"></i>Email</span>
-                            </div>
-                            <div class="col-lg-10">
-                                <div class="input-group">
-                                    <input class="form-control" value="{{ $user->email }}" required>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row mb-4 align-items-center">
-                            <div class="col-lg-2">
-                                <span class="text-muted fw-medium hstack gap-3 mr-3"><i
-                                        class="feather-user"></i>Name</span>
-                            </div>
-                            <div class="col-lg-10">
-                                <div class="input-group">
-                                    <input class="form-control" value="{{ $user->name }}" name="name" required>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row mb-4 align-items-center">
-                            <div class="col-lg-2">
-                                <span class="text-muted fw-medium hstack gap-3 mr-3"><i
-                                        class="bi bi-lock-fill"></i>Contraseña</span>
-                            </div>
-                            <div class="col-lg-10">
-                                <div class="input-group">
-                                    <input class="form-control" type="password" name="pass">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row mb-4">
-                            <div class="col-lg-2 fw-medium">Roles Asignados</div>
-                            <div class="col-lg-10 hstack gap-1">
-                                @foreach ($user->actions as $rol)
-                                    <a href="#" class="badge bg-soft-primary text-primary">{{ strtoupper($rol->role->name) }}</a>     
-                                @endforeach
-                            </div>
-                        </div>
-                        <div class="row mb-4 align-items-center">
-                            <div class="col-lg-2">
-                                <span class="text-muted fw-medium hstack gap-3 mr-3"><i class="bi bi-ui-checks-grid"></i>Permisos</span>
-                            </div>
-                            <div class="col-lg-10">
-                                <div class="row">
-                                    @foreach ($permisosUsuario as $index => $permiso)
-                                        @if ($index % 3 == 0 && $index > 0)
-                                </div>
-                                <div class="row">
-                                    @endif
-                                    <div class="col-lg-4">
-                                        <div class="form-check">
-                                            <input type="checkbox" name="permissions[]" value="{{ $permiso->id }}"
-                                                class="form-check-input ml-3" id="permission_{{ $permiso->id }}"
-                                                @if (in_array($permiso->id, $permisosAsignados)) checked @endif>
-                                            <label class="form-check-label" for="permission_{{ $permiso->id }}">
-                                                {{ $permiso->name }}
-                                            </label>
-                                        </div>
-                                    </div>
+                        
+                        <div class="row">
+                            <div class="col-md-8">
+                                <select class="form-select ui-input cursor-pointer" name="rolnuevo">
+                                    <option value="" disabled selected>Seleccione un perfil de la lista desplegable...</option>
+                                    @foreach ($roles as $rol)
+                                        <option value="{{ $rol->id }}" {{ $user->actions->first()?->role?->id === $rol->id ? 'selected' : '' }}>
+                                            {{ strtoupper($rol->name) }}
+                                        </option>
                                     @endforeach
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-end mb-3 mt-5 px-1">
+                    <div>
+                        <h5 class="fw-bold text-dark mb-1"><i class="bi bi-sliders me-2 text-primary"></i>Roles Activos & Permisos</h5>
+                        <p class="text-muted fs-14 mb-0">Personaliza los permisos específicos dentro de cada rol asignado.</p>
+                    </div>
+                    <span class="badge ui-pastel-purple rounded-pill px-3 py-2 fs-13 shadow-sm border border-light">
+                        {{ count($user->actions) }} Rol(es) Activo(s)
+                    </span>
+                </div>
+
+                <div class="accordion ui-accordion mb-5" id="accordionRolesPermissions">
+                    @forelse ($user->actions as $index => $rol)
+                        <div class="accordion-item shadow-sm">
+                            <h2 class="accordion-header" id="heading-{{ $index }}">
+                                <button class="accordion-button {{ $index === 0 ? '' : 'collapsed' }}" 
+                                        type="button" data-bs-toggle="collapse" 
+                                        data-bs-target="#collapse-{{ $index }}" 
+                                        aria-expanded="{{ $index === 0 ? 'true' : 'false' }}">
+                                    <i class="bi bi-shield-check text-success me-3 fs-4"></i> 
+                                    PERFIL: {{ strtoupper($rol->role->name) }}
+                                </button>
+                            </h2>
+                            <div id="collapse-{{ $index }}" 
+                                 class="accordion-collapse collapse {{ $index === 0 ? 'show' : '' }}" 
+                                 data-bs-parent="#accordionRolesPermissions">
+                                <div class="accordion-body p-4 p-md-5 bg-light">
+                                    
+                                    <div class="mb-4 pb-3 border-bottom border-light-subtle">
+                                        <h6 class="fw-bold text-dark">Matriz de Permisos</h6>
+                                        <p class="fs-13 text-muted mb-0">Activa o desactiva las capacidades operativas para este rol.</p>
+                                    </div>
+                                    
+                                    <div class="row g-4">
+                                        @foreach ($permisosUsuario->where('role_id', $rol->role_id) as $permiso)
+                                            <div class="col-lg-6 col-xl-4">
+                                                <div class="form-check form-switch ui-switch d-flex align-items-center">
+                                                    <input type="checkbox" name="permissions[]" value="{{ $permiso->id }}"
+                                                        class="form-check-input flex-shrink-0" id="perm_{{ $rol->role_id }}_{{ $permiso->id }}"
+                                                        @if (in_array($permiso->id, $permisosAsignados)) checked @endif>
+                                                    <label class="form-check-label user-select-none" for="perm_{{ $rol->role_id }}_{{ $permiso->id }}">
+                                                        {{ $permiso->name }}
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+
                                 </div>
                             </div>
                         </div>
-                    </ul>
-                    <div id="contenedor-roles">
-                        <div class="mb-4 rol-row">
-                            <label class="form-label">Adicionar un Rol<span class="text-danger">*</span></label>
-                            <select class="form-control" name="rolnuevo">
-                                @foreach ($roles as $rol)
-                                    <option value="{{ $rol->id }}" {{ $user->actions->first()?->role?->id === $rol->id ? 'selected' : '' }}>
-                                        {{ strtoupper($rol->name) }}
-                                    </option>
-                                @endforeach
-                            </select>
+                    @empty
+                        <div class="ui-card p-5 text-center bg-white shadow-sm border-dashed">
+                            <div class="ui-icon-box bg-light text-muted mx-auto mb-3" style="width: 64px; height: 64px; font-size: 2rem;">
+                                <i class="bi bi-inbox"></i>
                             </div>
+                            <h5 class="fw-bold text-dark">Sin Roles Asignados</h5>
+                            <p class="text-muted fs-14 mb-0">Este usuario no cuenta con perfiles operativos activos en el sistema.</p>
                         </div>
-                    <div class="d-flex gap-2 text-center pt-4">
-                        <a href="javascript:void(0);" class="w-50 btn btn-light-brand">
-                            <i class="feather-trash-2 me-2"></i>
-                            <span>Eliminar un Rol</span>
-                        </a>
-                        <button type="submit" class="w-50 btn btn-primary">
-                            <i class="feather-edit me-2"></i>
-                            <span>Guardar Cambios</span>
-                        </button>
+                    @endforelse
+                </div>
+
+                <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center bg-white p-4 rounded-4 border border-light-subtle shadow-sm mb-5">
+                    <a href="#cardAddPermisos" class="text-danger fw-semibold text-decoration-none px-2 mb-3 mb-sm-0 fs-15">
+                        <i class="bi bi-arrow-down-circle me-1"></i> Ir a Zona de Peligro
+                    </a>
+                    <button type="submit" class="ui-btn-primary w-100 w-sm-auto">
+                        <i class="bi bi-save me-2"></i> Guardar Configuración
+                    </button>
+                </div>
+            </form>
+
+            <div class="ui-danger-zone mt-4 shadow-sm" id="cardAddPermisos">
+                <div class="row align-items-center">
+                    <div class="col-lg-6 mb-4 mb-lg-0">
+                        <h5 class="fw-bold text-danger mb-2">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>Eliminar Rol Asociado
+                        </h5>
+                        <p class="text-danger opacity-75 fs-14 mb-0 pe-md-4">
+                            Al revocar un rol, el usuario perderá inmediatamente el acceso a todos los módulos dependientes de dicho perfil. Esta acción es irreversible.
+                        </p>
                     </div>
-                </form>
+                    
+                    <div class="col-lg-6 border-start border-danger border-opacity-25 ps-lg-4">
+                        <form method="POST" action="{{ route('admin.roles.destroy', $user->id) }}" id="formAddPermiso" novalidate>
+                            @csrf
+                            @method('DELETE')
+                            
+                            <label class="fw-semibold text-danger fs-13 mb-2">Seleccione el perfil a revocar</label>
+                            <div class="d-flex flex-column flex-sm-row gap-3">
+                                <select class="form-select flex-grow-1 border-danger border-opacity-50 text-danger bg-white shadow-none" name="rol" required>
+                                    <option value="" disabled selected>Seleccione el rol de la lista...</option>
+                                    @foreach ($user->actions as $rol)
+                                        <option value="{{ $rol->role_id }}">
+                                            {{ strtoupper($rol->role->name) }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                
+                                <button class="ui-btn-danger text-nowrap" data-bs-toggle="tooltip" title="Revocar acceso" type="submit">
+                                    <i class="bi bi-trash3-fill me-2"></i> Revocar Rol
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
+
         </div>
     </div>
-    <div class="col-lg-12">
-        <div class="card stretch stretch-full" id="cardAddPermisos">
-            <div class="card-header">
-                <h5 class="fw-bold mb-0">
-                    <span class="d-block mb-2">Eliminar Rol asociado</span>
-                </h5>
-            </div>
-            
-            <div class="card-body p-4">                
-                <form method="POST" action="{{ route('admin.roles.destroy', $user->id) }}" id="formAddPermiso" novalidate>
-                    @csrf
-                    @method('DELETE')                    
-                    <div class="mb-4">
-                        <label class="form-label">Seleccione el Rol<span class="text-danger">*</span></label>
-                        <select class="form-control" name="rol">
-                            @foreach ($user->actions as $rol)                            
-                                <option value="{{ $rol->role_id }}" {{ $user->actions->first()?->role?->id === $rol->id ? 'selected' : '' }}>
-                                    {{ strtoupper($rol->role->name) }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="d-flex flex-row-reverse gap-2 mt-2">
-                        <button class="btn btn-danger mt-4" data-bs-toggle="tooltip"
-                            title="Timesheets"type="submit">
-                            <i class="bi bi-trash3-fill me-2"></i>
-                            <span>Eliminar</span>
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+
     <script>
-        $('#formUpdateUser').submit(function(event) {
-            var form = this;
-            if (!form.checkValidity()) {
-                $(form).addClass('was-validated');
-                event.preventDefault();
-                event.stopPropagation();
-            } else {
-                console.log($(this).serialize());
-            }
+        $(document).ready(function() {
+            // Inicializar tooltips si tienes Bootstrap JS cargado
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            });
+
+            // Validación de formulario
+            $('#formUpdateUser').submit(function(event) {
+                var form = this;
+                if (!form.checkValidity()) {
+                    $(form).addClass('was-validated');
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+            });
         });
     </script>
 </x-base-layout>

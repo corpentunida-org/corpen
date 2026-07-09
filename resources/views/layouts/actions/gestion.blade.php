@@ -1,7 +1,8 @@
-<li class="nxl-item nxl-hasmenu {{ request()->routeIs('archivo.cargo.*', 'archivo.area.*', 'archivo.empleado.*', 'archivo.categoria.*', 'archivo.gdotipodocumento.*', 'archivo.gdodocsempleados.*', 'archivo.funcion.*', 'visitas.corpen.*') ? 'active' : '' }}">
+<li
+    class="nxl-item nxl-hasmenu {{ request()->routeIs('archivo.cargo.*', 'archivo.area.*', 'archivo.empleado.*', 'archivo.categoria.*', 'archivo.gdotipodocumento.*', 'archivo.gdodocsempleados.*', 'archivo.funcion.*', 'visitas.corpen.*') ? 'active' : '' }}">
     <a href="javascript:void(0);" class="nxl-link">
         <span class="nxl-micon"><i class="bi bi-collection"></i></span>
-        <span class="nxl-mtext">Gestión Documental</span>
+        <span class="nxl-mtext">RR. HH.</span>
         <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
     </a>
 
