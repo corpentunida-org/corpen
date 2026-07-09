@@ -29,6 +29,8 @@ class UserController extends Controller
         //$users = User::where('type', null)->paginate(5);
         return view('admin.users.index', compact('users'));
     }
+
+
     
     public function edit(User $user)
     {
