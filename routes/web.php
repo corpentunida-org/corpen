@@ -1187,22 +1187,25 @@ Route::middleware(['auth'])
         // ---------------------------------------------------
         // 1. FLUJO DE SINCRONIZACIÓN MASIVA EXCEL (NUEVO)
         // ---------------------------------------------------
-        // Vista principal del panel de carga y descarga de plantillas
-        Route::get('sincronizar', [MaeAsociadoController::class, 'excelIndex'])
-            ->name('sincronizar.index');
-
-        // Acción: Descarga la base de datos completa actual en formato .xlsx
-        Route::get('descargar-excel', [MaeAsociadoController::class, 'descargarExcel'])
-            ->name('sincronizar.descargar');
-
-        // Paso 1: Procesa el archivo Excel, valida la estructura y lo aloja en Sesión
-        Route::post('subir-excel', [MaeAsociadoController::class, 'subirExcel'])
-            ->name('sincronizar.subir');
+        Route::middleware(['can:ecm.sincronizacionmasiva.index'])->group(function () {
             
-        // Paso 2: Ejecuta el Upsert masivo transaccional en la BD desde la mesa de validación
-        Route::post('confirmar-sincronizacion', [MaeAsociadoController::class, 'confirmarSincronizacion'])
-            ->name('sincronizar.confirmar');
+            // Vista principal del panel de carga y descarga de plantillas
+            Route::get('sincronizar', [MaeAsociadoController::class, 'excelIndex'])
+                ->name('sincronizar.index');
 
+            // Acción: Descarga la base de datos completa actual en formato .xlsx
+            Route::get('descargar-excel', [MaeAsociadoController::class, 'descargarExcel'])
+                ->name('sincronizar.descargar');
+
+            // Paso 1: Procesa el archivo Excel, valida la estructura y lo aloja en Sesión
+            Route::post('subir-excel', [MaeAsociadoController::class, 'subirExcel'])
+                ->name('sincronizar.subir');
+                
+            // Paso 2: Ejecuta el Upsert masivo transaccional en la BD desde la mesa de validación
+            Route::post('confirmar-sincronizacion', [MaeAsociadoController::class, 'confirmarSincronizacion'])
+                ->name('sincronizar.confirmar');
+
+        });
         // ---------------------------------------------------
         // 2. GESTIÓN DEL MAESTRO DE ASOCIADOS (CRUD)
         // ---------------------------------------------------
