@@ -168,6 +168,15 @@
     </style>
 
     <div class="col-12 mb-4">
+        <!-- BOTÓN DE VOLVER AL INDEX (Con margen reducido para matar el espacio en blanco) -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+            <div class="d-flex align-items-center gap-4">
+                <a href="{{ route('admin.roles.index') }}" class="ui-nav-item mb-0">
+                    <i class="bi bi-shield-check fs-6 me-2"></i> Ver Roles y Permisos
+                </a>
+            </div>
+        </div>
+    
         <div class="ui-pro-card">
             
             <div class="card-header bg-white border-bottom border-light-subtle d-flex flex-column flex-md-row justify-content-between align-items-md-center py-4 px-4 px-md-5">
