@@ -60,7 +60,7 @@
         .text-center { text-align: center !important; }
         .text-muted { color: #5f6368; font-size: 11px; }
         .font-mono { font-family: 'Consolas', 'Courier New', monospace; font-size: 13px; font-weight: bold;}
-        
+
         .sheets-actions { display: flex; justify-content: flex-end; gap: 10px; align-items: center; }
         .action-icon { color: #5f6368; font-size: 15px; text-decoration: none; cursor: pointer; border: none; background: transparent; padding: 0; transition: color 0.2s ease; }
         .action-icon:hover { color: #1a73e8; }
@@ -87,7 +87,7 @@
                 <i class="bi bi-check-circle-fill"></i> {{ session('success') }}
             </div>
         @endif
-        
+
         <div class="sheets-header">
             <div>
                 <h1><i class="bi bi-journal-check" style="font-size: 18px; color: #1a73e8;"></i> Bitácora de Movimientos</h1>
@@ -120,7 +120,7 @@
                 <label>Buscar Código o Responsable</label>
                 <input type="text" name="search" class="filter-input" placeholder="Ej. ACT-001..." value="{{ request('search') }}">
             </div>
-            
+
             <div class="filter-group">
                 <label>Tipo de Registro</label>
                 <input type="text" name="tipo" class="filter-input" placeholder="Ej. Entrada, Salida..." value="{{ request('tipo') }}">
@@ -166,7 +166,7 @@
                         <td>{{ $mov->tipoRegistro->nombre ?? 'N/A' }}</td>
                         <td>{{ $mov->responsable->name ?? 'N/A' }}</td>
                         <td>{{ $mov->created_at->format('d/m/Y H:i') }}</td>
-                        
+
                         {{-- Indicador de Auditoría (Badge visual) --}}
                         <td>
                             @if($mov->acta_archivo)
@@ -175,9 +175,9 @@
                                 <span class="cell-warning" title="Falta subir el documento con firmas físicas"><i class="bi bi-hourglass-split"></i> Pendiente</span>
                             @endif
                         </td>
-                        
+
                         <td class="text-muted">{{ $mov->creador->name ?? 'Sistema' }}</td>
-                        
+
                         <td>
                             <div class="sheets-actions">
                                 {{-- Descargar Original siempre disponible --}}
@@ -215,7 +215,7 @@
                 </tbody>
             </table>
         </div>
-        
+
         @if($movimientos->hasPages())
             <div style="margin-top: 10px; font-size: 13px;">
                 {{ $movimientos->appends(request()->query())->links() }}
