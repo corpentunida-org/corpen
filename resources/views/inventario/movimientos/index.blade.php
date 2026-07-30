@@ -181,7 +181,7 @@
                         <td>
                             <div class="sheets-actions">
                                 {{-- Descargar Original siempre disponible --}}
-                                <a href="{{ route('inventario.movimientos.pdf', $mov->id) }}" class="action-icon" title="Imprimir acta original">
+                                <a href="{{ route('inventario.movimientos.pdf', $mov->id) }}" target="_blank" class="action-icon" title="Imprimir acta original">
                                     <i class="bi bi-printer"></i>
                                 </a>
 
