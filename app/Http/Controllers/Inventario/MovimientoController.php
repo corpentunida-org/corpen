@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Auth;
 
 class MovimientoController extends Controller
 {
@@ -26,7 +27,7 @@ class MovimientoController extends Controller
         $query = InvMovimiento::with(['responsable', 'tipoRegistro', 'creador']);
 
         // --- APLICAR FILTROS A LA CONSULTA ---
-        
+
         // Filtro por Búsqueda (Código de Acta o Nombre del Responsable)
         $query->when($request->search, function ($q) use ($request) {
             $search = $request->search;
@@ -60,7 +61,7 @@ class MovimientoController extends Controller
 
         // Calcular totales para las tarjetas
         $totalRegistros = $queryDashboard->count();
-        
+
         // Calcular cuántas actas ya tienen archivo adjunto (están firmadas)
         $queryFirmadas = clone $queryDashboard;
         $totalFirmadas = $queryFirmadas->whereNotNull('acta_archivo')->count();
@@ -81,10 +82,10 @@ class MovimientoController extends Controller
         $movimientos = $query->orderBy('created_at', 'desc')->paginate(50);
 
         return view('inventario.movimientos.index', compact(
-            'movimientos', 
-            'totalRegistros', 
-            'totalFirmadas', 
-            'chartLabels', 
+            'movimientos',
+            'totalRegistros',
+            'totalFirmadas',
+            'chartLabels',
             'chartData'
         ));
     }
@@ -137,7 +138,7 @@ class MovimientoController extends Controller
                 'observacion_general' => $request->observacion_general,
                 'id_InvTiposRegistros' => $request->id_InvTiposRegistros, // Llave foránea en Cabecera
                 'id_usersAsignado' => $request->id_usersAsignado,
-                'id_usersRegistro' => auth()->id()
+                'id_usersRegistro' => Auth::id()
             ]);
 
             // Obtenemos el objeto estado para usar su nombre en el detalle (auditoría histórica)
@@ -194,12 +195,21 @@ class MovimientoController extends Controller
             'detalles.activo.referencia.marca'
         ])->findOrFail($id);
 
-        // 2. Cargamos una vista HTML y le pasamos los datos del movimiento
-        $pdf = Pdf::loadView('inventario.movimientos.pdf', compact('movimiento'));
+        // --- 2. LÓGICA PARA INYECTAR LA IMAGEN DE FONDO ---
+        $pathFondo = public_path('assets/img/fondoPdf.png');
 
-        // 3. Forzamos la descarga del archivo con el nombre del acta
-        return $pdf->download($movimiento->codigo_acta . '.pdf');
-    }
+        $fondoImg = null;
+        if (file_exists($pathFondo)) {
+            $type = pathinfo($pathFondo, PATHINFO_EXTENSION);
+            $data = file_get_contents($pathFondo);
+            $fondoImg = 'data:image/' . $type . ';base64,' . base64_encode($data);
+        }
+
+        // 3. Cargamos la vista pasándole el movimiento Y la imagen de fondo
+        $pdf = Pdf::loadView('inventario.movimientos.pdf', compact('movimiento', 'fondoImg'));
+
+        // 4. Forzamos la descarga del archivo con el nombre del acta
+        return $pdf->stream($movimiento->codigo_acta . '.pdf');    }
 
     /**
      * Sube el acta firmada a AWS S3 y actualiza el registro en la BD
