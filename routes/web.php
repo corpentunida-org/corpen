@@ -46,6 +46,25 @@ use App\Http\Controllers\Reservas\ResReservaController;
 use App\Http\Controllers\Reservas\ResInmuebleController;
 use App\Http\Controllers\Reservas\ResDashboardController;
 
+//   MÓDULO DE RESERVAS (RSV)
+use App\Http\Controllers\Rsv\AuditLogController;
+use App\Http\Controllers\Rsv\BloqueoCalendarioController;
+use App\Http\Controllers\Rsv\CatalogoInmuebleController;
+use App\Http\Controllers\Rsv\HistorialEndosoController;
+use App\Http\Controllers\Rsv\HistorialEstadoController;
+use App\Http\Controllers\Rsv\InmuebleMultimediaController;
+use App\Http\Controllers\Rsv\ItinerarioEventoController;
+use App\Http\Controllers\Rsv\MensajeController;
+use App\Http\Controllers\Rsv\OrigenReservaController;
+use App\Http\Controllers\Rsv\PasarelaController;
+use App\Http\Controllers\Rsv\ReservaController;
+use App\Http\Controllers\Rsv\ReservaHuespedController;
+use App\Http\Controllers\Rsv\ReviewController;
+use App\Http\Controllers\Rsv\StatusController;
+use App\Http\Controllers\Rsv\TarifaTemporadaController;
+use App\Http\Controllers\Rsv\TipoReceptorController;
+use App\Http\Controllers\Rsv\TransaccionFinancieraController;
+
 //ARCHIVO
 use App\Http\Controllers\Archivo\GdoCargoController;
 use App\Http\Controllers\Archivo\GdoAreaController;
@@ -152,7 +171,7 @@ Route::get('/base', function () {
 //ADMIN
 Route::resource('users', UserController::class)
     ->names('admin.users')->middleware(['auth', 'candirect:admin.users.index']);
-    
+
 Route::resource('admin', AuditoriaController::class)
     ->names('admin.auditoria')
     ->middleware(['auth', 'candirect:admin.auditoria.index']);
@@ -271,9 +290,9 @@ Route::middleware(['auth', 'check.mantenimiento'])
         // ---------------------------------------------------
         // 2. CONCILIACIÓN Y EXTRACTOS BANCARIOS
         // ---------------------------------------------------
-        
+
         // --- FLUJO DE IMPORTACIÓN ---
-        
+
         // Descarga la plantilla estructurada
         Route::get('extractos/plantilla', [ConExtractoTransaccionController::class, 'descargarPlantilla'])
             ->name('extractos.plantilla');
@@ -281,7 +300,7 @@ Route::middleware(['auth', 'check.mantenimiento'])
         // Vista del formulario inicial para subir el archivo
         Route::get('extractos/importar', [ConExtractoTransaccionController::class, 'importar'])
             ->name('extractos.importar');
-        
+
         // Paso 1: Procesa el archivo y lo guarda temporalmente en la Sesión para previsualizar
         Route::post('extractos/procesar-importacion', [ConExtractoTransaccionController::class, 'procesarImportacion'])
             ->name('extractos.procesar-importacion');
@@ -292,7 +311,7 @@ Route::middleware(['auth', 'check.mantenimiento'])
 
 
         // --- FLUJO DE CONCILIACIÓN ---
-        
+
         // Vista principal de la mesa de conciliación (Lado a Lado)
         Route::get('extractos/conciliacion', [ConExtractoTransaccionController::class, 'conciliacion'])
             ->name('extractos.conciliacion');
@@ -300,7 +319,7 @@ Route::middleware(['auth', 'check.mantenimiento'])
         // Acción: Ejecuta el cruce masivo por Hash (Banco vs Cartera)
         Route::post('extractos/conciliacion-automatica', [ConExtractoTransaccionController::class, 'conciliacionAutomatica'])
             ->name('extractos.conciliacion-automatica');
-        
+
         // Acción: Vincula un movimiento bancario específico con un recibo de cartera
         Route::post('extractos/conciliacion-manual', [ConExtractoTransaccionController::class, 'conciliacionManual'])
             ->name('extractos.conciliacion-manual');
@@ -314,7 +333,7 @@ Route::middleware(['auth', 'check.mantenimiento'])
         // ---------------------------------------------------
         // 3. SINCRONIZACIÓN EXCEL (AWS Master Sync)
         // ---------------------------------------------------
-        
+
         // Panel de Sincronización Excel
         Route::get('sincronizar', [ExcelSyncController::class, 'index'])
             ->name('sincronizar.index');
@@ -330,8 +349,8 @@ Route::middleware(['auth', 'check.mantenimiento'])
         Route::get('subir-excel', function() {
             return redirect()->route('contabilidad.sincronizar.index')
                 ->withErrors('La página de previsualización expiró o fue recargada. Por favor, selecciona y sube el archivo de nuevo.');
-        }); 
-           
+        });
+
         // Acción: Confirmar y guardar masivamente el Upsert (PASO 2)
         Route::post('confirmar-sincronizacion', [ExcelSyncController::class, 'confirmarSincronizacion'])->name('sincronizar.confirmar');
 
@@ -342,7 +361,7 @@ Route::middleware(['auth', 'check.mantenimiento'])
         // ---------------------------------------------------
         // 4. SISTEMA Y MANTENIMIENTO
         // ---------------------------------------------------
-        
+
         // Vista Maestra de Mantenimiento (Ultra Profesional)
         Route::get('mantenimiento', [ConExtractoTransaccionController::class, 'mantenimiento'])
             ->name('mantenimiento');
@@ -483,6 +502,94 @@ Route::prefix('reservas')->name('reserva.')->group(function () {
 //Route::get('/scheduler-run', function () {Artisan::call('schedule:run');return 'Scheduler ejecutado';});
 Route::get('/scheduler-run', [ResReservaController::class, 'cancelarReservasSinSoportePago'])->name('reservas.cancelar.auto');
 
+// ==========================================
+//   MÓDULO DE RESERVAS RSV
+// ==========================================
+Route::middleware(['auth'])
+    ->prefix('rsv')
+    ->name('rsv.')
+    ->group(function () {
+        // ---------------------------------------------------
+        // 1. CATÁLOGO DE INMUEBLES Y CONFIGURACIONES
+        // ---------------------------------------------------
+
+        // Ruta específica para cambiar estado de inmueble (Activo/Inactivo)
+        Route::patch('inmuebles/{id}/cambiar-estado', [CatalogoInmuebleController::class, 'cambiarEstado'])->name('inmuebles.cambiar_estado');
+
+        // CRUD Principal de Inmuebles
+        Route::resource('inmuebles', CatalogoInmuebleController::class)->parameters(['inmuebles' => 'rsvCatalogoInmueble']);
+
+        // Multimedia de Inmuebles
+        Route::resource('inmueble-multimedia', InmuebleMultimediaController::class)->parameters(['inmueble-multimedia' => 'rsvMultimedia']);
+
+        // Tarifas por Temporada
+        Route::resource('tarifas-temporadas', TarifaTemporadaController::class)->parameters(['tarifas-temporadas' => 'rsvTarifa']);
+
+        // Bloqueos de Calendario
+        Route::resource('bloqueos-calendario', BloqueoCalendarioController::class)->parameters(['bloqueos-calendario' => 'rsvBloqueo']);
+
+        // ---------------------------------------------------
+        // 2. NÚCLEO TRANSACCIONAL (RESERVAS)
+        // ---------------------------------------------------
+
+        // Acciones específicas de Negocio para Reservas
+        Route::patch('reservas/{id}/cambiar-estado', [ReservaController::class, 'cambiarEstado'])->name('reservas.cambiar_estado');
+        Route::get('reservas/{id}/comprobante-pdf', [ReservaController::class, 'descargarPdfComprobante'])->name('reservas.pdf');
+
+        // CRUD Principal de Reservas
+        Route::resource('reservas', ReservaController::class)->parameters(['reservas' => 'rsvReserva']);
+
+        // Huéspedes asociados a las reservas
+        Route::resource('reserva-huespedes', ReservaHuespedController::class)->parameters(['reserva-huespedes' => 'rsvHuesped']);
+
+        // Itinerarios y eventos de la reserva
+        Route::resource('itinerarios', ItinerarioEventoController::class)->parameters(['itinerarios' => 'rsvItinerario']);
+
+        // Endosos de reservas (Historial y transferencia)
+        Route::resource('historial-endosos', HistorialEndosoController::class)->parameters(['historial-endosos' => 'rsvEndoso']);
+
+        // Historial de cambios de estado
+        Route::resource('historial-estados', HistorialEstadoController::class)->parameters(['historial-estados' => 'rsvEstadoLog']);
+
+        // ---------------------------------------------------
+        // 3. FINANZAS Y PAGOS
+        // ---------------------------------------------------
+
+        // Transacciones Financieras de las reservas
+        Route::resource('transacciones', TransaccionFinancieraController::class)->parameters(['transacciones' => 'rsvTransaccion']);
+
+        // Pasarelas de pago (Catálogo)
+        Route::resource('pasarelas', PasarelaController::class)->parameters(['pasarelas' => 'rsvPasarela']);
+
+        // ---------------------------------------------------
+        // 4. COMUNICACIÓN Y REPUTACIÓN
+        // ---------------------------------------------------
+
+        // Centro de Mensajería / Chat interno de reservas
+        Route::resource('mensajes', MensajeController::class)->parameters(['mensajes' => 'rsvMensaje']);
+
+        // Reviews y Calificaciones
+        Route::resource('reviews', ReviewController::class)->parameters(['reviews' => 'rsvReview']);
+
+        // ---------------------------------------------------
+        // 5. PARÁMETROS, CATÁLOGOS AUXILIARES Y AUDITORÍA
+        // ---------------------------------------------------
+
+        // Catálogos de Estados de Reserva
+        Route::resource('statuses', StatusController::class)->parameters(['statuses' => 'rsvStatus']);
+
+        // Origen de las Reservas (Booking, Directo, etc.)
+        Route::resource('origen-reservas', OrigenReservaController::class)->parameters(['origen-reservas' => 'rsvOrigen']);
+
+        // Tipos de Receptor para Reviews
+        Route::resource('tipo-receptor', TipoReceptorController::class)->parameters(['tipo-receptor' => 'rsvTipoReceptor']);
+
+        // Auditoría e Inmutabilidad de Logs del Módulo
+        Route::resource('audit-logs', AuditLogController::class)->parameters(['audit-logs' => 'rsvAuditLog']);
+    });
+// FIN MÓDULO RESERVAS
+
+
 //TERCEROS
 Route::prefix('maestras')
     ->middleware('auth')
@@ -613,7 +720,7 @@ Route::prefix('interactions')
 
         // 👁️ Mostrar detalle
         Route::get('/{interaction}/show', [InteractionController::class, 'show'])->name('show');
-        
+
         // 🚀 NUEVA RUTA PARA AJAX (Punto 3): Obtener seguimientos dinámicamente
         Route::get('/{interaction}/seguimientos', [InteractionController::class, 'getSeguimientos'])->name('seguimientos.ajax');
 
@@ -965,7 +1072,7 @@ Route::middleware(['auth'])
 
         // Generar Reporte PDF Profesional de Activos (Filtrado)
         Route::get('activos/reporte-pdf', [ActivoController::class, 'generarReportePdf'])->name('activos.pdf');
-        
+
         // Generar Reporte Excel de Activos (Filtrado) <-- NUEVA RUTA
         Route::get('activos/reporte-excel', [ActivoController::class, 'generarReporteExcel'])->name('activos.excel');
 
@@ -1040,7 +1147,7 @@ Route::middleware(['auth'])
         Route::get('tablero', [CorrespondenciaController::class, 'tablero'])
             ->name('tablero')
             ->middleware('candirect:correspondencia.usuario.admin');
-            
+
         Route::get('tablero/pdf', [CorrespondenciaController::class, 'generarReportePdf'])
             ->name('tablero.pdf')
             ->middleware('candirect:correspondencia.usuario.admin');
@@ -1179,7 +1286,7 @@ Route::middleware(['auth'])
     ->prefix('asociados')
     ->name('asociados.')
     ->group(function () {
-        
+
         // 0. DASHBOARD E INDICADORES
         Route::get('tablero', [MaeAsociadoController::class, 'dashboard'])
             ->name('dashboard');
@@ -1188,7 +1295,7 @@ Route::middleware(['auth'])
         // 1. FLUJO DE SINCRONIZACIÓN MASIVA EXCEL (NUEVO)
         // ---------------------------------------------------
         Route::middleware(['can:ecm.sincronizacionmasiva.index'])->group(function () {
-            
+
             // Vista principal del panel de carga y descarga de plantillas
             Route::get('sincronizar', [MaeAsociadoController::class, 'excelIndex'])
                 ->name('sincronizar.index');
@@ -1200,7 +1307,7 @@ Route::middleware(['auth'])
             // Paso 1: Procesa el archivo Excel, valida la estructura y lo aloja en Sesión
             Route::post('subir-excel', [MaeAsociadoController::class, 'subirExcel'])
                 ->name('sincronizar.subir');
-                
+
             // Paso 2: Ejecuta el Upsert masivo transaccional en la BD desde la mesa de validación
             Route::post('confirmar-sincronizacion', [MaeAsociadoController::class, 'confirmarSincronizacion'])
                 ->name('sincronizar.confirmar');
@@ -1225,7 +1332,7 @@ Route::middleware(['auth'])
         // ---------------------------------------------------
         Route::get('ecm', [MaeAsociadoController::class, 'ecmIndex'])
             ->name('ecm.index');
-            
+
     });
 // FIN MÓDULO ASOCIADOS
 // ==========================================
@@ -1235,7 +1342,7 @@ Route::middleware(['auth'])
     ->prefix('demograficos')
     ->name('demograficos.')
     ->group(function () {
-        
+
         // 0. DASHBOARD E INDICADORES
         Route::get('tablero', [DemografiaController::class, 'dashboard'])
             ->name('dashboard');
@@ -1257,7 +1364,7 @@ Route::middleware(['auth'])
             // Paso 1: Procesa el archivo Excel, valida la estructura y lo aloja temporalmente
             Route::post('subir-excel', [DemografiaController::class, 'subirExcel'])
                 ->name('sincronizar.subir');
-                
+
             // Paso 2: Ejecuta el Upsert masivo transaccional en la BD (Múltiples hojas)
             Route::post('confirmar-sincronizacion', [DemografiaController::class, 'confirmarSincronizacion'])
                 ->name('sincronizar.confirmar');
@@ -1271,5 +1378,5 @@ Route::middleware(['auth'])
             ->parameters(['maestro' => 'demografia']);
 
     });
-    
-// FIN MÓDULO DEMOGRAFÍA - 
+
+// FIN MÓDULO DEMOGRAFÍA -
