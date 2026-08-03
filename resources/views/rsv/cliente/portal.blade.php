@@ -1,76 +1,132 @@
 <x-base-layout>
-    @section('titlepage', 'Portal de Huésped - Sistema RSV')
+    @section('titlepage', 'Mi Portal - Sistema RSV')
 
-    <x-success />
+    {{-- Notificaciones Toast --}}
+    @include('rsv.components.alert')
 
-    <div class="main-header d-flex justify-content-between align-items-center mb-4">
-        <h1 class="fw-extrabold mb-1 pl-2">Portal de Huésped</h1>
-
-        <div class="header-actions d-flex">
-            <a href="#" class="btn btn-primary shadow-sm rounded-pill px-4 fw-bold">
-                <i class="bi bi-search me-1"></i> Explorar Inmuebles
-            </a>
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
+        <div>
+            <h2 class="fw-extrabold mb-1">Hola, {{ auth()->user()->name ?? 'Huésped' }}</h2>
+            <p class="text-muted">Gestiona tus próximas estadías y pagos desde aquí.</p>
         </div>
     </div>
 
-    {{-- Pestañas de Navegación del Portal Cliente --}}
-    <ul class="nav nav-pills mb-4" id="clientTabs" role="tablist">
-        <li class="nav-item" role="presentation">
-            <button class="nav-link active rounded-pill px-4 fw-bold me-2 shadow-sm" id="activas-tab" data-bs-toggle="pill" data-bs-target="#activas" type="button" role="tab">Reservas Activas</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link rounded-pill px-4 fw-bold me-2 shadow-sm" id="historial-tab" data-bs-toggle="pill" data-bs-target="#historial" type="button" role="tab">Historial de Estancias</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link rounded-pill px-4 fw-bold me-2 shadow-sm" id="pagos-tab" data-bs-toggle="pill" data-bs-target="#pagos" type="button" role="tab">Pagos y Transacciones</button>
-        </li>
-        <li class="nav-item" role="presentation">
-            <button class="nav-link rounded-pill px-4 fw-bold shadow-sm" id="soporte-tab" data-bs-toggle="pill" data-bs-target="#soporte" type="button" role="tab">Soporte y Chat</button>
-        </li>
+    {{-- Pestañas de Navegación Cliente --}}
+    <ul class="nav nav-pills mb-4 bg-white p-2 rounded-pill shadow-sm" id="clienteTabs" role="tablist">
+        <li class="nav-item"><button class="nav-link active rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#mis-reservas">Mis Reservas</button></li>
+        <li class="nav-item"><button class="nav-link rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#mis-pagos">Pagos y Comprobantes</button></li>
+        <li class="nav-item"><button class="nav-link rounded-pill px-4" data-bs-toggle="pill" data-bs-target="#soporte-reviews">Soporte y Reseñas</button></li>
     </ul>
 
-    <div class="tab-content" id="clientTabsContent">
-        {{-- Reservas Activas --}}
-        <div class="tab-pane fade show active" id="activas" role="tabpanel">
-            <div class="card shadow-sm border-0 rounded-4 p-4">
-                <h4 class="fw-bold mb-3"><i class="bi bi-clock-history me-2 text-primary"></i> Mis Reservas Vigentes</h4>
-                <div class="alert alert-info border-0 rounded-3 mb-0 text-dark">
-                    No tienes reservas activas en este momento. ¡Realiza una nueva reserva para comenzar tu estancia!
-                </div>
-            </div>
-        </div>
+    <div class="tab-content" id="clienteTabsContent">
 
-        {{-- Historial --}}
-        <div class="tab-pane fade" id="historial" role="tabpanel">
-            <div class="card shadow-sm border-0 rounded-4 p-4">
-                <h4 class="fw-bold mb-3"><i class="bi bi-journal-text me-2 text-success"></i> Historial de Estancias y Reseñas</h4>
-                <p class="text-muted">Consulta tus estancias pasadas y califica tu experiencia a través de nuestro sistema de reseñas.</p>
-            </div>
-        </div>
-
-        {{-- Pagos --}}
-        <div class="tab-pane fade" id="pagos" role="tabpanel">
-            <div class="card shadow-sm border-0 rounded-4 p-4">
-                <h4 class="fw-bold mb-3"><i class="bi bi-credit-card me-2 text-warning"></i> Estado de Pagos y Pasarelas</h4>
-                <p class="text-muted">Historial financiero asociado a tus transacciones de pago y comprobantes descargables.</p>
-            </div>
-        </div>
-
-        {{-- Soporte --}}
-        <div class="tab-pane fade" id="soporte" role="tabpanel">
-            <div class="card shadow-sm border-0 rounded-4 p-4">
-                <h4 class="fw-bold mb-3"><i class="bi bi-chat-dots me-2 text-info"></i> Chat de Soporte y Asistencia</h4>
-                <div class="border rounded-4 p-3 bg-light mb-3" style="height: 250px; overflow-y: auto;">
-                    <div class="bg-white p-3 rounded-3 shadow-sm mb-2 w-75">
-                        <small class="text-muted fw-bold d-block mb-1">Soporte RSV</small>
-                        ¡Hola! ¿En qué podemos ayudarte con tu reserva?
+        {{-- MÓDULO 1: MIS RESERVAS --}}
+        <div class="tab-pane fade show active" id="mis-reservas">
+            <div class="row g-4">
+                <div class="col-md-8">
+                    <div class="card border-0 shadow-sm rounded-4 mb-3">
+                        <div class="card-body">
+                            <h5 class="fw-bold text-primary">Mis Próximos Viajes</h5>
+                            <!-- Iteración de reservas del cliente (rsv_reservas) -->
+                            <div class="border rounded-3 p-3 mb-2 d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="fw-bold mb-1">Cabaña del Lago (rsv_catalogo_inmueble)</h6>
+                                    <small class="text-muted">15 Nov - 18 Nov | 4 Huéspedes (rsv_reserva_huespedes)</small>
+                                </div>
+                                <button class="btn btn-sm btn-outline-primary rounded-pill" data-bs-toggle="modal" data-bs-target="#modalItinerario">
+                                    Ver Itinerario
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="input-group">
-                    <input type="text" class="form-control rounded-pill px-4" placeholder="Escribe tu mensaje...">
-                    <button class="btn btn-primary rounded-pill px-4 ms-2 fw-bold" type="button">Enviar</button>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm rounded-4 h-100 bg-light">
+                        <div class="card-body text-center">
+                            <i class="bi bi-clock-history fs-1 text-secondary mb-2"></i>
+                            <h6 class="fw-bold">Historial Pasado</h6>
+                            <p class="small text-muted">Revisa tus reservas completadas o canceladas.</p>
+                            <button class="btn btn-secondary btn-sm rounded-pill w-100">Ver Historial</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+
+        {{-- MÓDULO 2: PAGOS Y COMPROBANTES --}}
+        <div class="tab-pane fade" id="mis-pagos">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body">
+                    <h5 class="fw-bold">Mis Transacciones</h5>
+                    <p class="text-muted small">Tus comprobantes de pago (rsv_transacciones_financieras) a través de pasarelas autorizadas (rsv_pasarelas).</p>
+                    <div class="table-responsive mt-3">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr><th>Fecha</th><th>Reserva</th><th>Monto</th><th>Estado</th><th>Descarga</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>12 Oct 2023</td>
+                                    <td>#RSV-0012</td>
+                                    <td>$450.00</td>
+                                    <td><span class="badge bg-success">Aprobado</span></td>
+                                    <td>
+                                        <a href="{{ route('rsv.reservas.pdf', 12) }}" class="btn btn-sm btn-danger rounded-pill">
+                                            <i class="bi bi-file-pdf"></i> PDF
+                                        </a>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        {{-- Paginación fluida --}}
+                        @include('rsv.components.pagination')
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- MÓDULO 3: SOPORTE Y RESEÑAS --}}
+        <div class="tab-pane fade" id="soporte-reviews">
+            <div class="row g-4">
+                <div class="col-md-7">
+                    <div class="card border-0 shadow-sm rounded-4 h-100">
+                        <div class="card-header bg-white pt-4 pb-2 border-0">
+                            <h5 class="fw-bold"><i class="bi bi-chat-dots text-primary me-2"></i>Centro de Ayuda</h5>
+                        </div>
+                        <div class="card-body d-flex flex-column">
+                            <div class="flex-grow-1 bg-light rounded-3 p-3 mb-3" style="min-height: 200px;">
+                                <p class="text-muted text-center mt-4 small">Historial de mensajes con el administrador (rsv_mensajes)</p>
+                            </div>
+                            <div class="input-group">
+                                <input type="text" class="form-control rounded-start-pill" placeholder="Escribe tu consulta...">
+                                <button class="btn btn-primary rounded-end-pill px-4">Enviar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-5">
+                    <div class="card border-0 shadow-sm rounded-4 h-100">
+                        <div class="card-body">
+                            <h5 class="fw-bold"><i class="bi bi-star-fill text-warning me-2"></i>Mis Reseñas</h5>
+                            <p class="text-muted small">Califica tus estadías recientes (rsv_reviews).</p>
+
+                            <div class="border rounded-3 p-3 mb-2">
+                                <h6 class="small fw-bold mb-1">Cabaña del Bosque</h6>
+                                <div class="text-warning mb-2">★★★★★</div>
+                                <p class="small text-muted mb-0">"Excelente servicio y vista inmejorable."</p>
+                            </div>
+
+                            <button class="btn btn-outline-warning text-dark btn-sm rounded-pill w-100 mt-2">Dejar nueva reseña</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
+
+    {{-- Modal para formulario usando @include y pasando parámetros --}}
+    @include('rsv.components.modal', ['id' => 'modalItinerario', 'title' => 'Detalle del Itinerario y Huéspedes'])
+
 </x-base-layout>
