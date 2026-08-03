@@ -49,7 +49,6 @@ use App\Http\Controllers\Reservas\ResDashboardController;
 //   MÓDULO DE RESERVAS (RSV)
 use App\Http\Controllers\Rsv\AuditLogController;
 use App\Http\Controllers\Rsv\BloqueoCalendarioController;
-use App\Http\Controllers\Rsv\CatalogoInmuebleController;
 use App\Http\Controllers\Rsv\HistorialEndosoController;
 use App\Http\Controllers\Rsv\HistorialEstadoController;
 use App\Http\Controllers\Rsv\InmuebleMultimediaController;
@@ -57,13 +56,17 @@ use App\Http\Controllers\Rsv\ItinerarioEventoController;
 use App\Http\Controllers\Rsv\MensajeController;
 use App\Http\Controllers\Rsv\OrigenReservaController;
 use App\Http\Controllers\Rsv\PasarelaController;
-use App\Http\Controllers\Rsv\ReservaController;
 use App\Http\Controllers\Rsv\ReservaHuespedController;
 use App\Http\Controllers\Rsv\ReviewController;
 use App\Http\Controllers\Rsv\StatusController;
 use App\Http\Controllers\Rsv\TarifaTemporadaController;
 use App\Http\Controllers\Rsv\TipoReceptorController;
 use App\Http\Controllers\Rsv\TransaccionFinancieraController;
+
+use App\Http\Controllers\Rsv\AdminDashboardController;
+use App\Http\Controllers\Rsv\CatalogoInmuebleController;
+use App\Http\Controllers\Rsv\ReservaController;
+
 
 //ARCHIVO
 use App\Http\Controllers\Archivo\GdoCargoController;
@@ -509,82 +512,56 @@ Route::middleware(['auth'])
     ->prefix('rsv')
     ->name('rsv.')
     ->group(function () {
+
+        // ---------------------------------------------------
+        // 0. VISTAS PRINCIPALES (PANEL ÚNICO / DASHBOARDS)
+        // ---------------------------------------------------
+
+        // AHORA USA EL CONTROLADOR PARA LLENAR TODAS LAS PESTAÑAS
+        Route::get('/admin', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
+
+        // Vista del Portal de Clientes
+        Route::view('/cliente', 'rsv.cliente.portal')->name('cliente.portal');
+
+
         // ---------------------------------------------------
         // 1. CATÁLOGO DE INMUEBLES Y CONFIGURACIONES
         // ---------------------------------------------------
-
-        // Ruta específica para cambiar estado de inmueble (Activo/Inactivo)
         Route::patch('inmuebles/{id}/cambiar-estado', [CatalogoInmuebleController::class, 'cambiarEstado'])->name('inmuebles.cambiar_estado');
-
-        // CRUD Principal de Inmuebles
         Route::resource('inmuebles', CatalogoInmuebleController::class)->parameters(['inmuebles' => 'rsvCatalogoInmueble']);
-
-        // Multimedia de Inmuebles
         Route::resource('inmueble-multimedia', InmuebleMultimediaController::class)->parameters(['inmueble-multimedia' => 'rsvMultimedia']);
-
-        // Tarifas por Temporada
         Route::resource('tarifas-temporadas', TarifaTemporadaController::class)->parameters(['tarifas-temporadas' => 'rsvTarifa']);
-
-        // Bloqueos de Calendario
         Route::resource('bloqueos-calendario', BloqueoCalendarioController::class)->parameters(['bloqueos-calendario' => 'rsvBloqueo']);
 
         // ---------------------------------------------------
         // 2. NÚCLEO TRANSACCIONAL (RESERVAS)
         // ---------------------------------------------------
-
-        // Acciones específicas de Negocio para Reservas
         Route::patch('reservas/{id}/cambiar-estado', [ReservaController::class, 'cambiarEstado'])->name('reservas.cambiar_estado');
         Route::get('reservas/{id}/comprobante-pdf', [ReservaController::class, 'descargarPdfComprobante'])->name('reservas.pdf');
-
-        // CRUD Principal de Reservas
         Route::resource('reservas', ReservaController::class)->parameters(['reservas' => 'rsvReserva']);
-
-        // Huéspedes asociados a las reservas
         Route::resource('reserva-huespedes', ReservaHuespedController::class)->parameters(['reserva-huespedes' => 'rsvHuesped']);
-
-        // Itinerarios y eventos de la reserva
         Route::resource('itinerarios', ItinerarioEventoController::class)->parameters(['itinerarios' => 'rsvItinerario']);
-
-        // Endosos de reservas (Historial y transferencia)
         Route::resource('historial-endosos', HistorialEndosoController::class)->parameters(['historial-endosos' => 'rsvEndoso']);
-
-        // Historial de cambios de estado
         Route::resource('historial-estados', HistorialEstadoController::class)->parameters(['historial-estados' => 'rsvEstadoLog']);
 
         // ---------------------------------------------------
         // 3. FINANZAS Y PAGOS
         // ---------------------------------------------------
-
-        // Transacciones Financieras de las reservas
         Route::resource('transacciones', TransaccionFinancieraController::class)->parameters(['transacciones' => 'rsvTransaccion']);
-
-        // Pasarelas de pago (Catálogo)
         Route::resource('pasarelas', PasarelaController::class)->parameters(['pasarelas' => 'rsvPasarela']);
 
         // ---------------------------------------------------
         // 4. COMUNICACIÓN Y REPUTACIÓN
         // ---------------------------------------------------
-
-        // Centro de Mensajería / Chat interno de reservas
         Route::resource('mensajes', MensajeController::class)->parameters(['mensajes' => 'rsvMensaje']);
-
-        // Reviews y Calificaciones
         Route::resource('reviews', ReviewController::class)->parameters(['reviews' => 'rsvReview']);
 
         // ---------------------------------------------------
         // 5. PARÁMETROS, CATÁLOGOS AUXILIARES Y AUDITORÍA
         // ---------------------------------------------------
-
-        // Catálogos de Estados de Reserva
         Route::resource('statuses', StatusController::class)->parameters(['statuses' => 'rsvStatus']);
-
-        // Origen de las Reservas (Booking, Directo, etc.)
         Route::resource('origen-reservas', OrigenReservaController::class)->parameters(['origen-reservas' => 'rsvOrigen']);
-
-        // Tipos de Receptor para Reviews
         Route::resource('tipo-receptor', TipoReceptorController::class)->parameters(['tipo-receptor' => 'rsvTipoReceptor']);
-
-        // Auditoría e Inmutabilidad de Logs del Módulo
         Route::resource('audit-logs', AuditLogController::class)->parameters(['audit-logs' => 'rsvAuditLog']);
     });
 // FIN MÓDULO RESERVAS
