@@ -3,7 +3,7 @@
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <title>Informe de Indicadores TIC</title>
-    
+
     <style>
         /* =========================================
            CONFIGURACIÓN GLOBAL Y DOMPDF
@@ -11,7 +11,7 @@
         @page {
             margin: 40px 45px;
         }
-        
+
         body {
             /* VOLVEMOS A LA FUENTE SEGURA QUE NO ROMPE EL TEXTO */
             font-family: 'Helvetica', Arial, sans-serif;
@@ -32,7 +32,7 @@
             border-bottom: 2px solid #ecf0f1;
             padding-bottom: 15px;
         }
-        
+
         .header-table td {
             border: none;
             padding: 0;
@@ -43,7 +43,7 @@
             border-left: 4px solid #0d6efd;
             padding-left: 12px;
         }
-        
+
         .header-table td {
             border: none;
             padding: 0;
@@ -92,7 +92,7 @@
             text-align: center;
             border-radius: 6px;
         }
-        
+
         .summary-title {
             font-size: 10px;
             font-weight: bold;
@@ -101,7 +101,7 @@
             letter-spacing: 1px;
             margin: 0 0 8px 0;
         }
-        
+
         .summary-value {
             font-size: 26px;
             font-weight: bold;
@@ -160,10 +160,10 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-        .badge-primary { background-color: #e3f2fd; color: #0d47a1; border: 1px solid #bbdefb; }   
-        .badge-warning { background-color: #fff8e1; color: #f57f17; border: 1px solid #ffecb3; }   
-        .badge-info    { background-color: #e0f7fa; color: #006064; border: 1px solid #b2ebf2; }      
-        .badge-success { background-color: #e8f5e9; color: #1b5e20; border: 1px solid #c8e6c9; }   
+        .badge-primary { background-color: #e3f2fd; color: #0d47a1; border: 1px solid #bbdefb; }
+        .badge-warning { background-color: #fff8e1; color: #f57f17; border: 1px solid #ffecb3; }
+        .badge-info    { background-color: #e0f7fa; color: #006064; border: 1px solid #b2ebf2; }
+        .badge-success { background-color: #e8f5e9; color: #1b5e20; border: 1px solid #c8e6c9; }
 
         /* =========================================
            UTILIDADES Y FOOTER
@@ -171,7 +171,7 @@
         .text-center { text-align: center !important; }
         .text-right { text-align: right !important; }
         .fw-bold { font-weight: bold !important; }
-        
+
         .footer {
             position: fixed;
             bottom: -20px;
@@ -186,7 +186,7 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
-        
+
         .page-number:before {
             content: counter(page);
         }
@@ -247,13 +247,13 @@
                 <tr>
                     <td class="text-center fw-bold" style="color: #0d6efd;">#{{ $ind->id }}</td>
                     <td class="fw-bold">{{ $ind->nombre }}</td>
-                    
+
                     {{-- LIMPIEZA DE CÁLCULO: Por si acaso también hay símbolos raros aquí --}}
                     <td class="formula-text">{{ str_replace(['≥', '≤'], ['>=', '<='], $ind->calculo) }}</td>
-                    
+
                     {{-- LA SOLUCIÓN MÁGICA: Convertimos ≥ a >= usando PHP --}}
                     <td class="text-center fw-bold">{{ str_replace(['≥', '≤'], ['>=', '<='], $ind->meta) }}</td>
-                    
+
                     <td class="text-center">
                         @php
                             $badgeClass = match($ind->frecuencia) {
@@ -266,9 +266,9 @@
                         <span class="badge {{ $badgeClass }}">{{ $ind->frecuencia }}</span>
                     </td>
                     <td class="text-right fw-bold" style="font-size: 11px;">
-                        {{ $ind->indicador_calculado !== null 
-                            ? number_format($ind->indicador_calculado, 1) . ' %' 
-                            : '—' 
+                        {{ $ind->indicador_calculado !== null
+                            ? number_format($ind->indicador_calculado, 1) . ' %'
+                            : '—'
                         }}
                     </td>
                 </tr>
