@@ -11,20 +11,25 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\View\View;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class CatalogoInmuebleController extends Controller
 {
     /**
      * Display a listing of the resource.
-     * Implementa paginación, carga ansiosa para la multimedia (portada), filtros y soporte Dual (Web/JSON).
+     * Implementa paginación, carga ansiosa segura, filtros y soporte Dual (Web/JSON).
      */
-    public function index(Request $request): View|JsonResponse|RedirectResponse
+    public function index(Request $request): View|JsonResponse
     {
         try {
-            // Cargar solo la multimedia destacada (portada) para optimizar el listado
-            $query = CatalogoInmueble::with(['multimedia' => function ($q) {
-                $q->where('es_portada', true);
-            }]);
+            $query = CatalogoInmueble::query();
+
+            // Validación de seguridad: Solo intentamos cargar 'multimedia' si la relación existe en el modelo
+            if (method_exists(CatalogoInmueble::class, 'multimedia')) {
+                $query->with(['multimedia' => function ($q) {
+                    $q->where('es_portada', true);
+                }]);
+            }
 
             // Filtros estratégicos
             if ($request->filled('city')) {
@@ -43,8 +48,8 @@ class CatalogoInmuebleController extends Controller
                 $query->where('tipo_inmueble_id', $request->tipo_inmueble_id);
             }
 
-            $sortField = $request->input('sort_by', 'name');
-            $sortOrder = $request->input('sort_order', 'asc');
+            $sortField = $request->input('sort_by', 'id');
+            $sortOrder = $request->input('sort_order', 'desc');
             $query->orderBy($sortField, $sortOrder);
 
             $inmuebles = $query->paginate($request->input('per_page', 15));
@@ -59,7 +64,7 @@ class CatalogoInmuebleController extends Controller
             }
 
             // Si es una petición del navegador web, renderizamos la vista Blade
-            return view('rsv.inmuebles.index', compact('inmuebles'));
+            return view('rsv.admin.partials.tab-inmuebles', compact('inmuebles'));
 
         } catch (\Throwable $e) {
             Log::error('Error al listar catálogo de inmuebles: ' . $e->getMessage());
@@ -67,11 +72,15 @@ class CatalogoInmuebleController extends Controller
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Ocurrió un error al obtener el catálogo de inmuebles.',
+                    'message' => 'Ocurrió un error al obtener el catálogo de inmuebles: ' . $e->getMessage(),
                 ], 500);
             }
 
-            return back()->with('error', 'Ocurrió un error al obtener el catálogo de inmuebles.');
+            // Fallback seguro: Evita el bucle infinito de redirect()->back() creando un paginador vacío
+            $inmuebles = new LengthAwarePaginator([], 0, 15);
+
+            return view('rsv.admin.partials.tab-inmuebles', compact('inmuebles'))
+                ->with('error', 'Error al cargar los datos: ' . $e->getMessage());
         }
     }
 
@@ -86,45 +95,45 @@ class CatalogoInmuebleController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request): JsonResponse
+    public function store(Request $request): RedirectResponse|JsonResponse
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'city' => 'required|string|max:255',
             'ubicacion' => 'nullable|string|max:500',
-            'active' => 'boolean',
             'capacidad_maxima' => 'required|integer|min:1',
             'precio_base_noche' => 'required|numeric|min:0',
             'tipo_inmueble_id' => 'required|integer',
         ]);
 
         try {
-            // Asignar valor por defecto para 'active' si no se proporciona
-            $validated['active'] = $validated['active'] ?? true;
+            $validated['active'] = $request->has('active') ? 1 : 0;
 
-            $inmueble = DB::transaction(function () use ($validated) {
-                return CatalogoInmueble::create($validated);
+            DB::transaction(function () use ($validated) {
+                CatalogoInmueble::create($validated);
             });
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Inmueble creado exitosamente.',
-                'data' => $inmueble
-            ], 201);
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => true, 'message' => 'Inmueble creado exitosamente.']);
+            }
+
+            return redirect()->back()->with('success', 'Inmueble creado exitosamente.');
+
         } catch (\Throwable $e) {
             Log::error('Error al crear inmueble: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Ocurrió un error al registrar el inmueble.',
-            ], 500);
+
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Error al guardar.'], 500);
+            }
+
+            return redirect()->back()->with('error', 'Ocurrió un error al registrar el inmueble.')->withInput();
         }
     }
 
     /**
      * Display the specified resource.
-     * Carga relaciones clave para la vista de detalle.
      */
-    public function show(string $id): JsonResponse
+    public function show(Request $request, string $id): View|JsonResponse
     {
         try {
             $inmueble = CatalogoInmueble::with([
@@ -134,22 +143,40 @@ class CatalogoInmuebleController extends Controller
                 }
             ])->findOrFail($id);
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Inmueble recuperado exitosamente.',
-                'data' => $inmueble
-            ]);
+            $inmuebles = CatalogoInmueble::paginate(10, ['*'], 'page_inmuebles');
+            $reservas = \App\Models\Rsv\Reserva::paginate(10, ['*'], 'page_reservas');
+            $finanzas = \App\Models\Rsv\TransaccionFinanciera::paginate(10, ['*'], 'page_finanzas');
+            $auditoria = \App\Models\Rsv\AuditLog::latest()->paginate(10, ['*'], 'page_auditoria');
+
+            return view('rsv.admin.dashboard', compact('inmuebles', 'reservas', 'finanzas', 'auditoria', 'inmueble'));
+
         } catch (ModelNotFoundException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'El inmueble solicitado no existe.',
-            ], 404);
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'El inmueble solicitado no existe.'], 404);
+            }
+
+            // Para peticiones web devolvemos la misma vista del dashboard sin el inmueble
+            $inmuebles = CatalogoInmueble::paginate(10, ['*'], 'page_inmuebles');
+            $reservas = \App\Models\Rsv\Reserva::paginate(10, ['*'], 'page_reservas');
+            $finanzas = \App\Models\Rsv\TransaccionFinanciera::paginate(10, ['*'], 'page_finanzas');
+            $auditoria = \App\Models\Rsv\AuditLog::latest()->paginate(10, ['*'], 'page_auditoria');
+
+            return view('rsv.admin.dashboard', compact('inmuebles', 'reservas', 'finanzas', 'auditoria'))
+                ->with('error', 'El inmueble solicitado no existe.');
+
         } catch (\Throwable $e) {
             Log::error('Error al mostrar inmueble: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Ocurrió un error interno al recuperar el registro.',
-            ], 500);
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Ocurrió un error interno.'], 500);
+            }
+
+            $inmuebles = CatalogoInmueble::paginate(10, ['*'], 'page_inmuebles');
+            $reservas = \App\Models\Rsv\Reserva::paginate(10, ['*'], 'page_reservas');
+            $finanzas = \App\Models\Rsv\TransaccionFinanciera::paginate(10, ['*'], 'page_finanzas');
+            $auditoria = \App\Models\Rsv\AuditLog::latest()->paginate(10, ['*'], 'page_auditoria');
+
+            return view('rsv.admin.dashboard', compact('inmuebles', 'reservas', 'finanzas', 'auditoria'))
+                ->with('error', 'Ocurrió un error interno.');
         }
     }
 
@@ -164,13 +191,12 @@ class CatalogoInmuebleController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id): JsonResponse
+    public function update(Request $request, string $id): RedirectResponse|JsonResponse
     {
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255',
             'city' => 'sometimes|required|string|max:255',
             'ubicacion' => 'nullable|string|max:500',
-            'active' => 'sometimes|boolean',
             'capacidad_maxima' => 'sometimes|required|integer|min:1',
             'precio_base_noche' => 'sometimes|required|numeric|min:0',
             'tipo_inmueble_id' => 'sometimes|required|integer',
@@ -179,77 +205,96 @@ class CatalogoInmuebleController extends Controller
         try {
             $inmueble = CatalogoInmueble::findOrFail($id);
 
+            if ($request->has('active')) {
+                $validated['active'] = $request->active ? 1 : 0;
+            } else {
+                // Si el checkbox no viene en el request (desmarcado en formulario HTML), lo ponemos en 0
+                $validated['active'] = 0;
+            }
+
             DB::transaction(function () use ($inmueble, $validated) {
                 $inmueble->update($validated);
             });
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Inmueble actualizado exitosamente.',
-                'data' => $inmueble->fresh()
-            ]);
+            // Soporte Dual: Si es API o AJAX, responde con JSON. Si no, redirige.
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Inmueble actualizado exitosamente.',
+                    'data' => $inmueble->fresh()
+                ]);
+            }
+
+            return redirect()->back()->with('success', 'Inmueble actualizado exitosamente.');
+
         } catch (ModelNotFoundException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'El inmueble a actualizar no existe.',
-            ], 404);
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'El inmueble a actualizar no existe.'], 404);
+            }
+            return redirect()->back()->with('error', 'El inmueble a actualizar no existe.');
+
         } catch (\Throwable $e) {
             Log::error('Error al actualizar inmueble: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Ocurrió un error al actualizar el inmueble.',
-            ], 500);
+
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Ocurrió un error al actualizar el inmueble.'], 500);
+            }
+            return redirect()->back()->with('error', 'Ocurrió un error al actualizar el inmueble.');
         }
     }
 
     /**
      * Remove the specified resource from storage.
-     * Previene la eliminación si tiene reservas asociadas.
      */
-    public function destroy(string $id): JsonResponse
+    public function destroy(Request $request, string $id): RedirectResponse|JsonResponse
     {
         try {
             $inmueble = CatalogoInmueble::withCount('reservas')->findOrFail($id);
 
-            // Regla de Negocio: No se puede eliminar un inmueble con reservas históricas o activas.
             if ($inmueble->reservas_count > 0) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No se puede eliminar el inmueble porque tiene reservas asociadas. Considere desactivarlo.',
-                ], 422);
+                if ($request->wantsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'No se puede eliminar el inmueble porque tiene reservas asociadas. Considere desactivarlo.',
+                    ], 422);
+                }
+                return redirect()->back()->with('error', 'No se puede eliminar el inmueble porque tiene reservas asociadas.');
             }
 
             DB::transaction(function () use ($inmueble) {
-                // Eliminar dependencias si es necesario (ej: multimedia, bloqueos)
-                $inmueble->multimedia()->delete();
-                $inmueble->bloqueosCalendario()->delete();
-                $inmueble->tarifasTemporadas()->delete();
+                if (method_exists($inmueble, 'multimedia')) $inmueble->multimedia()->delete();
+                if (method_exists($inmueble, 'bloqueosCalendario')) $inmueble->bloqueosCalendario()->delete();
+                if (method_exists($inmueble, 'tarifasTemporadas')) $inmueble->tarifasTemporadas()->delete();
 
                 $inmueble->delete();
             });
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Inmueble eliminado exitosamente.'
-            ]);
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => true, 'message' => 'Inmueble eliminado exitosamente.']);
+            }
+
+            return redirect()->back()->with('success', 'Inmueble eliminado exitosamente.');
+
         } catch (ModelNotFoundException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'El inmueble a eliminar no existe.',
-            ], 404);
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'El inmueble a eliminar no existe.'], 404);
+            }
+            return redirect()->back()->with('error', 'El inmueble a eliminar no existe.');
+
         } catch (\Throwable $e) {
             Log::error('Error al eliminar inmueble: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Ocurrió un error al intentar eliminar el inmueble.',
-            ], 500);
+
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Ocurrió un error al intentar eliminar el inmueble.'], 500);
+            }
+            return redirect()->back()->with('error', 'Ocurrió un error al intentar eliminar el inmueble.');
         }
     }
 
     /**
      * Cambiar el estado activo/inactivo del inmueble.
      */
-    public function cambiarEstado(string $id): JsonResponse
+    public function cambiarEstado(Request $request, string $id): RedirectResponse|JsonResponse
     {
         try {
             $inmueble = CatalogoInmueble::findOrFail($id);
@@ -259,22 +304,29 @@ class CatalogoInmuebleController extends Controller
 
             $estado = $inmueble->active ? 'activado' : 'desactivado';
 
-            return response()->json([
-                'success' => true,
-                'message' => "El inmueble ha sido {$estado} exitosamente.",
-                'data' => $inmueble
-            ]);
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => "El inmueble ha sido {$estado} exitosamente.",
+                    'data' => $inmueble
+                ]);
+            }
+
+            return redirect()->back()->with('success', "El inmueble ha sido {$estado} exitosamente.");
+
         } catch (ModelNotFoundException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'El inmueble solicitado no existe.',
-            ], 404);
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'El inmueble solicitado no existe.'], 404);
+            }
+            return redirect()->back()->with('error', 'El inmueble solicitado no existe.');
+
         } catch (\Throwable $e) {
             Log::error('Error al cambiar estado de inmueble: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Ocurrió un error al cambiar el estado del inmueble.',
-            ], 500);
+
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Ocurrió un error al cambiar el estado del inmueble.'], 500);
+            }
+            return redirect()->back()->with('error', 'Ocurrió un error al cambiar el estado del inmueble.');
         }
     }
 }

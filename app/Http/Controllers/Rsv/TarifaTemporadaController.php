@@ -29,13 +29,12 @@ class TarifaTemporadaController extends Controller
 
             if ($request->has('search') && !empty($request->search)) {
                 $search = $request->search;
-                $query->where('nombre', 'like', "%{$search}%");
+                $query->where('nombre_temporada', 'like', "%{$search}%");
             }
 
             $perPage = $request->get('per_page', 15);
             $tarifas = $query->orderBy('fecha_inicio', 'asc')->paginate($perPage);
 
-            // Si la petición es por API o AJAX, devolvemos JSON
             if ($request->wantsJson() || $request->ajax()) {
                 return response()->json([
                     'success' => true,
@@ -44,7 +43,6 @@ class TarifaTemporadaController extends Controller
                 ], 200);
             }
 
-            // Si es navegación web tradicional, renderizamos la vista Blade del módulo
             return view('rsv.tarifas-temporada.index', compact('tarifas'));
 
         } catch (Throwable $e) {
@@ -77,16 +75,20 @@ class TarifaTemporadaController extends Controller
 
     /**
      * Store a newly created resource in storage.
+     * Soporte Dual (Web redirect / JSON API).
      */
-    public function store(Request $request): JsonResponse
+    public function store(Request $request): JsonResponse|RedirectResponse
     {
         $validatedData = $request->validate([
             'id_rsv_catalogo_inmueble' => 'required|exists:rsv_catalogo_inmueble,id',
-            'nombre' => 'required|string|max:255',
+            'nombre_temporada' => 'required|string|max:255',
             'fecha_inicio' => 'required|date',
             'fecha_fin' => 'required|date|after_or_equal:fecha_inicio',
-            'precio' => 'required|numeric|min:0',
+            'precio_noche' => 'required|numeric|min:0',
+            'precio_fin_semana' => 'required|numeric|min:0',
         ]);
+
+        $validatedData['active'] = $request->has('active') ? true : false;
 
         DB::beginTransaction();
 
@@ -95,11 +97,19 @@ class TarifaTemporadaController extends Controller
                 return TarifaTemporada::create($validatedData);
             });
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Tarifa de temporada creada exitosamente.',
-                'data' => $tarifa,
-            ], 201);
+            // CORREGIDO: Asegura que la transacción se guarde permanentemente en la base de datos
+            DB::commit();
+
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Tarifa de temporada creada exitosamente.',
+                    'data' => $tarifa,
+                ], 201);
+            }
+
+            return redirect()->route('rsv.inmuebles.show', $validatedData['id_rsv_catalogo_inmueble'])
+                ->with('success', 'Tarifa de temporada registrada exitosamente.');
 
         } catch (Throwable $e) {
             DB::rollBack();
@@ -107,18 +117,22 @@ class TarifaTemporadaController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Ocurrió un error al registrar la tarifa de temporada.',
-                'error' => config('app.debug') ? $e->getMessage() : null,
-            ], 500);
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ocurrió un error al registrar la tarifa de temporada.',
+                    'error' => config('app.debug') ? $e->getMessage() : null,
+                ], 500);
+            }
+
+            return back()->withInput()->with('error', 'Ocurrió un error al registrar la tarifa de temporada.');
         }
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(string $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
         try {
             $tarifa = TarifaTemporada::find($id);
@@ -162,8 +176,9 @@ class TarifaTemporadaController extends Controller
 
     /**
      * Update the specified resource in storage.
+     * Soporte Dual (Web redirect / JSON API).
      */
-    public function update(Request $request, string $id): JsonResponse
+    public function update(Request $request, string $id): JsonResponse|RedirectResponse
     {
         DB::beginTransaction();
 
@@ -171,29 +186,45 @@ class TarifaTemporadaController extends Controller
             $tarifa = TarifaTemporada::find($id);
 
             if (!$tarifa) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'La tarifa de temporada solicitada no existe.',
-                ], 404);
+                if ($request->wantsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'La tarifa de temporada solicitada no existe.',
+                    ], 404);
+                }
+                return redirect()->route('rsv.admin.dashboard')->with('error', 'La tarifa solicitada no existe.');
             }
 
             $validatedData = $request->validate([
                 'id_rsv_catalogo_inmueble' => 'sometimes|required|exists:rsv_catalogo_inmueble,id',
-                'nombre' => 'sometimes|required|string|max:255',
+                'nombre_temporada' => 'sometimes|required|string|max:255',
                 'fecha_inicio' => 'sometimes|required|date',
                 'fecha_fin' => 'sometimes|required|date|after_or_equal:fecha_inicio',
-                'precio' => 'sometimes|required|numeric|min:0',
+                'precio_noche' => 'sometimes|required|numeric|min:0',
+                'precio_fin_semana' => 'sometimes|required|numeric|min:0',
             ]);
+
+            if ($request->has('active')) {
+                $validatedData['active'] = $request->has('active') ? true : false;
+            }
 
             DB::transaction(function () use ($tarifa, $validatedData) {
                 $tarifa->update($validatedData);
             });
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Tarifa de temporada actualizada exitosamente.',
-                'data' => $tarifa,
-            ], 200);
+            // CORREGIDO: Confirmación de actualización
+            DB::commit();
+
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Tarifa de temporada actualizada exitosamente.',
+                    'data' => $tarifa,
+                ], 200);
+            }
+
+            return redirect()->route('rsv.inmuebles.show', $tarifa->id_rsv_catalogo_inmueble)
+                ->with('success', 'Tarifa actualizada exitosamente.');
 
         } catch (Throwable $e) {
             DB::rollBack();
@@ -201,18 +232,23 @@ class TarifaTemporadaController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Ocurrió un error al actualizar la tarifa de temporada.',
-                'error' => config('app.debug') ? $e->getMessage() : null,
-            ], 500);
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ocurrió un error al actualizar la tarifa de temporada.',
+                    'error' => config('app.debug') ? $e->getMessage() : null,
+                ], 500);
+            }
+
+            return back()->withInput()->with('error', 'Ocurrió un error al actualizar la tarifa de temporada.');
         }
     }
 
     /**
      * Remove the specified resource from storage.
+     * Soporte Dual (Web redirect / JSON API).
      */
-    public function destroy(string $id): JsonResponse
+    public function destroy(Request $request, string $id): JsonResponse|RedirectResponse
     {
         DB::beginTransaction();
 
@@ -220,20 +256,33 @@ class TarifaTemporadaController extends Controller
             $tarifa = TarifaTemporada::find($id);
 
             if (!$tarifa) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'La tarifa de temporada solicitada no existe.',
-                ], 404);
+                if ($request->wantsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'La tarifa de temporada solicitada no existe.',
+                    ], 404);
+                }
+                return back()->with('error', 'La tarifa solicitada no existe.');
             }
+
+            $inmuebleId = $tarifa->id_rsv_catalogo_inmueble;
 
             DB::transaction(function () use ($tarifa) {
                 $tarifa->delete();
             });
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Tarifa de temporada eliminada exitosamente.',
-            ], 200);
+            // CORREGIDO: Confirmación de eliminación
+            DB::commit();
+
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Tarifa de temporada eliminada exitosamente.',
+                ], 200);
+            }
+
+            return redirect()->route('rsv.inmuebles.show', $inmuebleId)
+                ->with('success', 'Tarifa eliminada exitosamente.');
 
         } catch (Throwable $e) {
             DB::rollBack();
@@ -241,11 +290,15 @@ class TarifaTemporadaController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
 
-            return response()->json([
-                'success' => false,
-                'message' => 'Ocurrió un error al eliminar la tarifa de temporada.',
-                'error' => config('app.debug') ? $e->getMessage() : null,
-            ], 500);
+            if ($request->wantsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Ocurrió un error al eliminar la tarifa de temporada.',
+                    'error' => config('app.debug') ? $e->getMessage() : null,
+                ], 500);
+            }
+
+            return back()->with('error', 'Ocurrió un error al eliminar la tarifa de temporada.');
         }
     }
 }

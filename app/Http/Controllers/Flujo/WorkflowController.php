@@ -68,7 +68,7 @@ class WorkflowController extends Controller
             $wf->progreso = $wf->tasks_count > 0 ? round(($wf->task_check_count / $wf->tasks_count) * 100) : 0;
             return $wf;
         });
-        
+
         // 4. Datos Globales (Sin filtros, para los contadores superiores fijos si se requiere, o filtrados)
         // En tu vista original, los contadores superiores parecían ser globales.
         $globalCounts = Workflow::selectRaw('estado, count(*) as total')->groupBy('estado')->pluck('total', 'estado');
@@ -97,7 +97,7 @@ class WorkflowController extends Controller
         $estadoLabels = $this->getEstadosOptions();
         $rawCounts = Workflow::selectRaw('estado, count(*) as total')->groupBy('estado')->pluck('total', 'estado');
         $totalrawCounts = $rawCounts->sum();
-        
+
 
         return view(
             'flujo.workflows.index',
@@ -340,10 +340,10 @@ class WorkflowController extends Controller
     private function getEstadosOptions()
     {
         return [
-            'Activo' => 'Activo - En desarollo',
-            'Archivado' => 'Archivado - Cancelado',
-            'Pausado' => 'Pausado - En espera',
-            'Completo' => 'Completo - Terminado',
+            'activo' => 'Activo - En desarrollo',
+            'archivado' => 'Archivado - Cancelado',
+            'pausado' => 'Pausado - En espera',
+            'completado' => 'Completo - Terminado',
         ];
     }
 
@@ -422,7 +422,7 @@ class WorkflowController extends Controller
 
         // Desactivamos verificación SSL local por si acaso y descargamos la imagen
         $context = stream_context_create(["ssl" => ["verify_peer" => false, "verify_peer_name" => false]]);
-        
+
         try {
             $img1 = file_get_contents($chart1_url, false, $context);
             $chart1_base64 = 'data:image/png;base64,' . base64_encode($img1);
@@ -439,8 +439,8 @@ class WorkflowController extends Controller
         // ------------------------------------
 
         $pdf = Pdf::loadView('flujo.workflows.pdf', compact(
-            'workflow', 'progress', 'totalTasks', 'completedTasks', 'pendingTasks', 
-            'auditEvents', 'priorityConfig', 'daysActive', 'totalComments', 'kpiDate', 
+            'workflow', 'progress', 'totalTasks', 'completedTasks', 'pendingTasks',
+            'auditEvents', 'priorityConfig', 'daysActive', 'totalComments', 'kpiDate',
             'chart1_base64', 'chart2_base64' // <-- Pasamos las variables Base64 a la vista
         ))->setOption(['isRemoteEnabled' => true]);
 

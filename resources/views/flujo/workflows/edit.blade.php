@@ -107,16 +107,16 @@
         }
 
         /* Tabs de Configuración */
-        .config-tabs { 
-            display: flex; 
+        .config-tabs {
+            display: flex;
             gap: 8px;
-            margin-bottom: 1.8rem; 
+            margin-bottom: 1.8rem;
             background: #f1f5f9;
             padding: 6px;
             border-radius: 16px;
             width: fit-content;
         }
-        
+
         .config-tab {
             padding: 0.7rem 1.4rem;
             background: transparent;
@@ -131,10 +131,10 @@
             gap: 8px;
             font-size: 0.9rem;
         }
-        
-        .config-tab.active { 
-            background: white; 
-            color: var(--primary); 
+
+        .config-tab.active {
+            background: white;
+            color: var(--primary);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
         }
 
@@ -174,47 +174,47 @@
         .template-card:hover i { transform: rotate(-5deg) scale(1.1); }
 
         /* Editor JSON */
-        .json-editor-container { 
-            border-radius: 18px; 
-            overflow: hidden; 
+        .json-editor-container {
+            border-radius: 18px;
+            overflow: hidden;
             border: 2px solid var(--border-color);
             box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
         }
-        
-        .json-editor { 
-            font-family: 'Fira Code', monospace; 
-            background: var(--json-bg); 
-            color: #a5f3fc; 
-            border: none; 
-            padding: 1.5rem; 
-            font-size: 0.9rem; 
-            width: 100%; 
+
+        .json-editor {
+            font-family: 'Fira Code', monospace;
+            background: var(--json-bg);
+            color: #a5f3fc;
+            border: none;
+            padding: 1.5rem;
+            font-size: 0.9rem;
+            width: 100%;
             line-height: 1.7;
             resize: vertical;
         }
-        
-        .json-editor-actions { 
-            background: #0f172a; 
-            padding: 1rem 1.5rem; 
-            display: flex; 
+
+        .json-editor-actions {
+            background: #0f172a;
+            padding: 1rem 1.5rem;
+            display: flex;
             gap: 1rem;
             border-top: 1px solid rgba(255,255,255,0.05);
         }
-        
-        .btn-small { 
-            background: rgba(255, 255, 255, 0.08); 
-            color: white; 
+
+        .btn-small {
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
             border: 1px solid rgba(255,255,255,0.1);
-            padding: 0.5rem 1rem; 
-            border-radius: 10px; 
-            font-size: 0.8rem; 
+            padding: 0.5rem 1rem;
+            border-radius: 10px;
+            font-size: 0.8rem;
             cursor: pointer;
             font-weight: 600;
             transition: all 0.2s;
         }
 
-        .btn-small:hover { 
-            background: var(--primary); 
+        .btn-small:hover {
+            background: var(--primary);
             border-color: var(--primary);
         }
 
@@ -230,9 +230,9 @@
             border: 2px solid transparent;
             transition: all 0.2s ease;
         }
-        
-        .checkbox-card:hover { 
-            border-color: var(--primary); 
+
+        .checkbox-card:hover {
+            border-color: var(--primary);
             background: #f1f5f9;
             transform: scale(1.01);
         }
@@ -245,37 +245,37 @@
         }
 
         /* Footer y Acciones */
-        .form-actions { 
-            margin-top: 4rem; 
-            padding-top: 2rem; 
-            border-top: 2px solid var(--border-color); 
-            display: flex; 
-            justify-content: flex-end; 
-            gap: 1.5rem; 
+        .form-actions {
+            margin-top: 4rem;
+            padding-top: 2rem;
+            border-top: 2px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 1.5rem;
         }
 
-        .btn { 
-            padding: 0.9rem 2.2rem; 
-            border-radius: 14px; 
-            font-weight: 700; 
-            cursor: pointer; 
-            display: flex; 
-            align-items: center; 
-            gap: 0.75rem; 
-            border: none; 
+        .btn {
+            padding: 0.9rem 2.2rem;
+            border-radius: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            border: none;
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             font-size: 0.95rem;
         }
 
-        .btn-primary { 
-            background: var(--primary); 
-            color: white; 
+        .btn-primary {
+            background: var(--primary);
+            color: white;
             box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3);
         }
 
-        .btn-primary:hover { 
-            background: var(--primary-hover); 
-            transform: translateY(-3px); 
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-3px);
             box-shadow: 0 20px 25px -5px rgba(79, 70, 229, 0.4);
         }
 
@@ -290,20 +290,20 @@
             color: var(--text-main);
             border-color: var(--secondary);
         }
-        
+
         /* Notificaciones */
-        .notification { 
-            position: fixed; top: 2rem; right: 2rem; 
-            padding: 1.2rem 2rem; 
-            border-radius: 18px; 
-            background: #0f172a; 
-            color: white; 
-            z-index: 9999; 
+        .notification {
+            position: fixed; top: 2rem; right: 2rem;
+            padding: 1.2rem 2rem;
+            border-radius: 18px;
+            background: #0f172a;
+            color: white;
+            z-index: 9999;
             display: flex;
             align-items: center;
             gap: 1rem;
-            transform: translateX(150%); 
-            transition: 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55); 
+            transform: translateX(150%);
+            transition: 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
             box-shadow: 0 20px 25px -5px rgba(0,0,0,0.2);
             border-left: 5px solid var(--primary);
         }
@@ -327,7 +327,7 @@
             background: var(--primary-light);
             color: var(--primary) !important;
         }
-        
+
         /* Estilos para la sección de equipo */
         .team-section {
             background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
@@ -337,14 +337,14 @@
             margin-top: 2.5rem;
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
         }
-        
+
         .team-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 1rem;
         }
-        
+
         .team-header h4 {
             margin: 0;
             color: #166534;
@@ -354,30 +354,30 @@
             align-items: center;
             gap: 10px;
         }
-        
+
         .team-empty {
             text-align: center;
             padding: 2rem 1rem;
             color: #166534;
         }
-        
+
         .team-empty i {
             font-size: 3rem;
             margin-bottom: 1rem;
             opacity: 0.5;
         }
-        
+
         .team-empty p {
             margin: 0 0 1.5rem 0;
             font-size: 0.95rem;
             opacity: 0.8;
         }
-        
+
         .search-container {
             position: relative;
             margin-bottom: 1rem;
         }
-        
+
         .search-container input {
             width: 100%;
             padding: 0.75rem 1rem 0.75rem 2.5rem;
@@ -387,13 +387,13 @@
             font-size: 0.9rem;
             transition: all 0.2s;
         }
-        
+
         .search-container input:focus {
             outline: none;
             border-color: #166534;
             box-shadow: 0 0 0 3px rgba(22, 101, 52, 0.1);
         }
-        
+
         .search-container i {
             position: absolute;
             left: 0.75rem;
@@ -402,7 +402,7 @@
             color: #166534;
             opacity: 0.6;
         }
-        
+
         .search-results {
             position: absolute;
             top: 100%;
@@ -418,11 +418,11 @@
             display: none;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
-        
+
         .search-results.active {
             display: block;
         }
-        
+
         .search-result-item {
             padding: 0.75rem 1rem;
             cursor: pointer;
@@ -432,16 +432,16 @@
             align-items: center;
             gap: 0.75rem;
         }
-        
+
         .search-result-item:hover {
             background: #f0fdf4;
             transform: translateX(5px);
         }
-        
+
         .search-result-item:last-child {
             border-bottom: none;
         }
-        
+
         .search-result-avatar {
             width: 32px;
             height: 32px;
@@ -455,28 +455,28 @@
             font-size: 0.8rem;
             flex-shrink: 0;
         }
-        
+
         .search-result-info {
             flex-grow: 1;
         }
-        
+
         .search-result-name {
             font-weight: 600;
             color: #1e293b;
             font-size: 0.9rem;
         }
-        
+
         .search-result-email {
             font-size: 0.75rem;
             color: var(--text-muted);
         }
-        
+
         .team-list {
             max-height: 250px;
             overflow-y: auto;
             padding: 0.5rem 0;
         }
-        
+
         .team-member {
             display: flex;
             align-items: center;
@@ -486,31 +486,31 @@
             background: white;
             transition: all 0.2s ease;
         }
-        
+
         .team-member:hover {
             background: #f0fdf4;
             transform: translateX(5px);
         }
-        
+
         .team-member input[type="checkbox"] {
             margin-right: 0.75rem;
             accent-color: #166534;
         }
-        
+
         .team-member .user-info {
             flex-grow: 1;
         }
-        
+
         .team-member .user-name {
             font-weight: 600;
             color: #1e293b;
         }
-        
+
         .team-member .user-email {
             font-size: 0.75rem;
             color: var(--text-muted);
         }
-        
+
         .team-member .remove-btn {
             background: #dcfce7;
             color: #166534;
@@ -522,18 +522,18 @@
             transition: all 0.2s;
             margin-left: 0.5rem;
         }
-        
+
         .team-member .remove-btn:hover {
             background: #ef4444;
             color: white;
         }
-        
+
         .team-actions {
             margin-top: 1rem;
             display: flex;
             justify-content: flex-end;
         }
-        
+
         .btn-save-team {
             background: #166534;
             color: white;
@@ -547,26 +547,26 @@
             gap: 0.5rem;
             transition: all 0.2s;
         }
-        
+
         .btn-save-team:hover {
             background: #14532d;
             transform: translateY(-2px);
         }
-        
+
         .btn-save-team.loading {
             opacity: 0.7;
             pointer-events: none;
         }
-        
+
         .btn-save-team.loading i {
             animation: spin 1s linear infinite;
         }
-        
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-        
+
         .add-member-section {
             background: white;
             border-radius: 12px;
@@ -574,21 +574,21 @@
             margin-bottom: 1rem;
             border: 2px dashed #bbf7d0;
         }
-        
+
         .add-member-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-bottom: 0.75rem;
         }
-        
+
         .add-member-header h5 {
             margin: 0;
             font-size: 0.9rem;
             color: #166534;
             font-weight: 700;
         }
-        
+
         .toggle-add-member {
             background: #166534;
             color: white;
@@ -599,7 +599,7 @@
             cursor: pointer;
             transition: all 0.2s;
         }
-        
+
         .toggle-add-member:hover {
             background: #14532d;
         }
@@ -711,9 +711,11 @@
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
                         <div class="form-group">
                             <label>Estado Global</label>
-                            <select name="estado" required>
+                            <select name="estado" required class="form-control">
                                 @foreach($estados as $val => $lab)
-                                    <option value="{{ $val }}" {{ old('estado', $workflow->estado) == $val ? 'selected' : '' }}>{{ $lab }}</option>
+                                    <option value="{{ $val }}" {{ old('estado', strtolower($workflow->estado ?? '')) == $val ? 'selected' : '' }}>
+                                        {{ $lab }}
+                                    </option>
                                 @endforeach
                             </select>
                         </div>
@@ -757,7 +759,7 @@
 
                     <!-- SECCIÓN DE EQUIPO MEJORADA -->
                     <div class="team-section">
-                        
+
                         <div class="team-header">
                             <h4><i class="fas fa-users"></i> Equipo del Proyecto</h4>
                             <span style="font-size: 0.85rem; color: #166534; font-weight: 600;" id="team-count">
@@ -772,7 +774,7 @@
                         <div class="team-empty" style="display: {{ $hasMembers ? 'none' : 'block' }};">
                             <i class="fas fa-user-plus"></i>
                             <p>Este proyecto aún no tiene miembros en el equipo</p>
-                            
+
                             <div class="search-container">
                                 <i class="fas fa-search"></i>
                                 <input type="text" id="user-search" placeholder="Buscar usuario por nombre o email...">
@@ -847,7 +849,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            
+
             // ==========================================
             // CONFIGURACIÓN INICIAL Y TABS
             // ==========================================
@@ -870,11 +872,11 @@
                 const toast = document.getElementById('toast');
                 const icon = document.getElementById('toast-icon');
                 document.getElementById('toast-message').textContent = msg;
-                
+
                 toast.style.borderLeftColor = type === 'success' ? '#10b981' : (type === 'danger' ? '#ef4444' : '#64748b');
                 icon.className = type === 'success' ? 'fas fa-check-circle' : 'fas fa-info-circle';
                 icon.style.color = type === 'success' ? '#10b981' : '#ef4444';
-                
+
                 toast.classList.add('show');
                 setTimeout(() => toast.classList.remove('show'), 3500);
             }
@@ -882,8 +884,8 @@
             // ==========================================
             // LÓGICA DEL EQUIPO (AQUÍ ESTÁ LA MAGIA)
             // ==========================================
-            
-            const allUsers = @json($users); 
+
+            const allUsers = @json($users);
             let selectedIds = @json($workflow->participantes->pluck('id')).map(Number);
 
             // Referencias al HTML
@@ -985,7 +987,7 @@
                     // Filtro: Coincide texto Y NO está seleccionado
                     const matches = allUsers.filter(u => {
                         const alreadyInTeam = selectedIds.includes(u.id);
-                        const matchesText = (u.name && u.name.toLowerCase().includes(query)) || 
+                        const matchesText = (u.name && u.name.toLowerCase().includes(query)) ||
                                             (u.email && u.email.toLowerCase().includes(query));
                         return !alreadyInTeam && matchesText;
                     }).slice(0, 5);
@@ -1037,7 +1039,7 @@
                 saveTeamBtn.addEventListener('click', function() {
                     saveTeamBtn.classList.add('loading');
                     saveTeamBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Guardando...';
-                    
+
                     fetch(`{{ route('flujo.workflows.updateTeam', $workflow) }}`, {
                         method: 'PUT',
                         headers: {

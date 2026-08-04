@@ -29,13 +29,13 @@ class ScpEstadisticaController extends Controller
         set_time_limit(300);
 
         $data = $this->calculateStats($request);
-        
+
         $labelsPrioridad = ScpPrioridad::pluck('nombre');
 
         return view(
             'soportes.estadisticas.index',
             array_merge($data, [
-                'labelsPrioridadSelect' => $labelsPrioridad, 
+                'labelsPrioridadSelect' => $labelsPrioridad,
                 'labelsPrioridad'       => $labelsPrioridad,
             ])
         );
@@ -65,6 +65,7 @@ class ScpEstadisticaController extends Controller
 
                 return [
                     'id' => $soporte->id,
+                    'creador_nombre' => $soporte->usuario?->name ?? ($soporte->usuario?->maeTercero?->nom_ter ?? 'Sistema'),
                     'detalles_soporte' => $soporte->detalles_soporte,
                     'created_at_formatted' => $soporte->created_at->format('d/m/Y H:i'),
                     'estado_color' => $soporte->estadoSoporte->color ?? 'light',
@@ -115,7 +116,7 @@ class ScpEstadisticaController extends Controller
         $inProgressTickets = (clone $baseQuery)->where('scp_soportes.estado', self::ESTADO_PROCESO)->count();
         $revisionTickets = (clone $baseQuery)->where('scp_soportes.estado', self::ESTADO_REVISION)->count();
         $closedTickets = (clone $baseQuery)->where('scp_soportes.estado', self::ESTADO_CERRADO)->count();
-        
+
         $escalatedTickets = (clone $baseQuery)->whereNotNull('scp_soportes.usuario_escalado')->count();
         $escalationRate = $totalTickets > 0 ? round(($escalatedTickets / $totalTickets) * 100, 1) : 0;
 
@@ -141,7 +142,7 @@ class ScpEstadisticaController extends Controller
         }
 
         // --- GRÁFICOS RESTANTES ---
-        
+
         $ticketsByType = $this->getTicketsByType($baseQuery);
         $ticketsByPriority = $this->getTicketsByPriority($baseQuery);
 
@@ -197,25 +198,25 @@ class ScpEstadisticaController extends Controller
             'reopenRate' => $reopenRate,
             'firstResponseRate' => $firstResponseRate,
             'avgFirstResponseTime' => $avgFirstResponseTime,
-            
+
             'startDate' => $startDate,
             'endDate' => $endDate,
-            
+
             'labelsMes' => $labelsMes,
             'dataMes' => $dataMes,
-            
+
             'ticketsByType' => $ticketsByType,
             'ticketsByPriority' => $ticketsByPriority,
-            
+
             'labelsEstado' => $labelsEstado,
             'dataEstado' => $dataEstado,
-            
+
             'labelsArea' => $labelsArea,
             'dataArea' => $dataArea,
-            
+
             'labelsAgente' => $labelsAgente,
             'dataAgente' => $dataAgente,
-            
+
             'topAgentes' => $topAgentes,
             'actividadReciente' => $actividadReciente,
         ];
@@ -228,10 +229,10 @@ class ScpEstadisticaController extends Controller
                 DB::table('scp_observaciones')
                     ->select('id_scp_soporte', DB::raw('MIN(timestam) as fecha_cierre'))
                     ->where('id_scp_estados', 4)
-                    ->groupBy('id_scp_soporte'), 
-                'o', 
-                'o.id_scp_soporte', 
-                '=', 
+                    ->groupBy('id_scp_soporte'),
+                'o',
+                'o.id_scp_soporte',
+                '=',
                 'scp_soportes.id'
             )
             ->whereRaw(
@@ -318,9 +319,9 @@ class ScpEstadisticaController extends Controller
             ->leftJoin('users as u_creador', 'scp_soportes.id_users', '=', 'u_creador.id')
             ->where('scp_soportes.estado', self::ESTADO_CERRADO)
             ->selectRaw('
-                COALESCE(scp_soportes.usuario_escalado, scp_soportes.id_users, 0) as agente_id, 
-                COALESCE(MaeTerceros.nom_ter, u_escalado.name, u_creador.name, "Agente Local") as name, 
-                COUNT(scp_soportes.id) as total_cerrados, 
+                COALESCE(scp_soportes.usuario_escalado, scp_soportes.id_users, 0) as agente_id,
+                COALESCE(MaeTerceros.nom_ter, u_escalado.name, u_creador.name, "Agente Local") as name,
+                COUNT(scp_soportes.id) as total_cerrados,
                 0 as tiempo_promedio
             ')
             ->groupBy('agente_id', 'name')
