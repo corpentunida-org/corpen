@@ -6,7 +6,7 @@
             --bg-body: #f3f4f6;          /* Gris muy suave para fondo */
             --bg-card: #ffffff;          /* Blanco puro */
             --bg-panel: #f9fafb;         /* Blanco humo para paneles */
-            
+
             --text-main: #111827;        /* Negro suave casi gris */
             --text-muted: #6b7280;       /* Gris medio */
             --text-light: #9ca3af;       /* Gris claro */
@@ -15,7 +15,7 @@
             --primary: #2563eb;          /* Azul Real - Acción principal */
             --primary-dark: #1d4ed8;     /* Azul oscuro - Hover */
             --primary-light: #eff6ff;    /* Fondo azul muy claro */
-            
+
             /* Estados Semánticos Refinados */
             --success: #10b981;          /* Esmeralda */
             --warning: #f59e0b;          /* Ámbar */
@@ -23,7 +23,7 @@
             --info: #3b82f6;             /* Azul información */
             --purple: #8b5cf6;           /* Violeta moderno */
             --dark: #1f2937;             /* Gris oscuro */
-            
+
             /* UI Elements */
             --radius: 8px;               /* Bordes menos redondeados = más serio */
             --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
@@ -150,18 +150,18 @@
             border: 1px solid var(--primary);
             box-shadow: 0 0 0 1px var(--primary);
         }
-        
+
         .kpi-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem; }
         .kpi-title { font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.02em; }
         .kpi-icon { font-size: 1.2rem; color: var(--text-light); transition: color 0.3s; }
         .kpi-box:hover .kpi-icon { color: var(--primary); }
-        
+
         .kpi-number { font-size: 1.75rem; font-weight: 700; color: var(--text-main); line-height: 1.2; letter-spacing: -0.03em; }
         .kpi-trend { font-size: 0.75rem; margin-top: 5px; display: inline-flex; align-items: center; gap: 4px; }
-        
+
         /* Variaciones KPI sutiles */
         .kpi-highlight .kpi-number { color: var(--primary); }
-        
+
         /* --- TABLA (Clean Corporate) --- */
         .table-container {
             max-height: 550px;
@@ -169,24 +169,24 @@
             border-radius: 0 0 var(--radius) var(--radius);
         }
         .easy-table { width: 100%; border-collapse: separate; border-spacing: 0; }
-        .easy-table th { 
-            background: #f9fafb; 
-            color: var(--text-muted); 
-            font-weight: 600; 
-            font-size: 0.75rem; 
-            text-transform: uppercase; 
+        .easy-table th {
+            background: #f9fafb;
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
             padding: 0.85rem 1rem;
             border-bottom: 1px solid var(--border-color);
             position: sticky; top: 0; z-index: 10;
             backdrop-filter: blur(8px);
             background: rgba(249, 250, 251, 0.95);
         }
-        .easy-table td { 
-            padding: 0.85rem 1rem; 
-            border-bottom: 1px solid var(--border-color); 
-            font-size: 0.875rem; 
-            color: var(--text-main); 
-            vertical-align: middle; 
+        .easy-table td {
+            padding: 0.85rem 1rem;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.875rem;
+            color: var(--text-main);
+            vertical-align: middle;
             background: white;
         }
         .easy-table tr:last-child td { border-bottom: none; }
@@ -203,7 +203,7 @@
             box-shadow: 0 1px 2px rgba(37, 99, 235, 0.3);
         }
         .btn-primary-action:hover { background: var(--primary-dark); transform: translateY(-1px); }
-        
+
         .btn-secondary-action {
             background: white; border-color: #d1d5db; color: var(--text-main);
         }
@@ -217,39 +217,39 @@
             display: flex; gap: 2rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0;
         }
         .tab-btn {
-            background: transparent; border: none; 
-            padding: 0.75rem 0; 
-            font-weight: 500; color: var(--text-muted); 
+            background: transparent; border: none;
+            padding: 0.75rem 0;
+            font-weight: 500; color: var(--text-muted);
             cursor: pointer; transition: all 0.3s;
             border-bottom: 2px solid transparent;
             font-size: 0.9rem;
             display: flex; align-items: center; gap: 6px;
         }
         .tab-btn:hover { color: var(--primary); }
-        .tab-btn.active { 
-            color: var(--primary); 
-            border-bottom-color: var(--primary); 
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
             font-weight: 600;
         }
-        
+
         .content-area { display: none; animation: fadeIn 0.3s ease-out; }
         .content-area.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
         /* Badges & Status */
-        .badge-status { 
+        .badge-status {
             padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em;
             display: inline-block;
         }
         .badge-gray { background: #f3f4f6; color: #4b5563; border: 1px solid #e5e7eb; }
-        
+
         /* Loader */
         .loader-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.8); z-index: 9999; display: none; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
-        
+
         /* Toast */
         .toast-container { position: fixed; top: 1rem; right: 1rem; z-index: 9990; display: flex; flex-direction: column; gap: 0.5rem; }
-        .toast-alert { 
-            background: white; padding: 1rem; border-radius: 6px; box-shadow: var(--shadow-lg); 
+        .toast-alert {
+            background: white; padding: 1rem; border-radius: 6px; box-shadow: var(--shadow-lg);
             border-left: 4px solid var(--dark); min-width: 320px; animation: slideInRight 0.3s;
             display: flex; align-items: center; gap: 10px;
         }
@@ -259,8 +259,8 @@
 
         /* Avatar */
         .avatar-circle {
-            width: 24px; height: 24px; border-radius: 50%; 
-            display: flex; align-items: center; justify-content: center; 
+            width: 24px; height: 24px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
             font-size: 0.7rem; font-weight: 700; color: white;
         }
 
@@ -285,7 +285,7 @@
             max-height: none !important; /* Expande la tabla */
             overflow: visible !important;
         }
-        body.printing-mode .card-box, 
+        body.printing-mode .card-box,
         body.printing-mode .kpi-box {
             box-shadow: none !important;
             border: 1px solid #ddd !important;
@@ -381,7 +381,7 @@
 
         {{-- SECCIÓN 1: GRÁFICOS Y KPIS --}}
         <div id="section-graficos" class="content-area active">
-            
+
             {{-- FILA 1: KPIs PRINCIPALES (Diseño Limpio) --}}
             <span class="section-label">Métricas de Volumen</span>
             <div class="row g-3 mb-5">
@@ -551,7 +551,7 @@
                         </thead>
                         <tbody id="table-body-soportes">
                             @foreach($actividadReciente as $soporte)
-                            <tr>
+                            <tr data-creador="{{ $soporte->usuario?->name ?? ($soporte->usuario?->maeTercero?->nom_ter ?? 'Sistema') }}">
                                 <td class="ps-4 fw-bold font-monospace text-primary">#{{ $soporte->id }}</td>
                                 <td>
                                     <div class="fw-bold text-dark mb-1">{{ Str::limit($soporte->detalles_soporte, 50) }}</div>
@@ -664,7 +664,7 @@
         let updateDashboard, filterKpi, exportTableToCSV;
 
         document.addEventListener('DOMContentLoaded', function () {
-            
+
             // --- Configuración Profesional Chart.js ---
             Chart.defaults.font.family = "'Inter', sans-serif";
             Chart.defaults.color = '#6b7280';
@@ -672,9 +672,9 @@
             Chart.defaults.plugins.tooltip.backgroundColor = '#1f2937';
             Chart.defaults.plugins.tooltip.padding = 10;
             Chart.defaults.plugins.tooltip.cornerRadius = 6;
-            
-            const colors = { 
-                primary: '#2563eb', secondary: '#64748b', info: '#3b82f6', 
+
+            const colors = {
+                primary: '#2563eb', secondary: '#64748b', info: '#3b82f6',
                 success: '#10b981', warning: '#f59e0b', danger: '#ef4444', purple: '#8b5cf6'
             };
 
@@ -687,15 +687,15 @@
                 if (document.getElementById('ticketsPorMesChart') && data.labelsMes) {
                     chartMes = new Chart(document.getElementById('ticketsPorMesChart'), {
                         type: 'line',
-                        data: { 
-                            labels: data.labelsMes, 
-                            datasets: [{ 
-                                label: 'Tickets Nuevos', 
-                                data: data.dataMes, 
-                                borderColor: colors.primary, 
-                                backgroundColor: 'rgba(37, 99, 235, 0.05)', 
+                        data: {
+                            labels: data.labelsMes,
+                            datasets: [{
+                                label: 'Tickets Nuevos',
+                                data: data.dataMes,
+                                borderColor: colors.primary,
+                                backgroundColor: 'rgba(37, 99, 235, 0.05)',
                                 fill: true, tension: 0.4, borderWidth: 2, pointRadius: 3
-                            }] 
+                            }]
                         },
                         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true }, x: { grid: { display: false } } } }
                     });
@@ -705,13 +705,13 @@
                 if (document.getElementById('ticketsPorEstadoChart') && data.labelsEstado) {
                     chartEstado = new Chart(document.getElementById('ticketsPorEstadoChart'), {
                         type: 'doughnut',
-                        data: { 
-                            labels: data.labelsEstado, 
-                            datasets: [{ 
-                                data: data.dataEstado, 
-                                backgroundColor: [colors.warning, colors.info, colors.purple, colors.success], 
+                        data: {
+                            labels: data.labelsEstado,
+                            datasets: [{
+                                data: data.dataEstado,
+                                backgroundColor: [colors.warning, colors.info, colors.purple, colors.success],
                                 borderWidth: 0, hoverOffset: 4
-                            }] 
+                            }]
                         },
                         options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'right', labels: { usePointStyle: true, boxWidth: 8, padding: 20 } } } }
                     });
@@ -725,7 +725,7 @@
                         options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { display: false } } }
                     });
                 }
-                
+
                 // 4. Prioridad
                 if(document.getElementById('ticketsPorPrioridadChart') && data.ticketsByPriority) {
                     chartPrioridad = new Chart(document.getElementById('ticketsPorPrioridadChart'), {
@@ -768,26 +768,26 @@
 
             // Datos Iniciales Asegurados desde el Controlador
             const initialData = {
-                labelsMes: {!! json_encode($labelsMes ?? []) !!}, 
+                labelsMes: {!! json_encode($labelsMes ?? []) !!},
                 dataMes: {!! json_encode($dataMes ?? []) !!},
-                labelsEstado: {!! json_encode($labelsEstado ?? []) !!}, 
+                labelsEstado: {!! json_encode($labelsEstado ?? []) !!},
                 dataEstado: {!! json_encode($dataEstado ?? []) !!},
-                labelsArea: {!! json_encode($labelsArea ?? []) !!}, 
+                labelsArea: {!! json_encode($labelsArea ?? []) !!},
                 dataArea: {!! json_encode($dataArea ?? []) !!},
                 ticketsByType: {!! json_encode($ticketsByType ?? []) !!},
                 ticketsByPriority: {!! json_encode($ticketsByPriority ?? []) !!},
-                slaCompliance: {{ $slaCompliance ?? 0 }}, 
-                csatScore: {{ $csatScore ?? 0 }}, 
+                slaCompliance: {{ $slaCompliance ?? 0 }},
+                csatScore: {{ $csatScore ?? 0 }},
                 firstResponseRate: {{ $firstResponseRate ?? 0 }},
-                reopenRate: {{ $reopenRate ?? 0 }}, 
+                reopenRate: {{ $reopenRate ?? 0 }},
                 escalationRate: {{ $escalationRate ?? 0 }}
             };
-            
+
             // Renderizamos la gráfica con toda la info inicial
             renderCharts(initialData);
 
             // --- Lógica de Interfaz ---
-            
+
             // Tabs
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
@@ -809,7 +809,7 @@
 
             // --- Lógica de Datos (AJAX) ---
             const loader = document.getElementById('loadingOverlay');
-            
+
             updateDashboard = function() {
                 const start = document.getElementById('filterStartDate').value;
                 const end = document.getElementById('filterEndDate').value;
@@ -817,7 +817,7 @@
 
                 document.getElementById('loaderText').innerText = "Procesando datos...";
                 loader.style.display = 'flex';
-                
+
                 const params = new URLSearchParams({
                     start_date: start, end_date: end,
                     priority: document.getElementById('priorityFilter').value,
@@ -849,7 +849,7 @@
                         if(data.actividadReciente && data.actividadReciente.length) {
                             data.actividadReciente.forEach(item => {
                                 const initial = item.asignado_nombre ? item.asignado_nombre.charAt(0) : 'U';
-                                const row = `<tr><td class="ps-4 fw-bold font-monospace text-primary">#${item.id}</td><td><div class="fw-bold text-dark mb-1">${(item.detalles_soporte||'').substring(0,50)}...</div></td><td><span class="badge-status badge-gray">${item.estado_nombre}</span></td><td><span class="badge-status badge-gray">${item.prioridad_nombre}</span></td><td><div class="d-flex align-items-center gap-2"><div class="avatar-circle" style="background-color: var(--primary);">${initial}</div><span class="small fw-medium">${item.asignado_nombre || 'Sin asignar'}</span></div></td><td class="text-muted small">${item.created_at_formatted}</td><td class="text-end pe-4"><a href="/soportes/soportes/${item.id}" class="btn-icon-only"><i class="feather-arrow-right"></i></a></td></tr>`;
+                                const row = `<tr data-creador="${item.creador_nombre}"><td class="ps-4 fw-bold font-monospace text-primary">#${item.id}</td><td><div class="fw-bold text-dark mb-1">${(item.detalles_soporte||'').substring(0,50)}...</div></td><td><span class="badge-status badge-gray">${item.estado_nombre}</span></td><td><span class="badge-status badge-gray">${item.prioridad_nombre}</span></td><td><div class="d-flex align-items-center gap-2"><div class="avatar-circle" style="background-color: var(--primary);">${initial}</div><span class="small fw-medium">${item.asignado_nombre || 'Sin asignar'}</span></div></td><td class="text-muted small">${item.created_at_formatted}</td><td class="text-end pe-4"><a href="/soportes/soportes/${item.id}" class="btn-icon-only"><i class="feather-arrow-right"></i></a></td></tr>`;
                                 tbodySoportes.insertAdjacentHTML('beforeend', row);
                             });
                             document.getElementById('table-footer-info').innerText = `Registros mostrados: ${data.actividadReciente.length}`;
@@ -901,7 +901,7 @@
 
             document.getElementById('applyDateFilters').addEventListener('click', updateDashboard);
             document.getElementById('refreshDashboard').addEventListener('click', updateDashboard);
-            
+
             document.getElementById('clearFiltersBtn').addEventListener('click', () => {
                 document.getElementById('priorityFilter').value = "";
                 document.getElementById('statusFilter').value = "";
@@ -924,19 +924,46 @@
                 });
             });
 
-            // Exportar CSV
             exportTableToCSV = function(id) {
                 let csv = [];
-                let rows = document.querySelectorAll('#'+id+' tr');
-                for (let i=0; i<rows.length; i++) {
-                    let row = [], cols = rows[i].querySelectorAll("td, th");
-                    for (let j=0; j<cols.length-1; j++) { 
-                        let txt = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, " ").trim();
-                        row.push('"' + txt.replace(/"/g, '""') + '"');
+                let table = document.getElementById(id);
+
+                // 1. Procesar Encabezados (Inyectamos "Creado Por" al lado de Asignado A)
+                let headerRow = [];
+                let headers = table.querySelectorAll('thead th');
+                for (let j = 0; j < headers.length - 1; j++) { // Ignora columna de Acciones
+                    let txt = headers[j].innerText.replace(/(\r\n|\n|\r)/gm, " ").trim();
+                    headerRow.push('"' + txt.replace(/"/g, '""') + '"');
+
+                    // Si acabamos de pasar "Prioridad" (índice 3), insertamos "Creado Por"
+                    if (j === 3) {
+                        headerRow.push('"Creado Por"');
                     }
-                    csv.push(row.join(","));
                 }
-                const blob = new Blob([csv.join("\n")], {type: "text/csv"});
+                csv.push(headerRow.join(","));
+
+                // 2. Procesar las Filas y capturar datos
+                let rows = table.querySelectorAll('tbody tr');
+                for (let i = 0; i < rows.length; i++) {
+                    let rowData = [];
+                    // Extraemos quién lo creó desde el atributo oculto
+                    let creador = rows[i].getAttribute('data-creador') || 'Desconocido';
+                    let cols = rows[i].querySelectorAll("td");
+
+                    for (let j = 0; j < cols.length - 1; j++) {
+                        let txt = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, " ").trim();
+                        rowData.push('"' + txt.replace(/"/g, '""') + '"');
+
+                        // Insertamos el dato del creador en la misma posición (después de Prioridad)
+                        if (j === 3) {
+                            rowData.push('"' + creador.replace(/"/g, '""') + '"');
+                        }
+                    }
+                    csv.push(rowData.join(","));
+                }
+
+                // 3. Crear el archivo para descargar
+                const blob = new Blob(["\uFEFF" + csv.join("\n")], {type: "text/csv;charset=utf-8;"});
                 const link = document.createElement("a");
                 link.download = "reporte_soportes_" + new Date().toISOString().slice(0,10) + ".csv";
                 link.href = window.URL.createObjectURL(blob);
@@ -950,7 +977,7 @@
                 const element = document.body;
                 const loader = document.getElementById('loadingOverlay');
                 const loaderText = document.getElementById('loaderText');
-                
+
                 loaderText.innerText = "Generando PDF Profesional...";
                 loader.style.display = 'flex';
                 element.classList.add('printing-mode');
@@ -969,9 +996,9 @@
                         element.classList.remove('printing-mode');
                         loader.style.display = 'none';
                         showToast('Reporte PDF descargado con éxito');
-                        
+
                         const activeTab = document.querySelector('.tab-btn.active');
-                        if(activeTab) activeTab.click(); 
+                        if(activeTab) activeTab.click();
                     });
                 }, 500);
             });

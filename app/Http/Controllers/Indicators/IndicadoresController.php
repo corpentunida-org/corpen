@@ -49,23 +49,21 @@ class IndicadoresController extends Controller
 
     public function dataIndicadores()
     {
-        $indicators = IndIndicadores::with('arearel')
-            ->get()
-            ->groupBy(function ($item) {
-                return $item->arearel->nombre ?? ' ';
-            });
-        foreach ($indicators as $grupo) {
-            foreach ($grupo as $ind) {
-                if (!empty($ind->consulta_bd)) {
-                    try {
-                        $resultado = collect(DB::select($ind->consulta_bd))->first();
-                        $ind->indicador_calculado = $resultado ? array_values((array) $resultado)[0] ?? null : null;
-                    } catch (\Exception $e) {
-                        throw new \Exception('Error en el indicador "' . $ind->nombre . '" - ' . $e->getMessage());
-                    }
+        // Quitamos el ->groupBy()
+        $indicators = IndIndicadores::with('arearel')->get();
+
+        // El bucle ahora solo necesita un nivel, porque ya no hay "grupos"
+        foreach ($indicators as $ind) {
+            if (!empty($ind->consulta_bd)) {
+                try {
+                    $resultado = collect(DB::select($ind->consulta_bd))->first();
+                    $ind->indicador_calculado = $resultado ? array_values((array) $resultado)[0] ?? null : null;
+                } catch (\Exception $e) {
+                    throw new \Exception('Error en el indicador "' . $ind->nombre . '" - ' . $e->getMessage());
                 }
             }
         }
+
         return $indicators;
     }
 
