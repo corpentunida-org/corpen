@@ -28,31 +28,41 @@ class IndicadoresController extends Controller
         } catch (\Exception $e) {
             return redirect()->back()->with('error', $e->getMessage());
         }
+
         $lastReport = IndRegistroInformes::latest()->first();
-        $totalIndicadores = IndRegistroInformes::count() - 3;
+
+        $totalIndicadores = 0;
         $indicadoresAlcanzados = 0;
-        /*foreach ($indicators as $grupo) {
+
+        // Descomentado y corregido: Ahora que '$indicators' vuelve a estar agrupado,
+        // este cálculo del promedio funcionará correctamente sin causar error.
+        foreach ($indicators as $grupo) {
             foreach ($grupo as $ind) {
                 if ($ind->indicador_calculado !== null) {
                     $totalIndicadores++;
                     $meta = $this->parseMeta($ind->meta);
-                    if ($ind->indicador_calculado >= $meta['valor']) {
-                        $indicadoresAlcanzados++;
+                    // Verificamos que parseMeta nos haya devuelto un arreglo válido
+                    if (!empty($meta) && isset($meta['valor'])) {
+                        if ($ind->indicador_calculado >= $meta['valor']) {
+                            $indicadoresAlcanzados++;
+                        }
                     }
                 }
             }
-        }*/
+        }
+
         $promedioAlcanzados = $totalIndicadores > 0 ? ($indicadoresAlcanzados / $totalIndicadores) * 100 : 0;
         $promedioAlcanzados = round($promedioAlcanzados, 2);
+
         return view('indicators.index', compact('indicators', 'lastReport', 'promedioAlcanzados'));
     }
 
     public function dataIndicadores()
     {
-        // Quitamos el ->groupBy()
+        // Obtenemos todos los indicadores con la relación de su área
         $indicators = IndIndicadores::with('arearel')->get();
 
-        // El bucle ahora solo necesita un nivel, porque ya no hay "grupos"
+        // Calculamos los valores recorriendo la lista plana
         foreach ($indicators as $ind) {
             if (!empty($ind->consulta_bd)) {
                 try {
@@ -64,7 +74,11 @@ class IndicadoresController extends Controller
             }
         }
 
-        return $indicators;
+        // SOLUCIÓN AL ERROR: Agrupamos la colección por el nombre del área
+        // ANTES de enviarla a la vista. Así los dos @foreach funcionarán perfecto.
+        return $indicators->groupBy(function($item) {
+            return $item->arearel->nombre ?? 'Sin Área Asignada';
+        });
     }
 
     public function show($id)
@@ -80,12 +94,15 @@ class IndicadoresController extends Controller
 
         $pdf = Pdf::loadView('indicators.informepdf', compact('indicators'))->setPaper('A4', 'portrait');
         $fileName = 'InformeTIC_' . now()->format('Ymd_His') . '.pdf';
+
         Storage::disk('s3')->put('corpentunida/indicators/' . $fileName, $pdf->output());
+
         IndRegistroInformes::create([
             'archivo' => 'corpentunida/indicators/' . $fileName,
-            'usuario' => auth()->id(),
+            'usuario' => Auth::id(),
             'fecha_descarga' => now(),
         ]);
+
         return $pdf->download('informe_indicadores.pdf');
     }
 
@@ -127,10 +144,11 @@ class IndicadoresController extends Controller
                     apellido1, ' ',
                     IFNULL(apellido2, '')
                 ) as nombre
-            ",
+            "
         )
             ->where('id', '>=', 11)
             ->get();
+
         return view('indicators.create', compact('areas', 'responsables'));
     }
 
