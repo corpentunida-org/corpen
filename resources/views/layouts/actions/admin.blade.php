@@ -12,6 +12,22 @@
         @endcandirect
         @candirect('admin.auditoria.index')
         <li class="nxl-item"><a href="{{ route('admin.auditoria.index') }}" class="nxl-link">Auditoria</a></li>
+        <!-- MENÚ INTEGRACIONES (Independiente) -->
+        <li class="nxl-item nxl-hasmenu">
+            <a class="nxl-link" href="javascript:void(0)">
+                <span class="nxl-micon"><i class="bi bi-hdd-network-fill"></i></span>
+                <span class="nxl-mtext">Integraciones</span>
+                <span class="nxl-arrow"><i class="feather-chevron-right"></i></span>
+            </a>
+            <ul class="nxl-submenu">
+                <li class="nxl-item">
+                    <a class="nxl-link" href="{{ route('integraciones.index') }}">Panel Principal</a>
+                </li>
+                <li class="nxl-item">
+                    <a class="nxl-link" href="{{ route('integraciones.show.pastors') }}">API Pastors</a>
+                </li>
+            </ul>
+        </li>
         @endcandirect
 
         @candirect('indicators.indicadores.index')
