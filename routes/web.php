@@ -159,6 +159,9 @@ use App\Http\Controllers\Correspondencia\MedioRecepcionController;
 //ASOCIADO
 use App\Http\Controllers\Asociado\MaeAsociadoController;
 
+//INTEGRACIONES
+use App\Http\Controllers\Integraciones\PanelIntegracionController;
+
 Route::middleware(['auth'])->group(function () {
     Route::get('/', [IndexController::class, 'index'])->name('dashboard');
 });
@@ -1357,3 +1360,41 @@ Route::middleware(['auth'])
     });
 
 // FIN MÓDULO DEMOGRAFÍA -
+
+// ==========================================
+//   MÓDULO DE INTEGRACIONES
+// ==========================================
+
+Route::middleware(['auth'])
+    ->prefix('integraciones')
+    ->name('integraciones.')
+    ->group(function () {
+
+        // ---------------------------------------------------
+        // 0. VISTAS PRINCIPALES (PANEL ÚNICO / DASHBOARDS)
+        // ---------------------------------------------------
+
+        // Vista principal: Dashboard con estado global e historial de logs
+        Route::get('/', [PanelIntegracionController::class, 'index'])->name('index');
+
+        // ---------------------------------------------------
+        // 1. DETALLES Y SIMULADORES DE APIS
+        // ---------------------------------------------------
+
+        // Vista de detalle y simulador interactivo para la API Pastors
+        Route::get('/pastors', [PanelIntegracionController::class, 'show'])->name('show.pastors');
+
+        // (Aquí podrás agregar futuras vistas de otras APIs. Ej: /pagos, /envios)
+
+        // ---------------------------------------------------
+        // 2. EJECUCIÓN DE PRUEBAS Y CONSUMO DE ENDPOINTS
+        // ---------------------------------------------------
+
+        // Ejecuta la prueba de conexión a Pastors, mide tiempo y guarda el log
+        Route::post('/test/pastors', [PanelIntegracionController::class, 'testPastors'])->name('test.pastors');
+
+    });
+// FIN MÓDULO INTEGRACIONES
+
+
+
