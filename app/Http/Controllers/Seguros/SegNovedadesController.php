@@ -56,7 +56,7 @@ class SegNovedadesController extends Controller
 
     public function create()
     {
-        
+
         return view('seguros.novedades.create');
     }
 
@@ -91,11 +91,15 @@ class SegNovedadesController extends Controller
         /*$request->validate([
             'formulario_nov' => 'required|mimes:pdf|max:2048',
         ]);*/
+
+        // 2. MANEJO DEL ARCHIVO
         $formulario = null;
         if ($request->hasFile('formulario_nov')) {
             $formulario = $request->file('formulario_nov');
         }
+        // 3. OBTENER EL PLAN
         $plan = SegPlan::findOrFail($request->planid);
+        // 4. CREAR LA NOVEDAD PRINCIPAL
         $novedad = SegNovedades::create([
             'id_poliza' => $request->id_poliza ?? null,
             'id_asegurado' => $request->asegurado,
@@ -107,10 +111,12 @@ class SegNovedadesController extends Controller
             'primaCorpen' => $request->primacorpen,
             'extraprima' => $request->extra_prima,
         ]);
+        // 5. GUARDAR ARCHIVO EN S3 SI EXISTE
         if ($formulario) {
             $ruta = Storage::disk('s3')->put('corpentunida/seguros_vida/' . $novedad->id, $formulario);
             $novedad->update(['formulario' => $ruta]);
         }
+        // 6. REGISTRAR EL CAMBIO DE ESTADO (AUDITORÍA INTERNA)
         SegCambioEstadoNovedad::create([
             'novedad' => $novedad->id,
             'estado' => $request->estado ?? 1,
@@ -118,6 +124,8 @@ class SegNovedadesController extends Controller
             'fechaInicio' => Carbon::now()->toDateString(),
             'user_created' => auth()->user()->id
         ]);
+        // 7. LÓGICA SEGÚN EL TIPO DE NOVEDAD
+
         if ($request->tipoNovedad === '1') {
             $accion = 'modificacion en poliza  ' . $request->id_poliza . ' Asegurado ' . $request->asegurado . ' novedad ID ' . $novedad->id;
         } elseif ($request->tipoNovedad === '2') {
@@ -126,21 +134,59 @@ class SegNovedadesController extends Controller
             if ($terapi->getStatusCode() === 404) {
                 return redirect()->back()->with('error', 'La cédula ingresada no coincide con ningún documento en base de datos de SiaSoft.');
             }*/
+
+            // 1. Convertimos todo a mayúsculas
+            $nom1 = strtoupper($request->ternom1);
+            $nom2 = strtoupper($request->ternom2);
+            $apl1 = strtoupper($request->terapl1);
+            $apl2 = strtoupper($request->terapl2);
+
+            // 2. Concatenamos: Apellido 1 + Apellido 2 + Nombre 1 + Nombre 2
+            // Usamos un array y array_filter para omitir los campos vacíos (por ejemplo, si no tiene segundo nombre)
+            $partesNombre = array_filter([$apl1, $apl2, $nom1, $nom2]);
+            $nombreCompleto = implode(' ', $partesNombre);
+
+            // ========================================================
+            // 🛑 DEPURADOR (DUMP AND DIE)
+            // ========================================================
+            // Esto imprimirá los datos en pantalla y detendrá el proceso
+            dd([
+                'Nombres Separados' => [
+                    'Primer Apellido' => $apl1,
+                    'Segundo Apellido' => $apl2,
+                    'Primer Nombre' => $nom1,
+                    'Segundo Nombre' => $nom2,
+                ],
+                'Nombre Completo Generado' => $nombreCompleto,
+                'Todo el Request (Para ver qué más llegó)' => $request->all()
+            ]);
+            // ========================================================
+
+            // Verificamos si el tercero ya existe en la base de datos
             $terceroontable = MaeTerceros::where('cod_ter', $request->asegurado)->exists();
+
+            // Si no existe, lo creamos usando el nombre concatenado que recibimos del JS
             if (!$terceroontable) {
                 $terceroontable = MaeTerceros::create([
                     'cod_ter' => $request->asegurado,
-                    'nom_ter' => strtoupper($request->ternombre),
+                    'nom_ter' => $nombreCompleto,
+                    'apl1'    => $apl1,
+                    'apl2'    => $apl2,
+                    'nom1'    => $nom1,
+                    'nom2'    => $nom2,
                     'fec_nac' => $request->fechaNacimiento,
-                    'tel1' => $request->tertelefono,
-                    'sexo' => $request->tergenero,
-                    'cod_dist' => $request->terdistrito,
+                    'tel1'    => $request->tertelefono,
+                    'sexo'    => $request->tergenero,
+                    'cod_dist'=> $request->terdistrito,
                 ]);
             } else {
                 $terceroontable = MaeTerceros::where('cod_ter', $request->asegurado)->first();
             }
+
+            // Verificamos si ya está registrado como Asegurado
             $aseguradontable = SegAsegurado::where('cedula', $terceroontable->cod_ter)->first();
             if (!$aseguradontable) {
+                // Evaluamos si es titular o beneficiario/afiliado
                 if ($request->estitular === '1') {
                     $asegurado = SegAsegurado::create([
                         'cedula' => $terceroontable->cod_ter,
@@ -157,6 +203,7 @@ class SegNovedadesController extends Controller
             }
             $accion = 'TERCERO CREAD0 ID ' . $terceroontable->cod_ter . ' para la novedad ID ' . $novedad->id;
         }
+        // 8. REGISTRO DE AUDITORÍA GLOBAL Y REDIRECCIÓN
         $this->auditoria($accion);
         return redirect()->route('seguros.novedades.index')->with('success', 'Novedad registrada correctamente');
     }
@@ -173,7 +220,7 @@ class SegNovedadesController extends Controller
     public function edit($id)
     {
         $actividadnov = SegCambioEstadoNovedad::where('novedad', $id)->with('estadosname')->get();
-        $novedad = SegNovedades::with(['poliza', 'estadoNovedad', 'cambiosEstado'])->findOrFail($id);      
+        $novedad = SegNovedades::with(['poliza', 'estadoNovedad', 'cambiosEstado'])->findOrFail($id);
         if ($novedad->estado != 1) {
             $editar = false;
             $planesGrupo = SegPlan::where('id', $novedad->id_plan)->get();
