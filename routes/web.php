@@ -243,6 +243,7 @@ Route::prefix('seguros')->group(function () {
     Route::prefix('seguros')->get('/reclamacion/informe-completo', [SegReclamacionesController::class, 'exportarInformeCompleto'])->name('seguros.reclamacion.exportarInformeCompleto');
     Route::get('/novedades/{id}/formulario', [SegNovedadesController::class, 'verArchivo'])->name('seguros.novedades.formulario');
     Route::get('/seguros/novedades/download', [SegNovedadesController::class, 'descargarexcel'])->name('seguros.novedades.download');
+    Route::delete('/novedades/{id}/eliminar', [SegNovedadesController::class, 'eliminar'])->name('seguros.novedades.eliminar');
 });
 
 //RUTAS CINCO

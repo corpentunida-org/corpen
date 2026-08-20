@@ -216,6 +216,16 @@
                                     <i class="feather-eye me-3"></i>
                                     <span>Editar</span>
                                 </a>
+                                <!-- BOTÓN DE ELIMINAR -->
+                                <form action="{{ route('seguros.novedades.eliminar', $reg->id) }}" method="POST" class="m-0 p-0">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="dropdown-item text-danger" onclick="return confirm('¿Estás seguro de que deseas eliminar esta novedad? Esta acción no se puede deshacer.')">
+                                        <i class="feather-trash-2 me-3"></i>
+                                        <span>Eliminar</span>
+                                    </button>
+                                </form>
+                                <!-- FIN BOTÓN -->
                             </div>
                         </div>
                     </div>
