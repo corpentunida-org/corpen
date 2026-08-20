@@ -150,7 +150,7 @@ class SegNovedadesController extends Controller
             // 🛑 DEPURADOR (DUMP AND DIE)
             // ========================================================
             // Esto imprimirá los datos en pantalla y detendrá el proceso
-            dd([
+            /* dd([
                 'Nombres Separados' => [
                     'Primer Apellido' => $apl1,
                     'Segundo Apellido' => $apl2,
@@ -159,7 +159,7 @@ class SegNovedadesController extends Controller
                 ],
                 'Nombre Completo Generado' => $nombreCompleto,
                 'Todo el Request (Para ver qué más llegó)' => $request->all()
-            ]);
+            ]); */
             // ========================================================
 
             // Verificamos si el tercero ya existe en la base de datos
