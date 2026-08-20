@@ -350,6 +350,23 @@ class SegNovedadesController extends Controller
 
         return redirect()->route('seguros.novedades.index')->with('success', 'Novedad registrada correctamente');
     }
+    
+    /* Soft Deletes (Borrados Lógicos) */
+    public function eliminar($id)
+    {
+        // 1. Buscamos la novedad
+        $novedad = SegNovedades::findOrFail($id);
+
+        // 2. Al ejecutar delete(), Laravel automáticamente llena el 'deleted_at'
+        // porque le pusimos el trait SoftDeletes al modelo.
+        $novedad->delete();
+
+        // 3. Dejamos rastro en la auditoría
+        $this->auditoria('SE ELIMINÓ (OCULTÓ) LA NOVEDAD, ID: ' . $id);
+
+        // 4. Recargamos la página con un mensaje de éxito
+        return redirect()->back()->with('success', 'El registro fue eliminado correctamente.');
+    }
 
     public function descargarexcel()
     {
