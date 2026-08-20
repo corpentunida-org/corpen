@@ -5,6 +5,7 @@ namespace App\Models\Seguros;
 use App\Models\Maestras\MaeTerceros;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\Seguros\SegAsegurado;
 use App\Models\Seguros\SegCambioEstadoNovedad;
 use App\Models\Seguros\SegEstadosNovedad;
@@ -17,6 +18,7 @@ use Illuminate\Support\Facades\Storage;
 
 class SegNovedades extends Model
 {
+    use SoftDeletes;
     use HasFactory;
     /* protected $table = 'Seg_novedadaes';
     protected $fillable = [
