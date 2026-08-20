@@ -221,7 +221,8 @@
                                 <span class="d-block mb-2">Tercero: </span>
                             </h5>
                         </div>
-                        <div class="row">
+
+                        {{-- <div class="row">
                             <div class="col-lg-4 mb-4">
                                 <label class="form-label">Cédula<span class="text-danger">*</span></label>
                                 <input type="number" class="form-control" name="asegurado" required>
@@ -231,7 +232,41 @@
                                 <label class="form-label">Nombre<span class="text-danger">*</span></label>
                                 <input type="text" class="form-control text-uppercase" name="ternombre" required>
                             </div>
+                        </div> --}}
+
+                        {{-- MEJORA 20/08/2026 --}}
+
+                        <div class="row">
+                            <div class="col-lg-12 mb-4">
+                                <label class="form-label">Cédula<span class="text-danger">*</span></label>
+                                <!-- Le añadí un w-25 (width 25%) para que no ocupe toda la pantalla, puedes quitarlo si prefieres -->
+                                <input type="number" class="form-control w-25" name="asegurado" required>
+                                <input type="hidden" name="tipoNovedad" value="2">
+                            </div>
                         </div>
+
+                        <!-- Nueva fila con los 4 campos del nombre -->
+                        <div class="row">
+                            <div class="col-lg-3 mb-4">
+                                <label class="form-label">Primer Apellido<span class="text-danger">*</span></label>
+                                <!-- El CSS 'text-uppercase' muestra la letra en mayúscula visualmente al usuario -->
+                                <input type="text" class="form-control text-uppercase" name="terapl1" required>
+                            </div>
+                            <div class="col-lg-3 mb-4">
+                                <label class="form-label">Segundo Apellido</label>
+                                <input type="text" class="form-control text-uppercase" name="terapl2">
+                            </div>
+                            <div class="col-lg-3 mb-4">
+                                <label class="form-label">Primer Nombre<span class="text-danger">*</span></label>
+                                <input type="text" class="form-control text-uppercase" name="ternom1" required>
+                            </div>
+                            <div class="col-lg-3 mb-4">
+                                <label class="form-label">Segundo Nombre</label>
+                                <input type="text" class="form-control text-uppercase" name="ternom2">
+                            </div>
+                        </div>
+
+
                         <div class="row">
                             <div class="col-lg-3 mb-4">
                                 <label class="form-label">Fecha Nacimiento<span class="text-danger">*</span></label>
@@ -549,13 +584,13 @@
                     success: function(planes) {
                         const $select = $('#selectPlanes');
                         $select.empty().append('<option value="">Seleccione un plan</option>');
-                        planes.forEach(function(plan) {                            
+                        planes.forEach(function(plan) {
                             $select.append(
                                 `<option value="${plan.id}"
-                                        data-as="${plan.prima_asegurado}" 
-                                        data-pas="${plan.prima_pastor}" data-base="${plan.prima_aseguradora}">                                        
-                                        ${plan.convenio?.nombre ?? 'SIN CONVENIO'} - ${plan.name} - 
-                                        $${Number(plan.valor).toLocaleString('es-CO')} - 
+                                        data-as="${plan.prima_asegurado}"
+                                        data-pas="${plan.prima_pastor}" data-base="${plan.prima_aseguradora}">
+                                        ${plan.convenio?.nombre ?? 'SIN CONVENIO'} - ${plan.name} -
+                                        $${Number(plan.valor).toLocaleString('es-CO')} -
                                         $${Number(plan.prima_aseguradora).toLocaleString('es-CO')}
                                     </option>`
                             );
