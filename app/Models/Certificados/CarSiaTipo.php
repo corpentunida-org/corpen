@@ -4,6 +4,7 @@ namespace App\Models\Certificados;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Certificados\CarSiaTipoEvento;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class CarSiaTipo extends Model
