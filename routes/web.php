@@ -156,6 +156,13 @@ use App\Http\Controllers\Correspondencia\CorrespondenciaProcesoController;
 use App\Http\Controllers\Correspondencia\CorrEstadoController;
 use App\Http\Controllers\Correspondencia\MedioRecepcionController;
 
+//CERTIFICADOS
+use App\Http\Controllers\Certificados\OperacionController;
+use App\Http\Controllers\Certificados\PortalClienteController;
+use App\Http\Controllers\Certificados\ConfiguracionController;
+use App\Http\Controllers\Certificados\IngestaController;
+use App\Http\Controllers\Certificados\AuditoriaController as AuditoriaCertificadosController;
+
 //ASOCIADO
 use App\Http\Controllers\Asociado\MaeAsociadoController;
 
@@ -1365,7 +1372,6 @@ Route::middleware(['auth'])
 // ==========================================
 //   MÓDULO DE INTEGRACIONES
 // ==========================================
-
 Route::middleware(['auth'])
     ->prefix('integraciones')
     ->name('integraciones.')
@@ -1397,5 +1403,97 @@ Route::middleware(['auth'])
     });
 // FIN MÓDULO INTEGRACIONES
 
+// ==========================================
+//   MÓDULO SIA CERTIFICADOS (MOTOR DE OPERACIONES)
+// ==========================================
+Route::middleware(['auth'])
+    ->prefix('certificados')
+    ->name('certificados.')
+    ->group(function () {
 
+        // ---------------------------------------------------
+        // 1. GESTIÓN DE CARTERA / BACKOFFICE
+        // ---------------------------------------------------
+
+        // Matriz Principal del Motor de Operaciones
+        Route::get('operaciones', [OperacionController::class, 'index'])->name('operaciones.index');
+
+        // Detalle y trazabilidad de una operación específica (Líneas, Estados, Alertas)
+        Route::get('operaciones/{id}', [OperacionController::class, 'show'])->name('operaciones.show');
+
+        // Acciones Operativas (Transiciones, Asignaciones, Notificaciones)
+        Route::post('operaciones/{id}/transicionar-estado', [OperacionController::class, 'transicionarEstado'])->name('operaciones.transicionar');
+        Route::post('operaciones/{id}/asignar-tipo', [OperacionController::class, 'asignarTipo'])->name('operaciones.asignar_tipo');
+        Route::post('operaciones/{id}/programar-alerta', [OperacionController::class, 'programarAlerta'])->name('operaciones.programar_alerta');
+        Route::post('operaciones/{id}/toggle-notificacion', [OperacionController::class, 'toggleNotificacion'])->name('operaciones.toggle_notificacion');
+
+
+        // ---------------------------------------------------
+        // 2. PORTAL DE ATENCIÓN / FRONT DESK
+        // ---------------------------------------------------
+
+        // Vista de Login/Búsqueda (No protegida estrictamente por rol cliente aún, pero agrupada aquí)
+        Route::get('frontdesk', [PortalClienteController::class, 'index'])->name('frontdesk.index');
+
+        // Autenticación por NIT
+        Route::post('frontdesk/autenticar', [PortalClienteController::class, 'autenticarPorNit'])->name('frontdesk.autenticar');
+
+        // Dashboard Cliente (Consulta de Lecturas)
+        Route::get('frontdesk/dashboard', [PortalClienteController::class, 'consultarLecturas'])->name('frontdesk.dashboard');
+
+        // Cerrar sesión del portal
+        Route::post('frontdesk/logout', [PortalClienteController::class, 'logout'])->name('frontdesk.logout');
+
+
+        // ---------------------------------------------------
+        // 3. CONFIGURACIÓN CENTRAL Y CATÁLOGOS
+        // ---------------------------------------------------
+
+        // Panel Central Unificado (Parámetros Core y Catálogos Base)
+        Route::get('configuracion', [ConfiguracionController::class, 'index'])->name('config.index');
+
+        // Alias para el menú de "Catálogos y Acciones" que apunta a la misma vista central
+        Route::get('catalogos', [ConfiguracionController::class, 'index'])->name('catalogos.index');
+
+        // Acciones de Configuración Core (JSONB y Reglas)
+        Route::post('configuracion/store', [ConfiguracionController::class, 'storeConfig'])->name('config.store');
+        Route::put('configuracion/accion/{id}/toggle', [ConfiguracionController::class, 'toggleAccionVencimiento'])->name('config.toggle_accion');
+
+        // Gestión de Catálogos 
+        Route::post('catalogos/store-accion', [ConfiguracionController::class, 'storeAccionVencimiento'])->name('catalogos.store_accion');
+        Route::post('catalogos/store-tipo', [ConfiguracionController::class, 'storeTipo'])->name('catalogos.store_tipo');
+        Route::post('catalogos/store-estado', [ConfiguracionController::class, 'storeEstado'])->name('catalogos.store_estado');
+        Route::post('catalogos/store-tipo-alerta', [ConfiguracionController::class, 'storeTipoAlerta'])->name('catalogos.store_tipo_alerta');
+
+
+        // ---------------------------------------------------
+        // 4. ÁREA TÉCNICA / BACKSTAGE - INGESTA ERP
+        // ---------------------------------------------------
+
+        // Panel de Lotes Crudos (Staging)
+        Route::get('ingesta', [IngestaController::class, 'index'])->name('ingesta.index');
+
+        // Proceso de Inyección Masiva (Motor ETl)
+        Route::post('ingesta/inyectar', [IngestaController::class, 'inyectarBloques'])->name('ingesta.inyectar');
+
+        // Anulación Manual de un lote corrupto
+        Route::put('ingesta/{id}/anular', [IngestaController::class, 'anularLote'])->name('ingesta.anular');
+
+
+        // ---------------------------------------------------
+        // 5. ÁREA TÉCNICA / BACKSTAGE - AUDITORÍA
+        // ---------------------------------------------------
+
+        // Panel de Bitácora de Auditoría
+        Route::get('auditoria', [AuditoriaCertificadosController::class, 'index'])->name('auditoria.index');
+
+        // Registro de Nueva Transacción JSON (Permite recibir por Web/API)
+        Route::post('auditoria/registrar', [AuditoriaCertificadosController::class, 'registrarTransaccion'])->name('auditoria.registrar');
+
+        // Gestión de Catálogos Técnicos (Orígenes y Eventos)
+        Route::post('auditoria/store-origen', [AuditoriaCertificadosController::class, 'storeOrigenEvento'])->name('auditoria.store_origen');
+        Route::post('auditoria/store-evento', [AuditoriaCertificadosController::class, 'storeEventoAuditoria'])->name('auditoria.store_evento');
+
+    });
+// FIN MÓDULO SIA CERTIFICADOS
 

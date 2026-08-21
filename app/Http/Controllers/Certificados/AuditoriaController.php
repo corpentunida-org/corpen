@@ -35,7 +35,7 @@ class AuditoriaController extends Controller
             $origenes = CarSiaOrigenEvento::orderBy('nombre')->get();
             $eventos  = CarSiaEventoAuditoria::orderBy('nombre')->get();
 
-            return view('sia.auditoria.index', compact('logs', 'origenes', 'eventos'));
+            return view('certificados.auditoria.index', compact('logs', 'origenes', 'eventos'));
 
         } catch (\Exception $e) {
             Log::error('SIA Auditoría - Error al cargar la bitácora: ' . $e->getMessage());
@@ -119,7 +119,7 @@ class AuditoriaController extends Controller
             CarSiaEventoAuditoria::create(['nombre' => $request->nombre]);
             return redirect()->back()->with('success', 'Evento de auditoría creado correctamente.');
         } catch (\Exception $e) {
-            Log::error('SIA Auditoría - Error al guardar evento de auditoría: ' . $e->getMessage());
+            Log::error('CERTIFICADOS Auditoría - Error al guardar evento de auditoría: ' . $e->getMessage());
             return redirect()->back()->with('error', 'No se pudo registrar el evento de auditoría.');
         }
     }

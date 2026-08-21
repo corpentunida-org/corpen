@@ -29,10 +29,10 @@ class IngestaController extends Controller
             // También podemos calcular estadísticas rápidas para el dashboard técnico
             $totalPendientes = CarSiaApi::where('estado', '!=', 'PROCESADO')->count();
 
-            return view('sia.ingesta.index', compact('lotesCrudos', 'totalPendientes'));
+            return view('certificados.ingesta.index', compact('lotesCrudos', 'totalPendientes'));
 
         } catch (\Exception $e) {
-            Log::error('SIA Ingesta - Error al cargar los lotes crudos: ' . $e->getMessage());
+            Log::error('CERTIFICADOS Ingesta - Error al cargar los lotes crudos: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Ocurrió un error al cargar la tabla de staging.');
         }
     }
@@ -74,11 +74,11 @@ class IngestaController extends Controller
                     });
             });
 
-            Log::info('SIA Ingesta - Inyección de bloques ejecutada correctamente por el usuario ID: ' . Auth::id());
+            Log::info('CERTIFICADOS Ingesta - Inyección de bloques ejecutada correctamente por el usuario ID: ' . Auth::id());
             return redirect()->back()->with('success', 'Los lotes pendientes se han inyectado exitosamente al motor de operaciones.');
 
         } catch (\Exception $e) {
-            Log::error('SIA Ingesta - Error crítico durante la inyección de bloques: ' . $e->getMessage());
+            Log::error('CERTIFICADOS Ingesta - Error crítico durante la inyección de bloques: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Error en la inyección de datos. Se ha revertido el proceso por seguridad.');
         }
     }
@@ -94,12 +94,12 @@ class IngestaController extends Controller
             // Actualizamos la bandera 'anular' (que definiste en el modelo) a true / 1
             $lote->update(['anular' => 1]);
 
-            Log::warning("SIA Ingesta - Lote de staging ID {$id} anulado manualmente.");
+            Log::warning("CERTIFICADOS Ingesta - Lote de staging ID {$id} anulado manualmente.");
 
             return redirect()->back()->with('success', 'El lote fue anulado y excluido del próximo procesamiento.');
 
         } catch (\Exception $e) {
-            Log::error("SIA Ingesta - Error al anular lote ID {$id}: " . $e->getMessage());
+            Log::error("CERTIFICADOS Ingesta - Error al anular lote ID {$id}: " . $e->getMessage());
             return redirect()->back()->with('error', 'No se pudo anular el registro de staging.');
         }
     }
