@@ -131,6 +131,13 @@ class SegPolizaController extends Controller
         if (!$poliza) {
             return redirect()->route('seguros.poliza.index')->with('warning', 'No se encontró la cédula como asegurado de una poliza');
         }
+
+        // 1. AGREGA ESTA NUEVA VALIDACIÓN AQUÍ
+        if (!$poliza->asegurado) {
+            return redirect()->route('seguros.poliza.index')->with('warning', 'La póliza existe pero no tiene un asegurado relacionado en la base de datos.');
+        }
+
+        // 2. Ahora es seguro acceder a la propiedad titular
         $titularCedula = $poliza->asegurado->titular;
         $grupoFamiliar = SegAsegurado::where('Titular', $titularCedula)
             ->whereDoesntHave('reclamacion', function ($q) {
