@@ -4,7 +4,7 @@ namespace App\Models\Certificados;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Certificados\CarSiaTipoEvento;
+use App\Models\Certificados\CarSiaTipoOperacion;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class CarSiaTipo extends Model
@@ -30,6 +30,6 @@ class CarSiaTipo extends Model
     // Un tipo de este catálogo define las tipologías o subcategorías de los eventos de las operaciones
     public function tiposEvento()
     {
-        return $this->hasMany(CarSiaTipoEvento::class, 'id_car_sia_tipos');
+        return $this->hasMany(CarSiaTipoOperacion::class, 'id_car_sia_tipos');
     }
 }

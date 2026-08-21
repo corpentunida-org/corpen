@@ -6,13 +6,13 @@
         .bg-pastel-warning { background-color: #fff9c4 !important; color: #f57f17 !important; border: none; }
         .bg-pastel-secondary { background-color: #f5f5f5 !important; color: #616161 !important; border: none; }
         .bg-pastel-danger { background-color: #ffebee !important; color: #c62828 !important; border: none; }
-        
+
         .table-hover tbody tr:hover { background-color: #fcfdfe !important; transition: all 0.2s ease; }
         .card-custom { border-radius: 20px; background: #ffffff; border: 1px solid #f0f0f0; }
-        
+
         .btn-pastel-primary { background-color: #4a90e2; color: white; border: none; transition: all 0.3s ease; }
         .btn-pastel-primary:hover { background-color: #357abd; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(74, 144, 226, 0.3); color: white; }
-        
+
         .nav-tabs-custom .nav-link {
             border: none; color: #616161; font-weight: 600; padding: 1rem 1.5rem; border-bottom: 3px solid transparent; transition: all 0.3s;
         }
@@ -20,7 +20,7 @@
     </style>
 
     <div class="app-container py-4">
-        
+
         {{-- Encabezado --}}
         <div class="d-flex justify-content-between align-items-end mb-4">
             <div>
@@ -51,17 +51,19 @@
         <div class="card card-custom shadow-sm border-0">
             <div class="card-header bg-white pt-3 pb-0 border-bottom px-4" style="border-radius: 20px 20px 0 0;">
                 <ul class="nav nav-tabs nav-tabs-custom" id="configTabs" role="tablist">
-                    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-core" type="button"><i class="fas fa-cogs me-2"></i> Reglas Core (JSON)</button></li>
-                    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-acciones" type="button"><i class="fas fa-calendar-times me-2"></i> Acciones Vencimiento</button></li>
-                    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-estados" type="button"><i class="fas fa-tags me-2"></i> Estados</button></li>
-                    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-tipos" type="button"><i class="fas fa-layer-group me-2"></i> Tipos</button></li>
-                    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-alertas" type="button"><i class="fas fa-bell me-2"></i> Tipos Alerta</button></li>
+                    <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-core" type="button"><i class="fas fa-cogs me-2"></i> PARÁMETROS</button></li>
+                    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-acciones" type="button"><i class="fas fa-calendar-times me-2"></i> ACCIONES</button></li>
+                    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-estados" type="button"><i class="fas fa-tags me-2"></i> ESTADOS</button></li>
+                    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-tipos" type="button"><i class="fas fa-layer-group me-2"></i> TIPOS</button></li>
+                    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-alertas" type="button"><i class="fas fa-bell me-2"></i> ALERTAS</button></li>
+                    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-origenes" type="button"><i class="fas fa-sitemap me-2"></i> ORÍGENES AUDITORÍA</button></li>
+                    <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-auditoria" type="button"><i class="fas fa-user-secret me-2"></i> EVENTOS AUDITORÍA</button></li>
                 </ul>
             </div>
-            
+
             <div class="card-body p-4">
                 <div class="tab-content">
-                    
+
                     {{-- TAB 1: PARÁMETROS CORE --}}
                     <div class="tab-pane fade show active" id="tab-core">
                         <div class="d-flex justify-content-between align-items-center mb-4">
@@ -211,13 +213,57 @@
                         </div>
                     </div>
 
+                    {{-- TAB 6: ORÍGENES DE EVENTO (AUDITORÍA) --}}
+                    <div class="tab-pane fade" id="tab-origenes">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h5 class="fw-bold text-dark m-0">Catálogo de Orígenes de Evento (Auditoría)</h5>
+                            <button class="btn btn-pastel-primary rounded-pill px-4 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalOrigenEvento">
+                                <i class="fas fa-plus me-2"></i> Nuevo Origen
+                            </button>
+                        </div>
+                        <div class="row">
+                            @forelse($origenesEvento as $origen)
+                            <div class="col-md-3 mb-3">
+                                <div class="bg-pastel-info rounded-4 p-3 d-flex align-items-center">
+                                    <i class="fas fa-sitemap text-info me-3 fs-4"></i>
+                                    <span class="fw-bold text-dark">{{ $origen->nombre }}</span>
+                                </div>
+                            </div>
+                            @empty
+                            <div class="col-12"><p class="text-center text-muted py-4">No hay orígenes de evento registrados.</p></div>
+                            @endforelse
+                        </div>
+                    </div>
+
+                    {{-- TAB 7: EVENTOS DE AUDITORÍA --}}
+                    <div class="tab-pane fade" id="tab-auditoria">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h5 class="fw-bold text-dark m-0">Catálogo de Eventos de Auditoría</h5>
+                            <button class="btn btn-pastel-primary rounded-pill px-4 fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalEventoAuditoria">
+                                <i class="fas fa-plus me-2"></i> Nuevo Evento
+                            </button>
+                        </div>
+                        <div class="row">
+                            @forelse($eventosAuditoria as $evento)
+                            <div class="col-md-3 mb-3">
+                                <div class="bg-pastel-danger rounded-4 p-3 d-flex align-items-center">
+                                    <i class="fas fa-user-secret text-danger me-3 fs-4"></i>
+                                    <span class="fw-bold text-dark">{{ $evento->nombre }}</span>
+                                </div>
+                            </div>
+                            @empty
+                            <div class="col-12"><p class="text-center text-muted py-4">No hay eventos de auditoría registrados.</p></div>
+                            @endforelse
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </div>
     </div>
 
     {{-- MODALES --}}
-    
+
     {{-- Modal Regla Core --}}
     <div class="modal fade" id="modalConfig" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
@@ -320,6 +366,36 @@
                     <i class="fas fa-bell text-warning fs-1 mb-3"></i>
                     <h5 class="fw-bold mb-3">Crear Tipo de Alerta</h5>
                     <input type="text" name="nombre" class="form-control bg-light border-0 mb-4 text-center" placeholder="Nombre (Ej. Cobro Prejurídico)" required>
+                    <button type="submit" class="btn btn-pastel-primary w-100 rounded-pill fw-bold">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- Modal Origen Evento --}}
+    <div class="modal fade" id="modalOrigenEvento" tabindex="-1">
+        <div class="modal-dialog modal-sm modal-dialog-centered">
+            <form action="{{ route('certificados.catalogos.store_origen_evento') }}" method="POST" class="modal-content border-0 shadow card-custom">
+                @csrf
+                <div class="modal-body p-4 text-center">
+                    <i class="fas fa-sitemap text-info fs-1 mb-3"></i>
+                    <h5 class="fw-bold mb-3">Crear Origen de Evento</h5>
+                    <input type="text" name="nombre" class="form-control bg-light border-0 mb-4 text-center" placeholder="Ej: Interfaz Web, API, Cron" required>
+                    <button type="submit" class="btn btn-pastel-primary w-100 rounded-pill fw-bold">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {{-- Modal Evento Auditoría --}}
+    <div class="modal fade" id="modalEventoAuditoria" tabindex="-1">
+        <div class="modal-dialog modal-sm modal-dialog-centered">
+            <form action="{{ route('certificados.catalogos.store_evento_auditoria') }}" method="POST" class="modal-content border-0 shadow card-custom">
+                @csrf
+                <div class="modal-body p-4 text-center">
+                    <i class="fas fa-user-secret text-danger fs-1 mb-3"></i>
+                    <h5 class="fw-bold mb-3">Crear Evento Auditoría</h5>
+                    <input type="text" name="nombre" class="form-control bg-light border-0 mb-4 text-center" placeholder="Ej: Creación, Modificación, Borrado" required>
                     <button type="submit" class="btn btn-pastel-primary w-100 rounded-pill fw-bold">Guardar</button>
                 </div>
             </form>

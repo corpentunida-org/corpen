@@ -19,7 +19,7 @@ class CarSiaApi extends Model
         'log_rq',
         'anular',
         'id_factura',
-        'cuenta',
+        'cuenta', //ESTE ES EL CAMPO QUE SE USA PARA RELACIONAR CON EL CAMPO "id_cre_lineas_creditos"
         'nombre_cuenta',
         'tercero_base',
         'tercero',

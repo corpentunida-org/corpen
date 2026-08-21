@@ -18,25 +18,60 @@ use App\Models\Certificados\CarSiaOperacionConfig;
 class OperacionController extends Controller
 {
     /**
-     * 1. GESTIÓN MATRIZ: Listar el motor de operaciones
+     * 1. GESTIÓN MATRIZ: Listar el motor de operaciones con filtros avanzados
      */
     public function index(Request $request)
     {
         try {
-            // Carga la matriz principal con sus relaciones básicas para la tabla
-            $operaciones = CarSiaOperacion::with([
+            $query = CarSiaOperacion::with([
                 'tercero',
                 'factura',
-                'estados.estado' // Trae el historial de estados y el nombre del estado
-            ])
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
+                'estados.estado'
+            ]);
 
-            return view('certificados.operaciones.index', compact('operaciones'));
+            // --- APLICACIÓN DE FILTROS ---
+
+            if ($request->filled('anio')) {
+                $query->whereYear('created_at', $request->anio);
+            }
+
+            if ($request->filled('bloque')) {
+                $query->where('numero_bloque', $request->bloque);
+            }
+
+            if ($request->filled('buscar')) {
+                $search = trim($request->buscar);
+                $query->where(function($q) use ($search) {
+                    $q->where('numero_radicado', 'LIKE', "%{$search}%")
+                      ->orWhere('id_tercero', 'LIKE', "%{$search}%");
+                });
+            }
+
+            $operaciones = $query->orderBy('created_at', 'desc')->paginate(20)->withQueryString();
+
+            // --- CORRECCIÓN MYSQL STRICT MODE ---
+            
+            // 1. Extraer Años agrupadamente (Compatible con MySQL estricto)
+            $aniosDisponibles = CarSiaOperacion::whereNotNull('created_at')
+                                    ->selectRaw('YEAR(created_at) as anio')
+                                    ->groupBy('anio')
+                                    ->orderBy('anio', 'desc')
+                                    ->pluck('anio');
+
+            // 2. Extraer Bloques con su fecha de ejecución (MySQL estricto compatible)
+            $bloquesDisponibles = CarSiaOperacion::whereNotNull('numero_bloque')
+                                    ->select('numero_bloque', DB::raw('MAX(created_at) as fecha_ejecucion'))
+                                    ->groupBy('numero_bloque')
+                                    ->orderBy('fecha_ejecucion', 'desc')
+                                    ->get(); // Cambiamos pluck() por get() para traer ambas columnas
+
+            return view('certificados.operaciones.index', compact('operaciones', 'aniosDisponibles', 'bloquesDisponibles'));
 
         } catch (\Exception $e) {
-            Log::error('CERTIFICADOS - Error cargando matriz de operaciones: ' . $e->getMessage());
-            return back()->with('error', 'Ocurrió un error al cargar la matriz de operaciones.');
+            Log::error('CERTIFICADOS - Error matriz: ' . $e->getMessage());
+            
+            // Ahora si hay un error, lo verás en la pantalla y no será invisible
+            return back()->with('error', 'Error interno al cargar: ' . $e->getMessage());
         }
     }
 
@@ -46,23 +81,28 @@ class OperacionController extends Controller
     public function show($id)
     {
         try {
-            // Carga la operación con TODO su árbol de dependencias (Líneas, Alertas, Tipos, Configuración)
+            // Carga la operación con TODO su árbol de dependencias
             $operacion = CarSiaOperacion::with([
                 'tercero',
                 'lineas.lineaCredito',
-                'lineas.estadoOperacion.estado',
-                'alertas.tipoAlerta',
-                'tiposEvento.tipo',
-                'configuraciones.configuracionBase',
-                'estados.estado'
+                'lineas.estadoOperacion', // 👇 ¡CORREGIDO! Ya no lleva .estado porque apunta directo al catálogo
+                
+                // Si estas tablas (Fase 4) aún no existen en tu BD, coméntalas con // para que no den error
+                // 'alertas.tipoAlerta',
+                // 'tiposEvento.tipo',
+                // 'configuraciones.configuracionBase',
+                
+                'estados.estado' // Este sí queda igual porque es el historial (tabla pivote)
             ])->findOrFail($id);
 
             return view('certificados.operaciones.show', compact('operacion'));
 
         } catch (\Exception $e) {
-            Log::error("CERTIFICADOS - Error cargando el detalle de la operación {$id}: " . $e->getMessage());
-            return redirect()->route('certificados.operaciones.index')
-                             ->with('error', 'No se pudo cargar el detalle de la operación solicitada.');
+            // Ponemos el DD para que la pantalla nos grite el error en lugar de ocultarlo
+            dd('🚨 ERROR AL ABRIR EL EXPEDIENTE (SHOW):', $e->getMessage());
+            
+            // return redirect()->route('certificados.operaciones.index')
+            //                  ->with('error', 'No se pudo cargar: ' . $e->getMessage());
         }
     }
 
