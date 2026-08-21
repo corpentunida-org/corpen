@@ -13,6 +13,9 @@ use App\Models\Certificados\CarSiaAccionVencimiento;
 use App\Models\Certificados\CarSiaEstado;
 use App\Models\Certificados\CarSiaTipo;
 use App\Models\Certificados\CarSiaTipoAlerta;
+// Nuevos Modelos de Auditoría
+use App\Models\Certificados\CarSiaOrigenEvento;
+use App\Models\Certificados\CarSiaEventoAuditoria;
 
 class ConfiguracionController extends Controller
 {
@@ -28,12 +31,18 @@ class ConfiguracionController extends Controller
             $tipos           = CarSiaTipo::orderBy('nombre')->get();
             $tiposAlerta     = CarSiaTipoAlerta::orderBy('nombre')->get();
 
+            // Catálogos de Auditoría
+            $origenesEvento   = CarSiaOrigenEvento::orderBy('nombre')->get();
+            $eventosAuditoria = CarSiaEventoAuditoria::orderBy('nombre')->get();
+
             return view('certificados.config.index', compact(
                 'configuraciones',
                 'acciones',
                 'estados',
                 'tipos',
-                'tiposAlerta'
+                'tiposAlerta',
+                'origenesEvento',
+                'eventosAuditoria'
             ));
 
         } catch (\Exception $e) {
@@ -47,23 +56,21 @@ class ConfiguracionController extends Controller
      */
     public function storeConfig(Request $request)
     {
-        // 1. Cambiamos la validación de 'array' a 'json'
         $request->validate([
             'id_car_sia_acciones_vencimiento' => 'required|exists:car_sia_acciones_vencimiento,id',
-            'parametros'                      => 'nullable|json', 
+            'parametros'                      => 'nullable|json',
             'frecuencia_recordatorio_dias'    => 'nullable|integer|min:1'
         ], [
             'parametros.json' => 'El campo de parámetros debe ser un JSON válido. Revisa las comillas y comas.'
         ]);
 
         try {
-            // 2. Decodificamos el texto JSON a un Array de PHP antes de guardarlo
             $parametrosArray = $request->parametros ? json_decode($request->parametros, true) : null;
 
             DB::transaction(function () use ($request, $parametrosArray) {
                 CarSiaConfig::create([
                     'id_car_sia_acciones_vencimiento' => $request->id_car_sia_acciones_vencimiento,
-                    'parametros'                      => $parametrosArray, // Pasamos el array decodificado
+                    'parametros'                      => $parametrosArray,
                     'frecuencia_recordatorio_dias'    => $request->frecuencia_recordatorio_dias,
                 ]);
             });
@@ -84,13 +91,10 @@ class ConfiguracionController extends Controller
         try {
             DB::transaction(function () use ($id) {
                 $accion = CarSiaAccionVencimiento::findOrFail($id);
-                // Alterna el booleano actual (Si es true pasa a false y viceversa)
                 $accion->estado = !$accion->estado;
                 $accion->save();
             });
-
             return redirect()->back()->with('success', 'Estado de la acción actualizado.');
-
         } catch (\Exception $e) {
             Log::error("CERTIFICADOS Config - Error al cambiar estado de acción {$id}: " . $e->getMessage());
             return redirect()->back()->with('error', 'Error al modificar el estado de la regla.');
@@ -102,18 +106,10 @@ class ConfiguracionController extends Controller
      */
     public function storeAccionVencimiento(Request $request)
     {
-        $request->validate([
-            'nombre' => 'required|string|max:100'
-        ]);
-
+        $request->validate(['nombre' => 'required|string|max:100']);
         try {
-            CarSiaAccionVencimiento::create([
-                'nombre' => $request->nombre,
-                'estado' => true // Por defecto nacen activas
-            ]);
-
+            CarSiaAccionVencimiento::create(['nombre' => $request->nombre, 'estado' => true]);
             return redirect()->back()->with('success', 'Acción de vencimiento creada correctamente.');
-
         } catch (\Exception $e) {
             Log::error('CERTIFICADOS Config - Error al guardar Acción de Vencimiento: ' . $e->getMessage());
             return redirect()->back()->with('error', 'No se pudo registrar la acción.');
@@ -137,9 +133,7 @@ class ConfiguracionController extends Controller
                 'estructura_radicado' => $request->estructura_radicado,
                 'estado'              => $request->estado ?? true,
             ]);
-
             return redirect()->back()->with('success', 'Nuevo tipo agregado al catálogo.');
-
         } catch (\Exception $e) {
             Log::error('CERTIFICADOS Config - Error al guardar Tipo: ' . $e->getMessage());
             return redirect()->back()->with('error', 'No se pudo registrar el tipo.');
@@ -151,17 +145,10 @@ class ConfiguracionController extends Controller
      */
     public function storeEstado(Request $request)
     {
-        $request->validate([
-            'nombre' => 'required|string|max:100|unique:car_sia_estados,nombre'
-        ]);
-
+        $request->validate(['nombre' => 'required|string|max:100|unique:car_sia_estados,nombre']);
         try {
-            CarSiaEstado::create([
-                'nombre' => $request->nombre,
-            ]);
-
+            CarSiaEstado::create(['nombre' => $request->nombre]);
             return redirect()->back()->with('success', 'Estado registrado correctamente.');
-
         } catch (\Exception $e) {
             Log::error('CERTIFICADOS Config - Error al guardar Estado: ' . $e->getMessage());
             return redirect()->back()->with('error', 'No se pudo guardar el estado.');
@@ -173,20 +160,45 @@ class ConfiguracionController extends Controller
      */
     public function storeTipoAlerta(Request $request)
     {
-        $request->validate([
-            'nombre' => 'required|string|max:255|unique:car_sia_tipos_alerta,nombre'
-        ]);
-
+        $request->validate(['nombre' => 'required|string|max:255|unique:car_sia_tipos_alerta,nombre']);
         try {
-            CarSiaTipoAlerta::create([
-                'nombre' => $request->nombre,
-            ]);
-
+            CarSiaTipoAlerta::create(['nombre' => $request->nombre]);
             return redirect()->back()->with('success', 'Tipo de alerta registrado en el catálogo.');
-
         } catch (\Exception $e) {
             Log::error('CERTIFICADOS Config - Error al guardar Tipo de Alerta: ' . $e->getMessage());
             return redirect()->back()->with('error', 'No se pudo guardar el tipo de alerta.');
+        }
+    }
+
+    /**
+     * 8. AUDITORÍA: Crea un nuevo Origen de Evento (ej. Web, Cron, API)
+     */
+    public function storeOrigenEvento(Request $request)
+    {
+        $request->validate(['nombre' => 'required|string|max:100|unique:car_sia_origenes_evento,nombre']);
+        try {
+            CarSiaOrigenEvento::create(['nombre' => $request->nombre]);
+            return redirect()->back()->with('success', 'Origen de evento registrado en el catálogo de auditoría.');
+        } catch (\Exception $e) {
+            Log::error('CERTIFICADOS Config - Error al guardar Origen de Evento: ' . $e->getMessage());
+            // AHORA IMPRIME EL ERROR SQL SI FALLA ALGO EN LA BASE DE DATOS
+            return redirect()->back()->with('error', 'Error SQL: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * 9. AUDITORÍA: Crea un nuevo Evento de Auditoría
+     */
+    public function storeEventoAuditoria(Request $request)
+    {
+        $request->validate(['nombre' => 'required|string|max:100|unique:car_sia_eventos_auditoria,nombre']);
+        try {
+            CarSiaEventoAuditoria::create(['nombre' => $request->nombre]);
+            return redirect()->back()->with('success', 'Evento de auditoría registrado correctamente.');
+        } catch (\Exception $e) {
+            Log::error('CERTIFICADOS Config - Error al guardar Evento de Auditoría: ' . $e->getMessage());
+            // AHORA IMPRIME EL ERROR SQL SI FALLA ALGO EN LA BASE DE DATOS
+            return redirect()->back()->with('error', 'Error SQL: ' . $e->getMessage());
         }
     }
 }

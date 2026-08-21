@@ -7,40 +7,15 @@
         .bg-pastel-secondary { background-color: #f5f5f5 !important; color: #616161 !important; border: none; }
         .bg-pastel-warning { background-color: #fff9c4 !important; color: #f57f17 !important; border: none; }
         
-        .table-hover tbody tr:hover {
-            background-color: #fcfdfe !important;
-            transition: all 0.2s ease;
-        }
-
-        .card-custom {
-            border-radius: 20px;
-            background: #ffffff;
-            border: 1px solid #f0f0f0;
-        }
-
-        .btn-pastel-primary {
-            background-color: #4a90e2;
-            color: white;
-            border: none;
-            transition: all 0.3s ease;
-        }
-
-        .btn-pastel-primary:hover {
-            background-color: #357abd;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(74, 144, 226, 0.3);
-            color: white;
-        }
-
-        .badge-radicado {
-            background-color: #f1f3f5;
-            color: #495057;
-            font-weight: 500;
-            padding: 0.5rem 0.8rem;
-            border-radius: 10px;
-            display: inline-flex;
-            align-items: center;
-        }
+        .table-hover tbody tr:hover { background-color: #fcfdfe !important; transition: all 0.2s ease; }
+        .card-custom { border-radius: 20px; background: #ffffff; border: 1px solid #f0f0f0; }
+        .btn-pastel-primary { background-color: #4a90e2; color: white; border: none; transition: all 0.3s ease; }
+        .btn-pastel-primary:hover { background-color: #357abd; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(74, 144, 226, 0.3); color: white; }
+        .badge-radicado { background-color: #f1f3f5; color: #495057; font-weight: 500; padding: 0.5rem 0.8rem; border-radius: 10px; display: inline-flex; align-items: center; }
+        
+        /* Estilos para los filtros */
+        .form-select-custom, .form-control-custom { background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 12px; padding: 0.6rem 1rem; transition: all 0.3s ease;}
+        .form-select-custom:focus, .form-control-custom:focus { background-color: #fff; box-shadow: 0 0 0 0.25rem rgba(74, 144, 226, 0.1); border-color: #4a90e2; }
     </style>
 
     <div class="app-container py-4">
@@ -56,13 +31,73 @@
             </a>
         </div>
 
-        {{-- Alertas --}}
+        {{-- Alertas de Éxito --}}
         @if(session('success'))
             <div class="alert alert-success alert-dismissible fade show border-0 shadow-sm rounded-4" role="alert">
                 <i class="fas fa-check-circle me-2"></i> {{ session('success') }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         @endif
+
+        {{-- Alertas de Error (¡NUEVO!) --}}
+        @if(session('error'))
+            <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm rounded-4" role="alert">
+                <i class="fas fa-exclamation-triangle me-2"></i> {{ session('error') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+
+        {{-- Tarjeta de Filtros Avanzados --}}
+        <div class="card card-custom shadow-sm border-0 mb-4">
+            <div class="card-body p-4">
+                <form action="{{ route('certificados.operaciones.index') }}" method="GET" class="row g-3 align-items-end">
+                    
+                    {{-- Filtro Año --}}
+                    <div class="col-md-2">
+                        <label class="form-label text-muted fw-bold small text-uppercase mb-1"><i class="far fa-calendar-alt me-1"></i> Año</label>
+                        <select name="anio" class="form-select form-select-custom">
+                            <option value="">Todos</option>
+                            @foreach($aniosDisponibles as $anio)
+                                <option value="{{ $anio }}" {{ request('anio') == $anio ? 'selected' : '' }}>{{ $anio }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    {{-- Filtro Bloque (¡ACTUALIZADO CON FECHA!) --}}
+                    <div class="col-md-4">
+                        <label class="form-label text-muted fw-bold small text-uppercase mb-1"><i class="fas fa-cubes me-1"></i> Bloque Ejecutado</label>
+                        <select name="bloque" class="form-select form-select-custom">
+                            <option value="">Todos los bloques</option>
+                            @foreach($bloquesDisponibles as $bloque)
+                                <option value="{{ $bloque->numero_bloque }}" {{ request('bloque') == $bloque->numero_bloque ? 'selected' : '' }}>
+                                    {{ $bloque->numero_bloque }} (Ejecutado: {{ \Carbon\Carbon::parse($bloque->fecha_ejecucion)->format('d/m/Y') }})
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    {{-- Buscador Libre --}}
+                    <div class="col-md-4">
+                        <label class="form-label text-muted fw-bold small text-uppercase mb-1"><i class="fas fa-search me-1"></i> Buscar Cliente / Radicado</label>
+                        <input type="text" name="buscar" class="form-control form-control-custom" placeholder="Ej. 10102030..." value="{{ request('buscar') }}">
+                    </div>
+
+                    {{-- Botones de Acción --}}
+                    <div class="col-md-2 d-flex gap-2">
+                        <button type="submit" class="btn btn-pastel-primary w-100 fw-bold shadow-sm rounded-pill py-2">
+                            Filtrar
+                        </button>
+                        
+                        {{-- Botón para limpiar los filtros si hay alguno activo --}}
+                        @if(request()->hasAny(['anio', 'bloque', 'buscar']) && (request('anio') || request('bloque') || request('buscar')))
+                            <a href="{{ route('certificados.operaciones.index') }}" class="btn btn-light fw-bold shadow-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;" title="Limpiar Filtros">
+                                <i class="fas fa-times text-danger"></i>
+                            </a>
+                        @endif
+                    </div>
+                </form>
+            </div>
+        </div>
 
         {{-- Tabla Principal --}}
         <div class="card card-custom shadow-sm border-0">
@@ -120,10 +155,10 @@
                                     $estadoNombre = $ultimoEstado && $ultimoEstado->estado ? $ultimoEstado->estado->nombre : 'Pendiente';
                                     
                                     // Colores dinámicos de ejemplo
-                                    $clasePastel = match($estadoNombre) {
-                                        'Aprobado', 'Completado' => 'bg-pastel-success',
-                                        'Rechazado' => 'bg-pastel-warning',
-                                        'Pendiente' => 'bg-pastel-secondary',
+                                    $clasePastel = match(strtolower($estadoNombre)) {
+                                        'aprobado', 'completado', 'vigente' => 'bg-pastel-success',
+                                        'rechazado', 'anulado' => 'bg-pastel-warning',
+                                        'pendiente', 'nuevo' => 'bg-pastel-secondary',
                                         default => 'bg-pastel-primary'
                                     };
                                 @endphp
@@ -151,7 +186,7 @@
                                 <div class="text-center px-4">
                                     <img src="https://cdn-icons-png.flaticon.com/512/7486/7486744.png" width="100" class="opacity-20 mb-4" alt="Sin datos">
                                     <h4 class="fw-bold text-muted">No se encontraron operaciones</h4>
-                                    <p class="text-gray-400 fw-semibold">El motor de SIA Cartera está vacío actualmente.</p>
+                                    <p class="text-gray-400 fw-semibold">Intenta ajustar los filtros de búsqueda o realiza una nueva ingesta.</p>
                                 </div>
                             </td>
                         </tr>
