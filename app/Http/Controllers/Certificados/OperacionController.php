@@ -32,10 +32,10 @@ class OperacionController extends Controller
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
-            return view('sia.operaciones.index', compact('operaciones'));
+            return view('certificados.operaciones.index', compact('operaciones'));
 
         } catch (\Exception $e) {
-            Log::error('SIA - Error cargando matriz de operaciones: ' . $e->getMessage());
+            Log::error('CERTIFICADOS - Error cargando matriz de operaciones: ' . $e->getMessage());
             return back()->with('error', 'Ocurrió un error al cargar la matriz de operaciones.');
         }
     }
@@ -57,11 +57,11 @@ class OperacionController extends Controller
                 'estados.estado'
             ])->findOrFail($id);
 
-            return view('sia.operaciones.show', compact('operacion'));
+            return view('certificados.operaciones.show', compact('operacion'));
 
         } catch (\Exception $e) {
-            Log::error("SIA - Error cargando el detalle de la operación {$id}: " . $e->getMessage());
-            return redirect()->route('sia.operaciones.index')
+            Log::error("CERTIFICADOS - Error cargando el detalle de la operación {$id}: " . $e->getMessage());
+            return redirect()->route('certificados.operaciones.index')
                              ->with('error', 'No se pudo cargar el detalle de la operación solicitada.');
         }
     }
@@ -90,7 +90,7 @@ class OperacionController extends Controller
             return redirect()->back()->with('success', 'Estado de la operación actualizado correctamente.');
 
         } catch (\Exception $e) {
-            Log::error("SIA - Error al transicionar estado en operación {$id}: " . $e->getMessage());
+            Log::error("CERTIFICADOS - Error al transicionar estado en operación {$id}: " . $e->getMessage());
             return redirect()->back()->with('error', 'Ocurrió un error al procesar el cambio de estado.');
         }
     }
