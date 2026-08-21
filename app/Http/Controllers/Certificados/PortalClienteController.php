@@ -18,7 +18,7 @@ class PortalClienteController extends Controller
      */
     public function index()
     {
-        return view('sia.frontdesk.index');
+        return view('certificados.frontdesk.index');
     }
 
     /**
@@ -49,11 +49,11 @@ class PortalClienteController extends Controller
             // Almacenar en sesión (o token) que el tercero fue autenticado exitosamente en el portal
             session(['tercero_autenticado_cod' => $tercero->cod_ter]);
 
-            return redirect()->route('sia.frontdesk.dashboard')
+            return redirect()->route('certificados.frontdesk.dashboard')
                              ->with('success', "Bienvenido(a) {$tercero->nom_ter} {$tercero->apl1}");
 
         } catch (\Exception $e) {
-            Log::error("SIA FrontDesk - Error autenticando NIT {$request->cod_ter}: " . $e->getMessage());
+            Log::error("CERTIFICADOS FrontDesk - Error autenticando NIT {$request->cod_ter}: " . $e->getMessage());
             return redirect()->back()->with('error', 'Ocurrió un error al intentar validar la información.');
         }
     }
@@ -67,7 +67,7 @@ class PortalClienteController extends Controller
         $cod_ter = session('tercero_autenticado_cod');
 
         if (!$cod_ter) {
-            return redirect()->route('sia.frontdesk.index')->with('error', 'Su sesión ha expirado. Por favor ingrese su NIT nuevamente.');
+            return redirect()->route('certificados.frontdesk.index')->with('error', 'Su sesión ha expirado. Por favor ingrese su NIT nuevamente.');
         }
 
         try {
@@ -80,11 +80,11 @@ class PortalClienteController extends Controller
                                           ->orderBy('created_at', 'desc')
                                           ->get();
 
-            return view('sia.frontdesk.dashboard', compact('tercero', 'operaciones'));
+            return view('certificados.frontdesk.dashboard', compact('tercero', 'operaciones'));
 
         } catch (\Exception $e) {
-            Log::error("SIA FrontDesk - Error consultando lecturas para NIT {$cod_ter}: " . $e->getMessage());
-            return redirect()->route('sia.frontdesk.index')
+            Log::error("CERTIFICADOS FrontDesk - Error consultando lecturas para NIT {$cod_ter}: " . $e->getMessage());
+            return redirect()->route('certificados.frontdesk.index')
                              ->with('error', 'No fue posible cargar las operaciones. Intente más tarde.');
         }
     }
@@ -95,6 +95,6 @@ class PortalClienteController extends Controller
     public function logout()
     {
         session()->forget('tercero_autenticado_cod');
-        return redirect()->route('sia.frontdesk.index')->with('success', 'Sesión cerrada correctamente.');
+        return redirect()->route('certificados.frontdesk.index')->with('success', 'Sesión cerrada correctamente.');
     }
 }
