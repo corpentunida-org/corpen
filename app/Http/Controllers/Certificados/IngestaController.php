@@ -222,7 +222,7 @@ class IngestaController extends Controller
 
     /**
      * =========================================================================
-     * 3. MOTOR DE INYECCIÓN (ALTO RENDIMIENTO - CON FILTRO DE FORÁNEAS)
+     * 3. MOTOR DE INYECCIÓN (ALTO RENDIMIENTO - OPTIMIZADO POR BLOQUE)
      * =========================================================================
      */
     public function inyectarBloques(Request $request)
@@ -286,7 +286,7 @@ class IngestaController extends Controller
                 foreach ($cedulasValidas as $cedula) {
                     $cantidadActual++;
                     $consecutivo = str_pad($cantidadActual, 4, '0', STR_PAD_LEFT);
-                    $numeroRadicado = "CER-{$anioActual}-{$consecutivo}";
+                    $numeroRadicado = "INI-{$anioActual}-{$consecutivo}";
 
                     $operacionesMatriz[] = [
                         'numero_radicado' => $numeroRadicado,
@@ -303,44 +303,33 @@ class IngestaController extends Controller
                     CarSiaOperacion::insert($bloque);
                 }
 
-                // 5. PREPARACIÓN DE PIVOTES
-                $operacionesCreadas = CarSiaOperacion::where('numero_bloque', $numeroBloqueNuevo)
-                    ->select('id')
-                    ->get();
+                // =========================================================
+                // 5. INSERCIÓN DE PIVOTES (UN SOLO REGISTRO POR BLOQUE)
+                // =========================================================
 
-                $tiposInsertar = [];
-                $estadosInsertar = [];
+                // Un solo registro para el Tipo de Operación
+                DB::table('car_sia_tipos_operacion')->insert([
+                    'id_car_sia_operaciones' => null, // Queda en blanco, asocia al bloque general
+                    'id_car_sia_tipos'       => $idTipoEvento,
+                    'numero_bloque'          => $numeroBloqueNuevo,
+                    'created_at'             => $ahora,
+                    'updated_at'             => $ahora,
+                ]);
 
-                foreach ($operacionesCreadas as $operacion) {
-                    $tiposInsertar[] = [
-                        'id_car_sia_operaciones' => $operacion->id,
-                        'id_car_sia_tipos'       => $idTipoEvento,
-                        'numero_bloque'          => $numeroBloqueNuevo,
-                        'created_at'             => $ahora,
-                        'updated_at'             => $ahora,
-                    ];
+                // Un solo registro para el Estado de la Operación
+                DB::table('car_sia_estados_operacion')->insert([
+                    'id_car_sia_operaciones' => null, // Queda en blanco, asocia al bloque general
+                    'id_car_sia_estados'     => $idEstadoReal,
+                    'numero_bloque'          => $numeroBloqueNuevo,
+                    'created_at'             => $ahora,
+                    'updated_at'             => $ahora,
+                ]);
+                // =========================================================
 
-                    $estadosInsertar[] = [
-                        'id_car_sia_operaciones' => $operacion->id,
-                        'id_car_sia_estados'     => $idEstadoReal,
-                        'numero_bloque'          => $numeroBloqueNuevo,
-                        'created_at'             => $ahora,
-                        'updated_at'             => $ahora,
-                    ];
-                }
-
-                // 6. INSERCIÓN MASIVA DE PIVOTES
-                foreach (array_chunk($tiposInsertar, 1000) as $bloque) {
-                    DB::table('car_sia_tipos_operacion')->insert($bloque);
-                }
-                foreach (array_chunk($estadosInsertar, 1000) as $bloque) {
-                    CarSiaEstadoOperacion::insert($bloque);
-                }
-
-                // 7. ACTUALIZACIÓN MASIVA SOLO A LOS CLIENTES VÁLIDOS PROCESADOS
+                // 6. ACTUALIZACIÓN MASIVA SOLO A LOS CLIENTES VÁLIDOS PROCESADOS
                 CarSiaApi::where('numero_bloque', $bloqueOrigen)
                     ->where('estado', 'PENDIENTE')
-                    ->whereIn('tercero', $cedulasValidas) // <-- Esto evita dar por procesado a alguien que falló
+                    ->whereIn('tercero', $cedulasValidas)
                     ->where(function ($query) {
                         $query->whereNull('anular')->orWhere('anular', '!=', 1);
                     })
@@ -349,7 +338,7 @@ class IngestaController extends Controller
                         'updated_at' => $ahora
                     ]);
 
-                // 8. LOG DE AUDITORÍA
+                // 7. LOG DE AUDITORÍA
                 try {
                     CarSiaOperacionLog::create([
                         'numero_bloque'                 => $numeroBloqueNuevo,

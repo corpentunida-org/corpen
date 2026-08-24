@@ -15,9 +15,9 @@ class CarSiaEstadoOperacion extends Model
 
     // 2. Campos asignables masivamente
     protected $fillable = [
-        'id_car_sia_operaciones', //
-        'numero_bloque', //
+        'id_car_sia_operaciones',  //null - En inyectarBloques queda blanco
         'id_car_sia_estados', //
+        'numero_bloque', // En inyectarBloques 
     ];
 
     // 3. Relaciones
