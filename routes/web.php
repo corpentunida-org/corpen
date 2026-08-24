@@ -1459,12 +1459,15 @@ Route::middleware(['auth'])
         Route::post('configuracion/store', [ConfiguracionController::class, 'storeConfig'])->name('config.store');
         Route::put('configuracion/accion/{id}/toggle', [ConfiguracionController::class, 'toggleAccionVencimiento'])->name('config.toggle_accion');
 
-        // Gestión de Catálogos 
+        // Gestión de Catálogos
         Route::post('catalogos/store-accion', [ConfiguracionController::class, 'storeAccionVencimiento'])->name('catalogos.store_accion');
         Route::post('catalogos/store-tipo', [ConfiguracionController::class, 'storeTipo'])->name('catalogos.store_tipo');
         Route::post('catalogos/store-estado', [ConfiguracionController::class, 'storeEstado'])->name('catalogos.store_estado');
         Route::post('catalogos/store-tipo-alerta', [ConfiguracionController::class, 'storeTipoAlerta'])->name('catalogos.store_tipo_alerta');
 
+        // CORREGIDAS: Sin el slash inicial y sin repetir 'certificados.' en el nombre
+        Route::post('config/origen-evento', [ConfiguracionController::class, 'storeOrigenEvento'])->name('catalogos.store_origen_evento');
+        Route::post('config/evento-auditoria', [ConfiguracionController::class, 'storeEventoAuditoria'])->name('catalogos.store_evento_auditoria');
 
         // ---------------------------------------------------
         // 4. ÁREA TÉCNICA / BACKSTAGE - INGESTA ERP
@@ -1472,6 +1475,9 @@ Route::middleware(['auth'])
 
         // Panel de Lotes Crudos (Staging)
         Route::get('ingesta', [IngestaController::class, 'index'])->name('ingesta.index');
+
+        // carga el EXCEL
+        Route::post('ingesta/cargar', [IngestaController::class, 'cargarExcel'])->name('ingesta.cargar');
 
         // Proceso de Inyección Masiva (Motor ETl)
         Route::post('ingesta/inyectar', [IngestaController::class, 'inyectarBloques'])->name('ingesta.inyectar');

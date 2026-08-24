@@ -4,11 +4,10 @@ namespace App\Http\Controllers\Certificados;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str; // Para generar el ID alfanumérico de las alertas
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log; // Importación clave para el registro de errores
+use Illuminate\Support\Facades\Log;
 
-// Importación de todos los modelos Core y Pivote (Fase 3 y 4)
 use App\Models\Certificados\CarSiaOperacion;
 use App\Models\Certificados\CarSiaOperacionLinea;
 use App\Models\Certificados\CarSiaEstadoOperacion;
@@ -18,25 +17,84 @@ use App\Models\Certificados\CarSiaOperacionConfig;
 class OperacionController extends Controller
 {
     /**
-     * 1. GESTIÓN MATRIZ: Listar el motor de operaciones
+     * 1. GESTIÓN MATRIZ: Listar el motor de operaciones aislado por LOTES
      */
     public function index(Request $request)
     {
         try {
-            // Carga la matriz principal con sus relaciones básicas para la tabla
-            $operaciones = CarSiaOperacion::with([
-                'tercero',
-                'factura',
-                'estados.estado' // Trae el historial de estados y el nombre del estado
-            ])
-            ->orderBy('created_at', 'desc')
-            ->paginate(20);
+            // 1. Extraer Bloques con su fecha de ejecución
+            $bloquesDisponibles = CarSiaOperacion::whereNotNull('numero_bloque')
+                ->select('numero_bloque', DB::raw('MAX(created_at) as fecha_ejecucion'))
+                ->groupBy('numero_bloque')
+                ->orderBy('fecha_ejecucion', 'desc')
+                ->get();
 
-            return view('certificados.operaciones.index', compact('operaciones'));
+            // 2. Definir el Lote Activo
+            $bloqueActivo = $request->input('bloque', $bloquesDisponibles->first()->numero_bloque ?? null);
+
+            // =================================================================
+            // 3. CÁLCULO DE KPIs (NUEVO)
+            // =================================================================
+            $kpi = [
+                'total'      => 0,
+                'procesados' => 0,
+                'pendientes' => 0,
+            ];
+
+            if ($bloqueActivo) {
+                $kpi['total'] = CarSiaOperacion::where('numero_bloque', $bloqueActivo)->count();
+
+                // Buscamos cuántos tienen un estado de éxito (ajusta 'Procesado' o 'Aprobado' según los nombres de tu tabla car_sia_estados)
+                $kpi['procesados'] = CarSiaOperacion::where('numero_bloque', $bloqueActivo)
+                    ->whereHas('estados.estado', function($q) {
+                        $q->where('nombre', 'LIKE', '%Procesado%')
+                          ->orWhere('nombre', 'LIKE', '%Aprobado%')
+                          ->orWhere('nombre', 'LIKE', '%Completado%');
+                    })->count();
+
+                $kpi['pendientes'] = $kpi['total'] - $kpi['procesados'];
+            }
+            // =================================================================
+
+            $query = CarSiaOperacion::with([
+                'tercero',
+                'estados.estado'
+            ]);
+
+            // 4. AISLAMIENTO TOTAL
+            if ($bloqueActivo) {
+                $query->where('numero_bloque', $bloqueActivo);
+            } else {
+                $query->where('id', 0);
+            }
+
+            // --- APLICACIÓN DE FILTROS SECUNDARIOS ---
+            if ($request->filled('anio')) {
+                $query->whereYear('created_at', $request->anio);
+            }
+
+            if ($request->filled('buscar')) {
+                $search = trim($request->buscar);
+                $query->where(function($q) use ($search) {
+                    $q->where('numero_radicado', 'LIKE', "%{$search}%")
+                      ->orWhere('id_tercero', 'LIKE', "%{$search}%");
+                });
+            }
+
+            $operaciones = $query->orderBy('created_at', 'desc')->paginate(20)->withQueryString();
+
+            // Extraer Años
+            $aniosDisponibles = CarSiaOperacion::whereNotNull('created_at')
+                ->selectRaw('YEAR(created_at) as anio')
+                ->groupBy('anio')
+                ->orderBy('anio', 'desc')
+                ->pluck('anio');
+
+            return view('certificados.operaciones.index', compact('operaciones', 'aniosDisponibles', 'bloquesDisponibles', 'bloqueActivo', 'kpi'));
 
         } catch (\Exception $e) {
-            Log::error('CERTIFICADOS - Error cargando matriz de operaciones: ' . $e->getMessage());
-            return back()->with('error', 'Ocurrió un error al cargar la matriz de operaciones.');
+            Log::error('CERTIFICADOS - Error matriz: ' . $e->getMessage());
+            return back()->with('error', 'Error interno al cargar: ' . $e->getMessage());
         }
     }
 
@@ -46,23 +104,17 @@ class OperacionController extends Controller
     public function show($id)
     {
         try {
-            // Carga la operación con TODO su árbol de dependencias (Líneas, Alertas, Tipos, Configuración)
             $operacion = CarSiaOperacion::with([
                 'tercero',
                 'lineas.lineaCredito',
-                'lineas.estadoOperacion.estado',
-                'alertas.tipoAlerta',
-                'tiposEvento.tipo',
-                'configuraciones.configuracionBase',
+                'lineas.estadoOperacion',
                 'estados.estado'
             ])->findOrFail($id);
 
             return view('certificados.operaciones.show', compact('operacion'));
 
         } catch (\Exception $e) {
-            Log::error("CERTIFICADOS - Error cargando el detalle de la operación {$id}: " . $e->getMessage());
-            return redirect()->route('certificados.operaciones.index')
-                             ->with('error', 'No se pudo cargar el detalle de la operación solicitada.');
+            dd('🚨 ERROR AL ABRIR EL EXPEDIENTE (SHOW):', $e->getMessage());
         }
     }
 
@@ -142,12 +194,12 @@ class OperacionController extends Controller
                 $operacion = CarSiaOperacion::findOrFail($id);
 
                 CarSiaOperacionAlerta::create([
-                    'id'                      => (string) Str::uuid(), // Generamos el ID manual (VARCHAR 50)
+                    'id'                      => (string) Str::uuid(),
                     'id_car_sia_tipos_alerta' => $request->id_car_sia_tipos_alerta,
                     'numero_bloque'           => $request->numero_bloque,
                     'id_car_sia_operaciones'  => $operacion->id,
                     'fecha_programada'        => $request->fecha_programada,
-                    'procesado_en'            => null, // Nulo por defecto hasta que un CRON la procese
+                    'procesado_en'            => null,
                 ]);
             });
 
@@ -174,7 +226,6 @@ class OperacionController extends Controller
             DB::transaction(function () use ($request, $id) {
                 $operacion = CarSiaOperacion::findOrFail($id);
 
-                // Usamos updateOrCreate para evitar duplicar la configuración de un mismo bloque
                 CarSiaOperacionConfig::updateOrCreate(
                     [
                         'id_car_sia_operaciones' => $operacion->id,
