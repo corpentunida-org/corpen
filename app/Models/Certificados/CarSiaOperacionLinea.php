@@ -7,22 +7,33 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\Creditos\LineaCredito;
 
+/**
+ * Detalle (Líneas) de la Operación.
+ */
 class CarSiaOperacionLinea extends Model
 {
     use HasFactory, SoftDeletes;
 
-    // 1. Especificar la tabla exacta
+    // 1. Especificar la tabla exacta en la base de datos
     protected $table = 'car_sia_operaciones_lineas';
 
     // 2. Campos asignables masivamente
+    // - numero_bloque: Lo hereda de "car_sia_operaciones".
+    // - observacion: Configurado Segun Regla.
+    // - calificacion: Configurado Segun Regla.
+    // - fecha_venci: Fecha de vencimiento de la línea de operación.
+    // - fecha_ultimo_recordatorio: Configurado Segun Regla.
+    // - dias_mora_automaticos: Configurado Segun Regla.
+    // - procesado_en: Fecha y hora en que se procesó el registro.
     protected $fillable = [
         'id_car_sia_operaciones',
+        'id_factura',
         'id_cre_lineas_creditos',
         'numero_bloque',
         'observacion',
         'calificacion',
         'fecha_venci',
-        'id_car_sia_estados_operacion',
+        'id_car_sia_estados',
         'fecha_ultimo_recordatorio',
         'dias_mora_automaticos',
         'procesado_en',
@@ -30,32 +41,50 @@ class CarSiaOperacionLinea extends Model
 
     // 3. Conversión de tipos de datos (Casting)
     protected $casts = [
-        'fecha_venci' => 'datetime',
+        'fecha_venci'               => 'datetime',
         'fecha_ultimo_recordatorio' => 'datetime',
-        'procesado_en' => 'datetime',
-        'dias_mora_automaticos' => 'integer',
+        'procesado_en'              => 'datetime',
+        'dias_mora_automaticos'     => 'integer',
     ];
 
-    // 4. Relaciones
-
-    // Pertenece a una operación padre
+    // ---------------------------------------------------
+    // 4. RELACIONES DEL SISTEMA
+    // ---------------------------------------------------
+    /**
+     * Factura de Staging (car_sia_api) asociada a esta línea específica.
+     */
+    public function factura()
+    {
+        return $this->belongsTo(\App\Models\Certificados\CarSiaApi::class, 'id_factura');
+    }
+    /**
+     * Permite múltiples líneas por cada operación.
+     */
     public function operacion()
     {
         return $this->belongsTo(CarSiaOperacion::class, 'id_car_sia_operaciones');
     }
 
-    // Pertenece a un estado de operación (Fase 3)
+    /**
+     * Identificador del estado actual de la operación.
+     */
     public function estadoOperacion()
     {
-        return $this->belongsTo(CarSiaEstadoOperacion::class, 'id_car_sia_estados_operacion');
+        return $this->belongsTo(CarSiaEstado::class, 'id_car_sia_estados');
     }
 
+    /**
+     * Identificador de la línea de crédito asociada.
+     */
     public function lineaCredito()
     {
         return $this->belongsTo(LineaCredito::class, 'id_cre_lineas_creditos');
     }
 
-    // Una línea de operación puede tener múltiples registros en el historial (Logs)
+    /**
+     * Relación con los Logs de la Operación (Auditoría).
+     * Una línea de operación puede tener múltiples registros en su historial de eventos/cambios.
+     */
     public function logs()
     {
         return $this->hasMany(CarSiaOperacionLog::class, 'id_car_sia_operaciones_lineas');

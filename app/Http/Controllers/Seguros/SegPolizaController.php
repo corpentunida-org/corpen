@@ -13,6 +13,7 @@ use App\Models\Seguros\SegAsegurado;
 use App\Models\Seguros\SegReclamaciones;
 use App\Models\Seguros\SegPlan;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\AuditoriaController;
 use Carbon\Carbon;
@@ -82,6 +83,7 @@ class SegPolizaController extends Controller
                     'titular' => $request->titularasegurado,
                 ]);
             }
+            
             /*$plan = SegPlan::find($request->selectPlanes);
             $valorPrimaFinal = $plan->prima_aseguradora;
             if ($request->extra_prima !== null && $request->extra_prima != 0) {
@@ -162,7 +164,7 @@ class SegPolizaController extends Controller
         $novedades = SegNovedades::where('id_asegurado', $id)->where('id_poliza', $poliza->id)->get();
         $reclamacion = SegReclamaciones::where('cedulaAsegurado', $id)->with('cambiosEstado')->get();
 
-        if (auth()->user()->hasDirectPermission('seguros.poliza.valorpagar')) {
+        if (Auth::user()->hasDirectPermission('seguros.poliza.valorpagar')) {
             $beneficios = SegBeneficios::where('cedulaAsegurado', $id)->where('poliza', $poliza->id)->where('active', true)->get();
         } else {
             $beneficios = collect();
