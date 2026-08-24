@@ -26,9 +26,9 @@ class CarSiaTipo extends Model
         'estado' => 'boolean',
     ];
 
-    // 4. Relaciones (Opcional)
-    // Un tipo de este catálogo define las tipologías o subcategorías de los eventos de las operaciones
-    public function tiposEvento()
+    // 4. Relaciones
+    // Un tipo de este catálogo está presente en múltiples eventos/operaciones
+    public function operacionesVinculadas()
     {
         return $this->hasMany(CarSiaTipoOperacion::class, 'id_car_sia_tipos');
     }
