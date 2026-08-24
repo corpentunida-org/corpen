@@ -1418,6 +1418,9 @@ Route::middleware(['auth'])
         // Matriz Principal del Motor de Operaciones
         Route::get('operaciones', [OperacionController::class, 'index'])->name('operaciones.index');
 
+        // Programar alerta a nivel de Lote/Bloque (sin {id})
+        Route::post('operaciones/alerta-bloque', [OperacionController::class, 'programarAlertaBloque'])->name('operaciones.alerta_bloque');
+
         // Detalle y trazabilidad de una operación específica (Líneas, Estados, Alertas)
         Route::get('operaciones/{id}', [OperacionController::class, 'show'])->name('operaciones.show');
 
