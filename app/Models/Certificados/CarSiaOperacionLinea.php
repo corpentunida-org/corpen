@@ -27,6 +27,7 @@ class CarSiaOperacionLinea extends Model
     // - procesado_en: Fecha y hora en que se procesó el registro.
     protected $fillable = [
         'id_car_sia_operaciones',
+        'id_factura',
         'id_cre_lineas_creditos',
         'numero_bloque',
         'observacion',
@@ -49,7 +50,13 @@ class CarSiaOperacionLinea extends Model
     // ---------------------------------------------------
     // 4. RELACIONES DEL SISTEMA
     // ---------------------------------------------------
-
+    /**
+     * Factura de Staging (car_sia_api) asociada a esta línea específica.
+     */
+    public function factura()
+    {
+        return $this->belongsTo(\App\Models\Certificados\CarSiaApi::class, 'id_factura');
+    }
     /**
      * Permite múltiples líneas por cada operación.
      */
