@@ -35,23 +35,32 @@
                 </div>
             </div>
 
-            <!-- SELECTOR SUPERIOR DE BLOQUE -->
-            @if($bloquesDisponibles->count() > 0)
-            <form action="{{ route('certificados.operaciones.index') }}" method="GET" class="d-flex align-items-center bg-white p-2 border rounded-pill shadow-sm" style="min-width: 320px;">
-                <label class="fw-bold text-muted small mb-0 ms-3 me-2 text-nowrap"><i class="fas fa-filter me-1"></i> Lote Activo:</label>
+            <!-- CONTROLES DERECHOS: SELECTOR DE BLOQUE Y BOTÓN DE ALERTA -->
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+                @if($bloquesDisponibles->count() > 0)
+                <form action="{{ route('certificados.operaciones.index') }}" method="GET" class="d-flex align-items-center bg-white p-2 border rounded-pill shadow-sm" style="min-width: 320px;">
+                    <label class="fw-bold text-muted small mb-0 ms-3 me-2 text-nowrap"><i class="fas fa-filter me-1"></i> Lote Activo:</label>
 
-                @if(request('buscar')) <input type="hidden" name="buscar" value="{{ request('buscar') }}"> @endif
-                @if(request('anio')) <input type="hidden" name="anio" value="{{ request('anio') }}"> @endif
+                    @if(request('buscar')) <input type="hidden" name="buscar" value="{{ request('buscar') }}"> @endif
+                    @if(request('anio')) <input type="hidden" name="anio" value="{{ request('anio') }}"> @endif
 
-                <select name="bloque" class="form-select border-0 shadow-none fw-bold" style="background-color: transparent; color: #4a90e2; cursor:pointer;" onchange="this.form.submit()">
-                    @foreach($bloquesDisponibles as $b)
-                        <option value="{{ $b->numero_bloque }}" {{ $bloqueActivo == $b->numero_bloque ? 'selected' : '' }}>
-                            Lote BLQ-{{ str_pad($b->numero_bloque, 4, '0', STR_PAD_LEFT) }} ({{ \Carbon\Carbon::parse($b->fecha_ejecucion)->format('d/m/Y') }})
-                        </option>
-                    @endforeach
-                </select>
-            </form>
-            @endif
+                    <select name="bloque" class="form-select border-0 shadow-none fw-bold" style="background-color: transparent; color: #4a90e2; cursor:pointer;" onchange="this.form.submit()">
+                        @foreach($bloquesDisponibles as $b)
+                            <option value="{{ $b->numero_bloque }}" {{ $bloqueActivo == $b->numero_bloque ? 'selected' : '' }}>
+                                Lote BLQ-{{ str_pad($b->numero_bloque, 4, '0', STR_PAD_LEFT) }} ({{ \Carbon\Carbon::parse($b->fecha_ejecucion)->format('d/m/Y') }})
+                            </option>
+                        @endforeach
+                    </select>
+                </form>
+                @endif
+
+                {{-- NUEVO BOTÓN: Alerta de Lote --}}
+                @if($bloqueActivo)
+                <button type="button" class="btn btn-info shadow-sm rounded-pill px-4 py-2 fw-bold text-white d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#modalAlertaBloque">
+                    <i class="fas fa-bell me-2"></i> Alerta de Lote
+                </button>
+                @endif
+            </div>
         </div>
 
         {{-- Alertas del Sistema --}}
@@ -81,7 +90,7 @@
                         <i class="fas fa-cubes fs-4"></i>
                     </div>
                     <div>
-                        <div class="text-muted fw-bold small text-uppercase" style="letter-spacing: 0.5px;">Total en Lote</div>
+                        <div class="text-muted fw-bold small text-uppercase" style="letter-spacing: 0.5px;">Lote</div>
                         <div class="fs-3 fw-bolder" style="color: #2c3e50; line-height: 1;">{{ number_format($kpi['total'], 0, ',', '.') }}</div>
                     </div>
                 </div>
@@ -167,6 +176,7 @@
                             <th class="ps-5 border-0 py-3">Radicado & Bloque</th>
                             <th class="border-0 py-3">Cliente (Tercero)</th>
                             <th class="border-0 py-3">Estado Actual</th>
+                            <th class="border-0 py-3">Último Evento</th>
                             <th class="border-0 py-3">Fecha Creación</th>
                             <th class="border-0 text-end pe-5 py-3">Acciones</th>
                         </tr>
@@ -197,15 +207,20 @@
                                     <span class="badge bg-pastel-warning px-3 py-2 rounded-pill"><i class="fas fa-exclamation-triangle me-1"></i> Sin Tercero</span>
                                 @endif
                             </td>
+
+                            {{-- COLUMNA: ESTADO ACTUAL --}}
                             <td>
                                 @php
-                                    $ultimoEstado = $operacion->estados->sortByDesc('created_at')->first();
+                                    $estadosValidos = $operacion->estados->filter(function($est) use ($operacion) {
+                                        return $est->id_car_sia_operaciones == $operacion->id || is_null($est->id_car_sia_operaciones);
+                                    });
+                                    $ultimoEstado = $estadosValidos->sortByDesc('created_at')->first();
                                     $estadoNombre = $ultimoEstado && $ultimoEstado->estado ? $ultimoEstado->estado->nombre : 'Pendiente';
 
-                                    $clasePastel = match(strtolower($estadoNombre)) {
+                                    $clasePastel = match(strtolower(trim($estadoNombre))) {
                                         'aprobado', 'completado', 'vigente', 'procesado' => 'bg-pastel-success',
                                         'rechazado', 'anulado' => 'bg-pastel-warning',
-                                        'pendiente', 'nuevo' => 'bg-pastel-secondary',
+                                        'pendiente', 'nuevo', 'pendiente por procesar' => 'bg-pastel-secondary',
                                         default => 'bg-pastel-primary'
                                     };
                                 @endphp
@@ -213,6 +228,21 @@
                                     <i class="fas fa-info-circle me-1"></i> {{ strtoupper($estadoNombre) }}
                                 </span>
                             </td>
+
+                            {{-- NUEVA COLUMNA: ÚLTIMO TIPO DE EVENTO --}}
+                            <td>
+                                @php
+                                    $tiposValidos = $operacion->tipos->filter(function($tip) use ($operacion) {
+                                        return $tip->id_car_sia_operaciones == $operacion->id || is_null($tip->id_car_sia_operaciones);
+                                    });
+                                    $ultimoTipoObj = $tiposValidos->sortByDesc('created_at')->first();
+                                    $tipoNombre = $ultimoTipoObj && $ultimoTipoObj->tipo ? $ultimoTipoObj->tipo->nombre : 'Sin Evento';
+                                @endphp
+                                <span class="badge bg-light text-dark border border-secondary border-opacity-25 rounded-pill px-3 py-2 fw-bold" style="font-size: 0.75rem;">
+                                    <i class="fas fa-tag text-info me-1"></i> {{ strtoupper($tipoNombre) }}
+                                </span>
+                            </td>
+
                             <td>
                                 <div class="d-flex flex-column">
                                     <span class="text-gray-800 fw-bold small">{{ $operacion->created_at->format('d/m/Y') }}</span>
@@ -229,7 +259,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="5" class="text-center py-10">
+                            <td colspan="6" class="text-center py-10">
                                 <div class="text-center px-4 py-5">
                                     <div class="mb-3 p-4 rounded-circle d-inline-block" style="background-color: #f8f9fa;">
                                         <i class="fas fa-search fs-1 text-muted opacity-50"></i>
@@ -256,4 +286,52 @@
             @endif
         </div>
     </div>
+
+    {{-- ==========================================
+         MODAL: PROGRAMAR ALERTA DE LOTE
+         ========================================== --}}
+    @if($bloqueActivo)
+    <div class="modal fade" id="modalAlertaBloque" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            {{-- Asegúrate de crear esta ruta en web.php y apuntarla a tu nuevo método del controlador --}}
+            <form action="{{ route('certificados.operaciones.alerta_bloque') }}" method="POST" class="modal-content border-0 shadow-lg rounded-4">
+                @csrf
+                <div class="modal-header border-0 pb-0 pt-4 px-4">
+                    <h5 class="fw-bold mb-0"><i class="fas fa-bell text-info me-2"></i> Programar Alerta de Lote</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="alert bg-pastel-info text-dark border-0 rounded-4 mb-4" style="font-size: 0.85rem;">
+                        <i class="fas fa-info-circle me-2"></i> Esta alerta se aplicará de forma general al lote <strong>BLQ-{{ str_pad($bloqueActivo, 4, '0', STR_PAD_LEFT) }}</strong>. No quedará asignada a un cliente individual.
+                    </div>
+
+                    <input type="hidden" name="numero_bloque" value="{{ $bloqueActivo }}">
+
+                    <div class="mb-3">
+                        <label for="id_car_sia_tipos_alerta" class="form-label fw-semibold text-muted">Tipo de alerta</label>
+                        <select name="id_car_sia_tipos_alerta" id="id_car_sia_tipos_alerta" class="form-select bg-light border-0" required>
+                            <option value="">Seleccione una alerta</option>
+                            @isset($tiposAlerta)
+                                @foreach($tiposAlerta as $tipoAlerta)
+                                    <option value="{{ $tipoAlerta->id }}">{{ $tipoAlerta->nombre }}</option>
+                                @endforeach
+                            @else
+                                <option value="" disabled>Falta variable $tiposAlerta desde el controlador.</option>
+                            @endisset
+                        </select>
+                    </div>
+
+                    <div class="mb-0">
+                        <label for="fecha_programada" class="form-label fw-semibold text-muted">Fecha programada</label>
+                        <input type="date" name="fecha_programada" id="fecha_programada" class="form-control bg-light border-0" required>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 px-4 pb-4 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-info rounded-pill px-4 fw-bold text-white">Programar Lote</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    @endif
 </x-base-layout>

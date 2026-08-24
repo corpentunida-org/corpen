@@ -23,7 +23,7 @@ class CarSiaOperacionAlerta extends Model
         'id', // Lo incluimos en el fillable porque lo vas a generar/asignar manualmente
         'id_car_sia_tipos_alerta',
         'numero_bloque',
-        'id_car_sia_operaciones',
+        'id_car_sia_operaciones', //Null si asigna desde el index solo se hace un registro de alerta, y solo se toma "numero_bloque"
         'fecha_programada',
         'procesado_en',
     ];

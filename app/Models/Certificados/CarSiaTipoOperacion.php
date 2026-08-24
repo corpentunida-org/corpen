@@ -15,14 +15,14 @@ class CarSiaTipoOperacion extends Model
 
 
     // 1. Especificar la tabla exacta
-    protected $table = 'car_sia_tipos_evento';
+    protected $table = 'car_sia_tipos_operacion';
 
 
     // 2. Campos asignables masivamente
     protected $fillable = [
-        'id_car_sia_operaciones',
+        'id_car_sia_operaciones', //null - En inyectarBloques queda blanco
         'id_car_sia_tipos',
-        'numero_bloque',
+        'numero_bloque', // En inyectarBloques 
     ];
 
 

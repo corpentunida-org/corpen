@@ -11,8 +11,15 @@ use Illuminate\Support\Facades\Log;
 use App\Models\Certificados\CarSiaOperacion;
 use App\Models\Certificados\CarSiaOperacionLinea;
 use App\Models\Certificados\CarSiaEstadoOperacion;
+use App\Models\Certificados\CarSiaTipoOperacion;
 use App\Models\Certificados\CarSiaOperacionAlerta;
 use App\Models\Certificados\CarSiaOperacionConfig;
+
+use App\Models\Certificados\CarSiaEstado;
+use App\Models\Certificados\CarSiaTipo;
+use App\Models\Certificados\CarSiaTipoAlerta;
+use App\Models\Certificados\CarSiaConfig;
+use App\Models\Maestras\MaeTerceros;
 
 class OperacionController extends Controller
 {
@@ -33,7 +40,7 @@ class OperacionController extends Controller
             $bloqueActivo = $request->input('bloque', $bloquesDisponibles->first()->numero_bloque ?? null);
 
             // =================================================================
-            // 3. CÁLCULO DE KPIs (NUEVO)
+            // 3. CÁLCULO DE KPIs
             // =================================================================
             $kpi = [
                 'total'      => 0,
@@ -44,7 +51,6 @@ class OperacionController extends Controller
             if ($bloqueActivo) {
                 $kpi['total'] = CarSiaOperacion::where('numero_bloque', $bloqueActivo)->count();
 
-                // Buscamos cuántos tienen un estado de éxito (ajusta 'Procesado' o 'Aprobado' según los nombres de tu tabla car_sia_estados)
                 $kpi['procesados'] = CarSiaOperacion::where('numero_bloque', $bloqueActivo)
                     ->whereHas('estados.estado', function($q) {
                         $q->where('nombre', 'LIKE', '%Procesado%')
@@ -58,7 +64,9 @@ class OperacionController extends Controller
 
             $query = CarSiaOperacion::with([
                 'tercero',
-                'estados.estado'
+                'lineas.factura',
+                'estados.estado',
+                'tipos.tipo' // <-- ¡Añadido para optimizar la columna de Último Evento!
             ]);
 
             // 4. AISLAMIENTO TOTAL
@@ -90,7 +98,19 @@ class OperacionController extends Controller
                 ->orderBy('anio', 'desc')
                 ->pluck('anio');
 
-            return view('certificados.operaciones.index', compact('operaciones', 'aniosDisponibles', 'bloquesDisponibles', 'bloqueActivo', 'kpi'));
+            // =================================================================
+            // NUEVO: Obtener los tipos de alerta para llenar el Select del Modal
+            // =================================================================
+            $tiposAlerta = CarSiaTipoAlerta::all();
+
+            return view('certificados.operaciones.index', compact(
+                'operaciones',
+                'aniosDisponibles',
+                'bloquesDisponibles',
+                'bloqueActivo',
+                'kpi',
+                'tiposAlerta' // <-- ¡Enviado a la vista con éxito!
+            ));
 
         } catch (\Exception $e) {
             Log::error('CERTIFICADOS - Error matriz: ' . $e->getMessage());
@@ -108,15 +128,25 @@ class OperacionController extends Controller
                 'tercero',
                 'lineas.lineaCredito',
                 'lineas.estadoOperacion',
-                'estados.estado'
+                'lineas.factura',
+                'estados.estado',
+                'tipos.tipo'
             ])->findOrFail($id);
 
-            return view('certificados.operaciones.show', compact('operacion'));
+            // Tienes que cargar los listados para los select de los modales
+            $estados = CarSiaEstado::all();
+            $tipos = CarSiaTipo::all();
+            $tiposAlerta = CarSiaTipoAlerta::all();
+
+            // Y pasarlos compactados
+            return view('certificados.operaciones.show', compact('operacion', 'estados', 'tipos', 'tiposAlerta'));
 
         } catch (\Exception $e) {
-            dd('🚨 ERROR AL ABRIR EL EXPEDIENTE (SHOW):', $e->getMessage());
+            \Illuminate\Support\Facades\Log::error('🚨 ERROR AL ABRIR EL EXPEDIENTE (SHOW): ' . $e->getMessage());
+            return back()->with('error', 'No se pudo cargar el detalle de la operación.');
         }
     }
+
 
     /**
      * 3. TRANSICIONA ESTADOS: Registrar un nuevo estado para la operación
@@ -161,16 +191,15 @@ class OperacionController extends Controller
             DB::transaction(function () use ($request, $id) {
                 $operacion = CarSiaOperacion::findOrFail($id);
 
-                DB::table('car_sia_tipos_evento')->insert([
+                // AHORA USAMOS EL MODELO ELOQUENT EN LUGAR DE DB::table
+                CarSiaTipoOperacion::create([
                     'id_car_sia_operaciones' => $operacion->id,
                     'id_car_sia_tipos'       => $request->id_car_sia_tipos,
                     'numero_bloque'          => $request->numero_bloque,
-                    'created_at'             => now(),
-                    'updated_at'             => now(),
                 ]);
             });
 
-            return redirect()->back()->with('success', 'Tipo de evento asignado correctamente.');
+            return redirect()->back()->with('success', 'Tipo de operación asignado correctamente.');
 
         } catch (\Exception $e) {
             Log::error("SIA - Error al asignar tipo en operación {$id}: " . $e->getMessage());
@@ -179,7 +208,28 @@ class OperacionController extends Controller
     }
 
     /**
-     * 5. PROGRAMA ALERTAS: Crear una nueva alerta para la operación
+     * 5. PROGRAMA ALERTAS: Crear una nueva alerta para un bloque de operaciones (sin asignar a una operación específica)
+     */
+    public function programarAlertaBloque(Request $request)
+    {
+        $request->validate([
+            'id_car_sia_tipos_alerta' => 'required',
+            'numero_bloque'           => 'required',
+            'fecha_programada'        => 'required|date'
+        ]);
+
+        CarSiaOperacionAlerta::create([
+            'id'                      => (string) \Illuminate\Support\Str::uuid(),
+            'id_car_sia_tipos_alerta' => $request->id_car_sia_tipos_alerta,
+            'numero_bloque'           => $request->numero_bloque,
+            'id_car_sia_operaciones'  => null, // <-- Aquí está la magia del lote
+            'fecha_programada'        => $request->fecha_programada,
+        ]);
+
+        return back()->with('success', 'Alerta general programada para el lote.');
+    }
+        /**
+     * 6. PROGRAMA ALERTAS: Crear una nueva alerta para la operación
      */
     public function programarAlerta(Request $request, $id)
     {
@@ -210,9 +260,8 @@ class OperacionController extends Controller
             return redirect()->back()->with('error', 'Ocurrió un error al programar la alerta.');
         }
     }
-
     /**
-     * 6. ACTIVA NOTIFICACIONES: Configurar reglas de notificación para el bloque/operación
+     * 7. ACTIVA NOTIFICACIONES: Configurar reglas de notificación para el bloque/operación
      */
     public function toggleNotificacion(Request $request, $id)
     {
