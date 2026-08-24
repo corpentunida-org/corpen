@@ -49,6 +49,7 @@ class CarSiaApi extends Model
         'tipo',
         'id_cab',
         'id_reg_cab_ref',
+        'numero_bloque',
     ];
 
     // Nota: Como esta tabla es de ingesta cruda (Staging), generalmente no tiene

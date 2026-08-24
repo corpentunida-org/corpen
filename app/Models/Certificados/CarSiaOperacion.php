@@ -21,21 +21,12 @@ class CarSiaOperacion extends Model
     // - numero_radicado: Radicado generado a partir de la estructura definida en car_sia_tipos_evento.estructura_radicado.
     // - numero_bloque: Identificador generado durante la ejecución del proceso y compartido por los registros pertenecientes al mismo.
     protected $fillable = [
-        'numero_radicado',
-        'numero_bloque',
-        'id_factura',
+        'numero_radicado', //
+        'numero_bloque', //INT
         'id_tercero',
     ];
 
     // 3. Relaciones (El corazón del sistema)
-
-    /**
-     * Factura asociada a la operación.
-     */
-    public function factura()
-    {
-        return $this->belongsTo(CarSiaApi::class, 'id_factura');
-    }
 
     /**
      * Tercero asociado a la operación.
