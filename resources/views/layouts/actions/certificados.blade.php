@@ -45,15 +45,9 @@
         </li>
 
         <li class="nxl-item">
-            <a class="nxl-link" href="{{ route('certificados.config.index') }}">
-                <i class="bi bi-sliders me-2"></i>
-                <span class="nxl-mtext">Parámetros Core (JSON)</span>
-            </a>
-        </li>
-        <li class="nxl-item">
             <a class="nxl-link" href="{{ route('certificados.catalogos.index') }}">
                 <i class="bi bi-list-check me-2"></i>
-                <span class="nxl-mtext">Catálogos y Acciones</span>
+                <span class="nxl-mtext">Parámetros, Acciones y Catálogos</span>
             </a>
         </li>
 
