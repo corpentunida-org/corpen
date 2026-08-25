@@ -19,7 +19,7 @@ class CarSiaApi extends Model
         'log_rq',
         'anular',
         'id_factura',
-        'cuenta', //ESTE ES EL CAMPO QUE SE USA PARA RELACIONAR CON EL CAMPO "id_cre_lineas_creditos"
+        'cuenta', //ESTE ES EL CAMPO QUE SE USA PARA RELACIONAR CON EL CAMPO "id_car_sia_lineas" DE LA TABLA "car_sia_operaciones_lineas"
         'nombre_cuenta',
         'tercero_base',
         'tercero',
@@ -55,4 +55,10 @@ class CarSiaApi extends Model
     // Nota: Como esta tabla es de ingesta cruda (Staging), generalmente no tiene
     // relaciones directas (belongsTo) declaradas aquí para evitar dependencias estrictas,
     // pero si lo necesitas a futuro, puedes agregar la relación con facturas u operaciones.
+
+    public function lineaSia()
+    {
+        return $this->belongsTo(CarSiaLinea::class, 'cuenta', 'cuenta');
+    }
+
 }
