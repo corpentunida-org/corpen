@@ -5,7 +5,6 @@ namespace App\Models\Certificados;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Models\Creditos\LineaCredito;
 
 /**
  * Detalle (Líneas) de la Operación.
@@ -18,20 +17,13 @@ class CarSiaOperacionLinea extends Model
     protected $table = 'car_sia_operaciones_lineas';
 
     // 2. Campos asignables masivamente
-    // - numero_bloque: Lo hereda de "car_sia_operaciones".
-    // - observacion: Configurado Segun Regla.
-    // - calificacion: Configurado Segun Regla.
-    // - fecha_venci: Fecha de vencimiento de la línea de operación.
-    // - fecha_ultimo_recordatorio: Configurado Segun Regla.
-    // - dias_mora_automaticos: Configurado Segun Regla.
-    // - procesado_en: Fecha y hora en que se procesó el registro.
     protected $fillable = [
         'id_car_sia_operaciones',
         'id_factura', 
-        'id_cre_lineas_creditos',
+        'id_car_sia_lineas', //cuenta
         'numero_bloque',
-        'observacion', //Automatico dependiendo de la calificacion
-        'calificacion', //si mora< 30 = Bueno  si mora >30 y <60 = Regular , si mora > 60 Irregular
+        'observacion', 
+        'calificacion', 
         'fecha_venci',
         'id_car_sia_estados',
         'fecha_ultimo_recordatorio',
@@ -50,13 +42,26 @@ class CarSiaOperacionLinea extends Model
     // ---------------------------------------------------
     // 4. RELACIONES DEL SISTEMA
     // ---------------------------------------------------
+    
     /**
      * Factura de Staging (car_sia_api) asociada a esta línea específica.
      */
     public function factura()
     {
-        return $this->belongsTo(\App\Models\Certificados\CarSiaApi::class, 'id_factura');
+        // Nota: Si la llave primaria en car_sia_api no es 'id' sino 'id_factura',
+        // debes declararlo así: return $this->belongsTo(CarSiaApi::class, 'id_factura', 'id_factura');
+        return $this->belongsTo(CarSiaApi::class, 'id_factura');
     }
+
+    /**
+     * Relación con la tabla de Staging (car_sia_api) a través del campo 'cuenta'.
+     * Útil para cruzar la data cruda con la línea asignada.
+     */
+    public function apiPorCuenta()
+    {
+        return $this->belongsTo(CarSiaApi::class, 'id_car_sia_lineas', 'cuenta');
+    }
+    
     /**
      * Permite múltiples líneas por cada operación.
      */
@@ -74,11 +79,12 @@ class CarSiaOperacionLinea extends Model
     }
 
     /**
-     * Identificador de la línea de crédito asociada.
+     * Identificador de la línea SIA asociada.
      */
-    public function lineaCredito()
+    public function lineaSia()
     {
-        return $this->belongsTo(LineaCredito::class, 'id_cre_lineas_creditos');
+        // Se actualiza para apuntar explícitamente a la columna 'cuenta' en el modelo CarSiaLinea
+        return $this->belongsTo(CarSiaLinea::class, 'id_car_sia_lineas', 'cuenta');
     }
 
     /**
