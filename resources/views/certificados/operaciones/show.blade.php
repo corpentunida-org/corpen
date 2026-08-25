@@ -208,27 +208,13 @@
                                  TAB 1: LÍNEAS Y FACTURAS (Destacando Cuota)
                                  ========================================== --}}
                             <div class="tab-pane fade show active" id="lineas" role="tabpanel">
-                                @php
-                                    // 1. Consultamos la tabla cruda (CarSiaApi) basándonos en el Bloque y el NIT (tercero)
-                                    $registrosCrudos = \App\Models\Certificados\CarSiaApi::where('numero_bloque', $operacion->numero_bloque)
-                                        ->where('tercero', $operacion->id_tercero)
-                                        ->get();
-
-                                    // 2. Agrupamos por la Línea de Crédito
-                                    $lineasAgrupadas = $registrosCrudos->groupBy(function($item) {
-                                        if(!empty($item->nombre_cuenta) && !empty($item->cuenta)) {
-                                            return $item->nombre_cuenta . ' (' . $item->cuenta . ')';
-                                        }
-                                        return $item->nombre_cuenta ?? ($item->cuenta ?? 'Línea Desconocida');
-                                    });
-                                @endphp
-
+                                
                                 @if($lineasAgrupadas->count() > 0)
                                     <div class="accordion accordion-custom" id="accordionLineas">
                                         @foreach($lineasAgrupadas as $nombreLinea => $facturas)
                                             @php
                                                 $totalLinea = $facturas->sum('valor');
-                                                // 3. ORDENAMOS LAS FACTURAS POR CUOTA DE FORMA ASCENDENTE
+                                                // ORDENAMOS LAS FACTURAS POR CUOTA DE FORMA ASCENDENTE
                                                 $facturasOrdenadas = $facturas->sortBy('cuota');
                                             @endphp
                                             <div class="accordion-item border-0 mb-3 bg-white shadow-sm" style="border-radius: 15px; overflow: hidden;">
@@ -324,7 +310,7 @@
                                     <div class="text-center py-5 text-muted bg-light rounded-4 border-dashed">
                                         <i class="fas fa-database fs-1 text-secondary mb-3 opacity-25"></i>
                                         <h6 class="fw-bold text-dark">Sin Datos en el ERP</h6>
-                                        <p class="mb-0 fs-7">No se encontraron facturas en `car_sia_api` para el Bloque <strong>{{ $operacion->numero_bloque }}</strong> y NIT <strong>{{ $operacion->id_tercero }}</strong>.</p>
+                                        <p class="mb-0 fs-7">No se encontraron facturas asociadas a las cuentas de este cliente (Cédula: <strong>{{ $operacion->id_tercero }}</strong>) en el Bloque <strong>{{ $operacion->numero_bloque }}</strong>.</p>
                                     </div>
                                 @endif
                             </div>
