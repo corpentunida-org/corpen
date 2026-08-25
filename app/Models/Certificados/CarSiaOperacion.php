@@ -5,6 +5,8 @@ namespace App\Models\Certificados;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+
+// Importaciones de modelos relacionados
 use App\Models\Maestras\MaeTerceros;
 use App\Models\Certificados\CarSiaOperacionAlerta;
 use App\Models\Certificados\CarSiaOperacionConfig;
@@ -24,24 +26,28 @@ class CarSiaOperacion extends Model
 
     // 2. Campos asignables masivamente
     protected $fillable = [
-        'numero_radicado', //
-        'numero_bloque', //INT
+        'numero_radicado', 
+        'numero_bloque',   // INT
         'id_tercero',
     ];
 
-    // 3. Relaciones (El corazón del sistema)
+    // ---------------------------------------------------
+    // 3. RELACIONES (El corazón del sistema)
+    // ---------------------------------------------------
 
     /**
      * Tercero asociado a la operación.
      */
     public function tercero()
     {
+        // Se especifica que la llave foránea es 'id_tercero' y la llave local en MaeTerceros es 'cod_ter'
         return $this->belongsTo(MaeTerceros::class, 'id_tercero', 'cod_ter');
     }
 
     // ==========================================
-    // 1. RELACIONES INDIVIDUALES (Operación específica)
+    // RELACIONES INDIVIDUALES (Operación específica)
     // ==========================================
+    
     public function estados()
     {
         return $this->hasMany(CarSiaEstadoOperacion::class, 'id_car_sia_operaciones');
@@ -58,8 +64,9 @@ class CarSiaOperacion extends Model
     }
 
     // ==========================================
-    // 2. RELACIONES MASIVAS (A nivel de Lote/Bloque)
+    // RELACIONES MASIVAS (A nivel de Lote/Bloque)
     // ==========================================
+    
     public function estadosBloque()
     {
         return $this->hasMany(CarSiaEstadoOperacion::class, 'numero_bloque', 'numero_bloque')
@@ -79,15 +86,20 @@ class CarSiaOperacion extends Model
     }
 
     // ==========================================
-    // 3. OTRAS RELACIONES (Configuraciones y Detalle)
+    // OTRAS RELACIONES (Configuraciones y Detalle)
     // ==========================================
+    
     public function configuraciones()
     {
         return $this->hasMany(CarSiaOperacionConfig::class, 'id_car_sia_operaciones');
     }
 
+    /**
+     * Detalle de las líneas asociadas a esta operación.
+     */
     public function lineas()
     {
+        // Esto asume que la llave primaria de esta tabla (car_sia_operaciones) es 'id'.
         return $this->hasMany(CarSiaOperacionLinea::class, 'id_car_sia_operaciones');
     }
 }

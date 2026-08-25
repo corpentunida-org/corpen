@@ -92,12 +92,12 @@ class CertificadoController extends Controller
                         $lineasAInsertar[] = [
                             'id_car_sia_operaciones' => $operacion->id,
                             'id_factura'             => $factura->id,
-                            'id_cre_lineas_creditos' => $factura->cuenta,
+                            'id_car_sia_lineas'      => $factura->cuenta, // <-- ACTUALIZADO AL NUEVO CAMPO
                             'numero_bloque'          => $operacion->numero_bloque,
                             'observacion'            => "El asociado presenta una calificación $calificacion debido a un registro de $diasMora días de mora.",
                             'calificacion'           => $calificacion,
                             'fecha_venci'            => $factura->fecha_venci,
-                            'id_car_sia_estados'     => $factura->estado, 
+                            'id_car_sia_estados'     => 3, 
                             'dias_mora_automaticos'  => $diasMora,
                             'procesado_en'           => $ahora->format('Y-m-d H:i:s'),
                         ];
@@ -108,9 +108,9 @@ class CertificadoController extends Controller
                         collect($lineasAInsertar)->chunk(1000)->each(function ($batch) {
                             CarSiaOperacionLinea::upsert(
                                 $batch->toArray(),
-                                ['id_car_sia_operaciones', 'id_factura'], // <-- RECUERDA: Debes tener un índice UNIQUE en tu BD para estas 2 columnas
+                                ['id_car_sia_operaciones', 'id_factura'], 
                                 [
-                                    'id_cre_lineas_creditos', 
+                                    'id_car_sia_lineas', // <-- ACTUALIZADO EN EL ARRAY DE UPSERT
                                     'observacion', 
                                     'calificacion', 
                                     'fecha_venci', 
@@ -131,7 +131,6 @@ class CertificadoController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            // Registramos el error completo en el log para facilitar la depuración
             Log::error("Error en procesamiento masivo: " . $e->getMessage() . " en la línea " . $e->getLine());
             
             return back()->with('error', 'Ocurrió un error en la base de datos: ' . $e->getMessage());
@@ -172,12 +171,12 @@ class CertificadoController extends Controller
                     'id_factura'             => $factura->id,
                 ],
                 [
-                    'id_cre_lineas_creditos' => $factura->cuenta,
+                    'id_car_sia_lineas'      => $factura->cuenta, // <-- ACTUALIZADO AL NUEVO CAMPO
                     'numero_bloque'          => $operacion->numero_bloque,
                     'observacion'            => $observacion,
                     'calificacion'           => $calificacion,
                     'fecha_venci'            => $factura->fecha_venci,
-                    'id_car_sia_estados'     => $factura->estado,
+                    'id_car_sia_estados'     => 3, 
                     'dias_mora_automaticos'  => $diasMora,
                     'procesado_en'           => now(),
                 ]
