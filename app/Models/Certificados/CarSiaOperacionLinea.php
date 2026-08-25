@@ -27,11 +27,11 @@ class CarSiaOperacionLinea extends Model
     // - procesado_en: Fecha y hora en que se procesó el registro.
     protected $fillable = [
         'id_car_sia_operaciones',
-        'id_factura',
+        'id_factura', 
         'id_cre_lineas_creditos',
         'numero_bloque',
-        'observacion',
-        'calificacion',
+        'observacion', //Automatico dependiendo de la calificacion
+        'calificacion', //si mora< 30 = Bueno  si mora >30 y <60 = Regular , si mora > 60 Irregular
         'fecha_venci',
         'id_car_sia_estados',
         'fecha_ultimo_recordatorio',

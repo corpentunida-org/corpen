@@ -374,7 +374,10 @@ class IngestaController extends Controller
                 session()->flash('warning', "ATENCIÓN: Se omitieron {$cedulasIgnoradas} clientes porque su cédula no existe en el sistema.");
             }
 
+            // --- LIMPIEZA DE MEMORIAS (Pantalla A y Pantalla B) ---
             Cache::forget("kpis_ingesta_staging_bloque_{$bloqueOrigen}");
+            Cache::forget('sia_bloques_disponibles');
+            Cache::forget('sia_anios_disponibles');
 
             if ($request->ajax()) return response()->json(['success' => true]);
 

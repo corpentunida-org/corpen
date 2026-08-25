@@ -16,6 +16,12 @@
         /* Estilos para los filtros */
         .form-select-custom, .form-control-custom { background-color: #f8f9fa; border: 1px solid #e9ecef; border-radius: 12px; padding: 0.6rem 1rem; transition: all 0.3s ease;}
         .form-select-custom:focus, .form-control-custom:focus { background-color: #fff; box-shadow: 0 0 0 0.25rem rgba(74, 144, 226, 0.1); border-color: #4a90e2; }
+
+        /* Efecto minimalista para el botón de recarga */
+        .btn-reload { background-color: #ffffff; border: 1px solid #e9ecef; color: #adb5bd; transition: all 0.3s ease; }
+        .btn-reload:hover { background-color: #e7f0ff; color: #4a90e2; border-color: #e7f0ff; }
+        .btn-reload:hover i { transform: rotate(180deg); transition: transform 0.4s ease; }
+        .btn-reload i { transition: transform 0.4s ease; }
     </style>
 
     <div class="app-container py-4">
@@ -35,8 +41,14 @@
                 </div>
             </div>
 
-            <!-- CONTROLES DERECHOS: SELECTOR DE BLOQUE Y BOTÓN DE ALERTA -->
+            <!-- CONTROLES DERECHOS: SELECTOR DE BLOQUE, RECARGAR Y ALERTAS/CERTIFICADOS -->
             <div class="d-flex align-items-center gap-3 flex-wrap">
+
+                {{-- NUEVO BOTÓN: Recargar Vista (Sutil y Minimalista) --}}
+                <a href="{{ request()->fullUrl() }}" class="btn btn-reload shadow-sm rounded-circle d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; flex-shrink: 0;" title="Actualizar datos">
+                    <i class="fas fa-sync-alt"></i>
+                </a>
+
                 @if($bloquesDisponibles->count() > 0)
                 <form action="{{ route('certificados.operaciones.index') }}" method="GET" class="d-flex align-items-center bg-white p-2 border rounded-pill shadow-sm" style="min-width: 320px;">
                     <label class="fw-bold text-muted small mb-0 ms-3 me-2 text-nowrap"><i class="fas fa-filter me-1"></i> Lote Activo:</label>
@@ -54,11 +66,21 @@
                 </form>
                 @endif
 
-                {{-- NUEVO BOTÓN: Alerta de Lote --}}
+                {{-- ACCIONES DE LOTE (MUESTRA SOLO SI HAY BLOQUE SELECCIONADO) --}}
                 @if($bloqueActivo)
-                <button type="button" class="btn btn-info shadow-sm rounded-pill px-4 py-2 fw-bold text-white d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#modalAlertaBloque">
-                    <i class="fas fa-bell me-2"></i> Alerta de Lote
-                </button>
+                    {{-- BOTÓN: Alerta de Lote --}}
+                    <button type="button" class="btn btn-info shadow-sm rounded-pill px-4 py-2 fw-bold text-white d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#modalAlertaBloque">
+                        <i class="fas fa-bell me-2"></i> Alerta de Lote
+                    </button>
+
+                    {{-- NUEVO BOTÓN: Generar Certificados Masivos --}}
+                    <form action="{{ route('certificados.operaciones.pdf_masivo') }}" method="POST" class="d-inline">
+                        @csrf
+                        <input type="hidden" name="numero_bloque" value="{{ $bloqueActivo }}">
+                        <button type="submit" class="btn btn-danger shadow-sm rounded-pill px-4 py-2 fw-bold text-white d-flex align-items-center">
+                            <i class="fas fa-database me-2"></i> Estructurar Lote
+                        </button>
+                    </form>
                 @endif
             </div>
         </div>
@@ -177,6 +199,7 @@
                             <th class="border-0 py-3">Cliente (Tercero)</th>
                             <th class="border-0 py-3">Estado Actual</th>
                             <th class="border-0 py-3">Último Evento</th>
+                            <th class="border-0 py-3">Última Alerta</th>
                             <th class="border-0 py-3">Fecha Creación</th>
                             <th class="border-0 text-end pe-5 py-3">Acciones</th>
                         </tr>
@@ -208,13 +231,15 @@
                                 @endif
                             </td>
 
-                            {{-- COLUMNA: ESTADO ACTUAL --}}
+                            {{-- 1. COLUMNA: ESTADO ACTUAL --}}
                             <td>
                                 @php
-                                    $estadosValidos = $operacion->estados->filter(function($est) use ($operacion) {
-                                        return $est->id_car_sia_operaciones == $operacion->id || is_null($est->id_car_sia_operaciones);
-                                    });
-                                    $ultimoEstado = $estadosValidos->sortByDesc('created_at')->first();
+                                    $todosLosEstados = collect();
+                                    if(isset($operacion->estados)) $todosLosEstados = $todosLosEstados->concat($operacion->estados);
+                                    if(isset($operacion->estadosBloque)) $todosLosEstados = $todosLosEstados->concat($operacion->estadosBloque);
+
+                                    $ultimoEstado = $todosLosEstados->sortByDesc('created_at')->first();
+                                    $esEstadoBloque = $ultimoEstado && is_null($ultimoEstado->id_car_sia_operaciones);
                                     $estadoNombre = $ultimoEstado && $ultimoEstado->estado ? $ultimoEstado->estado->nombre : 'Pendiente';
 
                                     $clasePastel = match(strtolower(trim($estadoNombre))) {
@@ -224,23 +249,48 @@
                                         default => 'bg-pastel-primary'
                                     };
                                 @endphp
-                                <span class="badge {{ $clasePastel }} rounded-pill px-3 py-2 fw-bold" style="font-size: 0.75rem;">
-                                    <i class="fas fa-info-circle me-1"></i> {{ strtoupper($estadoNombre) }}
+                                <span class="badge {{ $clasePastel }} rounded-pill px-3 py-2 fw-bold" style="font-size: 0.75rem;" title="{{ $esEstadoBloque ? 'Estado general asignado por Lote' : 'Estado específico del cliente' }}">
+                                    <i class="fas {{ $esEstadoBloque ? 'fa-layer-group' : 'fa-info-circle' }} me-1"></i> {{ strtoupper($estadoNombre) }}
                                 </span>
                             </td>
 
-                            {{-- NUEVA COLUMNA: ÚLTIMO TIPO DE EVENTO --}}
+                            {{-- 2. COLUMNA: ÚLTIMO TIPO DE EVENTO --}}
                             <td>
                                 @php
-                                    $tiposValidos = $operacion->tipos->filter(function($tip) use ($operacion) {
-                                        return $tip->id_car_sia_operaciones == $operacion->id || is_null($tip->id_car_sia_operaciones);
-                                    });
-                                    $ultimoTipoObj = $tiposValidos->sortByDesc('created_at')->first();
+                                    $todosLosTipos = collect();
+                                    if(isset($operacion->tipos)) $todosLosTipos = $todosLosTipos->concat($operacion->tipos);
+                                    if(isset($operacion->tiposBloque)) $todosLosTipos = $todosLosTipos->concat($operacion->tiposBloque);
+
+                                    $ultimoTipoObj = $todosLosTipos->sortByDesc('created_at')->first();
+                                    $esTipoBloque = $ultimoTipoObj && is_null($ultimoTipoObj->id_car_sia_operaciones);
                                     $tipoNombre = $ultimoTipoObj && $ultimoTipoObj->tipo ? $ultimoTipoObj->tipo->nombre : 'Sin Evento';
                                 @endphp
-                                <span class="badge bg-light text-dark border border-secondary border-opacity-25 rounded-pill px-3 py-2 fw-bold" style="font-size: 0.75rem;">
-                                    <i class="fas fa-tag text-info me-1"></i> {{ strtoupper($tipoNombre) }}
+                                <span class="badge bg-light text-dark border border-secondary border-opacity-25 rounded-pill px-3 py-2 fw-bold" style="font-size: 0.75rem;" title="{{ $esTipoBloque ? 'Evento general asignado por Lote' : 'Evento específico del cliente' }}">
+                                    <i class="fas {{ $esTipoBloque ? 'fa-layer-group text-info' : 'fa-tag text-info' }} me-1"></i> {{ strtoupper($tipoNombre) }}
                                 </span>
+                            </td>
+
+                            {{-- 3. COLUMNA: ÚLTIMA ALERTA --}}
+                            <td>
+                                @php
+                                    $todasLasAlertas = collect();
+                                    if(isset($operacion->alertas)) $todasLasAlertas = $todasLasAlertas->concat($operacion->alertas);
+                                    if(isset($operacion->alertasBloque)) $todasLasAlertas = $todasLasAlertas->concat($operacion->alertasBloque);
+
+                                    $ultimaAlertaObj = $todasLasAlertas->sortByDesc('created_at')->first();
+                                    $esAlertaBloque = $ultimaAlertaObj && is_null($ultimaAlertaObj->id_car_sia_operaciones);
+                                @endphp
+
+                                @if($ultimaAlertaObj)
+                                    <span class="badge {{ $esAlertaBloque ? 'bg-pastel-primary' : 'bg-pastel-info' }} rounded-pill px-3 py-2 fw-bold" style="font-size: 0.75rem;" title="{{ $esAlertaBloque ? 'Alerta general programada por Lote' : 'Alerta específica del cliente' }}">
+                                        <i class="fas {{ $esAlertaBloque ? 'fa-layer-group' : 'fa-bell' }} me-1"></i>
+                                        {{ strtoupper($ultimaAlertaObj->tipoAlerta->nombre ?? 'DESCONOCIDA') }}
+                                    </span>
+                                @else
+                                    <span class="badge bg-light text-muted border border-secondary border-opacity-25 rounded-pill px-3 py-2 fw-bold" style="font-size: 0.75rem;">
+                                        <i class="fas fa-bell-slash me-1 opacity-50"></i> SIN ALERTA
+                                    </span>
+                                @endif
                             </td>
 
                             <td>
@@ -259,7 +309,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="6" class="text-center py-10">
+                            <td colspan="7" class="text-center py-10">
                                 <div class="text-center px-4 py-5">
                                     <div class="mb-3 p-4 rounded-circle d-inline-block" style="background-color: #f8f9fa;">
                                         <i class="fas fa-search fs-1 text-muted opacity-50"></i>
@@ -293,7 +343,6 @@
     @if($bloqueActivo)
     <div class="modal fade" id="modalAlertaBloque" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
-            {{-- Asegúrate de crear esta ruta en web.php y apuntarla a tu nuevo método del controlador --}}
             <form action="{{ route('certificados.operaciones.alerta_bloque') }}" method="POST" class="modal-content border-0 shadow-lg rounded-4">
                 @csrf
                 <div class="modal-header border-0 pb-0 pt-4 px-4">

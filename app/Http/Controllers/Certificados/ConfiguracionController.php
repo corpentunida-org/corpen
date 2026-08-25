@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache; 
 
 // Importación de Modelos de Configuración y Catálogos Base
 use App\Models\Certificados\CarSiaConfig;
@@ -21,19 +22,42 @@ class ConfiguracionController extends Controller
 {
     /**
      * 1. PANEL CENTRAL: Carga todas las configuraciones y catálogos en una sola vista
+     * OPTIMIZACIÓN: Se implementa Caché para evitar 7 consultas a la base de datos en cada recarga.
      */
     public function index()
     {
         try {
-            $configuraciones = CarSiaConfig::with('accionVencimiento')->orderBy('created_at', 'desc')->get();
-            $acciones        = CarSiaAccionVencimiento::orderBy('nombre')->get();
-            $estados         = CarSiaEstado::orderBy('nombre')->get();
-            $tipos           = CarSiaTipo::orderBy('nombre')->get();
-            $tiposAlerta     = CarSiaTipoAlerta::orderBy('nombre')->get();
+            // Tiempo de vida del caché: 24 horas (86400 segundos)
+            $ttl = 86400;
+
+            $configuraciones = Cache::remember('sia_configuraciones', $ttl, function () {
+                return CarSiaConfig::with('accionVencimiento')->orderBy('created_at', 'desc')->get();
+            });
+
+            $acciones = Cache::remember('sia_acciones_vencimiento', $ttl, function () {
+                return CarSiaAccionVencimiento::orderBy('nombre')->get();
+            });
+
+            $estados = Cache::remember('sia_estados', $ttl, function () {
+                return CarSiaEstado::orderBy('nombre')->get();
+            });
+
+            $tipos = Cache::remember('sia_tipos', $ttl, function () {
+                return CarSiaTipo::orderBy('nombre')->get();
+            });
+
+            $tiposAlerta = Cache::remember('sia_tipos_alerta', $ttl, function () {
+                return CarSiaTipoAlerta::orderBy('nombre')->get();
+            });
 
             // Catálogos de Auditoría
-            $origenesEvento   = CarSiaOrigenEvento::orderBy('nombre')->get();
-            $eventosAuditoria = CarSiaEventoAuditoria::orderBy('nombre')->get();
+            $origenesEvento = Cache::remember('sia_origenes_evento', $ttl, function () {
+                return CarSiaOrigenEvento::orderBy('nombre')->get();
+            });
+
+            $eventosAuditoria = Cache::remember('sia_eventos_auditoria', $ttl, function () {
+                return CarSiaEventoAuditoria::orderBy('nombre')->get();
+            });
 
             return view('certificados.config.index', compact(
                 'configuraciones',
@@ -75,6 +99,9 @@ class ConfiguracionController extends Controller
                 ]);
             });
 
+            // Limpiamos el caché para que la vista refleje el nuevo dato inmediatamente
+            Cache::forget('sia_configuraciones');
+
             return redirect()->back()->with('success', 'Configuración guardada exitosamente.');
 
         } catch (\Exception $e) {
@@ -94,6 +121,10 @@ class ConfiguracionController extends Controller
                 $accion->estado = !$accion->estado;
                 $accion->save();
             });
+
+            Cache::forget('sia_acciones_vencimiento');
+            Cache::forget('sia_configuraciones'); // Por si se muestran relaciones afectadas
+
             return redirect()->back()->with('success', 'Estado de la acción actualizado.');
         } catch (\Exception $e) {
             Log::error("CERTIFICADOS Config - Error al cambiar estado de acción {$id}: " . $e->getMessage());
@@ -109,6 +140,7 @@ class ConfiguracionController extends Controller
         $request->validate(['nombre' => 'required|string|max:100']);
         try {
             CarSiaAccionVencimiento::create(['nombre' => $request->nombre, 'estado' => true]);
+            Cache::forget('sia_acciones_vencimiento');
             return redirect()->back()->with('success', 'Acción de vencimiento creada correctamente.');
         } catch (\Exception $e) {
             Log::error('CERTIFICADOS Config - Error al guardar Acción de Vencimiento: ' . $e->getMessage());
@@ -133,6 +165,7 @@ class ConfiguracionController extends Controller
                 'estructura_radicado' => $request->estructura_radicado,
                 'estado'              => $request->estado ?? true,
             ]);
+            Cache::forget('sia_tipos');
             return redirect()->back()->with('success', 'Nuevo tipo agregado al catálogo.');
         } catch (\Exception $e) {
             Log::error('CERTIFICADOS Config - Error al guardar Tipo: ' . $e->getMessage());
@@ -148,6 +181,7 @@ class ConfiguracionController extends Controller
         $request->validate(['nombre' => 'required|string|max:100|unique:car_sia_estados,nombre']);
         try {
             CarSiaEstado::create(['nombre' => $request->nombre]);
+            Cache::forget('sia_estados');
             return redirect()->back()->with('success', 'Estado registrado correctamente.');
         } catch (\Exception $e) {
             Log::error('CERTIFICADOS Config - Error al guardar Estado: ' . $e->getMessage());
@@ -163,6 +197,7 @@ class ConfiguracionController extends Controller
         $request->validate(['nombre' => 'required|string|max:255|unique:car_sia_tipos_alerta,nombre']);
         try {
             CarSiaTipoAlerta::create(['nombre' => $request->nombre]);
+            Cache::forget('sia_tipos_alerta');
             return redirect()->back()->with('success', 'Tipo de alerta registrado en el catálogo.');
         } catch (\Exception $e) {
             Log::error('CERTIFICADOS Config - Error al guardar Tipo de Alerta: ' . $e->getMessage());
@@ -178,10 +213,10 @@ class ConfiguracionController extends Controller
         $request->validate(['nombre' => 'required|string|max:100|unique:car_sia_origenes_evento,nombre']);
         try {
             CarSiaOrigenEvento::create(['nombre' => $request->nombre]);
+            Cache::forget('sia_origenes_evento');
             return redirect()->back()->with('success', 'Origen de evento registrado en el catálogo de auditoría.');
         } catch (\Exception $e) {
             Log::error('CERTIFICADOS Config - Error al guardar Origen de Evento: ' . $e->getMessage());
-            // AHORA IMPRIME EL ERROR SQL SI FALLA ALGO EN LA BASE DE DATOS
             return redirect()->back()->with('error', 'Error SQL: ' . $e->getMessage());
         }
     }
@@ -194,10 +229,10 @@ class ConfiguracionController extends Controller
         $request->validate(['nombre' => 'required|string|max:100|unique:car_sia_eventos_auditoria,nombre']);
         try {
             CarSiaEventoAuditoria::create(['nombre' => $request->nombre]);
+            Cache::forget('sia_eventos_auditoria');
             return redirect()->back()->with('success', 'Evento de auditoría registrado correctamente.');
         } catch (\Exception $e) {
             Log::error('CERTIFICADOS Config - Error al guardar Evento de Auditoría: ' . $e->getMessage());
-            // AHORA IMPRIME EL ERROR SQL SI FALLA ALGO EN LA BASE DE DATOS
             return redirect()->back()->with('error', 'Error SQL: ' . $e->getMessage());
         }
     }

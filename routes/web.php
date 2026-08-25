@@ -162,6 +162,7 @@ use App\Http\Controllers\Certificados\PortalClienteController;
 use App\Http\Controllers\Certificados\ConfiguracionController;
 use App\Http\Controllers\Certificados\IngestaController;
 use App\Http\Controllers\Certificados\AuditoriaController as AuditoriaCertificadosController;
+use App\Http\Controllers\Certificados\CertificadoController;
 
 //ASOCIADO
 use App\Http\Controllers\Asociado\MaeAsociadoController;
@@ -1430,6 +1431,11 @@ Route::middleware(['auth'])
         Route::post('operaciones/{id}/programar-alerta', [OperacionController::class, 'programarAlerta'])->name('operaciones.programar_alerta');
         Route::post('operaciones/{id}/toggle-notificacion', [OperacionController::class, 'toggleNotificacion'])->name('operaciones.toggle_notificacion');
 
+
+        // CERTIFICADOS:
+        Route::get('operaciones/{id}/generar-pdf', [CertificadoController::class, 'generarIndividual'])->name('operaciones.pdf_individual');
+        Route::post('operaciones/generar-masivo', [CertificadoController::class, 'generarMasivo'])->name('operaciones.pdf_masivo');
+        
 
         // ---------------------------------------------------
         // 2. PORTAL DE ATENCIÓN / FRONT DESK

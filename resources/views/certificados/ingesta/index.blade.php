@@ -72,6 +72,12 @@
         @keyframes spin { to { transform: rotate(360deg); } }
         .is-loading .btn-text, .is-loading .btn-icon { display: none; }
         .is-loading .btn-spinner { display: inline-block; }
+
+        /* NUEVO: Efecto minimalista para el botón de recarga (Adaptado al Theme) */
+        .btn-reload { background-color: var(--color-surface); border: 1px solid var(--color-border); color: var(--color-text-muted); transition: all 0.3s ease; text-decoration: none; }
+        .btn-reload:hover { background-color: var(--color-primary-soft); color: var(--color-primary); border-color: var(--color-primary-soft); }
+        .btn-reload:hover i { transform: rotate(180deg); transition: transform 0.4s ease; }
+        .btn-reload i { transition: transform 0.4s ease; display: inline-block; }
     </style>
 
     <div class="app-container py-4 position-relative" style="min-height: 100vh;">
@@ -90,6 +96,12 @@
 
             <!-- CONTENEDOR BOTÓN NAVEGACIÓN + FILTRO -->
             <div class="d-flex flex-column flex-sm-row align-items-sm-center gap-3">
+
+                {{-- NUEVO BOTÓN: Recargar Vista --}}
+                <a href="{{ request()->fullUrl() }}" class="btn-reload shadow-sm rounded-circle d-flex align-items-center justify-content-center p-0" style="width: 42px; height: 42px; flex-shrink: 0;" title="Actualizar datos">
+                    <i class="fas fa-sync-alt fs-5"></i>
+                </a>
+
                 <a href="{{ route('certificados.operaciones.index') }}" class="btn-modern btn-outline-modern shadow-sm text-nowrap">
                     <i class="fas fa-list-ul me-2" style="color: var(--color-primary);"></i> Ver Operaciones
                 </a>
