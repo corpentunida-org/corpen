@@ -198,6 +198,11 @@
                                     <i class="fas fa-history me-2"></i> Historial ETL
                                 </button>
                             </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link text-danger" id="certificados-tab" data-bs-toggle="tab" data-bs-target="#certificados" type="button" role="tab">
+                                    <i class="fas fa-file-pdf me-2"></i> Certificados
+                                </button>
+                            </li>
                         </ul>
                     </div>
 
@@ -208,7 +213,7 @@
                                  TAB 1: LÍNEAS Y FACTURAS (Destacando Cuota)
                                  ========================================== --}}
                             <div class="tab-pane fade show active" id="lineas" role="tabpanel">
-                                
+
                                 @if($lineasAgrupadas->count() > 0)
                                     <div class="accordion accordion-custom" id="accordionLineas">
                                         @foreach($lineasAgrupadas as $nombreLinea => $facturas)
@@ -420,6 +425,37 @@
                                             <div class="bg-light p-3 rounded-4 text-center text-muted fs-8">Sin eventos inyectados.</div>
                                         @endif
                                     </div>
+                                </div>
+                            </div>
+
+                            {{-- ==========================================
+                                 TAB 4: CERTIFICADOS (Visor de PDF)
+                                 ========================================== --}}
+                            <div class="tab-pane fade" id="certificados" role="tabpanel">
+                                <div class="d-flex justify-content-between align-items-center mb-4">
+                                    <h6 class="fw-bold text-muted m-0 fs-8 text-uppercase">
+                                        <i class="fas fa-search me-2"></i> Vista Previa del Certificado
+                                    </h6>
+
+                                    {{-- Botón para abrir el PDF a pantalla completa en otra pestaña --}}
+                                    <a href="{{ route('certificados.operaciones.pdf_individual', $operacion->id) }}" target="_blank" class="btn btn-sm btn-outline-danger rounded-pill fw-bold">
+                                        <i class="fas fa-external-link-alt me-1"></i> Pantalla completa
+                                    </a>
+                                </div>
+
+                                {{-- Contenedor del Iframe --}}
+                                <div class="border-0 rounded-4 overflow-hidden shadow-sm bg-light" style="height: 650px; position: relative;">
+                                    {{-- Iframe que carga dinámicamente el método generarIndividual del controlador --}}
+                                    <iframe
+                                        src="{{ route('certificados.operaciones.pdf_individual', $operacion->id) }}"
+                                        width="100%"
+                                        height="100%"
+                                        frameborder="0"
+                                        style="border: none; background-color: #f8fafc;">
+                                        <p>Tu navegador no soporta la visualización de PDFs.
+                                           <a href="{{ route('certificados.operaciones.pdf_individual', $operacion->id) }}">Descargar PDF</a>
+                                        </p>
+                                    </iframe>
                                 </div>
                             </div>
                         </div>
