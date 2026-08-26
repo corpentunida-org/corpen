@@ -24,9 +24,9 @@ use App\Models\Certificados\CarSiaEstado;
 use App\Models\Certificados\CarSiaTipo;
 use App\Models\Certificados\CarSiaTipoAlerta;
 use App\Models\Certificados\CarSiaConfig;
-use App\Models\Certificados\CarSiaApi; // Importante para leer las facturas
+use App\Models\Certificados\CarSiaApi;
+use App\Models\Certificados\CarSiaOperacionLog;
 use App\Models\Maestras\MaeTerceros;
-
 class OperacionController extends Controller
 {
     /**
@@ -46,7 +46,6 @@ class OperacionController extends Controller
                     ->get();
             });
 
-            // Fíjate en el signo de interrogación antes de la flecha para evitar fallos si está vacío
             $bloqueActivo = $request->input('bloque', $bloquesDisponibles->first()?->numero_bloque);
 
             // =================================================================
@@ -57,6 +56,8 @@ class OperacionController extends Controller
                 'procesados' => 0,
                 'pendientes' => 0,
             ];
+
+            $historialBloque = collect(); // <-- NUEVA VARIABLE PARA LA VISTA
 
             if ($bloqueActivo) {
                 $kpi['total'] = CarSiaOperacion::where('numero_bloque', $bloqueActivo)->count();
@@ -75,6 +76,13 @@ class OperacionController extends Controller
                     })->count();
 
                 $kpi['pendientes'] = $kpi['total'] - $kpi['procesados'];
+
+                // <-- TRAEMOS EL HISTORIAL COMPACTO DEL LOTE (Últimos 8 movimientos)
+                $historialBloque = CarSiaOperacionLog::with(['usuario', 'eventoAuditoria'])
+                    ->where('numero_bloque', $bloqueActivo)
+                    ->orderBy('created_at', 'desc')
+                    ->take(8)
+                    ->get();
             }
 
             // =================================================================
@@ -121,13 +129,15 @@ class OperacionController extends Controller
 
             $tiposAlerta = CarSiaTipoAlerta::all();
 
+            // Agregamos $historialBloque al compact
             return view('certificados.operaciones.index', compact(
                 'operaciones',
                 'aniosDisponibles',
                 'bloquesDisponibles',
                 'bloqueActivo',
                 'kpi',
-                'tiposAlerta'
+                'tiposAlerta',
+                'historialBloque'
             ));
 
         } catch (\Exception $e) {
@@ -160,9 +170,9 @@ class OperacionController extends Controller
             // 2. Agrupamos usando el nombre oficial de la tabla maestra
             $lineasAgrupadas = $registrosCrudos->groupBy(function($item) {
                 // Busca primero en la relación maestra, luego en nombre_cuenta, luego en la cuenta misma
-                return $item->lineaSia->nombre 
-                    ?? $item->nombre_cuenta 
-                    ?? $item->cuenta 
+                return $item->lineaSia->nombre
+                    ?? $item->nombre_cuenta
+                    ?? $item->cuenta
                     ?? 'Línea Desconocida';
             });
             // =========================================================
@@ -383,7 +393,7 @@ class OperacionController extends Controller
             // ChunkById procesa en bloques de 500 garantizando que SOLO ES EL LOTE SELECCIONADO
             CarSiaOperacion::where('numero_bloque', $bloque)
                 ->chunkById(500, function ($operacionesChunk) use ($ahora, $bloque, &$totalOperacionesProcesadas) {
-                    
+
                     $tercerosIds = $operacionesChunk->pluck('id_tercero')->toArray();
                     $operacionesMap = $operacionesChunk->keyBy('id_tercero');
 
@@ -396,7 +406,7 @@ class OperacionController extends Controller
 
                     foreach ($facturasChunk as $factura) {
                         $operacion = $operacionesMap[$factura->tercero] ?? null;
-                        
+
                         if (!$operacion) continue;
 
                         $diasMora = 0;
@@ -420,7 +430,7 @@ class OperacionController extends Controller
                             'observacion'            => "El asociado presenta una calificación $calificacion debido a un registro de $diasMora días de mora.",
                             'calificacion'           => $calificacion,
                             'fecha_venci'            => $factura->fecha_venci,
-                            'id_car_sia_estados'     => 3, 
+                            'id_car_sia_estados'     => 3,
                             'dias_mora_automaticos'  => $diasMora,
                             'procesado_en'           => $ahora->format('Y-m-d H:i:s'),
                         ];
@@ -431,15 +441,15 @@ class OperacionController extends Controller
                         collect($lineasAInsertar)->chunk(1000)->each(function ($batch) {
                             CarSiaOperacionLinea::upsert(
                                 $batch->toArray(),
-                                ['id_car_sia_operaciones', 'id_factura'], 
+                                ['id_car_sia_operaciones', 'id_factura'],
                                 [
-                                    'id_car_sia_lineas', 
-                                    'numero_bloque', 
-                                    'observacion', 
-                                    'calificacion', 
-                                    'fecha_venci', 
-                                    'id_car_sia_estados', 
-                                    'dias_mora_automaticos', 
+                                    'id_car_sia_lineas',
+                                    'numero_bloque',
+                                    'observacion',
+                                    'calificacion',
+                                    'fecha_venci',
+                                    'id_car_sia_estados',
+                                    'dias_mora_automaticos',
                                     'procesado_en'
                                 ]
                             );
@@ -467,7 +477,7 @@ class OperacionController extends Controller
     {
         try {
             $operacion = CarSiaOperacion::with('tercero')->findOrFail($id);
-            
+
             $this->procesarLineasOperacion($operacion);
 
             $lineas = CarSiaOperacionLinea::where('id_car_sia_operaciones', $operacion->id)->get();
@@ -514,16 +524,51 @@ class OperacionController extends Controller
                     'id_factura'             => $factura->id,
                 ],
                 [
-                    'id_car_sia_lineas'      => $factura->cuenta, 
+                    'id_car_sia_lineas'      => $factura->cuenta,
                     'numero_bloque'          => $operacion->numero_bloque,
                     'observacion'            => $observacion,
                     'calificacion'           => $calificacion,
                     'fecha_venci'            => $factura->fecha_venci,
-                    'id_car_sia_estados'     => 3, 
+                    'id_car_sia_estados'     => 3,
                     'dias_mora_automaticos'  => $diasMora,
                     'procesado_en'           => now(),
                 ]
             );
+        }
+    }
+
+
+    /**
+     * 11. ACTUALIZAR LÍNEAS DESDE VISTA HOJA DE CÁLCULO
+     */
+    public function actualizarLineas(Request $request, $id)
+    {
+        // Validar que el request traiga un arreglo de líneas y que la estructura sea correcta
+        $request->validate([
+            'lineas'                         => 'required|array',
+            'lineas.*.calificacion'          => 'required|string',
+            'lineas.*.dias_mora_automaticos' => 'required|numeric',
+            'lineas.*.fecha_venci'           => 'nullable|date',
+            'lineas.*.observacion'           => 'nullable|string',
+        ]);
+
+        try {
+            DB::transaction(function () use ($request) {
+                foreach ($request->lineas as $lineaId => $data) {
+                    CarSiaOperacionLinea::where('id', $lineaId)->update([
+                        'calificacion'          => $data['calificacion'],
+                        'dias_mora_automaticos' => $data['dias_mora_automaticos'],
+                        'fecha_venci'           => $data['fecha_venci'],
+                        'observacion'           => $data['observacion'] ?? '',
+                    ]);
+                }
+            });
+
+            return redirect()->back()->with('success', 'Datos del certificado actualizados. El PDF ha sido regenerado con la nueva información.');
+
+        } catch (\Exception $e) {
+            Log::error("Error actualizando líneas tipo Excel: " . $e->getMessage());
+            return redirect()->back()->with('error', 'Ocurrió un error al intentar guardar los cambios.');
         }
     }
 }

@@ -16,26 +16,60 @@ use App\Models\Certificados\CarSiaEventoAuditoria;
 class AuditoriaController extends Controller
 {
     /**
-     * 1. BITÁCORA DE AUDITORÍA: Muestra el historial completo de operaciones
+     * 1. BITÁCORA DE AUDITORÍA: Paginación por LOTES (Bloques)
      */
     public function index(Request $request)
     {
         try {
-            // Carga los logs con sus relaciones para visualizar quién hizo qué y desde dónde
+            $query = CarSiaOperacionLog::query();
+
+            // FILTROS
+            if ($request->filled('bloque')) {
+                $query->where('numero_bloque', trim($request->bloque));
+            }
+            if ($request->filled('ip')) {
+                $query->where('ip', 'LIKE', "%" . trim($request->ip) . "%");
+            }
+            if ($request->filled('evento_id')) {
+                $query->where('id_car_sia_eventos_auditoria', $request->evento_id);
+            }
+
+            // 1. PAGINAMOS POR LOTE (Extraemos los números de bloque únicos, 5 por página)
+            $bloquesPaginados = (clone $query)
+                ->select('numero_bloque')
+                ->groupBy('numero_bloque')
+                ->orderBy(DB::raw('CAST(numero_bloque AS UNSIGNED)'), 'desc')
+                ->paginate(5)
+                ->withQueryString();
+
+            // Obtenemos los IDs en un arreglo
+            $numerosBloque = $bloquesPaginados->pluck('numero_bloque');
+
+            // 2. TRAEMOS LOS LOGS SOLO DE ESOS 5 LOTES
             $logs = CarSiaOperacionLog::with([
                 'origenEvento',
                 'eventoAuditoria',
-                'usuario',
-                'lineaOperacion'
+                'usuario'
             ])
+            ->whereIn('numero_bloque', $numerosBloque)
+            // Re-aplicamos los filtros internos por si buscaron IP o Evento específico
+            ->when($request->filled('ip'), function($q) use ($request) {
+                $q->where('ip', 'LIKE', "%" . trim($request->ip) . "%");
+            })
+            ->when($request->filled('evento_id'), function($q) use ($request) {
+                $q->where('id_car_sia_eventos_auditoria', $request->evento_id);
+            })
+            ->orderBy(DB::raw('CAST(numero_bloque AS UNSIGNED)'), 'desc')
             ->orderBy('created_at', 'desc')
-            ->paginate(50);
+            ->get();
 
-            // Consulta de IDs de orígenes y eventos para los filtros de búsqueda técnica
+            // 3. AGRUPAMOS EN MEMORIA PARA LA VISTA
+            $logsAgrupados = $logs->groupBy('numero_bloque');
+
             $origenes = CarSiaOrigenEvento::orderBy('nombre')->get();
             $eventos  = CarSiaEventoAuditoria::orderBy('nombre')->get();
 
-            return view('certificados.auditoria.index', compact('logs', 'origenes', 'eventos'));
+            return view('certificados.auditoria.index', compact('logsAgrupados', 'bloquesPaginados', 'origenes', 'eventos'));
 
         } catch (\Exception $e) {
             Log::error('SIA Auditoría - Error al cargar la bitácora: ' . $e->getMessage());
@@ -121,6 +155,45 @@ class AuditoriaController extends Controller
         } catch (\Exception $e) {
             Log::error('CERTIFICADOS Auditoría - Error al guardar evento de auditoría: ' . $e->getMessage());
             return redirect()->back()->with('error', 'No se pudo registrar el evento de auditoría.');
+        }
+    }
+
+    /**
+     * 5. ACTUALIZA CATÁLOGOS TÉCNICOS: Edita un Origen de Evento
+     */
+    public function updateOrigenEvento(Request $request, $id)
+    {
+        $request->validate([
+            // Validamos que sea único, excepto para el ID que estamos editando
+            'nombre' => 'required|string|max:100|unique:car_sia_origenes_evento,nombre,'.$id
+        ]);
+
+        try {
+            $origen = CarSiaOrigenEvento::findOrFail($id);
+            $origen->update(['nombre' => $request->nombre]);
+            return redirect()->back()->with('success', 'Origen actualizado correctamente.');
+        } catch (\Exception $e) {
+            Log::error('SIA Auditoría - Error al actualizar origen: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'No se pudo actualizar el origen de evento.');
+        }
+    }
+
+    /**
+     * 6. ACTUALIZA CATÁLOGOS TÉCNICOS: Edita un Evento de Auditoría
+     */
+    public function updateEventoAuditoria(Request $request, $id)
+    {
+        $request->validate([
+            'nombre' => 'required|string|max:255|unique:car_sia_eventos_auditoria,nombre,'.$id
+        ]);
+
+        try {
+            $evento = CarSiaEventoAuditoria::findOrFail($id);
+            $evento->update(['nombre' => $request->nombre]);
+            return redirect()->back()->with('success', 'Evento actualizado correctamente.');
+        } catch (\Exception $e) {
+            Log::error('SIA Auditoría - Error al actualizar evento: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'No se pudo actualizar el evento de auditoría.');
         }
     }
 }
