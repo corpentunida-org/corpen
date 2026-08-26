@@ -145,7 +145,53 @@
             </div>
         </div>
         @endif
+        {{-- ========================================== --}}
+        {{-- HISTORIAL COMPACTO DEL LOTE --}}
+        {{-- ========================================== --}}
+        @if($bloqueActivo && isset($historialBloque) && $historialBloque->count() > 0)
+        <div class="card card-custom shadow-sm border-0 mb-4">
+            <div class="card-body p-3">
+                <div class="d-flex align-items-center mb-2">
+                    <i class="fas fa-history text-muted me-2"></i>
+                    <h6 class="fw-bold text-muted m-0 small text-uppercase" style="letter-spacing: 0.5px;">Actividad Reciente del Lote</h6>
+                </div>
 
+                {{-- Contenedor Horizontal Scrollable --}}
+                <div class="d-flex flex-nowrap overflow-auto gap-3 pb-2 pt-1 custom-scrollbar">
+                    @foreach($historialBloque as $log)
+                        @php
+                            // Extrae la primera letra del usuario, o usa 'S' para el Sistema
+                            $inicial = strtoupper(substr($log->usuario->name ?? 'S', 0, 1));
+                            // Un color aleatorio basado en el nombre para darle vida sutil
+                            $colorBg = match($inicial) { 'S' => 'bg-pastel-secondary', 'A','E','I','O','U' => 'bg-pastel-success', 'M','N','P','C' => 'bg-pastel-warning', default => 'bg-pastel-primary' };
+                        @endphp
+
+                        <div class="bg-white rounded-3 p-2 d-flex align-items-center flex-shrink-0 shadow-sm" style="min-width: 260px; border: 1px solid #f0f0f0;">
+                            <div class="{{ $colorBg }} rounded-circle d-flex align-items-center justify-content-center me-3 text-dark fw-bold" style="width: 38px; height: 38px; font-size: 0.9rem;">
+                                {{ $inicial }}
+                            </div>
+                            <div class="overflow-hidden">
+                                <div class="fw-bold text-dark text-truncate" style="font-size: 0.75rem; line-height: 1.2;" title="{{ $log->eventoAuditoria->nombre ?? 'Evento de Motor' }}">
+                                    {{ $log->eventoAuditoria->nombre ?? 'Evento de Motor' }}
+                                </div>
+                                <div class="text-muted" style="font-size: 0.65rem;">
+                                    <i class="fas fa-user-circle me-1"></i>{{ $log->usuario->name ?? 'Sistema' }} • {{ $log->created_at->diffForHumans() }}
+                                </div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+
+        <style>
+            /* Hacemos el scrollbar súper delgado y elegante solo para este contenedor */
+            .custom-scrollbar::-webkit-scrollbar { height: 6px; }
+            .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
+            .custom-scrollbar::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+            .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+        </style>
+        @endif
         {{-- Tarjeta de Filtros Secundarios --}}
         <div class="card card-custom shadow-sm border-0 mb-4">
             <div class="card-body p-4">
