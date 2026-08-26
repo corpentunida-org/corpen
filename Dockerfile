@@ -35,7 +35,8 @@ RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | b
 RUN docker-php-ext-install pdo_mysql
 RUN docker-php-ext-install gd
 RUN docker-php-ext-install zip
-
+# Extensiones esenciales para Laravel (MySQL, imágenes, compresión y zip)
+RUN docker-php-ext-install pdo_mysql gd zip bcmath
 
 RUN echo "file_uploads = On\n" \
   "memory_limit = 500M\n" \
