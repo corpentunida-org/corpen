@@ -1403,7 +1403,6 @@ Route::middleware(['auth'])
 
     });
 // FIN MÓDULO INTEGRACIONES
-
 // ==========================================
 //   MÓDULO SIA CERTIFICADOS (MOTOR DE OPERACIONES)
 // ==========================================
@@ -1431,11 +1430,13 @@ Route::middleware(['auth'])
         Route::post('operaciones/{id}/programar-alerta', [OperacionController::class, 'programarAlerta'])->name('operaciones.programar_alerta');
         Route::post('operaciones/{id}/toggle-notificacion', [OperacionController::class, 'toggleNotificacion'])->name('operaciones.toggle_notificacion');
 
+        // NUEVA RUTA: Actualizar líneas desde la Hoja de Cálculo (Edición Rápida)
+        Route::put('operaciones/{id}/lineas', [OperacionController::class, 'actualizarLineas'])->name('operaciones.actualizar_lineas');
 
         // CERTIFICADOS:
         Route::get('operaciones/{id}/generar-pdf', [CertificadoController::class, 'generarIndividual'])->name('operaciones.pdf_individual');
         Route::post('operaciones/generar-masivo', [CertificadoController::class, 'generarMasivo'])->name('operaciones.pdf_masivo');
-        
+
 
         // ---------------------------------------------------
         // 2. PORTAL DE ATENCIÓN / FRONT DESK
@@ -1505,10 +1506,13 @@ Route::middleware(['auth'])
         // Registro de Nueva Transacción JSON (Permite recibir por Web/API)
         Route::post('auditoria/registrar', [AuditoriaCertificadosController::class, 'registrarTransaccion'])->name('auditoria.registrar');
 
-        // Gestión de Catálogos Técnicos (Orígenes y Eventos)
+        // Gestión de Catálogos Técnicos (Orígenes y Eventos) - CREACIÓN
         Route::post('auditoria/store-origen', [AuditoriaCertificadosController::class, 'storeOrigenEvento'])->name('auditoria.store_origen');
         Route::post('auditoria/store-evento', [AuditoriaCertificadosController::class, 'storeEventoAuditoria'])->name('auditoria.store_evento');
 
+        // Gestión de Catálogos Técnicos (Orígenes y Eventos) - ACTUALIZACIÓN (NUEVO)
+        Route::put('auditoria/origen/{id}', [AuditoriaCertificadosController::class, 'updateOrigenEvento'])->name('auditoria.update_origen');
+        Route::put('auditoria/evento/{id}', [AuditoriaCertificadosController::class, 'updateEventoAuditoria'])->name('auditoria.update_evento');
+
     });
 // FIN MÓDULO SIA CERTIFICADOS
-
